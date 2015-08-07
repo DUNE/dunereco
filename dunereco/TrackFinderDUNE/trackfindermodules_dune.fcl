@@ -1,0 +1,75 @@
+#include "trackfindermodules.fcl"
+
+BEGIN_PROLOG
+
+standard_trackanact:
+{
+  module_type:        "TrackAnaCT"
+  TrackModuleLabel:   "ct"
+  SpacepointModuleLabel:  "spacepts"
+  StitchModuleLabel:  "stitch"
+  TrkSpptAssocModuleLabel:  "ct"
+  HitSpptAssocModuleLabel:  "hitcheat"
+  Dump:               10
+  MinMCKE:            0.05
+  MinMCLen:           20.
+  MatchColinearity:   0.97
+  MatchDisp:          2.0
+  WMatchDisp:         15.0
+  IgnoreSign:         true
+}
+
+dune35t_trackcheater:                     @local::standard_trackcheater
+
+dune35t_cosmictracker:                    @local::standard_cosmictracker
+#dune35t_cosmictracker.CleanUpHits:        true
+dune35t_cosmictracker.SortDirection:      "-y"
+dune35t_cosmictracker.StitchTracks:       true
+dune35t_cosmictracker.DisCut:             100.
+dune35t_cosmictracker.AngCut:             0.2
+dune35t_cosmictracker.ClusterMatch:       @local::dune35t_clustermatchtq
+dune35t_cosmictracker.TrajOnly:           false
+dune35t_trackstitcher:                    @local::standard_trackstitcher
+dune35t_trackstitcher.SpptSepTolerance:   100
+dune35t_trackstitcher.CosAngTolerance:    0.80
+
+dune35t_track3Dkalmanhit:                            @local::standard_track3Dkalmanhit
+dune35t_track3Dkalmanhit.MaxSeedChiDF:               50
+dune35t_track3Dkalmanhit.MinSeedHits:                10
+dune35t_track3Dkalmanhit.KalmanFilterAlg:            @local::dune35t_kalmanfilteralg
+dune35t_track3Dkalmanhit.SeedFinderAlg:              @local::dune35t_seedfinderalgorithm
+dune35t_track3Dkalmanhit.SpacePointAlg:              @local::dune35t_spacepointalg
+
+dune35t_cctrackmaker:                          @local::standard_cctrackmaker
+dune35t_cctrackmaker.HitModuleLabel:           "linecluster"
+dune35t_cctrackmaker.ClusterModuleLabel:       "linecluster"
+dune35t_cctrackmaker.VertexModuleLabel:        "linecluster"
+
+dune35t_pmalgtrackmaker:                     @local::standard_pmalgtrackmaker
+dune35t_pmalgtrackmaker.HitModuleLabel:      "linecluster"
+dune35t_pmalgtrackmaker.ClusterModuleLabel:  "linecluster"
+dune35t_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightZ: 1.0
+dune35t_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightV: 1.0
+dune35t_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightU: 1.0
+#dune35t_pmalgtrackmaker.FlipToBeam:          true
+#dune35t_pmalgtrackmaker.AutoFlip_dQdx:       true
+
+dunefd_trackcheater:                      @local::standard_trackcheater
+
+dunefd_cosmictracker:                    @local::standard_cosmictracker
+dunefd_cosmictracker.SortDirection:      "-y"
+dunefd_cosmictracker.StitchTracks:       true
+dunefd_cosmictracker.DisCut:             100.
+dunefd_cosmictracker.AngCut:             0.2
+dunefd_cosmictracker.ClusterMatch:       @local::dunefd_clustermatchtq
+dunefd_cosmictracker.TrajOnly:           false
+
+dunefd_pmalgtrackmaker:                     @local::standard_pmalgtrackmaker
+dunefd_pmalgtrackmaker.HitModuleLabel:      "linecluster"
+dunefd_pmalgtrackmaker.ClusterModuleLabel:  "linecluster"
+dunefd_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightZ: 1.0
+dunefd_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightV: 1.0
+dunefd_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightU: 1.0
+
+
+END_PROLOG

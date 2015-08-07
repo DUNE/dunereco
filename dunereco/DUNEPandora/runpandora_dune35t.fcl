@@ -1,0 +1,96 @@
+#include "services_dune.fcl"
+#include "caldata_dune.fcl"
+#include "hitfindermodules_dune.fcl"
+#include "pandoramodules_dune.fcl"
+#include "anatreemodule.fcl"
+
+process_name: DUNE35tPandora
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "ntuple.root" }
+  Timing:       {}
+  SimpleMemoryCheck:     { ignoreTotal: 1 } # default is one
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+  user:         @local::dune35t_services
+}
+
+
+### Define input file format
+source:
+{
+  module_type: RootInput
+}
+
+### Define output file format
+outputs:
+{
+ out1:
+ {
+   module_type: RootOutput
+   fileName:    "standard_reco.root" #default file name, can override from command line with -o or --output
+   dataTier:    "full-reconstructed"
+ }
+}
+
+### Define the modules and create chains
+physics:
+{
+  producers:{
+    caldata:           @local::dune35t_calwire	
+    hitcheat:          @local::dune35t_hitcheater
+    pandora:           @local::dune35t_pandora
+    particlestitcher:   @local::dune35t_particlestitcher
+  }
+
+  filters:{
+
+  } 
+
+  analyzers:{
+    pandorana:         {module_type: PFParticleAnalysis}
+    pandoramonitoring: {module_type: PFParticleMonitoring}
+    analysistree:      @local::anatree_anatree
+  }
+
+  ### Set up a chain of Producer modules
+  reco: [ caldata, hitcheat, pandora, particlestitcher ]
+
+  ### Set up a chain of Analyzer modules
+  ana: [ pandorana, pandoramonitoring, analysistree ]
+ 
+  ### Set up the output stream
+  stream1: [ out1 ]
+
+  ### Set up the trigger paths (these are the modules that modify the event) 
+  trigger_paths: [ reco ] 
+
+  ### Set up the end paths (these are the modules that do not modify the event)
+  end_paths: [ ana, stream1 ]
+}
+
+### Configure the Producer modules
+physics.producers.pandora.HitFinderModuleLabel: "hitcheat"
+physics.producers.pandora.EnableMonitoring: true
+physics.producers.particlestitcher.PFParticleModuleLabel: "pandora"
+physics.producers.particlestitcher.TrackModuleLabel: "pandora"
+physics.producers.particlestitcher.UseXCoordinate: false
+physics.producers.particlestitcher.EnableMonitoring: true
+
+### Configure the Pandora Analyzer modules
+physics.analyzers.pandoramonitoring.UseDaughterPFParticles:  true
+physics.analyzers.pandoramonitoring.HitFinderModule: "hitcheat"
+physics.analyzers.pandoramonitoring.SpacePointModule: "pandora"
+physics.analyzers.pandoramonitoring.PFParticleModule: "particlestitcher"
+physics.analyzers.pandoramonitoring.TrackModule: "particlestitcher"
+physics.analyzers.pandorana.SpacePointModule: "pandora"
+physics.analyzers.pandorana.PFParticleModule: "particlestitcher"
+physics.analyzers.pandorana.TrackModule: "particlestitcher"
+
+### Configure the Analysis Tree module
+physics.analyzers.analysistree.TrackModuleLabel: "particlestitcher"
+physics.analyzers.analysistree.ClusterModuleLabel:  "pandora"
+physics.analyzers.analysistree.HitsModuleLabel:  "hitcheat"
+physics.analyzers.analysistree.SimulationLabel:  "largeant"
+

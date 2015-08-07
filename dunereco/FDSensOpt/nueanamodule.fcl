@@ -1,0 +1,9 @@
+BEGIN_PROLOG
+
+dunefd_nueana:
+{
+   module_type:             "NueAna"
+#  HitsModuleLabel:         "gaushit"
+}
+
+END_PROLOG
