@@ -5,8 +5,10 @@ simple_plugin(NueAna "module"
 		        Geometry
 			Geometry_service
 			Utilities
+			Simulation
 			DetectorProperties_service
 			LArProperties_service
+			BackTracker_service
 			${SIMULATIONBASE}
                         ${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}

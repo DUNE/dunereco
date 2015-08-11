@@ -3,7 +3,11 @@ BEGIN_PROLOG
 dunefd_nueana:
 {
    module_type:             "NueAna"
-#  HitsModuleLabel:         "gaushit"
+   HitsModuleLabel:         "lineclusterdc"
+   TrackModuleLabel:        "pmtrackdc"
+   VertexModuleLabel:       "lineclusterdc"
+   GenieGenModuleLabel:     "generator"
+   FidVolCut:	            3.0
 }
 
 END_PROLOG
