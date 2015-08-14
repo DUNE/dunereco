@@ -1,0 +1,14 @@
+BEGIN_PROLOG
+
+dunefd_nueana:
+{
+   module_type:             "NueAna"
+   HitsModuleLabel:         "lineclusterdc"
+   TrackModuleLabel:        "pmtrackdc"
+	 ClusterModuleLabel:			"lineclusterdc"
+   VertexModuleLabel:       "lineclusterdc"
+   GenieGenModuleLabel:     "generator"
+   FidVolCut:	            3.0
+}
+
+END_PROLOG
