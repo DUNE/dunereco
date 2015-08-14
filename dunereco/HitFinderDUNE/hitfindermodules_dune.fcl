@@ -11,6 +11,12 @@ standard_disambigcheat:
  ChanHitLabel:        "gaushit"
 }
 
+hit_repeater:
+{
+    module_type:      "HitRepeater"
+    ChanHitLabel:     "gaushit"
+}
+
 
 apa_hitfinder:
 {
@@ -20,6 +26,7 @@ apa_hitfinder:
  ClusLabel:           "fuzzy"
 }
 
+dune35t_hit_repeater:    @local::hit_repeater
 dune35t_disambigcheat:    @local::standard_disambigcheat
 
 dune35t_gaushitfinder:    @local::gaus_hitfinder

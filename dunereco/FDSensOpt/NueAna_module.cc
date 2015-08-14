@@ -88,6 +88,7 @@ private:
   short isdata;
 
   int ntracks_reco;         //number of reconstructed tracks
+  int   trkid[kMaxTrack];
   float trkstartx[kMaxTrack];
   float trkstarty[kMaxTrack];
   float trkstartz[kMaxTrack];
@@ -217,6 +218,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
     memset(larEnd, 0, 3);
     tracklist[i]->Extent(trackStart,trackEnd); 
     tracklist[i]->Direction(larStart,larEnd);
+    trkid[i]       = tracklist[i]->ID();
     trkstartx[i]      = trackStart[0];
     trkstarty[i]      = trackStart[1];
     trkstartz[i]      = trackStart[2];
@@ -292,6 +294,7 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("taulife",&taulife,"taulife/F");
   fTree->Branch("isdata",&isdata,"isdata/S");
   fTree->Branch("ntracks_reco",&ntracks_reco,"ntracks_reco/I");
+  fTree->Branch("trkid",trkid,"trkid[ntracks_reco]/I");
   fTree->Branch("trkstartx",trkstartx,"trkstartx[ntracks_reco]/F");
   fTree->Branch("trkstarty",trkstarty,"trkstarty[ntracks_reco]/F");
   fTree->Branch("trkstartz",trkstartz,"trkstartz[ntracks_reco]/F");
@@ -349,6 +352,7 @@ void dunefd::NueAna::ResetVars(){
 
   ntracks_reco = 0;
   for (int i = 0; i < kMaxTrack; ++i){
+    trkid[i] = -9999;
     trkstartx[i] = -9999;
     trkstarty[i] = -9999;
     trkstartz[i] = -9999;
