@@ -1,0 +1,14 @@
+#Check the ambiguity choices of two collections of hits assuming that one is cheated and the other is being checked
+
+BEGIN_PROLOG
+
+
+standard_disambigcheck:
+{
+ module_type:     "disambigcheck"
+ ChanHitDisambig: "hit35t"
+ ChanHitCheater:  "dcheat"
+}
+
+END_PROLOG
+

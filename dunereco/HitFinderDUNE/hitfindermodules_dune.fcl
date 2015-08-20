@@ -1,0 +1,97 @@
+#include "hitfindermodules.fcl"
+#include "clusteralgorithms.fcl"
+#include "disambigalgorithms.fcl"
+
+BEGIN_PROLOG
+
+
+standard_disambigcheat:
+{
+ module_type:         "DisambigCheater"
+ ChanHitLabel:        "gaushit"
+}
+
+hit_repeater:
+{
+    module_type:      "HitRepeater"
+    ChanHitLabel:     "gaushit"
+}
+
+
+apa_hitfinder:
+{
+ module_type:         "APAHitFinder"
+ DisambigAlg:         @local::apa_disambigalg
+ ChanHitLabel:        "gaushit"
+ ClusLabel:           "fuzzy"
+}
+
+dune35t_hit_repeater:    @local::hit_repeater
+dune35t_disambigcheat:    @local::standard_disambigcheat
+
+dune35t_gaushitfinder:    @local::gaus_hitfinder
+dune35t_apahitfinder:     @local::apa_hitfinder
+dune35t_hitcheater:	  @local::standard_hitcheater
+
+dune35t_gaushitfinder.MinSig:    [6.0, 6.0, 11.0]
+dune35t_gaushitfinder.MinWidth:  [1.0, 1.0, 1.0]
+dune35t_gaushitfinder.InitWidth: [6.0, 6.0, 7.8]
+dune35t_gaushitfinder.AreaNorms: [13.25, 13.25, 16.31]
+dune35t_gaushitfinder.Chi2NDFRetry: 1000.
+
+dune35t_disambigalg:
+{
+    TimeCut:          3.   #tolerance for 3 view hits matching, in ticks
+    DistanceCut:      1.   #tolerance to determine whether wires cross, in cm
+    DistanceCutClu:   4.   #tolerance to get disambiguated hits around a given hit, in cm
+    TimeWiggle:       5.   #Buffer to extend cluster windows by to exclude small clusters 
+    		      	   # of mis-identified hits.  
+    ColChannelWiggle: 5    #Buffer to extend cluster windows by to exclude small clusters 
+                           # of mis-identified hits. 
+    DBScanAlg:        @local::standard_dbscanalg
+}
+
+dune35t_disambigalg.DBScanAlg.eps:       13.
+dune35t_disambigalg.DBScanAlg.epstwo:    15.
+
+dune35t_TimeBasedDisambigAlg:
+{
+    TimeCut:          3.   #tolerance for 3 view hits matching, in ticks
+    DistanceCut:      1.   #tolerance to determine whether wires cross, in cm
+    DistanceCutClu:   4.   #tolerance to get disambiguated hits around a given hit, in cm
+    TimeWiggle:       5.   #Buffer to extend cluster windows by to exclude small clusters 
+                           # of mis-identified hits. 
+    ColChannelWiggle: 5    #Buffer to extend cluster windows by to exclude small clusters 
+                           # of mis-identified hits. 
+}
+
+dune35t_hitfinder35t:
+{
+    module_type:      "HitFinder35t"
+    DisambigAlg:      @local::dune35t_disambigalg
+    TimeBasedDisambigAlg:      @local::dune35t_TimeBasedDisambigAlg
+    ChanHitLabel:     "gaushit"
+    Algorithm:        "TripletMatch"
+}
+
+dune35t_fasthitfinder:    @local::standard_fasthitfinder
+dune35t_fasthitfinder.MinSigInd: 5.0
+dune35t_fasthitfinder.MinSigCol: 5.0
+
+dune35t_clustercrawlerhit: @local::standard_clustercrawlerhit
+dune35t_clustercrawlerhit.CCHitFinderAlg.ChiNorms:           [ 0.31, 0.62, 0.6 ]
+dune35t_clustercrawlerhit.CCHitFinderAlg.MinSigCol:          3.
+dune35t_clustercrawlerhit.CCHitFinderAlg.MinRMSCol:          2.1
+dune35t_clustercrawlerhit.CCHitFinderAlg.MinSigInd:          3.
+dune35t_clustercrawlerhit.CCHitFinderAlg.MinRMSInd:          2.3
+dune35t_clustercrawlerhit.CCHitFinderAlg.AllowNoHitWire:     2
+
+dunefd_disambigcheat:     @local::standard_disambigcheat
+dunefd_gaushitfinder:     @local::dune35t_gaushitfinder
+dunefd_apahitfinder:      @local::apa_hitfinder
+dunefd_hitcheater:	  @local::standard_hitcheater
+dunefd_fasthitfinder:     @local::dune35t_fasthitfinder
+dunefd_clustercrawlerhit: @local::dune35t_clustercrawlerhit
+dunefd_hitfinderfd:       @local::dune35t_hitfinder35t
+
+END_PROLOG
