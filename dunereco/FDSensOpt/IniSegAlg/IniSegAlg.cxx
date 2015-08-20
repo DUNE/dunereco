@@ -26,7 +26,7 @@ fKey(key)
 
 dunefd::IniSegAlg::IniSegAlg(std::map<size_t, std::vector<dunefd::Hit2D> > clusters) :
 fClusters(clusters),
-fRadius(3.0),
+fRadius(10.0),
 fDistVtxCl(0.0F)
 {
 }
