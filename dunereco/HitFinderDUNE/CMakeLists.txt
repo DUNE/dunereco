@@ -3,6 +3,7 @@ art_make( BASENAME_ONLY
           LIBRARY_NAME     HitFinderDUNE
           LIB_LIBRARIES    RecoBase
 	  		   RecoAlg
+			   PMAlg
 			   Filters
                            Geometry
                            Geometry_service
