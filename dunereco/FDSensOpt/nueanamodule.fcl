@@ -1,3 +1,5 @@
+#include "trackfinderalgorithms.fcl"
+
 BEGIN_PROLOG
 
 dunefd_nueana:
@@ -9,6 +11,17 @@ dunefd_nueana:
    VertexModuleLabel:       "lineclusterdc"
    GenieGenModuleLabel:     "generator"
    FidVolCut:	            3.0
+}
+
+dunefd_inisegreco:
+{
+	module_type: 							"IniSegReco"
+	HitsModuleLabel:          "lineclusterdc"
+  TrackModuleLabel:         "pmtrackdc"
+	ClusterModuleLabel:			  "lineclusterdc"
+  GenieGenModuleLabel:      "generator"
+	ProjectionMatchingAlg:  @local::standard_projectionmatchingalg
+  FidVolCut:	            	3.0
 }
 
 END_PROLOG

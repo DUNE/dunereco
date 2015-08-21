@@ -30,10 +30,6 @@
 #include "Utilities/TimeService.h"
 #include "MCCheater/BackTracker.h"
 #include "SimulationBase/MCTruth.h"
-#include "RecoAlg/ProjectionMatchingAlg.h"
-#include "RecoAlg/PMAlg/PmaTrack3D.h"
-#include "RecoAlg/PMAlg/Utilities.h"
-#include "IniSegAlg/IniSegAlg.h"
 
 // ROOT includes
 #include "TTree.h"
@@ -78,8 +74,6 @@ private:
 
   void ResetVars();
   bool insideFidVol(const TLorentzVector& pvtx); 
-	void recoIniElSeg(art::Event const & evt, const art::Ptr<simb::MCTruth> mctruth);
-	TVector3 findElDir(const art::Ptr<simb::MCTruth> mctruth);
 
   // Declare member data here.
   TTree *fTree;
@@ -162,6 +156,8 @@ dunefd::NueAna::NueAna(fhicl::ParameterSet const & pset)
 
 void dunefd::NueAna::analyze(art::Event const & evt)
 {
+
+	std::cout << " **************************************** analyze ************ " << std::endl;
   // Implementation of required member function here.
   ResetVars();
   art::ServiceHandle<geo::Geometry> geom;
@@ -282,9 +278,8 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	lep_dcosy_truth = mctruth->GetNeutrino().Lepton().Py()/mctruth->GetNeutrino().Lepton().P();
 	lep_dcosz_truth = mctruth->GetNeutrino().Lepton().Pz()/mctruth->GetNeutrino().Lepton().P();
       }
-
-			recoIniElSeg(evt, mctruth);
     }
+
   }
 
   fTree->Fill();
@@ -457,73 +452,6 @@ bool dunefd::NueAna::insideFidVol(const TLorentzVector& pvtx)
 	else inside = false;
 		
 	return inside;
-}
-
-/***********************************************************************/
-
-void dunefd::NueAna::recoIniElSeg(art::Event const & evt, const art::Ptr<simb::MCTruth> mctruth)
-{
-	const simb::MCParticle& particle = mctruth->GetNeutrino().Nu();
-	const TLorentzVector& pvtx = particle.Position();
-
-	if (insideFidVol(pvtx))
-	{
-		TVector3 mcdir = findElDir(mctruth);
-		TVector3 mcvtx(pvtx.X(), pvtx.Y(), pvtx.Z());
-
-		// * clusters
-  	art::Handle< std::vector<recob::Cluster> > clusterListHandle;
- 		std::vector<art::Ptr<recob::Cluster> > clusterlist;
-
-		std::map<size_t, std::vector<dunefd::Hit2D> > cls; 
-
-  	if (evt.getByLabel(fClusterModuleLabel,clusterListHandle))
-		{
-    	art::fill_ptr_vector(clusterlist, clusterListHandle);
-			art::FindManyP< recob::Hit > hc(clusterListHandle, evt, fClusterModuleLabel);		
-
-			std::vector< art::Ptr<recob::Hit> > hitscl;
-			
-			for (size_t c = 0; c < clusterlist.size(); ++c)
-			{
-				std::vector< Hit2D > hits2dcl;
-				hitscl = hc.at(c);
-				for (size_t h = 0; h < hitscl.size(); ++h)
-				{
-					size_t wire = hitscl[h]->WireID().Wire;
-					size_t plane = hitscl[h]->WireID().Plane;
-					size_t tpc = hitscl[h]->WireID().TPC;
-					size_t cryo = hitscl[h]->WireID().Cryostat;
-
-					TVector2 point = pma::WireDriftToCm(wire, hitscl[h]->PeakTime(), plane, tpc, cryo);
-					Hit2D hit2d(point, hitscl[h].key());
-					hits2dcl.push_back(hit2d);
-				}
-
-				cls[c] = hits2dcl;
-			}
-		}
-	}
-}
-
-/***********************************************************************/
-
-TVector3 dunefd::NueAna::findElDir(const art::Ptr<simb::MCTruth> mctruth)
-{
-	TVector3 dir;
-	const simb::MCParticle& particle = mctruth->GetNeutrino().Nu();
-
-	for (int p = 0; p < particle.NumberDaughters(); ++p)
-		if (abs(mctruth->GetParticle(p).PdgCode()) == 11)
-		{
-			TLorentzVector mom = particle.Momentum();
-			TVector3 momvec3(mom.Px(), mom.Py(), mom.Pz());
-			dir = momvec3 * (1 / momvec3.Mag());
-
-			break;
-		}
-
-	return dir;
 }
 
 /***********************************************************************/
