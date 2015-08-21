@@ -156,6 +156,8 @@ dunefd::NueAna::NueAna(fhicl::ParameterSet const & pset)
 
 void dunefd::NueAna::analyze(art::Event const & evt)
 {
+
+	std::cout << " **************************************** analyze ************ " << std::endl;
   // Implementation of required member function here.
   ResetVars();
   art::ServiceHandle<geo::Geometry> geom;
@@ -277,6 +279,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	lep_dcosz_truth = mctruth->GetNeutrino().Lepton().Pz()/mctruth->GetNeutrino().Lepton().P();
       }
     }
+
   }
 
   fTree->Fill();

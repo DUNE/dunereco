@@ -17,6 +17,12 @@ hit_repeater:
     ChanHitLabel:     "gaushit"
 }
 
+emlikehits:
+{
+    module_type:      "EmLikeHits"
+	HitModuleLabel:   "hit"   # hits used to reconstruct tagged tracks
+    Trk3DModuleLabel: "track" # tagged tracks (hadron/muon- or cascade-like)
+}
 
 apa_hitfinder:
 {
@@ -31,6 +37,7 @@ dune35t_disambigcheat:    @local::standard_disambigcheat
 
 dune35t_gaushitfinder:    @local::gaus_hitfinder
 dune35t_apahitfinder:     @local::apa_hitfinder
+dune35t_emlikehits:    @local::emlikehits
 dune35t_hitcheater:	  @local::standard_hitcheater
 
 dune35t_gaushitfinder.MinSig:    [6.0, 6.0, 11.0]
