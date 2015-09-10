@@ -10,6 +10,11 @@
     <MuonPlugin>LArMuonId</MuonPlugin>
 
     <!-- ALGORITHM SETTINGS -->
+    <!--algorithm type = "EventReading">
+         <EventFileName>/r05/lbne/mcproduction_v04_06_02/prodgenie_bnb_nu_cosmic_uboone/uBooNE_Events_100_0_reco1.pndr</EventFileName>
+         <ShouldReadEvents>true</ShouldReadEvents>
+         <SkipToEvent>0</SkipToEvent>
+    </algorithm-->
 
     <!-- COSMIC RAY RECONSTRUCTION -->
     <algorithm type = "LArListPreparation">
@@ -208,24 +213,67 @@
         <InputClusterListNameW>ClustersW</InputClusterListNameW>
     </algorithm>
 
-    <!-- 3D cosmic ray shower remnants -->
+    <!-- 2D/3D cosmic ray shower remnants -->  
+    <algorithm type = "LArSimpleClusterGrowing">
+        <InputClusterListName>ClustersW</InputClusterListName>
+        <MinCaloHitsPerCluster>5</MinCaloHitsPerCluster>
+    </algorithm>
+    <algorithm type = "LArSimpleClusterGrowing">
+        <InputClusterListName>ClustersU</InputClusterListName>
+        <MinCaloHitsPerCluster>5</MinCaloHitsPerCluster>
+    </algorithm>
+    <algorithm type = "LArSimpleClusterGrowing">
+        <InputClusterListName>ClustersV</InputClusterListName>
+        <MinCaloHitsPerCluster>5</MinCaloHitsPerCluster>
+    </algorithm>
     <algorithm type = "LArSimpleClusterMerging">
         <InputClusterListName>ClustersW</InputClusterListName>
+        <MinCaloHitsPerCluster>5</MinCaloHitsPerCluster>
     </algorithm>
     <algorithm type = "LArSimpleClusterMerging">
         <InputClusterListName>ClustersU</InputClusterListName>
+        <MinCaloHitsPerCluster>5</MinCaloHitsPerCluster>
     </algorithm>
     <algorithm type = "LArSimpleClusterMerging">
         <InputClusterListName>ClustersV</InputClusterListName>
+        <MinCaloHitsPerCluster>5</MinCaloHitsPerCluster>
     </algorithm>
     <algorithm type = "LArThreeDRemnants">
+        <MinClusterCaloHits>5</MinClusterCaloHits>
         <InputClusterListNameU>ClustersU</InputClusterListNameU>
         <InputClusterListNameV>ClustersV</InputClusterListNameV>
         <InputClusterListNameW>ClustersW</InputClusterListNameW>
         <OutputPfoListName>Particles3D</OutputPfoListName>
         <TrackTools>
             <tool type = "LArClearRemnants"/>
+            <tool type = "LArConnectedRemnants"/>
         </TrackTools>
+    </algorithm>
+    <algorithm type = "LArThreeDRemnants">
+        <MinClusterCaloHits>2</MinClusterCaloHits>
+        <InputClusterListNameU>ClustersU</InputClusterListNameU>
+        <InputClusterListNameV>ClustersV</InputClusterListNameV>
+        <InputClusterListNameW>ClustersW</InputClusterListNameW>
+        <OutputPfoListName>Particles3D</OutputPfoListName>
+        <TrackTools>
+            <tool type = "LArClearRemnants"/>
+            <tool type = "LArConnectedRemnants"/>
+            <tool type = "LArMopUpRemnants"/>
+        </TrackTools>
+    </algorithm>
+    <algorithm type = "LArCosmicRayShowerMatching">
+        <MinCaloHitsPerCluster>1</MinCaloHitsPerCluster>
+        <InputClusterListNameU>ClustersU</InputClusterListNameU>
+        <InputClusterListNameV>ClustersV</InputClusterListNameV>
+        <InputClusterListNameW>ClustersW</InputClusterListNameW>
+        <OutputPfoListName>Particles3D</OutputPfoListName>
+    </algorithm>
+
+    <!-- 2D cosmic-ray isolated hits -->  
+    <algorithm type = "LArIsolatedHitMerging">
+        <PfoListNames>Particles3D DaughterParticles3D</PfoListNames>
+        <RemnantClusterListNames>ClustersU ClustersV ClustersW</RemnantClusterListNames>
+        <ExcludePfosContainingTracks>false</ExcludePfosContainingTracks>
     </algorithm>
 
     <!-- 3D cosmic-ray hit creation -->
@@ -244,13 +292,35 @@
         </HitCreationTools>
     </algorithm>
     <algorithm type = "LArThreeDHitCreation">
+        <InputPfoListName>Particles3D</InputPfoListName>
+        <OutputCaloHitListName>CaloHitList3D</OutputCaloHitListName>
+        <OutputClusterListName>Clusters3D</OutputClusterListName>
+        <HitCreationTools>
+            <tool type = "LArThreeViewShowerHits">
+                <ChiSquaredCut>5.0</ChiSquaredCut>
+                <ZTolerance>3.0</ZTolerance>
+            </tool>
+            <tool type = "LArTwoViewShowerHits">
+                <ChiSquaredCut>5.0</ChiSquaredCut>
+                <XTolerance>2.0</XTolerance> 
+            </tool>
+        </HitCreationTools>
+    </algorithm>
+    <algorithm type = "LArThreeDHitCreation">
         <InputPfoListName>DaughterParticles3D</InputPfoListName>
         <OutputCaloHitListName>DaughterCaloHitList3D</OutputCaloHitListName>
         <OutputClusterListName>DaughterClusters3D</OutputClusterListName>
         <HitCreationTools>
-            <tool type = "LArThreeViewShowerHits"/>
-            <tool type = "LArTwoViewShowerHits"/>
-            <tool type = "LArDeltaRayShowerHits"/>
+            <tool type = "LArThreeViewShowerHits">
+                <ChiSquaredCut>5.0</ChiSquaredCut>
+                <ZTolerance>3.0</ZTolerance>
+            </tool>
+            <tool type = "LArTwoViewShowerHits">
+                <ChiSquaredCut>5.0</ChiSquaredCut>
+                <XTolerance>2.0</XTolerance> 
+            </tool>
+            <tool type = "LArDeltaRayShowerHits">
+            </tool>
         </HitCreationTools>
     </algorithm>
 
@@ -258,6 +328,19 @@
     <algorithm type = "LArCosmicRayVertexBuilding">
         <InputPfoListName>Particles3D</InputPfoListName>
         <OutputVertexListName>Vertices3D</OutputVertexListName>
+    </algorithm>
+
+    <!-- 3D cosmic-ray track and shower reconstruction -->
+    <algorithm type = "LArTrackParticleBuilding">
+        <CosmicMode>true</CosmicMode>
+        <PfoListName>Particles3D</PfoListName>
+        <VertexListName>Vertices3D</VertexListName>
+    </algorithm>
+
+    <algorithm type = "LArShowerParticleBuilding">
+        <CosmicMode>true</CosmicMode>
+        <PfoListName>DaughterParticles3D</PfoListName>
+        <VertexListName>Vertices3D</VertexListName>
     </algorithm>
 
     <!-- FINAL PARTICLE OUTPUT -->

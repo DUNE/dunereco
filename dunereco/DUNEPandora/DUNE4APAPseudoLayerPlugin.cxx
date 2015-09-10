@@ -11,7 +11,7 @@
 namespace lar_pandora
 {
 
-DUNE4APAPseudoLayerPlugin::DUNE4APAPseudoLayerPlugin() : LArPseudoLayerPlugin(0.45f)
+DUNE4APAPseudoLayerPlugin::DUNE4APAPseudoLayerPlugin() : LArPseudoLayerPlugin(0.467, 0.467, 0.479)
 {
 }
 

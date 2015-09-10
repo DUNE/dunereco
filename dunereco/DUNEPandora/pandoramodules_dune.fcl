@@ -25,4 +25,19 @@ dune35t_particlestitcher:
   EnableStitching:       true
 }
 
+dune4apa_pandora:
+{
+  module_type:           "DUNE4APAPandora"
+  ConfigFile:            "PandoraSettings_DUNE4APA_Neutrino.xml"
+  GeantModuleLabel:      "largeant"
+  HitFinderModuleLabel:  "hitcheat"
+  EnableMCParticles:     false
+  EnableProduction:      true
+  EnableMonitoring:      false
+  UseHitWidths:          false
+  UseLeftVolume:         true
+  UseRightVolume:        true
+  BuildTracks:           true
+}
+
 END_PROLOG
