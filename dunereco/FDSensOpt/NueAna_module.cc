@@ -24,6 +24,7 @@
 #include "RecoBase/Hit.h"
 #include "RecoBase/Cluster.h"
 #include "RecoBase/Vertex.h"
+#include "RecoBase/SpacePoint.h"
 #include "Utilities/LArProperties.h"
 #include "Utilities/DetectorProperties.h"
 #include "Utilities/AssociationUtil.h"
@@ -101,7 +102,13 @@ private:
   float trkenddcosy[kMaxTrack];
   float trkenddcosz[kMaxTrack];
   float trklen[kMaxTrack];
-
+  //geant information
+  int   trkg4id[kMaxTrack];
+  int   trkg4pdg[kMaxTrack];
+  float trkg4startx[kMaxTrack];
+  float trkg4starty[kMaxTrack];
+  float trkg4startz[kMaxTrack];
+  float trkg4initdedx[kMaxTrack];
   int nhits;
   Short_t  hit_plane[kMaxHits];      //plane number
   Short_t  hit_wire[kMaxHits];       //wire number
@@ -139,7 +146,7 @@ private:
   
 
   std::string fHitsModuleLabel;
-	std::string fClusterModuleLabel;
+  std::string fClusterModuleLabel;
   std::string fTrackModuleLabel;
   std::string fVertexModuleLabel;
   std::string fGenieGenModuleLabel;
@@ -165,7 +172,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   art::ServiceHandle<util::DetectorProperties> detprop;
   art::ServiceHandle<util::TimeService> timeservice;
   //fClock = timeservice->TPCClock();
-  art::ServiceHandle<cheat::BackTracker> bktrk;
+  art::ServiceHandle<cheat::BackTracker> bt;
 
   run = evt.run();
   subrun = evt.subRun();
@@ -194,6 +201,9 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   if (evt.getByLabel(fVertexModuleLabel,vtxListHandle))
     art::fill_ptr_vector(vtxlist, vtxListHandle);
 
+  // * associations
+  art::FindManyP<recob::Hit> fmtht(trackListHandle, evt, fTrackModuleLabel);
+  art::FindManyP<recob::SpacePoint> fmhs(hitListHandle, evt, fTrackModuleLabel);
   //hit information
   nhits = hitlist.size();
   for (int i = 0; i < nhits && i < kMaxHits ; ++i){//loop over hits
@@ -234,6 +244,83 @@ void dunefd::NueAna::analyze(art::Event const & evt)
     trkenddcosy[i]    = larEnd[1];
     trkenddcosz[i]    = larEnd[2];
     trklen[i]         = tracklist[i]->Length();
+    if (!isdata){
+      // Find true track for each reconstructed track
+      int TrackID = 0;
+      std::vector< art::Ptr<recob::Hit> > allHits = fmtht.at(i);
+      
+      std::map<int,double> trkide;
+      for(size_t h = 0; h < allHits.size(); ++h){
+	art::Ptr<recob::Hit> hit = allHits[h];
+	std::vector<sim::TrackIDE> TrackIDs = bt->HitToTrackID(hit);
+	for(size_t e = 0; e < TrackIDs.size(); ++e){
+	  trkide[TrackIDs[e].trackID] += TrackIDs[e].energy;
+	}	    
+      }
+      // Work out which IDE despoited the most charge in the hit if there was more than one.
+      double maxe = -1;
+      double tote = 0;
+      for (std::map<int,double>::iterator ii = trkide.begin(); ii!=trkide.end(); ++ii){
+	tote += ii->second;
+	if ((ii->second)>maxe){
+	  maxe = ii->second;
+	  TrackID = ii->first;
+	}
+      }
+      // Now have trackID, so get PdG code and T0 etc.
+      const simb::MCParticle *particle = bt->TrackIDToParticle(TrackID);
+      if (particle){
+	trkg4id[i] = TrackID;
+	trkg4pdg[i] = particle->PdgCode();
+	trkg4startx[i] = particle->Vx();
+	trkg4starty[i] = particle->Vy();
+	trkg4startz[i] = particle->Vz();
+	float sum_energy = 0;
+	int nhits = 0;
+	//std::map<float,float> hite;
+	for(size_t h = 0; h < allHits.size(); ++h){
+	  art::Ptr<recob::Hit> hit = allHits[h];
+	  if (hit->WireID().Plane==2){
+	    std::vector<art::Ptr<recob::SpacePoint> > spts = fmhs.at(hit.key());
+	    if (spts.size()){
+	      if (sqrt(pow(spts[0]->XYZ()[0]-trkg4startx[i],2)+
+		       pow(spts[0]->XYZ()[1]-trkg4starty[i],2)+
+		       pow(spts[0]->XYZ()[2]-trkg4startz[i],2))<5){
+		std::vector<sim::TrackIDE> TrackIDs = bt->HitToTrackID(hit);
+		float toten = 0;
+		for(size_t e = 0; e < TrackIDs.size(); ++e){
+		  //sum_energy += TrackIDs[e].energy;
+		  toten+=TrackIDs[e].energy;
+		}
+		if (toten){
+		  sum_energy += toten;
+		  ++nhits;
+		}
+	      }
+	    }
+	  }
+	}
+	float pitch = 0;
+	float dis1 = sqrt(pow(trkstartx[i]-trkg4startx[i],2)+
+			  pow(trkstarty[i]-trkg4starty[i],2)+
+			  pow(trkstartz[i]-trkg4startz[i],2));
+	float dis2 = sqrt(pow(trkendx[i]-trkg4startx[i],2)+
+			  pow(trkendy[i]-trkg4starty[i],2)+
+			  pow(trkendz[i]-trkg4startz[i],2));
+	if (dis1<dis2){
+	  pitch = tracklist[i]->PitchInView(geo::kZ,0);
+	}
+	else{
+	  pitch = tracklist[i]->PitchInView(geo::kZ,tracklist[i]->NumberTrajectoryPoints()-1);
+	}
+	if (pitch*nhits){
+	  trkg4initdedx[i] = sum_energy/(nhits*pitch);
+	}
+	else{
+	  trkg4initdedx[i] = 0;
+	}
+      }
+    }
   }
 
   //vertex information
@@ -311,6 +398,12 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("trkenddcosy",trkenddcosy,"trkenddcosy[ntracks_reco]/F");
   fTree->Branch("trkenddcosz",trkenddcosz,"trkenddcosz[ntracks_reco]/F");
   fTree->Branch("trklen",trklen,"trklen[ntracks_reco]/F");
+  fTree->Branch("trkg4id",trkg4id,"trkg4id[ntracks_reco]/I");
+  fTree->Branch("trkg4pdg",trkg4pdg,"trkg4pdg[ntracks_reco]/I");
+  fTree->Branch("trkg4startx",trkg4startx,"trkg4startx[ntracks_reco]/F");
+  fTree->Branch("trkg4starty",trkg4starty,"trkg4starty[ntracks_reco]/F");
+  fTree->Branch("trkg4startz",trkg4startz,"trkg4startz[ntracks_reco]/F");
+  fTree->Branch("trkg4initdedx",trkg4initdedx,"trkg4initdedx[ntracks_reco]/F");
   fTree->Branch("nhits",&nhits,"nhits/I");
   fTree->Branch("hit_plane",hit_plane,"hit_plane[nhits]/S");
   fTree->Branch("hit_wire",hit_wire,"hit_wire[nhits]/S");
@@ -369,6 +462,12 @@ void dunefd::NueAna::ResetVars(){
     trkenddcosy[i] = -9999;
     trkenddcosz[i] = -9999;
     trklen[i] = -9999;
+    trkg4id[i] = -9999;
+    trkg4pdg[i] = -9999;
+    trkg4startx[i] = -9999;
+    trkg4starty[i] = -9999;
+    trkg4startz[i] = -9999;
+    trkg4initdedx[i] = -9999;
   }
 
   nhits = 0;
