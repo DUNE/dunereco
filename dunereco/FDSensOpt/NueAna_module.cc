@@ -278,14 +278,36 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	float sum_energy = 0;
 	int nhits = 0;
 	//std::map<float,float> hite;
+	double x = 0;
+	double y = 0;
+	double z = 0;
+	double mindis = 1e10;
+	//find the closest point to the neutrino vertex
 	for(size_t h = 0; h < allHits.size(); ++h){
 	  art::Ptr<recob::Hit> hit = allHits[h];
 	  if (hit->WireID().Plane==2){
 	    std::vector<art::Ptr<recob::SpacePoint> > spts = fmhs.at(hit.key());
 	    if (spts.size()){
-	      if (sqrt(pow(spts[0]->XYZ()[0]-trkg4startx[i],2)+
-		       pow(spts[0]->XYZ()[1]-trkg4starty[i],2)+
-		       pow(spts[0]->XYZ()[2]-trkg4startz[i],2))<5){
+	      double dis = sqrt(pow(spts[0]->XYZ()[0]-trkg4startx[i],2)+
+				pow(spts[0]->XYZ()[1]-trkg4starty[i],2)+
+				pow(spts[0]->XYZ()[2]-trkg4startz[i],2));
+	      if (dis<mindis){
+		mindis = dis;
+		x = spts[0]->XYZ()[0];
+		y = spts[0]->XYZ()[1];
+		z = spts[0]->XYZ()[2];
+	      }
+	    }
+	  }
+	}
+	for(size_t h = 0; h < allHits.size(); ++h){
+	  art::Ptr<recob::Hit> hit = allHits[h];
+	  if (hit->WireID().Plane==2){
+	    std::vector<art::Ptr<recob::SpacePoint> > spts = fmhs.at(hit.key());
+	    if (spts.size()){
+	      if (sqrt(pow(spts[0]->XYZ()[0]-x,2)+
+		       pow(spts[0]->XYZ()[1]-y,2)+
+		       pow(spts[0]->XYZ()[2]-z,2))<3){
 		std::vector<sim::TrackIDE> TrackIDs = bt->HitToTrackID(hit);
 		float toten = 0;
 		for(size_t e = 0; e < TrackIDs.size(); ++e){
@@ -300,6 +322,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	    }
 	  }
 	}
+
 	float pitch = 0;
 	float dis1 = sqrt(pow(trkstartx[i]-trkg4startx[i],2)+
 			  pow(trkstarty[i]-trkg4starty[i],2)+
