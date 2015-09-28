@@ -145,6 +145,8 @@ void dunefd::IniSegReco::reconfigure(fhicl::ParameterSet const& pset)
 void dunefd::IniSegReco::ResetVars()
 {
 	pmatracks.clear();
+	lep_dist = 9999; //cm
+	lep_dedx = 9999;
 	return;
 }
 
@@ -156,6 +158,7 @@ void dunefd::IniSegReco::produce(art::Event& evt)
   subrun = evt.subRun();
   event = evt.id().event();
 	isdata = evt.isRealData();
+	
 
 	std::unique_ptr< std::vector< recob::Track > > tracks(new std::vector< recob::Track >);
 	std::unique_ptr< std::vector< recob::SpacePoint > > allsp(new std::vector< recob::SpacePoint >);
