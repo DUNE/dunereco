@@ -4,6 +4,7 @@
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include_directories( $ENV{PANDORA_INC} )
+include_directories( $ENV{LARPANDORACONTENT_INC} )
 
 art_make( BASENAME_ONLY
           LIBRARY_NAME  DUNEPandora
