@@ -31,6 +31,7 @@
 #include "Utilities/TimeService.h"
 #include "MCCheater/BackTracker.h"
 #include "SimulationBase/MCTruth.h"
+#include "RecoAlg/PMAlg/Utilities.h"
 
 // ROOT includes
 #include "TTree.h"
@@ -74,7 +75,7 @@ public:
 private:
 
   void ResetVars();
-  bool insideFidVol(const TLorentzVector& pvtx); 
+  bool insideFidVol(const double posX, const double posY, const double posZ);
 
   // Declare member data here.
   TTree *fTree;
@@ -119,9 +120,15 @@ private:
   Float_t  hit_endT[kMaxHits];       //hit end time
   
   // vertex information
+  int infidvol;
   Short_t  nvtx;                     //number of vertices
   Float_t  vtx[kMaxVertices][3];     //vtx[3] 
-  
+
+  Float_t	vtxrecomc;		// distance between mc and reco vtx
+  Float_t	vtxrecomcx;		
+  Float_t	vtxrecomcy;		
+  Float_t	vtxrecomcz;		
+
   //mctruth information
   Int_t     mcevts_truth;    //number of neutrino Int_teractions in the spill
   Int_t     nuPDG_truth;     //neutrino PDG code
@@ -143,7 +150,7 @@ private:
   Float_t  lep_dcosx_truth; //lepton dcos x
   Float_t  lep_dcosy_truth; //lepton dcos y
   Float_t  lep_dcosz_truth; //lepton dcos z
-  
+  Float_t  t0_truth;        // t0
 
   std::string fHitsModuleLabel;
   std::string fClusterModuleLabel;
@@ -388,8 +395,60 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	lep_dcosy_truth = mctruth->GetNeutrino().Lepton().Py()/mctruth->GetNeutrino().Lepton().P();
 	lep_dcosz_truth = mctruth->GetNeutrino().Lepton().Pz()/mctruth->GetNeutrino().Lepton().P();
       }
-    }
+      
+      if (mctruth->NParticles()){
+	simb::MCParticle particle = mctruth->GetParticle(0);
+	t0_truth = particle.T();
+      }
 
+
+	float mindist2 = 9999; // cm;
+	TVector3 nuvtx(nuvtxx_truth, nuvtxy_truth, nuvtxz_truth);
+	infidvol = insideFidVol(nuvtxx_truth, nuvtxy_truth, nuvtxz_truth); 
+	//find the closest reco vertex to the neutrino mc truth
+	if (infidvol)
+	{
+		// vertex is when at least two tracks meet
+  		for(size_t i = 0; i < vtxlist.size(); ++i){ // loop over vertices
+			Double_t xyz[3] = {};
+    			vtxlist[i]->XYZ(xyz);
+			TVector3 vtxreco(xyz);
+			float dist2 = pma::Dist2(vtxreco, nuvtx);
+			if (dist2 < mindist2)
+			{
+				mindist2 = dist2;
+				vtxrecomc = std::sqrt(dist2);
+				vtxrecomcx = vtxreco.X() - nuvtxx_truth;
+				vtxrecomcy = vtxreco.Y() - nuvtxy_truth;
+				vtxrecomcz = vtxreco.Z() - nuvtxz_truth;
+			}
+  		}
+
+		// two endpoints of tracks are somehow also vertices...
+		for (size_t i = 0; i < tracklist.size(); ++i){ // loop over tracks
+			float dist2 = pma::Dist2(tracklist[i]->Vertex(), nuvtx);
+			if (dist2 < mindist2)
+			{
+				mindist2 = dist2;
+				vtxrecomc = std::sqrt(dist2);
+				vtxrecomcx = tracklist[i]->Vertex().X() - nuvtxx_truth;
+				vtxrecomcy = tracklist[i]->Vertex().Y() - nuvtxy_truth;
+				vtxrecomcz = tracklist[i]->Vertex().Z() - nuvtxz_truth;
+				
+			}
+			dist2 = pma::Dist2(tracklist[i]->End(), nuvtx);
+			if (dist2 < mindist2)
+			{
+				mindist2 = dist2;
+				vtxrecomc = std::sqrt(dist2);
+				vtxrecomcx = tracklist[i]->End().X() - nuvtxx_truth;
+				vtxrecomcy = tracklist[i]->End().Y() - nuvtxy_truth;
+				vtxrecomcz = tracklist[i]->End().Z() - nuvtxz_truth;
+				
+			}
+		}
+	 }
+    }
   }
 
   fTree->Fill();
@@ -435,8 +494,13 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("hit_charge",hit_charge,"hit_charge[nhits]/F");
   fTree->Branch("hit_startT",hit_startT,"hit_startT[nhits]/F");
   fTree->Branch("hit_endT",hit_endT,"hit_endT[nhits]/F");
+  fTree->Branch("infidvol",&infidvol,"infidvol/I");
   fTree->Branch("nvtx",&nvtx,"nvtx/S");
   fTree->Branch("vtx",vtx,"vtx[nvtx][3]/F");
+  fTree->Branch("vtxrecomc",&vtxrecomc,"vtxrecomc/F");
+  fTree->Branch("vtxrecomcx",&vtxrecomcx,"vtxrecomcx/F");
+  fTree->Branch("vtxrecomcy",&vtxrecomcy,"vtxrecomcy/F");
+  fTree->Branch("vtxrecomcz",&vtxrecomcz,"vtxrecomcz/F");
   fTree->Branch("mcevts_truth",&mcevts_truth,"mcevts_truth/I");
   fTree->Branch("nuPDG_truth",&nuPDG_truth,"nuPDG_truth/I");
   fTree->Branch("ccnc_truth",&ccnc_truth,"ccnc_truth/I");
@@ -457,7 +521,7 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("lep_dcosx_truth",&lep_dcosx_truth,"lep_dcosx_truth/F");
   fTree->Branch("lep_dcosy_truth",&lep_dcosy_truth,"lep_dcosy_truth/F");
   fTree->Branch("lep_dcosz_truth",&lep_dcosz_truth,"lep_dcosz_truth/F");
-
+  fTree->Branch("t0_truth",&t0_truth,"t0_truth/F");
 }
 
 void dunefd::NueAna::ResetVars(){
@@ -504,12 +568,17 @@ void dunefd::NueAna::ResetVars(){
     hit_endT[i] = -9999;
   }
 
+  infidvol = 0;
   nvtx = 0;
   for (int i = 0; i<kMaxVertices; ++i){
     vtx[i][0] = -9999;
     vtx[i][1] = -9999;
     vtx[i][2] = -9999;
   }
+  vtxrecomc = 9999;
+  vtxrecomcx = 9999;
+  vtxrecomcy = 9999;
+  vtxrecomcz = 9999;
 
   mcevts_truth = -9999; 
   nuPDG_truth = -9999;  
@@ -531,7 +600,7 @@ void dunefd::NueAna::ResetVars(){
   lep_dcosx_truth = -9999;
   lep_dcosy_truth = -9999;
   lep_dcosz_truth = -9999;
-  
+  t0_truth = -9999;
 }
 
 void dunefd::NueAna::endJob()
@@ -552,26 +621,57 @@ void dunefd::NueAna::reconfigure(fhicl::ParameterSet const & p)
 
 /***********************************************************************/
 
-bool dunefd::NueAna::insideFidVol(const TLorentzVector& pvtx) 
+bool dunefd::NueAna::insideFidVol(const double posX, const double posY, const double posZ) 
 {
+	
 	art::ServiceHandle<geo::Geometry> geom;
+	double vtx[3] = {posX, posY, posZ};
+	bool inside = false;
 
-	double vtx[3];
-	vtx[0] = pvtx.X(); vtx[1] = pvtx.Y(); vtx[2] = pvtx.Z();
-
-	bool inside = true;
 	geo::TPCID idtpc = geom->FindTPCAtPosition(vtx);
+
 	if (geom->HasTPC(idtpc))
-	{
-		const geo::TPCGeo& tpcgeo = geom->GetElement(idtpc); 
-		if ((fabs(vtx[0] - tpcgeo.MinX()) < fFidVolCut) ||
-				(fabs(tpcgeo.MaxX() - vtx[0]) < fFidVolCut) ||
-				(fabs(vtx[1] - tpcgeo.MinY()) < fFidVolCut) ||
-				(fabs(tpcgeo.MaxY() - vtx[1]) < fFidVolCut) ||
-				(fabs(vtx[2] - tpcgeo.MinZ()) < fFidVolCut) ||
-				(fabs(tpcgeo.MaxZ() - vtx[2]) < fFidVolCut)) inside = false;
+	{		
+		const geo::TPCGeo& tpcgeo = geom->GetElement(idtpc);
+		double minx = tpcgeo.MinX(); double maxx = tpcgeo.MaxX();
+		double miny = tpcgeo.MinY(); double maxy = tpcgeo.MaxY();
+		double minz = tpcgeo.MinZ(); double maxz = tpcgeo.MaxZ();
+
+		for (size_t c = 0; c < geom->Ncryostats(); c++)
+		{
+			const geo::CryostatGeo& cryostat = geom->Cryostat(c);
+			for (size_t t = 0; t < cryostat.NTPC(); t++)
+			{	
+				const geo::TPCGeo& tpcg = cryostat.TPC(t);
+				if (tpcg.MinX() < minx) minx = tpcg.MinX();
+				if (tpcg.MaxX() > maxx) maxx = tpcg.MaxX(); 
+				if (tpcg.MinY() < miny) miny = tpcg.MinY();
+				if (tpcg.MaxY() > maxy) maxy = tpcg.MaxY();
+				if (tpcg.MinZ() < minz) minz = tpcg.MinZ();
+				if (tpcg.MaxZ() > maxz) maxz = tpcg.MaxZ();
+			}
+		}	
+
+		
+		//x
+		double dista = fabs(minx - posX);
+		double distb = fabs(posX - maxx); 
+		if ((posX > minx) && (posX < maxx) &&
+		 	(dista > fFidVolCut) && (distb > fFidVolCut)) inside = true;
+		//y
+		dista = fabs(maxy - posY);
+		distb = fabs(posY - miny);
+		if (inside && (posY > miny) && (posY < maxy) &&
+		 	(dista > fFidVolCut) && (distb > fFidVolCut)) inside = true;
+		else inside = false;
+
+		//z
+		dista = fabs(maxz - posZ);
+		distb = fabs(posZ - minz);
+		if (inside && (posZ > minz) && (posZ < maxz) &&
+		 	(dista > fFidVolCut) && (distb > fFidVolCut)) inside = true;
+		else inside = false;
 	}
-	else inside = false;
 		
 	return inside;
 }

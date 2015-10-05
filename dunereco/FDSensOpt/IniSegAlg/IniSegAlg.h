@@ -39,25 +39,48 @@ class dunefd::IniSegAlg
 {
 	public:
 	IniSegAlg(std::map<size_t, std::vector<dunefd::Hit2D> > clusters); 
+	IniSegAlg(std::vector< art::Ptr<recob::Track> > const & tracks, TVector3 const & mcvtx); 
 
-	void FeedwithMc(TVector2 const & vtx, TVector2 const & dir);
+	void FeedwithMc(TVector2 const & vtx, TVector2 const & dir, TVector3 const & dir3d);
+	void FeedwithMc(TVector3 const & dir3d);
 	std::map<size_t, std::vector< dunefd::Hit2D > > const & GetSelectedCl() const { return fSelCls; } 
 	std::vector< dunefd::Hit2D > const & GetCl() const { return fCl; }
+
+	const bool IsFound() { return fFound; }
+	art::Ptr<recob::Track> const & GetTrk() const { return fTrk; }
+
 	float const & GetDist() const { return fDistVtxCl; } 
 
 	private:
 	void FindClustersInRad(); 
 	void FindCluster();
 	void SortLess(); 
+
+	void Find3dTrack();
+
 	TVector2 ClusterDir(std::vector< Hit2D > const & hits);
 
 	std::map<size_t, std::vector<dunefd::Hit2D> > fClusters;
 	std::map<size_t, std::vector<dunefd::Hit2D> > fSelCls;
+	//
+
+	std::vector< art::Ptr<recob::Track> > fSelTrks;
+	art::Ptr<recob::Track> fTrk;
+	bool fFound;
+	TVector3 fDir3d;
+
+	TVector3 fFront;
+	TVector3 fBack;
+	
+	//
 	std::vector< dunefd::Hit2D > fCl;
 	TVector2 fMcVtx;
+	TVector3 fMcVtx3d;
 	TVector2 fDir;
+
 	float fRadius;
 	float fDistVtxCl;
+	float const fThrcos;
 };
 
 class dunefd::bDistCentLess2D :
