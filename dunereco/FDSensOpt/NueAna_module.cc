@@ -150,7 +150,7 @@ private:
   Float_t  lep_dcosx_truth; //lepton dcos x
   Float_t  lep_dcosy_truth; //lepton dcos y
   Float_t  lep_dcosz_truth; //lepton dcos z
-  
+  Float_t  t0_truth;        // t0
 
   std::string fHitsModuleLabel;
   std::string fClusterModuleLabel;
@@ -395,6 +395,12 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	lep_dcosy_truth = mctruth->GetNeutrino().Lepton().Py()/mctruth->GetNeutrino().Lepton().P();
 	lep_dcosz_truth = mctruth->GetNeutrino().Lepton().Pz()/mctruth->GetNeutrino().Lepton().P();
       }
+      
+      if (mctruth->NParticles()){
+	simb::MCParticle particle = mctruth->GetParticle(0);
+	t0_truth = particle.T();
+      }
+
 
 	float mindist2 = 9999; // cm;
 	TVector3 nuvtx(nuvtxx_truth, nuvtxy_truth, nuvtxz_truth);
@@ -515,7 +521,7 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("lep_dcosx_truth",&lep_dcosx_truth,"lep_dcosx_truth/F");
   fTree->Branch("lep_dcosy_truth",&lep_dcosy_truth,"lep_dcosy_truth/F");
   fTree->Branch("lep_dcosz_truth",&lep_dcosz_truth,"lep_dcosz_truth/F");
-
+  fTree->Branch("t0_truth",&t0_truth,"t0_truth/F");
 }
 
 void dunefd::NueAna::ResetVars(){
@@ -594,7 +600,7 @@ void dunefd::NueAna::ResetVars(){
   lep_dcosx_truth = -9999;
   lep_dcosy_truth = -9999;
   lep_dcosz_truth = -9999;
-  
+  t0_truth = -9999;
 }
 
 void dunefd::NueAna::endJob()
