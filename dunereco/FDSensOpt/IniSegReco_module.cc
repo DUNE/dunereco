@@ -74,6 +74,7 @@ private:
 	TVector2 getMCdir2d(TVector3 const & mcvtx3d, TVector3 const & mcdir3d, 
 											const size_t cryo, const size_t tpc, const size_t plane) const;	
 	TVector3 findElDir(art::Ptr<simb::MCTruth> const mctruth) const;
+	std::vector< TVector3 > findDirs(art::Ptr<simb::MCTruth> const mctruth, int pdg) const;
  
 	void collectCls(art::Event const & evt, art::Ptr<simb::MCTruth> const mctruth);
 	std::vector< dunefd::Hit2D > reselectCls(std::map<size_t, std::vector< dunefd::Hit2D > > const & cls, 
@@ -99,6 +100,8 @@ private:
 
 	Float_t lep_dedx;  
 	Float_t lep_dist;
+	int ngamma;
+	Float_t convdist;
 
 	std::string fHitsModuleLabel;
 	std::string fClusterModuleLabel;
@@ -133,6 +136,8 @@ void dunefd::IniSegReco::beginJob()
   	fTree->Branch("event",&event,"event/I");
 	fTree->Branch("lep_dedx",&lep_dedx,"lep_dedx/F");
 	fTree->Branch("lep_dist",&lep_dist,"lep_dist/F");
+	fTree->Branch("ngamma", &ngamma, "ngamma/I");
+	fTree->Branch("convdist", &convdist, "convdist/F");
 }
 
 void dunefd::IniSegReco::reconfigure(fhicl::ParameterSet const& pset)
@@ -149,6 +154,8 @@ void dunefd::IniSegReco::reconfigure(fhicl::ParameterSet const& pset)
 
 void dunefd::IniSegReco::ResetVars()
 {
+	ngamma = 0;
+	convdist = -10.0F;
 	pmatracks.clear();
 	lep_dist = -9999; //cm
 	lep_dedx = -9999;
@@ -186,6 +193,34 @@ void dunefd::IniSegReco::produce(art::Event& evt)
 			art::Ptr<simb::MCTruth> mctruth = mclist[0];
 			const TLorentzVector& pvtx = mctruth->GetNeutrino().Nu().Position();
 			primary = TVector3(pvtx.X(), pvtx.Y(), pvtx.Z());
+
+			art::ServiceHandle<cheat::BackTracker> bt;
+			const sim::ParticleList& plist = bt->ParticleList();
+
+			bool photon = false;
+			for (sim::ParticleList::const_iterator ipar = plist.begin(); ipar != plist.end(); ++ipar)
+			{
+				simb::MCParticle* particle = ipar->second;
+				TLorentzVector mom = particle->Momentum();
+				TVector3 momvec(mom.Px(), mom.Py(), mom.Pz());
+			
+				if ((particle->PdgCode() == 22) && (momvec.Mag() > 0.030))
+				{		
+					ngamma++; photon = true;
+					TLorentzVector conversion = particle->EndPosition();
+					TVector3 convec(conversion.X(), conversion.Y(), conversion.Z());
+					convdist = std::sqrt(pma::Dist2(primary, convec));				
+
+					for (int i = 0; i < particle->NumberDaughters(); i++)
+					{		
+						std::cout << " pdg = " << bt->TrackIDToParticle(particle->Daughter(i))->PdgCode() << std::endl;
+						std::cout << " no of particles " << particle->NumberDaughters() << std::endl;
+					}
+				}
+			}
+			if (!photon) ngamma = -10;
+
+			std::cout << " ****** end ****** " << std::endl;
 		}
 	}
 
@@ -210,6 +245,7 @@ void dunefd::IniSegReco::produce(art::Event& evt)
 
 			lep_dist = std::sqrt(pma::Dist2(primary, trk->front()->Point3D()));
 
+		
 			fTree->Fill();
 
 			tracks->push_back(convertFrom(*trk));
@@ -256,6 +292,7 @@ void dunefd::IniSegReco::produce(art::Event& evt)
 		for (size_t t = 0; t < pmatracks.size(); ++t) delete pmatracks[t];
 
 	}
+	
 
 	evt.put(std::move(tracks));
 	evt.put(std::move(allsp));
@@ -534,6 +571,33 @@ TVector3 dunefd::IniSegReco::findElDir(art::Ptr<simb::MCTruth> const mctruth) co
 	}
 
 	return dir;
+}
+
+/***********************************************************************/
+
+std::vector< TVector3 > dunefd::IniSegReco::findDirs(art::Ptr<simb::MCTruth> const mctruth, int pdg) const
+{
+	std::vector< TVector3 > dirs;
+
+	art::ServiceHandle<cheat::BackTracker> bt;
+	const sim::ParticleList& plist = bt->ParticleList();
+
+	for (sim::ParticleList::const_iterator ipar = plist.begin(); ipar != plist.end(); ++ipar)
+	{
+		simb::MCParticle* particle = ipar->second;
+		TLorentzVector mom = particle->Momentum();
+		TVector3 momvec(mom.Px(), mom.Py(), mom.Pz());
+			
+		if ((particle->PdgCode() == pdg) && (momvec.Mag() > 0.030))
+		{		
+			TLorentzVector momconv = particle->EndMomentum();
+			TVector3 momconvec3(momconv.Px(), momconv.Py(), momconv.Pz());			
+			TVector3 dir = momconvec3 * (1 / momconvec3.Mag());
+			dirs.push_back(dir);
+		}
+	}
+	
+	return dirs;
 }
 
 /***********************************************************************/
