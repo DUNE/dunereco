@@ -12,6 +12,7 @@
 #include "RecoAlg/ProjectionMatchingAlg.h"
 #include "RecoAlg/PMAlg/PmaTrack3D.h"
 #include "RecoAlg/PMAlg/Utilities.h"
+#include "RecoBase/Track.h"
 
 namespace fhicl {
 	class ParameterSet;
