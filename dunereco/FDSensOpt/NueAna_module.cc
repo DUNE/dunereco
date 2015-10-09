@@ -338,10 +338,20 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 			  pow(trkendy[i]-trkg4starty[i],2)+
 			  pow(trkendz[i]-trkg4startz[i],2));
 	if (dis1<dis2){
-	  pitch = tracklist[i]->PitchInView(geo::kZ,0);
+	  try{
+	    pitch = tracklist[i]->PitchInView(geo::kZ,0);
+	  }
+	  catch(...){
+	    pitch = 0;
+	  }
 	}
 	else{
-	  pitch = tracklist[i]->PitchInView(geo::kZ,tracklist[i]->NumberTrajectoryPoints()-1);
+	  try{
+	    pitch = tracklist[i]->PitchInView(geo::kZ,tracklist[i]->NumberTrajectoryPoints()-1);
+	  }
+	  catch(...){
+	    pitch = 0;
+	  }
 	}
 	if (pitch*nhits){
 	  trkg4initdedx[i] = sum_energy/(nhits*pitch);
