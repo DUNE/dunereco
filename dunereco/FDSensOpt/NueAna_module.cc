@@ -25,6 +25,7 @@
 #include "RecoBase/Cluster.h"
 #include "RecoBase/Vertex.h"
 #include "RecoBase/SpacePoint.h"
+#include "RecoBase/TrackHitMeta.h"
 #include "Utilities/LArProperties.h"
 #include "Utilities/DetectorProperties.h"
 #include "Utilities/AssociationUtil.h"
@@ -32,6 +33,7 @@
 #include "MCCheater/BackTracker.h"
 #include "SimulationBase/MCTruth.h"
 #include "RecoAlg/PMAlg/Utilities.h"
+#include "AnalysisAlg/CalorimetryAlg.h"
 
 // ROOT includes
 #include "TTree.h"
@@ -44,6 +46,7 @@
 constexpr int kMaxTrack      = 1000;  //maximum number of tracks
 constexpr int kMaxHits       = 25000; //maximum number of hits;
 constexpr int kMaxVertices   = 100;    //max number of 3D vertices
+constexpr int kMaxPrimaries  = 20000;  //maximum number of primary particles
 
 namespace dunefd {
 	class Hit2D;
@@ -113,12 +116,16 @@ private:
   int nhits;
   Short_t  hit_plane[kMaxHits];      //plane number
   Short_t  hit_wire[kMaxHits];       //wire number
-  Int_t  hit_channel[kMaxHits];    //channel ID
+  Int_t  hit_channel[kMaxHits];      //channel ID
   Float_t  hit_peakT[kMaxHits];      //peak time
   Float_t  hit_charge[kMaxHits];     //charge (area)
   Float_t  hit_startT[kMaxHits];     //hit start time
   Float_t  hit_endT[kMaxHits];       //hit end time
-  
+  Int_t    hit_trkkey[kMaxHits];     //track index
+  Float_t  hit_dQds[kMaxHits];       //hit dQ/dx
+  Float_t  hit_dEds[kMaxHits];       //hit dE/dx
+  Float_t  hit_resrange[kMaxHits];   //hit residual range
+
   // vertex information
   int infidvol;
   Short_t  nvtx;                     //number of vertices
@@ -152,6 +159,26 @@ private:
   Float_t  lep_dcosz_truth; //lepton dcos z
   Float_t  t0_truth;        // t0
 
+   // === Storing Geant4 MC Truth Information ===
+   int no_primaries;				//<---Number of primary Geant4 particles in the event
+   int geant_list_size;				//<---Number of Geant4 particles tracked
+   int pdg[kMaxPrimaries];			//<---PDG Code number of this particle
+   Float_t Eng[kMaxPrimaries];			//<---Energy of the particle
+   Float_t Px[kMaxPrimaries];			//<---Px momentum of the particle
+   Float_t Py[kMaxPrimaries];			//<---Py momentum of the particle
+   Float_t Pz[kMaxPrimaries];			//<---Pz momentum of the particle
+   Float_t StartPointx[kMaxPrimaries];		//<---X position that this Geant4 particle started at
+   Float_t StartPointy[kMaxPrimaries];		//<---Y position that this Geant4 particle started at
+   Float_t StartPointz[kMaxPrimaries];		//<---Z position that this Geant4 particle started at
+   Float_t EndPointx[kMaxPrimaries];		//<---X position that this Geant4 particle ended at
+   Float_t EndPointy[kMaxPrimaries];		//<---Y position that this Geant4 particle ended at
+   Float_t EndPointz[kMaxPrimaries];		//<---Z position that this Geant4 particle ended at
+   int NumberDaughters[kMaxPrimaries];		//<---Number of Daughters this particle has
+   int TrackId[kMaxPrimaries];			//<---Geant4 TrackID number
+   int Mother[kMaxPrimaries];			//<---TrackID of the mother of this particle
+   int process_primary[kMaxPrimaries];		//<---Is this particle primary (primary = 1, non-primary = 1)
+
+
   std::string fHitsModuleLabel;
   std::string fClusterModuleLabel;
   std::string fTrackModuleLabel;
@@ -159,11 +186,15 @@ private:
   std::string fGenieGenModuleLabel;
 
   double fFidVolCut;
+
+  calo::CalorimetryAlg fCalorimetryAlg;
+
 };
 
 
 dunefd::NueAna::NueAna(fhicl::ParameterSet const & pset)
   : EDAnalyzer(pset)
+  , fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg"))
 {
   reconfigure(pset);
 }
@@ -180,6 +211,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   art::ServiceHandle<util::TimeService> timeservice;
   //fClock = timeservice->TPCClock();
   art::ServiceHandle<cheat::BackTracker> bt;
+  const sim::ParticleList& plist = bt->ParticleList();
 
   run = evt.run();
   subrun = evt.subRun();
@@ -209,7 +241,8 @@ void dunefd::NueAna::analyze(art::Event const & evt)
     art::fill_ptr_vector(vtxlist, vtxListHandle);
 
   // * associations
-  art::FindManyP<recob::Hit> fmtht(trackListHandle, evt, fTrackModuleLabel);
+  art::FindManyP<recob::Hit> fmth(trackListHandle, evt, fTrackModuleLabel);
+  art::FindManyP<recob::Hit, recob::TrackHitMeta> fmthm(trackListHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::SpacePoint> fmhs(hitListHandle, evt, fTrackModuleLabel);
   //hit information
   nhits = hitlist.size();
@@ -251,10 +284,26 @@ void dunefd::NueAna::analyze(art::Event const & evt)
     trkenddcosy[i]    = larEnd[1];
     trkenddcosz[i]    = larEnd[2];
     trklen[i]         = tracklist[i]->Length();
+    if (fmthm.isValid()){
+      auto vhit = fmthm.at(i);
+      auto vmeta = fmthm.data(i);
+      for (size_t h = 0; h < vhit.size(); ++h){
+	if (vhit[h].key()<kMaxHits){
+	  hit_trkkey[vhit[h].key()] = tracklist[i].key();
+	  std::cout<<vmeta[h]->Dx()<<" "<<vmeta[h]->Index()<<std::endl;
+	  if (vmeta[h]->Dx()){
+	    hit_dQds[vhit[h].key()] = vhit[h]->Integral()*fCalorimetryAlg.LifetimeCorrection(vhit[h]->PeakTime())/vmeta[h]->Dx();
+	    hit_dEds[vhit[h].key()] = fCalorimetryAlg.dEdx_AREA(vhit[h], vmeta[h]->Dx());
+	  }
+	  hit_resrange[vhit[h].key()] = tracklist[i]->Length(vmeta[h]->Index());
+	}
+      }//loop over all hits
+    }//fmthm is valid
+      
     if (!isdata){
       // Find true track for each reconstructed track
       int TrackID = 0;
-      std::vector< art::Ptr<recob::Hit> > allHits = fmtht.at(i);
+      std::vector< art::Ptr<recob::Hit> > allHits = fmth.at(i);
       
       std::map<int,double> trkide;
       for(size_t h = 0; h < allHits.size(); ++h){
@@ -359,8 +408,8 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	else{
 	  trkg4initdedx[i] = 0;
 	}
-      }
-    }
+      }//if (particle)
+    }//MC
   }
 
   //vertex information
@@ -382,85 +431,159 @@ void dunefd::NueAna::analyze(art::Event const & evt)
     mcevts_truth=mclist.size();
     if (mcevts_truth){
       art::Ptr<simb::MCTruth> mctruth = mclist[0];
-      nuPDG_truth  = mctruth->GetNeutrino().Nu().PdgCode();
-      ccnc_truth   = mctruth->GetNeutrino().CCNC();
-      mode_truth   = mctruth->GetNeutrino().Mode();
-      Q2_truth     = mctruth->GetNeutrino().QSqr();
-      W_truth      = mctruth->GetNeutrino().W();
-      X_truth      = mctruth->GetNeutrino().X();
-      Y_truth      = mctruth->GetNeutrino().Y();
-      hitnuc_truth = mctruth->GetNeutrino().HitNuc();
-      enu_truth    = mctruth->GetNeutrino().Nu().E();
-      nuvtxx_truth = mctruth->GetNeutrino().Nu().Vx();
-      nuvtxy_truth = mctruth->GetNeutrino().Nu().Vy();
-      nuvtxz_truth = mctruth->GetNeutrino().Nu().Vz();
-      if (mctruth->GetNeutrino().Nu().P()){
-	nu_dcosx_truth = mctruth->GetNeutrino().Nu().Px()/mctruth->GetNeutrino().Nu().P();
-	nu_dcosy_truth = mctruth->GetNeutrino().Nu().Py()/mctruth->GetNeutrino().Nu().P();
-	nu_dcosz_truth = mctruth->GetNeutrino().Nu().Pz()/mctruth->GetNeutrino().Nu().P();
-      }
-      lep_mom_truth = mctruth->GetNeutrino().Lepton().P();
-      if (mctruth->GetNeutrino().Lepton().P()){
-	lep_dcosx_truth = mctruth->GetNeutrino().Lepton().Px()/mctruth->GetNeutrino().Lepton().P();
-	lep_dcosy_truth = mctruth->GetNeutrino().Lepton().Py()/mctruth->GetNeutrino().Lepton().P();
-	lep_dcosz_truth = mctruth->GetNeutrino().Lepton().Pz()/mctruth->GetNeutrino().Lepton().P();
-      }
-      
-      if (mctruth->NParticles()){
-	simb::MCParticle particle = mctruth->GetParticle(0);
-	t0_truth = particle.T();
-      }
-
-
+      if (mctruth->Origin() == simb::kBeamNeutrino){
+	nuPDG_truth  = mctruth->GetNeutrino().Nu().PdgCode();
+	ccnc_truth   = mctruth->GetNeutrino().CCNC();
+	mode_truth   = mctruth->GetNeutrino().Mode();
+	Q2_truth     = mctruth->GetNeutrino().QSqr();
+	W_truth      = mctruth->GetNeutrino().W();
+	X_truth      = mctruth->GetNeutrino().X();
+	Y_truth      = mctruth->GetNeutrino().Y();
+	hitnuc_truth = mctruth->GetNeutrino().HitNuc();
+	enu_truth    = mctruth->GetNeutrino().Nu().E();
+	nuvtxx_truth = mctruth->GetNeutrino().Nu().Vx();
+	nuvtxy_truth = mctruth->GetNeutrino().Nu().Vy();
+	nuvtxz_truth = mctruth->GetNeutrino().Nu().Vz();
+	if (mctruth->GetNeutrino().Nu().P()){
+	  nu_dcosx_truth = mctruth->GetNeutrino().Nu().Px()/mctruth->GetNeutrino().Nu().P();
+	  nu_dcosy_truth = mctruth->GetNeutrino().Nu().Py()/mctruth->GetNeutrino().Nu().P();
+	  nu_dcosz_truth = mctruth->GetNeutrino().Nu().Pz()/mctruth->GetNeutrino().Nu().P();
+	}
+	lep_mom_truth = mctruth->GetNeutrino().Lepton().P();
+	if (mctruth->GetNeutrino().Lepton().P()){
+	  lep_dcosx_truth = mctruth->GetNeutrino().Lepton().Px()/mctruth->GetNeutrino().Lepton().P();
+	  lep_dcosy_truth = mctruth->GetNeutrino().Lepton().Py()/mctruth->GetNeutrino().Lepton().P();
+	  lep_dcosz_truth = mctruth->GetNeutrino().Lepton().Pz()/mctruth->GetNeutrino().Lepton().P();
+	}
+	
+	if (mctruth->NParticles()){
+	  simb::MCParticle particle = mctruth->GetParticle(0);
+	  t0_truth = particle.T();
+	}
+	
+	
 	float mindist2 = 9999; // cm;
 	TVector3 nuvtx(nuvtxx_truth, nuvtxy_truth, nuvtxz_truth);
 	infidvol = insideFidVol(nuvtxx_truth, nuvtxy_truth, nuvtxz_truth); 
 	//find the closest reco vertex to the neutrino mc truth
 	if (infidvol)
-	{
-		// vertex is when at least two tracks meet
-  		for(size_t i = 0; i < vtxlist.size(); ++i){ // loop over vertices
-			Double_t xyz[3] = {};
-    			vtxlist[i]->XYZ(xyz);
-			TVector3 vtxreco(xyz);
-			float dist2 = pma::Dist2(vtxreco, nuvtx);
-			if (dist2 < mindist2)
-			{
-				mindist2 = dist2;
-				vtxrecomc = std::sqrt(dist2);
-				vtxrecomcx = vtxreco.X() - nuvtxx_truth;
-				vtxrecomcy = vtxreco.Y() - nuvtxy_truth;
-				vtxrecomcz = vtxreco.Z() - nuvtxz_truth;
-			}
-  		}
-
-		// two endpoints of tracks are somehow also vertices...
-		for (size_t i = 0; i < tracklist.size(); ++i){ // loop over tracks
-			float dist2 = pma::Dist2(tracklist[i]->Vertex(), nuvtx);
-			if (dist2 < mindist2)
-			{
-				mindist2 = dist2;
-				vtxrecomc = std::sqrt(dist2);
-				vtxrecomcx = tracklist[i]->Vertex().X() - nuvtxx_truth;
-				vtxrecomcy = tracklist[i]->Vertex().Y() - nuvtxy_truth;
-				vtxrecomcz = tracklist[i]->Vertex().Z() - nuvtxz_truth;
-				
-			}
-			dist2 = pma::Dist2(tracklist[i]->End(), nuvtx);
-			if (dist2 < mindist2)
-			{
-				mindist2 = dist2;
-				vtxrecomc = std::sqrt(dist2);
-				vtxrecomcx = tracklist[i]->End().X() - nuvtxx_truth;
-				vtxrecomcy = tracklist[i]->End().Y() - nuvtxy_truth;
-				vtxrecomcz = tracklist[i]->End().Z() - nuvtxz_truth;
-				
-			}
+	  {
+	    // vertex is when at least two tracks meet
+	    for(size_t i = 0; i < vtxlist.size(); ++i){ // loop over vertices
+	      Double_t xyz[3] = {};
+	      vtxlist[i]->XYZ(xyz);
+	      TVector3 vtxreco(xyz);
+	      float dist2 = pma::Dist2(vtxreco, nuvtx);
+	      if (dist2 < mindist2)
+		{
+		  mindist2 = dist2;
+		  vtxrecomc = std::sqrt(dist2);
+		  vtxrecomcx = vtxreco.X() - nuvtxx_truth;
+		  vtxrecomcy = vtxreco.Y() - nuvtxy_truth;
+		  vtxrecomcz = vtxreco.Z() - nuvtxz_truth;
 		}
-	 }
+	    }
+	    
+	    // two endpoints of tracks are somehow also vertices...
+	    for (size_t i = 0; i < tracklist.size(); ++i){ // loop over tracks
+	      float dist2 = pma::Dist2(tracklist[i]->Vertex(), nuvtx);
+	      if (dist2 < mindist2)
+		{
+		  mindist2 = dist2;
+		  vtxrecomc = std::sqrt(dist2);
+		  vtxrecomcx = tracklist[i]->Vertex().X() - nuvtxx_truth;
+		  vtxrecomcy = tracklist[i]->Vertex().Y() - nuvtxy_truth;
+		  vtxrecomcz = tracklist[i]->Vertex().Z() - nuvtxz_truth;
+		  
+		}
+	      dist2 = pma::Dist2(tracklist[i]->End(), nuvtx);
+	      if (dist2 < mindist2)
+		{
+		  mindist2 = dist2;
+		  vtxrecomc = std::sqrt(dist2);
+		  vtxrecomcx = tracklist[i]->End().X() - nuvtxx_truth;
+		  vtxrecomcy = tracklist[i]->End().Y() - nuvtxy_truth;
+		  vtxrecomcz = tracklist[i]->End().Z() - nuvtxz_truth;
+		  
+		}
+	    }
+	  }
+      }//is neutrino
     }
-  }
 
+    //save g4 particle information
+    std::vector<const simb::MCParticle* > geant_part;
+    
+    // ### Looping over all the Geant4 particles from the BackTracker ###
+    for(size_t p = 0; p < plist.size(); ++p) 
+      {
+	// ### Filling the vector with MC Particles ###
+	geant_part.push_back(plist.Particle(p)); 
+      }
+    
+    //std::cout<<"No of geant part= "<<geant_part.size()<<std::endl;
+    
+    // ### Setting a string for primary ###
+    std::string pri("primary");
+    
+    int primary=0;
+    int geant_particle=0;
+    
+    // ############################################################
+    // ### Determine the number of primary particles from geant ###
+    // ############################################################
+    for( unsigned int i = 0; i < geant_part.size(); ++i ){
+      geant_particle++;
+      // ### Counting the number of primary particles ###
+      if(geant_part[i]->Process()==pri)
+	{ primary++;}
+    }//<---End i loop
+    
+    
+    // ### Saving the number of primary particles ###
+    no_primaries=primary;
+    // ### Saving the number of Geant4 particles ###
+    geant_list_size=geant_particle;
+    
+    // ### Looping over all the Geant4 particles ###
+    for( unsigned int i = 0; i < geant_part.size(); ++i ){
+   
+      // ### If this particle is primary, set = 1 ###
+      if(geant_part[i]->Process()==pri)
+	{process_primary[i]=1;}
+      // ### If this particle is not-primary, set = 0 ###
+      else
+	{process_primary[i]=0;}
+      
+      // ### Saving the particles mother TrackID ###
+      Mother[i]=geant_part[i]->Mother();
+      // ### Saving the particles TrackID ###
+      TrackId[i]=geant_part[i]->TrackId();
+      // ### Saving the PDG Code ###
+      pdg[i]=geant_part[i]->PdgCode();
+      // ### Saving the particles Energy ###
+      Eng[i]=geant_part[i]->E();
+      
+      // ### Saving the Px, Py, Pz info ###
+      Px[i]=geant_part[i]->Px();
+      Py[i]=geant_part[i]->Py();
+      Pz[i]=geant_part[i]->Pz();
+      
+      // ### Saving the Start and End Point for this particle ###
+      StartPointx[i]=geant_part[i]->Vx();
+      StartPointy[i]=geant_part[i]->Vy();
+      StartPointz[i]=geant_part[i]->Vz();
+      EndPointx[i]=geant_part[i]->EndPosition()[0];
+      EndPointy[i]=geant_part[i]->EndPosition()[1];
+      EndPointz[i]=geant_part[i]->EndPosition()[2];
+      
+      // ### Saving the number of Daughters for this particle ###
+      NumberDaughters[i]=geant_part[i]->NumberDaughters();
+      
+    } //geant particles
+
+
+  }//is neutrino
   fTree->Fill();
 }
 
@@ -504,6 +627,10 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("hit_charge",hit_charge,"hit_charge[nhits]/F");
   fTree->Branch("hit_startT",hit_startT,"hit_startT[nhits]/F");
   fTree->Branch("hit_endT",hit_endT,"hit_endT[nhits]/F");
+  fTree->Branch("hit_trkkey",hit_trkkey,"hit_trkkey[nhits]/I");
+  fTree->Branch("hit_dQds",hit_dQds,"hit_dQds[nhits]/F");
+  fTree->Branch("hit_dEds",hit_dEds,"hit_dEds[nhits]/F");
+  fTree->Branch("hit_resrange",hit_resrange,"hit_resrange[nhits]/F");
   fTree->Branch("infidvol",&infidvol,"infidvol/I");
   fTree->Branch("nvtx",&nvtx,"nvtx/S");
   fTree->Branch("vtx",vtx,"vtx[nvtx][3]/F");
@@ -532,6 +659,23 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("lep_dcosy_truth",&lep_dcosy_truth,"lep_dcosy_truth/F");
   fTree->Branch("lep_dcosz_truth",&lep_dcosz_truth,"lep_dcosz_truth/F");
   fTree->Branch("t0_truth",&t0_truth,"t0_truth/F");
+  fTree->Branch("no_primaries",&no_primaries,"no_primaries/I");
+  fTree->Branch("geant_list_size",&geant_list_size,"geant_list_size/I");
+  fTree->Branch("pdg",pdg,"pdg[geant_list_size]/I");
+  fTree->Branch("Eng",Eng,"Eng[geant_list_size]/F");
+  fTree->Branch("Px",Px,"Px[geant_list_size]/F");
+  fTree->Branch("Py",Py,"Py[geant_list_size]/F");
+  fTree->Branch("Pz",Pz,"Pz[geant_list_size]/F");
+  fTree->Branch("StartPointx",StartPointx,"StartPointx[geant_list_size]/F");
+  fTree->Branch("StartPointy",StartPointy,"StartPointy[geant_list_size]/F");
+  fTree->Branch("StartPointz",StartPointz,"StartPointz[geant_list_size]/F");
+  fTree->Branch("EndPointx",EndPointx,"EndPointx[geant_list_size]/F");
+  fTree->Branch("EndPointy",EndPointy,"EndPointy[geant_list_size]/F");
+  fTree->Branch("EndPointz",EndPointz,"EndPointz[geant_list_size]/F");
+  fTree->Branch("NumberDaughters",NumberDaughters,"NumberDaughters[geant_list_size]/I");
+  fTree->Branch("Mother",Mother,"Mother[geant_list_size]/I");
+  fTree->Branch("TrackId",TrackId,"TrackId[geant_list_size]/I");
+  fTree->Branch("process_primary",process_primary,"process_primary[geant_list_size]/I");
 }
 
 void dunefd::NueAna::ResetVars(){
@@ -576,6 +720,10 @@ void dunefd::NueAna::ResetVars(){
     hit_charge[i] = -9999;
     hit_startT[i] = -9999;
     hit_endT[i] = -9999;
+    hit_trkkey[i] = -9999;
+    hit_dQds[i] = -9999;
+    hit_dEds[i] = -9999;
+    hit_resrange[i] = -9999;
   }
 
   infidvol = 0;
@@ -611,6 +759,27 @@ void dunefd::NueAna::ResetVars(){
   lep_dcosy_truth = -9999;
   lep_dcosz_truth = -9999;
   t0_truth = -9999;
+
+  no_primaries = -99999;
+  geant_list_size=-9999;
+  for (int i = 0; i<kMaxPrimaries; ++i){
+    pdg[i] = -99999;
+    Eng[i] = -99999;
+    Px[i] = -99999;
+    Py[i] = -99999;
+    Pz[i] = -99999;
+    StartPointx[i] = -99999;
+    StartPointy[i] = -99999;
+    StartPointz[i] = -99999;
+    EndPointx[i] = -99999;
+    EndPointy[i] = -99999;
+    EndPointz[i] = -99999;
+    NumberDaughters[i] = -99999;
+    Mother[i] = -99999;
+    TrackId[i] = -99999;
+    process_primary[i] = -99999;
+  }
+
 }
 
 void dunefd::NueAna::endJob()
