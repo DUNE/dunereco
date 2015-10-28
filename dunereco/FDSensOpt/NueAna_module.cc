@@ -290,7 +290,6 @@ void dunefd::NueAna::analyze(art::Event const & evt)
       for (size_t h = 0; h < vhit.size(); ++h){
 	if (vhit[h].key()<kMaxHits){
 	  hit_trkkey[vhit[h].key()] = tracklist[i].key();
-	  std::cout<<vmeta[h]->Dx()<<" "<<vmeta[h]->Index()<<std::endl;
 	  if (vmeta[h]->Dx()){
 	    hit_dQds[vhit[h].key()] = vhit[h]->Integral()*fCalorimetryAlg.LifetimeCorrection(vhit[h]->PeakTime())/vmeta[h]->Dx();
 	    hit_dEds[vhit[h].key()] = fCalorimetryAlg.dEdx_AREA(vhit[h], vmeta[h]->Dx());
