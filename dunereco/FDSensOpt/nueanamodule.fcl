@@ -1,3 +1,5 @@
+#include "calorimetry_dune35t.fcl"
+#include "calorimetry_dune10kt.fcl"
 #include "trackfinderalgorithms.fcl"
 
 BEGIN_PROLOG
@@ -7,21 +9,22 @@ dunefd_nueana:
    module_type:             "NueAna"
    HitsModuleLabel:         "lineclusterdc"
    TrackModuleLabel:        "pmtrackdc"
-	 ClusterModuleLabel:			"lineclusterdc"
+   ClusterModuleLabel:			"lineclusterdc"
    VertexModuleLabel:       "lineclusterdc"
    GenieGenModuleLabel:     "generator"
    FidVolCut:	            3.0
+   CalorimetryAlg:          @local::dune35t_calorimetryalgmc
 }
 
 dunefd_inisegreco:
 {
-	module_type: 							"IniSegReco"
-	HitsModuleLabel:          "lineclusterdc"
-  TrackModuleLabel:         "pmtrackdc"
-	ClusterModuleLabel:			  "lineclusterdc"
-  GenieGenModuleLabel:      "generator"
-	ProjectionMatchingAlg:  @local::standard_projectionmatchingalg
-  FidVolCut:	            	3.0
+    module_type: 	      "IniSegReco"
+    HitsModuleLabel:          "lineclusterdc"
+    TrackModuleLabel:         "pmtrackdc"
+    ClusterModuleLabel:	      "lineclusterdc"
+    GenieGenModuleLabel:      "generator"
+    ProjectionMatchingAlg:    @local::standard_projectionmatchingalg
+    FidVolCut:	              3.0
 }
 
 END_PROLOG
