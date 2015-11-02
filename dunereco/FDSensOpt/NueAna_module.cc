@@ -26,6 +26,7 @@
 #include "RecoBase/Vertex.h"
 #include "RecoBase/SpacePoint.h"
 #include "RecoBase/TrackHitMeta.h"
+#include "RecoBase/Shower.h"
 #include "Utilities/LArProperties.h"
 #include "Utilities/DetectorProperties.h"
 #include "Utilities/AssociationUtil.h"
@@ -44,6 +45,7 @@
 #include <utility>
 
 constexpr int kMaxTrack      = 1000;  //maximum number of tracks
+constexpr int kMaxShower     = 1000;  //maximum number of showers
 constexpr int kMaxHits       = 25000; //maximum number of hits;
 constexpr int kMaxVertices   = 100;    //max number of 3D vertices
 constexpr int kMaxPrimaries  = 20000;  //maximum number of primary particles
@@ -136,6 +138,19 @@ private:
   Float_t	vtxrecomcy;		
   Float_t	vtxrecomcz;		
 
+  // shower information
+  int nshws;
+  int shwid[kMaxShower];
+  Float_t shwdcosx[kMaxShower];
+  Float_t shwdcosy[kMaxShower];
+  Float_t shwdcosz[kMaxShower];
+  Float_t shwstartx[kMaxShower];
+  Float_t shwstarty[kMaxShower];
+  Float_t shwstartz[kMaxShower];
+  Float_t shwenergy[kMaxShower][3];
+  Float_t shwdedx[kMaxShower][3];
+  int shwbestplane[kMaxShower];
+  
   //mctruth information
   Int_t     mcevts_truth;    //number of neutrino Int_teractions in the spill
   Int_t     nuPDG_truth;     //neutrino PDG code
@@ -182,6 +197,7 @@ private:
   std::string fHitsModuleLabel;
   std::string fClusterModuleLabel;
   std::string fTrackModuleLabel;
+  std::string fShowerModuleLabel;
   std::string fVertexModuleLabel;
   std::string fGenieGenModuleLabel;
 
@@ -239,6 +255,12 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   std::vector<art::Ptr<recob::Vertex> > vtxlist;
   if (evt.getByLabel(fVertexModuleLabel,vtxListHandle))
     art::fill_ptr_vector(vtxlist, vtxListHandle);
+
+  // * showers
+  art::Handle<std::vector<recob::Shower>> shwListHandle;
+  std::vector<art::Ptr<recob::Shower>> shwlist;
+  if (evt.getByLabel(fShowerModuleLabel,shwListHandle))
+    art::fill_ptr_vector(shwlist, shwListHandle);
 
   // * associations
   art::FindManyP<recob::Hit> fmth(trackListHandle, evt, fTrackModuleLabel);
@@ -419,6 +441,25 @@ void dunefd::NueAna::analyze(art::Event const & evt)
     for (size_t j = 0; j<3; ++j) vtx[i][j] = xyz[j];
   }
 
+  //shower information
+  nshws = shwlist.size();
+  
+  for (int i = 0; i<std::min(int(shwlist.size()),kMaxShower); ++i){
+    shwid[i] = shwlist[i]->ID();
+    shwdcosx[i] = shwlist[i]->Direction().X(); 
+    shwdcosy[i] = shwlist[i]->Direction().Y(); 
+    shwdcosz[i] = shwlist[i]->Direction().Z(); 
+    shwstartx[i] = shwlist[i]->ShowerStart().X();
+    shwstarty[i] = shwlist[i]->ShowerStart().Y();
+    shwstartz[i] = shwlist[i]->ShowerStart().Z();
+    for (size_t j = 0; j<(shwlist[i]->Energy()).size(); ++j){
+      shwenergy[i][j] = shwlist[i]->Energy()[j];
+    }      
+    for (size_t j = 0; j<(shwlist[i]->dEdx()).size(); ++j){
+      shwdedx[i][j] = shwlist[i]->dEdx()[j];
+    }
+    shwbestplane[i] = shwlist[i]->best_plane();
+  }
   if (!isdata){
 
     // * MC truth information
@@ -618,6 +659,17 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("trkg4starty",trkg4starty,"trkg4starty[ntracks_reco]/F");
   fTree->Branch("trkg4startz",trkg4startz,"trkg4startz[ntracks_reco]/F");
   fTree->Branch("trkg4initdedx",trkg4initdedx,"trkg4initdedx[ntracks_reco]/F");
+  fTree->Branch("nshws",&nshws,"nshws/I");
+  fTree->Branch("shwid",shwid,"shwid[nshws]/I");
+  fTree->Branch("shwdcosx",shwdcosx,"shwdcosx[nshws]/F");
+  fTree->Branch("shwdcosy",shwdcosy,"shwdcosy[nshws]/F");
+  fTree->Branch("shwdcosz",shwdcosz,"shwdcosz[nshws]/F");
+  fTree->Branch("shwstartx",shwstartx,"shwstartx[nshws]/F");
+  fTree->Branch("shwstarty",shwstarty,"shwstarty[nshws]/F");
+  fTree->Branch("shwstartz",shwstartz,"shwstartz[nshws]/F");
+  fTree->Branch("shwenergy",shwenergy,"shwenergy[nshws][3]/F");
+  fTree->Branch("shwdedx",shwdedx,"shwdedx[nshws][3]/F");
+  fTree->Branch("shwbestplane",shwbestplane,"shwbestplane[nshws]/I");
   fTree->Branch("nhits",&nhits,"nhits/I");
   fTree->Branch("hit_plane",hit_plane,"hit_plane[nhits]/S");
   fTree->Branch("hit_wire",hit_wire,"hit_wire[nhits]/S");
@@ -710,6 +762,22 @@ void dunefd::NueAna::ResetVars(){
     trkg4initdedx[i] = -9999;
   }
 
+  nshws = 0;
+  for (int i = 0; i<kMaxShower; ++i){
+    shwid[i] = -9999;
+    shwdcosx[i] = -9999;
+    shwdcosy[i] = -9999;
+    shwdcosz[i] = -9999;
+    shwstartx[i] = -9999;
+    shwstarty[i] = -9999;
+    shwstartz[i] = -9999;
+    for (int j = 0; j<3; ++j){
+      shwenergy[i][j] = -9999;
+      shwdedx[i][j] = -9999;
+    }
+    shwbestplane[i] = -9999;
+  }
+
   nhits = 0;
   for (int i = 0; i<kMaxHits; ++i){
     hit_plane[i] = -9999;
@@ -790,7 +858,8 @@ void dunefd::NueAna::reconfigure(fhicl::ParameterSet const & p)
 {
   fHitsModuleLabel     =   p.get< std::string >("HitsModuleLabel");
   fTrackModuleLabel    =   p.get< std::string >("TrackModuleLabel");
-	fClusterModuleLabel  =   p.get< std::string >("ClusterModuleLabel");
+  fShowerModuleLabel    =   p.get< std::string >("ShowerModuleLabel");
+  fClusterModuleLabel  =   p.get< std::string >("ClusterModuleLabel");
   fVertexModuleLabel   =   p.get< std::string >("VertexModuleLabel");
   fGenieGenModuleLabel =   p.get< std::string >("GenieGenModuleLabel");
   fFidVolCut           =   p.get< double >("FidVolCut");
