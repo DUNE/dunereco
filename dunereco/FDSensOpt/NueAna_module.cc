@@ -621,16 +621,9 @@ void dunefd::NueAna::analyze(art::Event const & evt)
       EndPointz[i]=geant_part[i]->EndPosition()[2];
 
       // ### Saving the Start direction cosines for this particle ###
-      double a = fabs( pow ( (geant_part[i]->Momentum(0).Px()*geant_part[i]->Momentum(0).Px()) / (geant_part[i]->Momentum(0).P()*geant_part[i]->Momentum(0).P()) , 0.5) );
-      double b = fabs( pow ( (geant_part[i]->Momentum(0).Py()*geant_part[i]->Momentum(0).Py()) / (geant_part[i]->Momentum(0).P()*geant_part[i]->Momentum(0).P()) , 0.5) );
-      double c = fabs( pow ( (geant_part[i]->Momentum(0).Pz()*geant_part[i]->Momentum(0).Pz()) / (geant_part[i]->Momentum(0).P()*geant_part[i]->Momentum(0).P()) , 0.5) );
-
       Startdcosx[i] = geant_part[i]->Momentum(0).Px() / geant_part[i]->Momentum(0).P();
       Startdcosy[i] = geant_part[i]->Momentum(0).Py() / geant_part[i]->Momentum(0).P();
       Startdcosz[i] = geant_part[i]->Momentum(0).Pz() / geant_part[i]->Momentum(0).P();
-      
-      std::cout << geant_part[i]->Momentum(0).Px() << " " << geant_part[i]->Momentum(0).Py() << " " << geant_part[i]->Momentum(0).Pz() << " " << geant_part[i]->Momentum(0).P() 
-		<< "....." << Startdcosx[i] << " " << Startdcosy[i] << " " << Startdcosz[i] << "......" << a << " " << b << " " <<  c << std::endl;
       // ### Saving the number of Daughters for this particle ###
       NumberDaughters[i]=geant_part[i]->NumberDaughters();
       
