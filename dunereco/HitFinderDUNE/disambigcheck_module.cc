@@ -38,7 +38,6 @@ extern "C" {
 #include "RecoBase/Hit.h"
 #include "RecoBase/Cluster.h"
 #include "Utilities/AssociationUtil.h"
-#include "Utilities/DetectorProperties.h"
 #include "DisambigAlg35t.h"
 #include "MCCheater/BackTracker.h"
 #include "AnalysisBase/ParticleID.h"

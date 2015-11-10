@@ -17,8 +17,6 @@
 #include "art/Framework/Services/Optional/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "Utilities/LArProperties.h"
-#include "Utilities/DetectorProperties.h"
 #include "RecoBase/Hit.h"
 #include "RecoBase/Wire.h"
 #include "Geometry/CryostatGeo.h"

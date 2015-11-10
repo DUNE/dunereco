@@ -31,7 +31,6 @@
 #include "RecoBase/Hit.h"
 #include "RecoBaseArt/HitCreator.h"
 #include "Utilities/AssociationUtil.h"
-#include "Utilities/DetectorProperties.h"
 #include "DisambigAlg35t.h"
 #include "TimeBasedDisambig.h"
 

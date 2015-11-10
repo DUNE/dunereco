@@ -8,8 +8,7 @@ art_make( BASENAME_ONLY
                            Geometry
                            Geometry_service
                            RecoObjects
-                           LArProperties_service
-                           DetectorProperties_service
+                           DetectorPropertiesServiceStandard_service
 			   BackTracker_service
                            Utilities
 			   ${SIMULATIONBASE}
@@ -35,8 +34,8 @@ art_make( BASENAME_ONLY
                            RecoBaseArt
                            Geometry
                            Geometry_service
-                           LArProperties_service
-                           DetectorProperties_service
+                           LArPropertiesServiceStandard_service
+                           DetectorPropertiesServiceStandard_service
 			   BackTracker_service
                            Utilities
 			   ${SIMULATIONBASE}

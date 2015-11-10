@@ -10,9 +10,8 @@ simple_plugin(NueAna   "module"
 			Geometry_service
 			Utilities
 			Simulation
-			DetectorProperties_service
-			LArProperties_service
 			BackTracker_service
+			DetectorPropertiesServiceStandard_service
 			${SIMULATIONBASE}
                         ${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}
@@ -39,8 +38,6 @@ simple_plugin(IniSegReco "module"
 			Geometry_service
 			Utilities
 			Simulation
-			DetectorProperties_service
-			LArProperties_service
 			${SIMULATIONBASE}
       ${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}

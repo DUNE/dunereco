@@ -25,10 +25,8 @@
 #include "RecoBase/Cluster.h"
 #include "RecoBase/Vertex.h"
 #include "RecoBase/SpacePoint.h"
-#include "Utilities/LArProperties.h"
-#include "Utilities/DetectorProperties.h"
+#include "Utilities/DetectorPropertiesService.h"
 #include "Utilities/AssociationUtil.h"
-#include "Utilities/TimeService.h"
 #include "MCCheater/BackTracker.h"
 #include "SimulationBase/MCTruth.h"
 #include "RecoAlg/PMAlg/Utilities.h"
@@ -175,10 +173,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   // Implementation of required member function here.
   ResetVars();
   art::ServiceHandle<geo::Geometry> geom;
-  art::ServiceHandle<util::LArProperties> larprop;
-  art::ServiceHandle<util::DetectorProperties> detprop;
-  art::ServiceHandle<util::TimeService> timeservice;
-  //fClock = timeservice->TPCClock();
+  auto const *detprop = lar::providerFrom<util::DetectorPropertiesService>();
   art::ServiceHandle<cheat::BackTracker> bt;
 
   run = evt.run();
@@ -187,7 +182,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   art::Timestamp ts = evt.time();
   TTimeStamp tts(ts.timeHigh(), ts.timeLow());
   evttime = tts.AsDouble();
-  taulife = larprop->ElectronLifetime();
+  taulife = detprop->ElectronLifetime();
   isdata = evt.isRealData();
 
   // * hits

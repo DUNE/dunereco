@@ -2,8 +2,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 art_make( BASENAME_ONLY
           LIBRARY_NAME  IniSegAlg
-          LIB_LIBRARIES DetectorProperties_service
-                        LArProperties_service
+          LIB_LIBRARIES DetectorPropertiesServiceStandard_service
+                        LArPropertiesServiceStandard_service
                         Geometry
                         Geometry_service
                         Simulation
