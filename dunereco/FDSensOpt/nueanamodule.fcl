@@ -12,6 +12,7 @@ dunefd_nueana:
    ClusterModuleLabel:			"lineclusterdc"
    VertexModuleLabel:       "lineclusterdc"
    GenieGenModuleLabel:     "generator"
+   ShowerModuleLabel:       "emshower"
    FidVolCut:	            3.0
    CalorimetryAlg:          @local::dune35t_calorimetryalgmc
 }
