@@ -195,7 +195,8 @@ private:
   int TrackId[kMaxPrimaries];			//<---Geant4 TrackID number
   int Mother[kMaxPrimaries];			//<---TrackID of the mother of this particle
   int process_primary[kMaxPrimaries];		//<---Is this particle primary (primary = 1, non-primary = 1)
-
+  std::vector<std::string> G4Process;         //<---The process which created this particle
+  std::vector<std::string> G4FinalProcess;    //<---The last process which this particle went under
 
   std::string fHitsModuleLabel;
   std::string fClusterModuleLabel;
@@ -221,7 +222,7 @@ dunefd::NueAna::NueAna(fhicl::ParameterSet const & pset)
 void dunefd::NueAna::analyze(art::Event const & evt)
 {
 
-	std::cout << " **************************************** analyze ************ " << std::endl;
+  std::cout << " **************************************** analyze ************ " << std::endl;
   // Implementation of required member function here.
   ResetVars();
   art::ServiceHandle<geo::Geometry> geom;
@@ -620,6 +621,15 @@ void dunefd::NueAna::analyze(art::Event const & evt)
       EndPointy[i]=geant_part[i]->EndPosition()[1];
       EndPointz[i]=geant_part[i]->EndPosition()[2];
 
+      // ### Saving the processes for this particle ###
+      std::cout<<"finding proc"<<std::endl;
+      G4Process.push_back( geant_part[i]->Process() );
+      G4FinalProcess.push_back( geant_part[i]->EndProcess() );
+      std::cout<<"found proc"<<std::endl;
+      std::cout << "ID " << TrackId[i] << ", pdg " << pdg[i] << ", Start X,Y,Z " << StartPointx[i] << ", " << StartPointy[i] << ", " << StartPointz[i]
+		<< ", End XYZ " << EndPointx[i] << ", " << EndPointy[i] << ", " << EndPointz[i] << ", Start Proc " << G4Process[i] << ", End Proc " << G4FinalProcess[i]
+		<< std::endl;
+
       // ### Saving the Start direction cosines for this particle ###
       Startdcosx[i] = geant_part[i]->Momentum(0).Px() / geant_part[i]->Momentum(0).P();
       Startdcosy[i] = geant_part[i]->Momentum(0).Py() / geant_part[i]->Momentum(0).P();
@@ -737,9 +747,14 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("Mother",Mother,"Mother[geant_list_size]/I");
   fTree->Branch("TrackId",TrackId,"TrackId[geant_list_size]/I");
   fTree->Branch("process_primary",process_primary,"process_primary[geant_list_size]/I");
+  fTree->Branch("G4Process",&G4Process);//,"G4Process[geant_list_size]");
+  fTree->Branch("G4FinalProcess",&G4FinalProcess);//,"G4FinalProcess[geant_list_size]");
 }
 
 void dunefd::NueAna::ResetVars(){
+
+  G4Process.clear();
+  G4FinalProcess.clear();
 
   run = -9999;
   subrun = -9999;
