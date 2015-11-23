@@ -51,6 +51,7 @@ class dunefd::IniSegAlg
 	art::Ptr<recob::Track> const & GetTrk() const { return fTrk; }
 
 	float const & GetDist() const { return fDistVtxCl; } 
+	float const & GetCos() const { return fCos; }
 
 	private:
 	void FindClustersInRad(); 
@@ -82,6 +83,7 @@ class dunefd::IniSegAlg
 	float fRadius;
 	float fDistVtxCl;
 	float const fThrcos;
+	float fCos;
 };
 
 class dunefd::bDistCentLess2D :
