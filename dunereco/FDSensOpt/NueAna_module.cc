@@ -150,6 +150,7 @@ private:
   Float_t shwenergy[kMaxShower][3];
   Float_t shwdedx[kMaxShower][3];
   int shwbestplane[kMaxShower];
+  int   shwg4id[kMaxTrack];
   
   //mctruth information
   Int_t     mcevts_truth;    //number of neutrino Int_teractions in the spill
@@ -270,6 +271,8 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   art::FindManyP<recob::Hit> fmth(trackListHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::Hit, recob::TrackHitMeta> fmthm(trackListHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::SpacePoint> fmhs(hitListHandle, evt, fTrackModuleLabel);
+  art::FindManyP<recob::Hit> fmsh(shwListHandle, evt, fShowerModuleLabel);
+
   //hit information
   nhits = hitlist.size();
   for (int i = 0; i < nhits && i < kMaxHits ; ++i){//loop over hits
@@ -463,6 +466,34 @@ void dunefd::NueAna::analyze(art::Event const & evt)
       shwdedx[i][j] = shwlist[i]->dEdx()[j];
     }
     shwbestplane[i] = shwlist[i]->best_plane();
+    if (!isdata){
+      // Find true track for each reconstructed track
+      int TrackID = 0;
+      std::vector< art::Ptr<recob::Hit> > allHits = fmsh.at(i);
+      std::map<int,double> trkide;
+      for(size_t h = 0; h < allHits.size(); ++h){
+	art::Ptr<recob::Hit> hit = allHits[h];
+	std::vector<sim::TrackIDE> TrackIDs = bt->HitToTrackID(hit);
+	for(size_t e = 0; e < TrackIDs.size(); ++e){
+	  trkide[TrackIDs[e].trackID] += TrackIDs[e].energy;
+	}	    
+      }
+      // Work out which IDE despoited the most charge in the hit if there was more than one.
+      double maxe = -1;
+      double tote = 0;
+      for (std::map<int,double>::iterator ii = trkide.begin(); ii!=trkide.end(); ++ii){
+	tote += ii->second;
+	if ((ii->second)>maxe){
+	  maxe = ii->second;
+	  TrackID = ii->first;
+	}
+      }
+      // Now have trackID, so get PdG code and T0 etc.
+      const simb::MCParticle *particle = bt->TrackIDToParticle(TrackID);
+      if (particle){
+	shwg4id[i] = TrackID;
+      }
+    }
   }
   if (!isdata){
 
@@ -687,6 +718,7 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("shwenergy",shwenergy,"shwenergy[nshws][3]/F");
   fTree->Branch("shwdedx",shwdedx,"shwdedx[nshws][3]/F");
   fTree->Branch("shwbestplane",shwbestplane,"shwbestplane[nshws]/I");
+  fTree->Branch("shwg4id",shwg4id,"shwg4id[nshws]/I");
   fTree->Branch("nhits",&nhits,"nhits/I");
   fTree->Branch("hit_plane",hit_plane,"hit_plane[nhits]/S");
   fTree->Branch("hit_wire",hit_wire,"hit_wire[nhits]/S");
@@ -801,6 +833,7 @@ void dunefd::NueAna::ResetVars(){
       shwdedx[i][j] = -9999;
     }
     shwbestplane[i] = -9999;
+    trkg4id[i] = -9999;
   }
 
   nhits = 0;
