@@ -35,6 +35,8 @@
 #include "SimulationBase/MCTruth.h"
 #include "RecoAlg/PMAlg/Utilities.h"
 #include "AnalysisAlg/CalorimetryAlg.h"
+#include "SummaryData/POTSummary.h"
+#include "SimulationBase/MCFlux.h"
 
 // ROOT includes
 #include "TTree.h"
@@ -75,6 +77,9 @@ public:
   void beginJob() override;
   void endJob() override;
 
+  //void beginSubRun(const art::SubRun& sr);
+  void endSubRun(const art::SubRun& sr);
+
   void reconfigure(fhicl::ParameterSet const& p) override;
 
 private:
@@ -84,7 +89,8 @@ private:
 
   // Declare member data here.
   TTree *fTree;
-  
+  TTree* fPOT;
+
   // Run information
   int run;
   int subrun;
@@ -92,6 +98,7 @@ private:
   float evttime;
   float taulife;
   short isdata;
+  double pot;
 
   int ntracks_reco;         //number of reconstructed tracks
   int   trkid[kMaxTrack];
@@ -115,6 +122,7 @@ private:
   float trkg4starty[kMaxTrack];
   float trkg4startz[kMaxTrack];
   float trkg4initdedx[kMaxTrack];
+
   int nhits;
   Short_t  hit_plane[kMaxHits];      //plane number
   Short_t  hit_wire[kMaxHits];       //wire number
@@ -124,8 +132,8 @@ private:
   Float_t  hit_startT[kMaxHits];     //hit start time
   Float_t  hit_endT[kMaxHits];       //hit end time
   Int_t    hit_trkkey[kMaxHits];     //track index
-  Float_t  hit_dQds[kMaxHits];       //hit dQ/dx
-  Float_t  hit_dEds[kMaxHits];       //hit dE/dx
+  Float_t  hit_dQds[kMaxHits];       //hit dQ/ds
+  Float_t  hit_dEds[kMaxHits];       //hit dE/ds
   Float_t  hit_resrange[kMaxHits];   //hit residual range
 
   // vertex information
@@ -199,12 +207,21 @@ private:
   std::vector<std::string> G4Process;         //<---The process which created this particle
   std::vector<std::string> G4FinalProcess;    //<---The last process which this particle went under
 
+  //flux information
+  Int_t    ptype_flux;        //Parent GEANT code particle ID
+  Float_t  pdpx_flux;        //Parent X momentum at decay point (GeV)
+  Float_t  pdpy_flux;        //Parent Y momentum at decay point (GeV)
+  Float_t  pdpz_flux;        //Parent Z momentum at decay point (GeV)
+  Int_t    pntype_flux;      //oscillated neutrino type
+  //end of ttree variables
+  //
   std::string fHitsModuleLabel;
   std::string fClusterModuleLabel;
   std::string fTrackModuleLabel;
   std::string fShowerModuleLabel;
   std::string fVertexModuleLabel;
   std::string fGenieGenModuleLabel;
+  std::string fPOTModuleLabel;
 
   double fFidVolCut;
 
@@ -218,6 +235,28 @@ dunefd::NueAna::NueAna(fhicl::ParameterSet const & pset)
   , fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg"))
 {
   reconfigure(pset);
+}
+
+//void dunefd::NueAna::beginSubRun(const art::SubRun& sr){
+//
+//  art::Handle< sumdata::POTSummary > potListHandle;
+//
+//  if(sr.getByLabel(fPOTModuleLabel,potListHandle))
+//    pot = potListHandle->totpot;
+//  else
+//    pot = 0.;
+//  if (fPOT) fPOT->Fill();
+//}
+
+void dunefd::NueAna::endSubRun(const art::SubRun& sr){
+
+  art::Handle< sumdata::POTSummary > potListHandle;
+
+  if(sr.getByLabel(fPOTModuleLabel,potListHandle))
+    pot = potListHandle->totpot;
+  else
+    pot = 0.;
+  if (fPOT) fPOT->Fill();
 }
 
 void dunefd::NueAna::analyze(art::Event const & evt)
@@ -266,6 +305,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   std::vector<art::Ptr<recob::Shower>> shwlist;
   if (evt.getByLabel(fShowerModuleLabel,shwListHandle))
     art::fill_ptr_vector(shwlist, shwListHandle);
+
 
   // * associations
   art::FindManyP<recob::Hit> fmth(trackListHandle, evt, fTrackModuleLabel);
@@ -502,7 +542,13 @@ void dunefd::NueAna::analyze(art::Event const & evt)
     std::vector<art::Ptr<simb::MCTruth> > mclist;
     if (evt.getByLabel(fGenieGenModuleLabel,mctruthListHandle))
       art::fill_ptr_vector(mclist, mctruthListHandle);
+
+    art::Handle< std::vector<simb::MCFlux> > mcfluxListHandle;
+    std::vector<art::Ptr<simb::MCFlux> > fluxlist;
+    if (evt.getByLabel(fGenieGenModuleLabel,mcfluxListHandle))
+      art::fill_ptr_vector(fluxlist, mcfluxListHandle);
     
+
     mcevts_truth=mclist.size();
     if (mcevts_truth){
       art::Ptr<simb::MCTruth> mctruth = mclist[0];
@@ -584,6 +630,14 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	    }
 	  }
       }//is neutrino
+    }
+    
+    if (fluxlist.size()){
+      ptype_flux  = fluxlist[0]->fptype;
+      pdpx_flux   = fluxlist[0]->fpdpx;
+      pdpy_flux   = fluxlist[0]->fpdpy;
+      pdpz_flux   = fluxlist[0]->fpdpz;
+      pntype_flux = fluxlist[0]->fntype;
     }
 
     //save g4 particle information
@@ -781,6 +835,15 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("process_primary",process_primary,"process_primary[geant_list_size]/I");
   fTree->Branch("G4Process",&G4Process);//,"G4Process[geant_list_size]");
   fTree->Branch("G4FinalProcess",&G4FinalProcess);//,"G4FinalProcess[geant_list_size]");
+  fTree->Branch("ptype_flux",&ptype_flux,"ptype_flux/I");
+  fTree->Branch("pdpx_flux",&pdpx_flux,"pdpx_flux/F");
+  fTree->Branch("pdpy_flux",&pdpy_flux,"pdpy_flux/F");
+  fTree->Branch("pdpz_flux",&pdpz_flux,"pdpz_flux/F");
+  fTree->Branch("pntype_flux",&pntype_flux,"pntype_flux/I");
+
+  fPOT = tfs->make<TTree>("pottree","pot tree");
+  fPOT->Branch("pot",&pot,"pot/D");
+
 }
 
 void dunefd::NueAna::ResetVars(){
@@ -908,6 +971,11 @@ void dunefd::NueAna::ResetVars(){
     process_primary[i] = -99999;
   }
 
+  ptype_flux = -99999;
+  pdpx_flux = -99999;
+  pdpy_flux = -99999;
+  pdpz_flux = -99999;
+  pntype_flux = -99999;
 }
 
 void dunefd::NueAna::endJob()
@@ -924,6 +992,8 @@ void dunefd::NueAna::reconfigure(fhicl::ParameterSet const & p)
   fVertexModuleLabel   =   p.get< std::string >("VertexModuleLabel");
   fGenieGenModuleLabel =   p.get< std::string >("GenieGenModuleLabel");
   fFidVolCut           =   p.get< double >("FidVolCut");
+  fPOTModuleLabel      =   p.get< std::string >("POTModuleLabel"); 
+
   return;
 }
 

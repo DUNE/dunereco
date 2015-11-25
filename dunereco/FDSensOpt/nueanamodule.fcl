@@ -9,10 +9,11 @@ dunefd_nueana:
    module_type:             "NueAna"
    HitsModuleLabel:         "lineclusterdc"
    TrackModuleLabel:        "pmtrackdc"
-   ClusterModuleLabel:			"lineclusterdc"
+   ClusterModuleLabel:	    "lineclusterdc"
    VertexModuleLabel:       "lineclusterdc"
    GenieGenModuleLabel:     "generator"
    ShowerModuleLabel:       "emshower"
+   POTModuleLabel:           "generator"
    FidVolCut:	            3.0
    CalorimetryAlg:          @local::dune35t_calorimetryalgmc
 }
