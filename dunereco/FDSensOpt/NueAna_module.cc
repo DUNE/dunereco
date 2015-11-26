@@ -27,6 +27,7 @@
 #include "RecoBase/SpacePoint.h"
 #include "RecoBase/TrackHitMeta.h"
 #include "RecoBase/Shower.h"
+#include "RecoBase/OpFlash.h"
 #include "Utilities/LArProperties.h"
 #include "Utilities/DetectorProperties.h"
 #include "Utilities/AssociationUtil.h"
@@ -51,6 +52,7 @@ constexpr int kMaxShower     = 1000;  //maximum number of showers
 constexpr int kMaxHits       = 25000; //maximum number of hits;
 constexpr int kMaxVertices   = 100;    //max number of 3D vertices
 constexpr int kMaxPrimaries  = 20000;  //maximum number of primary particles
+constexpr int kMaxFlash      = 1000;  //maximum number of flashes
 
 namespace dunefd {
 	class Hit2D;
@@ -91,6 +93,8 @@ private:
   TTree *fTree;
   TTree* fPOT;
 
+  // TTree variables
+
   // Run information
   int run;
   int subrun;
@@ -100,28 +104,29 @@ private:
   short isdata;
   double pot;
 
-  int ntracks_reco;         //number of reconstructed tracks
-  int   trkid[kMaxTrack];
-  float trkstartx[kMaxTrack];
+  // Track information
+  int ntracks_reco;                   //number of reconstructed tracks
+  int   trkid[kMaxTrack];             //track id from recob::Track::ID(), this does not have to be the index of track
+  float trkstartx[kMaxTrack];         //track start position (cm)
   float trkstarty[kMaxTrack];
   float trkstartz[kMaxTrack];
-  float trkendx[kMaxTrack];
+  float trkendx[kMaxTrack];           //track end position (cm)
   float trkendy[kMaxTrack];
   float trkendz[kMaxTrack];
-  float trkstartdcosx[kMaxTrack];
+  float trkstartdcosx[kMaxTrack];     //track start direction cosine
   float trkstartdcosy[kMaxTrack];
   float trkstartdcosz[kMaxTrack];
-  float trkenddcosx[kMaxTrack];
+  float trkenddcosx[kMaxTrack];       //track end direction cosine
   float trkenddcosy[kMaxTrack];
   float trkenddcosz[kMaxTrack];
-  float trklen[kMaxTrack];
-  //geant information
-  int   trkg4id[kMaxTrack];
-  int   trkg4pdg[kMaxTrack];
-  float trkg4startx[kMaxTrack];
+  float trklen[kMaxTrack];            //track length (cm)
+  //geant information for the track
+  int   trkg4id[kMaxTrack];           //geant track id for the track
+  int   trkg4pdg[kMaxTrack];          //pdg of geant particle
+  float trkg4startx[kMaxTrack];       //start position of geant particle
   float trkg4starty[kMaxTrack];
   float trkg4startz[kMaxTrack];
-  float trkg4initdedx[kMaxTrack];
+  float trkg4initdedx[kMaxTrack];     //initial dE/dx of the track using true energy (MeV/cm)
 
   int nhits;
   Short_t  hit_plane[kMaxHits];      //plane number
@@ -129,12 +134,14 @@ private:
   Int_t  hit_channel[kMaxHits];      //channel ID
   Float_t  hit_peakT[kMaxHits];      //peak time
   Float_t  hit_charge[kMaxHits];     //charge (area)
+  Float_t  hit_summedADC[kMaxHits];  //summed ADC
   Float_t  hit_startT[kMaxHits];     //hit start time
   Float_t  hit_endT[kMaxHits];       //hit end time
-  Int_t    hit_trkkey[kMaxHits];     //track index
+  Int_t    hit_trkkey[kMaxHits];     //track index if hit is associated with a track
   Float_t  hit_dQds[kMaxHits];       //hit dQ/ds
   Float_t  hit_dEds[kMaxHits];       //hit dE/ds
   Float_t  hit_resrange[kMaxHits];   //hit residual range
+  Int_t    hit_shwkey[kMaxHits];     //shower index if hit is associated with a shower
 
   // vertex information
   int infidvol;
@@ -147,19 +154,30 @@ private:
   Float_t	vtxrecomcz;		
 
   // shower information
-  int nshws;
-  int shwid[kMaxShower];
-  Float_t shwdcosx[kMaxShower];
+  int nshws;                         //number of showers
+  int shwid[kMaxShower];             //recob::Shower::ID()
+  Float_t shwdcosx[kMaxShower];      //shower direction cosine
   Float_t shwdcosy[kMaxShower];
   Float_t shwdcosz[kMaxShower];
-  Float_t shwstartx[kMaxShower];
+  Float_t shwstartx[kMaxShower];     //shower start position (cm)
   Float_t shwstarty[kMaxShower];
   Float_t shwstartz[kMaxShower];
-  Float_t shwenergy[kMaxShower][3];
-  Float_t shwdedx[kMaxShower][3];
-  int shwbestplane[kMaxShower];
-  int   shwg4id[kMaxTrack];
-  
+  Float_t shwenergy[kMaxShower][3];  //shower energy measured on the 3 planes (GeV)
+  Float_t shwdedx[kMaxShower][3];    //shower dE/dx of the initial track measured on the 3 plane (MeV/cm)
+  int shwbestplane[kMaxShower];      //recommended plane for energy and dE/dx information
+  int   shwg4id[kMaxTrack];          //geant track id for the shower
+
+  // flash information
+  int    flash_total;                //total number of flashes
+  Float_t flash_time[kMaxFlash];     //flash time
+  Float_t flash_width[kMaxFlash];    //flash width
+  Float_t flash_abstime[kMaxFlash];  //flash absolute time
+  Float_t flash_YCenter[kMaxFlash];  //flash y center (cm)
+  Float_t flash_YWidth[kMaxFlash];   //flash y width (cm)
+  Float_t flash_ZCenter[kMaxFlash];  //flash z center (cm)
+  Float_t flash_ZWidth[kMaxFlash];   //flash z width (cm)
+  Float_t flash_TotalPE[kMaxFlash];  //flash total pe
+
   //mctruth information
   Int_t     mcevts_truth;    //number of neutrino Int_teractions in the spill
   Int_t     nuPDG_truth;     //neutrino PDG code
@@ -170,7 +188,8 @@ private:
   Float_t  W_truth;         //hadronic invariant mass
   Float_t  X_truth;
   Float_t  Y_truth;
-  Int_t     hitnuc_truth;    //hit nucleon
+  Int_t    hitnuc_truth;    //hit nucleon
+  Int_t    target_truth;    //hit nucleus 
   Float_t  nuvtxx_truth;    //neutrino vertex x
   Float_t  nuvtxy_truth;    //neutrino vertex y
   Float_t  nuvtxz_truth;    //neutrino vertex z
@@ -213,8 +232,13 @@ private:
   Float_t  pdpy_flux;        //Parent Y momentum at decay point (GeV)
   Float_t  pdpz_flux;        //Parent Z momentum at decay point (GeV)
   Int_t    pntype_flux;      //oscillated neutrino type
+  Float_t  vx_flux;          //X position of hadron/muon decay (cm)
+  Float_t  vy_flux;          //Y position of hadron/muon decay (cm)
+  Float_t  vz_flux;          //Z position of hadron/muon decay (cm)
+
   //end of ttree variables
-  //
+
+  //Module labels to get data products
   std::string fHitsModuleLabel;
   std::string fClusterModuleLabel;
   std::string fTrackModuleLabel;
@@ -222,6 +246,7 @@ private:
   std::string fVertexModuleLabel;
   std::string fGenieGenModuleLabel;
   std::string fPOTModuleLabel;
+  std::string fFlashModuleLabel;
 
   double fFidVolCut;
 
@@ -305,7 +330,12 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   std::vector<art::Ptr<recob::Shower>> shwlist;
   if (evt.getByLabel(fShowerModuleLabel,shwListHandle))
     art::fill_ptr_vector(shwlist, shwListHandle);
-
+  
+  // * flashes
+  art::Handle< std::vector<recob::OpFlash> > flashListHandle;
+  std::vector<art::Ptr<recob::OpFlash> > flashlist;
+  if (evt.getByLabel(fFlashModuleLabel, flashListHandle))
+    art::fill_ptr_vector(flashlist, flashListHandle);
 
   // * associations
   art::FindManyP<recob::Hit> fmth(trackListHandle, evt, fTrackModuleLabel);
@@ -321,8 +351,10 @@ void dunefd::NueAna::analyze(art::Event const & evt)
     hit_wire[i]    = hitlist[i]->WireID().Wire;
     hit_peakT[i]   = hitlist[i]->PeakTime();
     hit_charge[i]  = hitlist[i]->Integral();
+    hit_summedADC[i] = hitlist[i]->SummedADC();
     hit_startT[i] = hitlist[i]->PeakTimeMinusRMS();
     hit_endT[i] = hitlist[i]->PeakTimePlusRMS();
+
   }
 
   //track information
@@ -368,7 +400,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
       }//loop over all hits
     }//fmthm is valid
       
-    if (!isdata){
+    if (!isdata&&fmth.isValid()){
       // Find true track for each reconstructed track
       int TrackID = 0;
       std::vector< art::Ptr<recob::Hit> > allHits = fmth.at(i);
@@ -506,7 +538,15 @@ void dunefd::NueAna::analyze(art::Event const & evt)
       shwdedx[i][j] = shwlist[i]->dEdx()[j];
     }
     shwbestplane[i] = shwlist[i]->best_plane();
-    if (!isdata){
+    if (fmsh.isValid()){
+      auto vhit = fmsh.at(i);
+      for (size_t h = 0; h < vhit.size(); ++h){
+	if (vhit[h].key()<kMaxHits){
+	  hit_shwkey[vhit[h].key()] = shwlist[i].key();
+	}
+      }
+    }
+    if (!isdata&&fmsh.isValid()){
       // Find true track for each reconstructed track
       int TrackID = 0;
       std::vector< art::Ptr<recob::Hit> > allHits = fmsh.at(i);
@@ -535,6 +575,22 @@ void dunefd::NueAna::analyze(art::Event const & evt)
       }
     }
   }
+
+  // flash information
+  flash_total = flashlist.size();
+  for ( int f = 0; f < std::min(flash_total,kMaxHits); ++f ) {
+    flash_time[f]      = flashlist[f]->Time();
+    flash_width[f]     = flashlist[f]->TimeWidth();
+    flash_abstime[f]   = flashlist[f]->AbsTime();
+    flash_YCenter[f]   = flashlist[f]->YCenter();
+    flash_YWidth[f]    = flashlist[f]->YWidth();
+    flash_ZCenter[f]   = flashlist[f]->ZCenter();
+    flash_ZWidth[f]    = flashlist[f]->ZWidth();
+    flash_TotalPE[f]   = flashlist[f]->TotalPE();
+  }
+
+
+
   if (!isdata){
 
     // * MC truth information
@@ -561,6 +617,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	X_truth      = mctruth->GetNeutrino().X();
 	Y_truth      = mctruth->GetNeutrino().Y();
 	hitnuc_truth = mctruth->GetNeutrino().HitNuc();
+	target_truth = mctruth->GetNeutrino().Target();
 	enu_truth    = mctruth->GetNeutrino().Nu().E();
 	nuvtxx_truth = mctruth->GetNeutrino().Nu().Vx();
 	nuvtxy_truth = mctruth->GetNeutrino().Nu().Vy();
@@ -638,6 +695,9 @@ void dunefd::NueAna::analyze(art::Event const & evt)
       pdpy_flux   = fluxlist[0]->fpdpy;
       pdpz_flux   = fluxlist[0]->fpdpz;
       pntype_flux = fluxlist[0]->fntype;
+      vx_flux     = fluxlist[0]->fvx;
+      vy_flux     = fluxlist[0]->fvy;
+      vz_flux     = fluxlist[0]->fvz;
     }
 
     //save g4 particle information
@@ -773,18 +833,29 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("shwdedx",shwdedx,"shwdedx[nshws][3]/F");
   fTree->Branch("shwbestplane",shwbestplane,"shwbestplane[nshws]/I");
   fTree->Branch("shwg4id",shwg4id,"shwg4id[nshws]/I");
+  fTree->Branch("flash_total"  ,&flash_total ,"flash_total/I");
+  fTree->Branch("flash_time"   ,flash_time   ,"flash_time[flash_total]/F");
+  fTree->Branch("flash_width"  ,flash_width  ,"flash_width[flash_total]/F");
+  fTree->Branch("flash_abstime",flash_abstime,"flash_abstime[flash_total]/F");
+  fTree->Branch("flash_YCenter",flash_YCenter,"flash_YCenter[flash_total]/F");
+  fTree->Branch("flash_YWidth" ,flash_YWidth ,"flash_YWidth[flash_total]/F");
+  fTree->Branch("flash_ZCenter",flash_ZCenter,"flash_ZCenter[flash_total]/F");
+  fTree->Branch("flash_ZWidth" ,flash_ZWidth ,"flash_ZWidth[flash_total]/F");
+  fTree->Branch("flash_TotalPE",flash_TotalPE,"flash_TotalPE[flash_total]/F");
   fTree->Branch("nhits",&nhits,"nhits/I");
   fTree->Branch("hit_plane",hit_plane,"hit_plane[nhits]/S");
   fTree->Branch("hit_wire",hit_wire,"hit_wire[nhits]/S");
   fTree->Branch("hit_channel",hit_channel,"hit_channel[nhits]/I");
   fTree->Branch("hit_peakT",hit_peakT,"hit_peakT[nhits]/F");
   fTree->Branch("hit_charge",hit_charge,"hit_charge[nhits]/F");
+  fTree->Branch("hit_summedADC",hit_summedADC,"hit_summedADC[nhits]/F");
   fTree->Branch("hit_startT",hit_startT,"hit_startT[nhits]/F");
   fTree->Branch("hit_endT",hit_endT,"hit_endT[nhits]/F");
   fTree->Branch("hit_trkkey",hit_trkkey,"hit_trkkey[nhits]/I");
   fTree->Branch("hit_dQds",hit_dQds,"hit_dQds[nhits]/F");
   fTree->Branch("hit_dEds",hit_dEds,"hit_dEds[nhits]/F");
   fTree->Branch("hit_resrange",hit_resrange,"hit_resrange[nhits]/F");
+  fTree->Branch("hit_shwkey",hit_shwkey,"hit_shwkey[nhits]/I");
   fTree->Branch("infidvol",&infidvol,"infidvol/I");
   fTree->Branch("nvtx",&nvtx,"nvtx/S");
   fTree->Branch("vtx",vtx,"vtx[nvtx][3]/F");
@@ -802,6 +873,7 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("X_truth",&X_truth,"X_truth/F");
   fTree->Branch("Y_truth",&Y_truth,"Y_truth/F");
   fTree->Branch("hitnuc_truth",&hitnuc_truth,"hitnuc_truth/I");
+  fTree->Branch("target_truth",&target_truth,"target_truth/I");
   fTree->Branch("nuvtxx_truth",&nuvtxx_truth,"nuvtxx_truth/F");
   fTree->Branch("nuvtxy_truth",&nuvtxy_truth,"nuvtxy_truth/F");
   fTree->Branch("nuvtxz_truth",&nuvtxz_truth,"nuvtxz_truth/F");
@@ -840,6 +912,9 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("pdpy_flux",&pdpy_flux,"pdpy_flux/F");
   fTree->Branch("pdpz_flux",&pdpz_flux,"pdpz_flux/F");
   fTree->Branch("pntype_flux",&pntype_flux,"pntype_flux/I");
+  fTree->Branch("vx_flux",&vx_flux,"vx_flux/F");
+  fTree->Branch("vy_flux",&vy_flux,"vy_flux/F");
+  fTree->Branch("vz_flux",&vz_flux,"vz_flux/F");
 
   fPOT = tfs->make<TTree>("pottree","pot tree");
   fPOT->Branch("pot",&pot,"pot/D");
@@ -899,6 +974,18 @@ void dunefd::NueAna::ResetVars(){
     trkg4id[i] = -9999;
   }
 
+  flash_total = 0;
+  for (int f = 0; f < kMaxFlash; ++f) {
+    flash_time[f]    = -9999;
+    flash_width[f]   = -9999;
+    flash_abstime[f] = -9999;
+    flash_YCenter[f] = -9999;
+    flash_YWidth[f]  = -9999;
+    flash_ZCenter[f] = -9999;
+    flash_ZWidth[f]  = -9999;
+    flash_TotalPE[f] = -9999;
+  }
+
   nhits = 0;
   for (int i = 0; i<kMaxHits; ++i){
     hit_plane[i] = -9999;
@@ -906,12 +993,14 @@ void dunefd::NueAna::ResetVars(){
     hit_channel[i] = -9999;
     hit_peakT[i] = -9999;
     hit_charge[i] = -9999;
+    hit_summedADC[i] = -9999;
     hit_startT[i] = -9999;
     hit_endT[i] = -9999;
     hit_trkkey[i] = -9999;
     hit_dQds[i] = -9999;
     hit_dEds[i] = -9999;
     hit_resrange[i] = -9999;
+    hit_shwkey[i] = -9999;
   }
 
   infidvol = 0;
@@ -935,7 +1024,8 @@ void dunefd::NueAna::ResetVars(){
   W_truth = -9999;        
   X_truth = -9999;
   Y_truth = -9999;
-  hitnuc_truth = -9999;  
+  hitnuc_truth = -9999;
+  target_truth = -9999;
   nuvtxx_truth = -9999;   
   nuvtxy_truth = -9999;   
   nuvtxz_truth = -9999;   
@@ -976,6 +1066,9 @@ void dunefd::NueAna::ResetVars(){
   pdpy_flux = -99999;
   pdpz_flux = -99999;
   pntype_flux = -99999;
+  vx_flux = -99999;
+  vy_flux = -99999;
+  vz_flux = -99999;
 }
 
 void dunefd::NueAna::endJob()
@@ -993,7 +1086,8 @@ void dunefd::NueAna::reconfigure(fhicl::ParameterSet const & p)
   fGenieGenModuleLabel =   p.get< std::string >("GenieGenModuleLabel");
   fFidVolCut           =   p.get< double >("FidVolCut");
   fPOTModuleLabel      =   p.get< std::string >("POTModuleLabel"); 
-
+  fFlashModuleLabel    =   p.get< std::string >("FlashModuleLabel");
+  
   return;
 }
 

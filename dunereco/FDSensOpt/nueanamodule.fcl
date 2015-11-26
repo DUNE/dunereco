@@ -14,6 +14,7 @@ dunefd_nueana:
    GenieGenModuleLabel:     "generator"
    ShowerModuleLabel:       "emshower"
    POTModuleLabel:           "generator"
+   FlashModuleLabel:        "opflash"
    FidVolCut:	            3.0
    CalorimetryAlg:          @local::dune35t_calorimetryalgmc
 }
