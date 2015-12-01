@@ -68,6 +68,8 @@ private:
 	void ResetVars(void);
 
 	bool insideFidVol(TLorentzVector const & pvtx) const;
+	
+	float t0Corr(art::Event const & evt, TLorentzVector const & pvtx);
 
 	TVector2 getMCvtx2d(TVector3 const & mcvtx3d, 
 											const size_t cryo, const size_t tpc, const size_t plane) const;
@@ -98,8 +100,15 @@ private:
 	short isdata;
 	int trkindex;        // track index in the event
 
-	Float_t lep_dedx;  
+	Float_t lep_dedx; 
+	Float_t dx; 
 	Float_t lep_dist;
+	Float_t cos;
+	Float_t t0;
+	Float_t vtxrecomc;
+	Float_t vtxrecomcx;
+	Float_t vtxrecomcy;
+	Float_t vtxrecomcz;
 	int ngamma;
 	Float_t convdist;
 
@@ -135,7 +144,14 @@ void dunefd::IniSegReco::beginJob()
   	fTree->Branch("subrun",&subrun,"subrun/I");
   	fTree->Branch("event",&event,"event/I");
 	fTree->Branch("lep_dedx",&lep_dedx,"lep_dedx/F");
+	fTree->Branch("dx",&dx,"dx/F");
 	fTree->Branch("lep_dist",&lep_dist,"lep_dist/F");
+	fTree->Branch("cos", &cos, "cos/F");
+	fTree->Branch("t0", &t0, "t0/F");
+	fTree->Branch("vtxrecomc", &vtxrecomc, "vtxrecomc/F");
+	fTree->Branch("vtxrecomcx", &vtxrecomcx, "vtxrecomcx/F");
+	fTree->Branch("vtxrecomcy", &vtxrecomcy, "vtxrecomcy/F");
+	fTree->Branch("vtxrecomcz", &vtxrecomcz, "vtxrecomcz/F");
 	fTree->Branch("ngamma", &ngamma, "ngamma/I");
 	fTree->Branch("convdist", &convdist, "convdist/F");
 }
@@ -159,6 +175,13 @@ void dunefd::IniSegReco::ResetVars()
 	pmatracks.clear();
 	lep_dist = -9999; //cm
 	lep_dedx = -9999;
+	t0 = -9999;
+	dx = -9999;
+	cos = -9999;
+	vtxrecomc = -9999;
+	vtxrecomcx = -9999;
+	vtxrecomcy = -9999;
+	vtxrecomcz = -9999;
 	return;
 }
 
@@ -210,21 +233,11 @@ void dunefd::IniSegReco::produce(art::Event& evt)
 					TLorentzVector conversion = particle->EndPosition();
 					TVector3 convec(conversion.X(), conversion.Y(), conversion.Z());
 					convdist = std::sqrt(pma::Dist2(primary, convec));				
-
-					for (int i = 0; i < particle->NumberDaughters(); i++)
-					{		
-						std::cout << " pdg = " << bt->TrackIDToParticle(particle->Daughter(i))->PdgCode() << std::endl;
-						std::cout << " no of particles " << particle->NumberDaughters() << std::endl;
-					}
 				}
 			}
 			if (!photon) ngamma = -10;
-
-			std::cout << " ****** end ****** " << std::endl;
 		}
 	}
-
-	// UseClusters(evt);
 
 	UseTracks(evt);
 
@@ -325,26 +338,25 @@ void dunefd::IniSegReco::UseClusters(art::Event const & evt)
 
 void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 {
-	std::cout << " UseTracks " << std::endl;
-
 	if (!isdata)
 	{
+		// * hits
+		art::Handle< std::vector<recob::Hit> > hitListHandle;
+  		std::vector<art::Ptr<recob::Hit> > hitlist;
+ 		if (evt.getByLabel(fHitsModuleLabel,hitListHandle))
+    			art::fill_ptr_vector(hitlist, hitListHandle);
+
 		// * tracks
 		art::Handle< std::vector<recob::Track> > trackListHandle;
   		std::vector<art::Ptr<recob::Track> > tracklist;
-
   		if (evt.getByLabel(fTrackModuleLabel,trackListHandle))
     			art::fill_ptr_vector(tracklist, trackListHandle); 
-
-		std::cout << " *** tracklist size *** " << tracklist.size() << std::endl;
 
 		// * monte carlo
     		art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
     		std::vector<art::Ptr<simb::MCTruth> > mclist;
     		if (evt.getByLabel(fGenieGenModuleLabel,mctruthListHandle))
       		art::fill_ptr_vector(mclist, mctruthListHandle);
-
-		std::cout << " mclist size: " << mclist.size() << std::endl;
 
 		if (mclist.size())
 		{
@@ -353,60 +365,64 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 			const simb::MCParticle& particle = mctruth->GetNeutrino().Nu();
 			const TLorentzVector& pvtx = particle.Position();
 			TVector3 primary(pvtx.X(), pvtx.Y(), pvtx.Z());
-
-			std::cout << " insideFidVol = " << insideFidVol(pvtx) << std::endl;
 	
 			if (insideFidVol(pvtx) && (abs(mctruth->GetNeutrino().Lepton().PdgCode()) == 11) && tracklist.size()) 
-			{
+			{	
 				// mc
 				TVector3 mcvtx3d(pvtx.X(), pvtx.Y(), pvtx.Z());
 				TVector3 mcdir3d = findElDir(mctruth);
-				std::cout << " mcdir3d " << mcdir3d.X() << ", " << mcdir3d.Y() << ", " << mcdir3d.Z() << std::endl;
 
-				// reco: find the best clusters to proceed with segment reconstruction
+				// reco
 				IniSegAlg recoini(tracklist, mcvtx3d); 
-				recoini.FeedwithMc(mcdir3d); // mcvtx3d == primary
-			
+				recoini.FeedwithMc(mcdir3d); // mcvtx3d == primary	
+
 				if (recoini.IsFound())
 				{
 					lep_dedx = 0.0; lep_dist = 0.0;
 					art::Ptr<recob::Track> recotrack = recoini.GetTrk(); 
 					if (!recotrack->NumberTrajectoryPoints()) return;
-				
+
+					art::FindManyP< recob::Hit > fb(trackListHandle, evt, fTrackModuleLabel);
+					std::vector< art::Ptr<recob::Hit> > recoinihit = fb.at(recotrack.key());
+					
 					// use recob::Track functionality as much as possible
 					const double setlength = 2.5; double length = 0.0; // cm
-					double leng = 0.0;			
+							
 					TVector3 pos_p = recotrack->LocationAtPoint(0);
-
-					// if (std::sqrt(pma::Dist2(pos_p, primary)) > 10.0) return;
-
-					double disttemp = std::sqrt(pma::Dist2(pos_p, primary));
-					std::cout << " disttemp " << disttemp << std::endl;
+					
+					float px = pos_p.X();
+					if (px > 0) px -= t0Corr(evt, pvtx);
+					else px += t0Corr(evt, pvtx);
+					pos_p.SetX(px);
+					
+					vtxrecomc = std::sqrt(pma::Dist2(primary, pos_p));
+					vtxrecomcx = primary.X() - pos_p.X();
+					vtxrecomcy = primary.Y() - pos_p.Y();
+					vtxrecomcz = primary.Z() - pos_p.Z();
 
 					lep_dist = std::sqrt(pma::Dist2(primary, pos_p));	
-					lep_dedx = recotrack->DQdxAtPoint(0, geo::kZ);
+					cos = recoini.GetCos();
 
-					// double dqdx = 0.0;
+					size_t fp = 0; bool hitcoll = false;
+					for (size_t p = 0; p < recotrack->NumberTrajectoryPoints(); ++p)
+						if (recotrack->DQdxAtPoint(p, geo::kZ) > 0) {pos_p = recotrack->LocationAtPoint(p); fp = p; hitcoll = true; break;}
+					
 					// loop over trajectory point to get dQdx.
-					for (size_t p = 1; p < recotrack->NumberTrajectoryPoints(); ++p)
-					{
-						TVector3 pos = recotrack->LocationAtPoint(p);
-						length += std::sqrt(pma::Dist2(pos_p, pos));
-						pos_p = recotrack->LocationAtPoint(p);
-
-						if (length > setlength) break;
-									
-						double dqdx_p = recotrack->DQdxAtPoint(p, geo::kZ);
-						if (dqdx_p > 0)
+					if (hitcoll)
+						for (size_t p = (fp+1); p < recotrack->NumberTrajectoryPoints(); ++p)
 						{
-							lep_dedx += dqdx_p;
-							leng = length;
+							TVector3 pos = recotrack->LocationAtPoint(p);
+							length += std::sqrt(pma::Dist2(pos_p, pos));
+							pos_p = recotrack->LocationAtPoint(p);
+
+							if (length > setlength) break;
+							dx = length;	
+							double dqdx_p = recotrack->DQdxAtPoint(p, geo::kZ);
+							if (dqdx_p > 0) lep_dedx += recoinihit[p]->SummedADC();
 						}
 
-					}
-
-					std::cout << " lep_dist " << lep_dist << " lep_dedx " << lep_dedx << std::endl;
-					std::cout << " leng = " << leng << std::endl;
+					
+					if (dx > 0.0) lep_dedx /= dx;
 				}
 				
 			}
@@ -429,7 +445,7 @@ void dunefd::IniSegReco::collectCls(art::Event const & evt, art::Ptr<simb::MCTru
    		art::fill_ptr_vector(clusterlist, clusterListHandle);
 		art::FindManyP< recob::Hit > hc(clusterListHandle, evt, fClusterModuleLabel);		
 
-		for (size_t c = 0; c < geom->Ncryostats(); ++c) // iter...
+		for (size_t c = 0; c < geom->Ncryostats(); ++c) 
 		{
 			const geo::CryostatGeo& cryo = geom->Cryostat(c);
 			for (size_t t = 0; t < cryo.NTPC(); ++t)
@@ -538,7 +554,7 @@ void dunefd::IniSegReco::make3dseg(art::Event const & evt,
 /***********************************************************************/
 
 TVector2 dunefd::IniSegReco::getMCdir2d(TVector3 const & mcvtx3d, TVector3 const & mcdir3d, 
-																				const size_t cryo, const size_t tpc, const size_t plane) const
+							const size_t cryo, const size_t tpc, const size_t plane) const
 {
 	TVector3 shift3d = mcvtx3d + mcdir3d;
 	TVector2 shift2d = pma::GetProjectionToPlane(shift3d, plane, tpc, cryo) - getMCvtx2d(mcvtx3d, cryo, tpc, plane);
@@ -602,6 +618,42 @@ std::vector< TVector3 > dunefd::IniSegReco::findDirs(art::Ptr<simb::MCTruth> con
 
 /***********************************************************************/
 
+float dunefd::IniSegReco::t0Corr(art::Event const & evt, TLorentzVector const & pvtx) 
+{
+	float corrt0x = 0.0F;
+
+	art::ServiceHandle<geo::Geometry> geom;
+	art::ServiceHandle<util::DetectorProperties> detprop;
+	art::ServiceHandle<util::LArProperties> larprop;
+
+	// * MC truth information
+	art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
+    	std::vector<art::Ptr<simb::MCTruth> > mclist;
+    	if (evt.getByLabel(fGenieGenModuleLabel,mctruthListHandle))
+      	art::fill_ptr_vector(mclist, mctruthListHandle);
+
+	double vtx[3] = {pvtx.X(), pvtx.Y(), pvtx.Z()};
+
+	geo::TPCID idtpc = geom->FindTPCAtPosition(vtx);
+
+	if (geom->HasTPC(idtpc))
+		if (mclist.size())
+		{
+			art::Ptr<simb::MCTruth> mctruth = mclist[0];
+			if (mctruth->NParticles())
+			{
+				simb::MCParticle particle = mctruth->GetParticle(0);
+				t0 = particle.T(); // ns
+				corrt0x = t0 * 1.e-3 * larprop->DriftVelocity();
+     	 	}
+		}
+	
+
+	return corrt0x;
+}
+
+/***********************************************************************/
+
 bool dunefd::IniSegReco::insideFidVol(TLorentzVector const & pvtx) const
 {
 	art::ServiceHandle<geo::Geometry> geom;
@@ -632,19 +684,13 @@ bool dunefd::IniSegReco::insideFidVol(TLorentzVector const & pvtx) const
 			}
 		}	
 
-		std::cout << " pvtx x " << pvtx.X() << " pvtx y " << pvtx.Y() << " pvtx z " << pvtx.Z() << std::endl;
-		std::cout << " minx " << minx << " maxx " << maxx << std::endl;
-		std::cout << " miny " << miny << " maxy " << maxy << std::endl;
-		std::cout << " minz " << minz << " maxz " << maxz << std::endl;
 		//x
 		double dista = fabs(minx - pvtx.X());
 		double distb = fabs(pvtx.X() - maxx); 
-		std::cout << " X dista = " << dista << " distb = " << distb << std::endl;
+;
 		if ((pvtx.X() > minx) && (pvtx.X() < maxx) &&
 		 	(dista > fFidVolCut) && (distb > fFidVolCut))
 		{ 
-			std::cout << " dista " << dista << " fFidVolCut = " << fFidVolCut << std::endl;
-			std::cout << " distb " << distb << std::endl;
 			inside = true;
 		}
 		else { inside = false; }

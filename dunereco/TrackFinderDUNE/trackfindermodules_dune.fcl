@@ -67,8 +67,10 @@ dunefd_cosmictracker.TrajOnly:           false
 dunefd_pmalgtrackmaker:                     @local::standard_pmalgtrackmaker
 dunefd_pmalgtrackmaker.HitModuleLabel:      "linecluster"
 dunefd_pmalgtrackmaker.ClusterModuleLabel:  "linecluster"
+dunefd_pmalgtrackmaker.FlipToBeam:          true
+dunefd_pmalgtrackmaker.AutoFlip_dQdx:       false
+dunefd_pmalgtrackmaker.RunVertexing:        true
 dunefd_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightZ: 1.0
 dunefd_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightV: 1.0
 dunefd_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightU: 1.0
-
 END_PROLOG

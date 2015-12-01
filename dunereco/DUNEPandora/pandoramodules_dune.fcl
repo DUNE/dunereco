@@ -40,4 +40,19 @@ dune4apa_pandora:
   BuildTracks:           true
 }
 
+protodune_pandora:
+{
+  module_type:           "ProtoDUNEPandora"
+  ConfigFile:            "PandoraSettings_ProtoDUNE_Neutrino.xml"
+  GeantModuleLabel:      "largeant"
+  HitFinderModuleLabel:  "hitcheat"
+  EnableMCParticles:     false
+  EnableProduction:      true
+  EnableMonitoring:      false
+  UseHitWidths:          false
+  UseLeftVolume:         true
+  UseRightVolume:        true
+  BuildTracks:           true
+}
+
 END_PROLOG

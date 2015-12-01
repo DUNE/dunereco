@@ -28,21 +28,22 @@ dunefd::IniSegAlg::IniSegAlg(std::map<size_t, std::vector<dunefd::Hit2D> > clust
 fClusters(clusters),
 fRadius(10.0),
 fDistVtxCl(0.0F),
-fThrcos(0.9)
+fThrcos(0.9),
+fCos(0.0F)
 {
 }
 
 dunefd::IniSegAlg::IniSegAlg(std::vector< art::Ptr<recob::Track> > const & tracks, TVector3 const & mcvtx) :
 fRadius(10.0),
 fDistVtxCl(0.0F),
-fThrcos(0.9)
+fThrcos(0.9),
+fCos(-9999.0F)
 {
 	fSelTrks = tracks;
 	fMcVtx3d = mcvtx;
 	fFound = false;
 }
 
-// void dunefd::IniSegAlg::FeedwithMc(TVector2 const & vtx, TVector2 const & dir)
 void dunefd::IniSegAlg::FeedwithMc(TVector2 const & vtx, TVector2 const & dir, TVector3 const & dir3d)
 {
 	fMcVtx = vtx;
@@ -55,7 +56,6 @@ void dunefd::IniSegAlg::FeedwithMc(TVector2 const & vtx, TVector2 const & dir, T
 
 void dunefd::IniSegAlg::FeedwithMc(TVector3 const & dir3d)
 {
-	std::cout << " FeedwithMc " << std::endl;
 	fDir3d = dir3d;
 	Find3dTrack();
 }
@@ -117,16 +117,14 @@ void dunefd::IniSegAlg::FindCluster()
 	fSelCls = chosen;
 }
 
-// returns index of recob::track
-// cosine for output.
 void dunefd::IniSegAlg::Find3dTrack()
 {
 	double larStart[3] = {0.0, 0.0, 0.0};
   	double larEnd[3] = {0.0, 0.0, 0.0};
 
 	double maxcos = 0.0; 
-	double mindist = 9999.0; // cm
-	std::cout << " ***************************** " << std::endl;
+	const double thrdist = 10; // cm
+
 	for (auto& trk: fSelTrks)
 	{
 		trk->Direction(larStart,larEnd); // correct, check both directions
@@ -141,19 +139,15 @@ void dunefd::IniSegAlg::Find3dTrack()
 		if (dist > std::sqrt(pma::Dist2(pos_end, fMcVtx3d))) continue;
 
 		double cos = fDir3d * dir;
-		// if ((cos > maxcos) && (cos > fThrcos))
-		if ((dist < mindist) && (cos > fThrcos))
-		{
-			std::cout << " dist = " << dist << std::endl;	
-			
+		
+		if ((cos > maxcos) && (dist < thrdist))
+		{		
 			maxcos = cos;
-			std::cout << " maxcos " << maxcos << std::endl;
-			mindist = dist;
 			fTrk = trk;
+			fCos = cos;
 			fFound = true;
 		}
 	}
-	std::cout << " ***************************** " << std::endl;
 }
 
 
