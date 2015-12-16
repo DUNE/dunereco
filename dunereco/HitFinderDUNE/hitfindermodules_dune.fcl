@@ -87,10 +87,8 @@ dune35t_fasthitfinder.MinSigCol: 5.0
 
 dune35t_clustercrawlerhit: @local::standard_clustercrawlerhit
 dune35t_clustercrawlerhit.CCHitFinderAlg.ChiNorms:           [ 0.31, 0.62, 0.6 ]
-dune35t_clustercrawlerhit.CCHitFinderAlg.MinSigCol:          3.
-dune35t_clustercrawlerhit.CCHitFinderAlg.MinRMSCol:          2.1
-dune35t_clustercrawlerhit.CCHitFinderAlg.MinSigInd:          3.
-dune35t_clustercrawlerhit.CCHitFinderAlg.MinRMSInd:          2.3
+dune35t_clustercrawlerhit.CCHitFinderAlg.MinPeak:            [ 3., 3., 3. ]
+dune35t_clustercrawlerhit.CCHitFinderAlg.MinRMS:             [ 2.3, 2.3, 2.1 ]
 dune35t_clustercrawlerhit.CCHitFinderAlg.AllowNoHitWire:     2
 
 dunefd_disambigcheat:     @local::standard_disambigcheat
