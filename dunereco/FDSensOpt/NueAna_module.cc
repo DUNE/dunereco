@@ -25,7 +25,7 @@
 #include "RecoBase/Cluster.h"
 #include "RecoBase/Vertex.h"
 #include "RecoBase/SpacePoint.h"
-#include "Utilities/DetectorPropertiesService.h"
+#include "DetectorInfoServices/DetectorPropertiesService.h"
 #include "Utilities/AssociationUtil.h"
 #include "MCCheater/BackTracker.h"
 #include "SimulationBase/MCTruth.h"
@@ -173,7 +173,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   // Implementation of required member function here.
   ResetVars();
   art::ServiceHandle<geo::Geometry> geom;
-  auto const *detprop = lar::providerFrom<util::DetectorPropertiesService>();
+  auto const *detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
   art::ServiceHandle<cheat::BackTracker> bt;
 
   run = evt.run();

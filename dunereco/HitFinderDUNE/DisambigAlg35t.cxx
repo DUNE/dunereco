@@ -21,7 +21,7 @@
 #include "art/Framework/Services/Optional/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "Utilities/DetectorPropertiesService.h"
+#include "DetectorInfoServices/DetectorPropertiesService.h"
 #include "Utilities/AssociationUtil.h"
 #include "RecoBase/Hit.h"
 #include "RecoBase/Wire.h"
@@ -68,7 +68,7 @@ void DisambigAlg35t::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &Ori
 {
   fDisambigHits.clear();
 
-  auto const* detprop = lar::providerFrom<util::DetectorPropertiesService>();
+  auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
   art::ServiceHandle<geo::Geometry> geo;
 
   std::vector<std::vector<art::Ptr<recob::Hit> > > hitsUV(2);
