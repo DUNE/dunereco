@@ -620,8 +620,8 @@ float dunefd::IniSegReco::t0Corr(art::Event const & evt, TLorentzVector const & 
 	float corrt0x = 0.0F;
 
 	art::ServiceHandle<geo::Geometry> geom;
-	art::ServiceHandle<util::DetectorProperties> detprop;
-	art::ServiceHandle<util::LArProperties> larprop;
+	auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
+	auto const* larprop = lar::providerFrom<detinfo::LArPropertiesService>();
 
 	// * MC truth information
 	art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
