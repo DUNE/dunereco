@@ -4,8 +4,7 @@ art_make( BASENAME_ONLY
 	  		   RecoBase
                            Geometry
                            Geometry_service
-                           LArProperties_service
-                           DetectorProperties_service
+                           DetectorPropertiesServiceStandard_service
                            Utilities
 			   Simulation
 			   BackTracker_service

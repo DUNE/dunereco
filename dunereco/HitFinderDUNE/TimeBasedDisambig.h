@@ -22,7 +22,6 @@
 #include "art/Framework/Principal/Event.h"
 
 #include "Geometry/Geometry.h"
-#include "Utilities/DetectorProperties.h"
 #include "SimpleTypesAndConstants/geo_types.h"
 #include "RecoBase/Wire.h"
 #include "RecoBase/Hit.h"

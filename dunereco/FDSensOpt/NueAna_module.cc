@@ -28,10 +28,8 @@
 #include "RecoBase/TrackHitMeta.h"
 #include "RecoBase/Shower.h"
 #include "RecoBase/OpFlash.h"
-#include "Utilities/LArProperties.h"
-#include "Utilities/DetectorProperties.h"
+#include "DetectorInfoServices/DetectorPropertiesService.h"
 #include "Utilities/AssociationUtil.h"
-#include "Utilities/TimeService.h"
 #include "MCCheater/BackTracker.h"
 #include "SimulationBase/MCTruth.h"
 #include "RecoAlg/PMAlg/Utilities.h"
@@ -291,10 +289,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   // Implementation of required member function here.
   ResetVars();
   art::ServiceHandle<geo::Geometry> geom;
-  art::ServiceHandle<util::LArProperties> larprop;
-  art::ServiceHandle<util::DetectorProperties> detprop;
-  art::ServiceHandle<util::TimeService> timeservice;
-  //fClock = timeservice->TPCClock();
+  auto const *detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
   art::ServiceHandle<cheat::BackTracker> bt;
   const sim::ParticleList& plist = bt->ParticleList();
 
@@ -304,7 +299,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   art::Timestamp ts = evt.time();
   TTimeStamp tts(ts.timeHigh(), ts.timeLow());
   evttime = tts.AsDouble();
-  taulife = larprop->ElectronLifetime();
+  taulife = detprop->ElectronLifetime();
   isdata = evt.isRealData();
 
   // * hits
