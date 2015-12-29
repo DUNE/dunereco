@@ -30,6 +30,7 @@
 #include "RecoAlg/PMAlg/PmaTrack3D.h"
 #include "RecoAlg/PMAlg/Utilities.h"
 #include "IniSegAlg/IniSegAlg.h"
+#include "DetectorInfoServices/DetectorPropertiesService.h"
 
 // ROOT includes
 #include "TTree.h"
@@ -621,7 +622,6 @@ float dunefd::IniSegReco::t0Corr(art::Event const & evt, TLorentzVector const & 
 
 	art::ServiceHandle<geo::Geometry> geom;
 	auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
-	auto const* larprop = lar::providerFrom<detinfo::LArPropertiesService>();
 
 	// * MC truth information
 	art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
@@ -641,7 +641,7 @@ float dunefd::IniSegReco::t0Corr(art::Event const & evt, TLorentzVector const & 
 			{
 				simb::MCParticle particle = mctruth->GetParticle(0);
 				t0 = particle.T(); // ns
-				corrt0x = t0 * 1.e-3 * larprop->DriftVelocity();
+				corrt0x = t0 * 1.e-3 * detprop->DriftVelocity();
      	 	}
 		}
 	
