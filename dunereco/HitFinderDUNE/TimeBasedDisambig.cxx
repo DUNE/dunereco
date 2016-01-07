@@ -20,16 +20,16 @@
 #include "art/Framework/Services/Optional/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "Utilities/AssociationUtil.h"
-#include "RecoBase/Hit.h"
-#include "RecoBase/Wire.h"
-#include "Geometry/CryostatGeo.h"
-#include "Geometry/TPCGeo.h"
-#include "Geometry/PlaneGeo.h"
-#include "Geometry/WireGeo.h"
+#include "lardata/Utilities/AssociationUtil.h"
+#include "lardata/RecoBase/Hit.h"
+#include "lardata/RecoBase/Wire.h"
+#include "larcore/Geometry/CryostatGeo.h"
+#include "larcore/Geometry/TPCGeo.h"
+#include "larcore/Geometry/PlaneGeo.h"
+#include "larcore/Geometry/WireGeo.h"
 #include "TimeBasedDisambig.h"
 //#include "MCCheater/BackTracker.h"
-#include "Filters/ChannelFilter.h"
+#include "larevt/Filters/ChannelFilter.h"
 
 #include <map>
 #include <cmath>

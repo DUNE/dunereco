@@ -10,7 +10,7 @@ art_make( BASENAME_ONLY
           LIBRARY_NAME  DUNEPandora
           LIB_LIBRARIES LArPandoraInterface
                         Geometry
-                        Geometry_service
+                        larcore_Geometry_Geometry_service
                         Simulation
 			${LARCONTENT}
                         ${PANDORASDK}

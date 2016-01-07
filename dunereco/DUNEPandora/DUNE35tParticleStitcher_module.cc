@@ -9,7 +9,7 @@
 #include "art/Framework/Core/ModuleMacros.h"
 
 // Local includes
-#include "LArPandoraInterface/PFParticleStitcher.h"
+#include "larpandora/LArPandoraInterface/PFParticleStitcher.h"
 
 #include "cetlib/exception.h"
 

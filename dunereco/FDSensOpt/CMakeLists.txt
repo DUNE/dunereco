@@ -8,11 +8,11 @@ simple_plugin(NueAna   "module"
 		        PMAlg
 		        IniSegAlg
 		        Geometry
-			Geometry_service
+			larcore_Geometry_Geometry_service
 			Utilities
 			Simulation
-			BackTracker_service
-			DetectorPropertiesServiceStandard_service
+			larsim_MCCheater_BackTracker_service
+			lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
 			${SIMULATIONBASE}
                         ${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}
@@ -36,7 +36,7 @@ simple_plugin(IniSegReco "module"
 		      PMAlg
 		      IniSegAlg
 		      Geometry
-		      Geometry_service
+		      larcore_Geometry_Geometry_service
 		      Utilities
 		      Simulation
 		      ${SIMULATIONBASE}

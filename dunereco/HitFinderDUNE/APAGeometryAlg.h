@@ -14,10 +14,10 @@
 #include "art/Persistency/Common/Ptr.h"
 #include "art/Persistency/Common/PtrVector.h"
 
-#include "Geometry/Geometry.h"
-#include "SimpleTypesAndConstants/geo_types.h"
-#include "RecoBase/Wire.h"
-#include "RecoBase/Hit.h"
+#include "larcore/Geometry/Geometry.h"
+#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "lardata/RecoBase/Wire.h"
+#include "lardata/RecoBase/Hit.h"
 
 #include "TMatrixD.h"
 #include "TVectorD.h"

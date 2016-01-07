@@ -6,10 +6,10 @@ art_make( BASENAME_ONLY
 			   PMAlg
 			   Filters
                            Geometry
-                           Geometry_service
+                           larcore_Geometry_Geometry_service
                            RecoObjects
-                           DetectorPropertiesServiceStandard_service
-			   BackTracker_service
+                           lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
+			   larsim_MCCheater_BackTracker_service
                            Utilities
 			   ${SIMULATIONBASE}
                            ${ART_FRAMEWORK_CORE}
@@ -33,10 +33,10 @@ art_make( BASENAME_ONLY
                            RecoBase
                            RecoBaseArt
                            Geometry
-                           Geometry_service
-                           LArPropertiesServiceStandard_service
-                           DetectorPropertiesServiceStandard_service
-			   BackTracker_service
+                           larcore_Geometry_Geometry_service
+                           lardata_DetectorInfoServices_LArPropertiesServiceStandard_service
+                           lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
+			   larsim_MCCheater_BackTracker_service
                            Utilities
 			   ${SIMULATIONBASE}
  			   ${ART_FRAMEWORK_CORE}

@@ -9,7 +9,7 @@
 #include "art/Framework/Core/ModuleMacros.h"
 
 // Local includes
-#include "LArPandoraInterface/LArPandoraParticleCreator.h"
+#include "larpandora/LArPandoraInterface/LArPandoraParticleCreator.h"
 
 // std includes
 #include <string>
@@ -55,7 +55,7 @@ DEFINE_ART_MODULE(ProtoDUNEPandora)
 // implementation follows
 
 // LArSoft includes
-#include "Geometry/Geometry.h"
+#include "larcore/Geometry/Geometry.h"
 
 // Local includes (LArContent) 
 #include "LArContent.h"

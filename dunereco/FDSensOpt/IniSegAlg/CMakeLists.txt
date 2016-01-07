@@ -2,10 +2,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 art_make( BASENAME_ONLY
           LIBRARY_NAME  IniSegAlg
-          LIB_LIBRARIES DetectorPropertiesServiceStandard_service
-                        LArPropertiesServiceStandard_service
+          LIB_LIBRARIES lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
+                        lardata_DetectorInfoServices_LArPropertiesServiceStandard_service
                         Geometry
-                        Geometry_service
+                        larcore_Geometry_Geometry_service
                         Simulation
                         RawData
                         RecoBase

@@ -7,8 +7,8 @@
 
 #include "dune/DUNEPandora/ProtoDUNEGeometryHelper.h"
 
-#include "Geometry/TPCGeo.h"
-#include "Geometry/Geometry.h"
+#include "larcore/Geometry/TPCGeo.h"
+#include "larcore/Geometry/Geometry.h"
 
 #include "cetlib/exception.h"
 

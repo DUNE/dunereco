@@ -9,10 +9,10 @@
 #ifndef IniSegAlg_h
 #define IniSegAlg_h
 
-#include "RecoAlg/ProjectionMatchingAlg.h"
-#include "RecoAlg/PMAlg/PmaTrack3D.h"
-#include "RecoAlg/PMAlg/Utilities.h"
-#include "RecoBase/Track.h"
+#include "larreco/RecoAlg/ProjectionMatchingAlg.h"
+#include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
+#include "larreco/RecoAlg/PMAlg/Utilities.h"
+#include "lardata/RecoBase/Track.h"
 
 namespace fhicl {
 	class ParameterSet;
