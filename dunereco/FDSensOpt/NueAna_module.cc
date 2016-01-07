@@ -28,6 +28,7 @@
 #include "RecoBase/TrackHitMeta.h"
 #include "RecoBase/Shower.h"
 #include "RecoBase/OpFlash.h"
+#include "AnalysisBase/Calorimetry.h"
 #include "Utilities/LArProperties.h"
 #include "Utilities/DetectorProperties.h"
 #include "Utilities/AssociationUtil.h"
@@ -49,11 +50,11 @@
 
 constexpr int kMaxTrack      = 1000;  //maximum number of tracks
 constexpr int kMaxShower     = 1000;  //maximum number of showers
-constexpr int kMaxHits       = 25000; //maximum number of hits;
+constexpr int kMaxHits       = 40000; //maximum number of hits;
 constexpr int kMaxVertices   = 100;    //max number of 3D vertices
 constexpr int kMaxPrimaries  = 20000;  //maximum number of primary particles
 constexpr int kMaxFlash      = 1000;  //maximum number of flashes
-
+//constexpr int kMaxTrackHits  = 1000;  //maximum number of track trajectory points
 namespace dunefd {
 	class Hit2D;
   class NueAna;
@@ -120,6 +121,10 @@ private:
   float trkenddcosy[kMaxTrack];
   float trkenddcosz[kMaxTrack];
   float trklen[kMaxTrack];            //track length (cm)
+  float trkke[kMaxTrack][3];          //track kinetic energy (in 3 planes)
+  float trkpida[kMaxTrack][3];        //track PIDA (in 3 planes)
+  int   trkbestplane[kMaxTrack];      //best plane for trkke and trkpida
+
   //geant information for the track
   int   trkg4id[kMaxTrack];           //geant track id for the track
   int   trkg4pdg[kMaxTrack];          //pdg of geant particle
@@ -129,9 +134,11 @@ private:
   float trkg4initdedx[kMaxTrack];     //initial dE/dx of the track using true energy (MeV/cm)
 
   int nhits;
+  int nhits_stored;
   Short_t  hit_plane[kMaxHits];      //plane number
   Short_t  hit_wire[kMaxHits];       //wire number
-  Int_t  hit_channel[kMaxHits];      //channel ID
+  Int_t    hit_channel[kMaxHits];    //channel ID
+  Short_t  hit_tpc[kMaxHits];        //tpc
   Float_t  hit_peakT[kMaxHits];      //peak time
   Float_t  hit_charge[kMaxHits];     //charge (area)
   Float_t  hit_summedADC[kMaxHits];  //summed ADC
@@ -247,6 +254,7 @@ private:
   std::string fGenieGenModuleLabel;
   std::string fPOTModuleLabel;
   std::string fFlashModuleLabel;
+  std::string fCalorimetryModuleLabel;
 
   double fFidVolCut;
 
@@ -342,13 +350,16 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   art::FindManyP<recob::Hit, recob::TrackHitMeta> fmthm(trackListHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::SpacePoint> fmhs(hitListHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::Hit> fmsh(shwListHandle, evt, fShowerModuleLabel);
+  art::FindMany<anab::Calorimetry>  fmcal(trackListHandle, evt, fCalorimetryModuleLabel);
 
   //hit information
   nhits = hitlist.size();
+  nhits_stored = std::min(nhits, kMaxHits);
   for (int i = 0; i < nhits && i < kMaxHits ; ++i){//loop over hits
     hit_channel[i] = hitlist[i]->Channel();
     hit_plane[i]   = hitlist[i]->WireID().Plane;
     hit_wire[i]    = hitlist[i]->WireID().Wire;
+    hit_tpc[i]     = hitlist[i]->WireID().TPC;
     hit_peakT[i]   = hitlist[i]->PeakTime();
     hit_charge[i]  = hitlist[i]->Integral();
     hit_summedADC[i] = hitlist[i]->SummedADC();
@@ -399,7 +410,37 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	}
       }//loop over all hits
     }//fmthm is valid
-      
+    else if (fmth.isValid()){
+      std::vector< art::Ptr<recob::Hit> > vhit = fmth.at(i);
+      for (size_t h = 0; h < vhit.size(); ++h){
+	if (vhit[h].key()<kMaxHits){
+	  hit_trkkey[vhit[h].key()] = tracklist[i].key();
+	}
+      }
+    }
+    if (fmcal.isValid()){
+      unsigned maxnumhits = 0;
+      std::vector<const anab::Calorimetry*> calos = fmcal.at(i);
+      for (auto const& calo : calos){
+	if (calo->PlaneID().isValid){
+	  trkke[i][calo->PlaneID().Plane] = calo->KineticEnergy();
+	  if (calo->dEdx().size()>maxnumhits){
+	    maxnumhits = calo->dEdx().size();
+	    trkbestplane[i] = calo->PlaneID().Plane;
+	  }
+	  double pida = 0;
+	  int used_trkres = 0;
+	  for (size_t ip = 0; ip<calo->dEdx().size(); ++ip){
+	    if (calo->ResidualRange()[ip]<30){
+	      pida += calo->dEdx()[ip]*pow(calo->ResidualRange()[ip],0.42);
+	      ++used_trkres;
+	    }
+	  }
+	  if (used_trkres) pida/=used_trkres;
+	  trkpida[i][calo->PlaneID().Plane] = pida;
+	}
+      }
+    }
     if (!isdata&&fmth.isValid()){
       // Find true track for each reconstructed track
       int TrackID = 0;
@@ -432,7 +473,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	trkg4starty[i] = particle->Vy();
 	trkg4startz[i] = particle->Vz();
 	float sum_energy = 0;
-	int nhits = 0;
+	int numhits = 0;
 	//std::map<float,float> hite;
 	double x = 0;
 	double y = 0;
@@ -472,7 +513,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 		}
 		if (toten){
 		  sum_energy += toten;
-		  ++nhits;
+		  ++numhits;
 		}
 	      }
 	    }
@@ -502,8 +543,8 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	    pitch = 0;
 	  }
 	}
-	if (pitch*nhits){
-	  trkg4initdedx[i] = sum_energy/(nhits*pitch);
+	if (pitch*numhits){
+	  trkg4initdedx[i] = sum_energy/(numhits*pitch);
 	}
 	else{
 	  trkg4initdedx[i] = 0;
@@ -767,13 +808,13 @@ void dunefd::NueAna::analyze(art::Event const & evt)
       EndPointz[i]=geant_part[i]->EndPosition()[2];
 
       // ### Saving the processes for this particle ###
-      std::cout<<"finding proc"<<std::endl;
+      //std::cout<<"finding proc"<<std::endl;
       G4Process.push_back( geant_part[i]->Process() );
       G4FinalProcess.push_back( geant_part[i]->EndProcess() );
-      std::cout<<"found proc"<<std::endl;
-      std::cout << "ID " << TrackId[i] << ", pdg " << pdg[i] << ", Start X,Y,Z " << StartPointx[i] << ", " << StartPointy[i] << ", " << StartPointz[i]
-		<< ", End XYZ " << EndPointx[i] << ", " << EndPointy[i] << ", " << EndPointz[i] << ", Start Proc " << G4Process[i] << ", End Proc " << G4FinalProcess[i]
-		<< std::endl;
+      //std::cout<<"found proc"<<std::endl;
+//      std::cout << "ID " << TrackId[i] << ", pdg " << pdg[i] << ", Start X,Y,Z " << StartPointx[i] << ", " << StartPointy[i] << ", " << StartPointz[i]
+//		<< ", End XYZ " << EndPointx[i] << ", " << EndPointy[i] << ", " << EndPointz[i] << ", Start Proc " << G4Process[i] << ", End Proc " << G4FinalProcess[i]
+//		<< std::endl;
 
       // ### Saving the Start direction cosines for this particle ###
       Startdcosx[i] = geant_part[i]->Momentum(0).Px() / geant_part[i]->Momentum(0).P();
@@ -815,6 +856,9 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("trkenddcosy",trkenddcosy,"trkenddcosy[ntracks_reco]/F");
   fTree->Branch("trkenddcosz",trkenddcosz,"trkenddcosz[ntracks_reco]/F");
   fTree->Branch("trklen",trklen,"trklen[ntracks_reco]/F");
+  fTree->Branch("trkbestplane",trkbestplane,"trkbestplane[ntracks_reco]/I");
+  fTree->Branch("trkke",trkke,"trkke[ntracks_reco][3]/F");
+  fTree->Branch("trkpida",trkpida,"trkpida[ntracks_reco][3]/F");
   fTree->Branch("trkg4id",trkg4id,"trkg4id[ntracks_reco]/I");
   fTree->Branch("trkg4pdg",trkg4pdg,"trkg4pdg[ntracks_reco]/I");
   fTree->Branch("trkg4startx",trkg4startx,"trkg4startx[ntracks_reco]/F");
@@ -843,19 +887,21 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("flash_ZWidth" ,flash_ZWidth ,"flash_ZWidth[flash_total]/F");
   fTree->Branch("flash_TotalPE",flash_TotalPE,"flash_TotalPE[flash_total]/F");
   fTree->Branch("nhits",&nhits,"nhits/I");
-  fTree->Branch("hit_plane",hit_plane,"hit_plane[nhits]/S");
-  fTree->Branch("hit_wire",hit_wire,"hit_wire[nhits]/S");
-  fTree->Branch("hit_channel",hit_channel,"hit_channel[nhits]/I");
-  fTree->Branch("hit_peakT",hit_peakT,"hit_peakT[nhits]/F");
-  fTree->Branch("hit_charge",hit_charge,"hit_charge[nhits]/F");
-  fTree->Branch("hit_summedADC",hit_summedADC,"hit_summedADC[nhits]/F");
-  fTree->Branch("hit_startT",hit_startT,"hit_startT[nhits]/F");
-  fTree->Branch("hit_endT",hit_endT,"hit_endT[nhits]/F");
-  fTree->Branch("hit_trkkey",hit_trkkey,"hit_trkkey[nhits]/I");
-  fTree->Branch("hit_dQds",hit_dQds,"hit_dQds[nhits]/F");
-  fTree->Branch("hit_dEds",hit_dEds,"hit_dEds[nhits]/F");
-  fTree->Branch("hit_resrange",hit_resrange,"hit_resrange[nhits]/F");
-  fTree->Branch("hit_shwkey",hit_shwkey,"hit_shwkey[nhits]/I");
+  fTree->Branch("nhits_stored",&nhits_stored,"nhits_stored/I");
+  fTree->Branch("hit_plane",hit_plane,"hit_plane[nhits_stored]/S");
+  fTree->Branch("hit_tpc",hit_tpc,"hit_tpc[nhits_stored]/S");
+  fTree->Branch("hit_wire",hit_wire,"hit_wire[nhits_stored]/S");
+  fTree->Branch("hit_channel",hit_channel,"hit_channel[nhits_stored]/I");
+  fTree->Branch("hit_peakT",hit_peakT,"hit_peakT[nhits_stored]/F");
+  fTree->Branch("hit_charge",hit_charge,"hit_charge[nhits_stored]/F");
+  fTree->Branch("hit_summedADC",hit_summedADC,"hit_summedADC[nhits_stored]/F");
+  fTree->Branch("hit_startT",hit_startT,"hit_startT[nhits_stored]/F");
+  fTree->Branch("hit_endT",hit_endT,"hit_endT[nhits_stored]/F");
+  fTree->Branch("hit_trkkey",hit_trkkey,"hit_trkkey[nhits_stored]/I");
+  fTree->Branch("hit_dQds",hit_dQds,"hit_dQds[nhits_stored]/F");
+  fTree->Branch("hit_dEds",hit_dEds,"hit_dEds[nhits_stored]/F");
+  fTree->Branch("hit_resrange",hit_resrange,"hit_resrange[nhits_stored]/F");
+  fTree->Branch("hit_shwkey",hit_shwkey,"hit_shwkey[nhits_stored]/I");
   fTree->Branch("infidvol",&infidvol,"infidvol/I");
   fTree->Branch("nvtx",&nvtx,"nvtx/S");
   fTree->Branch("vtx",vtx,"vtx[nvtx][3]/F");
@@ -918,7 +964,8 @@ void dunefd::NueAna::beginJob()
 
   fPOT = tfs->make<TTree>("pottree","pot tree");
   fPOT->Branch("pot",&pot,"pot/D");
-
+  fPOT->Branch("run",&run,"run/I");
+  fPOT->Branch("subrun",&subrun,"subrun/I");
 }
 
 void dunefd::NueAna::ResetVars(){
@@ -949,6 +996,11 @@ void dunefd::NueAna::ResetVars(){
     trkenddcosy[i] = -9999;
     trkenddcosz[i] = -9999;
     trklen[i] = -9999;
+    trkbestplane[i] = -9999;
+    for (int j = 0; j<3; ++j){
+      trkke[i][j] = -9999;
+      trkpida[i][j] = -9999;
+    }
     trkg4id[i] = -9999;
     trkg4pdg[i] = -9999;
     trkg4startx[i] = -9999;
@@ -987,9 +1039,11 @@ void dunefd::NueAna::ResetVars(){
   }
 
   nhits = 0;
+  nhits_stored = 0;
   for (int i = 0; i<kMaxHits; ++i){
     hit_plane[i] = -9999;
     hit_wire[i] = -9999;
+    hit_tpc[i] = -9999;
     hit_channel[i] = -9999;
     hit_peakT[i] = -9999;
     hit_charge[i] = -9999;
@@ -1087,7 +1141,7 @@ void dunefd::NueAna::reconfigure(fhicl::ParameterSet const & p)
   fFidVolCut           =   p.get< double >("FidVolCut");
   fPOTModuleLabel      =   p.get< std::string >("POTModuleLabel"); 
   fFlashModuleLabel    =   p.get< std::string >("FlashModuleLabel");
-  
+  fCalorimetryModuleLabel = p.get< std::string >("CalorimetryModuleLabel");
   return;
 }
 
