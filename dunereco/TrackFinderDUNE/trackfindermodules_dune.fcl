@@ -51,6 +51,7 @@ dune35t_pmalgtrackmaker.ClusterModuleLabel:  "linecluster"
 dune35t_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightZ: 1.0
 dune35t_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightV: 1.0
 dune35t_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightU: 1.0
+dune35t_pmalgtrackmaker.RunVertexing:        true
 #dune35t_pmalgtrackmaker.FlipToBeam:          true
 #dune35t_pmalgtrackmaker.AutoFlip_dQdx:       true
 
