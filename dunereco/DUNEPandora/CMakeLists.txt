@@ -8,10 +8,10 @@ include_directories( $ENV{LARPANDORACONTENT_INC} )
 
 art_make( BASENAME_ONLY
           LIBRARY_NAME  DUNEPandora
-          LIB_LIBRARIES LArPandoraInterface
-                        Geometry
+          LIB_LIBRARIES larpandora_LArPandoraInterface
+                        larcore_Geometry
                         larcore_Geometry_Geometry_service
-                        Simulation
+                        larsim_Simulation
 			${LARCONTENT}
                         ${PANDORASDK}
                         ${PANDORAMONITORING}
@@ -31,7 +31,7 @@ art_make( BASENAME_ONLY
                         ${CETLIB}
                         ${ROOT_BASIC_LIB_LIST}
 			${Boost_SYSTEM_LIBRARY}
-          MODULE_LIBRARIES LArPandoraInterface 
+          MODULE_LIBRARIES larpandora_LArPandoraInterface 
                            DUNEPandora
           )
 

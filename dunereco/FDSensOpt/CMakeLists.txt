@@ -1,16 +1,16 @@
 add_subdirectory(IniSegAlg)
 
 simple_plugin(NueAna   "module"
-		        RawData
-		        RecoBase
-		        RecoAlg
-			AnalysisAlg
-		        PMAlg
+		        lardata_RawData
+		        lardata_RecoBase
+		        larreco_RecoAlg
+			lardata_AnalysisAlg
+		        larreco_RecoAlg_PMAlg
 		        IniSegAlg
-		        Geometry
+		        larcore_Geometry
 			larcore_Geometry_Geometry_service
-			Utilities
-			Simulation
+			lardata_Utilities
+			larsim_Simulation
 			larsim_MCCheater_BackTracker_service
 			lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
 			${SIMULATIONBASE}
@@ -30,15 +30,15 @@ simple_plugin(NueAna   "module"
 )
 
 simple_plugin(IniSegReco "module"
-		      RawData
-		      RecoBase
-		      RecoAlg
-		      PMAlg
+		      lardata_RawData
+		      lardata_RecoBase
+		      larreco_RecoAlg
+		      larreco_RecoAlg_PMAlg
 		      IniSegAlg
-		      Geometry
+		      larcore_Geometry
 		      larcore_Geometry_Geometry_service
-		      Utilities
-		      Simulation
+		      lardata_Utilities
+		      larsim_Simulation
 		      ${SIMULATIONBASE}
       		      ${ART_FRAMEWORK_CORE}
 		      ${ART_FRAMEWORK_PRINCIPAL}

@@ -4,14 +4,14 @@ art_make( BASENAME_ONLY
           LIBRARY_NAME  IniSegAlg
           LIB_LIBRARIES lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
                         lardata_DetectorInfoServices_LArPropertiesServiceStandard_service
-                        Geometry
+                        larcore_Geometry
                         larcore_Geometry_Geometry_service
-                        Simulation
-                        RawData
-                        RecoBase
-			RecoAlg
-			PMAlg
-                        Utilities
+                        larsim_Simulation
+                        lardata_RawData
+                        lardata_RecoBase
+			larreco_RecoAlg
+			larreco_RecoAlg_PMAlg
+                        lardata_Utilities
                         ${SIMULATIONBASE}
                         ${ART_FRAMEWORK_CORE}
                         ${ART_FRAMEWORK_PRINCIPAL}

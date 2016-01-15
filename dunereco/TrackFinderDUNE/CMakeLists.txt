@@ -1,12 +1,12 @@
 
 art_make( BASENAME_ONLY
-	  MODULE_LIBRARIES RecoAlg
-	  		   RecoBase
-                           Geometry
+	  MODULE_LIBRARIES larreco_RecoAlg
+	  		   lardata_RecoBase
+                           larcore_Geometry
                            larcore_Geometry_Geometry_service
                            lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
-                           Utilities
-			   Simulation
+                           lardata_Utilities
+			   larsim_Simulation
 			   larsim_MCCheater_BackTracker_service
 			   ${SIMULATIONBASE}
  			   ${ART_FRAMEWORK_CORE}
