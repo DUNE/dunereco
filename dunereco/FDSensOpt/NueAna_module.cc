@@ -349,7 +349,6 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   art::FindManyP<recob::Hit> fmth(trackListHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::Hit, recob::TrackHitMeta> fmthm(trackListHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::SpacePoint> fmhs(hitListHandle, evt, fTrackModuleLabel);
-  art::FindManyP<recob::Hit> fmsh(shwListHandle, evt, fShowerModuleLabel);
   art::FindMany<anab::Calorimetry>  fmcal(trackListHandle, evt, fCalorimetryModuleLabel);
 
   //hit information
@@ -562,6 +561,9 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   }
 
   //shower information
+  if (shwListHandle.isValid()){
+  art::FindManyP<recob::Hit> fmsh(shwListHandle, evt, fShowerModuleLabel);
+
   nshws = shwlist.size();
   
   for (int i = 0; i<std::min(int(shwlist.size()),kMaxShower); ++i){
@@ -616,7 +618,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
       }
     }
   }
-
+  }
   // flash information
   flash_total = flashlist.size();
   for ( int f = 0; f < std::min(flash_total,kMaxHits); ++f ) {
