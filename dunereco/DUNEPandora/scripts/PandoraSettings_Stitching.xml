@@ -1,0 +1,23 @@
+<!-- Pandora settings xml file -->
+
+<pandora>
+    <!-- GLOBAL SETTINGS -->
+    <IsMonitoringEnabled>true</IsMonitoringEnabled>
+    <ShouldDisplayAlgorithmInfo>true</ShouldDisplayAlgorithmInfo>
+    <SingleHitTypeClusteringMode>true</SingleHitTypeClusteringMode>
+
+    <!-- PLUGIN SETTINGS -->
+    <MuonPlugin>LArMuonId</MuonPlugin>
+
+    <!-- ALGORITHM SETTINGS -->
+    <algorithm type = "LArStitching">
+        <StitchingTools>
+            <tool type = "LArStitchingObjectCreation">
+                <NewPfoListName>RecreatedPfos</NewPfoListName>
+                <NewVertexListName>RecreatedVertices</NewVertexListName>
+                <NewClusterListName>RecreatedClusters</NewClusterListName>
+            </tool>
+            <!--tool type = "LArStitchingPfoMerging"/-->
+        </StitchingTools>
+    </algorithm>
+</pandora>
