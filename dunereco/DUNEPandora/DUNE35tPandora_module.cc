@@ -1,20 +1,17 @@
 /**
  *  @file   dunetpc/DUNEPandora/DUNE35tPandora_module.cc
  *
- *  @brief  Producer module for DUNE 35t detector.
+ *  @brief  LArPandora producer module for DUNE35t detector.
  *
  */
 
-// Framework Includes
 #include "art/Framework/Core/ModuleMacros.h"
 
-// Local includes
-#include "LArPandoraInterface/LArPandoraParticleCreator.h"
+#include "LArStitching/MultiPandoraApi.h"
 
-// std includes
+#include "LArPandoraInterface/LArPandora.h"
+
 #include <string>
-
-//------------------------------------------------------------------------------------------------------------------------------------------
 
 namespace lar_pandora
 {
@@ -22,29 +19,38 @@ namespace lar_pandora
 /**
  *  @brief  DUNE35tPandora class
  */
-class DUNE35tPandora : public LArPandoraParticleCreator
+class DUNE35tPandora : public LArPandora
 {
 public: 
-
     /**
      *  @brief  Constructor
      *
-     *  @param  pset
+     *  @param  pset the parameter set
      */
     DUNE35tPandora(fhicl::ParameterSet const &pset);
 
-    /**
-     *  @brief  Destructor
-     */
-    virtual ~DUNE35tPandora();
+    int GetVolumeIdNumber(const unsigned int cryostat, const unsigned int tpc) const;
 
 private:
+    void CreatePandoraInstances();
 
-    unsigned int GetPandoraVolumeID(const unsigned int cstat, const unsigned int tpc) const;
-    void ConfigurePandoraGeometry() const;
+    /**
+     *  @brief  Create primary pandora instance
+     *
+     *  @param  stitchingConfigFileName the pandora settings stitching config file name
+     */
+    void CreatePrimaryPandoraInstance(const std::string &stitchingConfigFileName);
 
-    bool            m_useShortVolume;      ///<
-    bool            m_useLongVolume;       ///<
+    /**
+     *  @brief  Create daughter pandora instances
+     *
+     *  @param  theGeometry the geometry handle
+     *  @param  configFileName the pandora settings config file name
+     */
+    void CreateDaughterPandoraInstances(const art::ServiceHandle<geo::Geometry> &theGeometry, const std::string &configFileName);
+
+    bool        m_useShortVolume;      ///<
+    bool        m_useLongVolume;       ///<
 };
 
 DEFINE_ART_MODULE(DUNE35tPandora)
@@ -54,81 +60,118 @@ DEFINE_ART_MODULE(DUNE35tPandora)
 //------------------------------------------------------------------------------------------------------------------------------------------
 // implementation follows
 
-// LArSoft includes
+#include "cetlib/exception.h"
+
 #include "Geometry/Geometry.h"
 
-// Local includes (LArContent) 
+#include "Api/PandoraApi.h"
+
 #include "LArContent.h"
 
-// Local includes (LArPandora)
 #include "dune/DUNEPandora/DUNE35tPseudoLayerPlugin.h"
 #include "dune/DUNEPandora/DUNE35tTransformationPlugin.h"
-#include "dune/DUNEPandora/DUNE35tGeometryHelper.h"
 
-namespace lar_pandora {
-
-DUNE35tPandora::DUNE35tPandora(fhicl::ParameterSet const &pset) : LArPandoraParticleCreator(pset)
+namespace lar_pandora
 {
-    m_useShortVolume = pset.get<bool>("UseShortVolume",true);
-    m_useLongVolume = pset.get<bool>("UseLongVolume",true);
+
+DUNE35tPandora::DUNE35tPandora(fhicl::ParameterSet const &pset) :
+    LArPandora(pset)
+{
+    m_useShortVolume = pset.get<bool>("UseShortVolume", true);
+    m_useLongVolume = pset.get<bool>("UseLongVolume", true);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-DUNE35tPandora::~DUNE35tPandora()
+int DUNE35tPandora::GetVolumeIdNumber(const unsigned int cryostat, const unsigned int tpc) const
 {
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-void DUNE35tPandora::ConfigurePandoraGeometry() const
-{
-    mf::LogDebug("LArPandora") << " *** DUNE35tPandora::ConfigurePandoraGeometry(...) *** " << std::endl;
-
-    // Identify the Geometry and load the plugins
     art::ServiceHandle<geo::Geometry> theGeometry;
+    const geo::TPCGeo &theTpcGeo(theGeometry->TPC(tpc, cryostat));
 
+    // Long drift volume: negative drift direction
+    if (theTpcGeo.DriftDirection() == geo::kNegX)
+    {
+        if (m_useLongVolume) 
+            return 1;
+    }
+
+    // Short drift volume: positive drift direction
+    if (theTpcGeo.DriftDirection() == geo::kPosX)
+    {
+        if (m_useShortVolume) 
+            return 0;
+    }
+
+    throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+void DUNE35tPandora::CreatePandoraInstances()
+{
+    mf::LogDebug("LArPandora") << " *** DUNE35tPandora::CreatePandoraInstances(...) *** " << std::endl;
+
+    art::ServiceHandle<geo::Geometry> theGeometry;
     if (std::string::npos == theGeometry->DetectorName().find("dune35t"))
     {
         mf::LogError("LArPandora") << " Error! Using invalid geometry: " << theGeometry->DetectorName() << std::endl;
         throw cet::exception("LArPandora") << " DUNE35tPandora::ConfigurePandoraGeometry --- Invalid Geometry: " << theGeometry->DetectorName();
     }
 
-    for (PandoraInstanceMap::const_iterator pIter = m_pandoraInstanceMap.begin(), pIterEnd = m_pandoraInstanceMap.end(); 
-        pIter != pIterEnd; ++pIter)
-    {
-        const unsigned int      volumeID = pIter->first;
-        const pandora::Pandora *pPandora = pIter->second;
-
-        const bool isForward((0 == volumeID) ? true : false); // ATTN: Sign of rotation matrix is taken from Volume ID
-    
-        PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, LArContent::SetLArPseudoLayerPlugin(*pPandora, 
-            new DUNE35tPseudoLayerPlugin));
-
-        PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, LArContent::SetLArTransformationPlugin(*pPandora, 
-            new DUNE35tTransformationPlugin(isForward)));
+    cet::search_path sp("FW_SEARCH_PATH");
+    std::string stitchingConfigFileName, configFileName;
+    if (!sp.find_file(m_stitchingConfigFile, stitchingConfigFileName) || !sp.find_file(m_configFile, configFileName))
+    {                                               
+        mf::LogError("LArPandora") << "   Failed to find one of: " << m_stitchingConfigFile << ", " << m_configFile << std::endl;
+        throw pandora::StatusCodeException(pandora::STATUS_CODE_NOT_FOUND);              
     }
+
+    this->CreatePrimaryPandoraInstance(stitchingConfigFileName);
+    this->CreateDaughterPandoraInstances(theGeometry, configFileName);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-unsigned int DUNE35tPandora::GetPandoraVolumeID(const unsigned int cstat, const unsigned int tpc) const
-{    
-    const DUNE35tGeometryHelper::DUNE35tVolume volumeID(DUNE35tGeometryHelper::GetVolumeID(cstat, tpc));
+void DUNE35tPandora::CreatePrimaryPandoraInstance(const std::string &stitchingConfigFileName)
+{
+    m_pPrimaryPandora = this->CreateNewPandora();
+    MultiPandoraApi::AddPrimaryPandoraInstance(m_pPrimaryPandora);
+    PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::ReadSettings(*m_pPrimaryPandora, stitchingConfigFileName));
+}
 
-    if (DUNE35tGeometryHelper::kShortVolume == volumeID) 
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+void DUNE35tPandora::CreateDaughterPandoraInstances(const art::ServiceHandle<geo::Geometry> &theGeometry, const std::string &configFileName)
+{
+    if (!m_pPrimaryPandora)
+        throw pandora::StatusCodeException(pandora::STATUS_CODE_NOT_INITIALIZED);
+
+    for (unsigned int icstat = 0; icstat < theGeometry->Ncryostats(); ++icstat)
     {
-        if (m_useShortVolume) 
-            return 0;
-    }
+        for (unsigned int itpc = 0; itpc < theGeometry->NTPC(icstat); ++itpc)
+        {
+            try
+            {
+                const int volumeIdNumber(this->GetVolumeIdNumber(icstat, itpc));
+                const bool isForward(0 == volumeID); // ATTN: Sign of rotation matrix is taken from Volume ID
+                const bool isPositiveDrift(0 == volumeID);
 
-    if (DUNE35tGeometryHelper::kLongVolume == volumeID) 
-    {
-        if (m_useLongVolume) 
-            return 1;
-    }
+                std::ostringstream volumeIdString("dune35t_");
+                volumeIdString << volumeIdNumber;
 
-    throw pandora::StatusCodeException(pandora::STATUS_CODE_INVALID_PARAMETER);
+                const Pandora *const pPandora = this->CreateNewPandora();
+                MultiPandoraApi::AddDaughterPandoraInstance(m_pPrimaryPandora, pPandora);
+                MultiPandoraApi::SetVolumeInfo(pPandora, new VolumeInfo(volumeIdNumber, volumeIdString.str(), pandora::CartesianVector(0.f, 0.f, 0.f), isPositiveDrift));
+                PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, LArContent::SetLArPseudoLayerPlugin(*pPandora, new lar_pandora::DUNE35tPseudoLayerPlugin));
+                PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, LArContent::SetLArTransformationPlugin(*pPandora, new lar_pandora::DUNE35tTransformationPlugin(isForward)));
+                PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraApi::ReadSettings(*pPandora, configFileName));
+            }
+            catch (pandora::StatusCodeException &)
+            {
+                mf::LogDebug("DUNE35tPandora") << "    No volume ID for this TPC..." << std::endl;
+            }
+        }
+    }
 }
 
 } // namespace lar_pandora
