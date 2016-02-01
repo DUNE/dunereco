@@ -7,6 +7,8 @@
 
 #include "art/Framework/Core/ModuleMacros.h"
 
+#include "Geometry/Geometry.h"
+
 #include "LArStitching/MultiPandoraApi.h"
 
 #include "LArPandoraInterface/LArPandora.h"
@@ -61,8 +63,6 @@ DEFINE_ART_MODULE(DUNE35tPandora)
 // implementation follows
 
 #include "cetlib/exception.h"
-
-#include "Geometry/Geometry.h"
 
 #include "Api/PandoraApi.h"
 
@@ -153,18 +153,18 @@ void DUNE35tPandora::CreateDaughterPandoraInstances(const art::ServiceHandle<geo
             try
             {
                 const int volumeIdNumber(this->GetVolumeIdNumber(icstat, itpc));
-                const bool isForward(0 == volumeID); // ATTN: Sign of rotation matrix is taken from Volume ID
-                const bool isPositiveDrift(0 == volumeID);
+                const bool isForward(0 == volumeIdNumber); // ATTN: Sign of rotation matrix is taken from Volume ID
+                const bool isPositiveDrift(0 == volumeIdNumber);
 
                 std::ostringstream volumeIdString("dune35t_");
                 volumeIdString << volumeIdNumber;
 
-                const Pandora *const pPandora = this->CreateNewPandora();
+                const pandora::Pandora *const pPandora = this->CreateNewPandora();
                 MultiPandoraApi::AddDaughterPandoraInstance(m_pPrimaryPandora, pPandora);
                 MultiPandoraApi::SetVolumeInfo(pPandora, new VolumeInfo(volumeIdNumber, volumeIdString.str(), pandora::CartesianVector(0.f, 0.f, 0.f), isPositiveDrift));
-                PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, LArContent::SetLArPseudoLayerPlugin(*pPandora, new lar_pandora::DUNE35tPseudoLayerPlugin));
-                PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, LArContent::SetLArTransformationPlugin(*pPandora, new lar_pandora::DUNE35tTransformationPlugin(isForward)));
-                PANDORA_THROW_RESULT_IF(STATUS_CODE_SUCCESS, !=, PandoraApi::ReadSettings(*pPandora, configFileName));
+                PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, LArContent::SetLArPseudoLayerPlugin(*pPandora, new lar_pandora::DUNE35tPseudoLayerPlugin));
+                PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, LArContent::SetLArTransformationPlugin(*pPandora, new lar_pandora::DUNE35tTransformationPlugin(isForward)));
+                PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::ReadSettings(*pPandora, configFileName));
             }
             catch (pandora::StatusCodeException &)
             {
