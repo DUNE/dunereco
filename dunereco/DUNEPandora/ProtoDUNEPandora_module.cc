@@ -13,6 +13,7 @@
 
 #include "LArPandoraInterface/LArPandora.h"
 
+#include <set>
 #include <string>
 
 namespace lar_pandora
@@ -50,6 +51,8 @@ private:
      *  @param  configFileName the pandora settings config file name
      */
     void CreateDaughterPandoraInstances(const art::ServiceHandle<geo::Geometry> &theGeometry, const std::string &configFileName);
+
+    typedef std::set<int> IntSet;   ///<
 
     bool    m_useLeftVolume;        ///<
     bool    m_useRightVolume;       ///<
@@ -146,6 +149,8 @@ void ProtoDUNEPandora::CreateDaughterPandoraInstances(const art::ServiceHandle<g
     if (!m_pPrimaryPandora)
         throw pandora::StatusCodeException(pandora::STATUS_CODE_NOT_INITIALIZED);
 
+    IntSet volumeIdNumbers;
+
     for (unsigned int icstat = 0; icstat < theGeometry->Ncryostats(); ++icstat)
     {
         for (unsigned int itpc = 0; itpc < theGeometry->NTPC(icstat); ++itpc)
@@ -153,6 +158,10 @@ void ProtoDUNEPandora::CreateDaughterPandoraInstances(const art::ServiceHandle<g
             try
             {
                 const int volumeIdNumber(this->GetVolumeIdNumber(icstat, itpc));
+
+                if (!volumeIdNumbers.insert(volumeIdNumber).second)
+                    continue;
+
                 const bool isForward(0 == volumeIdNumber); // ATTN: Sign of rotation matrix is taken from Volume ID
                 const bool isPositiveDrift(1 == volumeIdNumber);
 
