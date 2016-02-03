@@ -140,6 +140,7 @@ void ProtoDUNEPandora::CreatePrimaryPandoraInstance(const std::string &stitching
     m_pPrimaryPandora = this->CreateNewPandora();
     MultiPandoraApi::AddPrimaryPandoraInstance(m_pPrimaryPandora);
     PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::ReadSettings(*m_pPrimaryPandora, stitchingConfigFileName));
+    PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, LArContent::SetLArPseudoLayerPlugin(*m_pPrimaryPandora, new lar_pandora::ProtoDUNEPseudoLayerPlugin));
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------

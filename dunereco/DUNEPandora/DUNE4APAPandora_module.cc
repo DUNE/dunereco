@@ -140,6 +140,7 @@ void DUNE4APAPandora::CreatePrimaryPandoraInstance(const std::string &stitchingC
     m_pPrimaryPandora = this->CreateNewPandora();
     MultiPandoraApi::AddPrimaryPandoraInstance(m_pPrimaryPandora);
     PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, PandoraApi::ReadSettings(*m_pPrimaryPandora, stitchingConfigFileName));
+    PANDORA_THROW_RESULT_IF(pandora::STATUS_CODE_SUCCESS, !=, LArContent::SetLArPseudoLayerPlugin(*m_pPrimaryPandora, new lar_pandora::DUNE4APAPseudoLayerPlugin));
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
