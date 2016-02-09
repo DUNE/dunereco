@@ -4,6 +4,7 @@ dune35t_pandora:
 {
   module_type:           "DUNE35tPandora"
   ConfigFile:            "PandoraSettings_DUNE35t_Cosmic.xml"
+  StitchingConfigFile:   "PandoraSettings_Stitching.xml"
   GeantModuleLabel:      "largeant"
   HitFinderModuleLabel:  "hitcheat"
   EnableMCParticles:     false
@@ -29,6 +30,7 @@ dune4apa_pandora:
 {
   module_type:           "DUNE4APAPandora"
   ConfigFile:            "PandoraSettings_DUNE4APA_Neutrino.xml"
+  StitchingConfigFile:   "PandoraSettings_Stitching.xml"
   GeantModuleLabel:      "largeant"
   HitFinderModuleLabel:  "hitcheat"
   EnableMCParticles:     false
@@ -44,6 +46,7 @@ protodune_pandora:
 {
   module_type:           "ProtoDUNEPandora"
   ConfigFile:            "PandoraSettings_ProtoDUNE_Neutrino.xml"
+  StitchingConfigFile:   "PandoraSettings_Stitching.xml"
   GeantModuleLabel:      "largeant"
   HitFinderModuleLabel:  "hitcheat"
   EnableMCParticles:     false
