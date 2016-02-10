@@ -40,10 +40,10 @@ dune35t_apahitfinder:     @local::apa_hitfinder
 dune35t_emlikehits:    @local::emlikehits
 dune35t_hitcheater:	  @local::standard_hitcheater
 
-dune35t_gaushitfinder.MinSig:    [6.0, 6.0, 11.0]
+dune35t_gaushitfinder.MinSig:    [6.0, 6.0, 6.0]
 dune35t_gaushitfinder.MinWidth:  [1.0, 1.0, 1.0]
-dune35t_gaushitfinder.InitWidth: [6.0, 6.0, 7.8]
-dune35t_gaushitfinder.AreaNorms: [13.25, 13.25, 16.31]
+dune35t_gaushitfinder.InitWidth: [6.0, 6.0, 6.0]
+dune35t_gaushitfinder.AreaNorms: [13.25, 13.25, 13.25]
 dune35t_gaushitfinder.Chi2NDFRetry: 1000.
 
 dune35t_disambigalg:
