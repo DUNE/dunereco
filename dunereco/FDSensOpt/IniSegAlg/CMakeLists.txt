@@ -2,16 +2,16 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 art_make( BASENAME_ONLY
           LIBRARY_NAME  	IniSegAlg
-          LIB_LIBRARIES 	RecoBase
-				RecoAlg
-				PMAlg
-				DetectorProperties_service
-                        	LArProperties_service
-                        	Geometry
-                        	Geometry_service
-                        	Simulation
-                        	RawData
-                        	Utilities
+          LIB_LIBRARIES 	lardata_RecoBase
+				larreco_RecoAlg
+				larreco_RecoAlg_PMAlg
+				lardata_Utilities_DetectorProperties_service
+                        	lardata_Utilities_LArProperties_service
+                        	larcore_Geometry
+                        	larcore_Geometry_Geometry_service
+                        	larsim_Simulation
+                        	lardata_RawData
+                        	lardata_Utilities
                         	${SIMULATIONBASE}
                                 ${ART_FRAMEWORK_CORE}
 			        ${ART_FRAMEWORK_PRINCIPAL}

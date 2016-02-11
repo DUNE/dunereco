@@ -7,11 +7,11 @@
 
 #include "art/Framework/Core/ModuleMacros.h"
 
-#include "Geometry/Geometry.h"
+#include "larcore/Geometry/Geometry.h"
 
 #include "LArStitching/MultiPandoraApi.h"
 
-#include "LArPandoraInterface/LArPandora.h"
+#include "larpandora/LArPandoraInterface/LArPandora.h"
 
 #include <set>
 #include <string>

@@ -26,12 +26,12 @@
 #include "art/Framework/Core/EDProducer.h"
 
 // LArSoft Includes
-#include "Geometry/Geometry.h"
-#include "RawData/RawDigit.h"
-#include "RecoBase/Hit.h"
-#include "RecoBaseArt/HitCreator.h"
-#include "Utilities/AssociationUtil.h"
-#include "Utilities/DetectorProperties.h"
+#include "larcore/Geometry/Geometry.h"
+#include "lardata/RawData/RawDigit.h"
+#include "lardata/RecoBase/Hit.h"
+#include "lardata/RecoBaseArt/HitCreator.h"
+#include "lardata/Utilities/AssociationUtil.h"
+#include "lardata/Utilities/DetectorProperties.h"
 #include "DisambigAlg35t.h"
 #include "TimeBasedDisambig.h"
 
