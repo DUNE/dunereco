@@ -1,21 +1,14 @@
 /**
  *  @file   dunetpc/DUNEPandora/DUNE35tParticleStitcher_module.cc
  *
- *  @brief  Stitching module for DUNE 35t detector.
+ *  @brief  Stitching module for DUNE 35t detector (soon to be replaced with stitching by algorithms running within a Pandora instance)
  *
  */
 
-// Framework Includes
 #include "art/Framework/Core/ModuleMacros.h"
 
-// Local includes
+#include "TVector3.h" // ATTN Should be included in PFParticleStitcher.h
 #include "LArPandoraInterface/PFParticleStitcher.h"
-
-#include "cetlib/exception.h"
-
-#include <string>
-
-//------------------------------------------------------------------------------------------------------------------------------------------
 
 namespace lar_pandora
 {
@@ -30,18 +23,12 @@ public:
     /**
      *  @brief  Constructor
      *
-     *  @param  pset
+     *  @param  pset the parameter set
      */
     DUNE35tParticleStitcher(fhicl::ParameterSet const &pset);
 
-    /**
-     *  @brief  Destructor
-     */
-    virtual ~DUNE35tParticleStitcher();
-
 private:
     unsigned int GetVolumeID(const unsigned int cstat, const unsigned int tpc) const;
-
 };
 
 DEFINE_ART_MODULE(DUNE35tParticleStitcher)
@@ -51,18 +38,15 @@ DEFINE_ART_MODULE(DUNE35tParticleStitcher)
 //------------------------------------------------------------------------------------------------------------------------------------------
 // implementation follows
 
-#include "dune/DUNEPandora/DUNE35tGeometryHelper.h"
+#include "cetlib/exception.h"
 
-namespace lar_pandora {
+#include "Geometry/Geometry.h"
 
-DUNE35tParticleStitcher::DUNE35tParticleStitcher(fhicl::ParameterSet const &pset) : PFParticleStitcher(pset)
+namespace lar_pandora
 {
-  
-}
 
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-DUNE35tParticleStitcher::~DUNE35tParticleStitcher()
+DUNE35tParticleStitcher::DUNE35tParticleStitcher(fhicl::ParameterSet const &pset) :
+    PFParticleStitcher(pset)
 {
 }
 
@@ -70,13 +54,16 @@ DUNE35tParticleStitcher::~DUNE35tParticleStitcher()
 
 unsigned int DUNE35tParticleStitcher::GetVolumeID(const unsigned int cstat, const unsigned int tpc) const
 {
-    DUNE35tGeometryHelper::DUNE35tVolume volumeID(DUNE35tGeometryHelper::GetVolumeID(cstat, tpc));
+    art::ServiceHandle<geo::Geometry> theGeometry;
+    const geo::TPCGeo &theTpcGeo(theGeometry->TPC(tpc, cstat));
 
-    if (DUNE35tGeometryHelper::kShortVolume == volumeID) 
-        return 0;
-
-    if (DUNE35tGeometryHelper::kLongVolume == volumeID) 
+    // Long drift volume: negative drift direction
+    if (theTpcGeo.DriftDirection() == geo::kNegX)
         return 1;
+
+    // Short drift volume: positive drift direction
+    if (theTpcGeo.DriftDirection() == geo::kPosX)
+        return 0;
 
     throw cet::exception("LArPandora") << " DUNE35tParticleStitcher::GetVolumeID --- No valid ID for cstat=" << cstat << ", tpc=" << tpc;
 }
