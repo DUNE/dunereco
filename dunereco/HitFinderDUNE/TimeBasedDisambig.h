@@ -22,7 +22,6 @@
 #include "art/Framework/Principal/Event.h"
 
 #include "larcore/Geometry/Geometry.h"
-#include "lardata/Utilities/DetectorProperties.h"
 #include "larcore/SimpleTypesAndConstants/geo_types.h"
 #include "lardata/RecoBase/Wire.h"
 #include "lardata/RecoBase/Hit.h"

@@ -11,8 +11,6 @@ simple_plugin(NueAna   "module"
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
 			larsim_Simulation
-			lardata_Utilities_DetectorProperties_service
-			lardata_Utilities_LArProperties_service
 			larsim_MCCheater_BackTracker_service
 			${SIMULATIONBASE}
                         ${ART_FRAMEWORK_CORE}
@@ -38,11 +36,8 @@ simple_plugin(IniSegReco "module"
 		      IniSegAlg
 		      larcore_Geometry
 		      larcore_Geometry_Geometry_service
-	              larsim_MCCheater_BackTracker_service
 		      lardata_Utilities
 		      larsim_Simulation
-		      lardata_Utilities_DetectorProperties_service
-		      lardata_Utilities_LArProperties_service
 		      ${SIMULATIONBASE}
       		      ${ART_FRAMEWORK_CORE}
 		      ${ART_FRAMEWORK_PRINCIPAL}

@@ -38,7 +38,6 @@ extern "C" {
 #include "lardata/RecoBase/Hit.h"
 #include "lardata/RecoBase/Cluster.h"
 #include "lardata/Utilities/AssociationUtil.h"
-#include "lardata/Utilities/DetectorProperties.h"
 #include "DisambigAlg35t.h"
 #include "larsim/MCCheater/BackTracker.h"
 #include "lardata/AnalysisBase/ParticleID.h"

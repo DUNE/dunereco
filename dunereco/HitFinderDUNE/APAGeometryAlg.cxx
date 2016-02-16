@@ -17,8 +17,6 @@
 #include "art/Framework/Services/Optional/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "lardata/Utilities/LArProperties.h"
-#include "lardata/Utilities/DetectorProperties.h"
 #include "lardata/RecoBase/Hit.h"
 #include "lardata/RecoBase/Wire.h"
 #include "larcore/Geometry/CryostatGeo.h"

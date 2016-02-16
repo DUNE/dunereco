@@ -23,16 +23,14 @@
 #include "lardata/RecoBase/Hit.h"
 #include "lardata/RecoBase/Cluster.h"
 #include "lardata/RecoBase/Vertex.h"
-#include "lardata/Utilities/LArProperties.h"
-#include "lardata/Utilities/DetectorProperties.h"
 #include "lardata/Utilities/AssociationUtil.h"
-#include "lardata/Utilities/TimeService.h"
 #include "larsim/MCCheater/BackTracker.h"
 #include "SimulationBase/MCTruth.h"
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
 #include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 #include "IniSegAlg/IniSegAlg.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 // ROOT includes
 #include "TTree.h"
@@ -623,8 +621,7 @@ float dunefd::IniSegReco::t0Corr(art::Event const & evt, TLorentzVector const & 
 	float corrt0x = 0.0F;
 
 	art::ServiceHandle<geo::Geometry> geom;
-	art::ServiceHandle<util::DetectorProperties> detprop;
-	art::ServiceHandle<util::LArProperties> larprop;
+	auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
 	// * MC truth information
 	art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
@@ -644,7 +641,7 @@ float dunefd::IniSegReco::t0Corr(art::Event const & evt, TLorentzVector const & 
 			{
 				simb::MCParticle particle = mctruth->GetParticle(0);
 				t0 = particle.T(); // ns
-				corrt0x = t0 * 1.e-3 * larprop->DriftVelocity();
+				corrt0x = t0 * 1.e-3 * detprop->DriftVelocity();
      	 	}
 		}
 	

@@ -8,8 +8,6 @@ art_make( BASENAME_ONLY
                            larcore_Geometry
                            larcore_Geometry_Geometry_service
                            lardata_RecoObjects
-                           lardata_Utilities_LArProperties_service
-                           lardata_Utilities_DetectorProperties_service
 			   larsim_MCCheater_BackTracker_service
                            lardata_Utilities
 			   ${SIMULATIONBASE}
@@ -35,8 +33,6 @@ art_make( BASENAME_ONLY
                            lardata_RecoBaseArt
                            larcore_Geometry
                            larcore_Geometry_Geometry_service
-                           lardata_Utilities_LArProperties_service
-                           lardata_Utilities_DetectorProperties_service
 			   larsim_MCCheater_BackTracker_service
                            lardata_Utilities
 			   ${SIMULATIONBASE}

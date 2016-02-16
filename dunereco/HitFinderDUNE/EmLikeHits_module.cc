@@ -138,7 +138,7 @@ bool EmLikeHits::isCloseToTrack(TVector2 p, const recob::Track& trk,
 	art::ServiceHandle<geo::Geometry> geom;
 	double wirePitch = geom->TPC(tpc, cryo).Plane(view).WirePitch();
 
-	//art::ServiceHandle<util::DetectorProperties> detprop;
+	//lar::providerFrom<detinfo::DetectorPropertiesService> detprop;
 	//double driftPitch = detprop->GetXTicksCoefficient(tpc, cryo);
 
 	double max_d2_d = 0.3 * 0.3;
