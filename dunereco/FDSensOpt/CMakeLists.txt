@@ -38,6 +38,7 @@ simple_plugin(IniSegReco "module"
 		      larcore_Geometry_Geometry_service
 		      lardata_Utilities
 		      larsim_Simulation
+		      larsim_MCCheater_BackTracker_service
 		      ${SIMULATIONBASE}
       		      ${ART_FRAMEWORK_CORE}
 		      ${ART_FRAMEWORK_PRINCIPAL}
@@ -55,19 +56,19 @@ simple_plugin(IniSegReco "module"
 )
 
 simple_plugin(ShSeg   "module"
-			RawData
-			RecoBase
-			RecoAlg
-			AnalysisAlg
-			PMAlg
+			lardata_RawData
+			lardata_RecoBase
+			larreco_RecoAlg
+			lardata_AnalysisAlg
+			larreco_RecoAlg_PMAlg
 			IniSegAlg
-			Geometry
-			Geometry_service
-			Utilities
-			Simulation
-			DetectorProperties_service
-			LArProperties_service
-			BackTracker_service
+			larcore_Geometry
+			larcore_Geometry_Geometry_service
+			lardata_Utilities
+			larsim_Simulation
+			
+			
+			larsim_MCCheater_BackTracker_service
 			${SIMULATIONBASE}
 			${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}

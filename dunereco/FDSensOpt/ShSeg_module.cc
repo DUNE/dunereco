@@ -29,24 +29,24 @@
 #include "fhiclcpp/ParameterSet.h" 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "Geometry/Geometry.h"
-#include "RecoBase/Track.h"
-#include "RecoBase/Hit.h"
-#include "RecoBase/Cluster.h"
-#include "RecoBase/Vertex.h"
-#include "RecoBase/SpacePoint.h"
-#include "RecoBase/PFParticle.h"
+#include "larcore/Geometry/Geometry.h"
+#include "lardata/RecoBase/Track.h"
+#include "lardata/RecoBase/Hit.h"
+#include "lardata/RecoBase/Cluster.h"
+#include "lardata/RecoBase/Vertex.h"
+#include "lardata/RecoBase/SpacePoint.h"
+#include "lardata/RecoBase/PFParticle.h"
 
-#include "Utilities/LArProperties.h"
-#include "Utilities/AssociationUtil.h"
-#include "AnalysisAlg/CalorimetryAlg.h"
+#include "lardata/DetectorInfo/DetectorProperties.h"
+#include "lardata/Utilities/AssociationUtil.h"
+#include "lardata/AnalysisAlg/CalorimetryAlg.h"
 
-#include "MCCheater/BackTracker.h"
+#include "larsim/MCCheater/BackTracker.h"
 #include "SimulationBase/MCTruth.h"
 
-#include "RecoAlg/ProjectionMatchingAlg.h"
-#include "RecoAlg/PMAlg/Utilities.h"
-#include "RecoAlg/PMAlg/PmaTrack3D.h"
+#include "larreco/RecoAlg/ProjectionMatchingAlg.h"
+#include "larreco/RecoAlg/PMAlg/Utilities.h"
+#include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
 
 #include <random>
 
@@ -423,8 +423,8 @@ bool dunefd::ShSeg::BuildSegMC(art::Event & e)
 
 void dunefd::ShSeg::CorrOffset(TVector3& vec, const simb::MCParticle& particle)
 {
-	art::ServiceHandle<util::LArProperties> larprop;
-	float corrt0x = particle.T() * 1.e-3 * larprop->DriftVelocity();
+	auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
+	float corrt0x = particle.T() * 1.e-3 * detprop->DriftVelocity();
 
 	float px = vec.X();
 	if (px > 0) px -= corrt0x;
