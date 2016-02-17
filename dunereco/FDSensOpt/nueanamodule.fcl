@@ -31,4 +31,13 @@ dunefd_inisegreco:
     FidVolCut:	              3.0
 }
 
+dunefd_shseg:
+{
+   		module_type: 	      	"ShSeg"
+		HitsModuleLabel:         "Hit"
+		FidVolCut:   			3.0
+		CalorimetryAlg:          @local::dune35t_calorimetryalgmc
+		ProjectionMatchingAlg:   @local::standard_projectionmatchingalg
+}
+
 END_PROLOG
