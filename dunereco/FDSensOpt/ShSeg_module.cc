@@ -37,7 +37,7 @@
 #include "lardata/RecoBase/SpacePoint.h"
 #include "lardata/RecoBase/PFParticle.h"
 
-#include "lardata/DetectorInfo/DetectorProperties.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/AnalysisAlg/CalorimetryAlg.h"
 
