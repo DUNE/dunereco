@@ -21,17 +21,16 @@
 #include "art/Framework/Services/Optional/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "Utilities/LArProperties.h"
-#include "Utilities/DetectorProperties.h"
-#include "Utilities/AssociationUtil.h"
-#include "RecoBase/Hit.h"
-#include "RecoBase/Wire.h"
-#include "Geometry/CryostatGeo.h"
-#include "Geometry/TPCGeo.h"
-#include "Geometry/PlaneGeo.h"
-#include "Geometry/WireGeo.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/Utilities/AssociationUtil.h"
+#include "lardata/RecoBase/Hit.h"
+#include "lardata/RecoBase/Wire.h"
+#include "larcore/Geometry/CryostatGeo.h"
+#include "larcore/Geometry/TPCGeo.h"
+#include "larcore/Geometry/PlaneGeo.h"
+#include "larcore/Geometry/WireGeo.h"
 #include "DisambigAlg35t.h"
-#include "Filters/ChannelFilter.h"
+#include "larevt/Filters/ChannelFilter.h"
 
 #include <map>
 #include <cmath>
@@ -69,7 +68,7 @@ void DisambigAlg35t::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &Ori
 {
   fDisambigHits.clear();
 
-  art::ServiceHandle<util::DetectorProperties> detprop;
+  auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
   art::ServiceHandle<geo::Geometry> geo;
 
   std::vector<std::vector<art::Ptr<recob::Hit> > > hitsUV(2);

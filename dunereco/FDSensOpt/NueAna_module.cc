@@ -19,25 +19,23 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // LArSoft includes
-#include "Geometry/Geometry.h"
-#include "RecoBase/Track.h"
-#include "RecoBase/Hit.h"
-#include "RecoBase/Cluster.h"
-#include "RecoBase/Vertex.h"
-#include "RecoBase/SpacePoint.h"
-#include "RecoBase/TrackHitMeta.h"
-#include "RecoBase/Shower.h"
-#include "RecoBase/OpFlash.h"
-#include "AnalysisBase/Calorimetry.h"
-#include "Utilities/LArProperties.h"
-#include "Utilities/DetectorProperties.h"
-#include "Utilities/AssociationUtil.h"
-#include "Utilities/TimeService.h"
-#include "MCCheater/BackTracker.h"
+#include "larcore/Geometry/Geometry.h"
+#include "lardata/RecoBase/Track.h"
+#include "lardata/RecoBase/Hit.h"
+#include "lardata/RecoBase/Cluster.h"
+#include "lardata/RecoBase/Vertex.h"
+#include "lardata/RecoBase/SpacePoint.h"
+#include "lardata/RecoBase/TrackHitMeta.h"
+#include "lardata/RecoBase/Shower.h"
+#include "lardata/RecoBase/OpFlash.h"
+#include "lardata/AnalysisBase/Calorimetry.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/Utilities/AssociationUtil.h"
+#include "larsim/MCCheater/BackTracker.h"
 #include "SimulationBase/MCTruth.h"
-#include "RecoAlg/PMAlg/Utilities.h"
-#include "AnalysisAlg/CalorimetryAlg.h"
-#include "SummaryData/POTSummary.h"
+#include "larreco/RecoAlg/PMAlg/Utilities.h"
+#include "lardata/AnalysisAlg/CalorimetryAlg.h"
+#include "larcore/SummaryData/POTSummary.h"
 #include "SimulationBase/MCFlux.h"
 
 // ROOT includes
@@ -299,10 +297,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   // Implementation of required member function here.
   ResetVars();
   art::ServiceHandle<geo::Geometry> geom;
-  art::ServiceHandle<util::LArProperties> larprop;
-  art::ServiceHandle<util::DetectorProperties> detprop;
-  art::ServiceHandle<util::TimeService> timeservice;
-  //fClock = timeservice->TPCClock();
+  auto const *detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
   art::ServiceHandle<cheat::BackTracker> bt;
   const sim::ParticleList& plist = bt->ParticleList();
 
@@ -312,7 +307,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   art::Timestamp ts = evt.time();
   TTimeStamp tts(ts.timeHigh(), ts.timeLow());
   evttime = tts.AsDouble();
-  taulife = larprop->ElectronLifetime();
+  taulife = detprop->ElectronLifetime();
   isdata = evt.isRealData();
 
   // * hits

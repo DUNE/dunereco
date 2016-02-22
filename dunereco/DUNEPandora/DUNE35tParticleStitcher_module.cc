@@ -8,7 +8,7 @@
 #include "art/Framework/Core/ModuleMacros.h"
 
 #include "TVector3.h" // ATTN Should be included in PFParticleStitcher.h
-#include "LArPandoraInterface/PFParticleStitcher.h"
+#include "larpandora/LArPandoraInterface/PFParticleStitcher.h"
 
 namespace lar_pandora
 {
@@ -40,7 +40,7 @@ DEFINE_ART_MODULE(DUNE35tParticleStitcher)
 
 #include "cetlib/exception.h"
 
-#include "Geometry/Geometry.h"
+#include "larcore/Geometry/Geometry.h"
 
 namespace lar_pandora
 {

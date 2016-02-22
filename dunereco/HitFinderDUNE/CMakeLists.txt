@@ -1,17 +1,15 @@
 
 art_make( BASENAME_ONLY
           LIBRARY_NAME     HitFinderDUNE
-          LIB_LIBRARIES    RecoBase
-	  		   RecoAlg
-			   PMAlg
-			   Filters
-                           Geometry
-                           Geometry_service
-                           RecoObjects
-                           LArProperties_service
-                           DetectorProperties_service
-			   BackTracker_service
-                           Utilities
+          LIB_LIBRARIES    lardata_RecoBase
+	  		   larreco_RecoAlg
+			   larreco_RecoAlg_PMAlg
+			   larevt_Filters
+                           larcore_Geometry
+                           larcore_Geometry_Geometry_service
+                           lardata_RecoObjects
+			   larsim_MCCheater_BackTracker_service
+                           lardata_Utilities
 			   ${SIMULATIONBASE}
                            ${ART_FRAMEWORK_CORE}
    			   ${ART_FRAMEWORK_PRINCIPAL}
@@ -31,14 +29,12 @@ art_make( BASENAME_ONLY
 			   ${Boost_SYSTEM_LIBRARY}
 			   ${ROOT_BASIC_LIB_LIST}
          MODULE_LIBRARIES HitFinderDUNE
-                           RecoBase
-                           RecoBaseArt
-                           Geometry
-                           Geometry_service
-                           LArProperties_service
-                           DetectorProperties_service
-			   BackTracker_service
-                           Utilities
+                           lardata_RecoBase
+                           lardata_RecoBaseArt
+                           larcore_Geometry
+                           larcore_Geometry_Geometry_service
+			   larsim_MCCheater_BackTracker_service
+                           lardata_Utilities
 			   ${SIMULATIONBASE}
  			   ${ART_FRAMEWORK_CORE}
 			   ${ART_FRAMEWORK_PRINCIPAL}

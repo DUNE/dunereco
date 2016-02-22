@@ -31,17 +31,16 @@ extern "C" {
 #include "fhiclcpp/ParameterSet.h"
 
 // LArSoft Includes
-#include "Geometry/Geometry.h"
-#include "Geometry/CryostatGeo.h"
-#include "Geometry/TPCGeo.h"
-#include "Geometry/PlaneGeo.h"
-#include "RecoBase/Hit.h"
-#include "RecoBase/Cluster.h"
-#include "Utilities/AssociationUtil.h"
-#include "Utilities/DetectorProperties.h"
+#include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/CryostatGeo.h"
+#include "larcore/Geometry/TPCGeo.h"
+#include "larcore/Geometry/PlaneGeo.h"
+#include "lardata/RecoBase/Hit.h"
+#include "lardata/RecoBase/Cluster.h"
+#include "lardata/Utilities/AssociationUtil.h"
 #include "DisambigAlg35t.h"
-#include "MCCheater/BackTracker.h"
-#include "AnalysisBase/ParticleID.h"
+#include "larsim/MCCheater/BackTracker.h"
+#include "lardata/AnalysisBase/ParticleID.h"
 
 // ROOT Includes 
 #include "TH1D.h"

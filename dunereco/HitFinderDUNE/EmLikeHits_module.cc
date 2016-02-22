@@ -32,14 +32,14 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // LArSoft includes
-#include "Geometry/Geometry.h"
-#include "Geometry/TPCGeo.h"
-#include "Geometry/PlaneGeo.h"
-#include "Geometry/WireGeo.h"
-#include "RecoBase/Hit.h"
-#include "RecoBase/Track.h"
-#include "Utilities/AssociationUtil.h"
-#include "RecoAlg/PMAlg/Utilities.h"
+#include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/TPCGeo.h"
+#include "larcore/Geometry/PlaneGeo.h"
+#include "larcore/Geometry/WireGeo.h"
+#include "lardata/RecoBase/Hit.h"
+#include "lardata/RecoBase/Track.h"
+#include "lardata/Utilities/AssociationUtil.h"
+#include "larreco/RecoAlg/PMAlg/Utilities.h"
 
 namespace dune {
 
@@ -138,7 +138,7 @@ bool EmLikeHits::isCloseToTrack(TVector2 p, const recob::Track& trk,
 	art::ServiceHandle<geo::Geometry> geom;
 	double wirePitch = geom->TPC(tpc, cryo).Plane(view).WirePitch();
 
-	//art::ServiceHandle<util::DetectorProperties> detprop;
+	//lar::providerFrom<detinfo::DetectorPropertiesService> detprop;
 	//double driftPitch = detprop->GetXTicksCoefficient(tpc, cryo);
 
 	double max_d2_d = 0.3 * 0.3;
