@@ -48,6 +48,7 @@ void DBScanAlg::reconfigure(fhicl::ParameterSet const &pset)
     m_minPairPts             = pset.get<size_t>("MinPairPts",        2 );
     m_timeAdvanceGap         = pset.get<double>("TimeAdvanceGap",   50.);
     m_numSigmaPeakTime       = pset.get<double>("NumSigmaPeakTime",  5.);
+    m_EpsMaxDist             = pset.get<double>("EpsilonDistanceDBScan", 5.);
     
     art::ServiceHandle<geo::Geometry>            geometry;
     //    auto const* detectorProperties = lar::providerFrom<detinfo::DetectorPropertiesService>();
@@ -246,9 +247,167 @@ void DBScanAlg::ClusterHitsDBScan(ViewToHitVectorMap&       viewToHitVectorMap,
     
     return;
 }
-    
+
+
+//This is second-least restrictive: U+W+V required, now with a corrected version of nearestwireid
 size_t DBScanAlg::BuildHitPairMap(ViewToHitVectorMap& viewToHitVectorMap, ViewToWireToHitSetMap& viewToWireToHitSetMap, HitPairList& hitPairList) const
 {
+  /**
+   *  @brief Given input 2D hits, build out the lists of possible 3D hits
+   *
+   *         The current strategy: ideally all 3D hits would be comprised of a triplet of 2D hits, one from each view
+     *         However, we have concern that, in particular, the v-plane may have some inefficiency which we have to be
+     *         be prepared to deal with. The idea, then, is to first make the association of hits in the U and W planes
+     *         and then look for the match in the V plane. In the event we don't find the match in the V plane then we 
+     *         will evaluate the situation and in some instances keep the U-W pairs in order to keep efficiency high.
+     */
+
+
+
+
+    // Should we set a minimum total charge for a hit?
+    size_t totalNumHits(0);
+    size_t hitPairCntr(0);
+    double minCharge[] = {0., 0., 0.};
+    
+    //-********************************************************************************
+    // First job is to find all pairs of hits in different views which are "consistent"
+    // Start loops over rows in HitVectorMap
+    ViewToHitVectorMap::iterator mapItrU = viewToHitVectorMap.find(geo::kU);
+
+    if (mapItrU != viewToHitVectorMap.end())
+    {
+        HitVector& hitVectorU = mapItrU->second;
+        
+        totalNumHits += hitVectorU.size();
+
+        ViewToHitVectorMap::iterator mapItrW = viewToHitVectorMap.find(geo::kW);
+        
+        if (mapItrW != viewToHitVectorMap.end())
+        {
+            HitVector& hitVectorW = mapItrW->second;
+
+            totalNumHits += hitVectorW.size();
+            
+            if (viewToHitVectorMap.find(geo::kV) != viewToHitVectorMap.end())
+                totalNumHits += viewToHitVectorMap[geo::kV].size();
+            
+            // Take advantage that hits are sorted in "start time order"
+            // Set the inner loop iterator before starting loop over outer hits
+            HitVector::iterator hitVectorWStartItr = hitVectorW.begin();
+            
+            // Now we loop over the hits in these two layers
+            for (HitVector::iterator hitItrU = hitVectorU.begin(); hitItrU != hitVectorU.end(); hitItrU++)
+            {
+
+                const reco::ClusterHit2D* hitPtrU = *hitItrU;
+                
+                if (hitPtrU->getHit().Integral() < minCharge[hitPtrU->getHit().View()]) continue;
+                
+
+                // This will be used in each loop so dereference the peak time here
+                double hitUPeakTime = hitPtrU->getTimeTicks();
+                
+                // Inner loop is over hits within the time range of the outer hit
+                for (HitVector::iterator hitItrW = hitVectorWStartItr; hitItrW != hitVectorW.end(); hitItrW++)
+                {
+                    const reco::ClusterHit2D* hitPtrW = *hitItrW;
+                    
+                    if (hitPtrW->getHit().Integral() < minCharge[hitPtrW->getHit().View()]) continue;
+                    
+                    // Hits are sorted in "peak time order" which we can take advantage of to try to speed
+                    // the loops. Basically, we can compare the peak time for the outer loop hit against
+                    // the current hit's peak time and if outside the range of interest we can take action.
+                    // The range of interest is eyeballed but is meant to account for large pulse widths
+                    // Start by dereferencing the inner hit peak time
+                    double hitWPeakTime = hitPtrW->getTimeTicks();
+                    
+                    // If the outer loop's peak time is well past the current hit's then
+                    // we should advance the inner loop's start iterator and keep going
+                    if (hitUPeakTime >  hitWPeakTime + m_timeAdvanceGap)
+                    {
+
+		      
+                        hitVectorWStartItr++;
+                        continue;
+                    }
+
+                    // If the inner loop hit start time is past the end of the outer's end time, then break out loop
+                    if (hitUPeakTime + m_timeAdvanceGap < hitWPeakTime) break;
+                    
+                    // We have a candidate hit pair combination, try to make a hit
+                    reco::ClusterHit3D pair = makeHitPair(hitPtrU, hitPtrW);
+
+                    
+                    // The sign of success here is that the average peak time of the combined hits is > 0
+                    // (note that when hits are combined the first window offset is accounted for)
+                    if (pair.getAvePeakTime() > 0.)
+                    {
+		      //bool hitInVNotFound(true);
+
+
+			//I need to know the plane ID to find the nearest wire in this TPC. In order to do that, I need to
+			//loop through the viewToHitVector map and find the plane ID corresponding to a hit in this plane and this TPC
+			size_t thePlane = 9999;
+			for( HitVector::iterator hitVect_iter = viewToHitVectorMap[geo::kV].begin(); hitVect_iter != viewToHitVectorMap[geo::kV].end(); ++hitVect_iter ){
+			  if( (*(hitVect_iter))->getHit().WireID().TPC == hitPtrW->getHit().WireID().TPC ){
+			    thePlane = (*(hitVect_iter))->getHit().WireID().Plane;
+			    break;
+			  }
+			}
+			geo::PlaneID thePlaneID(0,hitPtrW->getHit().WireID().TPC,thePlane);
+           
+                        // Recover the WireID nearest in the V plane to the position of the pair
+			//REL Use plane ids here to avoid TPC ambiguity introduced by just using view type
+                        const geo::WireID wireIDV = NearestWireID_mod(pair.getPosition(), thePlaneID);
+
+			//Some debug printing
+			if( wireIDV.TPC != hitPtrW->getHit().WireID().TPC )
+			  std::cout << "TPC of third (nearest) wire is not the same as the TPC of the first two." << std::endl;
+			if( hitPtrU->getHit().WireID().TPC != hitPtrW->getHit().WireID().TPC )
+			  std::cout << "TPC of wire 1 is not TPC of wire 2." << std::endl;
+                            
+                        // We believe the code that returns the ID is offset by one
+			//Get the hits associated with the nearest wire
+                        WireToHitSetMap::iterator wireToHitSetMapVItr = viewToWireToHitSetMap[geo::kV].find(wireIDV.Wire);
+			
+                        if (wireToHitSetMapVItr != viewToWireToHitSetMap[geo::kV].end())
+                        {
+			  const reco::ClusterHit2D* hit2DV = FindBestMatchingHit(wireToHitSetMapVItr->second, pair, m_numSigmaPeakTime*pair.getSigmaPeakTime());
+
+
+                            // If a V hit found then it should be straightforward to make the triplet
+                            if (hit2DV)
+                            {
+                                reco::ClusterHit3D triplet = makeHitTriplet(pair, hit2DV);
+
+                                if (triplet.getAvePeakTime() > 0.)
+                                {
+
+                                    triplet.setID(hitPairCntr++);
+                                    hitPairList.emplace_back(std::unique_ptr<reco::ClusterHit3D>(new reco::ClusterHit3D(triplet)));
+				    //				    goodBool = true;
+                                }
+                                
+                                //hitInVNotFound = false;
+                            }
+                        }
+			
+		    }
+		}
+	    }
+	}
+    }
+    hitPairList.sort(SetPositionOrder);
+    return hitPairList.size();
+
+    
+   
+   }
+ 
+    
+  //size_t DBScanAlg::BuildHitPairMap(ViewToHitVectorMap& viewToHitVectorMap, ViewToWireToHitSetMap& viewToWireToHitSetMap, HitPairList& hitPairList) const
+  //{
     /**
      *  @brief Given input 2D hits, build out the lists of possible 3D hits
      *
@@ -258,13 +417,13 @@ size_t DBScanAlg::BuildHitPairMap(ViewToHitVectorMap& viewToHitVectorMap, ViewTo
      *         and then look for the match in the V plane. In the event we don't find the match in the V plane then we 
      *         will evaluate the situation and in some instances keep the U-W pairs in order to keep efficiency high.
      */
-    
+  /*    
     // Should we set a minimum total charge for a hit?
     size_t totalNumHits(0);
     size_t hitPairCntr(0);
     double minCharge[] = {0., 0., 0.};
     
-    //*********************************************************************************
+    //o*********************************************************************************
     // First job is to find all pairs of hits in different views which are "consistent"
     // Start loops over rows in HitVectorMap
     ViewToHitVectorMap::iterator mapItrU = viewToHitVectorMap.find(geo::kU);
@@ -456,17 +615,20 @@ size_t DBScanAlg::BuildHitPairMap(ViewToHitVectorMap& viewToHitVectorMap, ViewTo
     
     return hitPairList.size();
 }
+  */
+
+
     
-size_t DBScanAlg::BuildNeighborhoodMap(HitPairList& hitPairList, EpsPairNeighborhoodMapVec& epsPairNeighborhoodMapVec) const
-{
+//size_t DBScanAlg::BuildNeighborhoodMap(HitPairList& hitPairList, EpsPairNeighborhoodMapVec& epsPairNeighborhoodMapVec) const
+//{
     /**
      *  @brief build out the epsilon neighborhood map to be used by DBScan
      */
-    
+  /*    
     size_t consistentPairsCnt(0);
     size_t pairsChecked(0);
     
-    //**********************************************************************************
+    //o**********************************************************************************
     // Given the list of pairs of hits which are consistent with each other, build out the
     // epsilon neighbor maps
     // Now we go through the pair list and basically repeat the same exercise as above
@@ -588,6 +750,106 @@ size_t DBScanAlg::BuildNeighborhoodMap(HitPairList& hitPairList, EpsPairNeighbor
     
     return consistentPairsCnt;
 }
+*/
+
+//REL modified
+size_t DBScanAlg::BuildNeighborhoodMap(HitPairList& hitPairList, EpsPairNeighborhoodMapVec& epsPairNeighborhoodMapVec) const
+{
+  size_t consistentPairsCnt = 0;
+  size_t pairsChecked = 0;
+
+  for (HitPairList::const_iterator pairItrO = hitPairList.begin(); pairItrO != hitPairList.end(); pairItrO++)
+    {
+      const reco::ClusterHit3D* hitPairO   = (*pairItrO).get();
+      const size_t              hitPairOID = hitPairO->getID();
+      
+      // Need to initialize the "first" part of the vector pseudo map
+      epsPairNeighborhoodMapVec[hitPairOID].first = hitPairO;
+      
+      // Get reference to the list for this hit so we don't look it up inside the loop
+      EpsPairNeighborhoodPair& hitPairOPair(epsPairNeighborhoodMapVec[hitPairOID].second);
+      
+      HitPairList::const_iterator pairItrI = pairItrO;
+      
+      std::map<int, std::pair<double, const reco::ClusterHit3D*> > bestTripletMap;
+      
+      // Get the X,Y, and Z for this triplet
+      double pairO_X = hitPairO->getPosition()[0];
+      double pairO_Y = hitPairO->getPosition()[1];
+      double pairO_Z = hitPairO->getPosition()[2];
+
+      // Set maximums
+      double maxDist = m_EpsMaxDist; //REL 4.0; //Was 2, then 4 REL
+      
+      while (++pairItrI != hitPairList.end())
+        {
+	  const reco::ClusterHit3D* hitPairI = (*pairItrI).get();
+          
+	  // Note that the hits have been sorted by z, then y and then in x
+	  // Translation: hits are sorted by W wire, then in Y (increasing u, decreasing v)
+	  // and then in time.
+	  
+	  // Get the X,Y, and Z for this triplet
+	  double pairI_X = hitPairI->getPosition()[0];
+	  double pairI_Y = hitPairI->getPosition()[1];
+	  double pairI_Z = hitPairI->getPosition()[2];
+
+	  //Form the distance so we can check ranges
+	  double distance = pow(
+				pow(pairO_X-pairI_X,2) +
+				pow(pairO_Y-pairI_Y,2) +
+				pow(pairO_Z-pairI_Z,2),0.5);
+
+	  // If we have passed the 3d distance then we are done with the loop
+	  if( distance > maxDist )continue;
+
+
+	  // This is the tight constraint on the hits
+	  if (consistentPairs(hitPairO, hitPairI))
+            {
+	      double    bestBin = distance;
+	      double bestDist = 10000.;
+              
+	      if (bestTripletMap.find(bestBin) != bestTripletMap.end())  //Look at a given case of error (a given bin) and pull out the best (shortest) distance
+                {
+		  bestDist = bestTripletMap[bestBin].first;
+                }
+	      
+	      double newDist = fabs(hitPairI->getX() - hitPairO->getX());
+              
+	      // This is an attempt to "prefer" triplets over pairs
+	      if (hitPairI->getHits().size() < 3) newDist += 25.;
+              
+	      if (newDist < bestDist) bestTripletMap[bestBin] = std::pair<double, const reco::ClusterHit3D*>(newDist, hitPairI); //Select the pair of hits that is closest in time
+              
+            }
+
+	  bestTripletMap[distance] = std::pair<double,const reco::ClusterHit3D*>(distance,hitPairI);
+	  
+        }
+
+      for(const auto& bestMapItr : bestTripletMap)
+        {
+	  const reco::ClusterHit3D* hitPairI(bestMapItr.second.second);
+          
+	  hitPairOPair.first.incrementCount();
+	  hitPairOPair.second.emplace_back(hitPairI);
+	  
+	  epsPairNeighborhoodMapVec[hitPairI->getID()].second.first.incrementCount();
+	  epsPairNeighborhoodMapVec[hitPairI->getID()].second.second.emplace_back(hitPairO);
+          
+	  consistentPairsCnt++;
+        }
+    }
+  
+  mf::LogDebug("Cluster3D") << "Consistent pairs: " << consistentPairsCnt << " of " << pairsChecked << " checked." << std::endl;
+  
+  return consistentPairsCnt;
+
+  
+}
+
+
     
 bool DBScanAlg::consistentPairs(const reco::ClusterHit3D* pair1, const reco::ClusterHit3D* pair2) const
 {
@@ -1006,6 +1268,33 @@ geo::WireID DBScanAlg::NearestWireID(const double* position, const geo::View_t& 
         // Assume extremum for wire number depending on z coordinate
         if (position[2] < 0.5 * m_geometry->DetLength()) wireID.Wire = 0;
         else                                             wireID.Wire = m_geometry->Nwires(view) - 1;
+    }
+    
+    return wireID;
+}
+
+
+geo::WireID DBScanAlg::NearestWireID_mod(const double* position, const geo::PlaneID & thePlaneID ) const
+{
+    geo::WireID wireID(0,0,0,0);
+    
+    // Embed the call to the geometry's services nearest wire id method in a try-catch block
+    try {
+      wireID =  m_geometry->NearestWireID(position, thePlaneID.Plane, thePlaneID.TPC, thePlaneID.Cryostat);
+    }
+    catch(std::exception& exc)
+    {
+        // This can happen, almost always because the coordinates are **just** out of range
+        mf::LogWarning("Cluster3D") << "Exception caught finding nearest wire, position - " << exc.what() << std::endl;
+	std::cout << "Exception caught finding nearest wire." << std::endl;
+
+
+        // Assume extremum for wire number depending on z coordinate
+        if (position[2] < 0.5 * m_geometry->DetLength()) wireID.Wire = 0;
+        else                                             wireID.Wire = m_geometry->Nwires(thePlaneID.Plane) - 1; //Could be a problem here.Testing for now...
+
+	std::cout << "WireID: " << wireID.Wire << std::endl;
+
     }
     
     return wireID;

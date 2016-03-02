@@ -1,25 +1,26 @@
 BEGIN_PROLOG
 
-standard_cluster3ddbscanalg:
+dune35t_cluster3ddbscanalg:
 {
-  EnableMonitoring:  true   # enable monitoring of functions
-  NumPairPts:           2   # minimum number of hit pairs for DBScan to consider
-  TimeAdvanceGap:      50.  # Window size (ticks) for comparing hits in different views
-  NumSigmaPeakTime:     5.  # Number "sigma" for peak times when building hits
+  EnableMonitoring:        true   # enable monitoring of functions
+  NumPairPts:              2      # minimum number of hit pairs for DBScan to consider
+  TimeAdvanceGap:          50.    # Window size (ticks) for comparing hits in different views
+  NumSigmaPeakTime:        5.     # Number "sigma" for peak times when building hits
+  EpsilonDistanceDBScan:   5.     # Distance (cm) between 3D hits for DBScan to cluster them together
 }
 
-standard_cluster3dprincipalcomponentsalg:
+dune35t_cluster3dprincipalcomponentsalg:
 {
   ParallelLines:        0.00001 # delta theta to be parallel
 }
 
-standard_cluster3dskeletonalg:
+dune35t_cluster3dskeletonalg:
 {
   MinimumDeltaTicks:    0.05 # minimum delta time (in ticks) when matching hits
   MaximumDeltaTicks:   10.0  # maximum delta time (in ticks) when matching hits
 }
 
-standard_cluster3dhoughseedfinderalg:
+dune35t_cluster3dhoughseedfinderalg:
 {
   Minimum3DHits:            5      # Minimum number 3D hits to run transform
   ThetaBins:              360      # Number of bins in theta (pi)
@@ -33,30 +34,23 @@ standard_cluster3dhoughseedfinderalg:
   MaxLoopsPerCluster:       3      # Maximum number of loops to search for tracks
   MaximumGap:              5.      # Maximum gap in arc length for seed hits
   DisplayHoughHist:       false
-  PrincipalComponentsAlg: @local::standard_cluster3dprincipalcomponentsalg
+  PrincipalComponentsAlg: @local::dune35t_cluster3dprincipalcomponentsalg
 }
 
-standard_cluster3dpcaseedfinderalg:
+dune35t_cluster3dpcaseedfinderalg:
 {
   GapDistance:             5.      # Distance to declare a gap in hits
   NumSeed2DHits:           80      # number of 2D hits in the seed
   MinAllowedCosAng:       0.7      # minimum angle allowed
-  PrincipalComponentsAlg: @local::standard_cluster3dprincipalcomponentsalg
+  PrincipalComponentsAlg: @local::dune35t_cluster3dprincipalcomponentsalg
 }
 
-standard_cluster3dparallelhitsseedfinderalg:
+dune35t_cluster3dparallelhitsseedfinderalg:
 {
   MaxNumEdgeHits:        1000      # Maximum number hits each end of PCA axis
   GapDistance:            20.      # Distance to declare a gap in hits
   NumSeed2DHits:           80      # number of 2D hits in the seed
-  PrincipalComponentsAlg: @local::standard_cluster3dprincipalcomponentsalg
+  PrincipalComponentsAlg: @local::dune35t_cluster3dprincipalcomponentsalg
 }
-
-microboone_cluster3ddbscanalg:                 @local::standard_cluster3ddbscanalg 
-microboone_cluster3dprincipalcomponentsalg:    @local::standard_cluster3dprincipalcomponentsalg 
-microboone_cluster3dskeletonalg:               @local::standard_cluster3dskeletonalg 
-microboone_cluster3dhoughseedfinderalg:        @local::standard_cluster3dhoughseedfinderalg 
-microboone_cluster3dpcaseedfinderalg:          @local::standard_cluster3dpcaseedfinderalg
-microboone_cluster3dparallelhitsseedfinderalg: @local::standard_cluster3dparallelhitsseedfinderalg
 
 END_PROLOG

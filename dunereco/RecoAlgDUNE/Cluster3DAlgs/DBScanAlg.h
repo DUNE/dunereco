@@ -182,6 +182,7 @@ private:
      */
     geo::WireID NearestWireID(const double* position, const geo::View_t& view) const;
 
+    geo::WireID NearestWireID_mod(const double* position, const geo::PlaneID & thePlaneID ) const; //REL
     
     /**
      *  @brief Data members to follow
@@ -190,6 +191,7 @@ private:
     size_t                    m_minPairPts;
     double                    m_timeAdvanceGap;
     double                    m_numSigmaPeakTime;
+    double                    m_EpsMaxDist;
 
     bool                      m_enableMonitoring;      ///<
     int                       m_hits;                  ///<

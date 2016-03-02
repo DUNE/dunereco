@@ -1,7 +1,7 @@
 /**
- *  @file   Cluster3D_module.cc
+ *  @file   Cluster3DDUNE35t_module.cc
  *
- *          Class:       Cluster3D
+ *          Class:       Cluster3DDUNE35t
  *          Module Type: Producer
  * 
  *  @brief  Producer module to create 3D clusters from input recob::Hit objects
@@ -24,7 +24,7 @@
  *
  *          Note that the general 3D cluster suite of algorithms make extensive use of a set of data objects 
  *          which contain volatile data members. At the end of the routine these are used to make the output
- *          LArSoft data products described above. See LarData/RecoObjects/Cluster3D.h
+ *          LArSoft data products described above. See LarData/RecoObjects/Cluster3DDUNE35t.h
  *   
  *          Configuration parameters:
  *          HitFinderModuleLabel:         the producer module responsible for making the recob:Hits to use
@@ -80,6 +80,7 @@
 
 // ROOT includes
 #include "TTree.h"
+#include "TH2D.h"
 
 // std includes
 #include <string>
@@ -165,9 +166,9 @@ typedef std::list<ClusterParameters> ClusterParametersList;
 // Definition of the producer module here
     
 /**
- *  @brief  Definition of the Cluster3D class
+ *  @brief  Definition of the Cluster3DDUNE35t class
  */
-class Cluster3D : public art::EDProducer
+class Cluster3DDUNE35t : public art::EDProducer
 {
 public:
     /**
@@ -175,12 +176,12 @@ public:
      * 
      *  @param  pset - reference to the parameters used by this module and its algorithms
      */
-    Cluster3D(fhicl::ParameterSet const &pset);
+    Cluster3DDUNE35t(fhicl::ParameterSet const &pset);
 
     /**
      *  @brief  Destructor
      */
-    virtual ~Cluster3D();
+    virtual ~Cluster3DDUNE35t();
 
     /**
      *  @brief declare the standard art functions that we'll implement in this producer module
@@ -296,6 +297,19 @@ private:
     {
         return fabs(pca.getEigenVectors()[2][0]) > m_parallelHitsCosAng && 3. * sqrt(pca.getEigenValues()[1]) > m_parallelHitsTransWid;
     }
+  
+  //Debug plotting
+  void plotClusters1( reco::HitPairClusterMap hpcm, HitPairList& hpl );
+  void plotClusters2( ClusterParametersList cpl );
+  void plotSpacepoints( double y, double z) const;
+  
+  void extractTPCSpecificInfoFromHitVect( RecobHitVector & recobHits_thisTPC,
+					  double & startWire,
+					  double & endWire,
+					  double & startTime,
+					  double & sigmaStartTime,
+					  double & endTime,
+					  double & sigmaEndTime) const;
 
     /**
      *   Algorithm parameters
@@ -332,9 +346,40 @@ private:
     HoughSeedFinderAlg        m_seedFinderAlg;         ///<  Seed finder
     PCASeedFinderAlg          m_pcaSeedFinderAlg;      ///<  Use PCA axis to find seeds
     ParallelHitsSeedFinderAlg m_parallelHitsAlg;       ///<  Deal with parallel hits clusters
+
+  //Histograms for plotting in debug mode
+  TH2D * cluster3DHitsYZ_evt1;
+  TH2D * cluster3DHitsYZ_evt2;
+  TH2D * cluster3DHitsYZ_evt3;
+  TH2D * cluster3DHitsYZ_evt4;
+  TH2D * cluster3DHitsYZ_evt5;
+
+  TH2D * all3DHitsYZ_evt1;
+  TH2D * all3DHitsYZ_evt2;
+  TH2D * all3DHitsYZ_evt3;
+  TH2D * all3DHitsYZ_evt4;
+  TH2D * all3DHitsYZ_evt5;
+
+  TH2D * cluster3DHitsYZ_postDisambig_evt1;
+  TH2D * cluster3DHitsYZ_postDisambig_evt2;
+  TH2D * cluster3DHitsYZ_postDisambig_evt3;
+  TH2D * cluster3DHitsYZ_postDisambig_evt4;
+  TH2D * cluster3DHitsYZ_postDisambig_evt5;
+ 
+  TH2D * finalSpacePoints_evt1;
+  TH2D * finalSpacePoints_evt2;
+  TH2D * finalSpacePoints_evt3;
+  TH2D * finalSpacePoints_evt4;
+  TH2D * finalSpacePoints_evt5;
+  
+  
+  size_t fEvtNum;
+
+
+
 };
 
-DEFINE_ART_MODULE(Cluster3D)
+DEFINE_ART_MODULE(Cluster3DDUNE35t)
 
 } // namespace lar_cluster3d
 
@@ -343,7 +388,7 @@ DEFINE_ART_MODULE(Cluster3D)
 
 namespace lar_cluster3d {
 
-Cluster3D::Cluster3D(fhicl::ParameterSet const &pset) :
+Cluster3DDUNE35t::Cluster3DDUNE35t(fhicl::ParameterSet const &pset) :
     m_dbScanAlg(pset.get<fhicl::ParameterSet>("DBScanAlg")),
     m_pcaAlg(pset.get<fhicl::ParameterSet>("PrincipalComponentsAlg")),
     m_skeletonAlg(pset.get<fhicl::ParameterSet>("SkeletonAlg")),
@@ -369,16 +414,16 @@ Cluster3D::Cluster3D(fhicl::ParameterSet const &pset) :
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-Cluster3D::~Cluster3D()
+Cluster3DDUNE35t::~Cluster3DDUNE35t()
 {
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-void Cluster3D::reconfigure(fhicl::ParameterSet const &pset)
+void Cluster3DDUNE35t::reconfigure(fhicl::ParameterSet const &pset)
 {
     m_hitfinderModuleLabel = pset.get<std::string>("HitFinderModuleLabel", "gaushit");
-    m_enableMonitoring     = pset.get<bool>       ("EnableMonitoring",         false);
+    m_enableMonitoring     = pset.get<bool>       ("EnableMonitoring",          true);
     m_clusHitRejectionFrac = pset.get<double>     ("ClusterHitRejectionFrac",    0.5);
     m_parallelHitsCosAng   = pset.get<double>     ("ParallelHitsCosAng",       0.999);
     m_parallelHitsTransWid = pset.get<double>     ("ParallelHitsTransWid",      25.0);
@@ -393,7 +438,7 @@ void Cluster3D::reconfigure(fhicl::ParameterSet const &pset)
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-void Cluster3D::beginJob()
+void Cluster3DDUNE35t::beginJob()
 {
     /**
      *  @brief beginJob will be tasked with initializing monitoring, in necessary, but also to init the 
@@ -410,18 +455,23 @@ void Cluster3D::beginJob()
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-void Cluster3D::endJob()
+void Cluster3DDUNE35t::endJob()
 {
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-void Cluster3D::produce(art::Event &evt)
+void Cluster3DDUNE35t::produce(art::Event &evt)
 {
     /**
      *  @brief Producer method for reovering the 2D hits and driving the 3D reconstruciton
      */
-    mf::LogInfo("Cluster3D") << " *** Cluster3D::produce(...)  [Run=" << evt.run() << ", Event=" << evt.id().event() << "] Starting Now! *** " << std::endl;
+    mf::LogInfo("Cluster3DDUNE35t") << " *** Cluster3DDUNE35t::produce(...)  [Run=" << evt.run() << ", Event=" << evt.id().event() << "] Starting Now! *** " << std::endl;
+    
+    //REL debug
+    fEvtNum = evt.id().event();
+    std::cout << "Cluster3DDUNE35t has started." << std::endl;
+
 
     // Set up for monitoring the timing... at some point this should be removed in favor of
     // external profilers
@@ -456,12 +506,20 @@ void Cluster3D::produce(art::Event &evt)
     // If there are no hits in our view/wire data structure then do not proceed with the full analysis
     if (!viewToWireToHitSetMap.empty())
     {
-        // Call the main workhorse algorithm for building the local version of candidate 3D clusters
-        m_dbScanAlg.ClusterHitsDBScan(viewToHitVectorMap, viewToWireToHitSetMap, *hitPairList, hitPairClusterMap);
-        
-        // Given the work above, process and build the list of 3D clusters to output
-        BuildClusterInfo(hitPairClusterMap, clusterParametersList, m_clusHitRejectionFrac);
+
+      // Call the main workhorse algorithm for building the local version of candidate 3D clusters
+      m_dbScanAlg.ClusterHitsDBScan(viewToHitVectorMap, viewToWireToHitSetMap, *hitPairList, hitPairClusterMap);
+      
+      //Plot Spatial locations of clusters for debugging
+      plotClusters1( hitPairClusterMap, *hitPairList );
+      
+      // Given the work above, process and build the list of 3D clusters to output
+      BuildClusterInfo(hitPairClusterMap, clusterParametersList, m_clusHitRejectionFrac);
+      
     }
+
+    //Plot Spatial locations of clusters for debugging
+    plotClusters2( clusterParametersList );
     
     if(m_enableMonitoring) theClockFinish.start();
 
@@ -487,19 +545,49 @@ void Cluster3D::produce(art::Event &evt)
         m_hits                  = static_cast<int>(clusterHit2DMasterVec.size());
         m_pRecoTree->Fill();
         
-        mf::LogDebug("Cluster3D") << "*** Cluster3D total time: " << m_totalTime << ", art: " << m_artHitsTime << ", make: " << m_makeHitsTime
+        mf::LogDebug("Cluster3DDUNE35t") << "*** Cluster3DDUNE35t total time: " << m_totalTime << ", art: " << m_artHitsTime << ", make: " << m_makeHitsTime
         << ", build: " << m_buildNeighborhoodTime << ", dbscan: " << m_dbscanTime << ", finish: " << m_finishTime << std::endl;
     }
     
     // Will we ever get here? ;-)
+    std::cout << "Cluster3DDUNE35t has ended." << std::endl;
     return;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-void Cluster3D::InitializeMonitoring()
+void Cluster3DDUNE35t::InitializeMonitoring()
 {
     art::ServiceHandle<art::TFileService> tfs;
+
+    //REL Debug
+    cluster3DHitsYZ_evt1 = tfs->make<TH2D>("cluster3DHits_evt1",";Evt 1 YZ Locations of 3D hits created in DBScan: Z=Xaxis, Y=Yaxis;",250,0,250,350,-100,250);
+    cluster3DHitsYZ_evt2 = tfs->make<TH2D>("cluster3DHits_evt2",";Evt 2 YZ Locations of 3D hits created in DBScan: Z=Xaxis, Y=Yaxis;",250,0,250,350,-100,250);
+    cluster3DHitsYZ_evt3 = tfs->make<TH2D>("cluster3DHits_evt3",";Evt 3 YZ Locations of 3D hits created in DBScan: Z=Xaxis, Y=Yaxis;",250,0,250,350,-100,250);
+    cluster3DHitsYZ_evt4 = tfs->make<TH2D>("cluster3DHits_evt4",";Evt 4 YZ Locations of 3D hits created in DBScan: Z=Xaxis, Y=Yaxis;",250,0,250,350,-100,250);
+    cluster3DHitsYZ_evt5 = tfs->make<TH2D>("cluster3DHits_evt5",";Evt 5 YZ Locations of 3D hits created in DBScan: Z=Xaxis, Y=Yaxis;",250,0,250,350,-100,250);
+
+    //REL Debug    
+    all3DHitsYZ_evt1 = tfs->make<TH2D>("all3DHits_evt1",";Evt 1 YZ Locations of all possible 3D hits in DBScan: Z=Xaxis, Y=Yaxis;",250,0,250,350,-100,250);
+    all3DHitsYZ_evt2 = tfs->make<TH2D>("all3DHits_evt2",";Evt 2 YZ Locations of all possible 3D hits in DBScan: Z=Xaxis, Y=Yaxis;",250,0,250,350,-100,250);
+    all3DHitsYZ_evt3 = tfs->make<TH2D>("all3DHits_evt3",";Evt 3 YZ Locations of all possible 3D hits in DBScan: Z=Xaxis, Y=Yaxis;",250,0,250,350,-100,250);
+    all3DHitsYZ_evt4 = tfs->make<TH2D>("all3DHits_evt4",";Evt 4 YZ Locations of all possible 3D hits in DBScan: Z=Xaxis, Y=Yaxis;",250,0,250,350,-100,250);
+    all3DHitsYZ_evt5 = tfs->make<TH2D>("all3DHits_evt5",";Evt 5 YZ Locations of all possible 3D hits in DBScan: Z=Xaxis, Y=Yaxis;",250,0,250,350,-100,250);
+
+    //REL Debug    
+    cluster3DHitsYZ_postDisambig_evt1 = tfs->make<TH2D>("postDisambigClusts_evt1",";Evt1 YZ Locs of 3D hits, Z=Xaxis, Y=Yaxis;",250,0,250,350,-100,250);
+    cluster3DHitsYZ_postDisambig_evt2 = tfs->make<TH2D>("postDisambigClusts_evt2",";Evt2 YZ Locs of 3D hits, Z=Xaxis, Y=Yaxis;",250,0,250,350,-100,250);
+    cluster3DHitsYZ_postDisambig_evt3 = tfs->make<TH2D>("postDisambigClusts_evt3",";Evt3 YZ Locs of 3D hits, Z=Xaxis, Y=Yaxis;",250,0,250,350,-100,250);
+    cluster3DHitsYZ_postDisambig_evt4 = tfs->make<TH2D>("postDisambigClusts_evt4",";Evt4 YZ Locs of 3D hits, Z=Xaxis, Y=Yaxis;",250,0,250,350,-100,250);
+    cluster3DHitsYZ_postDisambig_evt5 = tfs->make<TH2D>("postDisambigClusts_evt5",";Evt5 YZ Locs of 3D hits, Z=Xaxis, Y=Yaxis;",250,0,250,350,-100,250);
+
+    //REL Debug    
+    finalSpacePoints_evt1 = tfs->make<TH2D>("finalSpacePoints_evt1",";Evt1 Final Spacepoints YZ;",250,0,250,350,-100,250);
+    finalSpacePoints_evt2 = tfs->make<TH2D>("finalSpacePoints_evt2",";Evt1 Final Spacepoints YZ;",250,0,250,350,-100,250);
+    finalSpacePoints_evt3 = tfs->make<TH2D>("finalSpacePoints_evt3",";Evt1 Final Spacepoints YZ;",250,0,250,350,-100,250);
+    finalSpacePoints_evt4 = tfs->make<TH2D>("finalSpacePoints_evt4",";Evt1 Final Spacepoints YZ;",250,0,250,350,-100,250);
+    finalSpacePoints_evt5 = tfs->make<TH2D>("finalSpacePoints_evt5",";Evt1 Final Spacepoints YZ;",250,0,250,350,-100,250);
+    
     m_pRecoTree = tfs->make<TTree>("monitoring", "LAr Reco");
     m_pRecoTree->Branch("run",                  &m_run,                   "run/I");
     m_pRecoTree->Branch("event",                &m_event,                 "event/I");
@@ -514,7 +602,7 @@ void Cluster3D::InitializeMonitoring()
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-void Cluster3D::PrepareEvent(const art::Event &evt)
+void Cluster3DDUNE35t::PrepareEvent(const art::Event &evt)
 {
     m_run                   = evt.run();
     m_event                 = evt.id().event();
@@ -540,7 +628,7 @@ bool Hit2DSetCompare::operator() (const reco::ClusterHit2D* left, const reco::Cl
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
-void Cluster3D::CollectArtHits(art::Event&            evt,
+void Cluster3DDUNE35t::CollectArtHits(art::Event&            evt,
                                Hit2DVector&           hitVector,
                                ViewToHitVectorMap&    viewToHitVectorMap,
                                ViewToWireToHitSetMap& viewToWireToHitSetMap,
@@ -589,7 +677,7 @@ void Cluster3D::CollectArtHits(art::Event&            evt,
     std::sort(viewToHitVectorMap[geo::kV].begin(), viewToHitVectorMap[geo::kV].end(), SetHitTimeOrder);
     std::sort(viewToHitVectorMap[geo::kW].begin(), viewToHitVectorMap[geo::kW].end(), SetHitTimeOrder);
 
-    mf::LogDebug("Cluster3D") << ">>>>> Number of ART hits: " << recobHitHandle->size() << std::endl;
+    mf::LogDebug("Cluster3DDUNE35t") << ">>>>> Number of ART hits: " << recobHitHandle->size() << std::endl;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -637,7 +725,7 @@ struct HitPairClusterOrder
     }
 };
     
-void Cluster3D::BuildClusterInfo(reco::HitPairClusterMap& hitPairClusterMap, ClusterParametersList& clusterParametersList, double rejectFraction) const
+void Cluster3DDUNE35t::BuildClusterInfo(reco::HitPairClusterMap& hitPairClusterMap, ClusterParametersList& clusterParametersList, double rejectFraction) const
 {
     /** 
      *  @brief Given a list of a list of candidate cluster hits, build these out into the intermediate 
@@ -699,7 +787,7 @@ void Cluster3D::BuildClusterInfo(reco::HitPairClusterMap& hitPairClusterMap, Clu
     return;
 }
     
-void Cluster3D::FillClusterParams(ClusterParameters& clusterParams, double rejectFraction, double maxLostRatio) const
+void Cluster3DDUNE35t::FillClusterParams(ClusterParameters& clusterParams, double rejectFraction, double maxLostRatio) const
 {
     /**
      *  @brief Given a list of hits fill out the remaining parameters for this cluster and evaluate the
@@ -743,10 +831,13 @@ void Cluster3D::FillClusterParams(ClusterParameters& clusterParams, double rejec
         
         numSharedHits += nHitsAlreadyUsed;
         
-        if (nHitsAlreadyUsed < int(hit3D->getHits().size())-1)   // was 2
+	//        if (nHitsAlreadyUsed < int(hit3D->getHits().size())-1)   // was 2 //Commented out by REL
+	if (nHitsAlreadyUsed == 0 )   // Added in by REL
         {
             numUniqueHits += int(hit3D->getHits().size()) - nHitsAlreadyUsed;
-            for(const auto& hit2D : hit3D->getHits()) hitSet.insert(hit2D);
+            for(const auto& hit2D : hit3D->getHits()){
+	      hitSet.insert(hit2D);
+	    }
         }
         else
         {
@@ -835,7 +926,7 @@ void Cluster3D::FillClusterParams(ClusterParameters& clusterParams, double rejec
     return;
 }
     
-void Cluster3D::findTrackSeeds(art::Event&                         evt,
+void Cluster3DDUNE35t::findTrackSeeds(art::Event&                         evt,
                                ClusterParameters&                  cluster,
                                RecobHitToPtrMap&                   hitToPtrMap,
                                std::vector<recob::Seed>&           seedVec,
@@ -935,7 +1026,7 @@ struct Hit3DDistanceOrder
     }
 };
     
-void Cluster3D::splitClustersWithMST(ClusterParameters& clusterParameters, ClusterParametersList& clusterParametersList) const
+void Cluster3DDUNE35t::splitClustersWithMST(ClusterParameters& clusterParameters, ClusterParametersList& clusterParametersList) const
 {
     // This is being left in place for future development. Essentially, it was an attempt to implement
     // a Minimum Spanning Tree as a way to split a particular cluster topology, one where two straight
@@ -1125,7 +1216,7 @@ private:
     double m_maxRange;
 };
 
-void Cluster3D::splitClustersWithHough(ClusterParameters&       clusterParameters,
+void Cluster3DDUNE35t::splitClustersWithHough(ClusterParameters&       clusterParameters,
                                        reco::HitPairClusterMap& hitPairClusterMap,
                                        ClusterParametersList&   clusterParametersList) const
 {
@@ -1268,7 +1359,7 @@ void Cluster3D::splitClustersWithHough(ClusterParameters&       clusterParameter
     return;
 }
     
-void Cluster3D::ProduceArtClusters(art::Event&              evt,
+void Cluster3DDUNE35t::ProduceArtClusters(art::Event&              evt,
                                    HitPairList&             hitPairVector,
                                    reco::HitPairClusterMap& hitPairClusterMap,
                                    ClusterParametersList&   clusterParametersList,
@@ -1278,7 +1369,7 @@ void Cluster3D::ProduceArtClusters(art::Event&              evt,
      *  @brief The workhorse to take the candidate 3D clusters and produce all of the necessary art output
      */
     
-    mf::LogDebug("Cluster3D") << " *** Cluster3D::ProduceArtClusters() *** " << std::endl;
+    mf::LogDebug("Cluster3DDUNE35t") << " *** Cluster3DDUNE35t::ProduceArtClusters() *** " << std::endl;
     
     std::unique_ptr< std::vector<recob::PCAxis> >     artPCAxisVector( new std::vector<recob::PCAxis>         );
     std::unique_ptr< std::vector<recob::PFParticle> > artPFParticleVector( new std::vector<recob::PFParticle> );
@@ -1312,6 +1403,7 @@ void Cluster3D::ProduceArtClusters(art::Event&              evt,
     if (!clusterParametersList.empty())
     {
         // Grab an instance of the Geometry as it is needed for the association of hits
+
 
         // indices for the clusters created
         int    clusterIdx(0);
@@ -1347,7 +1439,7 @@ void Cluster3D::ProduceArtClusters(art::Event&              evt,
             // The chances of getting here and this condition not being true are probably zero... but check anyway
             if (!fullPCA.getSvdOK())
             {
-                mf::LogDebug("Cluster3D") << "--> no feature extraction done on this cluster!!" << std::endl;
+                mf::LogDebug("Cluster3DDUNE35t") << "--> no feature extraction done on this cluster!!" << std::endl;
                 clusterParametersListItr++;
                 continue;
             }
@@ -1381,7 +1473,7 @@ void Cluster3D::ProduceArtClusters(art::Event&              evt,
                 // hardwire for now to see what is going on...
                 if (skeletonPCA.getNumHitsUsed() > 1000 && skeletonPCA.getEigenValues()[1] > 100. && fabs(skeletonPCA.getEigenVectors()[2][0]) < m_parallelHitsCosAng)
                 {
-                    mf::LogDebug("Cluster3D") << "--> Detected crossed axes!! Total # hits: " << fullPCA.getNumHitsUsed() <<
+                    mf::LogDebug("Cluster3DDUNE35t") << "--> Detected crossed axes!! Total # hits: " << fullPCA.getNumHitsUsed() <<
                         "\n    Skeleton PCA # hits: " << skeletonPCA.getNumHitsUsed() << ", eigenValues: " <<
                         skeletonPCA.getEigenValues()[0] << ", " <<skeletonPCA.getEigenValues()[1] << ", " <<skeletonPCA.getEigenValues()[2] << std::endl;
                     
@@ -1406,7 +1498,125 @@ void Cluster3D::ProduceArtClusters(art::Event&              evt,
                 // And sorting! Sorting is good for the mind, soul and body
                 // ooopsss... don't do this else event display will look funky
 //                std::sort(recobHits.begin(), recobHits.end());
+
                 
+		//////////////////////////////
+		//REL TWEAKS BEGIN HERE
+		//////////////////////////////
+
+		//Right now, we have our clusterparameter objects holding clusters that are not restricted to a given TPC (but should be
+		//restricted to a given view). What we need to do is split up the existing clusters by TPC
+		
+		//Loop over TPCs - make more robust later
+		for( size_t iTPC = 0; iTPC < 8 ; ++iTPC ){
+		  
+		  //Create a recob::Hit vector for this TPC
+		  RecobHitVector recobHits_thisTPC;
+		  
+		  //Loop over all hits in the cluster and push back only those in this TPC
+		  for(HitVectorConst::const_iterator hitItr = clusParams.m_hitVector.begin(); hitItr != clusParams.m_hitVector.end(); hitItr++)
+		    {
+		      art::Ptr<recob::Hit> hitPtr = hitToPtrMap[&(*hitItr)->getHit()];
+		      if( hitPtr->WireID().TPC == iTPC ){
+			recobHits_thisTPC.push_back(hitPtr);
+		      }
+		    }
+		  
+		  //Now we have a vector of recob::Hits that belong to this TPC. Start extracting info		
+		  double dTdW(0.);
+		  double startWire(0);
+		  double endWire(0);
+		  double startTime(0);
+		  double sigmaStartTime(0);
+		  double endTime(0);
+		  double sigmaEndTime(0);
+		  double wirePitch(m_geometry->WirePitch(clusParams.m_view));
+		  //		  double midWire(0);
+		  extractTPCSpecificInfoFromHitVect(recobHits_thisTPC,
+						    startWire,
+						    endWire,
+						    startTime,
+						    sigmaStartTime,
+						    endTime,
+						    sigmaEndTime);
+
+		  std::cout << "Starttime: " << startTime << std::endl;
+		  
+		  //At this point, we should have the correct pieces of information (startWire,endwire,etc.) to use for
+		  //further cluster analysis
+
+		  // Now sort out the slope in this view
+		  // This follows the code in the display pacakage		  
+		  double thetaWire     = m_geometry->Plane(clusParams.m_view,iTPC,0).Wire(0).ThetaZ();
+		  double driftVelocity = m_detector->DriftVelocity();
+		  double timeTick      = m_detector->SamplingRate()*1.e-3;
+
+		  //rotate coord system CCW around x-axis by pi-thetawire
+		  //   new yprime direction is perpendicular to the wire direction
+		  //   in the same plane as the wires and in the direction of
+		  //   increasing wire number
+		  //use yprime-component of dir cos in rotated coord sys to get
+		  //   dTdW (number of time ticks per unit of wire pitch)
+		  double rotAng = 3.1416-thetaWire;
+		  double yPrime = std::cos(rotAng)*skeletonPCA.getEigenVectors()[0][1]+std::sin(rotAng)*skeletonPCA.getEigenVectors()[0][2];
+		  
+		  if (fabs(yPrime) < 0.0000001) yPrime = 0.0000001;
+		  
+		  dTdW = skeletonPCA.getEigenVectors()[0][0]*wirePitch/(driftVelocity*timeTick*yPrime);
+		  
+		  // Finally, use the time corresponding to this position
+		  //		  double midTime = m_detector->ConvertXToTicks(skeletonPCA.getAvePosition()[0], clusParams.m_view, iTPC, 0);
+		  
+		  
+		  // plane ID is not a part of clusParams... get the one from the first hit
+		  geo::PlaneID plane; // invalid by default
+		  if (!recobHits.empty())
+		    plane = recobHits.front()->WireID().planeID();
+		  
+		  
+		  // feed the algorithm with all the cluster hits
+		  ClusterParamAlgo.ImportHits(recobHits);
+		  
+		  // override the end angles: instead of using the standard
+		  // algorithm, we use a precomputed value
+		  double tan_dTdW(std::tan(dTdW));
+		  
+		  ClusterParamAlgo.OverrideParameter
+		    (OverriddenClusterParamsAlg_t::cpStartAngle, tan_dTdW);
+		  ClusterParamAlgo.OverrideParameter
+		    (OverriddenClusterParamsAlg_t::cpEndAngle, tan_dTdW);
+
+		  if( recobHits_thisTPC.size() > 0 ){
+		    // create the recob::Cluster directly in the vector
+		    cluster::ClusterCreator artCluster(
+		  				       ClusterParamAlgo,                     // algo
+						       startWire,                            // start_wire
+						       0.,                                   // sigma_start_wire
+						       startTime,                            // start_tick
+						       clusParams.m_sigmaStartTime,          // sigma_start_tick
+						       endWire,                              // end_wire
+						       0.,                                   // sigma_end_wire,
+						       endTime,                              // end_tick
+						       clusParams.m_sigmaEndTime,            // sigma_end_tick
+						       clusterIdx++,                         // ID
+						       clusParams.m_view,                    // view
+						       plane,                                // plane
+						       recob::Cluster::Sentry                // sentry
+						       );
+		    
+		    artClusterVector->emplace_back(artCluster.move());
+		    
+		    util::CreateAssn(*this, evt, *artClusterVector, recobHits_thisTPC, *artClusterAssociations);
+		    clusterEnd++;
+		  }
+		}
+
+		  
+		//////////////////////////////
+		//REL TWEAKS END HERE
+		//////////////////////////////
+
+		/*                
                 // Get the tdc/wire slope... from the unit vector...
                 double dTdW(0.);
                 double startWire(clusParams.m_startWire);
@@ -1422,7 +1632,7 @@ void Cluster3D::ProduceArtClusters(art::Event&              evt,
                     midWire = 1.*m_geometry->NearestWire(skeletonPCA.getAvePosition(), clusParams.m_view);
                 } catch (cet::exception& e)
                 {
-                    mf::LogWarning("Cluster3D") << "Exception caught finding nearest wire, position - " << e.what() << std::endl;
+                    mf::LogWarning("Cluster3DDUNE35t") << "Exception caught finding nearest wire, position - " << e.what() << std::endl;
                     midWire  = skeletonPCA.getAvePosition()[2];
                     midWire /= wirePitch;
                 }
@@ -1495,6 +1705,7 @@ void Cluster3D::ProduceArtClusters(art::Event&              evt,
                              
                 util::CreateAssn(*this, evt, *artClusterVector, recobHits, *artClusterAssociations);
                 clusterEnd++;
+		*/
             }
             
             // Deal with converting the Hit Pairs to art
@@ -1533,7 +1744,27 @@ void Cluster3D::ProduceArtClusters(art::Event&              evt,
                 // Mark this hit pair as in use
                 hitPair->setStatusBit(reco::ClusterHit3D::MADESPACEPOINT);
                 double spacePointPos[] = {hitPair->getPosition()[0],hitPair->getPosition()[1],hitPair->getPosition()[2]};
+		this->plotSpacepoints( spacePointPos[1], spacePointPos[2] );
+
+		//Add this spacepoint to the spacepoint vector for later association creation
                 artSpacePointVector->push_back(recob::SpacePoint(spacePointPos, spError, chisq, spacePointID++));
+
+		//REL make associations between this spacepoint and hits
+		if( chisq == -1 ||
+		    chisq == -3 || 
+		    chisq == -4 ){
+		  
+		  std::vector<art::Ptr<recob::Hit> > recobHitVector;	     
+		  
+		  //Looping over all of the 2d hits inside the 3d hit and pushing them into a vector associated with a Spacepoint
+		  for( size_t iHit2D = 0; iHit2D < hitPair->getHits().size(); ++iHit2D ){
+		    art::Ptr<recob::Hit> hitPtr = hitToPtrMap[&(hitPair->getHits().at(iHit2D)->getHit())];
+		    recobHitVector.push_back( hitPtr );
+		  }		
+		  
+		  //Finally creating the association
+		  util::CreateAssn(*this, evt, *artSpacePointVector, recobHitVector, *artSPHitAssociations);
+		}
             }
             
             // Empty daughter vector for now
@@ -1598,6 +1829,12 @@ void Cluster3D::ProduceArtClusters(art::Event&              evt,
         }
     }
     
+    //REL Troubleshooting
+    for( size_t iClust = 0; iClust < artClusterVector->size(); ++iClust ){
+      //Find the cluster ID, the plane ID, and the TPC ID
+      std::cout << "ClusterID/PlaneID/TPCID: " << artClusterVector->at(iClust).ID() << "/" << artClusterVector->at(iClust).Plane().Plane << "/" << artClusterVector->at(iClust).Plane().TPC << std::endl;
+    }
+
     // Finaly done, now output everything to art
     evt.put(std::move(artPCAxisVector));
     evt.put(std::move(artPFParticleVector));
@@ -1614,5 +1851,156 @@ void Cluster3D::ProduceArtClusters(art::Event&              evt,
     
     return;
 }
+
+void Cluster3DDUNE35t::plotClusters1( reco::HitPairClusterMap hpcm, HitPairList& hpl )
+{
+  //Loop through all clusters
+  for( std::map<int,reco::HitPairListPtr>::iterator listIter = hpcm.begin(); listIter != hpcm.end(); ++listIter ){
+    //    int clusterColor = listIter->first;
+    reco::HitPairListPtr hitPairListPtr = listIter->second;
+    std::cout << "Sucessfully found hitPairListPtr with size: " << hitPairListPtr.size() << std::endl;
+    
+    if( hitPairListPtr.size() > 0 ){
+      for(reco::HitPairListPtr::const_iterator hit3DIter = hitPairListPtr.begin(); hit3DIter != hitPairListPtr.end(); hit3DIter++ ){
+	//	std::cout << "Inside for loop 1." << std::endl;
+	const reco::ClusterHit3D* theHit  = *hit3DIter;
+	double y = theHit->getPosition()[1];
+	double z = theHit->getPosition()[2];
+	//	std::cout << "Inside for loop 2." << std::endl;
+	
+
+	
+	if( fEvtNum == 1 )
+	  cluster3DHitsYZ_evt1->Fill(z,y);
+	if( fEvtNum == 2 )
+	  cluster3DHitsYZ_evt2->Fill(z,y);
+	if( fEvtNum == 3 )
+	  cluster3DHitsYZ_evt3->Fill(z,y);
+	if( fEvtNum == 4 )
+	  cluster3DHitsYZ_evt4->Fill(z,y);
+	if( fEvtNum == 5 )
+	  cluster3DHitsYZ_evt5->Fill(z,y);
+
+	//	std::cout << "Inside for loop 3." << std::endl;
+
+      }
+    }
+  }
+
+  
+  //Also plot stuff in hitPairLists
+  
+  for(auto& hitPair : hpl){
+    
+    if( fEvtNum == 1 )
+      all3DHitsYZ_evt1->Fill( (hitPair)->getPosition()[2], (hitPair)->getPosition()[1] );
+    if( fEvtNum == 2 )
+      all3DHitsYZ_evt2->Fill( (hitPair)->getPosition()[2], (hitPair)->getPosition()[1] );
+    if( fEvtNum == 3 )
+      all3DHitsYZ_evt3->Fill( (hitPair)->getPosition()[2], (hitPair)->getPosition()[1] );
+    if( fEvtNum == 4 )
+      all3DHitsYZ_evt4->Fill( (hitPair)->getPosition()[2], (hitPair)->getPosition()[1] );
+    if( fEvtNum == 5 )
+      all3DHitsYZ_evt5->Fill( (hitPair)->getPosition()[2], (hitPair)->getPosition()[1] );
+    
+  }	
+}
+
+void Cluster3DDUNE35t::plotClusters2( ClusterParametersList cpl )
+{
+  //Loop through all clusters
+  std::cout << "Break1" << std::endl;
+  for( std::list<ClusterParameters>::iterator cpl_iter = cpl.begin(); cpl_iter != cpl.end(); ++cpl_iter ){
+    std::cout << "Break2" << std::endl;
+    //Get the hit pair list for this cluster
+    reco::HitPairListPtr & hitPairListPtr =  (cpl_iter)->m_hitPairListPtr;
+    std::cout << "Break3" << std::endl;
+    std::cout << "Sucessfully found hitPairListPtr with size: " << hitPairListPtr.size() << std::endl;
+
+    std::cout << "Break4" << std::endl;
+
+    if( hitPairListPtr.size() > 0 ){
+      std::cout << "Break5." << std::endl;
+      for(reco::HitPairListPtr::const_iterator hit3DIter = hitPairListPtr.begin(); hit3DIter != hitPairListPtr.end(); hit3DIter++ ){
+	const reco::ClusterHit3D* theHit  = *hit3DIter;
+	double y = theHit->getPosition()[1];
+	double z = theHit->getPosition()[2];	  
+	
+	if( fEvtNum == 1 )
+	  cluster3DHitsYZ_postDisambig_evt1->Fill(z,y);
+	if( fEvtNum == 2 )
+	  cluster3DHitsYZ_postDisambig_evt2->Fill(z,y);
+	if( fEvtNum == 3 )
+	  cluster3DHitsYZ_postDisambig_evt3->Fill(z,y);
+	if( fEvtNum == 4 )
+	  cluster3DHitsYZ_postDisambig_evt4->Fill(z,y);
+	if( fEvtNum == 5 )
+	  cluster3DHitsYZ_postDisambig_evt5->Fill(z,y);
+      }
+    }
+  }
+}  
+
+void Cluster3DDUNE35t::plotSpacepoints( double y, double z ) const
+{
+  //Loop over all spacepoints
+  if( fEvtNum == 1 )
+    finalSpacePoints_evt1->Fill(z,y);
+  if( fEvtNum == 2 )
+    finalSpacePoints_evt2->Fill(z,y);
+  if( fEvtNum == 3 )
+    finalSpacePoints_evt3->Fill(z,y);
+  if( fEvtNum == 4 )
+    finalSpacePoints_evt4->Fill(z,y);
+  if( fEvtNum == 5 )
+    finalSpacePoints_evt5->Fill(z,y);
+}
+
+
+
+
+
+void Cluster3DDUNE35t::extractTPCSpecificInfoFromHitVect( RecobHitVector & recobHits_thisTPC,
+						   double & startWire,
+						   double & endWire,
+						   double & startTime,
+						   double & sigmaStartTime,
+						   double & endTime,
+						   double & sigmaEndTime) const
+
+{
+  //Low wire
+  double lWire = 99999;
+  double lWire_time = 0;
+  double lWire_sigmaTime = 0;
+  double hWire = -999999;
+  double hWire_time = 0;
+  double hWire_sigmaTime = 0;
+  
+  //Loop over hits
+  for( size_t iHit = 0; iHit < recobHits_thisTPC.size(); ++iHit ){
+    if( recobHits_thisTPC.at(iHit)->WireID().Wire < lWire ){
+      lWire = recobHits_thisTPC.at(iHit)->WireID().Wire;
+      lWire_time = recobHits_thisTPC.at(iHit)->PeakTime();
+      lWire_sigmaTime = recobHits_thisTPC.at(iHit)->SigmaPeakTime();
+    }
+    if( recobHits_thisTPC.at(iHit)->WireID().Wire > hWire ){
+      hWire = recobHits_thisTPC.at(iHit)->WireID().Wire;
+      hWire_time = recobHits_thisTPC.at(iHit)->PeakTime();
+      hWire_sigmaTime = recobHits_thisTPC.at(iHit)->SigmaPeakTime();
+    }
+  }
+
+  startWire = lWire;
+  endWire = hWire;
+  startTime = lWire_time;
+  endTime = hWire_time;
+  sigmaStartTime = lWire_sigmaTime;
+  sigmaEndTime = hWire_sigmaTime;
+
+  if( lWire_time == 0 && lWire_sigmaTime == 0 && hWire_time == 0 && hWire_sigmaTime == 0 ){ std::cout << "Wire Times unset. Problem here." << std::endl; }
+
+}
+
 
 } // namespace lar_cluster3d
