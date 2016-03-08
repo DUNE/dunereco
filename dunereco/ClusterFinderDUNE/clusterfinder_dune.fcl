@@ -1,0 +1,24 @@
+#include "clusteralgorithms_dune35t.fcl"
+
+
+BEGIN_PROLOG
+
+dune35t_cluster3d:
+{
+  module_type:            "Cluster3DDUNE35t"
+  HitFinderModuleLabel:   "hitrepeater"
+  EnableMonitoring:       true
+  EnableProduction:       false
+  DBScanAlg:              @local::dune35t_cluster3ddbscanalg
+  PrincipalComponentsAlg: @local::dune35t_cluster3dprincipalcomponentsalg
+  SkeletonAlg:            @local::dune35t_cluster3dskeletonalg
+  SeedFinderAlg:          @local::dune35t_cluster3dhoughseedfinderalg
+  PCASeedFinderAlg:       @local::dune35t_cluster3dpcaseedfinderalg
+  ParallelHitsAlg:        @local::dune35t_cluster3dparallelhitsseedfinderalg
+}
+
+
+
+
+
+END_PROLOG
