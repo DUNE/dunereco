@@ -28,6 +28,8 @@ art_make(
 			${ROOT_BASIC_LIB_LIST}
                         ${ROOT_MINUIT}
 			${ROOT_MINUIT2}	
+                        ${Boost_FILESYSTEM_LIBRARY}
+                        ${Boost_SYSTEM_LIBRARY}
         )
 
 install_headers()
