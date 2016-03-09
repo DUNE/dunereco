@@ -34,6 +34,7 @@
 #include "larsim/MCCheater/BackTracker.h"
 #include "SimulationBase/MCTruth.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
+#include "larreco/RecoAlg/TrackUtils.h" // lar::TrackPitchInView()
 #include "lardata/AnalysisAlg/CalorimetryAlg.h"
 #include "larcore/SummaryData/POTSummary.h"
 #include "SimulationBase/MCFlux.h"
@@ -523,7 +524,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 			  pow(trkendz[i]-trkg4startz[i],2));
 	if (dis1<dis2){
 	  try{
-	    pitch = tracklist[i]->PitchInView(geo::kZ,0);
+	    pitch = lar::TrackPitchInView(*(tracklist[i]),geo::kZ,0);
 	  }
 	  catch(...){
 	    pitch = 0;
@@ -531,7 +532,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	}
 	else{
 	  try{
-	    pitch = tracklist[i]->PitchInView(geo::kZ,tracklist[i]->NumberTrajectoryPoints()-1);
+	    pitch = lar::TrackPitchInView(*(tracklist[i]), geo::kZ,tracklist[i]->NumberTrajectoryPoints()-1);
 	  }
 	  catch(...){
 	    pitch = 0;
