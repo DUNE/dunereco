@@ -3,7 +3,7 @@ add_subdirectory(IniSegAlg)
 simple_plugin(NueAna   "module"
 		        lardata_RawData
 		        lardata_RecoBase
-		        larreco_RecoAlg
+		        lardata_RecoBaseArt
 			lardata_AnalysisAlg
 		        larreco_RecoAlg_PMAlg
 		        IniSegAlg
