@@ -511,7 +511,8 @@ void Cluster3DDUNE35t::produce(art::Event &evt)
       m_dbScanAlg.ClusterHitsDBScan(viewToHitVectorMap, viewToWireToHitSetMap, *hitPairList, hitPairClusterMap);
       
       //Plot Spatial locations of clusters for debugging
-      plotClusters1( hitPairClusterMap, *hitPairList );
+      if(m_enableMonitoring)
+	plotClusters1( hitPairClusterMap, *hitPairList );
       
       // Given the work above, process and build the list of 3D clusters to output
       BuildClusterInfo(hitPairClusterMap, clusterParametersList, m_clusHitRejectionFrac);
@@ -519,14 +520,15 @@ void Cluster3DDUNE35t::produce(art::Event &evt)
     }
 
     //Plot Spatial locations of clusters for debugging
-    plotClusters2( clusterParametersList );
+    if(m_enableMonitoring)
+      plotClusters2( clusterParametersList );
     
     if(m_enableMonitoring) theClockFinish.start();
 
     // Call the module that does the end processing (of which there is quite a bit of work!)
     // This goes here to insure that something is always written to the data store
     ProduceArtClusters(evt, *hitPairList, hitPairClusterMap, clusterParametersList, clusterHitToArtPtrMap);
-    
+
     if (m_enableMonitoring) theClockFinish.stop();
     
     // If monitoring then deal with the fallout
@@ -1744,7 +1746,8 @@ void Cluster3DDUNE35t::ProduceArtClusters(art::Event&              evt,
                 // Mark this hit pair as in use
                 hitPair->setStatusBit(reco::ClusterHit3D::MADESPACEPOINT);
                 double spacePointPos[] = {hitPair->getPosition()[0],hitPair->getPosition()[1],hitPair->getPosition()[2]};
-		this->plotSpacepoints( spacePointPos[1], spacePointPos[2] );
+		if(m_enableMonitoring)
+		  this->plotSpacepoints( spacePointPos[1], spacePointPos[2] );
 
 		//Add this spacepoint to the spacepoint vector for later association creation
                 artSpacePointVector->push_back(recob::SpacePoint(spacePointPos, spError, chisq, spacePointID++));
@@ -1849,6 +1852,7 @@ void Cluster3DDUNE35t::ProduceArtClusters(art::Event&              evt,
     evt.put(std::move(artSeedHitAssociations));
     evt.put(std::move(artSPHitAssociations));
     
+    std::cout << "Reached end of produce art clusters." << std::endl;
     return;
 }
 
