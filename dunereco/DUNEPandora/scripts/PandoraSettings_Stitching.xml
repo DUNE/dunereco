@@ -16,6 +16,7 @@
                 <NewPfoListName>RecreatedPfos</NewPfoListName>
                 <NewVertexListName>RecreatedVertices</NewVertexListName>
                 <NewClusterListName>RecreatedClusters</NewClusterListName>
+                <RecreateTwoDContent>true</RecreateTwoDContent>
             </tool>
             <!--tool type = "LArStitchingPfoMerging"/-->
         </StitchingTools>
