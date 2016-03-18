@@ -9,7 +9,7 @@
 #include "cetlib/search_path.h"
 #include "cetlib/cpu_timer.h"
 
-#include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/DBScanAlg.h"
+#include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/DBScanAlg_DUNE35t.h"
 
 // LArSoft includes
 #include "lardata/Utilities/AssociationUtil.h"
@@ -29,20 +29,20 @@
 
 namespace lar_cluster3d {
 
-DBScanAlg::DBScanAlg(fhicl::ParameterSet const &pset)
+DBScanAlg_DUNE35t::DBScanAlg_DUNE35t(fhicl::ParameterSet const &pset)
 {
     this->reconfigure(pset);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-DBScanAlg::~DBScanAlg()
+DBScanAlg_DUNE35t::~DBScanAlg_DUNE35t()
 {
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-void DBScanAlg::reconfigure(fhicl::ParameterSet const &pset)
+void DBScanAlg_DUNE35t::reconfigure(fhicl::ParameterSet const &pset)
 {
     m_enableMonitoring       = pset.get<bool>("EnableMonitoring",  true);
     m_minPairPts             = pset.get<size_t>("MinPairPts",        2 );
@@ -59,7 +59,7 @@ void DBScanAlg::reconfigure(fhicl::ParameterSet const &pset)
     m_timeVector.resize(NUMTIMEVALUES, 0.);
 }
     
-void DBScanAlg::expandCluster(EpsPairNeighborhoodMapVec&          epsNeighborhoodMapVec,
+void DBScanAlg_DUNE35t::expandCluster(EpsPairNeighborhoodMapVec&          epsNeighborhoodMapVec,
                               EpsPairNeighborhoodMapVec::iterator epsVecItr,
                               reco::HitPairListPtr&               curCluster,
                               size_t                              minPts) const
@@ -155,7 +155,7 @@ struct HitPairClusterOrder
     }
 };
     
-void DBScanAlg::ClusterHitsDBScan(ViewToHitVectorMap&       viewToHitVectorMap,
+void DBScanAlg_DUNE35t::ClusterHitsDBScan(ViewToHitVectorMap&       viewToHitVectorMap,
                                   ViewToWireToHitSetMap&    viewToWiretoHitSetMap,
                                   HitPairList&              hitPairList,
                                   reco::HitPairClusterMap&  hitPairClusterMap)
@@ -175,6 +175,8 @@ void DBScanAlg::ClusterHitsDBScan(ViewToHitVectorMap&       viewToHitVectorMap,
     // The first task is to take the lists of input 2D hits (a map of view to sorted lists of 2D hits)
     // and then to build a list of 3D hits to be used in downstream processing
     size_t numHitPairs = BuildHitPairMap(viewToHitVectorMap, viewToWiretoHitSetMap, hitPairList);
+
+    std::cout << "Number of hit pairs: " << numHitPairs << std::endl;
     
     if (m_enableMonitoring)
     {
@@ -250,7 +252,7 @@ void DBScanAlg::ClusterHitsDBScan(ViewToHitVectorMap&       viewToHitVectorMap,
 
 
 //This is second-least restrictive: U+W+V required, now with a corrected version of nearestwireid
-size_t DBScanAlg::BuildHitPairMap(ViewToHitVectorMap& viewToHitVectorMap, ViewToWireToHitSetMap& viewToWireToHitSetMap, HitPairList& hitPairList) const
+size_t DBScanAlg_DUNE35t::BuildHitPairMap(ViewToHitVectorMap& viewToHitVectorMap, ViewToWireToHitSetMap& viewToWireToHitSetMap, HitPairList& hitPairList) const
 {
   /**
    *  @brief Given input 2D hits, build out the lists of possible 3D hits
@@ -406,7 +408,7 @@ size_t DBScanAlg::BuildHitPairMap(ViewToHitVectorMap& viewToHitVectorMap, ViewTo
    }
  
     
-  //size_t DBScanAlg::BuildHitPairMap(ViewToHitVectorMap& viewToHitVectorMap, ViewToWireToHitSetMap& viewToWireToHitSetMap, HitPairList& hitPairList) const
+  //size_t DBScanAlg_DUNE35t::BuildHitPairMap(ViewToHitVectorMap& viewToHitVectorMap, ViewToWireToHitSetMap& viewToWireToHitSetMap, HitPairList& hitPairList) const
   //{
     /**
      *  @brief Given input 2D hits, build out the lists of possible 3D hits
@@ -619,7 +621,7 @@ size_t DBScanAlg::BuildHitPairMap(ViewToHitVectorMap& viewToHitVectorMap, ViewTo
 
 
     
-//size_t DBScanAlg::BuildNeighborhoodMap(HitPairList& hitPairList, EpsPairNeighborhoodMapVec& epsPairNeighborhoodMapVec) const
+//size_t DBScanAlg_DUNE35t::BuildNeighborhoodMap(HitPairList& hitPairList, EpsPairNeighborhoodMapVec& epsPairNeighborhoodMapVec) const
 //{
     /**
      *  @brief build out the epsilon neighborhood map to be used by DBScan
@@ -753,7 +755,7 @@ size_t DBScanAlg::BuildHitPairMap(ViewToHitVectorMap& viewToHitVectorMap, ViewTo
 */
 
 //REL modified
-size_t DBScanAlg::BuildNeighborhoodMap(HitPairList& hitPairList, EpsPairNeighborhoodMapVec& epsPairNeighborhoodMapVec) const
+size_t DBScanAlg_DUNE35t::BuildNeighborhoodMap(HitPairList& hitPairList, EpsPairNeighborhoodMapVec& epsPairNeighborhoodMapVec) const
 {
   size_t consistentPairsCnt = 0;
   size_t pairsChecked = 0;
@@ -851,7 +853,7 @@ size_t DBScanAlg::BuildNeighborhoodMap(HitPairList& hitPairList, EpsPairNeighbor
 
 
     
-bool DBScanAlg::consistentPairs(const reco::ClusterHit3D* pair1, const reco::ClusterHit3D* pair2) const
+bool DBScanAlg_DUNE35t::consistentPairs(const reco::ClusterHit3D* pair1, const reco::ClusterHit3D* pair2) const
 {
     // Most likely this will fail
     bool consistent(false);
@@ -988,7 +990,7 @@ bool DBScanAlg::consistentPairs(const reco::ClusterHit3D* pair1, const reco::Clu
     return consistent;
 }
 
-reco::ClusterHit3D DBScanAlg::makeHitPair(const reco::ClusterHit2D* hit1,
+reco::ClusterHit3D DBScanAlg_DUNE35t::makeHitPair(const reco::ClusterHit2D* hit1,
                                           const reco::ClusterHit2D* hit2,
                                           double                    hitWidthSclFctr,
                                           size_t                    hitPairCntr) const
@@ -1085,7 +1087,7 @@ reco::ClusterHit3D DBScanAlg::makeHitPair(const reco::ClusterHit2D* hit1,
 }
 
     
-reco::ClusterHit3D DBScanAlg::makeHitTriplet(const reco::ClusterHit3D& pairUW,
+reco::ClusterHit3D DBScanAlg_DUNE35t::makeHitTriplet(const reco::ClusterHit3D& pairUW,
                                              const reco::ClusterHit2D* hitV) const
 {
     // No matter what happens, we will return a HitPair object
@@ -1200,7 +1202,7 @@ reco::ClusterHit3D DBScanAlg::makeHitTriplet(const reco::ClusterHit3D& pairUW,
     return hitTriplet;
 }
     
-const reco::ClusterHit2D* DBScanAlg::FindBestMatchingHit(const Hit2DSet& hit2DSet, const reco::ClusterHit3D& pair, double pairDeltaTimeLimits) const
+const reco::ClusterHit2D* DBScanAlg_DUNE35t::FindBestMatchingHit(const Hit2DSet& hit2DSet, const reco::ClusterHit3D& pair, double pairDeltaTimeLimits) const
 {
     static const double minCharge(0.);
     
@@ -1218,7 +1220,9 @@ const reco::ClusterHit2D* DBScanAlg::FindBestMatchingHit(const Hit2DSet& hit2DSe
         
         if (deltaPeakTime >  pairDeltaTimeLimits) continue;
         
-        if (deltaPeakTime < -pairDeltaTimeLimits) break;
+	//        if (deltaPeakTime < -pairDeltaTimeLimits) break;
+	//REL
+        if (deltaPeakTime < -pairDeltaTimeLimits) continue;
 
         pairDeltaTimeLimits = fabs(deltaPeakTime);
         bestVHit            = hit2D;
@@ -1227,7 +1231,7 @@ const reco::ClusterHit2D* DBScanAlg::FindBestMatchingHit(const Hit2DSet& hit2DSe
     return bestVHit;
 }
     
-int DBScanAlg::FindNumberInRange(const Hit2DSet& hit2DSet, const reco::ClusterHit3D& pair, double range) const
+int DBScanAlg_DUNE35t::FindNumberInRange(const Hit2DSet& hit2DSet, const reco::ClusterHit3D& pair, double range) const
 {
     static const double minCharge(0.);
     
@@ -1252,10 +1256,10 @@ int DBScanAlg::FindNumberInRange(const Hit2DSet& hit2DSet, const reco::ClusterHi
     return numberInRange;
 }
 
-geo::WireID DBScanAlg::NearestWireID(const double* position, const geo::View_t& view) const
+geo::WireID DBScanAlg_DUNE35t::NearestWireID(const double* position, const geo::View_t& view) const
 {
-    geo::WireID wireID(0,view,0,0);
-    
+  geo::WireID wireID(0,view,0,0);
+  
     // Embed the call to the geometry's services nearest wire id method in a try-catch block
     try {
         wireID =  m_geometry->NearestWireID(position, view);
@@ -1274,7 +1278,7 @@ geo::WireID DBScanAlg::NearestWireID(const double* position, const geo::View_t& 
 }
 
 
-geo::WireID DBScanAlg::NearestWireID_mod(const double* position, const geo::PlaneID & thePlaneID ) const
+geo::WireID DBScanAlg_DUNE35t::NearestWireID_mod(const double* position, const geo::PlaneID & thePlaneID ) const
 {
     geo::WireID wireID(0,0,0,0);
     

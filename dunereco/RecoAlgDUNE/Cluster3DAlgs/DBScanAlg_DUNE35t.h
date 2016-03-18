@@ -1,13 +1,13 @@
 /**
- *  @file   DBScanAlg.h
+ *  @file   DBScanAlg_DUNE35t.h
  * 
  *  @brief  This algorithm will create and then cluster 3D hits using DBScan
  *
  *  @author usher@slac.stanford.edu
  * 
  */
-#ifndef DBScanAlg_h
-#define DBScanAlg_h
+#ifndef DBScanAlg_DUNE35t_h
+#define DBScanAlg_DUNE35t_h
 
 // Framework Includes
 #include "fhiclcpp/ParameterSet.h"
@@ -81,9 +81,9 @@ typedef std::vector<std::unique_ptr<reco::ClusterHit3D> >    HitPairVector;
 typedef std::list<std::unique_ptr<reco::ClusterHit3D> >      HitPairList;
 
 /**
- *  @brief  DBScanAlg class definiton
+ *  @brief  DBScanAlg_DUNE35t class definiton
  */
-class DBScanAlg
+class DBScanAlg_DUNE35t
 {
 public:
     /**
@@ -91,12 +91,12 @@ public:
      * 
      *  @param  pset
      */
-    DBScanAlg(fhicl::ParameterSet const &pset);
+    DBScanAlg_DUNE35t(fhicl::ParameterSet const &pset);
 
     /**
      *  @brief  Destructor
      */
-    virtual ~DBScanAlg();
+    virtual ~DBScanAlg_DUNE35t();
 
     void reconfigure(fhicl::ParameterSet const &pset);
     

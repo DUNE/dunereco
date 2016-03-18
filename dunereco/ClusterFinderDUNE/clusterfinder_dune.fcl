@@ -1,5 +1,5 @@
 #include "clusteralgorithms_dune35t.fcl"
-
+#include "cluster3dalgorithms_dune35t.fcl"
 
 BEGIN_PROLOG
 

@@ -72,7 +72,7 @@
 #include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/ParallelHitsSeedFinderAlg.h"
 #include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/PrincipalComponentsAlg.h"
 #include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/SkeletonAlg.h"
-#include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/DBScanAlg.h"
+#include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/DBScanAlg_DUNE35t.h"
 #include "larreco/RecoAlg/ClusterRecoUtil/StandardClusterParamsAlg.h"
 #include "larreco/RecoAlg/ClusterRecoUtil/OverriddenClusterParamsAlg.h"
 #include "larreco/RecoAlg/ClusterParamsImportWrapper.h"
@@ -340,7 +340,7 @@ private:
     geo::Geometry*            m_geometry;              ///<  pointer to the Geometry service
   const detinfo::DetectorProperties* m_detector;              ///<  Pointer to the detector properties
     
-    DBScanAlg                 m_dbScanAlg;             ///<  Algorithm to cluster hits
+    DBScanAlg_DUNE35t         m_dbScanAlg;             ///<  Algorithm to cluster hits
     PrincipalComponentsAlg    m_pcaAlg;                ///<  Principal Components algorithm
     SkeletonAlg               m_skeletonAlg;           ///<  Skeleton point finder
     HoughSeedFinderAlg        m_seedFinderAlg;         ///<  Seed finder
@@ -500,6 +500,8 @@ void Cluster3DDUNE35t::produce(art::Event &evt)
     // Recover the 2D hits and then organize them into data structures which will be used in the
     // DBscan algorithm for building the 3D clusters
     this->CollectArtHits(evt, clusterHit2DMasterVec, viewToHitVectorMap, viewToWireToHitSetMap, clusterHitToArtPtrMap);
+
+    std::cout << "Size of clusterHit2DMasterVec going into dbscan: " << clusterHit2DMasterVec.size() << std::endl;
     
     if (m_enableMonitoring) theClockArtHits.stop();
     
@@ -510,37 +512,43 @@ void Cluster3DDUNE35t::produce(art::Event &evt)
       // Call the main workhorse algorithm for building the local version of candidate 3D clusters
       m_dbScanAlg.ClusterHitsDBScan(viewToHitVectorMap, viewToWireToHitSetMap, *hitPairList, hitPairClusterMap);
       
+      std::cout << "Number of hitpairs after dbscan: " << hitPairList->size() << std::endl;
+
       //Plot Spatial locations of clusters for debugging
-      plotClusters1( hitPairClusterMap, *hitPairList );
+      if(m_enableMonitoring)
+	plotClusters1( hitPairClusterMap, *hitPairList );
       
+      
+
       // Given the work above, process and build the list of 3D clusters to output
       BuildClusterInfo(hitPairClusterMap, clusterParametersList, m_clusHitRejectionFrac);
       
     }
 
     //Plot Spatial locations of clusters for debugging
-    plotClusters2( clusterParametersList );
+    if(m_enableMonitoring)
+      plotClusters2( clusterParametersList );
     
     if(m_enableMonitoring) theClockFinish.start();
 
     // Call the module that does the end processing (of which there is quite a bit of work!)
     // This goes here to insure that something is always written to the data store
     ProduceArtClusters(evt, *hitPairList, hitPairClusterMap, clusterParametersList, clusterHitToArtPtrMap);
-    
+
     if (m_enableMonitoring) theClockFinish.stop();
     
     // If monitoring then deal with the fallout
     if (m_enableMonitoring)
-    {
+    {   
         theClockTotal.stop();
-
+        
         m_run                   = evt.run();
         m_event                 = evt.id().event();
         m_totalTime             = theClockTotal.accumulated_real_time();
         m_artHitsTime           = theClockArtHits.accumulated_real_time();
-        m_makeHitsTime          = m_dbScanAlg.getTimeToExecute(DBScanAlg::BUILDTHREEDHITS);
-        m_buildNeighborhoodTime = m_dbScanAlg.getTimeToExecute(DBScanAlg::BUILDHITTOHITMAP);
-        m_dbscanTime            = m_dbScanAlg.getTimeToExecute(DBScanAlg::RUNDBSCAN);
+	//        m_makeHitsTime          = m_dbScanAlg.getTimeToExecute(DBScanAlg::BUILDTHREEDHITS);
+        //m_buildNeighborhoodTime = m_dbScanAlg.getTimeToExecute(DBScanAlg::BUILDHITTOHITMAP);
+        //m_dbscanTime            = m_dbScanAlg.getTimeToExecute(DBScanAlg::RUNDBSCAN);
         m_finishTime            = theClockFinish.accumulated_real_time();
         m_hits                  = static_cast<int>(clusterHit2DMasterVec.size());
         m_pRecoTree->Fill();
@@ -642,6 +650,8 @@ void Cluster3DDUNE35t::CollectArtHits(art::Event&            evt,
     
     if (!recobHitHandle.isValid()) return;
     
+    std::cout << "Number of recob::hits in collectarthits: " << recobHitHandle->size() << std::endl;
+
     // We'll need the offsets for each plane
     std::map<geo::View_t, double> viewOffsetMap;
     
@@ -1744,7 +1754,8 @@ void Cluster3DDUNE35t::ProduceArtClusters(art::Event&              evt,
                 // Mark this hit pair as in use
                 hitPair->setStatusBit(reco::ClusterHit3D::MADESPACEPOINT);
                 double spacePointPos[] = {hitPair->getPosition()[0],hitPair->getPosition()[1],hitPair->getPosition()[2]};
-		this->plotSpacepoints( spacePointPos[1], spacePointPos[2] );
+		if(m_enableMonitoring)
+		  this->plotSpacepoints( spacePointPos[1], spacePointPos[2] );
 
 		//Add this spacepoint to the spacepoint vector for later association creation
                 artSpacePointVector->push_back(recob::SpacePoint(spacePointPos, spError, chisq, spacePointID++));
@@ -1849,6 +1860,7 @@ void Cluster3DDUNE35t::ProduceArtClusters(art::Event&              evt,
     evt.put(std::move(artSeedHitAssociations));
     evt.put(std::move(artSPHitAssociations));
     
+    std::cout << "Reached end of produce art clusters." << std::endl;
     return;
 }
 
@@ -1889,8 +1901,9 @@ void Cluster3DDUNE35t::plotClusters1( reco::HitPairClusterMap hpcm, HitPairList&
 
   
   //Also plot stuff in hitPairLists
-  
+  std::cout << "size of hpl: " << hpl.size() << std::endl;
   for(auto& hitPair : hpl){
+    
     
     if( fEvtNum == 1 )
       all3DHitsYZ_evt1->Fill( (hitPair)->getPosition()[2], (hitPair)->getPosition()[1] );

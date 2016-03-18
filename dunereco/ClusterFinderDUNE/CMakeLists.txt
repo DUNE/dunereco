@@ -2,6 +2,7 @@
 art_make( 
 	  LIBRARY_NAME  dune_ClusterFinderDUNE          
           LIB_LIBRARIES larcore_Geometry
+	  		dune_RecoAlgDUNE
                         lardata_RecoBase
                         larreco_RecoAlg_ClusterRecoUtil
           MODULE_LIBRARIES dune_RecoAlgDUNE_Cluster3DAlgs

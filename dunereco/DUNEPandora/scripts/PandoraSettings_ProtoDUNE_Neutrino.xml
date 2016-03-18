@@ -220,7 +220,12 @@
             <algorithm type = "LArVertexBasedPfoMerging">
                 <TrackPfoListName>TrackParticles3D</TrackPfoListName>
                 <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
-                <ClusterListNames>ClustersU ClustersV ClustersW</ClusterListNames>
+                <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
+            </algorithm>
+            <algorithm type = "LArSplitShowerMerging">
+                <TrackPfoListName>TrackParticles3D</TrackPfoListName>
+                <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
+                <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
             </algorithm>
             <algorithm type = "LArBoundedClusterMerging">
                 <PfoListNames>ShowerParticles3D</PfoListNames>
