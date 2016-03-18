@@ -15,6 +15,12 @@ dune35t_cluster3d:
   SeedFinderAlg:          @local::dune35t_cluster3dhoughseedfinderalg
   PCASeedFinderAlg:       @local::dune35t_cluster3dpcaseedfinderalg
   ParallelHitsAlg:        @local::dune35t_cluster3dparallelhitsseedfinderalg
+
+  EpsilonHoughBins:       5
+  HoughSpikeThreshold:    20
+  NumBinsPhi:             300
+  NumBinsRho:             300
+  HoughScaleFactor:       10
 }
 
 
