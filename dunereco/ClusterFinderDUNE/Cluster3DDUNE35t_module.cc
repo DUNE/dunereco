@@ -1564,7 +1564,7 @@ void Cluster3DDUNE35t::ProduceArtClusters(art::Event&              evt,
 		  //Split these hits up with a hough transform	  
 		  //		  if( fEvtNum == m_TestEventNum && iTPC == m_TestTPCNum && viewItr == clusterParameters.m_clusterParams.begin() ){
 		  //Should make sure that there is at least one hit first
-		  if( recobHits_thisTPC.size() > 0 )
+		  if( recobHits_thisTPC.size() > 1 )
 		    recobHits_thisTPC = SplitDeltaRaysOffWithHough( recobHits_thisTPC );
 		  
 
@@ -2101,9 +2101,13 @@ RecobHitVector Cluster3DDUNE35t::SplitDeltaRaysOffWithHough( RecobHitVector cons
   //Loop over phi
   for( size_t iPhi = 0; iPhi < nBinsPhi; ++iPhi ){
 
+    std::cout << "Inside phi." << std::endl;
+
     //Loop over the hits
     for( size_t iHit = 0; iHit < recobHitVect.size(); ++iHit ){
       
+      std::cout << "Inside hits." << std::endl;
+
       //Create a phi value from our loop
       double phi = pi*(iPhi/nBinsPhi);
       
@@ -2153,24 +2157,35 @@ RecobHitVector Cluster3DDUNE35t::SplitDeltaRaysOffWithHough( RecobHitVector cons
     }
   }
 
+  std::cout << "Past first loop." << std::endl;
+
   //Create a map containing the hitIDs contained in the spikes (the straight muon tracks). Again, bool is meaningless
   std::map<size_t,bool> hitIDs;
 
   //Now take the max spike and find the unique hitIDs contained wihthin
   for( size_t iHitID = 0; iHitID < houghSpace.at(maxPeak).size(); ++iHitID ){
+    
+    std::cout << "In HitID loop." << std::endl;
+
     if( hitIDs.count(houghSpace.at(maxPeak).at(iHitID)) == 0 ) hitIDs.emplace(houghSpace.at(maxPeak).at(iHitID),true);
+
+    std::cout << "Past hitID first if." << std::endl;
 
     //Also look in a region around the max spike
     //For all points in a square region around this, find all unique hitIDs and push back into hitIDs map.
     for( int iiRho = -1*m_EpsHoughBins; iiRho <= m_EpsHoughBins; ++iiRho ){
       for( int iiPhi =  -1*m_EpsHoughBins; iiPhi <= m_EpsHoughBins; ++iiPhi ){
 	
+	std::cout << "In Rho/phi loops" << std::endl;
+
 	//build the position
 	std::pair<double,double> neighborhood(maxPeak.first+iiRho,maxPeak.second+iiPhi);
 	
 	//Loop over hits at this position
 	if( houghSpace.count(neighborhood) > 0 ){
+	  std::cout << "Past neighborhood cut." << std::endl;
 	  for( size_t iHitID = 0; iHitID < houghSpace.at(neighborhood).size(); ++iHitID ){
+	    std::cout << "In last hitID loop." << std::endl;
 	    if( hitIDs.count(houghSpace.at(neighborhood).at(iHitID)) == 0 ) hitIDs.emplace(houghSpace.at(neighborhood).at(iHitID),true);
 	  } //End loop over hits in this rho/phi
 	} //End if statement
@@ -2179,8 +2194,8 @@ RecobHitVector Cluster3DDUNE35t::SplitDeltaRaysOffWithHough( RecobHitVector cons
   }
   
   //Fill our second histogram with the max peak position
-  if( fEvtNum == m_TestEventNum )
-    houghSpaceSpikes->Fill(maxPeak.first,maxPeak.second);
+  //  if( fEvtNum == m_TestEventNum )
+  // houghSpaceSpikes->Fill(maxPeak.first,maxPeak.second);
 
   //Now find the spikes present.
   // for( std::map<std::pair<double,double>,bool>::iterator iter = houghSpikes.begin(); iter != houghSpikes.end(); ++iter ){
