@@ -7,6 +7,7 @@ dune35t_cluster3ddbscanalg:
   TimeAdvanceGap:          50.    # Window size (ticks) for comparing hits in different views
   NumSigmaPeakTime:        5.     # Number "sigma" for peak times when building hits
   EpsilonDistanceDBScan:   5.     # Distance (cm) between 3D hits for DBScan to cluster them together
+
 }
 
 dune35t_cluster3dprincipalcomponentsalg:
