@@ -143,7 +143,10 @@ bool SetPositionOrder(const std::unique_ptr<reco::ClusterHit3D>& left, const std
     return left->getHits().back()->getHit().WireID().Wire < right->getHits().back()->getHit().WireID().Wire;
 }
 
-bool SetPositionOrderXYZ( const std::unique_ptr<reco::ClusterHit3D>& left, const std::unique_ptr<reco::ClusterHit3D>& right ) 
+
+//This function sorts by Z first. It is the default, and is also used if we have particles passing through the EW
+//scintillation counters on the exterior of the detector
+bool SetPositionOrderZ( const std::unique_ptr<reco::ClusterHit3D>& left, const std::unique_ptr<reco::ClusterHit3D>& right ) 
 {
   //Sort by Z first, then by Y, then by X.
   if( left->getZ() == right->getZ() ){
@@ -154,6 +157,36 @@ bool SetPositionOrderXYZ( const std::unique_ptr<reco::ClusterHit3D>& left, const
   }
   return left->getZ() < right->getZ();
 }
+
+
+//This function sorts by X first. It is used if we have particles passing through the NS scintillation counters on the
+//exterior of the detector.
+bool SetPositionOrderX( const std::unique_ptr<reco::ClusterHit3D>& left, const std::unique_ptr<reco::ClusterHit3D>& right ) 
+{
+  //Sort by X first, then by Z, then by Y.
+  if( left->getX() == right->getX() ){
+    if( left->getZ() == right->getZ() ){
+      return left->getY() < right->getY();
+    }
+    return left->getZ() < right->getZ();
+  }
+  return left->getX() < right->getX();
+}
+
+//This function sorts by Y first. It is used if we have particles passing through the top scintillation counters above
+//the detector.
+bool SetPositionOrderY( const std::unique_ptr<reco::ClusterHit3D>& left, const std::unique_ptr<reco::ClusterHit3D>& right ) 
+{
+  //Sort by Y first, then by Z, then by X.
+  if( left->getY() == right->getY() ){
+    if( left->getZ() == right->getZ() ){
+      return left->getX() < right->getX();
+    }
+    return left->getZ() < right->getZ();
+  }
+  return left->getY() < right->getY();
+}
+
 
     
 bool SetPeakHitPairIteratorOrder(const HitPairList::iterator& left, const HitPairList::iterator& right)
@@ -423,7 +456,7 @@ size_t DBScanAlg_DUNE35t::BuildHitPairMap(ViewToHitVectorMap& viewToHitVectorMap
 	    }
 	}
     }
-    hitPairList.sort(SetPositionOrderXYZ);
+    hitPairList.sort(SetPositionOrderZ);
     return hitPairList.size();
     
 }
@@ -460,8 +493,6 @@ size_t DBScanAlg_DUNE35t::BuildNeighborhoodMap(HitPairList& hitPairList,
     double pairO_Y = hitPairO->getPosition()[1];
     double pairO_Z = hitPairO->getPosition()[2];
 
-    std::cout << "Position in Z: " << pairO_Z << std::endl;
-    
     // Set maximums
     double maxDist = m_EpsMaxDist; //REL 4.0; //Was 2, then 4 REL
 

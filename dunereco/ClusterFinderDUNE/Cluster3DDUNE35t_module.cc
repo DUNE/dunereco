@@ -566,9 +566,9 @@ void Cluster3DDUNE35t::produce(art::Event &evt)
         m_event                 = evt.id().event();
         m_totalTime             = theClockTotal.accumulated_real_time();
         m_artHitsTime           = theClockArtHits.accumulated_real_time();
-	//        m_makeHitsTime          = m_dbScanAlg.getTimeToExecute(DBScanAlg::BUILDTHREEDHITS);
-        //m_buildNeighborhoodTime = m_dbScanAlg.getTimeToExecute(DBScanAlg::BUILDHITTOHITMAP);
-        //m_dbscanTime            = m_dbScanAlg.getTimeToExecute(DBScanAlg::RUNDBSCAN);
+	m_makeHitsTime          = m_dbScanAlg.getTimeToExecute(DBScanAlg_DUNE35t::BUILDTHREEDHITS);
+        m_buildNeighborhoodTime = m_dbScanAlg.getTimeToExecute(DBScanAlg_DUNE35t::BUILDHITTOHITMAP);
+        m_dbscanTime            = m_dbScanAlg.getTimeToExecute(DBScanAlg_DUNE35t::RUNDBSCAN);
         m_finishTime            = theClockFinish.accumulated_real_time();
         m_hits                  = static_cast<int>(clusterHit2DMasterVec.size());
         m_pRecoTree->Fill();
@@ -1588,7 +1588,7 @@ void Cluster3DDUNE35t::ProduceArtClusters(art::Event&              evt,
 						    endTime,
 						    sigmaEndTime);
 
-		  std::cout << "Starttime: " << startTime << std::endl;
+		  //REL		  std::cout << "Starttime: " << startTime << std::endl;
 		  
 		  //At this point, we should have the correct pieces of information (startWire,endwire,etc.) to use for
 		  //further cluster analysis
@@ -1879,10 +1879,12 @@ void Cluster3DDUNE35t::ProduceArtClusters(art::Event&              evt,
     }
     
     //REL Troubleshooting
+    /*
     for( size_t iClust = 0; iClust < artClusterVector->size(); ++iClust ){
       //Find the cluster ID, the plane ID, and the TPC ID
       std::cout << "ClusterID/PlaneID/TPCID: " << artClusterVector->at(iClust).ID() << "/" << artClusterVector->at(iClust).Plane().Plane << "/" << artClusterVector->at(iClust).Plane().TPC << std::endl;
     }
+    */
 
     // Finaly done, now output everything to art
     evt.put(std::move(artPCAxisVector));
@@ -1939,7 +1941,7 @@ void Cluster3DDUNE35t::plotClusters1( reco::HitPairClusterMap hpcm, HitPairList&
 
   
   //Also plot stuff in hitPairLists
-  std::cout << "size of hpl: " << hpl.size() << std::endl;
+  //std::cout << "size of hpl: " << hpl.size() << std::endl;
   for(auto& hitPair : hpl){
     
     
@@ -1960,18 +1962,18 @@ void Cluster3DDUNE35t::plotClusters1( reco::HitPairClusterMap hpcm, HitPairList&
 void Cluster3DDUNE35t::plotClusters2( ClusterParametersList cpl )
 {
   //Loop through all clusters
-  std::cout << "Break1" << std::endl;
+  //std::cout << "Break1" << std::endl;
   for( std::list<ClusterParameters>::iterator cpl_iter = cpl.begin(); cpl_iter != cpl.end(); ++cpl_iter ){
-    std::cout << "Break2" << std::endl;
+    //std::cout << "Break2" << std::endl;
     //Get the hit pair list for this cluster
     reco::HitPairListPtr & hitPairListPtr =  (cpl_iter)->m_hitPairListPtr;
-    std::cout << "Break3" << std::endl;
-    std::cout << "Sucessfully found hitPairListPtr with size: " << hitPairListPtr.size() << std::endl;
+    //std::cout << "Break3" << std::endl;
+    //std::cout << "Sucessfully found hitPairListPtr with size: " << hitPairListPtr.size() << std::endl;
 
-    std::cout << "Break4" << std::endl;
+    //std::cout << "Break4" << std::endl;
 
     if( hitPairListPtr.size() > 0 ){
-      std::cout << "Break5." << std::endl;
+      //std::cout << "Break5." << std::endl;
       for(reco::HitPairListPtr::const_iterator hit3DIter = hitPairListPtr.begin(); hit3DIter != hitPairListPtr.end(); hit3DIter++ ){
 	const reco::ClusterHit3D* theHit  = *hit3DIter;
 	double y = theHit->getPosition()[1];
@@ -2049,7 +2051,7 @@ void Cluster3DDUNE35t::extractTPCSpecificInfoFromHitVect( RecobHitVector & recob
   sigmaStartTime = lWire_sigmaTime;
   sigmaEndTime = hWire_sigmaTime;
 
-  if( lWire_time == 0 && lWire_sigmaTime == 0 && hWire_time == 0 && hWire_sigmaTime == 0 ){ std::cout << "Wire Times unset. Problem here." << std::endl; }
+  //if( lWire_time == 0 && lWire_sigmaTime == 0 && hWire_time == 0 && hWire_sigmaTime == 0 ){ std::cout << "Wire Times unset. Problem here." << std::endl; }
   
 }
 
@@ -2101,12 +2103,12 @@ RecobHitVector Cluster3DDUNE35t::SplitDeltaRaysOffWithHough( RecobHitVector cons
   //Loop over phi
   for( size_t iPhi = 0; iPhi < nBinsPhi; ++iPhi ){
 
-    std::cout << "Inside phi." << std::endl;
+    //std::cout << "Inside phi." << std::endl;
 
     //Loop over the hits
     for( size_t iHit = 0; iHit < recobHitVect.size(); ++iHit ){
       
-      std::cout << "Inside hits." << std::endl;
+      //std::cout << "Inside hits." << std::endl;
 
       //Create a phi value from our loop
       double phi = pi*(iPhi/nBinsPhi);
@@ -2157,7 +2159,7 @@ RecobHitVector Cluster3DDUNE35t::SplitDeltaRaysOffWithHough( RecobHitVector cons
     }
   }
 
-  std::cout << "Past first loop." << std::endl;
+  //std::cout << "Past first loop." << std::endl;
 
   //Create a map containing the hitIDs contained in the spikes (the straight muon tracks). Again, bool is meaningless
   std::map<size_t,bool> hitIDs;
@@ -2165,27 +2167,27 @@ RecobHitVector Cluster3DDUNE35t::SplitDeltaRaysOffWithHough( RecobHitVector cons
   //Now take the max spike and find the unique hitIDs contained wihthin
   for( size_t iHitID = 0; iHitID < houghSpace.at(maxPeak).size(); ++iHitID ){
     
-    std::cout << "In HitID loop." << std::endl;
+    //std::cout << "In HitID loop." << std::endl;
 
     if( hitIDs.count(houghSpace.at(maxPeak).at(iHitID)) == 0 ) hitIDs.emplace(houghSpace.at(maxPeak).at(iHitID),true);
 
-    std::cout << "Past hitID first if." << std::endl;
+    //std::cout << "Past hitID first if." << std::endl;
 
     //Also look in a region around the max spike
     //For all points in a square region around this, find all unique hitIDs and push back into hitIDs map.
     for( int iiRho = -1*m_EpsHoughBins; iiRho <= m_EpsHoughBins; ++iiRho ){
       for( int iiPhi =  -1*m_EpsHoughBins; iiPhi <= m_EpsHoughBins; ++iiPhi ){
 	
-	std::cout << "In Rho/phi loops" << std::endl;
+	//std::cout << "In Rho/phi loops" << std::endl;
 
 	//build the position
 	std::pair<double,double> neighborhood(maxPeak.first+iiRho,maxPeak.second+iiPhi);
 	
 	//Loop over hits at this position
 	if( houghSpace.count(neighborhood) > 0 ){
-	  std::cout << "Past neighborhood cut." << std::endl;
+	  //std::cout << "Past neighborhood cut." << std::endl;
 	  for( size_t iHitID = 0; iHitID < houghSpace.at(neighborhood).size(); ++iHitID ){
-	    std::cout << "In last hitID loop." << std::endl;
+	    //std::cout << "In last hitID loop." << std::endl;
 	    if( hitIDs.count(houghSpace.at(neighborhood).at(iHitID)) == 0 ) hitIDs.emplace(houghSpace.at(neighborhood).at(iHitID),true);
 	  } //End loop over hits in this rho/phi
 	} //End if statement
