@@ -175,14 +175,16 @@ private:
     /**
      *  @brief Given an input HitPairList, build out the map of nearest neighbors
      */
-    size_t BuildNeighborhoodMap(HitPairList& hitPairList, EpsPairNeighborhoodMapVec& epsPairNeighborhoodMapVec) const;
+    size_t BuildNeighborhoodMap(HitPairList& hitPairList,
+				EpsPairNeighborhoodMapVec& epsPairNeighborhoodMapVec )const;
+
     
     /** 
      *  @brief Jacket the calls to finding the nearest wire in order to intercept the exceptions if out of range
      */
     geo::WireID NearestWireID(const double* position, const geo::View_t& view) const;
+    geo::WireID NearestWireID_mod(const double* position, const geo::PlaneID & thePlaneID ) const;
 
-    geo::WireID NearestWireID_mod(const double* position, const geo::PlaneID & thePlaneID ) const; //REL
     
     /**
      *  @brief Data members to follow
@@ -198,6 +200,8 @@ private:
     std::vector<float>        m_timeVector;            ///<
 
     geo::Geometry*            m_geometry;  // pointer to the Geometry service
+
+
     //    const detinfo::DetectorProperties* m_detector;  // Pointer to the detector properties
 };
 

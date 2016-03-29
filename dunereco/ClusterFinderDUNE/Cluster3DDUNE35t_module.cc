@@ -311,6 +311,8 @@ private:
 					  double & endTime,
 					  double & sigmaEndTime) const;
 
+  RecobHitVector SplitDeltaRaysOffWithHough( RecobHitVector const & recobHitVect ) const;
+
     /**
      *   Algorithm parameters
      */
@@ -319,6 +321,14 @@ private:
     double                    m_clusHitRejectionFrac;  ///< Cluster hit purity must exceed this to be kept
     double                    m_parallelHitsCosAng;    ///< Cut for PCA 3rd axis angle to X axis
     double                    m_parallelHitsTransWid;  ///< Cut on transverse width of cluster (PCA 2nd eigenvalue)
+  
+    double                    m_EpsHoughBins;          //Number of bins to use as a neighborhood around spikes
+    double                    m_HoughSpikeThreshold;   //Bin occupancy in hough space that denotes a spike
+    double                    m_nBinsPhi;              //Total # of bins in phi
+    double                    m_nBinsRho;              //Total # of bins in rho
+    double                    m_HoughScaleFactor;      //Used to set time bins and wires on same footing
+    double                    m_TestEventNum;
+    double                    m_TestTPCNum;
 
     /**
      *   Tree variables for output
@@ -371,7 +381,9 @@ private:
   TH2D * finalSpacePoints_evt3;
   TH2D * finalSpacePoints_evt4;
   TH2D * finalSpacePoints_evt5;
-  
+
+  TH2D * houghSpaceOccupancy;
+  TH2D * houghSpaceSpikes;
   
   size_t fEvtNum;
 
@@ -427,6 +439,14 @@ void Cluster3DDUNE35t::reconfigure(fhicl::ParameterSet const &pset)
     m_clusHitRejectionFrac = pset.get<double>     ("ClusterHitRejectionFrac",    0.5);
     m_parallelHitsCosAng   = pset.get<double>     ("ParallelHitsCosAng",       0.999);
     m_parallelHitsTransWid = pset.get<double>     ("ParallelHitsTransWid",      25.0);
+
+    m_EpsHoughBins         = pset.get<double>     ("EpsilonHoughBins",             5);
+    m_HoughSpikeThreshold  = pset.get<double>     ("HoughSpikeThreshold",         10);
+    m_nBinsPhi             = pset.get<double>     ("NumBinsPhi",                 200);
+    m_nBinsRho             = pset.get<double>     ("NumBinsRho",                 200);
+    m_HoughScaleFactor     = pset.get<double>     ("HoughScaleFactor",            10);
+    m_TestEventNum         = pset.get<double>     ("TestEventNum",                 3);
+    m_TestTPCNum           = pset.get<double>     ("TestTPCNum",                   1);
     
     m_dbScanAlg.reconfigure(pset.get<fhicl::ParameterSet>("DBScanAlg"));
     m_pcaAlg.reconfigure(pset.get<fhicl::ParameterSet>("PrincipalComponentsAlg"));
@@ -546,9 +566,9 @@ void Cluster3DDUNE35t::produce(art::Event &evt)
         m_event                 = evt.id().event();
         m_totalTime             = theClockTotal.accumulated_real_time();
         m_artHitsTime           = theClockArtHits.accumulated_real_time();
-	//        m_makeHitsTime          = m_dbScanAlg.getTimeToExecute(DBScanAlg::BUILDTHREEDHITS);
-        //m_buildNeighborhoodTime = m_dbScanAlg.getTimeToExecute(DBScanAlg::BUILDHITTOHITMAP);
-        //m_dbscanTime            = m_dbScanAlg.getTimeToExecute(DBScanAlg::RUNDBSCAN);
+	m_makeHitsTime          = m_dbScanAlg.getTimeToExecute(DBScanAlg_DUNE35t::BUILDTHREEDHITS);
+        m_buildNeighborhoodTime = m_dbScanAlg.getTimeToExecute(DBScanAlg_DUNE35t::BUILDHITTOHITMAP);
+        m_dbscanTime            = m_dbScanAlg.getTimeToExecute(DBScanAlg_DUNE35t::RUNDBSCAN);
         m_finishTime            = theClockFinish.accumulated_real_time();
         m_hits                  = static_cast<int>(clusterHit2DMasterVec.size());
         m_pRecoTree->Fill();
@@ -595,6 +615,11 @@ void Cluster3DDUNE35t::InitializeMonitoring()
     finalSpacePoints_evt3 = tfs->make<TH2D>("finalSpacePoints_evt3",";Evt1 Final Spacepoints YZ;",250,0,250,350,-100,250);
     finalSpacePoints_evt4 = tfs->make<TH2D>("finalSpacePoints_evt4",";Evt1 Final Spacepoints YZ;",250,0,250,350,-100,250);
     finalSpacePoints_evt5 = tfs->make<TH2D>("finalSpacePoints_evt5",";Evt1 Final Spacepoints YZ;",250,0,250,350,-100,250);
+
+    //REL Debug
+    houghSpaceOccupancy = tfs->make<TH2D>("houghSpaceBinOccupancy",";Hough Space Bin Occupancy;",m_nBinsPhi,0,m_nBinsPhi,m_nBinsRho,-m_nBinsRho/2,m_nBinsRho/2);
+    houghSpaceSpikes = tfs->make<TH2D>("houghSpaceSpikes",";Hough Space Spike Locations;",m_nBinsPhi,0,m_nBinsPhi,m_nBinsRho,-m_nBinsRho/2,m_nBinsRho/2);
+    
     
     m_pRecoTree = tfs->make<TTree>("monitoring", "LAr Reco");
     m_pRecoTree->Branch("run",                  &m_run,                   "run/I");
@@ -1490,6 +1515,9 @@ void Cluster3DDUNE35t::ProduceArtClusters(art::Event&              evt,
                     splitClustersWithHough(clusterParameters, hitPairClusterMap, clusterParametersList);
                 }
             }
+
+
+
         
             // Start loop over views to build out the hit lists and the 2D cluster objects
             for(ViewToClusterParamsMap::const_iterator viewItr = clusterParameters.m_clusterParams.begin(); viewItr != clusterParameters.m_clusterParams.end(); viewItr++)
@@ -1531,7 +1559,17 @@ void Cluster3DDUNE35t::ProduceArtClusters(art::Event&              evt,
 			recobHits_thisTPC.push_back(hitPtr);
 		      }
 		    }
+
+
+		  //Split these hits up with a hough transform	  
+		  //		  if( fEvtNum == m_TestEventNum && iTPC == m_TestTPCNum && viewItr == clusterParameters.m_clusterParams.begin() ){
+		  //Should make sure that there is at least one hit first
+		  if( recobHits_thisTPC.size() > 1 )
+		    recobHits_thisTPC = SplitDeltaRaysOffWithHough( recobHits_thisTPC );
 		  
+
+
+
 		  //Now we have a vector of recob::Hits that belong to this TPC. Start extracting info		
 		  double dTdW(0.);
 		  double startWire(0);
@@ -1550,7 +1588,7 @@ void Cluster3DDUNE35t::ProduceArtClusters(art::Event&              evt,
 						    endTime,
 						    sigmaEndTime);
 
-		  std::cout << "Starttime: " << startTime << std::endl;
+		  //REL		  std::cout << "Starttime: " << startTime << std::endl;
 		  
 		  //At this point, we should have the correct pieces of information (startWire,endwire,etc.) to use for
 		  //further cluster analysis
@@ -1841,10 +1879,12 @@ void Cluster3DDUNE35t::ProduceArtClusters(art::Event&              evt,
     }
     
     //REL Troubleshooting
+    /*
     for( size_t iClust = 0; iClust < artClusterVector->size(); ++iClust ){
       //Find the cluster ID, the plane ID, and the TPC ID
       std::cout << "ClusterID/PlaneID/TPCID: " << artClusterVector->at(iClust).ID() << "/" << artClusterVector->at(iClust).Plane().Plane << "/" << artClusterVector->at(iClust).Plane().TPC << std::endl;
     }
+    */
 
     // Finaly done, now output everything to art
     evt.put(std::move(artPCAxisVector));
@@ -1901,7 +1941,7 @@ void Cluster3DDUNE35t::plotClusters1( reco::HitPairClusterMap hpcm, HitPairList&
 
   
   //Also plot stuff in hitPairLists
-  std::cout << "size of hpl: " << hpl.size() << std::endl;
+  //std::cout << "size of hpl: " << hpl.size() << std::endl;
   for(auto& hitPair : hpl){
     
     
@@ -1922,18 +1962,18 @@ void Cluster3DDUNE35t::plotClusters1( reco::HitPairClusterMap hpcm, HitPairList&
 void Cluster3DDUNE35t::plotClusters2( ClusterParametersList cpl )
 {
   //Loop through all clusters
-  std::cout << "Break1" << std::endl;
+  //std::cout << "Break1" << std::endl;
   for( std::list<ClusterParameters>::iterator cpl_iter = cpl.begin(); cpl_iter != cpl.end(); ++cpl_iter ){
-    std::cout << "Break2" << std::endl;
+    //std::cout << "Break2" << std::endl;
     //Get the hit pair list for this cluster
     reco::HitPairListPtr & hitPairListPtr =  (cpl_iter)->m_hitPairListPtr;
-    std::cout << "Break3" << std::endl;
-    std::cout << "Sucessfully found hitPairListPtr with size: " << hitPairListPtr.size() << std::endl;
+    //std::cout << "Break3" << std::endl;
+    //std::cout << "Sucessfully found hitPairListPtr with size: " << hitPairListPtr.size() << std::endl;
 
-    std::cout << "Break4" << std::endl;
+    //std::cout << "Break4" << std::endl;
 
     if( hitPairListPtr.size() > 0 ){
-      std::cout << "Break5." << std::endl;
+      //std::cout << "Break5." << std::endl;
       for(reco::HitPairListPtr::const_iterator hit3DIter = hitPairListPtr.begin(); hit3DIter != hitPairListPtr.end(); hit3DIter++ ){
 	const reco::ClusterHit3D* theHit  = *hit3DIter;
 	double y = theHit->getPosition()[1];
@@ -2011,9 +2051,213 @@ void Cluster3DDUNE35t::extractTPCSpecificInfoFromHitVect( RecobHitVector & recob
   sigmaStartTime = lWire_sigmaTime;
   sigmaEndTime = hWire_sigmaTime;
 
-  if( lWire_time == 0 && lWire_sigmaTime == 0 && hWire_time == 0 && hWire_sigmaTime == 0 ){ std::cout << "Wire Times unset. Problem here." << std::endl; }
+  //if( lWire_time == 0 && lWire_sigmaTime == 0 && hWire_time == 0 && hWire_sigmaTime == 0 ){ std::cout << "Wire Times unset. Problem here." << std::endl; }
+  
+}
+
+
+
+
+
+RecobHitVector Cluster3DDUNE35t::SplitDeltaRaysOffWithHough( RecobHitVector const & recobHitVect ) const
+{
+  // This function uses the hough transform to remove delta rays and little "blip" clusters from
+  // long, straight tracks corresponding to muons.
+  //
+  // The function runs on each 2-D recob::Cluster, and for each of these, the procedure is generally as follows:
+  // 1.) Run a hough transform on the hits and label each curve in hough space with the hit ID 
+  // 2.) Find the peak in hough space - this corresponds to the straight muon line.
+  // 3.) Define/parametrize some radius away from the peak by epsilon. Include all hits whose curves come within
+  //     epsilon of the peak in the final 2D recob::cluster
+  // 4.) Ideally, the curves corresponding to delta rays or other slightly-separated blip clusters will not be within
+  //     this epsilon of the peak. These will not be included in the 2D recob::cluster
+  
+  //Pseudocode
+
+  //Define parameters of hough space
+  double nBinsPhi = m_nBinsPhi;
+  double nBinsRho = m_nBinsRho;
+  double pi = 3.141592539;
+  double scaleFactor = m_HoughScaleFactor;    //used to put wire and time tick on roughly the same footing?
+
+  //Our origin is at X,Y = 0 (wire,time = 0), so the max rho should be in the top
+  //right corner, where X and Y are maximized. If X and Y are scaled to have equal maxima, we
+  //estimate this to be roughly sqrt(2)*Xmax
+  double minRho = 0;
+  double maxRho = pow(2,0.5)*3000; //3000 is rough # of time ticks
+
+
+  //Create the hough space map (pair<double: rho, double:phi>,std::vector<size_t: hitID>
+  //For now, the hit index serves as the hitID
+  std::map<std::pair<double,double>,std::vector<size_t> > houghSpace;
+
+  //Create the hough space spike map (those bins that are above threshold)
+  //Here, the int represents the "height" of the spike (i.e. number of curves that pass into
+  //the specified bin).
+  std::map<std::pair<double,double>,bool> houghSpikes; 
+
+  //Counter for max peak
+  double maxPeakOcc = 0;
+  std::pair<double,double> maxPeak(-1,-1);
+  
+  //Loop over phi
+  for( size_t iPhi = 0; iPhi < nBinsPhi; ++iPhi ){
+
+    //std::cout << "Inside phi." << std::endl;
+
+    //Loop over the hits
+    for( size_t iHit = 0; iHit < recobHitVect.size(); ++iHit ){
+      
+      //std::cout << "Inside hits." << std::endl;
+
+      //Create a phi value from our loop
+      double phi = pi*(iPhi/nBinsPhi);
+      
+      //Find rho from phi and the hit X,Y and put into a bin
+      double rho = (recobHitVect.at(iHit)->WireID().Wire*scaleFactor)*cos(phi) + (recobHitVect.at(iHit)->PeakTime())*sin(phi);
+      double stepRho = (maxRho-minRho)/nBinsRho;
+      double iRho = floor((rho-minRho)/stepRho);
+      
+      //Sanity check
+      if( rho > maxRho ) std::cout << "Rho is larger than maxRho. Problem here!" << std::endl;
+      if( recobHitVect.at(iHit)->PeakTime() < 0 ) std::cout << "PeakTime is less than zero. Problem here!" << std::endl;
+
+      //For each hit, take the x, y into a rho, phi, and fill the corresponding map entry with the hit IDs
+      //Also fill a histogram for debugging
+      std::pair<double,double> thePair(iRho,iPhi);
+      if( fEvtNum == m_TestEventNum )
+	houghSpaceOccupancy->Fill(iPhi,iRho);
+      
+      if( houghSpace.count(thePair) == 0 ){
+	std::vector<size_t> hitIDVect;
+	hitIDVect.push_back(iHit);
+	houghSpace.emplace(thePair,hitIDVect);
+      }
+
+      //Push back the map entry with the hit ID. Also check the bin occupancy of this map entry to identify if the spike threshold has been surpassed
+      else{ 
+	houghSpace.at(thePair).push_back(iHit);
+
+	//Check if adding this has created a maximum spike
+	if( houghSpace.at(thePair).size() > maxPeakOcc ){
+	  maxPeakOcc = houghSpace.at(thePair).size();
+	  maxPeak = thePair;
+	}
+	
+	/*
+	//Check threshold and push back if a super-threshold exists.
+	if( houghSpace.at(thePair).size() > m_HoughSpikeThreshold ){
+	  if( houghSpikes.count(thePair) == 0 )
+	    houghSpikes.emplace(thePair,houghSpace.at(thePair).size());
+	  else{ houghSpikes.at(thePair) = houghSpace.at(thePair).size(); }
+	}
+	*/
+	
+	
+	
+      }
+    }
+  }
+
+  //std::cout << "Past first loop." << std::endl;
+
+  //Create a map containing the hitIDs contained in the spikes (the straight muon tracks). Again, bool is meaningless
+  std::map<size_t,bool> hitIDs;
+
+  //Now take the max spike and find the unique hitIDs contained wihthin
+  for( size_t iHitID = 0; iHitID < houghSpace.at(maxPeak).size(); ++iHitID ){
+    
+    //std::cout << "In HitID loop." << std::endl;
+
+    if( hitIDs.count(houghSpace.at(maxPeak).at(iHitID)) == 0 ) hitIDs.emplace(houghSpace.at(maxPeak).at(iHitID),true);
+
+    //std::cout << "Past hitID first if." << std::endl;
+
+    //Also look in a region around the max spike
+    //For all points in a square region around this, find all unique hitIDs and push back into hitIDs map.
+    for( int iiRho = -1*m_EpsHoughBins; iiRho <= m_EpsHoughBins; ++iiRho ){
+      for( int iiPhi =  -1*m_EpsHoughBins; iiPhi <= m_EpsHoughBins; ++iiPhi ){
+	
+	//std::cout << "In Rho/phi loops" << std::endl;
+
+	//build the position
+	std::pair<double,double> neighborhood(maxPeak.first+iiRho,maxPeak.second+iiPhi);
+	
+	//Loop over hits at this position
+	if( houghSpace.count(neighborhood) > 0 ){
+	  //std::cout << "Past neighborhood cut." << std::endl;
+	  for( size_t iHitID = 0; iHitID < houghSpace.at(neighborhood).size(); ++iHitID ){
+	    //std::cout << "In last hitID loop." << std::endl;
+	    if( hitIDs.count(houghSpace.at(neighborhood).at(iHitID)) == 0 ) hitIDs.emplace(houghSpace.at(neighborhood).at(iHitID),true);
+	  } //End loop over hits in this rho/phi
+	} //End if statement
+      } //End loop over phi
+    } //End loop over rho
+  }
+  
+  //Fill our second histogram with the max peak position
+  //  if( fEvtNum == m_TestEventNum )
+  // houghSpaceSpikes->Fill(maxPeak.first,maxPeak.second);
+
+  //Now find the spikes present.
+  // for( std::map<std::pair<double,double>,bool>::iterator iter = houghSpikes.begin(); iter != houghSpikes.end(); ++iter ){
+    
+    //Get the position in rho, phi space
+    //    double iRho = iter->first.first;
+    //double iPhi = iter->first.second;
+    
+    //Fill a hist with spike location
+    //    houghSpaceSpikes->Fill(iPhi,iRho);
+
+    //For these spikes, find all unique hitIDs and push back into hitIDs map.
+  // for( size_t iHitID = 0; iHitID < houghSpace.at(iter->first).size(); ++iHitID ){
+  //  if( hitIDs.count(houghSpace.at(iter->first).at(iHitID)) == 0 ) hitIDs.emplace(houghSpace.at(iter->first).at(iHitID),true);
+  //}
+
+    /*
+    //For all points in a square region around this, find all unique hitIDs and push back into hitIDs map.
+    for( size_t iiRho = iRho - m_EpsHoughBins; iiRho <= iRho + m_EpsHoughBins; ++iiRho ){
+      for( size_t iiPhi = iPhi - m_EpsHoughBins; iiPhi <= iPhi + m_EpsHoughBins; ++iiPhi ){
+	for( size_t iHitID = 0; iHitID < houghSpace.at(iter->first).size(); ++iHitID ){
+	  if( hitIDs.count(houghSpace.at(iter->first).at(iHitID)) == 0 ) hitIDs.emplace(houghSpace.at(iter->first).at(iHitID),true);
+	} //End loop over hits in this rho/phi
+      } //End loop over phi
+    } //End loop over rho
+    */
+  //  }
+  //Note that we have to make the threshold for spikes large enough so that a slightly-long delta ray won't be considered
+  //a spike.
+  
+
+  //By now, hitIDs should have all of the remaining hit IDs that should remain in the vector. Create a new vector for those.
+  RecobHitVector finalHitVect;
+  for( size_t iHit = 0; iHit < recobHitVect.size(); ++iHit ){
+    if( hitIDs.count(iHit) == 1 ){
+      finalHitVect.push_back(recobHitVect.at(iHit));
+    }
+  }
+  
+  return finalHitVect;
+  
+  //If it is, then record that rho,phi pair as a possible line of points in a separate map
+  
+  //Out of loops
+  //Look at the super-threshold points, and consider a square neighborhood of pixels around them
+  // If a new hit id is found in this neighborhood of pixels, add it to the existing hit IDs.
+  //Form a cluster from the existing hit IDs.
+  
+  //Later: run DBScan on the remaining hits?
+
+
+
+
+
+
+
 
 }
+
+
 
 
 } // namespace lar_cluster3d
