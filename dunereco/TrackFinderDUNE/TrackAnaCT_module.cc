@@ -754,7 +754,6 @@ namespace trkf {
   //
   {
     auto const *detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
-    art::ServiceHandle<cheat::BackTracker> bt;
     art::ServiceHandle<geo::Geometry> geom;
 
 
@@ -774,13 +773,13 @@ namespace trkf {
 
     // Get mc particles.
 
-    sim::ParticleList plist;
     std::vector<const simb::MCParticle*> plist2;
-    plist2.reserve(plist.size());
-
     if(mc) {
 
-      plist = bt->ParticleList();
+      art::ServiceHandle<cheat::BackTracker> bt;
+      sim::ParticleList const& plist = bt->ParticleList();
+      plist2.reserve(plist.size());
+  
 
       if(pdump) {
 	*pdump << "MC Particles\n"
