@@ -414,7 +414,23 @@ void DisambigAlg35t::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &Ori
   }
 
   }
-  
+  else{//just take all triplets of hits
+    for (size_t i = 0; i<ntpc; ++i){//loop over all TPCs
+      for (size_t j = 0; j < allhitsu[i].size(); ++j){
+        //only add each hit once
+        if (fHasBeenDisambigedUV[0].find(cluidu[i][j])==fHasBeenDisambigedUV[0].end()){
+          fDisambigHits.push_back(std::pair<art::Ptr<recob::Hit>, geo::WireID>(allhitsu[i][j],wireidsu[i][j]));
+          fHasBeenDisambigedUV[0][cluidu[i][j]] = bestwireidu[i][j];
+        }
+        if (fHasBeenDisambigedUV[1].find(cluidv[i][j])==fHasBeenDisambigedUV[1].end()){
+          
+          fDisambigHits.push_back(std::pair<art::Ptr<recob::Hit>, geo::WireID>(allhitsv[i][j],wireidsv[i][j]));
+          fHasBeenDisambigedUV[1][cluidv[i][j]] = bestwireidv[i][j];
+        }
+      }
+    }
+  }
+    
 //loop over undisambiguated hits, find the nearest channel of disambiguated hits and determine the correct wire segment.
   for (size_t i = 0; i<2; ++i){//loop over U and V hits
     for (size_t hit = 0; hit<hitsUV[i].size(); ++hit){
