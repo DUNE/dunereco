@@ -61,7 +61,7 @@ physics:
 }
 
 ### Configure the Geometry
-services.Geometry: @local::protoDune_geo
+services.Geometry: @local::protodune_geo
 
 ### Configure the Producer modules
 physics.producers.pandora.HitFinderModuleLabel: "hitcheat"
