@@ -58,6 +58,7 @@ void DisambigAlg35t::reconfigure(fhicl::ParameterSet const& p)
   fDistanceCutClu = p.get<double>("DistanceCutClu");
   fTimeWiggle     = p.get<double>("TimeWiggle");
   fColChanWiggle  = p.get<int>("ColChannelWiggle");
+  fDoCleanUpHits  = p.get<bool>("DoCleanUpHits", true);
   fDBScan.reconfigure(p.get< fhicl::ParameterSet >("DBScanAlg"));
 }
 
@@ -223,7 +224,8 @@ void DisambigAlg35t::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &Ori
     }//loop over all u hits
   }//loop over all z hits
   //Done finding trivial disambiguated hits
-  
+
+  if (fDoCleanUpHits){
   //running DB scan to identify and remove outlier hits
   // get the ChannelFilter
   filter::ChannelFilter chanFilt;
@@ -410,7 +412,25 @@ void DisambigAlg35t::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &Ori
       }
     }
   }
-  
+
+  }
+  else{//just take all triplets of hits
+    for (size_t i = 0; i<ntpc; ++i){//loop over all TPCs
+      for (size_t j = 0; j < allhitsu[i].size(); ++j){
+        //only add each hit once
+        if (fHasBeenDisambigedUV[0].find(cluidu[i][j])==fHasBeenDisambigedUV[0].end()){
+          fDisambigHits.push_back(std::pair<art::Ptr<recob::Hit>, geo::WireID>(allhitsu[i][j],wireidsu[i][j]));
+          fHasBeenDisambigedUV[0][cluidu[i][j]] = bestwireidu[i][j];
+        }
+        if (fHasBeenDisambigedUV[1].find(cluidv[i][j])==fHasBeenDisambigedUV[1].end()){
+          
+          fDisambigHits.push_back(std::pair<art::Ptr<recob::Hit>, geo::WireID>(allhitsv[i][j],wireidsv[i][j]));
+          fHasBeenDisambigedUV[1][cluidv[i][j]] = bestwireidv[i][j];
+        }
+      }
+    }
+  }
+    
 //loop over undisambiguated hits, find the nearest channel of disambiguated hits and determine the correct wire segment.
   for (size_t i = 0; i<2; ++i){//loop over U and V hits
     for (size_t hit = 0; hit<hitsUV[i].size(); ++hit){
@@ -452,7 +472,7 @@ void DisambigAlg35t::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &Ori
 //	mf::LogWarning("DisambigAlg35t")<<"Could not find disambiguated hit for  "<<*hitsUV[i][hit]<<"\n";
 //      }
     }
-    }  
+  }  
 }
 
 } //end namespace apa
