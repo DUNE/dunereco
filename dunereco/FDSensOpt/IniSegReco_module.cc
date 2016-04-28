@@ -134,8 +134,8 @@ private:
 	double fFidVolCut;
 	pma::ProjectionMatchingAlg fProjectionMatchingAlg;
 
-	std::ofstream file;
-	std::ofstream file1;
+        std::ofstream file;
+        std::ofstream file1;
 };
 // ------------------------------------------------------
 

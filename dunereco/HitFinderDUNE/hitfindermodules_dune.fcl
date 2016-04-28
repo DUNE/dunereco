@@ -55,6 +55,7 @@ dune35t_disambigalg:
     		      	   # of mis-identified hits.  
     ColChannelWiggle: 5    #Buffer to extend cluster windows by to exclude small clusters 
                            # of mis-identified hits. 
+    DoCleanUpHits:    true #clean up wrong hit triplets
     DBScanAlg:        @local::standard_dbscanalg
 }
 
@@ -98,5 +99,5 @@ dunefd_hitcheater:	  @local::standard_hitcheater
 dunefd_fasthitfinder:     @local::dune35t_fasthitfinder
 dunefd_clustercrawlerhit: @local::dune35t_clustercrawlerhit
 dunefd_hitfinderfd:       @local::dune35t_hitfinder35t
-
+dunefd_hitfinderfd.DisambigAlg.DoCleanUpHits: false
 END_PROLOG
