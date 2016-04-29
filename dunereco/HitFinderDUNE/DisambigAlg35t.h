@@ -60,6 +60,7 @@ namespace dune{
     double fDistanceCutClu;
     double fTimeWiggle;
     int    fColChanWiggle;
+    bool   fDoCleanUpHits;
     cluster::DBScanAlg fDBScan; ///< object that implements the DB scan algorithm
   }; // class DisambigAlg35t
 
