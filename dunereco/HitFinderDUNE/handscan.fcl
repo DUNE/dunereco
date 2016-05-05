@@ -1,0 +1,11 @@
+BEGIN_PROLOG
+
+dune35t_handscan:
+{
+    module_type: "HitHandScan"
+    PreviousHitModuleLabel: "hit35t"
+    HandScanFileName: "/dune/app/users/mthiesse/larHandScan/test/handscan.txt"
+}
+
+
+END_PROLOG

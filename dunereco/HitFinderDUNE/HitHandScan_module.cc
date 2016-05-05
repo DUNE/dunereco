@@ -37,9 +37,13 @@
 class HitHandScan;
 
 typedef struct {
-  double tick;// IN RELATION TO EXTERNAL TRIGGER, NOT NECESSARILY THE FIRST TICK IN THE EVENT
+  unsigned int run;
+  unsigned int event;
   unsigned int tpc;
-  unsigned int wire;// wire number in this tpc (usually 0-111 for coll planes)
+  unsigned int plane;
+  double wire;// wire number in this tpc on this plane
+  double tick;// IN RELATION TO EXTERNAL TRIGGER, NOT NECESSARILY THE FIRST TICK IN THE EVENT
+  unsigned int numpoly;
 } Point;
 
 class HitHandScan : public art::EDProducer {
@@ -62,13 +66,9 @@ public:
 
 private:
   bool insidePolygon(std::vector<Point> polygon, Point ptest);
-  double angle2D(Point p1, Point p2);
 
   std::string fPreviousHitModuleLabel;
   std::string fHandScanFileName;
-  int fPreTriggerTicks;
-
-  std::map<int,std::vector<Point> > trackBox;
 
 };
 
@@ -88,23 +88,45 @@ void HitHandScan::produce(art::Event & e)
   art::FindOneP<raw::RawDigit> rawdigits(prevHitHandle,e,fPreviousHitModuleLabel);
 
   recob::HitCollectionCreator hcol(*this, e, wires.isValid(), rawdigits.isValid());
+
+  std::vector<Point> trackBox;
   
-  std::string readrun,readevent,readtpc,readwire,readtick,readnumpoly;
+  std::string readrun,readevent,readtpc,readplane,readwire,readtick,readnumpoly;
+  unsigned int run,event,tpc,plane,numpoly;
+  double tick,wire;
+  int linenumber = 0;
   std::string line;
   std::ifstream handscanfile(fHandScanFileName.c_str(),std::ifstream::in);
   if (handscanfile.is_open())
     {
       while (std::getline(handscanfile,line))
 	{
+	  linenumber++;
 	  std::stringstream ss(line);
-	  ss >> readrun >> readevent >> readtpc >> readwire >> readtick >> readnumpoly;
-	  if (stoul(readrun) == e.run() && stoul(readevent) == e.event())
+	  ss >> std::ws >> readrun >> readevent >> readtpc >> readplane >> readwire >> readtick >> readnumpoly;
+	  try 
 	    {
+	      run = stoul(readrun);
+	      event = stoul(readevent);
+	      tick = stod(readtick);
+	      tpc = stoul(readtpc);
+	      plane = stoul(readplane);
+	      wire = stod(readwire);
+	      numpoly = stoul(readnumpoly);
+	      
 	      Point p;
-	      p.tick = stod(readtick);
-	      p.tpc = stoul(readtpc);
-	      p.wire = stoul(readwire);
-	      trackBox[stoi(readnumpoly)].push_back(p);
+	      p.run = run;
+	      p.event = event;
+	      p.tpc = tpc;
+	      p.plane = plane;
+	      p.wire = wire;
+	      p.tick = tick;
+	      p.numpoly = numpoly;
+	      trackBox.push_back(p);
+	    } 
+	  catch (const std::exception& ex)
+	    {
+	      std::cout << "Line # " << linenumber << " is invalid, skipping..." << std::endl;
 	    }
 	}
       handscanfile.close();
@@ -120,20 +142,38 @@ void HitHandScan::produce(art::Event & e)
   for (size_t i_hit = 0; i_hit < prevHitHandle->size(); i_hit++)
     {
       art::Ptr<recob::Hit> phit(prevHitHandle,i_hit);
-      if (phit->View() != geo::kZ) continue;
 
       art::Ptr<recob::Wire> wire(wires.at(i_hit));
       art::Ptr<raw::RawDigit> rawdigit(rawdigits.at(i_hit));
 
-      bool acceptPoint = false;
-      for (auto poly = trackBox.begin(); poly != trackBox.end(); poly++)
+      Point ptest;
+      ptest.run = e.run();
+      ptest.event = e.event();
+      ptest.tpc = phit->WireID().TPC;
+      ptest.plane = phit->WireID().Plane;
+      ptest.wire = phit->WireID().Wire;
+      ptest.tick = phit->PeakTime();
+      if (e.event() == 2) std::cout << "testing wire=" << ptest.wire << "  tpc=" << ptest.tpc << "  tick=" << ptest.tick << std::endl;
+      
+      std::map< unsigned int, std::vector<Point> > polygons;
+      for (auto const &poly : trackBox)
 	{
-	  std::vector<Point> polygon = (*poly).second;
-	  Point ptest;
-	  ptest.wire = phit->WireID().Wire;
-	  ptest.tpc = phit->WireID().TPC;
-	  ptest.tick = phit->PeakTime()-fPreTriggerTicks;
-	  if (insidePolygon(polygon,ptest)) acceptPoint = true;
+	  if (poly.run == ptest.run 
+	      && poly.event == ptest.event
+	      && poly.tpc == ptest.tpc
+	      && poly.plane == ptest.plane)
+	    {
+	      polygons[poly.numpoly].push_back(poly);
+	    }
+	}
+      bool acceptPoint = false;
+      for (auto const &p : polygons)
+	{
+	  if (insidePolygon(p.second,ptest)) 
+	    {
+	      acceptPoint = true;
+	      if (e.event()==2) std::cout << "ACCEPTED" << std::endl;
+	    }
 	}
       if (acceptPoint) 
 	{
@@ -149,38 +189,21 @@ void HitHandScan::reconfigure(fhicl::ParameterSet const & p)
 {
   fHandScanFileName = p.get<std::string>("HandScanFileName");
   fPreviousHitModuleLabel = p.get<std::string>("PreviousHitModuleLabel");
-  fPreTriggerTicks = p.get<int>("PreTriggerTicks");
 }
 
 bool HitHandScan::insidePolygon(std::vector<Point> polygon, Point ptest)
 {
-  Point p1,p2;
-  double angle=0;
   size_t n = polygon.size();
-  for (size_t i = 0; i < n; i++)
+  size_t i, j;
+  bool c = false;
+  for (i = 0, j = n - 1; i < n; j = i++)
     {
-      p1.tpc = polygon[i].tpc;
-      p1.wire = polygon[i].wire - ptest.wire;
-      p1.tick = polygon[i].tick - ptest.tick;
-      p2.tpc = polygon[(i+1)%n].tpc;
-      p2.wire = polygon[(i+1)%n].wire - ptest.wire;
-      p2.tick = polygon[(i+1)%n].tick - ptest.wire;
-      angle += angle2D(p1,p2);
+      if ( ((polygon[i].tick > ptest.tick) != (polygon[j].tick > ptest.tick)) &&
+	   (ptest.wire < (polygon[j].wire - polygon[i].wire) * 
+	    (ptest.tick - polygon[i].tick) / (polygon[j].tick - polygon[i].tick) + polygon[i].wire) )
+	c = !c;
     }
-  if (TMath::Abs(angle) < TMath::Pi()) return false;
-  return true;
+  return c;
 }
-
-double HitHandScan::angle2D(Point p1, Point p2)
-{
-  double theta1 = TMath::ATan2(p1.tick,p1.wire);
-  double theta2 = TMath::ATan2(p2.tick,p2.wire);
-  double dtheta = theta2 - theta1;
-  while (dtheta > TMath::Pi()) dtheta -= 2*TMath::Pi();
-  while (dtheta < -TMath::Pi()) dtheta += 2*TMath::Pi();
-  return dtheta;
-}
-
-
 
 DEFINE_ART_MODULE(HitHandScan)
