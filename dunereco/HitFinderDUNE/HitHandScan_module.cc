@@ -153,8 +153,7 @@ void HitHandScan::produce(art::Event & e)
       ptest.plane = phit->WireID().Plane;
       ptest.wire = phit->WireID().Wire;
       ptest.tick = phit->PeakTime();
-      if (e.event() == 2) std::cout << "testing wire=" << ptest.wire << "  tpc=" << ptest.tpc << "  tick=" << ptest.tick << std::endl;
-      
+            
       std::map< unsigned int, std::vector<Point> > polygons;
       for (auto const &poly : trackBox)
 	{
@@ -172,7 +171,6 @@ void HitHandScan::produce(art::Event & e)
 	  if (insidePolygon(p.second,ptest)) 
 	    {
 	      acceptPoint = true;
-	      if (e.event()==2) std::cout << "ACCEPTED" << std::endl;
 	    }
 	}
       if (acceptPoint) 
