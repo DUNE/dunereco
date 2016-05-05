@@ -4,7 +4,7 @@ dune35t_handscan:
 {
     module_type: "HitHandScan"
     PreviousHitModuleLabel: "hit35t"
-    HandScanFileName: "/dune/app/users/mthiesse/larHandScan/test/handscan.txt"
+    HandScanFileName: "/dune/app/users/mthiesse/handscan.txt"
 }
 
 
