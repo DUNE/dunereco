@@ -13,7 +13,7 @@ art_make(
                            lardata_RecoBase
                            larcore_Geometry
                            larcore_Geometry_Geometry_service
-                           SeedService_service # artextensions
+                           larsim_RandomUtils_LArSeedService_service
                            ${SIMULATIONBASE}
                            ${ART_FRAMEWORK_CORE}
                            ${ART_FRAMEWORK_PRINCIPAL}
