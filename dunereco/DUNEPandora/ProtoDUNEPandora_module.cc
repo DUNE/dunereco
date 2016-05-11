@@ -9,7 +9,7 @@
 
 #include "larcore/Geometry/Geometry.h"
 
-#include "LArStitching/MultiPandoraApi.h"
+#include "larpandoracontent/LArStitching/MultiPandoraApi.h"
 
 #include "larpandora/LArPandoraInterface/LArPandora.h"
 
@@ -69,7 +69,7 @@ DEFINE_ART_MODULE(ProtoDUNEPandora)
 
 #include "Api/PandoraApi.h"
 
-#include "LArContent.h"
+#include "larpandoracontent/LArContent.h"
 
 #include "dune/DUNEPandora/ProtoDUNEPseudoLayerPlugin.h"
 #include "dune/DUNEPandora/ProtoDUNETransformationPlugin.h"
