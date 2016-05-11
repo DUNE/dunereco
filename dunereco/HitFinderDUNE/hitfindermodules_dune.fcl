@@ -82,6 +82,13 @@ dune35t_hitfinder35t:
     Algorithm:        "TripletMatch"
 }
 
+dune35t_handscan:
+{
+    module_type:     "HitHandScan"
+    HandScanFileName: "/dune/app/users/mthiesse/handscan.txt"
+    PreviousHitModuleLabel: "hit35t"
+}
+
 dune35t_fasthitfinder:    @local::standard_fasthitfinder
 dune35t_fasthitfinder.MinSigInd: 5.0
 dune35t_fasthitfinder.MinSigCol: 5.0
