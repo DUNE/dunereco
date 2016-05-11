@@ -8,7 +8,7 @@
 #ifndef PROTO_DUNE_TRANSFORMATION_PLUGIN_H
 #define PROTO_DUNE_TRANSFORMATION_PLUGIN_H 1
 
-#include "LArPlugins/LArRotationalTransformationPlugin.h"
+#include "larpandoracontent/LArPlugins/LArRotationalTransformationPlugin.h"
 
 namespace lar_pandora
 {
