@@ -8,7 +8,7 @@
 #ifndef DUNE_35T_TRANSFORMATION_PLUGIN_H
 #define DUNE_35T_TRANSFORMATION_PLUGIN_H 1
 
-#include "LArPlugins/LArRotationalTransformationPlugin.h"
+#include "larpandoracontent/LArPlugins/LArRotationalTransformationPlugin.h"
 
 namespace lar_pandora
 {
