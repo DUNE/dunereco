@@ -12,7 +12,7 @@ art_make( BASENAME_ONLY
                         larcore_Geometry
                         larcore_Geometry_Geometry_service
                         larsim_Simulation
-			${LARCONTENT}
+			${LARPANDORACONTENT}
                         ${PANDORASDK}
                         ${PANDORAMONITORING}
                         ${SIMULATIONBASE}
