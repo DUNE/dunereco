@@ -32,6 +32,13 @@ apa_hitfinder:
  ClusLabel:           "fuzzy"
 }
 
+dunefddphase_gaushitfinder:	@local::gaus_hitfinder
+dunefddphase_gaushitfinder.MinSig:    [6.0, 6.0]
+dunefddphase_gaushitfinder.MinWidth:  [1.0, 1.0]
+dunefddphase_gaushitfinder.InitWidth: [6.0, 6.0]
+dunefddphase_gaushitfinder.AreaNorms: [13.25, 13.25]
+dunefddphase_gaushitfinder.Chi2NDFRetry: 1000.
+
 dune35t_hit_repeater:    @local::hit_repeater
 dune35t_disambigcheat:    @local::standard_disambigcheat
 
