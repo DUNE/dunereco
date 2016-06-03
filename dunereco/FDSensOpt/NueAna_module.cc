@@ -14,7 +14,7 @@
 #include "art/Framework/Principal/Run.h"
 #include "art/Framework/Principal/SubRun.h"
 #include "art/Framework/Services/Optional/TFileService.h" 
-#include "art/Utilities/InputTag.h"
+#include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
@@ -33,11 +33,11 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "larsim/MCCheater/BackTracker.h"
-#include "SimulationBase/MCTruth.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 #include "lardata/AnalysisAlg/CalorimetryAlg.h"
-#include "larcore/SummaryData/POTSummary.h"
-#include "SimulationBase/MCFlux.h"
+#include "larcoreobj/SummaryData/POTSummary.h"
+#include "nusimdata/SimulationBase/MCFlux.h"
 
 // ROOT includes
 #include "TTree.h"

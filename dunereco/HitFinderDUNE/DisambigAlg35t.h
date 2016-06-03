@@ -16,12 +16,12 @@
 
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "fhiclcpp/ParameterSet.h"
-#include "art/Persistency/Common/Ptr.h"
-#include "art/Persistency/Common/PtrVector.h"
+#include "canvas/Persistency/Common/Ptr.h"
+#include "canvas/Persistency/Common/PtrVector.h"
 #include "art/Framework/Principal/Event.h"
 
 #include "larcore/Geometry/Geometry.h"
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "lardata/RecoBase/Wire.h"
 #include "lardata/RecoBase/Hit.h"
 #include "lardata/RecoBase/Cluster.h"

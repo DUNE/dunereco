@@ -54,7 +54,7 @@
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
-#include "SimulationBase/MCTruth.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
 #include "larsim/MCCheater/BackTracker.h"
 #include "lardata/RecoBase/Hit.h"
 #include "lardata/RecoBase/Cluster.h"
