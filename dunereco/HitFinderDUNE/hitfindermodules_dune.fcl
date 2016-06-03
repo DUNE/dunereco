@@ -96,6 +96,21 @@ dune35t_handscan:
     PreviousHitModuleLabel: "hit35t"
 }
 
+dune35t_hitfindercounters:
+{
+    module_type:           "HitFinderCounter35t"
+    HitsModuleLabel:       "gaushit"
+    CounterModuleLabel:    "SplitterInput:TRIGGER"
+    CounterDir:            "/dune/app/users/abooth/winter/counters_V3_01/"
+    CounterFile:           "counterInformation.txt"
+    CoincidenceTolerance:  2
+    fConvCountTimeToTicks: 32
+    ExtendCounters:        5
+    InductionWireWidth:    10
+    InductionTimeWidth:    100
+    CollectionTimeWidth:   50
+}
+
 dune35t_fasthitfinder:    @local::standard_fasthitfinder
 dune35t_fasthitfinder.MinSigInd: 5.0
 dune35t_fasthitfinder.MinSigCol: 5.0
