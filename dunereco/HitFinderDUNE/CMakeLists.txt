@@ -10,6 +10,7 @@ art_make( BASENAME_ONLY
                            lardata_RecoObjects
 			   larsim_MCCheater_BackTracker_service
                            lardata_Utilities
+			   lbne_daqinput35t
 			   nusimdata_SimulationBase
                            ${ART_FRAMEWORK_CORE}
    			   ${ART_FRAMEWORK_PRINCIPAL}
