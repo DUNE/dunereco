@@ -1,8 +1,8 @@
 add_subdirectory(IniSegAlg)
 
 simple_plugin(NueAna   "module"
-		        lardata_RawData
-		        lardata_RecoBase
+		        lardataobj_RawData
+		        lardataobj_RecoBase
 		        lardata_RecoBaseArt
 			lardata_AnalysisAlg
 		        larreco_RecoAlg_PMAlg
@@ -10,7 +10,7 @@ simple_plugin(NueAna   "module"
 		        larcore_Geometry
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
-			larsim_Simulation
+			larsim_Simulation larsimobj_Simulation
 			larsim_MCCheater_BackTracker_service
 			nusimdata_SimulationBase
                         ${ART_FRAMEWORK_CORE}
@@ -29,15 +29,15 @@ simple_plugin(NueAna   "module"
 )
 
 simple_plugin(IniSegReco "module"
-		      lardata_RawData
-		      lardata_RecoBase
+		      lardataobj_RawData
+		      lardataobj_RecoBase
 		      larreco_RecoAlg
 		      larreco_RecoAlg_PMAlg
 		      IniSegAlg
 		      larcore_Geometry
 		      larcore_Geometry_Geometry_service
 		      lardata_Utilities
-		      larsim_Simulation
+		      larsim_Simulation larsimobj_Simulation
 		      larsim_MCCheater_BackTracker_service
 		      nusimdata_SimulationBase
       		      ${ART_FRAMEWORK_CORE}
@@ -56,8 +56,8 @@ simple_plugin(IniSegReco "module"
 )
 
 simple_plugin(ShSeg   "module"
-			lardata_RawData
-			lardata_RecoBase
+			lardataobj_RawData
+			lardataobj_RecoBase
 			larreco_RecoAlg
 			lardata_AnalysisAlg
 			larreco_RecoAlg_PMAlg
@@ -65,7 +65,7 @@ simple_plugin(ShSeg   "module"
 			larcore_Geometry
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
-			larsim_Simulation
+			larsim_Simulation larsimobj_Simulation
 			
 			
 			larsim_MCCheater_BackTracker_service

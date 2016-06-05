@@ -19,9 +19,9 @@
 
 #include "canvas/Persistency/Common/FindOneP.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
-#include "lardata/RecoBase/Hit.h"
-#include "lardata/RecoBase/Wire.h"
-#include "lardata/RawData/RawDigit.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Wire.h"
+#include "lardataobj/RawData/RawDigit.h"
 #include "lardata/RecoBaseArt/HitCreator.h"
 #include "lardata/Utilities/AssociationUtil.h"
 

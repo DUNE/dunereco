@@ -2,14 +2,14 @@
 art_make(
 	  LIBRARY_NAME  dune_RecoAlgDUNE
           LIB_LIBRARIES larsim_MCCheater_BackTracker_service
-                        lardata_RecoBase
+                        lardataobj_RecoBase
                         lardata_RecoBaseArt
-                        larsim_Simulation
+                        larsim_Simulation larsimobj_Simulation
                         larevt_Filters
                         larcore_Geometry
                         larcore_Geometry_Geometry_service
                         lardata_RecoObjects
-                        lardata_AnalysisBase
+                        lardataobj_AnalysisBase
 			lardata_AnalysisAlg
                         lardata_Utilities
                         larreco_RecoAlg_ClusterRecoUtil

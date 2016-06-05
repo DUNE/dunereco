@@ -4,9 +4,9 @@ art_make( BASENAME_ONLY
           LIBRARY_NAME  IniSegAlg
           LIB_LIBRARIES larcore_Geometry
                         larcore_Geometry_Geometry_service
-                        larsim_Simulation
-                        lardata_RawData
-                        lardata_RecoBase
+                        larsim_Simulation larsimobj_Simulation
+                        lardataobj_RawData
+                        lardataobj_RecoBase
 			larreco_RecoAlg
 			larreco_RecoAlg_PMAlg
                         lardata_Utilities

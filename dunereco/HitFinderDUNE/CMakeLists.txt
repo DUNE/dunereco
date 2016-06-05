@@ -1,7 +1,7 @@
 
 art_make( BASENAME_ONLY
           LIBRARY_NAME     HitFinderDUNE
-          LIB_LIBRARIES    lardata_RecoBase
+          LIB_LIBRARIES    lardataobj_RecoBase
 	  		   larreco_RecoAlg
 			   larreco_RecoAlg_PMAlg
 			   larevt_Filters
@@ -29,7 +29,7 @@ art_make( BASENAME_ONLY
 			   ${Boost_SYSTEM_LIBRARY}
 			   ${ROOT_BASIC_LIB_LIST}
          MODULE_LIBRARIES HitFinderDUNE
-                           lardata_RecoBase
+                           lardataobj_RecoBase
                            lardata_RecoBaseArt
                            larcore_Geometry
                            larcore_Geometry_Geometry_service
