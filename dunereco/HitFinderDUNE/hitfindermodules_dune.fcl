@@ -106,8 +106,8 @@ dune35t_hitfindercounters:
     CoincidenceTolerance:  2
     fConvCountTimeToTicks: 32
     ExtendCounters:        5
-    InductionWireWidth:    10
-    InductionTimeWidth:    100
+    AdjacentWireWidth:     10
+    AdjacentTimeWidth:     100
     CollectionTimeWidth:   50
 }
 
