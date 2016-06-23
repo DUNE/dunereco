@@ -1,5 +1,6 @@
 #include "clusteralgorithms_dune35t.fcl"
 #include "cluster3dalgorithms_dune35t.fcl"
+#include "clustermodules.fcl"
 
 BEGIN_PROLOG
 
@@ -23,8 +24,81 @@ dune35t_cluster3d:
   HoughScaleFactor:       10
 }
 
+dune_dbscanalg:    @local::standard_dbscanalg_fast
+dune_houghbasealg: @local::standard_houghbasealg
+dune_endpointalg:  @local::standard_endpointalg 
 
+dune10kt_blurredcluster:             @local::standard_blurredcluster
+dune10kt_blurredcluster.BlurredClusterAlg.Detector: "dunefd"
+dunefd_dbcluster:                    @local::standard_dbcluster      
+dunefd_dbcluster.DBScanAlg:          @local::dunefd_dbscanalg          
+dunefd_dbclusterana:                 @local::standard_dbclusterana   
+dunefd_fuzzycluster:                 @local::standard_fuzzycluster
+dunefd_fuzzycluster.HitsModuleLabel: "gaushit"
+dunefd_houghlinefinder:              @local::standard_houghlinefinder
+dunefd_houghlinefinder.HoughBaseAlg: @local::dunefd_houghbasealg
+dunefd_houghlinefinderana:           @local::standard_houghlinefinderana
+dunefd_linemerger:                   @local::standard_linemerger        
+dunefd_endpointmod:                  @local::standard_endpointmod       
+dunefd_endpointmod.EndPointAlg:      @local::dunefd_endpointalg
+dunefd_clustercheater:               @local::standard_clustercheater
+dunefd_linecluster:                       @local::standard_linecluster
+dunefd_linecluster.ClusterCrawlerAlg:     @local::dunefd_clustercrawleralg
 
+dune35t_blurredcluster:               @local::standard_blurredcluster
+dune35t_blurredcluster.BlurredClusterAlg.Detector: "dune35t"
+dune35t_dbcluster:                    @local::standard_dbcluster
+dune35t_dbcluster.DBScanAlg:          @local::dune35t_dbscanalg
+dune35t_dbclusterana:                 @local::standard_dbclusterana
+dune35t_fuzzycluster:                 @local::standard_fuzzycluster
+dune35t_fuzzycluster.fuzzyClusterAlg: @local::dune35t_fuzzyclusteralg
+dune35t_fuzzycluster.HitsModuleLabel: "gaushit" 
+dune35t_houghlinefinder:              @local::standard_houghlinefinder
+dune35t_houghlinefinder.HoughBaseAlg: @local::dune35t_houghbasealg
+dune35t_houghlinefinderana:           @local::standard_houghlinefinderana
+dune35t_linemerger:                   @local::standard_linemerger
+dune35t_endpointmod:                  @local::standard_endpointmod
+dune35t_endpointmod.EndPointAlg:      @local::dune35t_endpointalg
+dune35t_clustercheater:               @local::standard_clustercheater
+dune35t_linecluster:                       @local::standard_linecluster
+dune35t_linecluster.ClusterCrawlerAlg:     @local::dune35t_clustercrawleralg
 
+dune35tdata_linecluster:              @local::dune35t_linecluster
+dune35tdata_linecluster.HitFinderModuleLabel:  "hit35t"
+dune35tdata_linecluster.ClusterCrawlerAlg.NumPass:               3  # number of passes through the hit list. 0 = no cluster reco
+dune35tdata_linecluster.ClusterCrawlerAlg.MaxHitsFit: [ 100,  8, 4] # number of hits fitted to a line
+dune35tdata_linecluster.ClusterCrawlerAlg.MinHits:     [ 50,  8, 3] # minimum size of a cluster
+dune35tdata_linecluster.ClusterCrawlerAlg.NHitsAve:    [ 20,  8, 2] # number of hits to find the average charge and width
+dune35tdata_linecluster.ClusterCrawlerAlg.ChgCut:     [ .8, .8, .8] # max fractional hit charge difference for adding hits
+dune35tdata_linecluster.ClusterCrawlerAlg.ChiCut:       [ 4, 8, 10] # stop adding hits to clusters if ChiCut is reached
+dune35tdata_linecluster.ClusterCrawlerAlg.MaxWirSkip: [100, 100, 2] # max number of wires to skip without adding a hit
+dune35tdata_linecluster.ClusterCrawlerAlg.MinWirAfterSkip: [2, 2, 1] # min reqd number of consecutive wires with a hit after a skip
+dune35tdata_linecluster.ClusterCrawlerAlg.KinkChiRat: [1.2, 1.2, 0.] # Max consecutive chisq increase for the last 3 hits on the cluster
+dune35tdata_linecluster.ClusterCrawlerAlg.KinkAngCut: [0.4, 0.4, 0.4] # kink angle cut (radians) used to follow or merge
+dune35tdata_linecluster.ClusterCrawlerAlg.DoMerge:   [false, true, true] # run cluster merging code?
+dune35tdata_linecluster.ClusterCrawlerAlg.TimeDelta: [10., 10., 10.] # max time difference for cluster merging
+dune35tdata_linecluster.ClusterCrawlerAlg.MergeChgCut: [0.8, 0.8, 0.8] # max charge ratio for cluster merging
+dune35tdata_linecluster.ClusterCrawlerAlg.FindVertices: [true, true, true]  # make 2D vertices after clustering?
+dune35tdata_linecluster.ClusterCrawlerAlg.LACrawl: [true, true, true]  # crawl Large Angle clusters?
+dune35tdata_linecluster.ClusterCrawlerAlg.LAClusAngleCut:       60 # Large cluster angle cut (0 < 90 degrees). <0 to turn off
+dune35tdata_linecluster.ClusterCrawlerAlg.LAClusMaxHitsFit:   		4 # Max hits fit on Large Angle clusters
+dune35tdata_linecluster.ClusterCrawlerAlg.MinHitFrac: 				  0.5 # Drop clusters having < (#hits/#wires)
+dune35tdata_linecluster.ClusterCrawlerAlg.MinAmp: 				[5, 1, 5] # Min hit signal amplitude for merging per plane
+dune35tdata_linecluster.ClusterCrawlerAlg.HitMergeChiCut:        4 # Merge cluster hit-multiplets if the separation chisq
+dune35tdata_linecluster.ClusterCrawlerAlg.MergeAllHits:       true # merge all hits before reconstructing clusters
+dune35tdata_linecluster.ClusterCrawlerAlg.MergeOverlapAngCut:  0.1 # Set <= 0 to turn off overlapping cluster merging
+dune35tdata_linecluster.ClusterCrawlerAlg.ChkClusterDS:      true  # Check reconstruction at DS end of clusters?
+dune35tdata_linecluster.ClusterCrawlerAlg.KillGarbageClusters: 0.1 # Kill ghost clusters, etc
+dune35tdata_linecluster.ClusterCrawlerAlg.VtxClusterSplit:    true # Split clusters that cross vertices
+dune35tdata_linecluster.ClusterCrawlerAlg.FindStarVertices:  false # Find vertices with a star topology
+dune35tdata_linecluster.ClusterCrawlerAlg.HitErrFac:           0.8 # hit time error for fitting = fHitErrFac * (hit width)
+dune35tdata_linecluster.ClusterCrawlerAlg.HitMinAmp:             2 # ignore hits with PH < this value (seed clusters)
+dune35tdata_linecluster.ClusterCrawlerAlg.ClProjErrFac:          3 # cluster projection error factor
+dune35tdata_linecluster.ClusterCrawlerAlg.AllowNoHitWire:        5 # Allow skipping N wires w no hits
+dune35tdata_linecluster.ClusterCrawlerAlg.Vertex2DCut:          20 # Max equiv dTick cut for attaching a cluster to a vtx
+dune35tdata_linecluster.ClusterCrawlerAlg.fVertex2DWireErrCut:	  3 # Max wire error on the fitted vertex position
+dune35tdata_linecluster.ClusterCrawlerAlg.Vertex3DCut:          10 # 2D vtx -> 3D vtx matching cut (chisq)
+dune35tdata_linecluster.ClusterCrawlerAlg.FindHammerClusters: false # look for hammer type clusters
+dune35tdata_linecluster.ClusterCrawlerAlg.RefineVertexClusters:  false
 
 END_PROLOG
