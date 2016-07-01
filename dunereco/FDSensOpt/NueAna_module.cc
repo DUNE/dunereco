@@ -35,6 +35,7 @@
 #include "larsim/MCCheater/BackTracker.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
+#include "larreco/RecoAlg/TrackMomentumCalculator.h"
 #include "lardata/AnalysisAlg/CalorimetryAlg.h"
 #include "larcoreobj/SummaryData/POTSummary.h"
 #include "nusimdata/SimulationBase/MCFlux.h"
@@ -123,6 +124,7 @@ private:
   float trkke[kMaxTrack][3];          //track kinetic energy (in 3 planes)
   float trkpida[kMaxTrack][3];        //track PIDA (in 3 planes)
   int   trkbestplane[kMaxTrack];      //best plane for trkke and trkpida
+  float trkmomrange[kMaxTrack];       //Track momentum using range
 
   //geant information for the track
   int   trkg4id[kMaxTrack];           //geant track id for the track
@@ -370,6 +372,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   double larEnd[3];
   std::vector<double> trackStart;
   std::vector<double> trackEnd;
+  trkf::TrackMomentumCalculator trkm;
   for(int i=0; i<std::min(int(tracklist.size()),kMaxTrack);++i){
     trackStart.clear();
     trackEnd.clear();
@@ -391,6 +394,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
     trkenddcosy[i]    = larEnd[1];
     trkenddcosz[i]    = larEnd[2];
     trklen[i]         = tracklist[i]->Length();
+    trkmomrange[i]    = trkm.GetTrackMomentum(trklen[i],13);
     if (fmthm.isValid()){
       auto vhit = fmthm.at(i);
       auto vmeta = fmthm.data(i);
@@ -855,6 +859,7 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("trkenddcosz",trkenddcosz,"trkenddcosz[ntracks_reco]/F");
   fTree->Branch("trklen",trklen,"trklen[ntracks_reco]/F");
   fTree->Branch("trkbestplane",trkbestplane,"trkbestplane[ntracks_reco]/I");
+  fTree->Branch("trkmomrange",trkmomrange,"trkmomrange[ntracks_reco]/F");
   fTree->Branch("trkke",trkke,"trkke[ntracks_reco][3]/F");
   fTree->Branch("trkpida",trkpida,"trkpida[ntracks_reco][3]/F");
   fTree->Branch("trkg4id",trkg4id,"trkg4id[ntracks_reco]/I");
@@ -995,6 +1000,7 @@ void dunefd::NueAna::ResetVars(){
     trkenddcosz[i] = -9999;
     trklen[i] = -9999;
     trkbestplane[i] = -9999;
+    trkmomrange[i] = -9999;
     for (int j = 0; j<3; ++j){
       trkke[i][j] = -9999;
       trkpida[i][j] = -9999;
