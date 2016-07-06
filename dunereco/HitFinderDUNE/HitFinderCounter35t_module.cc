@@ -162,7 +162,10 @@ namespace dune{
     DAQToOffline::MakeCounterPositionMap(fCounterDir, fCounterFile, CounterPositionMap, fExtendCounters);
     
     art::ServiceHandle<art::TFileService> tfs;
-    TwoDLineHist = tfs->make<TH2F>("TwoDLineHist","TwoDLineHist; Z (cm); X (cm)", 320, -5, 155, 800, -50, 350 ); 
+    TwoDLineHist = tfs->make<TH2F>("TwoDLineHist","Plot of collection plane hit positions in the XZ plane; Z position (cm); X position (cm)", 320, -5, 155, 800, -50, 350 ); 
+    TwoDLineHist->SetMarkerStyle(6);
+    TwoDLineHist->SetMarkerSize(1);
+
   }
   //-------------------------------------------------
   void HitFinderCounter35t::endJob() {
@@ -186,7 +189,7 @@ namespace dune{
       art::fill_ptr_vector(hits,HitListHandle);
 
     auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
-    fDriftVelocity = detprop->DriftVelocity(0.25, 87);  // cm / us
+    fDriftVelocity = detprop->DriftVelocity();  // cm / us
         
     // Loop through counter hits, to look for external trigger pairs.
     ExternalTrigIndexVec.clear();
@@ -237,7 +240,7 @@ namespace dune{
 
     // FIXME:::::I am unsure of the best way to handle showers - lots of trigger indexes at the same time.
     //           The easiest ( and laziest ) thing to do, is to just discount events which have many triggers.
-    if ( ExternalTrigIndexVec.size() > 1 ) {
+    if ( ExternalTrigIndexVec.size() > 2 ) {
       std::cout << "Voiding this event as I have a vector of size " << ExternalTrigIndexVec.size() << std::endl;
       hcol.put_into(evt);
       return;
@@ -256,7 +259,7 @@ namespace dune{
       float BiggestX  = std::max( VertexX[0], std::max( VertexX[1], std::max( VertexX[2], VertexX[3] ) ) );
       
       TrigTime = ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigTime() + trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigTime() ) / (2*fConvCountTimeToTicks);
-      /*
+      ///*
       std::cout << "\nCounter1, with TrigID " << trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() << " (" << it1->first << ") has corners......"
       		<< "( " << it1->second.second[0][0] << ", " << it1->second.second[0][1] << ", " << it1->second.second[0][2] << ") and "
 		<< "( " << it1->second.second[1][0] << ", " << it1->second.second[1][1] << ", " << it1->second.second[1][2] << ") and "
@@ -276,30 +279,29 @@ namespace dune{
       // Loop through collection plane hits first, as can use that information to help decide which TPC an induction plane hit should be on.
       for( size_t HitInd = 0; HitInd < hits.size(); HitInd++ ) {
 	if ( hits[HitInd]->PeakTime()-TrigTime < 0 ) continue; // If in PreTriggerTick window then can't deduce the X position.
+	if( hits[HitInd]->View() != geo::kZ ) continue;
 
 	// Collection plane wires mainly discriminated against using XZ plane
-	if( hits[HitInd]->View() == geo::kZ ) {
-	  bool KeepHit = false;
-	  art::Ptr<recob::Wire> wire = ChannelHitWires.at(HitInd);
-	  art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(HitInd);
-	  
-	  double WireStart[3], WireEnd[3];
-	  fGeom->WireEndPoints( hits[HitInd]->WireID(), WireStart, WireEnd );
-	  float DriftDist = (0.5 *(hits[HitInd]->PeakTime()-TrigTime) * fDriftVelocity );
-	  if ( hits[HitInd]->WireID().TPC % 2 == 0) { // If short TPC
-	    DriftDist = -DriftDist;
-	  }
-	  float HitXPos = DriftDist + WireStart[0];
-	  
-	  KeepHit = pnpoly( 4, VertexX, VertexZ, HitXPos, (float)WireEnd[2] );
-	  if ( KeepHit ) {
-	    //std::cout << "\nGood collection plane hit on Channel " << hits[HitInd]->Channel() << ", Wire " << hits[HitInd]->WireID().Wire << ", Plane " << hits[HitInd]->WireID().Plane 
-	    //	      << ", TPC" << hits[HitInd]->WireID().TPC << " at time " <<  hits[HitInd]->PeakTime()-TrigTime << " has X pos " << HitXPos << " and Z pos " << (float)WireEnd[2]
-	    //	      << "\nI used the following cuts... X " << VertexX[0] << " " << VertexX[1] << " " << VertexX[2] << " " << VertexX[3] 
-	    //	      << ", and Z " << VertexZ[0] << " " << VertexZ[1] << " " << VertexZ[2] << " " << VertexZ[3]
-	    //	      << std::endl;
-	    hcol.emplace_back(*hits[HitInd], wire, rawdigits);
-	  }
+	bool KeepHit = false;
+	art::Ptr<recob::Wire> wire = ChannelHitWires.at(HitInd);
+	art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(HitInd);
+	
+	double WireStart[3], WireEnd[3];
+	fGeom->WireEndPoints( hits[HitInd]->WireID(), WireStart, WireEnd );
+	float DriftDist = (0.5 *(hits[HitInd]->PeakTime()-TrigTime) * fDriftVelocity );
+	if ( hits[HitInd]->WireID().TPC % 2 == 0) { // If short TPC
+	  DriftDist = -DriftDist;
+	}
+	float HitXPos = DriftDist + WireStart[0];
+	
+	KeepHit = pnpoly( 4, VertexX, VertexZ, HitXPos, (float)WireEnd[2] );
+	if ( KeepHit ) {
+	  //std::cout << "\nGood collection plane hit on Channel " << hits[HitInd]->Channel() << ", Wire " << hits[HitInd]->WireID().Wire << ", Plane " << hits[HitInd]->WireID().Plane 
+	  //	      << ", TPC" << hits[HitInd]->WireID().TPC << " at time " <<  hits[HitInd]->PeakTime()-TrigTime << " has X pos " << HitXPos << " and Z pos " << (float)WireEnd[2]
+	  //	      << "\nI used the following cuts... X " << VertexX[0] << " " << VertexX[1] << " " << VertexX[2] << " " << VertexX[3] 
+	  //	      << ", and Z " << VertexZ[0] << " " << VertexZ[1] << " " << VertexZ[2] << " " << VertexZ[3]
+	  //	      << std::endl;
+	  hcol.emplace_back(*hits[HitInd], wire, rawdigits);
 	} 
       }
       std::cout << "\nAfter collection wires for TrigInd " << TrigInd << ", hcol has size " << hcol.size() << std::endl;
@@ -310,7 +312,9 @@ namespace dune{
       for( size_t HitInd = 0; HitInd < hits.size(); HitInd++ ) {
 	if ( hits[HitInd]->PeakTime()-TrigTime < 0 ) continue; // If in PreTriggerTick window then can't deduce the X position.
 	if ( hits[HitInd]->View() == geo::kZ ) continue; // If a collection wire continue...
-	
+	if ( hits[HitInd]->PeakAmplitude() < 8 ) continue;
+
+
 	// An induction signal can be in either long or short drift volume...Work out X position for each of them...
 	float DriftDist = (0.5 *(hits[HitInd]->PeakTime()-TrigTime) * fDriftVelocity );
 	float HitPosShortDrift = UVStartEndPointsX[ hits[HitInd]->View()*2 ]  - DriftDist;
@@ -334,7 +338,6 @@ namespace dune{
 	std::vector< recob::Hit > TempHitsVec;
 	int Channel = hits[HitInd]->Channel();
 	std::vector< geo::WireID > WireList = fGeom->ChannelToWire( Channel );
-	//std::cout << "The original hit is on Channel " << hits[HitInd]->Channel() << " TPC " << hits[HitInd]->WireID().TPC << " Plane " << hits[HitInd]->WireID().Plane << " Wire " << hits[HitInd]->WireID().Wire << std::endl;
 	for (unsigned int ch=0; ch<WireList.size(); ++ch) {
 	  if ( !CouldBeShortDrift && (WireList[ch].TPC%2 == 0) ) continue; // If have ruled out short drift, then no point considering any short drift TPCs
 	  if ( !CouldBeLongDrift  && (WireList[ch].TPC%2 != 0) ) continue; // If have ruled out long drift, then no point considering any long drift TPCs
@@ -347,16 +350,35 @@ namespace dune{
 	  // I want to iterate through the wire looking if points along the wire are within the YZ projection.
 	  int NPoints = 5;
 	  for (int WPass=0; WPass < NPoints; ++WPass) {
+	    double ThisXPos = HitPosLongDrift;
+	    if (WireList[ch].TPC%2 == 0) ThisXPos = HitPosShortDrift;
 	    double ThisYPos = WStart[1] + ( WPass * (WEnd[1]-WStart[1])/(NPoints-1) );
 	    double ThisZPos = WStart[2] + ( WPass * (WEnd[2]-WStart[2])/(NPoints-1) );
-	    bool GoodWire = pnpoly ( 4, VertexY, VertexZ, ThisYPos, ThisZPos );
-	    if (!GoodWire) continue; // If outside YZ window
-	    
-	    // Now test if it is in the XZ window
-	    if (WireList[ch].TPC%2 == 0) GoodWire = pnpoly ( 4, VertexX, VertexZ, HitPosShortDrift, ThisZPos );
-	    else GoodWire = pnpoly ( 4, VertexX, VertexZ, HitPosLongDrift, ThisZPos );
+
+	    if (hits[HitInd]->WireID().TPC == 4 || hits[HitInd]->WireID().TPC == 5) {
+	      std::cout << "Looking at Hit " << HitInd << ", WPass " << WPass << " for wire " << WireList[ch].TPC << " " << WireList[ch].Wire << ", at time " << hits[HitInd]->PeakTime()
+			<< ". It has co-ords " << ThisXPos << " " << ThisYPos << " " << ThisZPos << std::endl;
+	    }
+
+	    bool GoodWire = false;
+	    // First test if it is in the XZ window
+	    GoodWire = pnpoly ( 4, VertexX, VertexZ, ThisXPos, ThisZPos );
 	    if (!GoodWire) continue; // If outside XZ window
-	    //std::cout << "This hit is within the 3D window! " << WireList[ch].Wire << " " << hits[HitInd]->WireID().Wire << " " << WireList[ch].TPC << " " << hits[HitInd]->WireID().TPC << std::endl;;
+	    
+	    if (hits[HitInd]->WireID().TPC == 4 || hits[HitInd]->WireID().TPC == 5)
+	      std::cout << "This hit is within the 2D window!" << std::endl;
+
+	    // If have EW coincidence, want to compare in YZ.
+	    // If have NS coincidence, want to compare in XY
+	    if ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() >= 6  && trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() <= 15 ) {
+	      GoodWire = pnpoly ( 4, VertexY, VertexZ, ThisYPos, ThisZPos ); // If EW do this
+	    } else { // If NS do this
+	      GoodWire = pnpoly ( 4, VertexX, VertexY, ThisXPos, ThisYPos );
+	    }
+	    if (!GoodWire) continue; // If outside window
+	    
+	    if (hits[HitInd]->WireID().TPC == 4 || hits[HitInd]->WireID().TPC == 5)
+	      std::cout << "This hit is within the 3D window! " << WireList[ch].Wire << " " << hits[HitInd]->WireID().Wire << " " << WireList[ch].TPC << " " << hits[HitInd]->WireID().TPC << std::endl;;
 	    
 	    // If this hit is the original one, then add it to TempHitsVec
 	    if ( WireList[ch].Wire == hits[HitInd]->WireID().Wire && WireList[ch].TPC == hits[HitInd]->WireID().TPC ) {
@@ -388,41 +410,27 @@ namespace dune{
     std::cout << "\nAfter all trigger indexes the vectors have sizes: hits -> " << hits.size() << ", hcol -> " << hcol.size() << ", UnDisambigHits -> " << UnDisambigHits.size() << std::endl;
     // ------------------------- Get Induction wires -------------------------
     
+    std::vector<recob::Hit> const &Peak = hcol.peek();
+    int TPC1, TPC2, TPC3, TPC4, TPC5, TPC6, TPC7, TPC0;
+    TPC1 = TPC2 = TPC3 = TPC4 = TPC5 = TPC6 = TPC7 = TPC0 = 0;
+    for (size_t qq=0; qq<Peak.size(); ++qq) {
+      if (Peak[qq].WireID().TPC == 0) ++TPC0;
+      else if (Peak[qq].WireID().TPC == 1) ++TPC1;
+      else if (Peak[qq].WireID().TPC == 2) ++TPC2;
+      else if (Peak[qq].WireID().TPC == 3) ++TPC3;
+      else if (Peak[qq].WireID().TPC == 4) ++TPC4;
+      else if (Peak[qq].WireID().TPC == 5) ++TPC5;
+      else if (Peak[qq].WireID().TPC == 6) ++TPC6;
+      else if (Peak[qq].WireID().TPC == 7) ++TPC7;
+    }
+    std::cout << "\n\nI have these hits in each TPC " << TPC0 << " " << TPC1 << " " << TPC2 << " " << TPC3 << " " << TPC4 << " " << TPC5 << " " << TPC6 << " " << TPC7 << "\n\n" << std::endl;
     // Now that I have gone through the trigger indexes I want to see if I can fix some of the undisambiguated hits.
     // 1) Look for any hits where there were collection plane hits at the same time.
     // 2) Look for any hits on adjacent induction plane wires at the same time.
-    ///*
+    
     std::vector < std::pair < std::vector <recob::Hit>, size_t > > StillUnDisambigHits; // Want to clear this each time
     std::vector < std::pair < recob::Hit, size_t > > NowGoodHits;                       // Want to clear this each time
 
-    // ------------------------- Collection Wire Crosses -------------------------
-    std::cout << "\nNow to do my next step....if induction wire crosses a collection wire with a good hit..." << std::endl;
-    std::vector < recob::Hit > const &NewHits = hcol.peek();
-    
-    CrossCollection( NewHits, UnDisambigHits, StillUnDisambigHits, NowGoodHits );
-    for ( size_t NowDisambig=0; NowDisambig < NowGoodHits.size(); ++NowDisambig ) {
-      size_t WhichRawHit = NowGoodHits[NowDisambig].second;
-      art::Ptr<recob::Wire> wire = ChannelHitWires.at(WhichRawHit);
-      art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(WhichRawHit);
-      hcol.emplace_back(NowGoodHits[NowDisambig].first, wire, rawdigits);
-    }
-    OutAndClearVector( UnDisambigHits, StillUnDisambigHits, NowGoodHits, hcol.size() );
-    // ------------------------- Collection Wire Crosses -------------------------
-    ///*
-    // --------------------------- Any adjacent wires? --------------------------- Do any of the questionable hits have real hits next to them at roughly the same time?
-    std::cout << "\nNow to do my next step....if any adjacent wires have hits on them..." << std::endl;
-    std::vector < recob::Hit > const &NewGoodHits = hcol.peek();
-
-    AdjacentWireWidth( NewGoodHits, UnDisambigHits, StillUnDisambigHits, NowGoodHits );
-    for ( size_t NowDisambig=0; NowDisambig < NowGoodHits.size(); ++NowDisambig ) {
-      size_t WhichRawHit = NowGoodHits[NowDisambig].second;
-      art::Ptr<recob::Wire> wire = ChannelHitWires.at(WhichRawHit);
-      art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(WhichRawHit);
-      hcol.emplace_back(NowGoodHits[NowDisambig].first, wire, rawdigits);
-    }
-    OutAndClearVector( UnDisambigHits, StillUnDisambigHits, NowGoodHits, hcol.size() );
-    // --------------------------- Any adjacent wires? ---------------------------
-    ///*
     // ------------------------- Make a 2D line in XZ and fit --------------------------
     std::cout << "\nNow to do my next step....fit hits to a 2D line in XZ and find which ambiguous hit is closer..." << std::endl;
     std::vector < recob::Hit > const &NextGoodHits = hcol.peek();
@@ -451,7 +459,34 @@ namespace dune{
     OutAndClearVector( UnDisambigHits, StillUnDisambigHits, NowGoodHits, hcol.size() );
     // ------------------------- Make a 2D line in XZ and fit --------------------------
 
-    //*/
+    // ------------------------- Collection Wire Crosses -------------------------
+    std::cout << "\nNow to do my next step....if induction wire crosses a collection wire with a good hit..." << std::endl;
+    std::vector < recob::Hit > const &NewHits = hcol.peek();
+    
+    CrossCollection( NewHits, UnDisambigHits, StillUnDisambigHits, NowGoodHits );
+    for ( size_t NowDisambig=0; NowDisambig < NowGoodHits.size(); ++NowDisambig ) {
+      size_t WhichRawHit = NowGoodHits[NowDisambig].second;
+      art::Ptr<recob::Wire> wire = ChannelHitWires.at(WhichRawHit);
+      art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(WhichRawHit);
+      hcol.emplace_back(NowGoodHits[NowDisambig].first, wire, rawdigits);
+    }
+    OutAndClearVector( UnDisambigHits, StillUnDisambigHits, NowGoodHits, hcol.size() );
+    // ------------------------- Collection Wire Crosses -------------------------
+
+    // --------------------------- Any adjacent wires? --------------------------- Do any of the questionable hits have real hits next to them at roughly the same time?
+    std::cout << "\nNow to do my next step....if any adjacent wires have hits on them..." << std::endl;
+    std::vector < recob::Hit > const &NewGoodHits = hcol.peek();
+
+    AdjacentWireWidth( NewGoodHits, UnDisambigHits, StillUnDisambigHits, NowGoodHits );
+    for ( size_t NowDisambig=0; NowDisambig < NowGoodHits.size(); ++NowDisambig ) {
+      size_t WhichRawHit = NowGoodHits[NowDisambig].second;
+      art::Ptr<recob::Wire> wire = ChannelHitWires.at(WhichRawHit);
+      art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(WhichRawHit);
+      hcol.emplace_back(NowGoodHits[NowDisambig].first, wire, rawdigits);
+    }
+    OutAndClearVector( UnDisambigHits, StillUnDisambigHits, NowGoodHits, hcol.size() );
+    // --------------------------- Any adjacent wires? ---------------------------
+
     hcol.put_into(evt);    
   } // The produce function
   //-------------------------------------------------
@@ -565,7 +600,19 @@ namespace dune{
       }
       if (NHits==1) UniqPlaneHits.emplace_back(PlaneHits[HitLoop]);
     }
-    return UniqPlaneHits;
+    
+    int NLong=0;
+    for (size_t Q=0; Q<UniqPlaneHits.size(); ++Q)
+      if ( UniqPlaneHits[Q].WireID().TPC%2 != 0 ) ++NLong;
+    double rat = (double)UniqPlaneHits.size() / (double)NLong;
+    if ( rat > 0.8 ) {
+      std::vector<recob::Hit> LongHit;
+      for (size_t W=0; W<UniqPlaneHits.size(); ++W)
+	if ( UniqPlaneHits[W].WireID().TPC%2 != 0 )
+	  LongHit.emplace_back(UniqPlaneHits[W]);
+      return LongHit;
+    } else
+      return UniqPlaneHits;
   } // Return only the hits which are unique on a given channel
   //-------------------------------------------------
   int HitFinderCounter35t::CheckWhichIndex( std::vector<int> CloseHits ) {
