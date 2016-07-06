@@ -99,6 +99,7 @@ dune35t_handscan:
 dune35t_hitfindercounters:
 {
     module_type:           "HitFinderCounter35t"
+    Debug:                 false
     HitsModuleLabel:       "gaushit"
     CounterModuleLabel:    "SplitterInput:TRIGGER"
     CounterDir:            "/dune/app/users/mthiesse/larDev/work/"

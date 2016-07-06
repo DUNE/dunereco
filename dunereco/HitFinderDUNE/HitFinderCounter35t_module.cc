@@ -104,6 +104,7 @@ namespace dune{
     
     art::ServiceHandle<geo::Geometry> fGeom;
   
+    bool         fDebug;
     std::string  fHitsModuleLabel;
     std::string  fCounterModuleLabel;
     std::string  fCounterDir;
@@ -131,7 +132,8 @@ namespace dune{
   //-------------------------------------------------
   HitFinderCounter35t::HitFinderCounter35t(fhicl::ParameterSet const& pset) 
     :
-    fHitsModuleLabel       (pset.get< std::string >("HitsModuleLabel"   ))
+    fDebug                 (pset.get<bool>("Debug"))
+    , fHitsModuleLabel     (pset.get< std::string >("HitsModuleLabel"   ))
     , fCounterModuleLabel  (pset.get< std::string >("CounterModuleLabel"))
     , fCounterDir          (pset.get< std::string >("CounterDir" ))
     , fCounterFile         (pset.get< std::string >("CounterFile"))
@@ -174,7 +176,7 @@ namespace dune{
   //-------------------------------------------------
   void HitFinderCounter35t::produce(art::Event& evt) {
     
-    std::cout << "\n\nLooking at event " << evt.event() << std::endl;
+    if (fDebug) std::cout << "\n\nLooking at event " << evt.event() << std::endl;
 
     // get raw::ExternalTriggers
     art::Handle< std::vector< raw::ExternalTrigger> > externalTriggerListHandle;
@@ -201,10 +203,10 @@ namespace dune{
 	     || ( trigs[CLoop]->GetTrigID() >= 0  && trigs[CLoop]->GetTrigID() <= 5  && trigs[CLoop2]->GetTrigID() >= 22 && trigs[CLoop2]->GetTrigID() <= 27 ) // South Lower, North Upper
 	     || ( trigs[CLoop]->GetTrigID() >= 16 && trigs[CLoop]->GetTrigID() <= 21 && trigs[CLoop2]->GetTrigID() >= 38 && trigs[CLoop2]->GetTrigID() <= 43 ) // North Lower, South Upper
 	     ) {
-	  std::cout << "I have a match..."
-		    << "CLoop " << CLoop << ", ID " << trigs[CLoop]->GetTrigID() << ", time " << trigs[CLoop]->GetTrigTime() << "..."
-		    << "CLoop2 " << CLoop2 << ", ID " << trigs[CLoop2]->GetTrigID() << ", Time " <<  trigs[CLoop2]->GetTrigTime() 
-		    << std::endl;
+	  if (fDebug) std::cout << "I have a match..."
+				<< "CLoop " << CLoop << ", ID " << trigs[CLoop]->GetTrigID() << ", time " << trigs[CLoop]->GetTrigTime() << "..."
+				<< "CLoop2 " << CLoop2 << ", ID " << trigs[CLoop2]->GetTrigID() << ", Time " <<  trigs[CLoop2]->GetTrigTime()
+				<< std::endl;
 	  ExternalTrigIndexVec.push_back( std::make_pair( CLoop, CLoop2 ) );
 	} // If a good coincidence
       } // CLoop2
@@ -218,9 +220,9 @@ namespace dune{
       int IDB      = trigs.at(ExternalTrigIndexVec[aa].second)->GetTrigID();
       double TimeB = trigs.at(ExternalTrigIndexVec[aa].second)->GetTrigTime();
       double TickB = trigs.at(ExternalTrigIndexVec[aa].second)->GetTrigTime() / fConvCountTimeToTicks;
-      std::cout << "ExternalTrigIndexVec["<<aa<<"] has indexes " << ExternalTrigIndexVec[aa].first << " and " << ExternalTrigIndexVec[aa].second 
-		<< ". They correspond to TrigIDs " << IDA << " and " << IDB << ", and times "  << TimeA << " (" << TickA << ") and " << TimeB << " (" << TickB << ")" 
-		<< std::endl;
+      if (fDebug) std::cout << "ExternalTrigIndexVec["<<aa<<"] has indexes " << ExternalTrigIndexVec[aa].first << " and " << ExternalTrigIndexVec[aa].second
+			    << ". They correspond to TrigIDs " << IDA << " and " << IDB << ", and times "  << TimeA << " (" << TickA << ") and " << TimeB << " (" << TickB << ")"
+			    << std::endl;
     }
 
     // also get the associated wires and raw digits;
@@ -260,20 +262,20 @@ namespace dune{
       
       TrigTime = ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigTime() + trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigTime() ) / (2*fConvCountTimeToTicks);
       ///*
-      std::cout << "\nCounter1, with TrigID " << trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() << " (" << it1->first << ") has corners......"
-      		<< "( " << it1->second.second[0][0] << ", " << it1->second.second[0][1] << ", " << it1->second.second[0][2] << ") and "
-		<< "( " << it1->second.second[1][0] << ", " << it1->second.second[1][1] << ", " << it1->second.second[1][2] << ") and "
-		<< "( " << it1->second.second[2][0] << ", " << it1->second.second[2][1] << ", " << it1->second.second[2][2] << ") and "
-		<< "( " << it1->second.second[3][0] << ", " << it1->second.second[3][1] << ", " << it1->second.second[3][2] << ") "
-		<< "\nCounter2, with TrigID " << trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() << " (" << it2->first << ") has corners......"
-		<< "( " << it2->second.second[0][0] << ", " << it2->second.second[0][1] << ", " << it2->second.second[0][2] << ") and "
-		<< "( " << it2->second.second[1][0] << ", " << it2->second.second[1][1] << ", " << it2->second.second[1][2] << ") and "
-		<< "( " << it2->second.second[2][0] << ", " << it2->second.second[2][1] << ", " << it2->second.second[2][2] << ") and "
-		<< "( " << it2->second.second[3][0] << ", " << it2->second.second[3][1] << ", " << it2->second.second[3][2] << ") "
-		<<"\nVertexX has co-ords " << VertexX[0] << " " << VertexX[1] << " " << VertexX[2] << " " << VertexX[3]
-		<<"\nVertexY has co-ords " << VertexY[0] << " " << VertexY[1] << " " << VertexY[2] << " " << VertexY[3]
-		<<"\nVertexZ has co-ords " << VertexZ[0] << " " << VertexZ[1] << " " << VertexZ[2] << " " << VertexZ[3]
-		<< std::endl;
+      if (fDebug) std::cout << "\nCounter1, with TrigID " << trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() << " (" << it1->first << ") has corners......"
+			    << "( " << it1->second.second[0][0] << ", " << it1->second.second[0][1] << ", " << it1->second.second[0][2] << ") and "
+			    << "( " << it1->second.second[1][0] << ", " << it1->second.second[1][1] << ", " << it1->second.second[1][2] << ") and "
+			    << "( " << it1->second.second[2][0] << ", " << it1->second.second[2][1] << ", " << it1->second.second[2][2] << ") and "
+			    << "( " << it1->second.second[3][0] << ", " << it1->second.second[3][1] << ", " << it1->second.second[3][2] << ") "
+			    << "\nCounter2, with TrigID " << trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() << " (" << it2->first << ") has corners......"
+			    << "( " << it2->second.second[0][0] << ", " << it2->second.second[0][1] << ", " << it2->second.second[0][2] << ") and "
+			    << "( " << it2->second.second[1][0] << ", " << it2->second.second[1][1] << ", " << it2->second.second[1][2] << ") and "
+			    << "( " << it2->second.second[2][0] << ", " << it2->second.second[2][1] << ", " << it2->second.second[2][2] << ") and "
+			    << "( " << it2->second.second[3][0] << ", " << it2->second.second[3][1] << ", " << it2->second.second[3][2] << ") "
+			    <<"\nVertexX has co-ords " << VertexX[0] << " " << VertexX[1] << " " << VertexX[2] << " " << VertexX[3]
+			    <<"\nVertexY has co-ords " << VertexY[0] << " " << VertexY[1] << " " << VertexY[2] << " " << VertexY[3]
+			    <<"\nVertexZ has co-ords " << VertexZ[0] << " " << VertexZ[1] << " " << VertexZ[2] << " " << VertexZ[3]
+			    << std::endl;
       //*/
       // ------------------------- Get Collection wires -------------------------
       // Loop through collection plane hits first, as can use that information to help decide which TPC an induction plane hit should be on.
@@ -304,7 +306,7 @@ namespace dune{
 	  hcol.emplace_back(*hits[HitInd], wire, rawdigits);
 	} 
       }
-      std::cout << "\nAfter collection wires for TrigInd " << TrigInd << ", hcol has size " << hcol.size() << std::endl;
+      std::cout << "After collection wires for TrigInd " << TrigInd << ", hcol has size " << hcol.size() << std::endl;
       // Got all the collection hits, so now loop through the induction plane hits.
       // ------------------------- Get Collection wires -------------------------
 
@@ -355,19 +357,11 @@ namespace dune{
 	    double ThisYPos = WStart[1] + ( WPass * (WEnd[1]-WStart[1])/(NPoints-1) );
 	    double ThisZPos = WStart[2] + ( WPass * (WEnd[2]-WStart[2])/(NPoints-1) );
 
-	    if (hits[HitInd]->WireID().TPC == 4 || hits[HitInd]->WireID().TPC == 5) {
-	      std::cout << "Looking at Hit " << HitInd << ", WPass " << WPass << " for wire " << WireList[ch].TPC << " " << WireList[ch].Wire << ", at time " << hits[HitInd]->PeakTime()
-			<< ". It has co-ords " << ThisXPos << " " << ThisYPos << " " << ThisZPos << std::endl;
-	    }
-
 	    bool GoodWire = false;
 	    // First test if it is in the XZ window
 	    GoodWire = pnpoly ( 4, VertexX, VertexZ, ThisXPos, ThisZPos );
 	    if (!GoodWire) continue; // If outside XZ window
 	    
-	    if (hits[HitInd]->WireID().TPC == 4 || hits[HitInd]->WireID().TPC == 5)
-	      std::cout << "This hit is within the 2D window!" << std::endl;
-
 	    // If have EW coincidence, want to compare in YZ.
 	    // If have NS coincidence, want to compare in XY
 	    if ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() >= 6  && trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() <= 15 ) {
@@ -376,10 +370,7 @@ namespace dune{
 	      GoodWire = pnpoly ( 4, VertexX, VertexY, ThisXPos, ThisYPos );
 	    }
 	    if (!GoodWire) continue; // If outside window
-	    
-	    if (hits[HitInd]->WireID().TPC == 4 || hits[HitInd]->WireID().TPC == 5)
-	      std::cout << "This hit is within the 3D window! " << WireList[ch].Wire << " " << hits[HitInd]->WireID().Wire << " " << WireList[ch].TPC << " " << hits[HitInd]->WireID().TPC << std::endl;;
-	    
+	    	    
 	    // If this hit is the original one, then add it to TempHitsVec
 	    if ( WireList[ch].Wire == hits[HitInd]->WireID().Wire && WireList[ch].TPC == hits[HitInd]->WireID().TPC ) {
 	      TempHitsVec.push_back( *hits[HitInd] );
@@ -405,9 +396,9 @@ namespace dune{
 	  UnDisambigHits.push_back( std::make_pair(TempHitsVec, HitInd) );
 	} // If TempHitsVec is large
       } // Loop through hits
-      std::cout << "\nAfter Induction planes for TrigInd " << TrigInd << " hcol now has size " << hcol.size() << std::endl;
+      std::cout << "After Induction planes for TrigInd " << TrigInd << " hcol now has size " << hcol.size() << std::endl;
     } // Loop through trigger indexes
-    std::cout << "\nAfter all trigger indexes the vectors have sizes: hits -> " << hits.size() << ", hcol -> " << hcol.size() << ", UnDisambigHits -> " << UnDisambigHits.size() << std::endl;
+    std::cout << "After all trigger indexes the vectors have sizes: hits -> " << hits.size() << ", hcol -> " << hcol.size() << ", UnDisambigHits -> " << UnDisambigHits.size() << std::endl;
     // ------------------------- Get Induction wires -------------------------
     
     std::vector<recob::Hit> const &Peak = hcol.peek();
@@ -423,7 +414,7 @@ namespace dune{
       else if (Peak[qq].WireID().TPC == 6) ++TPC6;
       else if (Peak[qq].WireID().TPC == 7) ++TPC7;
     }
-    std::cout << "\n\nI have these hits in each TPC " << TPC0 << " " << TPC1 << " " << TPC2 << " " << TPC3 << " " << TPC4 << " " << TPC5 << " " << TPC6 << " " << TPC7 << "\n\n" << std::endl;
+    if (fDebug) std::cout << "\n\nI have these hits in each TPC " << TPC0 << " " << TPC1 << " " << TPC2 << " " << TPC3 << " " << TPC4 << " " << TPC5 << " " << TPC6 << " " << TPC7 << "\n\n" << std::endl;
     // Now that I have gone through the trigger indexes I want to see if I can fix some of the undisambiguated hits.
     // 1) Look for any hits where there were collection plane hits at the same time.
     // 2) Look for any hits on adjacent induction plane wires at the same time.
@@ -487,6 +478,7 @@ namespace dune{
     OutAndClearVector( UnDisambigHits, StillUnDisambigHits, NowGoodHits, hcol.size() );
     // --------------------------- Any adjacent wires? ---------------------------
 
+    std::cout << "\nAfter all that the vectors have sizes: hits -> " << hits.size() << ", hcol -> " << hcol.size() << std::endl;
     hcol.put_into(evt);    
   } // The produce function
   //-------------------------------------------------
@@ -572,7 +564,7 @@ namespace dune{
       TMatrixD params = X_T_x_X_inv * X_T * Y;
       Gradient  = params[0][0];
       Intercept = params[1][0];
-      std::cout << "My line is of form: y = " << Gradient << "x + " << Intercept << std::endl;
+      if (fDebug) std::cout << "My line is of form: y = " << Gradient << "x + " << Intercept << std::endl;
     }
   } // Work out the gradient of a line using matricies
   //-------------------------------------------------
@@ -737,8 +729,9 @@ namespace dune{
       for (size_t q=0; q<InputBadVector.size(); ++q)
 	OutputBadVector.push_back(InputBadVector[q]);
       return;
-    } else std::cout << "I have " << UniqColHits.size() << " unique collection plane hits " << std::endl;
-    
+    } else {
+      if (fDebug) std::cout << "I have " << UniqColHits.size() << " unique collection plane hits " << std::endl;
+    }
     float Gradient, Intercept;
     FindXZGradient( UniqColHits, Gradient, Intercept );
     
@@ -808,7 +801,7 @@ namespace dune{
       unsigned int FirstTPC = Hits[0].WireID().TPC;
       for ( size_t ThisHit=0; ThisHit<Hits.size(); ++ThisHit ) {
 	if ( Hits[ThisHit].WireID().TPC != FirstTPC ) {
-	  std::cout << "First hit is in TPC " << FirstTPC << ", whilst hit " << ThisHit << " is in TPC " << Hits[ThisHit].WireID().TPC << " giving up on this hit" << std::endl;
+	  if (fDebug) std::cout << "First hit is in TPC " << FirstTPC << ", whilst hit " << ThisHit << " is in TPC " << Hits[ThisHit].WireID().TPC << " giving up on this hit" << std::endl;
 	  OutputBadVector.push_back( InputBadVector[HitLoop]);
 	  break;
 	}
@@ -839,7 +832,9 @@ namespace dune{
 	std::cout << "I have no unique hits on TPC " << ThisTPC << ", Plane " << ThisPl << std::endl;
 	// I need to put these hits into my badhits vector....
 	break;
-      } else std::cout << "I have " << UniqHits.size() << " unique hits on TPC " << ThisTPC << ", Plane " << ThisPl << std::endl;
+      } else {
+	if (fDebug) std::cout << "I have " << UniqHits.size() << " unique hits on TPC " << ThisTPC << ", Plane " << ThisPl << std::endl;
+      }
       // Work out the gradient in this wire tick space.
       float Gradient, Intercept;
       FindPlaneGradient( UniqHits, Gradient, Intercept );
