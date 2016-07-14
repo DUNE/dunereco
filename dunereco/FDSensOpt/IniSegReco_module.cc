@@ -201,7 +201,7 @@ void dunefd::IniSegReco::reconfigure(fhicl::ParameterSet const& pset)
 	fVertexModuleLabel 	 =   pset.get< std::string >("VertexModuleLabel");
 	fGenieGenModuleLabel =   pset.get< std::string >("GenieGenModuleLabel");
 
-	fProjectionMatchingAlg.reconfigure(pset.get< fhicl::ParameterSet >("ProjectionMatchingAlg"));
+	//fProjectionMatchingAlg.reconfigure(pset.get< fhicl::ParameterSet >("ProjectionMatchingAlg"));  // use constructor-time config only
 	fFidVolCut           =   pset.get< double >("FidVolCut");
 	return;
 }

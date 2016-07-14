@@ -159,7 +159,7 @@ void dunefd::ShSeg::reconfigure(fhicl::ParameterSet const & p)
 {
 	fHitsModuleLabel	= p.get< std::string >("HitsModuleLabel");
 	fFidVolCut		= p.get< double >("FidVolCut");
-	fProjectionMatchingAlg.reconfigure(p.get< fhicl::ParameterSet >("ProjectionMatchingAlg"));
+	//fProjectionMatchingAlg.reconfigure(p.get< fhicl::ParameterSet >("ProjectionMatchingAlg"));  // use constructor-time config only
   	return;
 }
 
