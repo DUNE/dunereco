@@ -56,6 +56,14 @@ dune35t_pmalgtrackmaker.FlipDownward:        true
 #dune35t_pmalgtrackmaker.FlipToBeam:          true
 #dune35t_pmalgtrackmaker.AutoFlip_dQdx:       true
 
+dune35t_pmalgtrajfitter:                     @local::standard_pmalgtrajfitter
+dune35t_pmalgtrajfitter.HitModuleLabel:      "linecluster"
+dune35t_pmalgtrajfitter.PfpModuleLabel:      "pandora"
+dune35t_pmalgtrajfitter.ProjectionMatchingAlg.HitWeightZ: 1.0
+dune35t_pmalgtrajfitter.ProjectionMatchingAlg.HitWeightV: 1.0
+dune35t_pmalgtrajfitter.ProjectionMatchingAlg.HitWeightU: 1.0
+dune35t_pmalgtrajfitter.RunVertexing:        true
+
 dunefd_trackcheater:                      @local::standard_trackcheater
 
 dunefd_cosmictracker:                    @local::standard_cosmictracker
@@ -75,4 +83,12 @@ dunefd_pmalgtrackmaker.RunVertexing:        true
 dunefd_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightZ: 1.0
 dunefd_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightV: 1.0
 dunefd_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightU: 1.0
+
+dunefd_pmalgtrajfitter:                     @local::standard_pmalgtrajfitter
+dunefd_pmalgtrajfitter.HitModuleLabel:      "linecluster"
+dunefd_pmalgtrajfitter.PfpModuleLabel:      "pandora"
+dunefd_pmalgtrajfitter.ProjectionMatchingAlg.HitWeightZ: 1.0
+dunefd_pmalgtrajfitter.ProjectionMatchingAlg.HitWeightV: 1.0
+dunefd_pmalgtrajfitter.ProjectionMatchingAlg.HitWeightU: 1.0
+dunefd_pmalgtrajfitter.RunVertexing:        true
 END_PROLOG
