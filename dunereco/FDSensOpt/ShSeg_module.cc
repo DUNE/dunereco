@@ -325,11 +325,12 @@ bool dunefd::ShSeg::BuildSegMC(art::Event & e)
 
 	double startvtx[3] = {firstpoint.X(), firstpoint.Y(), firstpoint.Z()};
 	
-	// check if it is inside		
-	if (!geom->FindTPCAtPosition(startvtx).isValid) return false;
+	// check if it is inside
+	geo::TPCID tpcid = geom->FindTPCAtPosition(startvtx);		
+	if (!tpcid.isValid) return false;
 
 	// try to build seg, it is based on MC truth 
-	size_t tpc = geom->FindTPCAtPosition(startvtx).TPC;
+	size_t tpc = tpcid.TPC;
 	size_t cryo = geom->FindCryostatAtPosition(startvtx);	
 	pma::Track3D* iniseg = new pma::Track3D();
 	iniseg->AddNode(firstpoint, tpc, cryo);
@@ -360,8 +361,10 @@ bool dunefd::ShSeg::BuildSegMC(art::Event & e)
 	if (iniseg->size() < 5) return false;
 
 	// 0: geo::kU, 1: geo::kV, 2: geo::kZ
-	double maxdist = 0.0; size_t bestview = 2;
-	for (size_t view = 0; view < 3; ++view)
+	const geo::TPCGeo& tpcgeo = geom->GetElement(tpcid);
+	double maxdist = 0.0; size_t bestview = 0; 
+	
+	for (size_t view = 0; view < tpcgeo.Nplanes(); ++view) 
 	{
 		std::map< size_t, std::vector< double > > ex;
 		iniseg->GetRawdEdxSequence(ex, view);
