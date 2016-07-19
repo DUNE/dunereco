@@ -1,0 +1,55 @@
+#include "calorimetry_dune10kt.fcl"
+#include "trackfinderalgorithms.fcl"
+
+BEGIN_PROLOG
+
+dunefd_mvaselect:
+{
+    module_type:             "MVASelect"
+
+    Select:                  "numu"
+    MVAMethods:              ["BDTG"]
+    WeightFiles:             ["/dune/app/users/talion/TMVALAr/srcs/dunetpc/dune/FDSensOpt/MVAAlg/TMVAClassification_BDTG.weights.xml"]
+    MakeAnaTree:             false    # Tree for general use
+    MakeWeightTree:          false    # Tree for TMVAClassification input, makes weight file
+
+    #HitsModuleLabel:         "lineclusterdc"
+    #TrackModuleLabel:        "pmtrackdc"
+    #ClusterModuleLabel:      "lineclusterdc"
+    #VertexModuleLabel:       "pmtrackdc"
+    #ShowerModuleLabel:       "emshowerdc"
+    #CalorimetryModuleLabel:  "pmtrackcalodc"
+    HitsModuleLabel:         "linecluster"
+    TrackModuleLabel:        "pmtrack"
+    ClusterModuleLabel:	     "linecluster"
+    VertexModuleLabel:       "pmtrack"
+    ShowerModuleLabel:       "emshower"
+    CalorimetryModuleLabel:  "pmtrackcalo"
+    GenieGenModuleLabel:     "generator"
+    POTModuleLabel:          "generator"
+    FlashModuleLabel:        "opflash"
+    CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
+    FidVolCut:	             3.0
+}
+
+dunefd_inisegreco:
+{
+    module_type: 	      "IniSegReco"
+    HitsModuleLabel:          "lineclusterdc"
+    TrackModuleLabel:         "pmtrackdc"
+    ClusterModuleLabel:	      "lineclusterdc"
+    GenieGenModuleLabel:      "generator"
+    ProjectionMatchingAlg:    @local::standard_projectionmatchingalg
+    FidVolCut:	              3.0
+}
+
+dunefd_shseg:
+{
+   		module_type: 	      	"ShSeg"
+		HitsModuleLabel:         "Hit"
+		FidVolCut:   			3.0
+		CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
+		ProjectionMatchingAlg:   @local::standard_projectionmatchingalg
+}
+
+END_PROLOG

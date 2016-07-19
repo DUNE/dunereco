@@ -1,4 +1,7 @@
 add_subdirectory(IniSegAlg)
+add_subdirectory(MVAAlg)
+
+include_directories ( $ENV{GENIE_INC}/GENIE )
 
 simple_plugin(NueAna   "module"
 		        lardata_RawData
@@ -25,6 +28,29 @@ simple_plugin(NueAna   "module"
 			${MF_UTILITIES}
 			${CETLIB}
 			${ROOT_BASIC_LIB_LIST}
+              BASENAME_ONLY
+)
+
+simple_plugin(MVASelect   "module"
+                        MVAAlg
+                        ${NUREWEIGHT}
+                        ${NUREWEIGHTART}
+			${SIMULATIONBASE}
+                        ${GHEP}
+                        ${GEVGCORE}
+			${GPDG}
+                        ${ART_FRAMEWORK_CORE}
+                        ${ART_FRAMEWORK_PRINCIPAL}
+                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
+                        ${ART_FRAMEWORK_SERVICES_OPTIONAL}
+                        ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
+                        ${ART_PERSISTENCY_COMMON}
+                        ${ART_PERSISTENCY_PROVENANCE}
+                        ${ART_UTILITIES}
+                        ${MF_MESSAGELOGGER}
+                        ${MF_UTILITIES}
+                        ${CETLIB}
+                        ${ROOT_BASIC_LIB_LIST}
               BASENAME_ONLY
 )
 
