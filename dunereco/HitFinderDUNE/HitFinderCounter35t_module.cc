@@ -72,7 +72,6 @@ namespace dune{
   
   private:
 
-    void MakeCounterCorners( unsigned int AuxDetindex, float Corners[4][3], double Pos[3]);
     //bool DoesIntersect( double A0, double B0, double A1, double B1, double A2, double B2, double A3, double B3 );
     int  pnpoly( int nvert, float *vertx, float *verty, float testx, float testy );
     void FindXZGradient   ( std::vector < recob::Hit > HitVector, float &Gradient, float& Intercept );
