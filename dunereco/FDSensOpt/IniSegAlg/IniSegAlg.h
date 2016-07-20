@@ -12,7 +12,7 @@
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
 #include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
-#include "lardata/RecoBase/Track.h"
+#include "lardataobj/RecoBase/Track.h"
 
 namespace fhicl {
 	class ParameterSet;

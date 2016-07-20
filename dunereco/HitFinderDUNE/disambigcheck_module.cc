@@ -35,12 +35,12 @@ extern "C" {
 #include "larcore/Geometry/CryostatGeo.h"
 #include "larcore/Geometry/TPCGeo.h"
 #include "larcore/Geometry/PlaneGeo.h"
-#include "lardata/RecoBase/Hit.h"
-#include "lardata/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Cluster.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "DisambigAlg35t.h"
 #include "larsim/MCCheater/BackTracker.h"
-#include "lardata/AnalysisBase/ParticleID.h"
+#include "lardataobj/AnalysisBase/ParticleID.h"
 
 // ROOT Includes 
 #include "TH1D.h"
