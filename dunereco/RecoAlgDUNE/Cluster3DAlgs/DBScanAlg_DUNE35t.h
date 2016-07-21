@@ -15,7 +15,7 @@
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardata/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Hit.h"
 #include "lardata/RecoObjects/Cluster3D.h"
 
 // std includes
