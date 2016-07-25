@@ -1,8 +1,8 @@
 add_subdirectory(IniSegAlg)
 
 simple_plugin(NueAna   "module"
-		        lardata_RawData
-		        lardata_RecoBase
+		        lardataobj_RawData
+		        lardataobj_RecoBase
 		        lardata_RecoBaseArt
 			lardata_AnalysisAlg
 		        larreco_RecoAlg_PMAlg
@@ -10,17 +10,17 @@ simple_plugin(NueAna   "module"
 		        larcore_Geometry
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
-			larsim_Simulation
+			larsim_Simulation larsimobj_Simulation
 			larsim_MCCheater_BackTracker_service
-			${SIMULATIONBASE}
+			nusimdata_SimulationBase
                         ${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}
 			${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_OPTIONAL}
                         ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
- 			${ART_PERSISTENCY_COMMON}
-			${ART_PERSISTENCY_PROVENANCE}
-			${ART_UTILITIES}
+ 			art_Persistency_Common canvas_Persistency_Common
+			art_Persistency_Provenance canvas_Persistency_Provenance
+			art_Utilities canvas_Utilities
 			${MF_MESSAGELOGGER}
 			${MF_UTILITIES}
 			${CETLIB}
@@ -29,25 +29,25 @@ simple_plugin(NueAna   "module"
 )
 
 simple_plugin(IniSegReco "module"
-		      lardata_RawData
-		      lardata_RecoBase
+		      lardataobj_RawData
+		      lardataobj_RecoBase
 		      larreco_RecoAlg
 		      larreco_RecoAlg_PMAlg
 		      IniSegAlg
 		      larcore_Geometry
 		      larcore_Geometry_Geometry_service
 		      lardata_Utilities
-		      larsim_Simulation
+		      larsim_Simulation larsimobj_Simulation
 		      larsim_MCCheater_BackTracker_service
-		      ${SIMULATIONBASE}
+		      nusimdata_SimulationBase
       		      ${ART_FRAMEWORK_CORE}
 		      ${ART_FRAMEWORK_PRINCIPAL}
 		      ${ART_FRAMEWORK_SERVICES_REGISTRY}
       		      ${ART_FRAMEWORK_SERVICES_OPTIONAL}
       		      ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
- 		      ${ART_PERSISTENCY_COMMON}
-		      ${ART_PERSISTENCY_PROVENANCE}
-		      ${ART_UTILITIES}
+ 		      art_Persistency_Common canvas_Persistency_Common
+		      art_Persistency_Provenance canvas_Persistency_Provenance
+		      art_Utilities canvas_Utilities
 		      ${MF_MESSAGELOGGER}
 		      ${MF_UTILITIES}
 		      ${CETLIB}
@@ -56,8 +56,8 @@ simple_plugin(IniSegReco "module"
 )
 
 simple_plugin(ShSeg   "module"
-			lardata_RawData
-			lardata_RecoBase
+			lardataobj_RawData
+			lardataobj_RecoBase
 			larreco_RecoAlg
 			lardata_AnalysisAlg
 			larreco_RecoAlg_PMAlg
@@ -65,19 +65,19 @@ simple_plugin(ShSeg   "module"
 			larcore_Geometry
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
-			larsim_Simulation
+			larsim_Simulation larsimobj_Simulation
 			
 			
 			larsim_MCCheater_BackTracker_service
-			${SIMULATIONBASE}
+			nusimdata_SimulationBase
 			${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}
 			${ART_FRAMEWORK_SERVICES_REGISTRY}
 			${ART_FRAMEWORK_SERVICES_OPTIONAL}
 			${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
- 			${ART_PERSISTENCY_COMMON}
-			${ART_PERSISTENCY_PROVENANCE}
-			${ART_UTILITIES}
+ 			art_Persistency_Common canvas_Persistency_Common
+			art_Persistency_Provenance canvas_Persistency_Provenance
+			art_Utilities canvas_Utilities
 			${MF_MESSAGELOGGER}
 			${MF_UTILITIES}
 			${CETLIB}
