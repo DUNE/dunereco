@@ -52,7 +52,7 @@ dune35t_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightZ: 1.0
 dune35t_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightV: 1.0
 dune35t_pmalgtrackmaker.ProjectionMatchingAlg.HitWeightU: 1.0
 dune35t_pmalgtrackmaker.PMAlgTracking.RunVertexing:       true
-dune35t_pmalgtrackmaker.PMAlgTrackng.FlipDownward:        true
+dune35t_pmalgtrackmaker.PMAlgTracking.FlipDownward:       true
 #dune35t_pmalgtrackmaker.PMAlgTracking.AutoFlip_dQdx:     true
 
 dune35t_pmalgtrajfitter:                     @local::standard_pmalgtrajfitter
