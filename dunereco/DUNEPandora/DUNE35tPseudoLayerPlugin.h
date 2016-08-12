@@ -8,7 +8,7 @@
 #ifndef DUNE_35T_PSEUDO_LAYER_PLUGIN_H
 #define DUNE_35T_PSEUDO_LAYER_PLUGIN_H 1
 
-#include "LArPlugins/LArPseudoLayerPlugin.h"
+#include "larpandoracontent/LArPlugins/LArPseudoLayerPlugin.h"
 
 namespace lar_pandora
 {

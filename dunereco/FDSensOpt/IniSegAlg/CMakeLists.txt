@@ -4,23 +4,23 @@ art_make( BASENAME_ONLY
           LIBRARY_NAME  IniSegAlg
           LIB_LIBRARIES larcore_Geometry
                         larcore_Geometry_Geometry_service
-                        larsim_Simulation
-                        lardata_RawData
-                        lardata_RecoBase
+                        larsim_Simulation larsimobj_Simulation
+                        lardataobj_RawData
+                        lardataobj_RecoBase
 			larreco_RecoAlg
 			larreco_RecoAlg_PMAlg
                         lardata_Utilities
-                        ${SIMULATIONBASE}
+                        nusimdata_SimulationBase
                         ${ART_FRAMEWORK_CORE}
                         ${ART_FRAMEWORK_PRINCIPAL}
-                        ${ART_PERSISTENCY_COMMON}
+                        art_Persistency_Common canvas_Persistency_Common
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_BASIC}
                         ${ART_FRAMEWORK_SERVICES_OPTIONAL}
                         ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
-                        ${ART_PERSISTENCY_COMMON}
-                        ${ART_PERSISTENCY_PROVENANCE}
-                        ${ART_UTILITIES}
+                        art_Persistency_Common canvas_Persistency_Common
+                        art_Persistency_Provenance canvas_Persistency_Provenance
+                        art_Utilities canvas_Utilities
                         ${FHICLCPP}
 			${MF_MESSAGELOGGER}
 			${MF_UTILITIES}

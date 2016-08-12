@@ -1,7 +1,7 @@
 
 art_make( BASENAME_ONLY
           LIBRARY_NAME     HitFinderDUNE
-          LIB_LIBRARIES    lardata_RecoBase
+          LIB_LIBRARIES    lardataobj_RecoBase
 	  		   larreco_RecoAlg
 			   larreco_RecoAlg_PMAlg
 			   larevt_Filters
@@ -10,7 +10,8 @@ art_make( BASENAME_ONLY
                            lardata_RecoObjects
 			   larsim_MCCheater_BackTracker_service
                            lardata_Utilities
-			   ${SIMULATIONBASE}
+			   lbne_daqinput35t
+			   nusimdata_SimulationBase
                            ${ART_FRAMEWORK_CORE}
    			   ${ART_FRAMEWORK_PRINCIPAL}
 			   ${ART_FRAMEWORK_SERVICES_REGISTRY}
@@ -18,9 +19,9 @@ art_make( BASENAME_ONLY
 			   ${ART_FRAMEWORK_SERVICES_OPTIONAL}
 			   ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
                            ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
-			   ${ART_PERSISTENCY_COMMON}
-		       	   ${ART_PERSISTENCY_PROVENANCE}
-			   ${ART_UTILITIES}
+			   art_Persistency_Common canvas_Persistency_Common
+		       	   art_Persistency_Provenance canvas_Persistency_Provenance
+			   art_Utilities canvas_Utilities
 			   ${MF_MESSAGELOGGER}
 			   ${MF_UTILITIES}
 	                   ${FHICLCPP}
@@ -29,21 +30,21 @@ art_make( BASENAME_ONLY
 			   ${Boost_SYSTEM_LIBRARY}
 			   ${ROOT_BASIC_LIB_LIST}
          MODULE_LIBRARIES HitFinderDUNE
-                           lardata_RecoBase
+                           lardataobj_RecoBase
                            lardata_RecoBaseArt
                            larcore_Geometry
                            larcore_Geometry_Geometry_service
 			   larsim_MCCheater_BackTracker_service
                            lardata_Utilities
-			   ${SIMULATIONBASE}
+			   nusimdata_SimulationBase
  			   ${ART_FRAMEWORK_CORE}
 			   ${ART_FRAMEWORK_PRINCIPAL}
 			   ${ART_FRAMEWORK_SERVICES_REGISTRY}
 			   ${ART_FRAMEWORK_SERVICES_BASIC}
 			   ${ART_FRAMEWORK_SERVICES_OPTIONAL}
 			   ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
-			   ${ART_PERSISTENCY_COMMON}
-			   ${ART_UTILITIES}
+			   art_Persistency_Common canvas_Persistency_Common
+			   art_Utilities canvas_Utilities
 			   ${MF_MESSAGELOGGER}
 			   ${MF_UTILITIES}
 	                   ${FHICLCPP}

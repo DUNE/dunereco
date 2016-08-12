@@ -10,6 +10,7 @@ add_subdirectory(DetSim)
 add_subdirectory(EventGenerator)
 add_subdirectory(Daq)
 add_subdirectory(CalData)
+add_subdirectory(DataPrep)
 add_subdirectory(RawdataDisplay)
 add_subdirectory(EnergyStudies)
 add_subdirectory(AnaTree)
@@ -24,6 +25,7 @@ add_subdirectory(SimFilter)
 add_subdirectory(FDSensOpt)
 add_subdirectory(Gaps)
 add_subdirectory(TrackingAna)
+add_subdirectory(ShowerAna)
 add_subdirectory(RunHistory)
 add_subdirectory(NearlineMonitor)
 add_subdirectory(ArtSupport)
@@ -34,6 +36,9 @@ add_subdirectory(EventFilters)
 add_subdirectory(ClusterFinderDUNE)
 add_subdirectory(RecoAlgDUNE)
 add_subdirectory(Protodune)
+add_subdirectory(DAQTriggerSim)
+add_subdirectory(SpaceCharge)
+add_subdirectory(SpaceChargeServices)
 
 # Respect the order specified in lar_build, which is:
 #
@@ -41,13 +46,13 @@ add_subdirectory(Protodune)
 #     "SRT_LAR",
 #     "SimpleTypesAndConstants",
 #     "larcore_Geometry",
-#     "larcore_SummaryData",
-#     "lardata_RawData",
-#     "lardata_RecoBase",
-#     "lardata_OpticalDetectorData",
-#     "lardata_AnalysisBase",
+#     "larcoreobj_SummaryData",
+#     "lardataobj_RawData",
+#     "lardataobj_RecoBase",
+#     "lardataobj_OpticalDetectorData",
+#     "lardataobj_AnalysisBase",
 #     "lardata_Utilities",
-#     "larsim_Simulation",
+#     "larsim_Simulation larsimobj_Simulation",
 #     "larsim_MCCheater",
 #     "lardata_AnalysisAlg",
 #     "lardata_RecoObjects",

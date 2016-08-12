@@ -14,30 +14,31 @@
 #include "art/Framework/Principal/Run.h"
 #include "art/Framework/Principal/SubRun.h"
 #include "art/Framework/Services/Optional/TFileService.h" 
-#include "art/Utilities/InputTag.h"
+#include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"
-#include "lardata/RecoBase/Track.h"
-#include "lardata/RecoBase/Hit.h"
-#include "lardata/RecoBase/Cluster.h"
-#include "lardata/RecoBase/Vertex.h"
-#include "lardata/RecoBase/SpacePoint.h"
-#include "lardata/RecoBase/TrackHitMeta.h"
-#include "lardata/RecoBase/Shower.h"
-#include "lardata/RecoBase/OpFlash.h"
-#include "lardata/RecoBaseArt/TrackUtils.h" // lar::utils::TrackPitchInView()
-#include "lardata/AnalysisBase/Calorimetry.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/Vertex.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
+#include "lardataobj/RecoBase/TrackHitMeta.h"
+#include "lardataobj/RecoBase/Shower.h"
+#include "lardataobj/RecoBase/OpFlash.h"
+#include "lardata/RecoBaseArt/TrackUtils.h" // lar::util::TrackPitchInView()
+#include "lardataobj/AnalysisBase/Calorimetry.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "larsim/MCCheater/BackTracker.h"
-#include "SimulationBase/MCTruth.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
+#include "larreco/RecoAlg/TrackMomentumCalculator.h"
 #include "lardata/AnalysisAlg/CalorimetryAlg.h"
-#include "larcore/SummaryData/POTSummary.h"
-#include "SimulationBase/MCFlux.h"
+#include "larcoreobj/SummaryData/POTSummary.h"
+#include "nusimdata/SimulationBase/MCFlux.h"
 
 // ROOT includes
 #include "TTree.h"
@@ -123,6 +124,7 @@ private:
   float trkke[kMaxTrack][3];          //track kinetic energy (in 3 planes)
   float trkpida[kMaxTrack][3];        //track PIDA (in 3 planes)
   int   trkbestplane[kMaxTrack];      //best plane for trkke and trkpida
+  float trkmomrange[kMaxTrack];       //Track momentum using range
 
   //geant information for the track
   int   trkg4id[kMaxTrack];           //geant track id for the track
@@ -370,6 +372,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   double larEnd[3];
   std::vector<double> trackStart;
   std::vector<double> trackEnd;
+  trkf::TrackMomentumCalculator trkm;
   for(int i=0; i<std::min(int(tracklist.size()),kMaxTrack);++i){
     trackStart.clear();
     trackEnd.clear();
@@ -391,6 +394,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
     trkenddcosy[i]    = larEnd[1];
     trkenddcosz[i]    = larEnd[2];
     trklen[i]         = tracklist[i]->Length();
+    trkmomrange[i]    = trkm.GetTrackMomentum(trklen[i],13);
     if (fmthm.isValid()){
       auto vhit = fmthm.at(i);
       auto vmeta = fmthm.data(i);
@@ -524,7 +528,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 			  pow(trkendz[i]-trkg4startz[i],2));
 	if (dis1<dis2){
 	  try{
-	    pitch = lar::utils::TrackPitchInView(*(tracklist[i]),geo::kZ,0);
+	    pitch = lar::util::TrackPitchInView(*(tracklist[i]),geo::kZ,0);
 	  }
 	  catch(...){
 	    pitch = 0;
@@ -532,7 +536,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	}
 	else{
 	  try{
-	    pitch = lar::utils::TrackPitchInView(*(tracklist[i]), geo::kZ,tracklist[i]->NumberTrajectoryPoints()-1);
+	    pitch = lar::util::TrackPitchInView(*(tracklist[i]), geo::kZ,tracklist[i]->NumberTrajectoryPoints()-1);
 	  }
 	  catch(...){
 	    pitch = 0;
@@ -855,6 +859,7 @@ void dunefd::NueAna::beginJob()
   fTree->Branch("trkenddcosz",trkenddcosz,"trkenddcosz[ntracks_reco]/F");
   fTree->Branch("trklen",trklen,"trklen[ntracks_reco]/F");
   fTree->Branch("trkbestplane",trkbestplane,"trkbestplane[ntracks_reco]/I");
+  fTree->Branch("trkmomrange",trkmomrange,"trkmomrange[ntracks_reco]/F");
   fTree->Branch("trkke",trkke,"trkke[ntracks_reco][3]/F");
   fTree->Branch("trkpida",trkpida,"trkpida[ntracks_reco][3]/F");
   fTree->Branch("trkg4id",trkg4id,"trkg4id[ntracks_reco]/I");
@@ -995,6 +1000,7 @@ void dunefd::NueAna::ResetVars(){
     trkenddcosz[i] = -9999;
     trklen[i] = -9999;
     trkbestplane[i] = -9999;
+    trkmomrange[i] = -9999;
     for (int j = 0; j<3; ++j){
       trkke[i][j] = -9999;
       trkpida[i][j] = -9999;

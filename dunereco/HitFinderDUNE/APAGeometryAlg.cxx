@@ -17,13 +17,13 @@
 #include "art/Framework/Services/Optional/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "lardata/RecoBase/Hit.h"
-#include "lardata/RecoBase/Wire.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Wire.h"
 #include "larcore/Geometry/CryostatGeo.h"
 #include "larcore/Geometry/TPCGeo.h"
 #include "larcore/Geometry/PlaneGeo.h"
 #include "larcore/Geometry/WireGeo.h"
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "APAGeometryAlg.h"
 
 #include <cmath>
