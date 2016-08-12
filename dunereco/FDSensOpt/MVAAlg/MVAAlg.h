@@ -86,7 +86,7 @@ namespace dunemva{
     float Norm(int ccnc, int nu0, int nu1, int subrun);
     float OscPro(int ccnc, int nu0, int nu1, float NuE);
 
-    ofstream fFile;
+    std::ofstream fFile;
 
     TMVA::Reader fReader;
     std::vector<std::string> fMVAMethods;

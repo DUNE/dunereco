@@ -1251,7 +1251,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
 			  pow(trkendz[i]-trkg4startz[i],2));
 	if (dis1<dis2){
 	  try{
-	    pitch = lar::utils::TrackPitchInView(*(tracklist[i]),geo::kZ,0);
+	    pitch = lar::util::TrackPitchInView(*(tracklist[i]),geo::kZ,0);
 	  }
 	  catch(...){
 	    pitch = 0;
@@ -1259,7 +1259,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
 	}
 	else{
 	  try{
-	    pitch = lar::utils::TrackPitchInView(*(tracklist[i]),geo::kZ,tracklist[i]->NumberTrajectoryPoints()-1);
+	    pitch = lar::util::TrackPitchInView(*(tracklist[i]),geo::kZ,tracklist[i]->NumberTrajectoryPoints()-1);
 	  }
 	  catch(...){
 	    pitch = 0;

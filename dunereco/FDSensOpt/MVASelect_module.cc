@@ -21,12 +21,12 @@
 #include "messagefacility/MessageLogger/MessageLogger.h" 
 #include "art/Framework/Services/Optional/TFileService.h" 
 
-#include "NuReweight/art/NuReweight.h"
+#include "nutools/NuReweight/art/NuReweight.h"
 
-#include "SimulationBase/GTruth.h"
-#include "SimulationBase/MCTruth.h"
-#include "SimulationBase/MCFlux.h"
-#include "larcore/SummaryData/POTSummary.h"
+#include "nusimdata/SimulationBase/GTruth.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
+#include "nusimdata/SimulationBase/MCFlux.h"
+#include "larcoreobj/SummaryData/POTSummary.h"
 #include "dune/FDSensOpt/MVAAlg/MVAAlg.h"
 
 #include "TTree.h"
