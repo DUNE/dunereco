@@ -11,8 +11,8 @@
 #include <memory>
 #include <utility>
 
-#include "art/Persistency/Common/Ptr.h"
-#include "art/Persistency/Common/PtrVector.h"
+#include "canvas/Persistency/Common/Ptr.h"
+#include "canvas/Persistency/Common/PtrVector.h"
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
@@ -20,7 +20,7 @@
 #include "art/Framework/Principal/Run.h"
 #include "art/Framework/Principal/SubRun.h"
 #include "art/Framework/Services/Optional/TFileService.h" 
-#include "art/Utilities/InputTag.h"
+#include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
@@ -32,24 +32,24 @@
 
 
 #include "larcore/Geometry/Geometry.h"
-#include "lardata/RecoBase/Track.h"
-#include "lardata/RecoBase/Hit.h"
-#include "lardata/RecoBase/Cluster.h"
-#include "lardata/RecoBase/Vertex.h"
-#include "lardata/RecoBase/SpacePoint.h"
-#include "lardata/RecoBase/TrackHitMeta.h"
-#include "lardata/RecoBase/Shower.h"
-#include "lardata/RecoBase/OpFlash.h"
-#include "lardata/AnalysisBase/Calorimetry.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/Vertex.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
+#include "lardataobj/RecoBase/TrackHitMeta.h"
+#include "lardataobj/RecoBase/Shower.h"
+#include "lardataobj/RecoBase/OpFlash.h"
+#include "lardataobj/AnalysisBase/Calorimetry.h"
 #include "lardata/AnalysisAlg/CalorimetryAlg.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "larsim/MCCheater/BackTracker.h"
-#include "SimulationBase/MCTruth.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 #include "lardata/AnalysisAlg/CalorimetryAlg.h"
-#include "larcore/SummaryData/POTSummary.h"
-#include "SimulationBase/MCFlux.h"
+#include "larcoreobj/SummaryData/POTSummary.h"
+#include "nusimdata/SimulationBase/MCFlux.h"
 
 
 

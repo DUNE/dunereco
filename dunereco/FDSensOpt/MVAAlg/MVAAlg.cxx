@@ -12,8 +12,8 @@
 #include "TPrincipal.h"
 #include "TVectorD.h"
 #include "TF1.h"
-#include "art/Framework/Core/FindManyP.h"
-#include "art/Framework/Core/FindOneP.h"
+#include "canvas/Persistency/Common/FindManyP.h"
+#include "canvas/Persistency/Common/FindOneP.h"
 #include "lardata/Utilities/AssociationUtil.h"
 
 //--------------------------------------------------------------------------------
