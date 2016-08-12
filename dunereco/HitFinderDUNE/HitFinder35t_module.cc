@@ -27,8 +27,8 @@
 
 // LArSoft Includes
 #include "larcore/Geometry/Geometry.h"
-#include "lardata/RawData/RawDigit.h"
-#include "lardata/RecoBase/Hit.h"
+#include "lardataobj/RawData/RawDigit.h"
+#include "lardataobj/RecoBase/Hit.h"
 #include "lardata/RecoBaseArt/HitCreator.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "DisambigAlg35t.h"

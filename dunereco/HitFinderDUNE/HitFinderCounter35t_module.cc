@@ -33,15 +33,15 @@
 // LArSoft Includes
 #include "larcore/Geometry/Geometry.h"
 #include "larcore/Geometry/AuxDetGeo.h"
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcore/Geometry/TPCGeo.h"
 #include "larcore/Geometry/PlaneGeo.h"
 #include "larcore/Geometry/WireGeo.h"
-#include "lardata/RawData/raw.h"
-#include "lardata/RawData/ExternalTrigger.h"
-#include "lardata/RawData/RawDigit.h"
-#include "lardata/RecoBase/Hit.h"
-#include "lardata/RecoBase/Wire.h"
+#include "lardataobj/RawData/raw.h"
+#include "lardataobj/RawData/ExternalTrigger.h"
+#include "lardataobj/RawData/RawDigit.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Wire.h"
 #include "lardata/RecoBaseArt/HitCreator.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
@@ -72,7 +72,6 @@ namespace dune{
   
   private:
 
-    void MakeCounterCorners( unsigned int AuxDetindex, float Corners[4][3], double Pos[3]);
     //bool DoesIntersect( double A0, double B0, double A1, double B1, double A2, double B2, double A3, double B3 );
     int  pnpoly( int nvert, float *vertx, float *verty, float testx, float testy );
     void FindXZGradient   ( std::vector < recob::Hit > HitVector, float &Gradient, float& Intercept );
