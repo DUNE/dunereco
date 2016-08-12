@@ -28,7 +28,7 @@
 #include "lardataobj/RecoBase/TrackHitMeta.h"
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardataobj/RecoBase/OpFlash.h"
-#include "lardata/RecoBaseArt/TrackUtils.h" // lar::utils::TrackPitchInView()
+#include "lardata/RecoBaseArt/TrackUtils.h" // lar::util::TrackPitchInView()
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
@@ -528,7 +528,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 			  pow(trkendz[i]-trkg4startz[i],2));
 	if (dis1<dis2){
 	  try{
-	    pitch = lar::utils::TrackPitchInView(*(tracklist[i]),geo::kZ,0);
+	    pitch = lar::util::TrackPitchInView(*(tracklist[i]),geo::kZ,0);
 	  }
 	  catch(...){
 	    pitch = 0;
@@ -536,7 +536,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	}
 	else{
 	  try{
-	    pitch = lar::utils::TrackPitchInView(*(tracklist[i]), geo::kZ,tracklist[i]->NumberTrajectoryPoints()-1);
+	    pitch = lar::util::TrackPitchInView(*(tracklist[i]), geo::kZ,tracklist[i]->NumberTrajectoryPoints()-1);
 	  }
 	  catch(...){
 	    pitch = 0;
