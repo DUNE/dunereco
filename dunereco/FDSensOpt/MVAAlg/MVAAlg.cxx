@@ -500,8 +500,10 @@ void dunemva::MVAAlg::CalculateInputs( ){
 	//if (maxtrklength>300) continue;
 
 	//std::vector<std::map<int,float> > vtrkdedx(3); don't use until Reco saves dEds per hit
-	std::vector<std::map<int,float> > vtrktick(3);;
-       
+        std::vector<std::vector<std::map<int,float> > > vtrktick(fGeom->NTPC());
+        for (size_t i = 0; i<fGeom->NTPC(); ++i){
+          vtrktick[i].resize(3);
+        }
 
 	trkdedx = 0;
 	trkrch = 0;
@@ -561,7 +563,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
 	      // dont use hit_dEds until is is saved in Reco
 	      // for now it is alwasy -9999
 	      //vtrkdedx[hit_plane[i]][hit_wire[i]] = hit_dEds[i];
-	      vtrktick[hit_plane[i]][hit_wire[i]] = hit_peakT[i];
+	      vtrktick[hit_tpc[i]][hit_plane[i]][hit_wire[i]] = hit_peakT[i];
 	    }
 	  }
 	  if (hit_plane[i]==2){
@@ -617,17 +619,21 @@ void dunemva::MVAAlg::CalculateInputs( ){
           // find the two planes with the most hits
 	  for (int i = 0; i<3; ++i){
 	    // set maxhits[0]
-	    if (int(vtrktick[i].size())>maxhits[0]){ // vtrktick[i] is a map from wire number to charge 
+            int tothits = 0;
+            for (size_t j = 0; j<fGeom->NTPC(); ++j){
+              tothits += vtrktick[j][i].size();
+            }
+	    if (tothits>maxhits[0]){ // vtrktick[i] is a map from wire number to charge 
 	      if (ipl[1]!=-1){ // dont do first time (i=0)
 		maxhits[1] = maxhits[0];
 		ipl[1] = ipl[0];
 	      }
-	      maxhits[0] = vtrktick[i].size();
+	      maxhits[0] = tothits;
 	      ipl[0] = i;
 	    }
 	    // set maxhits[1], isn't called first time (i=0)
-	    else if (int(vtrktick[i].size())>maxhits[1]){
-	      maxhits[1] = vtrktick[i].size();
+	    else if (tothits>maxhits[1]){
+	      maxhits[1] = tothits;
 	      ipl[1] = i;
 	    }
 	  }
@@ -668,8 +674,8 @@ void dunemva::MVAAlg::CalculateInputs( ){
 		    ++npida;
 		  }
 		} 
-		if (vtrktick[ipl[j]].find(hit_wire[i])!=vtrktick[ipl[j]].end()){
-		  if (std::abs(vtrktick[ipl[j]][hit_wire[i]]-hit_peakT[i])<200){
+		if (vtrktick[hit_tpc[i]][ipl[j]].find(hit_wire[i])!=vtrktick[hit_tpc[i]][ipl[j]].end()){
+		  if (std::abs(vtrktick[hit_tpc[i]][ipl[j]][hit_wire[i]]-hit_peakT[i])<200){
 		    vhitq.push_back(hit_charge[i]);
 		    qall+=hit_charge[i];
 		    if (hit_trkkey[i] == itrk){
