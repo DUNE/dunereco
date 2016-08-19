@@ -31,9 +31,8 @@ dunemva::MVAAlg::MVAAlg( fhicl::ParameterSet const& p )
 
   if(!fMakeWeightTree){
 
-    /*
     // branch, name, unit, type
-    //fReader.AddVariable("evtcharge", &evtcharge);
+    fReader.AddVariable("evtcharge", &evtcharge);
     fReader.AddVariable("ntrack", &ntrack);
     fReader.AddVariable("maxtrklength", &maxtrklength);
     fReader.AddVariable("avgtrklength", &avgtrklength);
@@ -70,8 +69,9 @@ dunemva::MVAAlg::MVAAlg( fhicl::ParameterSet const& p )
       fReader.AddVariable("shwcosy", &shwcosy);
       fReader.AddVariable("shwcosz", &shwcosz);
     }
-*/
 
+
+    /*
    fReader.AddVariable("evtcharge", &evtcharge);
    fReader.AddVariable("ntrack", &ntrack);
    fReader.AddVariable("maxtrklength", &maxtrklength);
@@ -101,7 +101,7 @@ dunemva::MVAAlg::MVAAlg( fhicl::ParameterSet const& p )
    fReader.AddVariable("shwcosx", &shwcosx);
    fReader.AddVariable("shwcosy", &shwcosy);
    fReader.AddVariable("shwcosz", &shwcosz);
-
+    */
     
     
     fMVAMethods=p.get<std::vector<std::string> >("MVAMethods");
@@ -252,9 +252,11 @@ void dunemva::MVAAlg::reconfigure(fhicl::ParameterSet const& p){
 //--------------------------------------------------------------------------------
 void dunemva::MVAAlg::Run( const art::Event & evt, std::vector<double>& result, double& wgt ){
 
+  this->ResetVars();
   this->PrepareEvent(evt); // does not reset vars, make sure to reset after evaluating
   this->CalculateInputs();
   if(!fMakeWeightTree){
+
     for(auto methodIter=fMVAMethods.begin();methodIter!=fMVAMethods.end();++methodIter)
       result.push_back( fReader.EvaluateMVA(*methodIter) );
     for(size_t m=0; m<result.size(); ++m)
@@ -279,7 +281,6 @@ void dunemva::MVAAlg::Run( const art::Event & evt, std::vector<double>& result, 
   }
 
   wgt = weight;
-  this->ResetVars();
 }
 
  
