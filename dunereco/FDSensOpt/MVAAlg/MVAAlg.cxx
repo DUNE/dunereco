@@ -556,7 +556,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
 	int shwwire0 = 100000;
 	int shwwire1 = -1;
 	int offset = 0;
-	int lastwire = -1;
+	//int lastwire = -1;
 	for (int i = 0; i<nhits && i<40000; ++i){
 	  if (itrk!=-1){
 	    if (hit_trkkey[i]==itrk){
@@ -573,15 +573,16 @@ void dunemva::MVAAlg::CalculateInputs( ){
 //	      std::cout<<hit_wire[i]<<" "<<shwwire0<<" "<<shwwire1<<std::endl;
 //	    }
 	    if (hit_shwkey[i]==ishw){
-	      if (lastwire == -1) lastwire = hit_wire[i];
-	      if (hit_wire[i]<lastwire) offset = 479;
+	      //if (lastwire == -1) lastwire = hit_wire[i];
+	      //if (hit_wire[i]<lastwire) offset = 479;
+              offset = (hit_tpc[i]/4)*fGeom->Nwires(2);
 	      if (hit_wire[i]+offset<shwwire0){
 		shwwire0 = hit_wire[i]+offset;
 	      }
 	      if (hit_wire[i]+offset>shwwire1){
 		shwwire1 = hit_wire[i]+offset;
 	      }
-	      lastwire = hit_wire[i];
+	      //lastwire = hit_wire[i];
 //	      if (hit_trkkey[i]>=0){
 //		if (sqrt(pow(trkstartx[hit_trkkey[i]]-vtxx,2)+
 //			 pow(trkstarty[hit_trkkey[i]]-vtxy,2)+
@@ -734,17 +735,18 @@ void dunemva::MVAAlg::CalculateInputs( ){
 	int totalshwhits = 0;
 	std::map<int,int> shwwires;
 	offset = 0;
-	lastwire = -1;
+	//lastwire = -1;
 	
 	for (int i = 0; i<nhits && i<40000; ++i){
 	  if (hit_plane[i]==2&&hit_shwkey[i]==ishw){
 	    frshower+=hit_charge[i]*exp(hit_peakT[i]*0.5/taulife);
 	    shwwires[hit_wire[i]] = 1;
 	    ++totalshwhits;
-	    if (lastwire ==-1) lastwire = hit_wire[i];
-	    if (hit_wire[i]<lastwire) offset = 479;
+            offset = (hit_tpc[i]/4)*fGeom->Nwires(2);
+	    //if (lastwire ==-1) lastwire = hit_wire[i];
+	    //if (hit_wire[i]<lastwire) offset = 479;
 	    shwph[hit_wire[i]+offset-shwwire0] += hit_charge[i]*exp(hit_peakT[i]*0.5/taulife);
-	    lastwire = hit_wire[i];
+	    //lastwire = hit_wire[i];
 	  }
 	}
 	frshower/=evtcharge;
