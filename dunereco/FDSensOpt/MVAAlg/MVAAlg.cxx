@@ -174,7 +174,44 @@ dunemva::MVAAlg::MVAAlg( fhicl::ParameterSet const& p )
   mva_nue_beam = tfs->make<TH1D>("mva_nue_beam","mva_nue_beam",mva_bins,-1,1);
   mva_nutau    = tfs->make<TH1D>("mva_nutau","mva_nutau",mva_bins,-1,1);
 
-   char name[5][100] = {"#nu_{e}^{osc}","NC","#nu_{#mu} CC","#nu_{e}^{beam}","#nu_{#tau} CC"};
+  mva_numu_nue    = tfs->make<TH1D>("mva_numu_nue","mva_numu_nue",mva_bins,-1,1);
+  mva_nue_nue    = tfs->make<TH1D>("mva_nue_nue","mva_nue_nue",mva_bins,-1,1);
+  mva_numu_numu    = tfs->make<TH1D>("mva_numu_numu","mva_numu_numu",mva_bins,-1,1);
+  mva_nue_numu    = tfs->make<TH1D>("mva_nue_numu","mva_nue_numu",mva_bins,-1,1);
+  mva_numu_nutau    = tfs->make<TH1D>("mva_numu_nutau","mva_numu_nutau",mva_bins,-1,1);
+  mva_nue_nutau    = tfs->make<TH1D>("mva_nue_nutau","mva_nue_nutau",mva_bins,-1,1);
+
+  enu_nc       = tfs->make<TH1D>("enu_nc","enu_nc",100,0,100);
+  enu_numu_nue    = tfs->make<TH1D>("enu_numu_nue","enu_numu_nue",100,0,100);
+  enu_nue_nue    = tfs->make<TH1D>("enu_nue_nue","enu_nue_nue",100,0,100);
+  enu_numu_numu    = tfs->make<TH1D>("enu_numu_numu","enu_numu_numu",100,0,100);
+  enu_nue_numu    = tfs->make<TH1D>("enu_nue_numu","enu_nue_numu",100,0,100);
+  enu_numu_nutau    = tfs->make<TH1D>("enu_numu_nutau","enu_numu_nutau",100,0,100);
+  enu_nue_nutau    = tfs->make<TH1D>("enu_nue_nutau","enu_nue_nutau",100,0,100);
+  
+  mva_nue_osc->Sumw2();
+  mva_nc->Sumw2();
+  mva_numu->Sumw2();
+  mva_nue_beam->Sumw2();
+  mva_nutau->Sumw2();
+  
+  mva_numu_nue->Sumw2();
+  mva_nue_nue->Sumw2();
+  mva_numu_numu->Sumw2();
+  mva_nue_numu->Sumw2();
+  mva_numu_nutau->Sumw2();
+  mva_nue_nutau->Sumw2();
+  
+  enu_nc->Sumw2();
+  enu_numu_nue->Sumw2();
+  enu_nue_nue->Sumw2();
+  enu_numu_numu->Sumw2();
+  enu_nue_numu->Sumw2();
+  enu_numu_nutau->Sumw2();
+  enu_nue_nutau->Sumw2();
+  
+
+  char name[5][100] = {"#nu_{e}^{osc}","NC","#nu_{#mu} CC","#nu_{e}^{beam}","#nu_{#tau} CC"};
 
    for (int i = 0; i<nSamples; ++i){
      events_truth[i] = 0;
@@ -257,26 +294,72 @@ void dunemva::MVAAlg::Run( const art::Event & evt, std::vector<double>& result, 
   this->CalculateInputs();
   if(!fMakeWeightTree){
 
-    for(auto methodIter=fMVAMethods.begin();methodIter!=fMVAMethods.end();++methodIter)
-      result.push_back( fReader.EvaluateMVA(*methodIter) );
-    for(size_t m=0; m<result.size(); ++m)
-      mf::LogVerbatim("MVASelect") << fMVAMethods[m]
-				   << " returned " << result[m];
-    if(result.size()){
-      // Fill histogram of MVA value for each type
-      
-      // itype is... (see instantiation of "name")
-      // 0 for oscillated NuE CC
-      // 1 for NC background
-      // 2 for NuMu CC (oscillated component negligible)
-      // 3 for beam NuE
-      // 4 for NuTau CC
-      
-      if (itype==0) mva_nue_osc->Fill(result[0]);
-      if (itype==1) mva_nc->Fill(result[0]);
-      if (itype==2) mva_numu->Fill(result[0]);
-      if (itype==3) mva_nue_beam->Fill(result[0]);
-      if (itype==4) mva_nutau->Fill(result[0]);
+    if (isinfidvol){
+      for(auto methodIter=fMVAMethods.begin();methodIter!=fMVAMethods.end();++methodIter)
+        result.push_back( fReader.EvaluateMVA(*methodIter) );
+      for(size_t m=0; m<result.size(); ++m)
+        mf::LogVerbatim("MVASelect") << fMVAMethods[m]
+                                     << " returned " << result[m];
+      if(result.size()){
+        // Fill histogram of MVA value for each type
+        
+        // itype is... (see instantiation of "name")
+        // 0 for oscillated NuE CC
+        // 1 for NC background
+        // 2 for NuMu CC (oscillated component negligible)
+        // 3 for beam NuE
+        // 4 for NuTau CC
+        
+        if (itype==0) mva_nue_osc->Fill(result[0],1.);
+        if (itype==1) mva_nc->Fill(result[0],1.);
+        if (itype==2) mva_numu->Fill(result[0],1.);
+        if (itype==3) mva_nue_beam->Fill(result[0],1.);
+        if (itype==4) mva_nutau->Fill(result[0],1.);
+
+        if (ccnc_truth==1){
+        }
+        else if (std::abs(pntype_flux)==14&&std::abs(nuPDG_truth)==12){
+          mva_numu_nue->Fill(result[0], oscpro);
+        }
+        else if (std::abs(pntype_flux)==12&&std::abs(nuPDG_truth)==12){
+          mva_nue_nue->Fill(result[0], oscpro);
+        }
+        else if (std::abs(pntype_flux)==14&&std::abs(nuPDG_truth)==14){
+          mva_numu_numu->Fill(result[0], oscpro);
+        }
+        else if (std::abs(pntype_flux)==12&&std::abs(nuPDG_truth)==14){
+          mva_nue_numu->Fill(result[0], oscpro);
+        }
+        else if (std::abs(pntype_flux)==14&&std::abs(nuPDG_truth)==16){
+          mva_numu_nutau->Fill(result[0], oscpro);
+        }
+        else if (std::abs(pntype_flux)==12&&std::abs(nuPDG_truth)==16){
+          mva_nue_nutau->Fill(result[0], oscpro);
+        }
+      }
+    }
+    if (isinfidvoltruth){
+      if (ccnc_truth==1){
+        enu_nc->Fill(enu_truth, oscpro);
+      }
+      else if (std::abs(pntype_flux)==14&&std::abs(nuPDG_truth)==12){
+        enu_numu_nue->Fill(enu_truth, oscpro);
+      }
+      else if (std::abs(pntype_flux)==12&&std::abs(nuPDG_truth)==12){
+        enu_nue_nue->Fill(enu_truth, oscpro);
+      }
+      else if (std::abs(pntype_flux)==14&&std::abs(nuPDG_truth)==14){
+        enu_numu_numu->Fill(enu_truth, oscpro);
+      }
+      else if (std::abs(pntype_flux)==12&&std::abs(nuPDG_truth)==14){
+        enu_nue_numu->Fill(enu_truth, oscpro);
+      }
+      else if (std::abs(pntype_flux)==14&&std::abs(nuPDG_truth)==16){
+        enu_numu_nutau->Fill(enu_truth, oscpro);
+      }
+      else if (std::abs(pntype_flux)==12&&std::abs(nuPDG_truth)==16){
+        enu_nue_nutau->Fill(enu_truth, oscpro);
+      }
     }
   }
 
@@ -363,7 +446,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
 	//	  << std::endl;
       }      
 
-      float oscpro = this->OscPro(ccnc_truth,pntype_flux,nuPDG_truth,enu_truth);
+      oscpro = this->OscPro(ccnc_truth,pntype_flux,nuPDG_truth,enu_truth);
       float norm = this->Norm(ccnc_truth,pntype_flux,nuPDG_truth, subrun);
       weight = oscpro*norm;
       
@@ -398,6 +481,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
       if (std::abs(nuvtxx_truth)<360-50&&
 	  std::abs(nuvtxy_truth)<600-50&&
 	  nuvtxz_truth>50&&nuvtxz_truth<1394-150){
+        isinfidvoltruth = 1;
 	//if (enu_truth>20) continue;
 	//if (enu_truth<0.5) continue;
 	//if (ccnc_truth==1&&Y_truth*enu_truth<0.5) continue;
@@ -484,6 +568,8 @@ void dunemva::MVAAlg::CalculateInputs( ){
 	  std::abs(vtxy) < 600-50 &&
 	  vtxz > 50 &&
 	  vtxz < 1394-150 ){//in the fiducial volume
+
+        isinfidvol = 1;
 	events_reco[itype] += oscpro*norm;
 	//ntrack = ntracks_reco;
 	//ntrack = ntracks_notvtx;
@@ -1779,6 +1865,9 @@ void dunemva::MVAAlg::ResetVars(){
   vy_flux = -99999;
   vz_flux = -99999;
 
+  isinfidvol = 0;
+  isinfidvoltruth = 0;
+  oscpro = 0;
 }
 
 
