@@ -104,17 +104,9 @@ dunemva::MVAAlg::MVAAlg( fhicl::ParameterSet const& p )
     */
     
     
-    fMVAMethods=p.get<std::vector<std::string> >("MVAMethods");
-    fWeightFiles=p.get<std::vector<std::string> >("WeightFiles");
-    
-    if(fMVAMethods.size()!=fWeightFiles.size()){
-      std::cerr<<"Mismatch in number of MVA methods and weight files!"<<std::endl;
-      exit(1);
-    }
-    
-    for(unsigned int iMethod=0;iMethod!=fMVAMethods.size();++iMethod){
-      fReader.BookMVA(fMVAMethods[iMethod], fWeightFiles[iMethod]);
-    }
+    fMVAMethod =p.get< std::string >("MVAMethod");
+    fWeightFile=p.get< std::string >("WeightFile");
+    fReader.BookMVA(fMVAMethod, fWeightFile);
     
   }
 
@@ -287,7 +279,7 @@ void dunemva::MVAAlg::reconfigure(fhicl::ParameterSet const& p){
 }
   
 //--------------------------------------------------------------------------------
-void dunemva::MVAAlg::Run( const art::Event & evt, std::vector<double>& result, double& wgt ){
+void dunemva::MVAAlg::Run( const art::Event & evt, double& result, double& wgt ){
 
   this->ResetVars();
   this->PrepareEvent(evt); // does not reset vars, make sure to reset after evaluating
@@ -295,47 +287,44 @@ void dunemva::MVAAlg::Run( const art::Event & evt, std::vector<double>& result, 
   if(!fMakeWeightTree){
 
     if (isinfidvol){
-      for(auto methodIter=fMVAMethods.begin();methodIter!=fMVAMethods.end();++methodIter)
-        result.push_back( fReader.EvaluateMVA(*methodIter) );
-      for(size_t m=0; m<result.size(); ++m)
-        mf::LogVerbatim("MVASelect") << fMVAMethods[m]
-                                     << " returned " << result[m];
-      if(result.size()){
-        // Fill histogram of MVA value for each type
-        
-        // itype is... (see instantiation of "name")
-        // 0 for oscillated NuE CC
-        // 1 for NC background
-        // 2 for NuMu CC (oscillated component negligible)
-        // 3 for beam NuE
-        // 4 for NuTau CC
-        
-        if (itype==0) mva_nue_osc->Fill(result[0],1.);
-        if (itype==1) mva_nc->Fill(result[0],1.);
-        if (itype==2) mva_numu->Fill(result[0],1.);
-        if (itype==3) mva_nue_beam->Fill(result[0],1.);
-        if (itype==4) mva_nutau->Fill(result[0],1.);
+      result = fReader.EvaluateMVA(fMVAMethod);
+      mf::LogVerbatim("MVASelect") << fMVAMethod
+				   << " returned " << result;
 
-        if (ccnc_truth==1){
-        }
-        else if (std::abs(pntype_flux)==14&&std::abs(nuPDG_truth)==12){
-          mva_numu_nue->Fill(result[0], oscpro);
-        }
-        else if (std::abs(pntype_flux)==12&&std::abs(nuPDG_truth)==12){
-          mva_nue_nue->Fill(result[0], oscpro);
-        }
-        else if (std::abs(pntype_flux)==14&&std::abs(nuPDG_truth)==14){
-          mva_numu_numu->Fill(result[0], oscpro);
-        }
-        else if (std::abs(pntype_flux)==12&&std::abs(nuPDG_truth)==14){
-          mva_nue_numu->Fill(result[0], oscpro);
-        }
-        else if (std::abs(pntype_flux)==14&&std::abs(nuPDG_truth)==16){
-          mva_numu_nutau->Fill(result[0], oscpro);
-        }
-        else if (std::abs(pntype_flux)==12&&std::abs(nuPDG_truth)==16){
-          mva_nue_nutau->Fill(result[0], oscpro);
-        }
+      // Fill histogram of MVA value for each type
+      
+      // itype is... (see instantiation of "name")
+      // 0 for oscillated NuE CC
+      // 1 for NC background
+      // 2 for NuMu CC (oscillated component negligible)
+      // 3 for beam NuE
+      // 4 for NuTau CC
+      
+      if (itype==0) mva_nue_osc->Fill(result,1.);
+      if (itype==1) mva_nc->Fill(result,1.);
+      if (itype==2) mva_numu->Fill(result,1.);
+      if (itype==3) mva_nue_beam->Fill(result,1.);
+      if (itype==4) mva_nutau->Fill(result,1.);
+      
+      if (ccnc_truth==1){
+      }
+      else if (std::abs(pntype_flux)==14&&std::abs(nuPDG_truth)==12){
+	mva_numu_nue->Fill(result, oscpro);
+      }
+      else if (std::abs(pntype_flux)==12&&std::abs(nuPDG_truth)==12){
+	mva_nue_nue->Fill(result, oscpro);
+      }
+      else if (std::abs(pntype_flux)==14&&std::abs(nuPDG_truth)==14){
+	mva_numu_numu->Fill(result, oscpro);
+      }
+      else if (std::abs(pntype_flux)==12&&std::abs(nuPDG_truth)==14){
+	mva_nue_numu->Fill(result, oscpro);
+      }
+      else if (std::abs(pntype_flux)==14&&std::abs(nuPDG_truth)==16){
+	mva_numu_nutau->Fill(result, oscpro);
+      }
+      else if (std::abs(pntype_flux)==12&&std::abs(nuPDG_truth)==16){
+	mva_nue_nutau->Fill(result, oscpro);
       }
     }
     if (isinfidvoltruth){
