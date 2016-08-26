@@ -60,16 +60,20 @@ public:
 private:
   
   MVAAlg fMVAAlg;
-  std::vector<double> fMVAResult;
-  std::vector<std::string> fMVAMethods;
-  int fnMethods;
-  double fmvaResults[10];
+  double fMVAResult;
+  std::string fMVAMethod;
 
   bool fReweight;
   unsigned int fRun,fSubrun,fEvent;
   double fWeight;
   TTree* fTree;  
 
+  bool fSelNuE;
+  bool fSelNuMu;
+  double fNuECut;
+  double fNuMuCut;
+
+  void FillNormResponseHists();
   void FillINuke( rwgt::ReweightLabel_t label, double sig, double wgt);
   std::vector< rwgt::ReweightLabel_t > fINukeLabel;
 
@@ -123,6 +127,12 @@ private:
 
   double ftotPOT;
 
+  // 0: true CC, 1: true NC
+  bool fMakeSystHist;
+  std::vector<TH2D*> h_int_nu_ccqe_1;
+
+  bool IsCCQE();
+
 
 }; // class MVASelect
 
@@ -153,9 +163,22 @@ dunemva::MVASelect::~MVASelect(){}
 //------------------------------------------------------------------------------
 void MVASelect::reconfigure(fhicl::ParameterSet const& pset) 
 {
-  fMVAMethods=pset.get<std::vector<std::string> >("MVAMethods");
+  fMVAMethod=pset.get< std::string >("MVAMethod");
   fReweight=pset.get<bool>("Reweight");
+  fMakeSystHist=pset.get<bool>("MakeSystHist");
   fMVAAlg.reconfigure(pset);
+  
+  fNuECut  = pset.get<double>("NuECut");
+  fNuMuCut = pset.get<double>("NuMuCut");
+
+  if(pset.get<std::string>("Select") == "nue"){
+    fSelNuE  = true;
+    fSelNuMu = false;
+  } else if(pset.get<std::string>("Select") == "numu"){
+    fSelNuE  = false;
+    fSelNuMu = true;
+  }
+
   return;
 }
 
@@ -170,8 +193,7 @@ void MVASelect::beginJob()
   fTree->Branch("run",         &fRun,        "run/I");
   fTree->Branch("subrun",      &fSubrun,     "subrun/I");
   fTree->Branch("event",       &fEvent,      "event/I");
-  fTree->Branch("nmvamethods",  fnMethods,   "nmvamethods/I");
-  fTree->Branch("mvaresults",   fmvaResults, "mvaresults[10]/D");
+  fTree->Branch("mvaresult",   &fMVAResult,  "mvaresult/D");
   fTree->Branch("weight",      &fWeight,     "weight/D");
 
   // particle counts
@@ -218,6 +240,53 @@ void MVASelect::beginJob()
   fTree->Branch("f_int_n_abs",      finuke_FrAbs_N,    "f_int_n_abs[41]/D");
   fTree->Branch("f_int_n_prod",     finuke_FrPiProd_N, "f_int_n_prod[41]/D");
 
+
+  const int bins_true_E = 98;
+  const double bin_edges_true_E[bins_true_E + 1] = {
+    0.000, 0.125, 0.250, 0.375, 0.500, 0.625, 0.750, 0.875, 
+    1.000, 1.125, 1.250, 1.375, 1.500, 1.625, 1.750, 1.875, 
+    2.000, 2.125, 2.250, 2.375, 2.500, 2.625, 2.750, 2.875, 
+    3.000, 3.125, 3.250, 3.375, 3.500, 3.625, 3.750, 3.875, 
+    4.000, 4.125, 4.250, 4.375, 4.500, 4.625, 4.750, 4.875, 
+    5.000, 5.125, 5.250, 5.375, 5.500, 5.625, 5.750, 5.875, 
+    6.000, 6.125, 6.250, 6.375, 6.500, 6.625, 6.750, 6.875, 
+    7.000, 7.125, 7.250, 7.375, 7.500, 7.625, 7.750, 7.875, 
+    8.000, 8.125, 8.250, 8.375, 8.500, 8.625, 8.750, 8.875, 
+    9.000, 9.125, 9.250, 9.375, 9.500, 9.625, 9.750, 9.875, 
+    10.000, 11.000, 12.000, 13.000, 14.000, 15.000, 16.000, 
+    17.000, 18.000, 19.000, 20.000, 30.000, 40.000, 50.000, 
+    60.000, 70.000, 80.000, 90.000, 100.000};
+
+  /*
+  const int bins_reco_E = 71;
+  const double bin_edges_reco_E[bins_reco_E + 1] = {
+    0.000, 0.125, 0.250, 0.375, 0.500, 0.625, 0.750, 0.875, 
+    1.000, 1.125, 1.250, 1.375, 1.500, 1.625, 1.750, 1.875, 
+    2.000, 2.125, 2.250, 2.375, 2.500, 2.625, 2.750, 2.875, 
+    3.000, 3.125, 3.250, 3.375, 3.500, 3.625, 3.750, 3.875, 
+    4.000, 4.125, 4.250, 4.375, 4.500, 4.625, 4.750, 4.875, 
+    5.000, 5.125, 5.250, 5.375, 5.500, 5.625, 5.750, 5.875, 
+    6.000, 6.125, 6.250, 6.375, 6.500, 6.625, 6.750, 6.875, 
+    7.000, 7.125, 7.250, 7.375, 7.500, 7.625, 7.750, 7.875, 
+    8.000, 9.000, 10.000, 12.000, 14.000, 16.000, 18.000, 20.000};
+  */
+
+  const int n_respo_bins  = 101;
+  double respo_min = -5.0 - (5.0 - -5.0)/(2.0*(n_respo_bins-1));
+  double respo_max =  5.0 + (5.0 - -5.0)/(2.0*(n_respo_bins-1));
+  double bin_edges_respo[n_respo_bins + 1] = {0.0};
+  for(int i=0; i<=n_respo_bins; i++) bin_edges_respo[i] = respo_min + i*(respo_max-respo_min)/n_respo_bins;
+  //for(int i=0; i<=n_respo_bins; i++) cout<<"bin_edges_respo["<<i<<"] = "<<bin_edges_respo[i]<<endl;
+
+  h_int_nu_ccqe_1.resize(2);
+
+  if( fMakeSystHist ){
+    for(unsigned int i=0; i<2; i++){
+      h_int_nu_ccqe_1[i] = tfs->make<TH2D>( "ccRespo_f_int_nu_ccqe_1","ccRespo_f_int_nu_ccqe_1",
+					    bins_true_E, bin_edges_true_E,
+					    n_respo_bins,bin_edges_respo);
+    }
+  } // if making syst hists
   return;
 }
 
@@ -239,14 +308,6 @@ void MVASelect::analyze(art::Event const & evt)
   fSubrun = evt.id().subRun();
   fEvent = evt.id().event();
   fMVAAlg.Run(evt,fMVAResult,fWeight);
-
-  // fill branch variables
-  fnMethods = fMVAResult.size();
-  if(fnMethods==0)
-    mf::LogWarning("MVASelect") << "Returning zero MVA methods";
-  for(int i=0; i<fnMethods; i++){
-    fmvaResults[i] = fMVAResult[i];
-  }
 
   art::Handle< std::vector<simb::MCTruth> > mct;
   std::vector< art::Ptr<simb::MCTruth> > truth;
@@ -276,7 +337,6 @@ void MVASelect::analyze(art::Event const & evt)
       mf::LogWarning("MVASelect") << "Skipping MC truth index " << i;
       continue;
     }
-
  
     fCCNC     = truth[i]->GetNeutrino().CCNC();  //0=CC 1=NC
     if(fCCNC==0){
@@ -350,6 +410,15 @@ void MVASelect::analyze(art::Event const & evt)
       }
     }
 
+    // depends on fCCNC, particle counts,
+    //
+    // loops through every sigma, checks particle counts,
+    //  and fills the histograms accordingly. 
+    if( (fSelNuE  && fMVAResult < fNuECut ) ||
+	(fSelNuMu && fMVAResult < fNuMuCut) ){
+      this->FillNormResponseHists();
+    }
+
     unsigned int sigs_i = 0;
     double sig_step = 0.1;
     for(double sig=-2; sig<=2; sig+=sig_step){      
@@ -357,8 +426,7 @@ void MVASelect::analyze(art::Event const & evt)
 	mf::LogError("MVASelect") << "too many sigma steps";
       fSigs[sigs_i] = sig;
       sigs_i++;
-    }
-    
+    }    
 
     if(fReweight){ // takes a long time, only reweight if necessary
       rwgt::NuReweight *rwt;
@@ -377,61 +445,81 @@ void MVASelect::analyze(art::Event const & evt)
 	} // all sigma steps s
       } // all reweights r
     } // if reweighting
-    
+
   } // loop through MC truth i
   
 
   fTree->Fill();
-  fMVAResult.clear();
-
   return;
 }
 
-//------------------------------------------------------------------------------
-void MVASelect::FillINuke( rwgt::ReweightLabel_t label, double sig, double wgt){
-
-  unsigned int sig_i = UINT_MAX;
-  for(unsigned int a=0; a<knRwgts; a++)
-    if( fSigs[a] == sig )
-      sig_i = a;
-	
-  if(sig_i==UINT_MAX)
-    mf::LogError("MVASelect") << "bad sigma index";
-
-  if(      label == rwgt::fReweightMFP_pi )
-    finuke_MFP_pi[sig_i] = wgt;
-  else if( label == rwgt::fReweightMFP_N )
-    finuke_MFP_N[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrCEx_pi )
-    finuke_FrCEx_pi[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrElas_pi )
-    finuke_FrElas_pi[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrInel_pi )
-    finuke_FrInel_pi[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrAbs_pi )
-    finuke_FrAbs_pi[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrPiProd_pi )
-    finuke_FrPiProd_pi[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrCEx_N )
-    finuke_FrCEx_N[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrElas_N )
-    finuke_FrElas_N[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrInel_N )
-    finuke_FrInel_N[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrAbs_N )
-    finuke_FrAbs_N[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrPiProd_N )
-    finuke_FrPiProd_N[sig_i] = wgt;
-
-}
-
-//------------------------------------------------------------------------------
-void MVASelect::endSubRun(const art::SubRun& sr){
-  fMVAAlg.endSubRun(sr);
-}
+  //------------------------------------------------------------------------------
+  void MVASelect::FillINuke( rwgt::ReweightLabel_t label, double sig, double wgt){
+    
+    unsigned int sig_i = UINT_MAX;
+    for(unsigned int a=0; a<knRwgts; a++)
+      if( fSigs[a] == sig )
+	sig_i = a;
+    
+    if(sig_i==UINT_MAX)
+      mf::LogError("MVASelect") << "bad sigma index";
+    
+    if(      label == rwgt::fReweightMFP_pi )
+      finuke_MFP_pi[sig_i] = wgt;
+    else if( label == rwgt::fReweightMFP_N )
+      finuke_MFP_N[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrCEx_pi )
+      finuke_FrCEx_pi[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrElas_pi )
+      finuke_FrElas_pi[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrInel_pi )
+      finuke_FrInel_pi[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrAbs_pi )
+      finuke_FrAbs_pi[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrPiProd_pi )
+      finuke_FrPiProd_pi[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrCEx_N )
+      finuke_FrCEx_N[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrElas_N )
+      finuke_FrElas_N[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrInel_N )
+      finuke_FrInel_N[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrAbs_N )
+      finuke_FrAbs_N[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrPiProd_N )
+      finuke_FrPiProd_N[sig_i] = wgt;  
+  }
   
-DEFINE_ART_MODULE(MVASelect)
+  //------------------------------------------------------------------------------
+  void MVASelect::FillNormResponseHists(){
+    
+    double weight(1.);
+    for(unsigned int s=0; s<knRwgts; s++){
 
+      // h_int_nu_ccqe_1
+      if( IsCCQE()   &&
+	  fQ2 < 0.2  &&
+	  fNuPdg > 0  )
+	h_int_nu_ccqe_1[fCCNC]->Fill(fEtrue,s,weight*(1+0.1*s));
+      else
+	h_int_nu_ccqe_1[fCCNC]->Fill(fEtrue,s,weight);
+	
+    }
+    
+  }
+  
+  //------------------------------------------------------------------------------
+  bool MVASelect::IsCCQE(){
+    return nPip==0&&nPim==0&&nPi0==0&&nKp==0&&nKm==0&&nK0==0&&nEM==0&&nOtherHad==0;
+  }
+
+  //------------------------------------------------------------------------------
+  void MVASelect::endSubRun(const art::SubRun& sr){
+    fMVAAlg.endSubRun(sr);
+  }
+  
+  DEFINE_ART_MODULE(MVASelect)
+  
 } // namespace dunemva
 
 #endif // MVASelect_H
