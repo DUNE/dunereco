@@ -327,6 +327,9 @@ void dunemva::MVAAlg::Run( const art::Event & evt, double& result, double& wgt )
 	mva_nue_nutau->Fill(result, oscpro);
       }
     }
+    else{//not in fiducial volume
+      result = -2.;
+    }
     if (isinfidvoltruth){
       if (ccnc_truth==1){
         enu_nc->Fill(enu_truth, oscpro);
