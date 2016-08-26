@@ -151,6 +151,7 @@ dune35t_rmshitfinderalg:
 dune35t_robusthitfinder:
 {
     module_type: "RobustHitFinder"
+    MakeTree: false
     Efield: [ 0.25, 0.620, 0.777, 1.772 ] #kV/cm --> 60kV cathode voltage
     CounterT0ModuleLabel: "t0counter"
     WireModuleLabel: "caldata"
