@@ -525,7 +525,7 @@ void MVASelect::analyze(art::Event const & evt)
     //  and fills the histograms accordingly. 
     if( (fSelNuE  && fMVAResult < fNuECut ) ||
 	(fSelNuMu && fMVAResult < fNuMuCut) ){
-      this->FillNormResponseHists();
+      if(fMakeSystHist) this->FillNormResponseHists();
     }
 
     unsigned int sigs_i = 0;
@@ -602,6 +602,11 @@ void MVASelect::analyze(art::Event const & evt)
   //------------------------------------------------------------------------------
   void MVASelect::FillNormResponseHists(){
     
+    if(!fMakeSystHist){
+      mf::LogWarning("FillNormResponseHists") 
+	<< "Job not configured to make systematic historgams, return.";
+      return;
+    }
     double weight(1.);
     bool rightSign;
     for(unsigned int s=0; s<knRwgts; s++){
