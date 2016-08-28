@@ -227,10 +227,13 @@ void MVASelect::beginJob()
   fTree->Branch("Ev_reco",      &fEtrue,        "Ev_reco/D");
   fTree->Branch("EvClass_reco", &fEvClass_reco, "EvClass_reco/I");
   fTree->Branch("coh",          &fIsCoh,        "coh/I");
+  fTree->Branch("dis",          &fIsDIS,        "dis/I");
   fTree->Branch("cc",           &fCC,           "cc/I");
   fTree->Branch("nc",           &fNC,           "nc/I");
   fTree->Branch("neu",          &fNuPdg,        "neu/I");
   fTree->Branch("beamPdg",      &fBeamPdg,      "beamPdg/I");
+  fTree->Branch("mode",         &fMode,         "mode/I");
+  fTree->Branch("ccnc",         &fCCNC,         "ccnc/I");
 
   fTree->Branch("nuvtxx_truth",&nuvtxx_truth,"nuvtxx_truth/D");
   fTree->Branch("nuvtxy_truth",&nuvtxy_truth,"nuvtxy_truth/D");
