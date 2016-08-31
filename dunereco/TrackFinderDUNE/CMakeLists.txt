@@ -5,7 +5,7 @@ art_make( BASENAME_ONLY
                            larcore_Geometry
                            larcore_Geometry_Geometry_service
                            lardata_Utilities
-			   larsim_Simulation larsimobj_Simulation
+			   larsim_Simulation lardataobj_Simulation
 			   larsim_MCCheater_BackTracker_service
 			   nusimdata_SimulationBase
  			   ${ART_FRAMEWORK_CORE}
