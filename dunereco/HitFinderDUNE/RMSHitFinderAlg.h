@@ -20,6 +20,7 @@ public:
 
     void FindHits(dune::ChannelInformation & chan);
 
+    void SetSearchTicks(int s, int e) { fSearchTickStart = s; fSearchTickEnd = e; }
 private:
     void FilterWaveform(std::vector<float> wf, std::vector<float> & fwf);
     void RobustRMSBase(std::vector<float> wf, float & bl, float & r);
@@ -30,6 +31,8 @@ private:
     float fFilterWidth;
     float fSigmaRiseThreshold;
     float fSigmaFallThreshold;
+    int fSearchTickStart;
+    int fSearchTickEnd;
 
   };
 

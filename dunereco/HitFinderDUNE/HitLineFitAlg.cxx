@@ -35,7 +35,7 @@ void dune::HitLineFitAlg::SetRanges(float hmin, float hmax, float vmin, float vm
 int dune::HitLineFitAlg::FindTrack(std::vector<dune::HitInformation> & data, HitLineFitResults & bestfit)
 {
   size_t i;
-  float horiz,vert,dist,ssr/*,diff*/;
+  float horiz,vert,dist,ssr,diff;
   std::vector<unsigned int> points;
   std::vector<unsigned int> points_best;
   TVector3 hitloc,lineloc1,lineloc2;
@@ -60,7 +60,10 @@ int dune::HitLineFitAlg::FindTrack(std::vector<dune::HitInformation> & data, Hit
   float fiterr = std::numeric_limits<float>::max();
   TGraphAsymmErrors * maybe = new TGraphAsymmErrors();
   TGraphAsymmErrors * maybebetter = new TGraphAsymmErrors();
-  //std::cout << "n=" << n << " k=" << k << " t=" << t << " d=" << d << std::endl;
+  if (fLogLevel > 1) mf::LogInfo("HitLineFitAlg") << "Minimum number of data points required to fit the model, n=" << n << "\n" 
+						  << "Maximum number of iterations allowed, k=" << k << "\n"
+						  << "Threshold value for model inclusion (cm), t=" << t << "\n"
+						  << "Number of close data points required to assert a good fit, d=" << d;
   std::vector<float> distances;
   while (iterations < k)
     {
@@ -69,7 +72,10 @@ int dune::HitLineFitAlg::FindTrack(std::vector<dune::HitInformation> & data, Hit
       points.clear();
       points_best.clear();
       distances.clear();
-      //if (iterations % 1000 == 0) std::cout << "iteration # " << iterations << std::endl;
+      if (fLogLevel > 1) 
+	{
+	  if (iterations % 1000 == 0) std::cout << "Iteration # " << iterations << std::endl;
+	}
       DeterministicShuffle(datakeys);
       for (i = 0; i < n; ++i)
         {
@@ -99,7 +105,7 @@ int dune::HitLineFitAlg::FindTrack(std::vector<dune::HitInformation> & data, Hit
               maybebetter->SetPoint(i,thisdata.hithoriz,thisdata.hitvert);
               maybebetter->SetPointError(i,thisdata.hithorizerrlo,thisdata.hithorizerrhi,thisdata.hitverterrlo,thisdata.hitverterrhi);
             }
-          TFitResultPtr rb = maybebetter->Fit("model","SQBR0");
+          TFitResultPtr rb = maybebetter->Fit("model","SQCBR0");
           ssr = 0;
           for (i = 0; i < points.size(); ++i)
             {
@@ -145,7 +151,7 @@ int dune::HitLineFitAlg::FindTrack(std::vector<dune::HitInformation> & data, Hit
           d_cur_penalty = (-d_cur_penalty);
           if (d_cur_penalty < fiterr && model->GetNpar() >= 2 && fabs(model->GetParameter("linear")) > 0.0015 && points_best.size() > 2)
             {
-              //diff = d_cur_penalty-fiterr;
+              diff = d_cur_penalty-fiterr;
               fiterr = d_cur_penalty;
               bestfit.fitconstant     = model->GetParameter("constant");
               bestfit.fitconstanterr  = model->GetParError(model->GetParNumber("constant"));
@@ -172,11 +178,15 @@ int dune::HitLineFitAlg::FindTrack(std::vector<dune::HitInformation> & data, Hit
                       data.at(i).fitrealhit = false;
                     }
                 }
-              //std::cout << "-------------Found new minimum!-------------" << std::endl;
-              //std::cout << "FitError=" << fiterr;
-              //if (fabs(diff) < 1e30) std::cout << "  delta(fiterr)=" << diff;
-              //std::cout << "\nNumber of points included = " << points_best.size() << " out of " << data.size() << std::endl;
-            }
+	      if (fLogLevel > 1)
+		{
+		  std::cout << "-------------Found new minimum!-------------" << std::endl;
+		  std::cout << "FitError=" << fiterr;
+		  if (fabs(diff) < 1e30) std::cout << "  delta(fiterr)=" << diff;
+		  std::cout << "\nNumber of points included = " << points_best.size() << " out of " << data.size() << std::endl;
+		  std::cout << "--------------------------------------------" << std::endl;
+		}
+	    }
         }
       iterations++;
     }
@@ -191,4 +201,5 @@ void dune::HitLineFitAlg::reconfigure(fhicl::ParameterSet const& p)
   fMinAlsoPoints = p.get<int>("MinAlsoPoints");
   fIterationsMultiplier = p.get<float>("IterationsMultiplier");
   fInclusionThreshold = p.get<float>("InclusionThreshold");
+  fLogLevel = p.get<int>("LogLevel",1);
 }

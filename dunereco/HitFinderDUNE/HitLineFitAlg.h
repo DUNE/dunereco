@@ -66,6 +66,7 @@ private:
     int fMinAlsoPoints;
     float fIterationsMultiplier;
     float fInclusionThreshold;
+    int fLogLevel;
   };
 
 }

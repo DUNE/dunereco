@@ -4,6 +4,7 @@
 dune::RMSHitFinderAlg::RMSHitFinderAlg(fhicl::ParameterSet const & p)
 {
   this->reconfigure(p);
+  SetSearchTicks(-1,-1);
 }
 
 void dune::RMSHitFinderAlg::reconfigure(fhicl::ParameterSet const& p)
@@ -16,10 +17,17 @@ void dune::RMSHitFinderAlg::reconfigure(fhicl::ParameterSet const& p)
 
 void dune::RMSHitFinderAlg::FindHits(dune::ChannelInformation & chan)
 {
+  if (fSearchTickStart < 0 || fSearchTickEnd < 0)
+    {
+      fSearchTickStart = 0; fSearchTickEnd = chan.signalVec.size();
+    }
+  std::vector<float> signal(chan.signalVec.begin()+fSearchTickStart,chan.signalVec.begin()+fSearchTickEnd);
+  std::vector<float> signalFilter;
   FilterWaveform(chan.signalVec,chan.signalFilterVec);
-  RobustRMSBase(chan.signalVec,chan.baseline,chan.rms);
-  RobustRMSBase(chan.signalFilterVec,chan.baselineFilter,chan.rmsFilter);
-  FindPulses(chan.signalFilterVec,chan.baselineFilter,chan.rmsFilter,chan.pulse_ends);
+  FilterWaveform(signal,signalFilter);
+  RobustRMSBase(signal,chan.baseline,chan.rms);
+  RobustRMSBase(signalFilter,chan.baselineFilter,chan.rmsFilter);
+  FindPulses(signalFilter,chan.baselineFilter,chan.rmsFilter,chan.pulse_ends);
   MergeHits(chan.pulse_ends);
 }
 
@@ -29,8 +37,8 @@ void dune::RMSHitFinderAlg::FilterWaveform(std::vector<float> wf, std::vector<fl
   unsigned int wfs = wf.size();
   fwf.resize(wfs);
   std::vector<float> intermediate_wf(wfs);
-  float filter_coef = TMath::Exp(static_cast<double>(-1.0/fFilterWidth));
-  float a0 = 1-filter_coef;
+  float filter_coef = static_cast<float>(TMath::Exp(static_cast<double>(-1.0/fFilterWidth)));
+  float a0 = 1.0-filter_coef;
   float b1 = filter_coef;
   unsigned int order = 1;
   for (size_t i = 0; i < wfs; ++i)
@@ -65,11 +73,11 @@ void dune::RMSHitFinderAlg::RobustRMSBase(std::vector<float> wf, float & bl, flo
   for (size_t i_wf = 0; i_wf < wf.size()-window_size; i_wf++)
     {
       std::vector<float> partial_window(wf.begin()+i_wf,wf.begin()+i_wf+window_size);
-      rms_collection.push_back(TMath::RMS(partial_window.size(),partial_window.data()));
-      bl_collection.push_back(TMath::Mean(partial_window.size(),partial_window.data()));
+      rms_collection.push_back(static_cast<float>(TMath::RMS(partial_window.size(),partial_window.data())));
+      bl_collection.push_back(static_cast<float>(TMath::Mean(partial_window.size(),partial_window.data())));
     }
-  r = TMath::Median(rms_collection.size(),rms_collection.data());
-  bl = TMath::Median(bl_collection.size(),bl_collection.data());
+  r = static_cast<float>(TMath::Median(rms_collection.size(),rms_collection.data()));
+  bl = static_cast<float>(TMath::Median(bl_collection.size(),bl_collection.data()));
 }
 
 
@@ -81,14 +89,14 @@ void dune::RMSHitFinderAlg::FindPulses(std::vector<float> wf, float bl, float r,
   for (int i_wf = 0; i_wf < static_cast<int>(wf.size())-fWindowWidth; i_wf++)
     {
       std::vector<float> window(wf.begin()+i_wf,wf.begin()+i_wf+fWindowWidth);
-      float window_mean = TMath::Mean(window.size(),window.data());
+      float window_mean = static_cast<float>(TMath::Mean(window.size(),window.data()));
       if ((window_mean > bl+fSigmaRiseThreshold*r) && !started)
         {
           started = true;
           for (int i_wf_back = i_wf-1; i_wf_back >= 0; i_wf_back--)
             {
               std::vector<float> window_back(wf.begin()+i_wf_back,wf.begin()+i_wf_back+fWindowWidth);
-              float window_mean_back = TMath::Mean(window_back.size(),window_back.data());
+              float window_mean_back = static_cast<float>(TMath::Mean(window_back.size(),window_back.data()));
               if (window_mean_back < bl+fSigmaFallThreshold*r)
                 {
                   start = i_wf_back;
@@ -101,13 +109,13 @@ void dune::RMSHitFinderAlg::FindPulses(std::vector<float> wf, float bl, float r,
         {
           started = false;
           end = i_wf+fWindowWidth;
-          pulse_ends.push_back(std::make_pair(start,end));
+          pulse_ends.push_back(std::make_pair(start+fSearchTickStart,end+fSearchTickStart));
           continue;
         }
     }
   if (started)
     {
-      pulse_ends.push_back(std::make_pair(start,wf.size()-1));
+      pulse_ends.push_back(std::make_pair(start+fSearchTickStart,wf.size()-1+fSearchTickStart));
     }
 }
 
