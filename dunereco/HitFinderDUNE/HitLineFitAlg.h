@@ -2,6 +2,7 @@
 #define HITLINEFITALG_H
 
 #include "fhiclcpp/ParameterSet.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "RobustHitFinderSupport.h"
 
