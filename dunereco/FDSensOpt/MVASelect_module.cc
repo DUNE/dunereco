@@ -111,6 +111,7 @@ private:
   double fEtrue; 
 
   int fIsCoh; // 1=is coherent, 0=otherwise
+  int fIsDIS; // 1=is dis,      0=otherwise
   int fCC;    // 1=is CC, 0=otherwise
   int fNC;    // 1=is NC, 0=otherwise
   int fEvClass_reco; // 0=NuMuCC, 1=NuECC, 2=NC
@@ -127,11 +128,22 @@ private:
 
   double ftotPOT;
 
-  // 0: true CC, 1: true NC
+  // [0][j]: true CC,  [1][j]: true NC
+  // [i][0]: nu,       [i][1]: nubar
   bool fMakeSystHist;
-  std::vector<TH2D*> h_int_nu_ccqe_1;
+  std::vector< std::vector<TH2D*> > h_ccqe_1,   h_ccqe_2,   h_ccqe_3;   // 3 Q2 bins
+  std::vector< std::vector<TH2D*> > h_cc1pic_1, h_cc1pic_2, h_cc1pic_3; // 3 Q2 bins
+  std::vector< std::vector<TH2D*> > h_cc1piz_1, h_cc1piz_2, h_cc1piz_3; // 3 Q2 bins
+  std::vector< std::vector<TH2D*> > h_2pi;
+  std::vector< std::vector<TH2D*> > h_dis_1, h_dis_2, h_dis_3;          // 3 Ev bins
+  std::vector< std::vector<TH2D*> > h_coh;
+  std::vector< std::vector<TH2D*> > h_nc;
 
   bool IsCCQE();
+  bool IsCC1PiC();
+  bool IsCC1Pi0();
+  bool IsCC2Pi();
+  bool IsDIS();
 
 
 }; // class MVASelect
@@ -215,10 +227,13 @@ void MVASelect::beginJob()
   fTree->Branch("Ev_reco",      &fEtrue,        "Ev_reco/D");
   fTree->Branch("EvClass_reco", &fEvClass_reco, "EvClass_reco/I");
   fTree->Branch("coh",          &fIsCoh,        "coh/I");
+  fTree->Branch("dis",          &fIsDIS,        "dis/I");
   fTree->Branch("cc",           &fCC,           "cc/I");
   fTree->Branch("nc",           &fNC,           "nc/I");
   fTree->Branch("neu",          &fNuPdg,        "neu/I");
   fTree->Branch("beamPdg",      &fBeamPdg,      "beamPdg/I");
+  fTree->Branch("mode",         &fMode,         "mode/I");
+  fTree->Branch("ccnc",         &fCCNC,         "ccnc/I");
 
   fTree->Branch("nuvtxx_truth",&nuvtxx_truth,"nuvtxx_truth/D");
   fTree->Branch("nuvtxy_truth",&nuvtxy_truth,"nuvtxy_truth/D");
@@ -278,18 +293,111 @@ void MVASelect::beginJob()
   for(int i=0; i<=n_respo_bins; i++) bin_edges_respo[i] = respo_min + i*(respo_max-respo_min)/n_respo_bins;
   //for(int i=0; i<=n_respo_bins; i++) cout<<"bin_edges_respo["<<i<<"] = "<<bin_edges_respo[i]<<endl;
 
-  h_int_nu_ccqe_1.resize(2);
+  h_ccqe_1.resize(2);    h_ccqe_2.resize(2);    h_ccqe_2.resize(2);
+  h_cc1pic_1.resize(2);  h_cc1pic_2.resize(2);  h_cc1pic_2.resize(2);
+  h_cc1piz_1.resize(2);  h_cc1piz_2.resize(2);  h_cc1piz_2.resize(2);
+  h_2pi.resize(2);
+  h_dis_1.resize(2);     h_dis_2.resize(2);     h_dis_2.resize(2);
+  h_coh.resize(2);
+  h_nc.resize(2);
 
+  std::string current, ptype;
   if( fMakeSystHist ){
     for(unsigned int i=0; i<2; i++){
-      h_int_nu_ccqe_1[i] = tfs->make<TH2D>( "ccRespo_f_int_nu_ccqe_1","ccRespo_f_int_nu_ccqe_1",
+      if(i) current = "nc";
+      else  current = "cc";
+
+      h_ccqe_1[i].resize(2);    h_ccqe_2[i].resize(2);    h_ccqe_2[i].resize(2);
+      h_cc1pic_1[i].resize(2);  h_cc1pic_2[i].resize(2);  h_cc1pic_2[i].resize(2);
+      h_cc1piz_1[i].resize(2);  h_cc1piz_2[i].resize(2);  h_cc1piz_2[i].resize(2);
+      h_2pi[i].resize(2);
+      h_dis_1[i].resize(2);     h_dis_2[i].resize(2);     h_dis_2[i].resize(2);
+      h_coh[i].resize(2);
+      h_nc[i].resize(2);
+      
+      for(unsigned int j=0; j<2; j++){ 
+	if(i) ptype = "nubar";
+	else  ptype = "nu";
+
+	h_ccqe_1[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_ccqe_1",current.c_str(),ptype.c_str()),
+					  Form("%sRespo_f_int_%s_ccqe_1",current.c_str(),ptype.c_str()),
+					  bins_true_E, bin_edges_true_E,
+					  n_respo_bins,bin_edges_respo);
+	h_ccqe_2[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_ccqe_2",current.c_str(),ptype.c_str()),
+					  Form("%sRespo_f_int_%s_ccqe_2",current.c_str(),ptype.c_str()),
+					  bins_true_E, bin_edges_true_E,
+					  n_respo_bins,bin_edges_respo);
+	h_ccqe_3[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_ccqe_3",current.c_str(),ptype.c_str()),
+					  Form("%sRespo_f_int_%s_ccqe_3",current.c_str(),ptype.c_str()),
+					  bins_true_E, bin_edges_true_E,
+					  n_respo_bins,bin_edges_respo);
+
+	h_cc1pic_1[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_cc1pic_1",current.c_str(),ptype.c_str()),
+					    Form("%sRespo_f_int_%s_cc1pic_1",current.c_str(),ptype.c_str()),
 					    bins_true_E, bin_edges_true_E,
 					    n_respo_bins,bin_edges_respo);
+	h_cc1pic_2[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_cc1pic_2",current.c_str(),ptype.c_str()),
+					    Form("%sRespo_f_int_%s_cc1pic_2",current.c_str(),ptype.c_str()),
+					    bins_true_E, bin_edges_true_E,
+					    n_respo_bins,bin_edges_respo);
+	h_cc1pic_3[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_cc1pic_3",current.c_str(),ptype.c_str()),
+					    Form("%sRespo_f_int_%s_cc1pic_3",current.c_str(),ptype.c_str()),
+					    bins_true_E, bin_edges_true_E,
+					    n_respo_bins,bin_edges_respo);
+
+	h_cc1piz_1[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_cc1piz_1",current.c_str(),ptype.c_str()),
+					    Form("%sRespo_f_int_%s_cc1piz_1",current.c_str(),ptype.c_str()),
+					    bins_true_E, bin_edges_true_E,
+					    n_respo_bins,bin_edges_respo);
+	h_cc1piz_2[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_cc1piz_2",current.c_str(),ptype.c_str()),
+					    Form("%sRespo_f_int_%s_cc1piz_2",current.c_str(),ptype.c_str()),
+					    bins_true_E, bin_edges_true_E,
+					    n_respo_bins,bin_edges_respo);
+	h_cc1piz_3[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_cc1piz_3",current.c_str(),ptype.c_str()),
+					    Form("%sRespo_f_int_%s_cc1piz_3",current.c_str(),ptype.c_str()),
+					    bins_true_E, bin_edges_true_E,
+					    n_respo_bins,bin_edges_respo);
+	
+	h_2pi[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_2pi",current.c_str(),ptype.c_str()),
+				       Form("%sRespo_f_int_%s_2pi",current.c_str(),ptype.c_str()),
+				       bins_true_E, bin_edges_true_E,
+				       n_respo_bins,bin_edges_respo);
+
+	h_dis_1[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_dis_1",current.c_str(),ptype.c_str()),
+					 Form("%sRespo_f_int_%s_dis_1",current.c_str(),ptype.c_str()),
+					 bins_true_E, bin_edges_true_E,
+					 n_respo_bins,bin_edges_respo);
+	h_dis_2[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_dis_2",current.c_str(),ptype.c_str()),
+					 Form("%sRespo_f_int_%s_dis_2",current.c_str(),ptype.c_str()),
+					 bins_true_E, bin_edges_true_E,
+					 n_respo_bins,bin_edges_respo);
+	h_dis_3[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_dis_3",current.c_str(),ptype.c_str()),
+					 Form("%sRespo_f_int_%s_dis_3",current.c_str(),ptype.c_str()),
+					 bins_true_E, bin_edges_true_E,
+					 n_respo_bins,bin_edges_respo);
+
+	h_coh[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_coh",current.c_str(),ptype.c_str()),
+				       Form("%sRespo_f_int_%s_coh",current.c_str(),ptype.c_str()),
+				       bins_true_E, bin_edges_true_E,
+				       n_respo_bins,bin_edges_respo);
+	h_nc[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_nc",current.c_str(),ptype.c_str()),
+				      Form("%sRespo_f_int_%s_nc",current.c_str(),ptype.c_str()),
+				      bins_true_E, bin_edges_true_E,
+				      n_respo_bins,bin_edges_respo);
+      }
     }
   } // if making syst hists
   return;
 }
 
+//------------------------------------------------------------------------------
+/*
+TH2D* MVASelect::MakeRespoHist(TString name){
+  return fTfs->make<TH2D>( name, name,
+			   bins_true_E, bin_edges_true_E,
+			   n_respo_bins,bin_edges_respo);
+}
+*/
 
 //------------------------------------------------------------------------------
 void MVASelect::beginSubRun(const art::SubRun& sr){
@@ -357,10 +465,11 @@ void MVASelect::analyze(art::Event const & evt)
     nuvtxy_truth = truth[i]->GetNeutrino().Nu().Vy();
     nuvtxz_truth = truth[i]->GetNeutrino().Nu().Vz();
 
-    if(fMode==3)
-      fIsCoh = 1;
-    else
-      fIsCoh = 0;
+    if(fMode==3) fIsCoh = 1;
+    else         fIsCoh = 0;
+
+    if(fMode==2) fIsDIS = 1;
+    else         fIsDIS = 0;
     
     // Cheat selection for now, will be refilled in script cutting on MVAResult
     fEvClass_reco = -1;
@@ -416,7 +525,7 @@ void MVASelect::analyze(art::Event const & evt)
     //  and fills the histograms accordingly. 
     if( (fSelNuE  && fMVAResult < fNuECut ) ||
 	(fSelNuMu && fMVAResult < fNuMuCut) ){
-      this->FillNormResponseHists();
+      if(fMakeSystHist) this->FillNormResponseHists();
     }
 
     unsigned int sigs_i = 0;
@@ -493,25 +602,139 @@ void MVASelect::analyze(art::Event const & evt)
   //------------------------------------------------------------------------------
   void MVASelect::FillNormResponseHists(){
     
+    if(!fMakeSystHist){
+      mf::LogWarning("FillNormResponseHists") 
+	<< "Job not configured to make systematic historgams, return.";
+      return;
+    }
     double weight(1.);
+    bool rightSign;
     for(unsigned int s=0; s<knRwgts; s++){
-
-      // h_int_nu_ccqe_1
-      if( IsCCQE()   &&
-	  fQ2 < 0.2  &&
-	  fNuPdg > 0  )
-	h_int_nu_ccqe_1[fCCNC]->Fill(fEtrue,s,weight*(1+0.1*s));
-      else
-	h_int_nu_ccqe_1[fCCNC]->Fill(fEtrue,s,weight);
+      for(unsigned int j=0; j<2; j++){ 
+	if(j) rightSign = (fNuPdg < 0); // nubar
+	else  rightSign = (fNuPdg > 0); // nu
 	
+	// h_ccqe_<q2 bin>
+	if( IsCCQE()   &&
+	    fQ2 < 0.2  &&
+	    rightSign  )   h_ccqe_1[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else               h_ccqe_1[fCCNC][j]->Fill(fEtrue,s,weight);	
+	if( IsCCQE()   &&
+	    fQ2 >= 0.2 &&  fQ2 < 0.55  &&
+	    rightSign  )   h_ccqe_2[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else               h_ccqe_2[fCCNC][j]->Fill(fEtrue,s,weight);
+	if( IsCCQE()    &&
+	    fQ2 >= 0.55 &&
+	    rightSign  )   h_ccqe_3[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	           h_ccqe_3[fCCNC][j]->Fill(fEtrue,s,weight);
+	
+
+
+	// h_cc1pic_<q2 bin>
+	if( IsCC1PiC() &&
+	    fQ2 < 0.2  &&
+	    rightSign  )   h_cc1pic_1[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	           h_cc1pic_1[fCCNC][j]->Fill(fEtrue,s,weight);	
+	if( IsCC1PiC() &&
+	    fQ2 >= 0.2 &&  fQ2 < 0.55  &&
+	    rightSign  )   h_cc1pic_2[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else               h_cc1pic_2[fCCNC][j]->Fill(fEtrue,s,weight);
+	if( IsCC1PiC()  &&
+	    fQ2 >= 0.55 &&
+	    rightSign  )    h_cc1pic_3[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	            h_cc1pic_3[fCCNC][j]->Fill(fEtrue,s,weight);
+
+
+
+	// h_cc1piz_<q2 bin>
+	if( IsCC1Pi0() &&
+	    fQ2 < 0.2  &&
+	    rightSign  )   h_cc1piz_1[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	           h_cc1piz_1[fCCNC][j]->Fill(fEtrue,s,weight);	
+	if( IsCC1Pi0() &&
+	    fQ2 >= 0.2 &&  fQ2 < 0.55  &&
+	    rightSign  )   h_cc1piz_2[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	           h_cc1piz_2[fCCNC][j]->Fill(fEtrue,s,weight);
+	if( IsCC1Pi0()  &&
+	    fQ2 >= 0.55 &&
+	    rightSign  )    h_cc1piz_3[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	            h_cc1piz_3[fCCNC][j]->Fill(fEtrue,s,weight);
+
+
+
+	// h_2pi
+	if( IsCC2Pi()   &&
+	    rightSign  )    h_2pi[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	            h_2pi[fCCNC][j]->Fill(fEtrue,s,weight);
+	
+
+	
+	// h_dis_<q2 bin>
+	if( IsDIS()       &&
+	    fEtrue < 7.5  &&
+	    rightSign  )   h_dis_1[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	           h_dis_1[fCCNC][j]->Fill(fEtrue,s,weight);
+	if( IsDIS()        &&
+	    fEtrue >= 7.5  &&  fEtrue < 15.0  &&
+	    rightSign  )   h_dis_2[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	           h_dis_2[fCCNC][j]->Fill(fEtrue,s,weight);
+	if( IsDIS()      &&
+	    fQ2 >= 15.0  &&
+	    rightSign  )    h_dis_3[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	            h_dis_3[fCCNC][j]->Fill(fEtrue,s,weight);
+
+
+
+	// h_coh
+	if( fIsCoh    &&
+	    rightSign  )    h_coh[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	            h_coh[fCCNC][j]->Fill(fEtrue,s,weight);
+
+
+	// h_nc
+	if( fCCNC == 1 &&
+	    rightSign  )    h_nc[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	            h_nc[fCCNC][j]->Fill(fEtrue,s,weight);
+
+
+      }
     }
     
   }
   
   //------------------------------------------------------------------------------
   bool MVASelect::IsCCQE(){
-    return nPip==0&&nPim==0&&nPi0==0&&nKp==0&&nKm==0&&nK0==0&&nEM==0&&nOtherHad==0;
+    return ( fCCNC==0 &&
+	     nPip==0  && nPim==0 && nPi0==0 &&
+	     nKp==0   && nKm==0  && nK0==0  &&
+	     nEM==0   && nOtherHad==0 );
   }
+  bool MVASelect::IsCC1PiC(){
+    return ( fCCNC==0 &&
+	     nPip+nPim == 1    && nPi0==0 && 
+	     nKp==0  && nKm==0 && nK0==0  &&
+	     nOtherHad==0      &&
+	     !fIsCoh );
+  }
+  bool MVASelect::IsCC1Pi0(){
+    return ( fCCNC==0 && 
+	     nPip== 0 && nPim==0 && nPi0==1 && 
+	     nKp==0   && nKm==0  && nK0==0  &&
+	     nOtherHad==0        &&
+	     !fIsCoh );
+  }
+  bool MVASelect::IsCC2Pi(){
+    return ( fCCNC==0 &&
+	     nPip     +  nPim    +  nPi0 == 2 && 
+	     nKp==0   && nKm==0  && nK0==0    &&
+	     nOtherHad==0        &&
+	     !fIsCoh );
+  }
+  bool MVASelect::IsDIS(){
+    return ( fIsDIS &&
+	     nPip +  nPim + nPi0 > 2 );
+  }
+
 
   //------------------------------------------------------------------------------
   void MVASelect::endSubRun(const art::SubRun& sr){

@@ -4,7 +4,7 @@ art_make( BASENAME_ONLY
           LIBRARY_NAME  MVAAlg
           LIB_LIBRARIES larcore_Geometry
                         larcore_Geometry_Geometry_service
-                        larsim_Simulation larsimobj_Simulation
+                        larsim_Simulation lardataobj_Simulation
                         lardataobj_RawData
                         lardataobj_RecoBase
 		        lardata_RecoBaseArt

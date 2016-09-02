@@ -13,7 +13,7 @@ simple_plugin(NueAna   "module"
 		        larcore_Geometry
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
-			larsim_Simulation larsimobj_Simulation
+			larsim_Simulation lardataobj_Simulation
 			larsim_MCCheater_BackTracker_service
 			nusimdata_SimulationBase
                         ${ART_FRAMEWORK_CORE}
@@ -63,7 +63,7 @@ simple_plugin(IniSegReco "module"
 		      larcore_Geometry
 		      larcore_Geometry_Geometry_service
 		      lardata_Utilities
-		      larsim_Simulation larsimobj_Simulation
+		      larsim_Simulation lardataobj_Simulation
 		      larsim_MCCheater_BackTracker_service
 		      nusimdata_SimulationBase
       		      ${ART_FRAMEWORK_CORE}
@@ -91,7 +91,7 @@ simple_plugin(ShSeg   "module"
 			larcore_Geometry
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
-			larsim_Simulation larsimobj_Simulation
+			larsim_Simulation lardataobj_Simulation
 			
 			
 			larsim_MCCheater_BackTracker_service

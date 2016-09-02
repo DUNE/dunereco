@@ -35,7 +35,7 @@ void dune::HitLineFitAlg::SetRanges(float hmin, float hmax, float vmin, float vm
 int dune::HitLineFitAlg::FindTrack(std::vector<dune::HitInformation> & data, HitLineFitResults & bestfit)
 {
   size_t i;
-  float horiz,vert,dist,ssr,diff;
+  float horiz,vert,dist,ssr/*,diff*/;
   std::vector<unsigned int> points;
   std::vector<unsigned int> points_best;
   TVector3 hitloc,lineloc1,lineloc2;
@@ -60,7 +60,7 @@ int dune::HitLineFitAlg::FindTrack(std::vector<dune::HitInformation> & data, Hit
   float fiterr = std::numeric_limits<float>::max();
   TGraphAsymmErrors * maybe = new TGraphAsymmErrors();
   TGraphAsymmErrors * maybebetter = new TGraphAsymmErrors();
-  std::cout << "n=" << n << " k=" << k << " t=" << t << " d=" << d << std::endl;
+  //std::cout << "n=" << n << " k=" << k << " t=" << t << " d=" << d << std::endl;
   std::vector<float> distances;
   while (iterations < k)
     {
@@ -69,7 +69,7 @@ int dune::HitLineFitAlg::FindTrack(std::vector<dune::HitInformation> & data, Hit
       points.clear();
       points_best.clear();
       distances.clear();
-      if (iterations % 1000 == 0) std::cout << "iteration # " << iterations << std::endl;
+      //if (iterations % 1000 == 0) std::cout << "iteration # " << iterations << std::endl;
       DeterministicShuffle(datakeys);
       for (i = 0; i < n; ++i)
         {
@@ -145,7 +145,7 @@ int dune::HitLineFitAlg::FindTrack(std::vector<dune::HitInformation> & data, Hit
           d_cur_penalty = (-d_cur_penalty);
           if (d_cur_penalty < fiterr && model->GetNpar() >= 2 && fabs(model->GetParameter("linear")) > 0.0015 && points_best.size() > 2)
             {
-              diff = d_cur_penalty-fiterr;
+              //diff = d_cur_penalty-fiterr;
               fiterr = d_cur_penalty;
               bestfit.fitconstant     = model->GetParameter("constant");
               bestfit.fitconstanterr  = model->GetParError(model->GetParNumber("constant"));
@@ -172,10 +172,10 @@ int dune::HitLineFitAlg::FindTrack(std::vector<dune::HitInformation> & data, Hit
                       data.at(i).fitrealhit = false;
                     }
                 }
-              std::cout << "-------------Found new minimum!-------------" << std::endl;
-              std::cout << "FitError=" << fiterr;
-              if (fabs(diff) < 1e30) std::cout << "  delta(fiterr)=" << diff;
-              std::cout << "\nNumber of points included = " << points_best.size() << " out of " << data.size() << std::endl;
+              //std::cout << "-------------Found new minimum!-------------" << std::endl;
+              //std::cout << "FitError=" << fiterr;
+              //if (fabs(diff) < 1e30) std::cout << "  delta(fiterr)=" << diff;
+              //std::cout << "\nNumber of points included = " << points_best.size() << " out of " << data.size() << std::endl;
             }
         }
       iterations++;

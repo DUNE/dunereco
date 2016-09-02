@@ -76,7 +76,7 @@ physics.analyzers.mvaselect.WeightFile:              "/pnfs/dune/persistent/Task
 #physics.analyzers.mvaselect.WeightFile:              "TMVAClassification_BDTG.weights.nue.xml"
 physics.analyzers.mvaselect.MakeWeightTree:          false
 physics.analyzers.mvaselect.Reweight:                false
-physics.analyzers.mvaselect.MakeSystHist:            true
+physics.analyzers.mvaselect.MakeSystHist:            false
 services.TFileService.fileName:                      "histeval_nue.root"
 
 
