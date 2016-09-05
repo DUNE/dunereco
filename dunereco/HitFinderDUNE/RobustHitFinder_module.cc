@@ -163,11 +163,8 @@ private:
   float segmentlength;
 
   bool fMakeTree;
-  bool fDoWireAssns;
-  bool fDoRawDigitAssns;
   float fHitGeomDistanceCut;
   std::string fWireModuleLabel;
-  std::string fDigitModuleLabel;
   std::string fCounterT0ModuleLabel;
   std::vector<float> fEfield;
   int fSearchPreTicks;
@@ -409,7 +406,7 @@ void dune::RobustHitFinder::produce(art::Event & e)
 					int(hit.hitEndTick-hit.hitBeginTick+1));
 	      hit.artHit = temphit.move();
 
-	      if (hit.hitx > -400) hitVec.push_back(hit);
+	      if (hit.hitx > -400 && hit.countercut) hitVec.push_back(hit);
 	    }
 	  chanMap.emplace(std::make_pair(chan.channelID,chan));
 
@@ -577,8 +574,6 @@ void dune::RobustHitFinder::beginJob()
 void dune::RobustHitFinder::reconfigure(fhicl::ParameterSet const & p)
 {
   fMakeTree = p.get<bool>("MakeTree");
-  fDoWireAssns = p.get<bool>("DoWireAssns");
-  fDoRawDigitAssns = p.get<bool>("DoRawDigitAssns");
   fHitGeomDistanceCut = p.get<float>("HitGeomDistanceCut");
   fCounterT0ModuleLabel = p.get<std::string>("CounterT0ModuleLabel");
   fWireModuleLabel = p.get<std::string>("WireModuleLabel");

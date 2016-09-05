@@ -148,7 +148,7 @@ dune35t_rmshitfinderalg:
     SigmaFallThreshold: 0.25
 }
 
-dune35t_robusthitfinderdata:
+dune35t_robusthitfinder:
 {
     module_type: "RobustHitFinder"
     MakeTree: false
@@ -163,8 +163,9 @@ dune35t_robusthitfinderdata:
     RMSHitFinderAlg: @local::dune35t_rmshitfinderalg
 }
 
-dune35t_robusthitfindersim: @local::dune35t_robusthitfinderdata
+dune35t_robusthitfindersim: @local::dune35t_robusthitfinder
 dune35t_robusthitfindersim.SearchPreTicks: 100
 dune35t_robusthitfindersim.SearchPostTicks: 4400
+dune35t_robusthitfindersim.HitGeomDistanceCut: 30
 
 END_PROLOG
