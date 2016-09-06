@@ -58,10 +58,10 @@ dune35t_disambigalg:
     TimeCut:          3.   #tolerance for 3 view hits matching, in ticks
     DistanceCut:      1.   #tolerance to determine whether wires cross, in cm
     DistanceCutClu:   4.   #tolerance to get disambiguated hits around a given hit, in cm
-    TimeWiggle:       5.   #Buffer to extend cluster windows by to exclude small clusters 
-    		      	   # of mis-identified hits.  
-    ColChannelWiggle: 5    #Buffer to extend cluster windows by to exclude small clusters 
-                           # of mis-identified hits. 
+    TimeWiggle:       5.   #Buffer to extend cluster windows by to exclude small clusters
+    		      	   # of mis-identified hits.
+    ColChannelWiggle: 5    #Buffer to extend cluster windows by to exclude small clusters
+                           # of mis-identified hits.
     DoCleanUpHits:    true #clean up wrong hit triplets
     DBScanAlg:        @local::standard_dbscanalg
 }
@@ -74,10 +74,10 @@ dune35t_TimeBasedDisambigAlg:
     TimeCut:          3.   #tolerance for 3 view hits matching, in ticks
     DistanceCut:      1.   #tolerance to determine whether wires cross, in cm
     DistanceCutClu:   4.   #tolerance to get disambiguated hits around a given hit, in cm
-    TimeWiggle:       5.   #Buffer to extend cluster windows by to exclude small clusters 
-                           # of mis-identified hits. 
-    ColChannelWiggle: 5    #Buffer to extend cluster windows by to exclude small clusters 
-                           # of mis-identified hits. 
+    TimeWiggle:       5.   #Buffer to extend cluster windows by to exclude small clusters
+                           # of mis-identified hits.
+    ColChannelWiggle: 5    #Buffer to extend cluster windows by to exclude small clusters
+                           # of mis-identified hits.
 }
 
 dune35t_hitfinder35t:
@@ -130,4 +130,42 @@ dunefd_fasthitfinder:     @local::dune35t_fasthitfinder
 dunefd_clustercrawlerhit: @local::dune35t_clustercrawlerhit
 dunefd_hitfinderfd:       @local::dune35t_hitfinder35t
 dunefd_hitfinderfd.DisambigAlg.DoCleanUpHits: false
+
+dune35t_hitlinefitalg:
+{
+    FitPolN: 2
+    MinStartPoints: 3
+    MinAlsoPoints: 6
+    IterationsMultiplier: 200
+    InclusionThreshold: 2
+}
+
+dune35t_rmshitfinderalg:
+{
+    WindowWidth: 50
+    FilterWidth: 6
+    SigmaRiseThreshold: 2.0
+    SigmaFallThreshold: 0.25
+}
+
+dune35t_robusthitfinder:
+{
+    module_type: "RobustHitFinder"
+    MakeTree: false
+    Efield: [ 0.25, 0.620, 0.777, 1.772 ] #kV/cm --> 60kV cathode voltage
+    CounterT0ModuleLabel: "t0counter"
+    WireModuleLabel: "caldata"
+    DigitModuleLabel: "caldata"
+    DoWireAssns: true
+    DoRawDigitAssns: false
+    HitGeomDistanceCut: 20
+    HitLineFitAlg: @local::dune35t_hitlinefitalg
+    RMSHitFinderAlg: @local::dune35t_rmshitfinderalg
+}
+
+dune35t_robusthitfindersim: @local::dune35t_robusthitfinder
+dune35t_robusthitfindersim.SearchPreTicks: 100
+dune35t_robusthitfindersim.SearchPostTicks: 4400
+dune35t_robusthitfindersim.HitGeomDistanceCut: 30
+
 END_PROLOG

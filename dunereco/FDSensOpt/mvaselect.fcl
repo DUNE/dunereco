@@ -69,11 +69,16 @@ physics:
 services.Geometry: @local::dune10kt_workspace_geo
 services.Geometry.GDML: "dune10kt_v1_1x2x6.gdml"
 
-physics.analyzers.mvaselect.MVAMethods:              ["BDTG"]
+physics.analyzers.mvaselect.MVAMethod:               "BDTG"
 
 physics.analyzers.mvaselect.Select:                  "nue"
-physics.analyzers.mvaselect.WeightFiles:             ["/pnfs/dune/persistent/TaskForce_AnaTree/far/train_nue/TMVAClassification_BDTG.weights.nue.xml"]
-#physics.analyzers.mvaselect.WeightFiles:             ["TMVAClassification_BDTG.weights.nue.xml"]
+physics.analyzers.mvaselect.WeightFile:              "/pnfs/dune/persistent/TaskForce_AnaTree/far/train_20May2016/TMVAClassification_BDTG.weights.nue.xml"
+#physics.analyzers.mvaselect.WeightFile:              "TMVAClassification_BDTG.weights.nue.xml"
 physics.analyzers.mvaselect.MakeWeightTree:          false
 physics.analyzers.mvaselect.Reweight:                false
+physics.analyzers.mvaselect.MakeSystHist:            false
 services.TFileService.fileName:                      "histeval_nue.root"
+
+
+physics.analyzers.mvaselect.NuECut:                  0.8
+physics.analyzers.mvaselect.NuMuCut:                 0.8

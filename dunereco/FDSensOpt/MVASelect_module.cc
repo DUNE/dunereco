@@ -60,16 +60,20 @@ public:
 private:
   
   MVAAlg fMVAAlg;
-  std::vector<double> fMVAResult;
-  std::vector<std::string> fMVAMethods;
-  int fnMethods;
-  double fmvaResults[10];
+  double fMVAResult;
+  std::string fMVAMethod;
 
   bool fReweight;
   unsigned int fRun,fSubrun,fEvent;
   double fWeight;
   TTree* fTree;  
 
+  bool fSelNuE;
+  bool fSelNuMu;
+  double fNuECut;
+  double fNuMuCut;
+
+  void FillNormResponseHists();
   void FillINuke( rwgt::ReweightLabel_t label, double sig, double wgt);
   std::vector< rwgt::ReweightLabel_t > fINukeLabel;
 
@@ -107,6 +111,7 @@ private:
   double fEtrue; 
 
   int fIsCoh; // 1=is coherent, 0=otherwise
+  int fIsDIS; // 1=is dis,      0=otherwise
   int fCC;    // 1=is CC, 0=otherwise
   int fNC;    // 1=is NC, 0=otherwise
   int fEvClass_reco; // 0=NuMuCC, 1=NuECC, 2=NC
@@ -122,6 +127,23 @@ private:
   int fCCNC; // 0=CC, 1=NC
 
   double ftotPOT;
+
+  // [0][j]: true CC,  [1][j]: true NC
+  // [i][0]: nu,       [i][1]: nubar
+  bool fMakeSystHist;
+  std::vector< std::vector<TH2D*> > h_ccqe_1,   h_ccqe_2,   h_ccqe_3;   // 3 Q2 bins
+  std::vector< std::vector<TH2D*> > h_cc1pic_1, h_cc1pic_2, h_cc1pic_3; // 3 Q2 bins
+  std::vector< std::vector<TH2D*> > h_cc1piz_1, h_cc1piz_2, h_cc1piz_3; // 3 Q2 bins
+  std::vector< std::vector<TH2D*> > h_2pi;
+  std::vector< std::vector<TH2D*> > h_dis_1, h_dis_2, h_dis_3;          // 3 Ev bins
+  std::vector< std::vector<TH2D*> > h_coh;
+  std::vector< std::vector<TH2D*> > h_nc;
+
+  bool IsCCQE();
+  bool IsCC1PiC();
+  bool IsCC1Pi0();
+  bool IsCC2Pi();
+  bool IsDIS();
 
 
 }; // class MVASelect
@@ -153,9 +175,22 @@ dunemva::MVASelect::~MVASelect(){}
 //------------------------------------------------------------------------------
 void MVASelect::reconfigure(fhicl::ParameterSet const& pset) 
 {
-  fMVAMethods=pset.get<std::vector<std::string> >("MVAMethods");
+  fMVAMethod=pset.get< std::string >("MVAMethod");
   fReweight=pset.get<bool>("Reweight");
+  fMakeSystHist=pset.get<bool>("MakeSystHist");
   fMVAAlg.reconfigure(pset);
+  
+  fNuECut  = pset.get<double>("NuECut");
+  fNuMuCut = pset.get<double>("NuMuCut");
+
+  if(pset.get<std::string>("Select") == "nue"){
+    fSelNuE  = true;
+    fSelNuMu = false;
+  } else if(pset.get<std::string>("Select") == "numu"){
+    fSelNuE  = false;
+    fSelNuMu = true;
+  }
+
   return;
 }
 
@@ -170,8 +205,7 @@ void MVASelect::beginJob()
   fTree->Branch("run",         &fRun,        "run/I");
   fTree->Branch("subrun",      &fSubrun,     "subrun/I");
   fTree->Branch("event",       &fEvent,      "event/I");
-  fTree->Branch("nmvamethods",  fnMethods,   "nmvamethods/I");
-  fTree->Branch("mvaresults",   fmvaResults, "mvaresults[10]/D");
+  fTree->Branch("mvaresult",   &fMVAResult,  "mvaresult/D");
   fTree->Branch("weight",      &fWeight,     "weight/D");
 
   // particle counts
@@ -193,10 +227,13 @@ void MVASelect::beginJob()
   fTree->Branch("Ev_reco",      &fEtrue,        "Ev_reco/D");
   fTree->Branch("EvClass_reco", &fEvClass_reco, "EvClass_reco/I");
   fTree->Branch("coh",          &fIsCoh,        "coh/I");
+  fTree->Branch("dis",          &fIsDIS,        "dis/I");
   fTree->Branch("cc",           &fCC,           "cc/I");
   fTree->Branch("nc",           &fNC,           "nc/I");
   fTree->Branch("neu",          &fNuPdg,        "neu/I");
   fTree->Branch("beamPdg",      &fBeamPdg,      "beamPdg/I");
+  fTree->Branch("mode",         &fMode,         "mode/I");
+  fTree->Branch("ccnc",         &fCCNC,         "ccnc/I");
 
   fTree->Branch("nuvtxx_truth",&nuvtxx_truth,"nuvtxx_truth/D");
   fTree->Branch("nuvtxy_truth",&nuvtxy_truth,"nuvtxy_truth/D");
@@ -218,9 +255,149 @@ void MVASelect::beginJob()
   fTree->Branch("f_int_n_abs",      finuke_FrAbs_N,    "f_int_n_abs[41]/D");
   fTree->Branch("f_int_n_prod",     finuke_FrPiProd_N, "f_int_n_prod[41]/D");
 
+
+  const int bins_true_E = 98;
+  const double bin_edges_true_E[bins_true_E + 1] = {
+    0.000, 0.125, 0.250, 0.375, 0.500, 0.625, 0.750, 0.875, 
+    1.000, 1.125, 1.250, 1.375, 1.500, 1.625, 1.750, 1.875, 
+    2.000, 2.125, 2.250, 2.375, 2.500, 2.625, 2.750, 2.875, 
+    3.000, 3.125, 3.250, 3.375, 3.500, 3.625, 3.750, 3.875, 
+    4.000, 4.125, 4.250, 4.375, 4.500, 4.625, 4.750, 4.875, 
+    5.000, 5.125, 5.250, 5.375, 5.500, 5.625, 5.750, 5.875, 
+    6.000, 6.125, 6.250, 6.375, 6.500, 6.625, 6.750, 6.875, 
+    7.000, 7.125, 7.250, 7.375, 7.500, 7.625, 7.750, 7.875, 
+    8.000, 8.125, 8.250, 8.375, 8.500, 8.625, 8.750, 8.875, 
+    9.000, 9.125, 9.250, 9.375, 9.500, 9.625, 9.750, 9.875, 
+    10.000, 11.000, 12.000, 13.000, 14.000, 15.000, 16.000, 
+    17.000, 18.000, 19.000, 20.000, 30.000, 40.000, 50.000, 
+    60.000, 70.000, 80.000, 90.000, 100.000};
+
+  /*
+  const int bins_reco_E = 71;
+  const double bin_edges_reco_E[bins_reco_E + 1] = {
+    0.000, 0.125, 0.250, 0.375, 0.500, 0.625, 0.750, 0.875, 
+    1.000, 1.125, 1.250, 1.375, 1.500, 1.625, 1.750, 1.875, 
+    2.000, 2.125, 2.250, 2.375, 2.500, 2.625, 2.750, 2.875, 
+    3.000, 3.125, 3.250, 3.375, 3.500, 3.625, 3.750, 3.875, 
+    4.000, 4.125, 4.250, 4.375, 4.500, 4.625, 4.750, 4.875, 
+    5.000, 5.125, 5.250, 5.375, 5.500, 5.625, 5.750, 5.875, 
+    6.000, 6.125, 6.250, 6.375, 6.500, 6.625, 6.750, 6.875, 
+    7.000, 7.125, 7.250, 7.375, 7.500, 7.625, 7.750, 7.875, 
+    8.000, 9.000, 10.000, 12.000, 14.000, 16.000, 18.000, 20.000};
+  */
+
+  const int n_respo_bins  = 101;
+  double respo_min = -5.0 - (5.0 - -5.0)/(2.0*(n_respo_bins-1));
+  double respo_max =  5.0 + (5.0 - -5.0)/(2.0*(n_respo_bins-1));
+  double bin_edges_respo[n_respo_bins + 1] = {0.0};
+  for(int i=0; i<=n_respo_bins; i++) bin_edges_respo[i] = respo_min + i*(respo_max-respo_min)/n_respo_bins;
+  //for(int i=0; i<=n_respo_bins; i++) cout<<"bin_edges_respo["<<i<<"] = "<<bin_edges_respo[i]<<endl;
+
+  h_ccqe_1.resize(2);    h_ccqe_2.resize(2);    h_ccqe_2.resize(2);
+  h_cc1pic_1.resize(2);  h_cc1pic_2.resize(2);  h_cc1pic_2.resize(2);
+  h_cc1piz_1.resize(2);  h_cc1piz_2.resize(2);  h_cc1piz_2.resize(2);
+  h_2pi.resize(2);
+  h_dis_1.resize(2);     h_dis_2.resize(2);     h_dis_2.resize(2);
+  h_coh.resize(2);
+  h_nc.resize(2);
+
+  std::string current, ptype;
+  if( fMakeSystHist ){
+    for(unsigned int i=0; i<2; i++){
+      if(i) current = "nc";
+      else  current = "cc";
+
+      h_ccqe_1[i].resize(2);    h_ccqe_2[i].resize(2);    h_ccqe_2[i].resize(2);
+      h_cc1pic_1[i].resize(2);  h_cc1pic_2[i].resize(2);  h_cc1pic_2[i].resize(2);
+      h_cc1piz_1[i].resize(2);  h_cc1piz_2[i].resize(2);  h_cc1piz_2[i].resize(2);
+      h_2pi[i].resize(2);
+      h_dis_1[i].resize(2);     h_dis_2[i].resize(2);     h_dis_2[i].resize(2);
+      h_coh[i].resize(2);
+      h_nc[i].resize(2);
+      
+      for(unsigned int j=0; j<2; j++){ 
+	if(i) ptype = "nubar";
+	else  ptype = "nu";
+
+	h_ccqe_1[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_ccqe_1",current.c_str(),ptype.c_str()),
+					  Form("%sRespo_f_int_%s_ccqe_1",current.c_str(),ptype.c_str()),
+					  bins_true_E, bin_edges_true_E,
+					  n_respo_bins,bin_edges_respo);
+	h_ccqe_2[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_ccqe_2",current.c_str(),ptype.c_str()),
+					  Form("%sRespo_f_int_%s_ccqe_2",current.c_str(),ptype.c_str()),
+					  bins_true_E, bin_edges_true_E,
+					  n_respo_bins,bin_edges_respo);
+	h_ccqe_3[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_ccqe_3",current.c_str(),ptype.c_str()),
+					  Form("%sRespo_f_int_%s_ccqe_3",current.c_str(),ptype.c_str()),
+					  bins_true_E, bin_edges_true_E,
+					  n_respo_bins,bin_edges_respo);
+
+	h_cc1pic_1[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_cc1pic_1",current.c_str(),ptype.c_str()),
+					    Form("%sRespo_f_int_%s_cc1pic_1",current.c_str(),ptype.c_str()),
+					    bins_true_E, bin_edges_true_E,
+					    n_respo_bins,bin_edges_respo);
+	h_cc1pic_2[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_cc1pic_2",current.c_str(),ptype.c_str()),
+					    Form("%sRespo_f_int_%s_cc1pic_2",current.c_str(),ptype.c_str()),
+					    bins_true_E, bin_edges_true_E,
+					    n_respo_bins,bin_edges_respo);
+	h_cc1pic_3[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_cc1pic_3",current.c_str(),ptype.c_str()),
+					    Form("%sRespo_f_int_%s_cc1pic_3",current.c_str(),ptype.c_str()),
+					    bins_true_E, bin_edges_true_E,
+					    n_respo_bins,bin_edges_respo);
+
+	h_cc1piz_1[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_cc1piz_1",current.c_str(),ptype.c_str()),
+					    Form("%sRespo_f_int_%s_cc1piz_1",current.c_str(),ptype.c_str()),
+					    bins_true_E, bin_edges_true_E,
+					    n_respo_bins,bin_edges_respo);
+	h_cc1piz_2[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_cc1piz_2",current.c_str(),ptype.c_str()),
+					    Form("%sRespo_f_int_%s_cc1piz_2",current.c_str(),ptype.c_str()),
+					    bins_true_E, bin_edges_true_E,
+					    n_respo_bins,bin_edges_respo);
+	h_cc1piz_3[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_cc1piz_3",current.c_str(),ptype.c_str()),
+					    Form("%sRespo_f_int_%s_cc1piz_3",current.c_str(),ptype.c_str()),
+					    bins_true_E, bin_edges_true_E,
+					    n_respo_bins,bin_edges_respo);
+	
+	h_2pi[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_2pi",current.c_str(),ptype.c_str()),
+				       Form("%sRespo_f_int_%s_2pi",current.c_str(),ptype.c_str()),
+				       bins_true_E, bin_edges_true_E,
+				       n_respo_bins,bin_edges_respo);
+
+	h_dis_1[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_dis_1",current.c_str(),ptype.c_str()),
+					 Form("%sRespo_f_int_%s_dis_1",current.c_str(),ptype.c_str()),
+					 bins_true_E, bin_edges_true_E,
+					 n_respo_bins,bin_edges_respo);
+	h_dis_2[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_dis_2",current.c_str(),ptype.c_str()),
+					 Form("%sRespo_f_int_%s_dis_2",current.c_str(),ptype.c_str()),
+					 bins_true_E, bin_edges_true_E,
+					 n_respo_bins,bin_edges_respo);
+	h_dis_3[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_dis_3",current.c_str(),ptype.c_str()),
+					 Form("%sRespo_f_int_%s_dis_3",current.c_str(),ptype.c_str()),
+					 bins_true_E, bin_edges_true_E,
+					 n_respo_bins,bin_edges_respo);
+
+	h_coh[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_coh",current.c_str(),ptype.c_str()),
+				       Form("%sRespo_f_int_%s_coh",current.c_str(),ptype.c_str()),
+				       bins_true_E, bin_edges_true_E,
+				       n_respo_bins,bin_edges_respo);
+	h_nc[i][j] = tfs->make<TH2D>( Form("%sRespo_f_int_%s_nc",current.c_str(),ptype.c_str()),
+				      Form("%sRespo_f_int_%s_nc",current.c_str(),ptype.c_str()),
+				      bins_true_E, bin_edges_true_E,
+				      n_respo_bins,bin_edges_respo);
+      }
+    }
+  } // if making syst hists
   return;
 }
 
+//------------------------------------------------------------------------------
+/*
+TH2D* MVASelect::MakeRespoHist(TString name){
+  return fTfs->make<TH2D>( name, name,
+			   bins_true_E, bin_edges_true_E,
+			   n_respo_bins,bin_edges_respo);
+}
+*/
 
 //------------------------------------------------------------------------------
 void MVASelect::beginSubRun(const art::SubRun& sr){
@@ -239,14 +416,6 @@ void MVASelect::analyze(art::Event const & evt)
   fSubrun = evt.id().subRun();
   fEvent = evt.id().event();
   fMVAAlg.Run(evt,fMVAResult,fWeight);
-
-  // fill branch variables
-  fnMethods = fMVAResult.size();
-  if(fnMethods==0)
-    mf::LogWarning("MVASelect") << "Returning zero MVA methods";
-  for(int i=0; i<fnMethods; i++){
-    fmvaResults[i] = fMVAResult[i];
-  }
 
   art::Handle< std::vector<simb::MCTruth> > mct;
   std::vector< art::Ptr<simb::MCTruth> > truth;
@@ -276,7 +445,6 @@ void MVASelect::analyze(art::Event const & evt)
       mf::LogWarning("MVASelect") << "Skipping MC truth index " << i;
       continue;
     }
-
  
     fCCNC     = truth[i]->GetNeutrino().CCNC();  //0=CC 1=NC
     if(fCCNC==0){
@@ -297,10 +465,11 @@ void MVASelect::analyze(art::Event const & evt)
     nuvtxy_truth = truth[i]->GetNeutrino().Nu().Vy();
     nuvtxz_truth = truth[i]->GetNeutrino().Nu().Vz();
 
-    if(fMode==3)
-      fIsCoh = 1;
-    else
-      fIsCoh = 0;
+    if(fMode==3) fIsCoh = 1;
+    else         fIsCoh = 0;
+
+    if(fMode==2) fIsDIS = 1;
+    else         fIsDIS = 0;
     
     // Cheat selection for now, will be refilled in script cutting on MVAResult
     fEvClass_reco = -1;
@@ -350,6 +519,15 @@ void MVASelect::analyze(art::Event const & evt)
       }
     }
 
+    // depends on fCCNC, particle counts,
+    //
+    // loops through every sigma, checks particle counts,
+    //  and fills the histograms accordingly. 
+    if( (fSelNuE  && fMVAResult < fNuECut ) ||
+	(fSelNuMu && fMVAResult < fNuMuCut) ){
+      if(fMakeSystHist) this->FillNormResponseHists();
+    }
+
     unsigned int sigs_i = 0;
     double sig_step = 0.1;
     for(double sig=-2; sig<=2; sig+=sig_step){      
@@ -357,8 +535,7 @@ void MVASelect::analyze(art::Event const & evt)
 	mf::LogError("MVASelect") << "too many sigma steps";
       fSigs[sigs_i] = sig;
       sigs_i++;
-    }
-    
+    }    
 
     if(fReweight){ // takes a long time, only reweight if necessary
       rwgt::NuReweight *rwt;
@@ -377,61 +554,195 @@ void MVASelect::analyze(art::Event const & evt)
 	} // all sigma steps s
       } // all reweights r
     } // if reweighting
-    
+
   } // loop through MC truth i
   
 
   fTree->Fill();
-  fMVAResult.clear();
-
   return;
 }
 
-//------------------------------------------------------------------------------
-void MVASelect::FillINuke( rwgt::ReweightLabel_t label, double sig, double wgt){
-
-  unsigned int sig_i = UINT_MAX;
-  for(unsigned int a=0; a<knRwgts; a++)
-    if( fSigs[a] == sig )
-      sig_i = a;
-	
-  if(sig_i==UINT_MAX)
-    mf::LogError("MVASelect") << "bad sigma index";
-
-  if(      label == rwgt::fReweightMFP_pi )
-    finuke_MFP_pi[sig_i] = wgt;
-  else if( label == rwgt::fReweightMFP_N )
-    finuke_MFP_N[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrCEx_pi )
-    finuke_FrCEx_pi[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrElas_pi )
-    finuke_FrElas_pi[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrInel_pi )
-    finuke_FrInel_pi[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrAbs_pi )
-    finuke_FrAbs_pi[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrPiProd_pi )
-    finuke_FrPiProd_pi[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrCEx_N )
-    finuke_FrCEx_N[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrElas_N )
-    finuke_FrElas_N[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrInel_N )
-    finuke_FrInel_N[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrAbs_N )
-    finuke_FrAbs_N[sig_i] = wgt;
-  else if( label == rwgt::fReweightFrPiProd_N )
-    finuke_FrPiProd_N[sig_i] = wgt;
-
-}
-
-//------------------------------------------------------------------------------
-void MVASelect::endSubRun(const art::SubRun& sr){
-  fMVAAlg.endSubRun(sr);
-}
+  //------------------------------------------------------------------------------
+  void MVASelect::FillINuke( rwgt::ReweightLabel_t label, double sig, double wgt){
+    
+    unsigned int sig_i = UINT_MAX;
+    for(unsigned int a=0; a<knRwgts; a++)
+      if( fSigs[a] == sig )
+	sig_i = a;
+    
+    if(sig_i==UINT_MAX)
+      mf::LogError("MVASelect") << "bad sigma index";
+    
+    if(      label == rwgt::fReweightMFP_pi )
+      finuke_MFP_pi[sig_i] = wgt;
+    else if( label == rwgt::fReweightMFP_N )
+      finuke_MFP_N[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrCEx_pi )
+      finuke_FrCEx_pi[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrElas_pi )
+      finuke_FrElas_pi[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrInel_pi )
+      finuke_FrInel_pi[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrAbs_pi )
+      finuke_FrAbs_pi[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrPiProd_pi )
+      finuke_FrPiProd_pi[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrCEx_N )
+      finuke_FrCEx_N[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrElas_N )
+      finuke_FrElas_N[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrInel_N )
+      finuke_FrInel_N[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrAbs_N )
+      finuke_FrAbs_N[sig_i] = wgt;
+    else if( label == rwgt::fReweightFrPiProd_N )
+      finuke_FrPiProd_N[sig_i] = wgt;  
+  }
   
-DEFINE_ART_MODULE(MVASelect)
+  //------------------------------------------------------------------------------
+  void MVASelect::FillNormResponseHists(){
+    
+    if(!fMakeSystHist){
+      mf::LogWarning("FillNormResponseHists") 
+	<< "Job not configured to make systematic historgams, return.";
+      return;
+    }
+    double weight(1.);
+    bool rightSign;
+    for(unsigned int s=0; s<knRwgts; s++){
+      for(unsigned int j=0; j<2; j++){ 
+	if(j) rightSign = (fNuPdg < 0); // nubar
+	else  rightSign = (fNuPdg > 0); // nu
+	
+	// h_ccqe_<q2 bin>
+	if( IsCCQE()   &&
+	    fQ2 < 0.2  &&
+	    rightSign  )   h_ccqe_1[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else               h_ccqe_1[fCCNC][j]->Fill(fEtrue,s,weight);	
+	if( IsCCQE()   &&
+	    fQ2 >= 0.2 &&  fQ2 < 0.55  &&
+	    rightSign  )   h_ccqe_2[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else               h_ccqe_2[fCCNC][j]->Fill(fEtrue,s,weight);
+	if( IsCCQE()    &&
+	    fQ2 >= 0.55 &&
+	    rightSign  )   h_ccqe_3[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	           h_ccqe_3[fCCNC][j]->Fill(fEtrue,s,weight);
+	
 
+
+	// h_cc1pic_<q2 bin>
+	if( IsCC1PiC() &&
+	    fQ2 < 0.2  &&
+	    rightSign  )   h_cc1pic_1[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	           h_cc1pic_1[fCCNC][j]->Fill(fEtrue,s,weight);	
+	if( IsCC1PiC() &&
+	    fQ2 >= 0.2 &&  fQ2 < 0.55  &&
+	    rightSign  )   h_cc1pic_2[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else               h_cc1pic_2[fCCNC][j]->Fill(fEtrue,s,weight);
+	if( IsCC1PiC()  &&
+	    fQ2 >= 0.55 &&
+	    rightSign  )    h_cc1pic_3[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	            h_cc1pic_3[fCCNC][j]->Fill(fEtrue,s,weight);
+
+
+
+	// h_cc1piz_<q2 bin>
+	if( IsCC1Pi0() &&
+	    fQ2 < 0.2  &&
+	    rightSign  )   h_cc1piz_1[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	           h_cc1piz_1[fCCNC][j]->Fill(fEtrue,s,weight);	
+	if( IsCC1Pi0() &&
+	    fQ2 >= 0.2 &&  fQ2 < 0.55  &&
+	    rightSign  )   h_cc1piz_2[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	           h_cc1piz_2[fCCNC][j]->Fill(fEtrue,s,weight);
+	if( IsCC1Pi0()  &&
+	    fQ2 >= 0.55 &&
+	    rightSign  )    h_cc1piz_3[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	            h_cc1piz_3[fCCNC][j]->Fill(fEtrue,s,weight);
+
+
+
+	// h_2pi
+	if( IsCC2Pi()   &&
+	    rightSign  )    h_2pi[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	            h_2pi[fCCNC][j]->Fill(fEtrue,s,weight);
+	
+
+	
+	// h_dis_<q2 bin>
+	if( IsDIS()       &&
+	    fEtrue < 7.5  &&
+	    rightSign  )   h_dis_1[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	           h_dis_1[fCCNC][j]->Fill(fEtrue,s,weight);
+	if( IsDIS()        &&
+	    fEtrue >= 7.5  &&  fEtrue < 15.0  &&
+	    rightSign  )   h_dis_2[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	           h_dis_2[fCCNC][j]->Fill(fEtrue,s,weight);
+	if( IsDIS()      &&
+	    fQ2 >= 15.0  &&
+	    rightSign  )    h_dis_3[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	            h_dis_3[fCCNC][j]->Fill(fEtrue,s,weight);
+
+
+
+	// h_coh
+	if( fIsCoh    &&
+	    rightSign  )    h_coh[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	            h_coh[fCCNC][j]->Fill(fEtrue,s,weight);
+
+
+	// h_nc
+	if( fCCNC == 1 &&
+	    rightSign  )    h_nc[fCCNC][j]->Fill(fEtrue,s,weight*(1+0.1*s));
+	else	            h_nc[fCCNC][j]->Fill(fEtrue,s,weight);
+
+
+      }
+    }
+    
+  }
+  
+  //------------------------------------------------------------------------------
+  bool MVASelect::IsCCQE(){
+    return ( fCCNC==0 &&
+	     nPip==0  && nPim==0 && nPi0==0 &&
+	     nKp==0   && nKm==0  && nK0==0  &&
+	     nEM==0   && nOtherHad==0 );
+  }
+  bool MVASelect::IsCC1PiC(){
+    return ( fCCNC==0 &&
+	     nPip+nPim == 1    && nPi0==0 && 
+	     nKp==0  && nKm==0 && nK0==0  &&
+	     nOtherHad==0      &&
+	     !fIsCoh );
+  }
+  bool MVASelect::IsCC1Pi0(){
+    return ( fCCNC==0 && 
+	     nPip== 0 && nPim==0 && nPi0==1 && 
+	     nKp==0   && nKm==0  && nK0==0  &&
+	     nOtherHad==0        &&
+	     !fIsCoh );
+  }
+  bool MVASelect::IsCC2Pi(){
+    return ( fCCNC==0 &&
+	     nPip     +  nPim    +  nPi0 == 2 && 
+	     nKp==0   && nKm==0  && nK0==0    &&
+	     nOtherHad==0        &&
+	     !fIsCoh );
+  }
+  bool MVASelect::IsDIS(){
+    return ( fIsDIS &&
+	     nPip +  nPim + nPi0 > 2 );
+  }
+
+
+  //------------------------------------------------------------------------------
+  void MVASelect::endSubRun(const art::SubRun& sr){
+    fMVAAlg.endSubRun(sr);
+  }
+  
+  DEFINE_ART_MODULE(MVASelect)
+  
 } // namespace dunemva
 
 #endif // MVASelect_H

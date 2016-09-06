@@ -76,6 +76,7 @@ namespace dunemva{
     void reconfigure(fhicl::ParameterSet const& p);
 
     void Run(const art::Event& evt,std::vector<double>& result, double& wgt);
+    void Run(const art::Event& evt,double& result, double& wgt);
     void endSubRun(const art::SubRun& sr);
 
   private:
@@ -89,8 +90,8 @@ namespace dunemva{
     std::ofstream fFile;
 
     TMVA::Reader fReader;
-    std::vector<std::string> fMVAMethods;
-    std::vector<std::string> fWeightFiles;
+    std::string fMVAMethod;
+    std::string fWeightFile;
 
     art::ServiceHandle<geo::Geometry> fGeom;
     art::ServiceHandle<art::TFileService> tfs;
