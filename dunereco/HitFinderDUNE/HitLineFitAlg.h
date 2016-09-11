@@ -2,6 +2,7 @@
 #define HITLINEFITALG_H
 
 #include "fhiclcpp/ParameterSet.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "RobustHitFinderSupport.h"
 
@@ -66,6 +67,7 @@ private:
     int fMinAlsoPoints;
     float fIterationsMultiplier;
     float fInclusionThreshold;
+    int fLogLevel;
   };
 
 }

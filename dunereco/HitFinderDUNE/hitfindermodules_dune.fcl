@@ -163,4 +163,9 @@ dune35t_robusthitfinder:
     RMSHitFinderAlg: @local::dune35t_rmshitfinderalg
 }
 
+dune35t_robusthitfindersim: @local::dune35t_robusthitfinder
+dune35t_robusthitfindersim.SearchPreTicks: 100
+dune35t_robusthitfindersim.SearchPostTicks: 4400
+dune35t_robusthitfindersim.HitGeomDistanceCut: 30
+
 END_PROLOG
