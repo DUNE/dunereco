@@ -10,11 +10,6 @@
     <MuonPlugin>LArMuonId</MuonPlugin>
 
     <!-- ALGORITHM SETTINGS -->
-    <!--algorithm type = "LArEventReading">
-         <EventFileName>/r05/lbne/mcproduction_v04_16_00/prodgenie_bnb_nu_uboone/uBooNE_Events_100_0_Neutrino.pndr</EventFileName>
-         <ShouldReadEvents>true</ShouldReadEvents>
-         <SkipToEvent>0</SkipToEvent>
-    </algorithm-->
 
     <!-- NEUTRINO-INDUCED EVENT RECONSTRUCTION -->
     <algorithm type = "LArListPreparation">
@@ -64,6 +59,9 @@
             <algorithm type = "LArOvershootSplitting"/>
             <algorithm type = "LArBranchSplitting"/>
             <algorithm type = "LArKinkSplitting"/>
+            <algorithm type = "LArTrackConsolidation">
+                <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
+            </algorithm>
         </TwoDAlgorithms>
 
         <ThreeDAlgorithms>
@@ -188,62 +186,63 @@
 
         <VertexAlgorithms>
             <algorithm type = "LArCandidateVertexCreation">
-                <InputClusterListNameU>ClustersU</InputClusterListNameU>
-                <InputClusterListNameV>ClustersV</InputClusterListNameV>
-                <InputClusterListNameW>ClustersW</InputClusterListNameW>
+                <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
                 <OutputVertexListName>CandidateVertices</OutputVertexListName>
                 <ReplaceCurrentVertexList>true</ReplaceCurrentVertexList>
             </algorithm>
-            <algorithm type = "LArVertexSelection">
-                <InputCaloHitListNameU>CaloHitListU</InputCaloHitListNameU>
-                <InputCaloHitListNameV>CaloHitListV</InputCaloHitListNameV>
-                <InputCaloHitListNameW>CaloHitListW</InputCaloHitListNameW>
+            <algorithm type = "LArEnergyKickVertexSelection">
+                <InputCaloHitListNames>CaloHitListU CaloHitListV CaloHitListW</InputCaloHitListNames>
+                <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
                 <OutputVertexListName>NeutrinoVertices3D</OutputVertexListName>
                 <ReplaceCurrentVertexList>true</ReplaceCurrentVertexList>
                 <BeamMode>true</BeamMode>
             </algorithm>
             <algorithm type = "LArVertexSplitting">
-                <InputClusterList>ClustersU</InputClusterList>
-                <MinClusterLength>5.</MinClusterLength>
-            </algorithm>
-            <algorithm type = "LArVertexSplitting">
-                <InputClusterList>ClustersV</InputClusterList>
-                <MinClusterLength>5.</MinClusterLength>
-            </algorithm>
-            <algorithm type = "LArVertexSplitting">
-                <InputClusterList>ClustersW</InputClusterList>
+                <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
                 <MinClusterLength>5.</MinClusterLength>
             </algorithm>
         </VertexAlgorithms>
 
-        <MopUpAlgorithms>
-            <algorithm type = "LArVertexBasedPfoMerging">
+        <TwoDMopUpAlgorithms>
+            <algorithm type = "LArVertexBasedPfoMopUp">
                 <TrackPfoListName>TrackParticles3D</TrackPfoListName>
                 <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
                 <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
             </algorithm>
-            <algorithm type = "LArSplitShowerMerging">
+            <algorithm type = "LArShowerPfoMopUp">
                 <TrackPfoListName>TrackParticles3D</TrackPfoListName>
                 <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
                 <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
             </algorithm>
-            <algorithm type = "LArBoundedClusterMerging">
+            <algorithm type = "LArBoundedClusterMopUp">
                 <PfoListNames>ShowerParticles3D</PfoListNames>
-                <RemnantClusterListNames>ClustersU ClustersV ClustersW</RemnantClusterListNames>
+                <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
             </algorithm>
-            <algorithm type = "LArConeBasedMerging">
+            <algorithm type = "LArConeClusterMopUp">
                 <PfoListNames>ShowerParticles3D</PfoListNames>
-                <RemnantClusterListNames>ClustersU ClustersV ClustersW</RemnantClusterListNames>
+                <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
             </algorithm>
-            <algorithm type = "LArProximityBasedMerging">
+            <algorithm type = "LArNearbyClusterMopUp">
                 <PfoListNames>ShowerParticles3D</PfoListNames>
-                <RemnantClusterListNames>ClustersU ClustersV ClustersW</RemnantClusterListNames>
+                <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
             </algorithm>
-            <algorithm type = "LArIsolatedHitMerging">
-                <PfoListNames>ShowerParticles3D</PfoListNames>
-                <RemnantClusterListNames>ClustersU ClustersV ClustersW</RemnantClusterListNames>
+        </TwoDMopUpAlgorithms>
+
+        <ThreeDMopUpAlgorithms>
+            <algorithm type = "LArSlidingConePfoMopUp">
+                <InputPfoListNames>TrackParticles3D ShowerParticles3D</InputPfoListNames>
+                <DaughterListNames>ClustersU ClustersV ClustersW TrackClusters3D ShowerClusters3D</DaughterListNames>
             </algorithm>
-        </MopUpAlgorithms>
+            <algorithm type = "LArSlidingConeClusterMopUp">
+                <InputPfoListNames>TrackParticles3D ShowerParticles3D</InputPfoListNames>
+                <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
+            </algorithm>
+            <algorithm type = "LArIsolatedClusterMopUp">
+                <PfoListNames>TrackParticles3D ShowerParticles3D</PfoListNames>
+                <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
+                <AddHitsAsIsolated>true</AddHitsAsIsolated>
+            </algorithm>
+        </ThreeDMopUpAlgorithms>
 
         <NeutrinoAlgorithms>
             <algorithm type = "LArNeutrinoCreation">

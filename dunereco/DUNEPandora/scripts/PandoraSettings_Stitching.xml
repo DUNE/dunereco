@@ -12,13 +12,11 @@
     <!-- ALGORITHM SETTINGS -->
     <algorithm type = "LArStitching">
         <StitchingTools>
-            <tool type = "LArStitchingObjectCreation">
-                <NewPfoListName>RecreatedPfos</NewPfoListName>
-                <NewVertexListName>RecreatedVertices</NewVertexListName>
-                <NewClusterListName>RecreatedClusters</NewClusterListName>
-                <RecreateTwoDContent>true</RecreateTwoDContent>
-            </tool>
+            <tool type = "LArStitchingObjectCreation"/>
             <!--tool type = "LArStitchingPfoMerging"/-->
         </StitchingTools>
+        <NewPfoListName>RecreatedPfos</NewPfoListName>
+        <NewVertexListName>RecreatedVertices</NewVertexListName>
+        <NewClusterListName>RecreatedClusters</NewClusterListName>
     </algorithm>
 </pandora>
