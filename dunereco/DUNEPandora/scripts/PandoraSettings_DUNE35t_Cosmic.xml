@@ -10,11 +10,6 @@
     <MuonPlugin>LArMuonId</MuonPlugin>
 
     <!-- ALGORITHM SETTINGS -->
-    <!--algorithm type = "EventReading">
-         <EventFileName>/r05/lbne/mcproduction_v04_06_02/prodgenie_bnb_nu_cosmic_uboone/uBooNE_Events_100_0_reco1.pndr</EventFileName>
-         <ShouldReadEvents>true</ShouldReadEvents>
-         <SkipToEvent>0</SkipToEvent>
-    </algorithm-->
 
     <!-- COSMIC RAY RECONSTRUCTION -->
     <algorithm type = "LArListPreparation">
@@ -154,6 +149,12 @@
         <InputClusterListNameW>ClustersW</InputClusterListNameW>
         <OutputPfoListName>Particles3D</OutputPfoListName>
     </algorithm>
+    <algorithm type = "LArCosmicRayTrackRecovery"> 
+        <InputClusterListNameU>ClustersU</InputClusterListNameU>
+        <InputClusterListNameV>ClustersV</InputClusterListNameV>
+        <InputClusterListNameW>ClustersW</InputClusterListNameW>
+        <OutputPfoListName>Particles3D</OutputPfoListName>
+    </algorithm>
 
     <!-- 2D cosmic ray shower clusters -->
     <algorithm type = "LArListDissolution">
@@ -266,10 +267,10 @@
         <OutputPfoListName>Particles3D</OutputPfoListName>
     </algorithm>
 
-    <!-- 2D cosmic-ray isolated hits -->  
-    <algorithm type = "LArIsolatedHitMerging">
+    <!-- 2D cosmic-ray isolated hits/clusters -->
+    <algorithm type = "LArIsolatedClusterMopUp">
         <PfoListNames>Particles3D DaughterParticles3D</PfoListNames>
-        <RemnantClusterListNames>ClustersU ClustersV ClustersW</RemnantClusterListNames>
+        <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
         <ExcludePfosContainingTracks>false</ExcludePfosContainingTracks>
     </algorithm>
 
