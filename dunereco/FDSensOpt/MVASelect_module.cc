@@ -109,6 +109,9 @@ private:
 
   double fQ2; 
   double fEtrue; 
+  double fW;
+  double fX;
+  double fY;
 
   int fIsCoh; // 1=is coherent, 0=otherwise
   int fIsDIS; // 1=is dis,      0=otherwise
@@ -234,6 +237,9 @@ void MVASelect::beginJob()
   fTree->Branch("beamPdg",      &fBeamPdg,      "beamPdg/I");
   fTree->Branch("mode",         &fMode,         "mode/I");
   fTree->Branch("ccnc",         &fCCNC,         "ccnc/I");
+  fTree->Branch("W",            &fW,            "W/D");
+  fTree->Branch("X",            &fX,            "X/D");
+  fTree->Branch("Y",            &fY,            "Y/D");
 
   fTree->Branch("nuvtxx_truth",&nuvtxx_truth,"nuvtxx_truth/D");
   fTree->Branch("nuvtxy_truth",&nuvtxy_truth,"nuvtxy_truth/D");
@@ -460,6 +466,9 @@ void MVASelect::analyze(art::Event const & evt)
     fMode     = truth[i]->GetNeutrino().Mode(); //0=QE/El, 1=RES, 2=DIS, 3=Coherent production
     fEtrue    = truth[i]->GetNeutrino().Nu().E();
     fQ2       = truth[i]->GetNeutrino().QSqr();
+    fW        = truth[i]->GetNeutrino().W();
+    fX        = truth[i]->GetNeutrino().X();
+    fY        = truth[i]->GetNeutrino().Y();
 
     nuvtxx_truth = truth[i]->GetNeutrino().Nu().Vx();
     nuvtxy_truth = truth[i]->GetNeutrino().Nu().Vy();
