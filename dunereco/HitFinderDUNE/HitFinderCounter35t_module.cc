@@ -72,34 +72,24 @@ namespace dune{
   
   private:
 
+    typedef std::vector<recob::Hit> HitVector_t;
+    typedef std::vector<std::pair<HitVector_t,size_t> > BadVector_t;
+    typedef std::vector<std::pair<recob::Hit,size_t> > GoodVector_t;
+
     //bool DoesIntersect( double A0, double B0, double A1, double B1, double A2, double B2, double A3, double B3 );
     int  pnpoly( int nvert, float *vertx, float *verty, float testx, float testy );
-    void FindXZGradient   ( std::vector < recob::Hit > HitVector, float &Gradient, float& Intercept );
-    void FindPlaneGradient( std::vector < recob::Hit > HitVector, float &Gradient, float& Intercept );
+    void FindXZGradient   ( HitVector_t HitVector, float &Gradient, float& Intercept );
+    void FindPlaneGradient( HitVector_t HitVector, float &Gradient, float& Intercept );
     void MatrixGradient   ( TMatrixD X, TMatrixD Y, size_t MatSize, float &Gradient, float &Intercept );
     double DistToLine     ( float Gradient, float Intercept, double X, double Y);
-    std::vector<recob::Hit> FindUniqueHits( std::vector < recob::Hit > const GoodHits, unsigned int Plane, unsigned int TPC );
+    HitVector_t FindUniqueHits( HitVector_t const GoodHits, unsigned int Plane, unsigned int TPC );
     int  CheckWhichIndex( std::vector<int> CloseHits );
     std::vector<int>  ClosestDistance( std::vector<double> CloseHits );
-    void OutAndClearVector ( std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InitialBad,
-			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &NewBad,
-			     std::vector < std::pair < recob::Hit, size_t > > & NewGood, size_t HitsSize );
-    void CrossCollection   ( std::vector < recob::Hit > const GoodHits,
-			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
-			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
-			     std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector );
-    void AdjacentWireWidth ( std::vector < recob::Hit > const GoodHits,
-			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
-			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
-			     std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector );
-    void TwoDimXZLineFit   ( std::vector < recob::Hit > const GoodHits,
-			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
-			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
-			     std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector );
-    void TwoDimPlaneLineFit( std::vector < recob::Hit > const GoodHits,
-			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
-			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
-			     std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector );
+    void OutAndClearVector ( BadVector_t & InitialBad, BadVector_t & NewBad, GoodVector_t & NewGood, size_t HitsSize );
+    void CrossCollection   ( HitVector_t const GoodHits, BadVector_t &InputBadVector, BadVector_t &OutputBadVector, GoodVector_t &OutputGoodVector );
+    void AdjacentWireWidth ( HitVector_t const GoodHits, BadVector_t &InputBadVector, BadVector_t &OutputBadVector, GoodVector_t &OutputGoodVector );
+    void TwoDimXZLineFit   ( HitVector_t const GoodHits, BadVector_t &InputBadVector, BadVector_t &OutputBadVector, GoodVector_t &OutputGoodVector );
+    void TwoDimPlaneLineFit( HitVector_t const GoodHits, BadVector_t &InputBadVector, BadVector_t &OutputBadVector, GoodVector_t &OutputGoodVector );
     
     art::ServiceHandle<geo::Geometry> fGeom;
   
@@ -237,7 +227,7 @@ namespace dune{
     				     );
     
     // I want a vector of a vector of hits, to store my undisambiguated hits.
-    std::vector < std::pair < std::vector < recob::Hit >, size_t > > UnDisambigHits;
+    BadVector_t UnDisambigHits;
 
     // FIXME:::::I am unsure of the best way to handle showers - lots of trigger indexes at the same time.
     //           The easiest ( and laziest ) thing to do, is to just discount events which have many triggers.
@@ -250,8 +240,8 @@ namespace dune{
     // Loop through all the indexes to see whether to keep the hit.
     for (size_t TrigInd=0; TrigInd< ExternalTrigIndexVec.size(); ++TrigInd) {
       // Make my Corner arrays.
-      std::map< unsigned int, std::pair < TVector3, std::vector< TVector3 > > >::iterator it1 = CounterPositionMap.find( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() );
-      std::map< unsigned int, std::pair < TVector3, std::vector< TVector3 > > >::iterator it2 = CounterPositionMap.find( trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() );     
+      auto it1 = CounterPositionMap.find( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() );
+      auto it2 = CounterPositionMap.find( trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() );     
       float VertexX[4] = { (float)it1->second.second[0][0], (float)it1->second.second[1][0], (float)it2->second.second[1][0], (float)it2->second.second[0][0]};
       float VertexY[4] = { (float)it1->second.second[0][1], (float)it1->second.second[2][1], (float)it2->second.second[2][1], (float)it2->second.second[0][1]};
       float VertexZ[4] = { (float)it1->second.second[0][2], (float)it1->second.second[1][2], (float)it2->second.second[1][2], (float)it2->second.second[0][2]};
@@ -336,7 +326,7 @@ namespace dune{
 	// Have deduced that my hit can be in either the short drift, the long drift or both...
 	// Now want to evaluate which wire segments for this channel are in my 3D window.
 	// I want to consider all wire segments because the original hit may be assigned to the wrong wire segment.
-	std::vector< recob::Hit > TempHitsVec;
+	HitVector_t TempHitsVec;
 	int Channel = hits[HitInd]->Channel();
 	std::vector< geo::WireID > WireList = fGeom->ChannelToWire( Channel );
 	for (unsigned int ch=0; ch<WireList.size(); ++ch) {
@@ -400,7 +390,7 @@ namespace dune{
     std::cout << "After all trigger indexes the vectors have sizes: hits -> " << hits.size() << ", hcol -> " << hcol.size() << ", UnDisambigHits -> " << UnDisambigHits.size() << std::endl;
     // ------------------------- Get Induction wires -------------------------
     
-    std::vector<recob::Hit> const &Peak = hcol.peek();
+    HitVector_t const &Peak = hcol.peek();
     int TPC1, TPC2, TPC3, TPC4, TPC5, TPC6, TPC7, TPC0;
     TPC1 = TPC2 = TPC3 = TPC4 = TPC5 = TPC6 = TPC7 = TPC0 = 0;
     for (size_t qq=0; qq<Peak.size(); ++qq) {
@@ -418,12 +408,12 @@ namespace dune{
     // 1) Look for any hits where there were collection plane hits at the same time.
     // 2) Look for any hits on adjacent induction plane wires at the same time.
     
-    std::vector < std::pair < std::vector <recob::Hit>, size_t > > StillUnDisambigHits; // Want to clear this each time
-    std::vector < std::pair < recob::Hit, size_t > > NowGoodHits;                       // Want to clear this each time
+    BadVector_t StillUnDisambigHits; // Want to clear this each time
+    GoodVector_t NowGoodHits;                       // Want to clear this each time
 
     // ------------------------- Make a 2D line in XZ and fit --------------------------
     std::cout << "\nNow to do my next step....fit hits to a 2D line in XZ and find which ambiguous hit is closer..." << std::endl;
-    std::vector < recob::Hit > const &NextGoodHits = hcol.peek();
+    HitVector_t const &NextGoodHits = hcol.peek();
 
     TwoDimXZLineFit( NextGoodHits, UnDisambigHits, StillUnDisambigHits, NowGoodHits );
     for ( size_t NowDisambig=0; NowDisambig < NowGoodHits.size(); ++NowDisambig ) {
@@ -437,7 +427,7 @@ namespace dune{
 
     // ------------------------- Make a 2D line in XZ and fit --------------------------
     std::cout << "\nNow to do my next step....fit hits to a 2D line in each TPC / Plane combination and find which ambiguous hit is closer..." << std::endl;
-    std::vector < recob::Hit > const &NewerGoodHits = hcol.peek();
+    HitVector_t const &NewerGoodHits = hcol.peek();
 
     TwoDimPlaneLineFit( NewerGoodHits, UnDisambigHits, StillUnDisambigHits, NowGoodHits );
     for ( size_t NowDisambig=0; NowDisambig < NowGoodHits.size(); ++NowDisambig ) {
@@ -451,7 +441,7 @@ namespace dune{
 
     // ------------------------- Collection Wire Crosses -------------------------
     std::cout << "\nNow to do my next step....if induction wire crosses a collection wire with a good hit..." << std::endl;
-    std::vector < recob::Hit > const &NewHits = hcol.peek();
+    HitVector_t const &NewHits = hcol.peek();
     
     CrossCollection( NewHits, UnDisambigHits, StillUnDisambigHits, NowGoodHits );
     for ( size_t NowDisambig=0; NowDisambig < NowGoodHits.size(); ++NowDisambig ) {
@@ -465,7 +455,7 @@ namespace dune{
 
     // --------------------------- Any adjacent wires? --------------------------- Do any of the questionable hits have real hits next to them at roughly the same time?
     std::cout << "\nNow to do my next step....if any adjacent wires have hits on them..." << std::endl;
-    std::vector < recob::Hit > const &NewGoodHits = hcol.peek();
+    HitVector_t const &NewGoodHits = hcol.peek();
 
     AdjacentWireWidth( NewGoodHits, UnDisambigHits, StillUnDisambigHits, NowGoodHits );
     for ( size_t NowDisambig=0; NowDisambig < NowGoodHits.size(); ++NowDisambig ) {
@@ -515,7 +505,7 @@ namespace dune{
     return c;
   } // Work out whether a point is within a polygon
   //-------------------------------------------------
-  void HitFinderCounter35t::FindXZGradient( std::vector < recob::Hit > HitVector, float &Gradient, float& Intercept ) {
+  void HitFinderCounter35t::FindXZGradient( HitVector_t HitVector, float &Gradient, float& Intercept ) {
     // I want to find the line of best fit using Matrices.
     TMatrixD X(HitVector.size(), 2); // Want to reserve a size of HitVector.size()
     TMatrixD Y(HitVector.size(), 1); // Want to reserve a size of HitVector.size()
@@ -535,7 +525,7 @@ namespace dune{
     MatrixGradient( X, Y, HitVector.size(), Gradient, Intercept );
   } // Find the gradient of the hits for the XZ configuration
   //-------------------------------------------------
-  void HitFinderCounter35t::FindPlaneGradient( std::vector < recob::Hit > HitVector, float &Gradient, float& Intercept ) {
+  void HitFinderCounter35t::FindPlaneGradient( HitVector_t HitVector, float &Gradient, float& Intercept ) {
     TMatrixD X(HitVector.size(), 2); // Want to reserve a size of HitVector.size()
     TMatrixD Y(HitVector.size(), 1); // Want to reserve a size of HitVector.size()
     for ( size_t HitLoop=0; HitLoop<HitVector.size(); ++HitLoop) {
@@ -573,16 +563,16 @@ namespace dune{
     return Dist;
   } // Caluclate the distance of a point to a line
   //-------------------------------------------------
-  std::vector<recob::Hit> HitFinderCounter35t::FindUniqueHits( std::vector < recob::Hit > const GoodHits, unsigned int Plane, unsigned int TPC ) {
+  HitFinderCounter35t::HitVector_t HitFinderCounter35t::FindUniqueHits( HitVector_t const GoodHits, unsigned int Plane, unsigned int TPC ) {
     // I want to get a vector of only Collection wire hits.
-    std::vector<recob::Hit> PlaneHits;
+    HitVector_t PlaneHits;
     for ( size_t HitLoop=0; HitLoop<GoodHits.size(); ++HitLoop) {
       if ( GoodHits[HitLoop].WireID().Plane != Plane ) continue;
       if ( TPC != 10 && GoodHits[HitLoop].WireID().TPC != TPC ) continue;
       PlaneHits.emplace_back(GoodHits[HitLoop]);
     }
     // I want to make a vector of only single occupancy collection plane wires.
-    std::vector<recob::Hit> UniqPlaneHits;
+    HitVector_t UniqPlaneHits;
     for ( size_t HitLoop=0; HitLoop<PlaneHits.size(); ++HitLoop) {
       unsigned int ThisChannel = PlaneHits[HitLoop].Channel();
       int NHits = 0;
@@ -597,7 +587,7 @@ namespace dune{
       if ( UniqPlaneHits[Q].WireID().TPC%2 != 0 ) ++NLong;
     double rat = (double)UniqPlaneHits.size() / (double)NLong;
     if ( rat > 0.8 ) {
-      std::vector<recob::Hit> LongHit;
+      HitVector_t LongHit;
       for (size_t W=0; W<UniqPlaneHits.size(); ++W)
 	if ( UniqPlaneHits[W].WireID().TPC%2 != 0 )
 	  LongHit.emplace_back(UniqPlaneHits[W]);
@@ -645,9 +635,9 @@ namespace dune{
     return ReturnVec;
   } // Work out which index is the closest to a line
   //-------------------------------------------------
-  void HitFinderCounter35t::OutAndClearVector ( std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InitialBad,
-						    std::vector < std::pair < std::vector < recob::Hit >, size_t > > &NewBad,
-						    std::vector < std::pair < recob::Hit, size_t > > &NewGood, size_t HitsSize ) {
+  void HitFinderCounter35t::OutAndClearVector ( BadVector_t &InitialBad,
+						    BadVector_t &NewBad,
+						    GoodVector_t &NewGood, size_t HitsSize ) {
     std::cout << "The vectors have sizes: UnDisambigHits -> " << InitialBad.size() 
 	      << ", StillUndisambigHits -> " << NewBad.size()
 	      << ", NowGoodHits -> " << NewGood.size() << ", hcol -> " << HitsSize << std::endl;
@@ -656,14 +646,14 @@ namespace dune{
     NewGood.clear();
   } // Produce some output and clear vectors
   //-------------------------------------------------
-  void HitFinderCounter35t::CrossCollection( std::vector < recob::Hit > const GoodHits,
-					    std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
-					    std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
-					    std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector ) {
+  void HitFinderCounter35t::CrossCollection( HitVector_t const GoodHits,
+					    BadVector_t &InputBadVector,
+					    BadVector_t &OutputBadVector,
+					    GoodVector_t &OutputGoodVector ) {
     if (!InputBadVector.size()) return; // If no bad hits are given, then I'm done already!
     for (size_t QuestHit=0; QuestHit<InputBadVector.size(); ++QuestHit) {
       std::vector<int> CloseHits;
-      std::vector< recob::Hit > Hitting = InputBadVector[QuestHit].first;
+      HitVector_t Hitting = InputBadVector[QuestHit].first;
       for (size_t ThisQuest=0; ThisQuest<Hitting.size(); ++ThisQuest) {
 	int ThisNearHit = 0;
 	for (size_t HitLoop=0; HitLoop<GoodHits.size(); ++HitLoop) {
@@ -687,14 +677,14 @@ namespace dune{
     } // Loop through StillUnDisambigHits......QuestHit
   } // Checking if the wires cross collection planes with hits
   //-------------------------------------------------
-  void HitFinderCounter35t::AdjacentWireWidth( std::vector < recob::Hit > const GoodHits,
-					       std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
-					       std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
-					       std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector ) {
+  void HitFinderCounter35t::AdjacentWireWidth( HitVector_t const GoodHits,
+					       BadVector_t &InputBadVector,
+					       BadVector_t &OutputBadVector,
+					       GoodVector_t &OutputGoodVector ) {
     if (!InputBadVector.size()) return; // If no bad hits are given, then I'm done already!
     for (size_t QuestHit=0; QuestHit<InputBadVector.size(); ++QuestHit) {
       std::vector<int> CloseHits;
-      std::vector< recob::Hit > Hitting = InputBadVector[QuestHit].first;
+      HitVector_t Hitting = InputBadVector[QuestHit].first;
       for (size_t ThisQuest=0; ThisQuest<Hitting.size(); ++ThisQuest) {
 	int ThisNearHit = 0;
 	for (size_t HitLoop=0; HitLoop<GoodHits.size(); ++HitLoop) {
@@ -716,13 +706,13 @@ namespace dune{
     } // Loop through UnDisambigHits......QuestHit
   } // Checking if adjacent wires have hits
   //-------------------------------------------------
-  void HitFinderCounter35t::TwoDimXZLineFit( std::vector < recob::Hit > const GoodHits,
-					     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
-					     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
-					     std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector ) {
+  void HitFinderCounter35t::TwoDimXZLineFit( HitVector_t const GoodHits,
+					     BadVector_t &InputBadVector,
+					     BadVector_t &OutputBadVector,
+					     GoodVector_t &OutputGoodVector ) {
     if (!InputBadVector.size()) return; // If no bad hits are given, then I'm done already!
 
-    std::vector<recob::Hit> UniqColHits = FindUniqueHits( GoodHits, 2, 10 );
+    HitVector_t UniqColHits = FindUniqueHits( GoodHits, 2, 10 );
     if (!UniqColHits.size()) {
       std::cout << "I have no unique collection plane wires, so can't do anything..." << std::endl;
       for (size_t q=0; q<InputBadVector.size(); ++q)
@@ -744,7 +734,7 @@ namespace dune{
       for (size_t BadLoop=0; BadLoop < InputBadVector.size(); ++BadLoop) {
 	//std::cout << "\nNow looking at BadLoop index " << BadLoop << std::endl;
 	std::vector<double> CloseHits;
-	std::vector< recob::Hit > Hitting = InputBadVector[BadLoop].first;
+	HitVector_t Hitting = InputBadVector[BadLoop].first;
 	for (size_t ThisQuest=0; ThisQuest<Hitting.size(); ++ThisQuest) {
 	  //.....Determine X and Z positions.....
 	  double WireEnd[3], WireStart[3];
@@ -774,7 +764,7 @@ namespace dune{
 	  if ( WhichIndexes.size() == Hitting.size() ) {
 	    OutputBadVector.push_back(InputBadVector[BadLoop]);
 	  } else { // If I have removed at least one ambiguity.
-	    std::vector<recob::Hit> BadHits;
+	    HitVector_t BadHits;
 	    for (size_t aa=0; aa<WhichIndexes.size(); ++aa) {
 	      BadHits.push_back( Hitting[ WhichIndexes[aa] ] );
 	    }
@@ -785,10 +775,10 @@ namespace dune{
     } // If can make line.
   } // Two dimensional line in XZ
   //-------------------------------------------------
-  void HitFinderCounter35t::TwoDimPlaneLineFit( std::vector < recob::Hit > const GoodHits,
-						std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
-						std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
-						std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector ) {
+  void HitFinderCounter35t::TwoDimPlaneLineFit( HitVector_t const GoodHits,
+						BadVector_t &InputBadVector,
+						BadVector_t &OutputBadVector,
+						GoodVector_t &OutputGoodVector ) {
     if (!InputBadVector.size()) return; // If no bad hits are given, then I'm done already!
 
     // If the ambiguties are not in the same TPC then I can't reliably tell the difference.
@@ -796,7 +786,7 @@ namespace dune{
     std::vector< std::pair< unsigned int, unsigned int > > WhichTPCPl;
     std::vector< std::pair < std::vector < recob::Hit >, size_t > > TPCPlaneCombs;
     for (size_t HitLoop=0; HitLoop < InputBadVector.size(); ++HitLoop) {
-      std::vector< recob::Hit > Hits = InputBadVector[HitLoop].first;
+      HitVector_t Hits = InputBadVector[HitLoop].first;
       unsigned int FirstTPC = Hits[0].WireID().TPC;
       for ( size_t ThisHit=0; ThisHit<Hits.size(); ++ThisHit ) {
 	if ( Hits[ThisHit].WireID().TPC != FirstTPC ) {
@@ -806,7 +796,7 @@ namespace dune{
 	}
       }
       // This index has all hits in same TPC, so add it to my new combination vector
-      std::vector<recob::Hit> CombHits;
+      HitVector_t CombHits;
       for (size_t aa=0; aa<Hits.size(); ++aa) {
 	CombHits.push_back( Hits[aa] );
       }
@@ -826,7 +816,7 @@ namespace dune{
     for (size_t LineIndex=0; LineIndex<WhichTPCPl.size(); ++LineIndex) {
       unsigned int ThisTPC = WhichTPCPl[LineIndex].first;
       unsigned int ThisPl  = WhichTPCPl[LineIndex].second;
-      std::vector<recob::Hit> UniqHits = FindUniqueHits( GoodHits, ThisPl, ThisTPC );
+      HitVector_t UniqHits = FindUniqueHits( GoodHits, ThisPl, ThisTPC );
       if ( !UniqHits.size() ) {
 	std::cout << "I have no unique hits on TPC " << ThisTPC << ", Plane " << ThisPl << std::endl;
 	// I need to put these hits into my badhits vector....
@@ -840,7 +830,7 @@ namespace dune{
       
       // Got my line fit, now to work out which hit is the best.
       for (size_t HitLoop=0; HitLoop < TPCPlaneCombs.size(); ++HitLoop) {
-	std::vector< recob::Hit > Hits = TPCPlaneCombs[HitLoop].first;
+	HitVector_t Hits = TPCPlaneCombs[HitLoop].first;
 	// Check that I'm looking at the right TPC/Plane configuration.
 	if ( Hits[0].WireID().TPC != ThisTPC || Hits[0].WireID().Plane != ThisPl ) continue;
 	// What if I can't construct a line? Then I want to put these into my bad hits.
