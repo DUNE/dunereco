@@ -189,7 +189,7 @@ int dune::HitLineFitAlg::FitLine(std::vector<HitLineFitData> & data, HitLineFitR
               double xloc2[1] = { horiz+1 };
               lineloc1.SetXYZ(horiz-1,model->EvalPar(xloc1,rb->GetParams()),0.);
               lineloc2.SetXYZ(horiz+1,model->EvalPar(xloc2,rb->GetParams()),0.);
-              dist = hitGeomDist(hitloc,lineloc1,lineloc2);
+              dist = PointToLineDist(hitloc,lineloc1,lineloc2);
               distances.push_back(fabs(dist));
               if (dist <= t)
                 {

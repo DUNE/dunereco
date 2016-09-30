@@ -33,8 +33,8 @@ public:
     };
 
     struct HitLineFitResults {
-      std::map<int,double> bestVal;
-      std::map<int,double> bestValError;
+      std::map<int,float> bestVal;
+      std::map<int,float> bestValError;
       double chi2;
       double sum2resid;
       double mle;
