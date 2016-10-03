@@ -46,8 +46,14 @@
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
+// Seed Service
+#include "larsim/RandomUtils/LArSeedService.h"
+#include "CLHEP/Random/RandomEngine.h"
+
 // Want to include the CounterPositionMapFunction
 #include "dune/daqinput35t/PennToOffline.h"
+
+#include "HitLineFitAlg.h"
 
 // ROOT Includes 
 #include "TH1D.h"
@@ -72,24 +78,34 @@ namespace dune{
   
   private:
 
-    typedef std::vector<recob::Hit> HitVector_t;
-    typedef std::vector<std::pair<HitVector_t,size_t> > BadVector_t;
-    typedef std::vector<std::pair<recob::Hit,size_t> > GoodVector_t;
-
     //bool DoesIntersect( double A0, double B0, double A1, double B1, double A2, double B2, double A3, double B3 );
     int  pnpoly( int nvert, float *vertx, float *verty, float testx, float testy );
-    void FindXZGradient   ( HitVector_t HitVector, float &Gradient, float& Intercept );
-    void FindPlaneGradient( HitVector_t HitVector, float &Gradient, float& Intercept );
+    void FindXZGradient   ( std::vector < recob::Hit > HitVector, float &Gradient, float& Intercept );
+    void FindPlaneGradient( std::vector < recob::Hit > HitVector, float &Gradient, float& Intercept );
     void MatrixGradient   ( TMatrixD X, TMatrixD Y, size_t MatSize, float &Gradient, float &Intercept );
     double DistToLine     ( float Gradient, float Intercept, double X, double Y);
-    HitVector_t FindUniqueHits( HitVector_t const GoodHits, unsigned int Plane, unsigned int TPC );
+    std::vector<recob::Hit> FindUniqueHits( std::vector < recob::Hit > const GoodHits, unsigned int Plane, unsigned int TPC );
     int  CheckWhichIndex( std::vector<int> CloseHits );
     std::vector<int>  ClosestDistance( std::vector<double> CloseHits );
-    void OutAndClearVector ( BadVector_t & InitialBad, BadVector_t & NewBad, GoodVector_t & NewGood, size_t HitsSize );
-    void CrossCollection   ( HitVector_t const GoodHits, BadVector_t &InputBadVector, BadVector_t &OutputBadVector, GoodVector_t &OutputGoodVector );
-    void AdjacentWireWidth ( HitVector_t const GoodHits, BadVector_t &InputBadVector, BadVector_t &OutputBadVector, GoodVector_t &OutputGoodVector );
-    void TwoDimXZLineFit   ( HitVector_t const GoodHits, BadVector_t &InputBadVector, BadVector_t &OutputBadVector, GoodVector_t &OutputGoodVector );
-    void TwoDimPlaneLineFit( HitVector_t const GoodHits, BadVector_t &InputBadVector, BadVector_t &OutputBadVector, GoodVector_t &OutputGoodVector );
+    void OutAndClearVector ( std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InitialBad,
+			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &NewBad,
+			     std::vector < std::pair < recob::Hit, size_t > > & NewGood, size_t HitsSize );
+    void CrossCollection   ( std::vector < recob::Hit > const GoodHits,
+			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
+			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
+			     std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector );
+    void AdjacentWireWidth ( std::vector < recob::Hit > const GoodHits,
+			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
+			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
+			     std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector );
+    void TwoDimXZLineFit   ( std::vector < recob::Hit > const GoodHits,
+			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
+			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
+			     std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector );
+    void TwoDimPlaneLineFit( std::vector < recob::Hit > const GoodHits,
+			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
+			     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
+			     std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector );
     
     art::ServiceHandle<geo::Geometry> fGeom;
   
@@ -104,6 +120,10 @@ namespace dune{
     unsigned int fAdjacentWireWidth;
     unsigned int fAdjacentTimeWidth;
     unsigned int fCollectionTimeWidth;
+
+    dune::HitLineFitAlg fFitAlg;
+    art::ServiceHandle<art::RandomNumberGenerator> fRng;
+    art::ServiceHandle<sim::LArSeedService> fSeed;
 
     std::map< unsigned int, std::pair < TVector3, std::vector< TVector3 > > > CounterPositionMap; // The map of counter positions....
     std::vector< std::pair< unsigned int, unsigned int > > ExternalTrigIndexVec; // My vector of counter coincidence indexes...
@@ -132,7 +152,9 @@ namespace dune{
     , fAdjacentWireWidth   (pset.get<unsigned int>("AdjacentWireWidth"))
     , fAdjacentTimeWidth   (pset.get<unsigned int>("AdjacentTimeWidth"))
     , fCollectionTimeWidth (pset.get<unsigned int>("CollectionTimeWidth"))
+    , fFitAlg              (pset.get<fhicl::ParameterSet>("HitLineFitAlg"))
   {
+    fSeed->createEngine(*this,"HepJamesRandom","Seed");
     recob::HitCollectionCreator::declare_products(*this);
   }
   //-------------------------------------------------
@@ -166,6 +188,9 @@ namespace dune{
   void HitFinderCounter35t::produce(art::Event& evt) {
     
     if (fDebug) std::cout << "\n\nLooking at event " << evt.event() << std::endl;
+
+    CLHEP::HepRandomEngine const & engine = fRng->getEngine("Seed");
+    fFitAlg.SetSeed(engine.getSeed());
 
     // get raw::ExternalTriggers
     art::Handle< std::vector< raw::ExternalTrigger> > externalTriggerListHandle;
@@ -227,21 +252,23 @@ namespace dune{
     				     );
     
     // I want a vector of a vector of hits, to store my undisambiguated hits.
-    BadVector_t UnDisambigHits;
+    std::vector < std::pair < std::vector < recob::Hit >, size_t > > UnDisambigHits;
 
     // FIXME:::::I am unsure of the best way to handle showers - lots of trigger indexes at the same time.
     //           The easiest ( and laziest ) thing to do, is to just discount events which have many triggers.
-    if ( ExternalTrigIndexVec.size() > 2 ) {
+    if ( ExternalTrigIndexVec.size() > 1 ) {
       std::cout << "Voiding this event as I have a vector of size " << ExternalTrigIndexVec.size() << std::endl;
       hcol.put_into(evt);
       return;
     }
 
+    
+
     // Loop through all the indexes to see whether to keep the hit.
     for (size_t TrigInd=0; TrigInd< ExternalTrigIndexVec.size(); ++TrigInd) {
       // Make my Corner arrays.
-      auto it1 = CounterPositionMap.find( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() );
-      auto it2 = CounterPositionMap.find( trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() );     
+      std::map< unsigned int, std::pair < TVector3, std::vector< TVector3 > > >::iterator it1 = CounterPositionMap.find( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() );
+      std::map< unsigned int, std::pair < TVector3, std::vector< TVector3 > > >::iterator it2 = CounterPositionMap.find( trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() );     
       float VertexX[4] = { (float)it1->second.second[0][0], (float)it1->second.second[1][0], (float)it2->second.second[1][0], (float)it2->second.second[0][0]};
       float VertexY[4] = { (float)it1->second.second[0][1], (float)it1->second.second[2][1], (float)it2->second.second[2][1], (float)it2->second.second[0][1]};
       float VertexZ[4] = { (float)it1->second.second[0][2], (float)it1->second.second[1][2], (float)it2->second.second[1][2], (float)it2->second.second[0][2]};
@@ -265,6 +292,44 @@ namespace dune{
 			    <<"\nVertexY has co-ords " << VertexY[0] << " " << VertexY[1] << " " << VertexY[2] << " " << VertexY[3]
 			    <<"\nVertexZ has co-ords " << VertexZ[0] << " " << VertexZ[1] << " " << VertexZ[2] << " " << VertexZ[3]
 			    << std::endl;
+      
+      bool doHitLineFitAlg = true;
+      int trignum = -1;
+      if ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() >= 6  && trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() <= 15 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() >= 28 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() <= 37 ) trignum=111; // East Lower, West Upper
+      else if ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() >= 0  && trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() <= 5  && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() >= 22 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() <= 27 ) trignum=112; // South Lower, North Upper
+      else if ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() >= 16 && trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() <= 21 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() >= 38 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() <= 43 ) trignum=113; // North Lower, South Upper
+      
+      float c1x = it1->second.first.X();
+      float c1z = it1->second.first.Z();
+      float c2x = it2->second.first.X();
+      float c2z = it2->second.first.Z();
+      if (trignum == 111)
+	{
+	  float slope = ((c1x-c2x)/(c1z-c2z));
+	  fFitAlg.SetParameter(0,10,-50,250);
+	  fFitAlg.SetParameter(1,1,slope-0.2,slope+0.2);
+	  fFitAlg.SetParameter(2,0,-0.0002,0.0002);
+	  fFitAlg.SetHorizVertRanges(-10,170,-50,250);
+	}
+      else if (trignum == 112 || trignum == 113)
+	{
+	  float slope = ((c1z-c2z)/(c1x-c2x));
+	  fFitAlg.SetParameter(0,10,-10,170);
+	  fFitAlg.SetParameter(1,1,slope-0.2,slope+0.2);
+	  fFitAlg.SetParameter(2,0,-0.0002,0.0002);
+	  fFitAlg.SetHorizVertRanges(-50,250,-10,170);
+	}
+      else
+	{
+	  doHitLineFitAlg = false;
+	}
+      if (ExternalTrigIndexVec.size() != 1) doHitLineFitAlg = false;
+
+      std::vector<dune::HitLineFitAlg::HitLineFitData> fitdata;
+      dune::HitLineFitAlg::HitLineFitResults bestfit;
+      std::map<unsigned int, size_t> index_convert;
+      unsigned int fitdataindex = 0;
+
       //*/
       // ------------------------- Get Collection wires -------------------------
       // Loop through collection plane hits first, as can use that information to help decide which TPC an induction plane hit should be on.
@@ -274,8 +339,8 @@ namespace dune{
 
 	// Collection plane wires mainly discriminated against using XZ plane
 	bool KeepHit = false;
-	art::Ptr<recob::Wire> wire = ChannelHitWires.at(HitInd);
-	art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(HitInd);
+	//art::Ptr<recob::Wire> wire = ChannelHitWires.at(HitInd);
+	//art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(HitInd);
 	
 	double WireStart[3], WireEnd[3];
 	fGeom->WireEndPoints( hits[HitInd]->WireID(), WireStart, WireEnd );
@@ -292,9 +357,57 @@ namespace dune{
 	  //	      << "\nI used the following cuts... X " << VertexX[0] << " " << VertexX[1] << " " << VertexX[2] << " " << VertexX[3] 
 	  //	      << ", and Z " << VertexZ[0] << " " << VertexZ[1] << " " << VertexZ[2] << " " << VertexZ[3]
 	  //	      << std::endl;
-	  hcol.emplace_back(*hits[HitInd], wire, rawdigits);
+	  
+	  dune::HitLineFitAlg::HitLineFitData hlfd;
+	  if (trignum == 111)
+            {
+              hlfd.hitHoriz = (float)WireEnd[2];
+              hlfd.hitVert = HitXPos;
+              hlfd.hitHorizErrLo = 0.25;
+              hlfd.hitHorizErrHi = 0.25;
+              hlfd.hitVertErrLo = 0.25;
+              hlfd.hitVertErrHi = 0.25;
+            }
+          else if (trignum == 112 || trignum == 113)
+            {
+              hlfd.hitHoriz = HitXPos;
+              hlfd.hitVert = (float)WireEnd[2];
+              hlfd.hitHorizErrLo = 0.25;
+              hlfd.hitHorizErrHi = 0.25;
+              hlfd.hitVertErrLo = 0.25;
+              hlfd.hitVertErrHi = 0.25;
+            }
+          hlfd.hitREAL = false;
+          fitdata.push_back(hlfd);
+	  index_convert[fitdataindex] = HitInd;
+	  ++fitdataindex;
+
+	  //hcol.emplace_back(*hits[HitInd], wire, rawdigits);
 	} 
       }
+
+      int retval = -1;
+      if (doHitLineFitAlg) retval = fFitAlg.FitLine(fitdata,bestfit);
+
+      if (retval != 1) 
+	{
+	  std::cout << "No line fit could be found, or not enough hits in counter shadow to make a line" << std::endl;
+	  hcol.put_into(evt);
+	  return;
+	}
+      else
+	{
+	  for (unsigned int i_fd = 0; i_fd < fitdata.size(); ++i_fd)
+	    {
+	      if (fitdata[i_fd].hitREAL)
+		{
+		  art::Ptr<recob::Wire> wire = ChannelHitWires.at(index_convert[i_fd]);
+		  art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(index_convert[i_fd]);
+		  hcol.emplace_back(*hits[index_convert[i_fd]],wire,rawdigits);
+		}
+	    }
+	}
+
       std::cout << "After collection wires for TrigInd " << TrigInd << ", hcol has size " << hcol.size() << std::endl;
       // Got all the collection hits, so now loop through the induction plane hits.
       // ------------------------- Get Collection wires -------------------------
@@ -303,7 +416,7 @@ namespace dune{
       for( size_t HitInd = 0; HitInd < hits.size(); HitInd++ ) {
 	if ( hits[HitInd]->PeakTime()-TrigTime < 0 ) continue; // If in PreTriggerTick window then can't deduce the X position.
 	if ( hits[HitInd]->View() == geo::kZ ) continue; // If a collection wire continue...
-	if ( hits[HitInd]->PeakAmplitude() < 8 ) continue;
+	//if ( hits[HitInd]->PeakAmplitude() < 8 ) continue;
 
 
 	// An induction signal can be in either long or short drift volume...Work out X position for each of them...
@@ -326,7 +439,7 @@ namespace dune{
 	// Have deduced that my hit can be in either the short drift, the long drift or both...
 	// Now want to evaluate which wire segments for this channel are in my 3D window.
 	// I want to consider all wire segments because the original hit may be assigned to the wrong wire segment.
-	HitVector_t TempHitsVec;
+	std::vector< recob::Hit > TempHitsVec;
 	int Channel = hits[HitInd]->Channel();
 	std::vector< geo::WireID > WireList = fGeom->ChannelToWire( Channel );
 	for (unsigned int ch=0; ch<WireList.size(); ++ch) {
@@ -390,7 +503,7 @@ namespace dune{
     std::cout << "After all trigger indexes the vectors have sizes: hits -> " << hits.size() << ", hcol -> " << hcol.size() << ", UnDisambigHits -> " << UnDisambigHits.size() << std::endl;
     // ------------------------- Get Induction wires -------------------------
     
-    HitVector_t const &Peak = hcol.peek();
+    std::vector<recob::Hit> const &Peak = hcol.peek();
     int TPC1, TPC2, TPC3, TPC4, TPC5, TPC6, TPC7, TPC0;
     TPC1 = TPC2 = TPC3 = TPC4 = TPC5 = TPC6 = TPC7 = TPC0 = 0;
     for (size_t qq=0; qq<Peak.size(); ++qq) {
@@ -408,12 +521,12 @@ namespace dune{
     // 1) Look for any hits where there were collection plane hits at the same time.
     // 2) Look for any hits on adjacent induction plane wires at the same time.
     
-    BadVector_t StillUnDisambigHits; // Want to clear this each time
-    GoodVector_t NowGoodHits;                       // Want to clear this each time
+    std::vector < std::pair < std::vector <recob::Hit>, size_t > > StillUnDisambigHits; // Want to clear this each time
+    std::vector < std::pair < recob::Hit, size_t > > NowGoodHits;                       // Want to clear this each time
 
     // ------------------------- Make a 2D line in XZ and fit --------------------------
     std::cout << "\nNow to do my next step....fit hits to a 2D line in XZ and find which ambiguous hit is closer..." << std::endl;
-    HitVector_t const &NextGoodHits = hcol.peek();
+    std::vector < recob::Hit > const &NextGoodHits = hcol.peek();
 
     TwoDimXZLineFit( NextGoodHits, UnDisambigHits, StillUnDisambigHits, NowGoodHits );
     for ( size_t NowDisambig=0; NowDisambig < NowGoodHits.size(); ++NowDisambig ) {
@@ -427,7 +540,7 @@ namespace dune{
 
     // ------------------------- Make a 2D line in XZ and fit --------------------------
     std::cout << "\nNow to do my next step....fit hits to a 2D line in each TPC / Plane combination and find which ambiguous hit is closer..." << std::endl;
-    HitVector_t const &NewerGoodHits = hcol.peek();
+    std::vector < recob::Hit > const &NewerGoodHits = hcol.peek();
 
     TwoDimPlaneLineFit( NewerGoodHits, UnDisambigHits, StillUnDisambigHits, NowGoodHits );
     for ( size_t NowDisambig=0; NowDisambig < NowGoodHits.size(); ++NowDisambig ) {
@@ -441,7 +554,7 @@ namespace dune{
 
     // ------------------------- Collection Wire Crosses -------------------------
     std::cout << "\nNow to do my next step....if induction wire crosses a collection wire with a good hit..." << std::endl;
-    HitVector_t const &NewHits = hcol.peek();
+    std::vector < recob::Hit > const &NewHits = hcol.peek();
     
     CrossCollection( NewHits, UnDisambigHits, StillUnDisambigHits, NowGoodHits );
     for ( size_t NowDisambig=0; NowDisambig < NowGoodHits.size(); ++NowDisambig ) {
@@ -455,7 +568,7 @@ namespace dune{
 
     // --------------------------- Any adjacent wires? --------------------------- Do any of the questionable hits have real hits next to them at roughly the same time?
     std::cout << "\nNow to do my next step....if any adjacent wires have hits on them..." << std::endl;
-    HitVector_t const &NewGoodHits = hcol.peek();
+    std::vector < recob::Hit > const &NewGoodHits = hcol.peek();
 
     AdjacentWireWidth( NewGoodHits, UnDisambigHits, StillUnDisambigHits, NowGoodHits );
     for ( size_t NowDisambig=0; NowDisambig < NowGoodHits.size(); ++NowDisambig ) {
@@ -505,7 +618,7 @@ namespace dune{
     return c;
   } // Work out whether a point is within a polygon
   //-------------------------------------------------
-  void HitFinderCounter35t::FindXZGradient( HitVector_t HitVector, float &Gradient, float& Intercept ) {
+  void HitFinderCounter35t::FindXZGradient( std::vector < recob::Hit > HitVector, float &Gradient, float& Intercept ) {
     // I want to find the line of best fit using Matrices.
     TMatrixD X(HitVector.size(), 2); // Want to reserve a size of HitVector.size()
     TMatrixD Y(HitVector.size(), 1); // Want to reserve a size of HitVector.size()
@@ -525,7 +638,7 @@ namespace dune{
     MatrixGradient( X, Y, HitVector.size(), Gradient, Intercept );
   } // Find the gradient of the hits for the XZ configuration
   //-------------------------------------------------
-  void HitFinderCounter35t::FindPlaneGradient( HitVector_t HitVector, float &Gradient, float& Intercept ) {
+  void HitFinderCounter35t::FindPlaneGradient( std::vector < recob::Hit > HitVector, float &Gradient, float& Intercept ) {
     TMatrixD X(HitVector.size(), 2); // Want to reserve a size of HitVector.size()
     TMatrixD Y(HitVector.size(), 1); // Want to reserve a size of HitVector.size()
     for ( size_t HitLoop=0; HitLoop<HitVector.size(); ++HitLoop) {
@@ -563,16 +676,16 @@ namespace dune{
     return Dist;
   } // Caluclate the distance of a point to a line
   //-------------------------------------------------
-  HitFinderCounter35t::HitVector_t HitFinderCounter35t::FindUniqueHits( HitVector_t const GoodHits, unsigned int Plane, unsigned int TPC ) {
+  std::vector<recob::Hit> HitFinderCounter35t::FindUniqueHits( std::vector < recob::Hit > const GoodHits, unsigned int Plane, unsigned int TPC ) {
     // I want to get a vector of only Collection wire hits.
-    HitVector_t PlaneHits;
+    std::vector<recob::Hit> PlaneHits;
     for ( size_t HitLoop=0; HitLoop<GoodHits.size(); ++HitLoop) {
       if ( GoodHits[HitLoop].WireID().Plane != Plane ) continue;
       if ( TPC != 10 && GoodHits[HitLoop].WireID().TPC != TPC ) continue;
       PlaneHits.emplace_back(GoodHits[HitLoop]);
     }
     // I want to make a vector of only single occupancy collection plane wires.
-    HitVector_t UniqPlaneHits;
+    std::vector<recob::Hit> UniqPlaneHits;
     for ( size_t HitLoop=0; HitLoop<PlaneHits.size(); ++HitLoop) {
       unsigned int ThisChannel = PlaneHits[HitLoop].Channel();
       int NHits = 0;
@@ -587,7 +700,7 @@ namespace dune{
       if ( UniqPlaneHits[Q].WireID().TPC%2 != 0 ) ++NLong;
     double rat = (double)UniqPlaneHits.size() / (double)NLong;
     if ( rat > 0.8 ) {
-      HitVector_t LongHit;
+      std::vector<recob::Hit> LongHit;
       for (size_t W=0; W<UniqPlaneHits.size(); ++W)
 	if ( UniqPlaneHits[W].WireID().TPC%2 != 0 )
 	  LongHit.emplace_back(UniqPlaneHits[W]);
@@ -635,9 +748,9 @@ namespace dune{
     return ReturnVec;
   } // Work out which index is the closest to a line
   //-------------------------------------------------
-  void HitFinderCounter35t::OutAndClearVector ( BadVector_t &InitialBad,
-						    BadVector_t &NewBad,
-						    GoodVector_t &NewGood, size_t HitsSize ) {
+  void HitFinderCounter35t::OutAndClearVector ( std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InitialBad,
+						    std::vector < std::pair < std::vector < recob::Hit >, size_t > > &NewBad,
+						    std::vector < std::pair < recob::Hit, size_t > > &NewGood, size_t HitsSize ) {
     std::cout << "The vectors have sizes: UnDisambigHits -> " << InitialBad.size() 
 	      << ", StillUndisambigHits -> " << NewBad.size()
 	      << ", NowGoodHits -> " << NewGood.size() << ", hcol -> " << HitsSize << std::endl;
@@ -646,14 +759,14 @@ namespace dune{
     NewGood.clear();
   } // Produce some output and clear vectors
   //-------------------------------------------------
-  void HitFinderCounter35t::CrossCollection( HitVector_t const GoodHits,
-					    BadVector_t &InputBadVector,
-					    BadVector_t &OutputBadVector,
-					    GoodVector_t &OutputGoodVector ) {
+  void HitFinderCounter35t::CrossCollection( std::vector < recob::Hit > const GoodHits,
+					    std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
+					    std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
+					    std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector ) {
     if (!InputBadVector.size()) return; // If no bad hits are given, then I'm done already!
     for (size_t QuestHit=0; QuestHit<InputBadVector.size(); ++QuestHit) {
       std::vector<int> CloseHits;
-      HitVector_t Hitting = InputBadVector[QuestHit].first;
+      std::vector< recob::Hit > Hitting = InputBadVector[QuestHit].first;
       for (size_t ThisQuest=0; ThisQuest<Hitting.size(); ++ThisQuest) {
 	int ThisNearHit = 0;
 	for (size_t HitLoop=0; HitLoop<GoodHits.size(); ++HitLoop) {
@@ -677,14 +790,14 @@ namespace dune{
     } // Loop through StillUnDisambigHits......QuestHit
   } // Checking if the wires cross collection planes with hits
   //-------------------------------------------------
-  void HitFinderCounter35t::AdjacentWireWidth( HitVector_t const GoodHits,
-					       BadVector_t &InputBadVector,
-					       BadVector_t &OutputBadVector,
-					       GoodVector_t &OutputGoodVector ) {
+  void HitFinderCounter35t::AdjacentWireWidth( std::vector < recob::Hit > const GoodHits,
+					       std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
+					       std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
+					       std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector ) {
     if (!InputBadVector.size()) return; // If no bad hits are given, then I'm done already!
     for (size_t QuestHit=0; QuestHit<InputBadVector.size(); ++QuestHit) {
       std::vector<int> CloseHits;
-      HitVector_t Hitting = InputBadVector[QuestHit].first;
+      std::vector< recob::Hit > Hitting = InputBadVector[QuestHit].first;
       for (size_t ThisQuest=0; ThisQuest<Hitting.size(); ++ThisQuest) {
 	int ThisNearHit = 0;
 	for (size_t HitLoop=0; HitLoop<GoodHits.size(); ++HitLoop) {
@@ -706,13 +819,13 @@ namespace dune{
     } // Loop through UnDisambigHits......QuestHit
   } // Checking if adjacent wires have hits
   //-------------------------------------------------
-  void HitFinderCounter35t::TwoDimXZLineFit( HitVector_t const GoodHits,
-					     BadVector_t &InputBadVector,
-					     BadVector_t &OutputBadVector,
-					     GoodVector_t &OutputGoodVector ) {
+  void HitFinderCounter35t::TwoDimXZLineFit( std::vector < recob::Hit > const GoodHits,
+					     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
+					     std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
+					     std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector ) {
     if (!InputBadVector.size()) return; // If no bad hits are given, then I'm done already!
 
-    HitVector_t UniqColHits = FindUniqueHits( GoodHits, 2, 10 );
+    std::vector<recob::Hit> UniqColHits = FindUniqueHits( GoodHits, 2, 10 );
     if (!UniqColHits.size()) {
       std::cout << "I have no unique collection plane wires, so can't do anything..." << std::endl;
       for (size_t q=0; q<InputBadVector.size(); ++q)
@@ -734,7 +847,7 @@ namespace dune{
       for (size_t BadLoop=0; BadLoop < InputBadVector.size(); ++BadLoop) {
 	//std::cout << "\nNow looking at BadLoop index " << BadLoop << std::endl;
 	std::vector<double> CloseHits;
-	HitVector_t Hitting = InputBadVector[BadLoop].first;
+	std::vector< recob::Hit > Hitting = InputBadVector[BadLoop].first;
 	for (size_t ThisQuest=0; ThisQuest<Hitting.size(); ++ThisQuest) {
 	  //.....Determine X and Z positions.....
 	  double WireEnd[3], WireStart[3];
@@ -764,7 +877,7 @@ namespace dune{
 	  if ( WhichIndexes.size() == Hitting.size() ) {
 	    OutputBadVector.push_back(InputBadVector[BadLoop]);
 	  } else { // If I have removed at least one ambiguity.
-	    HitVector_t BadHits;
+	    std::vector<recob::Hit> BadHits;
 	    for (size_t aa=0; aa<WhichIndexes.size(); ++aa) {
 	      BadHits.push_back( Hitting[ WhichIndexes[aa] ] );
 	    }
@@ -775,10 +888,10 @@ namespace dune{
     } // If can make line.
   } // Two dimensional line in XZ
   //-------------------------------------------------
-  void HitFinderCounter35t::TwoDimPlaneLineFit( HitVector_t const GoodHits,
-						BadVector_t &InputBadVector,
-						BadVector_t &OutputBadVector,
-						GoodVector_t &OutputGoodVector ) {
+  void HitFinderCounter35t::TwoDimPlaneLineFit( std::vector < recob::Hit > const GoodHits,
+						std::vector < std::pair < std::vector < recob::Hit >, size_t > > &InputBadVector,
+						std::vector < std::pair < std::vector < recob::Hit >, size_t > > &OutputBadVector,
+						std::vector < std::pair < recob::Hit, size_t > > &OutputGoodVector ) {
     if (!InputBadVector.size()) return; // If no bad hits are given, then I'm done already!
 
     // If the ambiguties are not in the same TPC then I can't reliably tell the difference.
@@ -786,7 +899,7 @@ namespace dune{
     std::vector< std::pair< unsigned int, unsigned int > > WhichTPCPl;
     std::vector< std::pair < std::vector < recob::Hit >, size_t > > TPCPlaneCombs;
     for (size_t HitLoop=0; HitLoop < InputBadVector.size(); ++HitLoop) {
-      HitVector_t Hits = InputBadVector[HitLoop].first;
+      std::vector< recob::Hit > Hits = InputBadVector[HitLoop].first;
       unsigned int FirstTPC = Hits[0].WireID().TPC;
       for ( size_t ThisHit=0; ThisHit<Hits.size(); ++ThisHit ) {
 	if ( Hits[ThisHit].WireID().TPC != FirstTPC ) {
@@ -796,7 +909,7 @@ namespace dune{
 	}
       }
       // This index has all hits in same TPC, so add it to my new combination vector
-      HitVector_t CombHits;
+      std::vector<recob::Hit> CombHits;
       for (size_t aa=0; aa<Hits.size(); ++aa) {
 	CombHits.push_back( Hits[aa] );
       }
@@ -816,7 +929,7 @@ namespace dune{
     for (size_t LineIndex=0; LineIndex<WhichTPCPl.size(); ++LineIndex) {
       unsigned int ThisTPC = WhichTPCPl[LineIndex].first;
       unsigned int ThisPl  = WhichTPCPl[LineIndex].second;
-      HitVector_t UniqHits = FindUniqueHits( GoodHits, ThisPl, ThisTPC );
+      std::vector<recob::Hit> UniqHits = FindUniqueHits( GoodHits, ThisPl, ThisTPC );
       if ( !UniqHits.size() ) {
 	std::cout << "I have no unique hits on TPC " << ThisTPC << ", Plane " << ThisPl << std::endl;
 	// I need to put these hits into my badhits vector....
@@ -830,7 +943,7 @@ namespace dune{
       
       // Got my line fit, now to work out which hit is the best.
       for (size_t HitLoop=0; HitLoop < TPCPlaneCombs.size(); ++HitLoop) {
-	HitVector_t Hits = TPCPlaneCombs[HitLoop].first;
+	std::vector< recob::Hit > Hits = TPCPlaneCombs[HitLoop].first;
 	// Check that I'm looking at the right TPC/Plane configuration.
 	if ( Hits[0].WireID().TPC != ThisTPC || Hits[0].WireID().Plane != ThisPl ) continue;
 	// What if I can't construct a line? Then I want to put these into my bad hits.

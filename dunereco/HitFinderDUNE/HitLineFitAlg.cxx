@@ -110,10 +110,10 @@ int dune::HitLineFitAlg::FitLine(std::vector<HitLineFitData> & data, HitLineFitR
   for (i = 0; i < data.size(); ++i) datakeys.push_back(i);
 
 
-  if (fLogLevel > 1) mf::LogInfo("HitLineFitAlg") << "Minimum number of data points required to fit the model, n=" << n << "\n" 
-						  << "Maximum number of iterations allowed, k=" << k << "\n"
-						  << "Threshold value for model inclusion (cm), t=" << t << "\n"
-						  << "Number of close data points required to assert a good fit, d=" << d;
+  if (fLogLevel > 1) std::cout << "Minimum number of data points required to fit the model, n=" << n << "\n" 
+			       << "Maximum number of iterations allowed, k=" << k << "\n"
+			       << "Threshold value for model inclusion (cm), t=" << t << "\n"
+			       << "Number of close data points required to assert a good fit, d=" << d << std::endl;
 
 
   // DO MAIN LOOP
@@ -267,11 +267,10 @@ int dune::HitLineFitAlg::FitLine(std::vector<HitLineFitData> & data, HitLineFitR
                 }
 	      if (fLogLevel > 1)
 		{
-		  std::cout << "-------------Found new minimum!-------------" << std::endl;
-		  std::cout << "FitError=" << fiterr;
-		  if (fabs(diff) < 1e30) std::cout << "  delta(fiterr)=" << diff;
-		  std::cout << "\nNumber of points included = " << points_best.size() << " out of " << data.size() << std::endl;
-		  std::cout << "--------------------------------------------" << std::endl;
+		  std::cout << "-------------Found new minimum!-------------" << std::endl
+			    << "FitError=" << fiterr << "  delta(fiterr)=" << diff << std::endl
+			    << "Number of points included = " << points_best.size() << " out of " << data.size() << std::endl
+			    << "--------------------------------------------" << std::endl;
 		}
 	    }
         }

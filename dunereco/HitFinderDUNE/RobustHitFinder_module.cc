@@ -287,7 +287,7 @@ void dune::RobustHitFinder::produce(art::Event & e)
       else if (tpc==5) nwiresTPC5++;
       else if (tpc==6) nwiresTPC6++;
       else if (tpc==7) nwiresTPC7++;
-      else mf::LogInfo("RobustHitFinder") << "Unknown TPC";
+      else mf::LogVerbatim("RobustHitFinder") << "Unknown TPC";
     }
 
   for (size_t i_t0 = 0; i_t0 < t0Handle->size(); i_t0++)
@@ -296,7 +296,7 @@ void dune::RobustHitFinder::produce(art::Event & e)
       t0 = pt0->Time();
 
       unsigned int tick0 = static_cast<unsigned int>(fClks->TPCG4Time2Tick(t0));
-      mf::LogInfo("RobustHitFinder") << "Found t0 at TPC tick = " << tick0;
+      mf::LogVerbatim("RobustHitFinder") << "Found t0 at TPC tick = " << tick0;
 
       std::vector<art::Ptr<raw::ExternalTrigger> > trigvec = triggers.at(i_t0);
 
