@@ -1034,6 +1034,7 @@ float dunemva::MVAAlg::OscPro(int ccnc, int nu0, int nu1, float NuE){
   //float sinth23=pow(sin(0.67),2);//sin(3.1415926535/4.0);
   //float sin2th13=0.094;
 
+  //FIXME osceq is created on the heap which was memory leak bound.  For now, a delete has been called at the end of the function.  This needs a more long term solution
   TF1 *osceq = 0;
   if(!osceq){
     osceq = new TF1("f2","sin(1.267*[0]*[1]/x)*sin(1.267*[0]*[1]/x)",0.,120.);
