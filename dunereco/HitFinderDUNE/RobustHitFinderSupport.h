@@ -41,12 +41,7 @@ public:
     float hiterryhi;
     float hiterrzlo;
     float hiterrzhi;
-    float hithoriz;
-    float hitvert;
-    float hithorizerrlo;
-    float hithorizerrhi;
-    float hitverterrlo;
-    float hitverterrhi;
+
     float perpdist;
     float hitt;
     float driftdist;

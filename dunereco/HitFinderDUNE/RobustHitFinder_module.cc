@@ -287,7 +287,7 @@ void dune::RobustHitFinder::produce(art::Event & e)
       else if (tpc==5) nwiresTPC5++;
       else if (tpc==6) nwiresTPC6++;
       else if (tpc==7) nwiresTPC7++;
-      else mf::LogInfo("RobustHitFinder") << "Unknown TPC";
+      else mf::LogVerbatim("RobustHitFinder") << "Unknown TPC";
     }
 
   for (size_t i_t0 = 0; i_t0 < t0Handle->size(); i_t0++)
@@ -296,7 +296,7 @@ void dune::RobustHitFinder::produce(art::Event & e)
       t0 = pt0->Time();
 
       unsigned int tick0 = static_cast<unsigned int>(fClks->TPCG4Time2Tick(t0));
-      mf::LogInfo("RobustHitFinder") << "Found t0 at TPC tick = " << tick0;
+      mf::LogVerbatim("RobustHitFinder") << "Found t0 at TPC tick = " << tick0;
 
       std::vector<art::Ptr<raw::ExternalTrigger> > trigvec = triggers.at(i_t0);
 
@@ -337,8 +337,12 @@ void dune::RobustHitFinder::produce(art::Event & e)
           fC2Horiz = c2x;
           distancecut *= fabs(TMath::Cos(TMath::ATan2(c1z-c2z,c1x-c2x)));
         }
-      fFitAlg.SetCounterPositions(fC1Vert,fC1Horiz,fC2Vert,fC2Horiz);
-      fFitAlg.SetRanges(fHorizRangeMin,fHorizRangeMax,fVertRangeMin,fVertRangeMax);
+      double counterslope = ((fC1Vert-fC2Vert)/(fC1Horiz-fC2Horiz));
+      fFitAlg.SetParameter(0,10,fVertRangeMin,fVertRangeMax);
+      fFitAlg.SetParameter(1,1,counterslope-0.15,counterslope+0.15);
+      fFitAlg.SetParameter(2,0,-0.0002,0.0002);
+      //fFitAlg.SetCounterPositions(fC1Vert,fC1Horiz,fC2Vert,fC2Horiz);
+      fFitAlg.SetHorizVertRanges(fHorizRangeMin,fHorizRangeMax,fVertRangeMin,fVertRangeMax);
 
       dune::ChanMap_t chanMap;
 
@@ -389,9 +393,41 @@ void dune::RobustHitFinder::produce(art::Event & e)
 	{
 	  FillHitInformation(chanmapitr.second,hitVec,false);
 	}
+      
+      std::vector<dune::HitLineFitAlg::HitLineFitData> fitdata;
+      for (auto & hit : hitVec)
+	{
+	  dune::HitLineFitAlg::HitLineFitData hlfd;
+	  if (trignum == 111)
+	    {
+	      hlfd.hitHoriz = hit.hitz;
+	      hlfd.hitVert = hit.hitx;
+	      hlfd.hitHorizErrLo = hit.hiterrzlo;
+	      hlfd.hitHorizErrHi = hit.hiterrzhi;
+	      hlfd.hitVertErrLo = hit.hiterrxlo;
+	      hlfd.hitVertErrHi = hit.hiterrxhi;
+	    }
+	  else if (trignum == 112 || trignum == 113)
+	    {
+	      hlfd.hitHoriz = hit.hitx;
+	      hlfd.hitVert = hit.hitz;
+	      hlfd.hitHorizErrLo = hit.hiterrxlo;
+	      hlfd.hitHorizErrHi = hit.hiterrxhi;
+	      hlfd.hitVertErrLo = hit.hiterrzlo;
+	      hlfd.hitVertErrHi = hit.hiterrzhi;
+	    }
+	  hlfd.hitREAL = false;
+	  fitdata.push_back(hlfd);
+	}
 
       dune::HitLineFitAlg::HitLineFitResults fitresult;
-      int retval = fFitAlg.FindTrack(hitVec,fitresult);
+      int retval = fFitAlg.FitLine(fitdata,fitresult);
+
+      for (size_t i_h = 0; i_h < fitdata.size(); ++i_h)
+	{
+	  hitVec[i_h].fitrealhit = fitdata[i_h].hitREAL;
+	}
+
       if (retval == 1 || retval == 0)
 	{
 	  if (fMakeupMissedHits) MakeupMissedHits(chanMap,hitVec);
@@ -438,8 +474,8 @@ void dune::RobustHitFinder::beginJob()
       fTree->Branch("wire",&wire,"wire/I");
       fTree->Branch("tpc",&tpc,"tpc/I");
       fTree->Branch("signalsize",&signalsize,"signalsize/I");
-      //fTree->Branch("signal",&signal);
-      //fTree->Branch("signalFilter",&signalFilter);
+      fTree->Branch("signal",&signal);
+      fTree->Branch("signalFilter",&signalFilter);
       fTree->Branch("baseline",&baseline,"baseline/F");
       fTree->Branch("rms",&rms,"rms/F");
       fTree->Branch("baselineFilter",&baselineFilter,"baselineFilter/F");
@@ -622,16 +658,16 @@ void dune::RobustHitFinder::MakeupMissedHits(ChanMap_t & chanMap, HitVec_t & hit
 
 void dune::RobustHitFinder::SetTreeVariables(const ChanMap_t chanMap, const HitVec_t hitVec, const dune::HitLineFitAlg::HitLineFitResults fitresult)
 {
-  fitconstant = fitresult.fitconstant;
-  fitconstanterr = fitresult.fitconstanterr;
-  fitlinear = fitresult.fitlinear;
-  fitlinearerr = fitresult.fitlinearerr;
-  fitquadratic = fitresult.fitquadratic;
-  fitquadraticerr = fitresult.fitquadraticerr;
-  fitchi2 = fitresult.fitchi2;
-  fitsumsqrresidual = fitresult.fitsumsqrresidual;
-  fitmle = fitresult.fitmle;
-  fitndf = fitresult.fitndf;
+  fitconstant = fitresult.bestVal.at(0);
+  fitconstanterr = fitresult.bestValError.at(0);
+  fitlinear = fitresult.bestVal.at(1);
+  fitlinearerr = fitresult.bestValError.at(1);
+  fitquadratic = fitresult.bestVal.at(2);
+  fitquadraticerr = fitresult.bestValError.at(2);
+  fitchi2 = fitresult.chi2;
+  fitsumsqrresidual = fitresult.sum2resid;
+  fitmle = fitresult.mle;
+  fitndf = fitresult.ndf;
   fitsuccess = fitresult.fitsuccess;
   TF1 * model = new TF1("model","pol2",fHorizRangeMin,fHorizRangeMax);
   model->SetParameters(fitconstant,fitlinear,fitquadratic);
@@ -749,24 +785,6 @@ void dune::RobustHitFinder::FillHitInformation(dune::ChannelInformation & chan, 
       hit.fitrealhit = false;
       hit.assumedhit = assumedHit;
 
-      if (trignum == 111)
-	{
-	  hit.hithoriz = hit.hitz;
-	  hit.hitvert = hit.hitx;
-	  hit.hithorizerrlo = hit.hiterrzlo;
-	  hit.hithorizerrhi = hit.hiterrzhi;
-	  hit.hitverterrlo = hit.hiterrxlo;
-	  hit.hitverterrhi = hit.hiterrxhi;
-	}
-      else if (trignum == 112 || trignum == 113)
-	{
-	  hit.hithoriz = hit.hitx;
-	  hit.hitvert = hit.hitz;
-	  hit.hithorizerrlo = hit.hiterrxlo;
-	  hit.hithorizerrhi = hit.hiterrxhi;
-	  hit.hitverterrlo = hit.hiterrzlo;
-	  hit.hitverterrhi = hit.hiterrzhi;
-	}
       recob::HitCreator temphit(*(chan.artWire),
 				fGeom->ChannelToWire(chan.channelID)[0],
 				hit.hitBeginTick,
