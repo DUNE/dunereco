@@ -79,13 +79,15 @@ namespace dunemva{
     void Run(const art::Event& evt,double& result, double& wgt);
     void endSubRun(const art::SubRun& sr);
 
+    float Norm(int ccnc, int nu0, int nu1, int subrun);
+    float OscPro(int ccnc, int nu0, int nu1, float NuE);
+
+
   private:
  
     void  PrepareEvent(const art::Event& event);
     void  MakeTree();
     void  CalculateInputs();
-    float Norm(int ccnc, int nu0, int nu1, int subrun);
-    float OscPro(int ccnc, int nu0, int nu1, float NuE);
 
     std::ofstream fFile;
 
