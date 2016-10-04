@@ -61,6 +61,7 @@ private:
   
   MVAAlg fMVAAlg;
   double fMVAResult;
+  double fEvtcharge;
   std::string fMVAMethod;
 
   bool fReweight;
@@ -214,7 +215,7 @@ void MVASelect::beginJob()
   fTree->Branch("event",       &fEvent,      "event/I");
   fTree->Branch("mvaresult",   &fMVAResult,  "mvaresult/D");
   fTree->Branch("weight",      &fWeight,     "weight/D");
-
+  fTree->Branch("evtcharge",   &fEvtcharge,"evtcharge/D");
   // particle counts
   fTree->Branch("nP",        &nP,         "nP/I");
   fTree->Branch("nN",        &nN,         "nN/I");
@@ -426,6 +427,7 @@ void MVASelect::analyze(art::Event const & evt)
   fSubrun = evt.id().subRun();
   fEvent = evt.id().event();
   fMVAAlg.Run(evt,fMVAResult,fWeight);
+  fEvtcharge = fMVAAlg.GetEvtCharge();
 
   art::Handle< std::vector<simb::MCTruth> > mct;
   std::vector< art::Ptr<simb::MCTruth> > truth;

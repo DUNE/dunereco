@@ -77,8 +77,9 @@ namespace dunemva{
 
     void Run(const art::Event& evt,std::vector<double>& result, double& wgt);
     void Run(const art::Event& evt,double& result, double& wgt);
+    float GetEvtCharge(){return evtcharge;}
     void endSubRun(const art::SubRun& sr);
-
+    
   private:
  
     void  PrepareEvent(const art::Event& event);
