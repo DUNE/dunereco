@@ -1102,6 +1102,8 @@ float dunemva::MVAAlg::OscPro(int ccnc, int nu0, int nu1, float NuE){
     std::cout << "Unknown oscillation: "
 	      << nu0 << " to " << nu1 << std::endl;
   }
+  delete osceq;
+
   return OscProb;
 } // OscPro()
 
