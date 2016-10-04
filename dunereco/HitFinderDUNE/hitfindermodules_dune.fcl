@@ -112,6 +112,11 @@ dune35t_hitfindercounters:
     CollectionTimeWidth:   50
 }
 
+dune35t_hitfindercounters_sim: @local::dune35t_hitfindercounters
+dune35t_hitfindercounters_sim.CounterModuleLabel: "simcounter"
+dune35t_hitfindercounters_sim.CounterFile: "counterInformation_sim.txt"
+
+
 dune35t_fasthitfinder:    @local::standard_fasthitfinder
 dune35t_fasthitfinder.MinSigInd: 5.0
 dune35t_fasthitfinder.MinSigCol: 5.0
@@ -140,6 +145,9 @@ dune35t_hitlinefitalg:
     InclusionThreshold: 2
 }
 
+dune35t_hitfindercounters.HitLineFitAlg: @local::dune35t_hitlinefitalg
+dune35t_hitfindercounters_sim.HitLineFitAlg: @local::dune35t_hitlinefitalg
+
 dune35t_rmshitfinderalg:
 {
     WindowWidth: 50
@@ -159,6 +167,13 @@ dune35t_robusthitfinder:
     DoWireAssns: true
     DoRawDigitAssns: false
     HitGeomDistanceCut: 20
+    MinPedMean: -10
+    MaxPedMean: 4000
+    MinPedRms: 0
+    MaxPedRms: 500
+    MakeupMissedHits: false
+    MissedBufferTicksLow: 0
+    MissedBufferTicksHigh: 0
     HitLineFitAlg: @local::dune35t_hitlinefitalg
     RMSHitFinderAlg: @local::dune35t_rmshitfinderalg
 }
