@@ -22,7 +22,7 @@
 #include "art/Framework/Services/Optional/TFileService.h" 
 
 #include "nutools/NuReweight/art/NuReweight.h"
-
+#include "Utils/AppInit.h"
 #include "nusimdata/SimulationBase/GTruth.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCFlux.h"
@@ -77,6 +77,8 @@ private:
   void FillINuke( rwgt::ReweightLabel_t label, double sig, double wgt);
   std::vector< rwgt::ReweightLabel_t > fINukeLabel;
 
+
+
   // INuke reweights
   double fSigs[knRwgts];
   double finuke_MFP_pi[knRwgts];
@@ -109,6 +111,9 @@ private:
 
   double fQ2; 
   double fEtrue; 
+  double fW;
+  double fX;
+  double fY;
 
   int fIsCoh; // 1=is coherent, 0=otherwise
   int fIsDIS; // 1=is dis,      0=otherwise
@@ -155,7 +160,9 @@ MVASelect::MVASelect(fhicl::ParameterSet const& pset)
     , fMVAAlg(pset)
 {
   this->reconfigure(pset);
-
+  if (fReweight){
+    genie::utils::app_init::MesgThresholds("Messenger_production.xml");
+  }
   fINukeLabel.emplace_back(rwgt::fReweightMFP_pi);
   fINukeLabel.emplace_back(rwgt::fReweightMFP_N);
   fINukeLabel.emplace_back(rwgt::fReweightFrCEx_pi);
@@ -234,6 +241,9 @@ void MVASelect::beginJob()
   fTree->Branch("beamPdg",      &fBeamPdg,      "beamPdg/I");
   fTree->Branch("mode",         &fMode,         "mode/I");
   fTree->Branch("ccnc",         &fCCNC,         "ccnc/I");
+  fTree->Branch("W",            &fW,            "W/D");
+  fTree->Branch("X",            &fX,            "X/D");
+  fTree->Branch("Y",            &fY,            "Y/D");
 
   fTree->Branch("nuvtxx_truth",&nuvtxx_truth,"nuvtxx_truth/D");
   fTree->Branch("nuvtxy_truth",&nuvtxy_truth,"nuvtxy_truth/D");
@@ -460,6 +470,9 @@ void MVASelect::analyze(art::Event const & evt)
     fMode     = truth[i]->GetNeutrino().Mode(); //0=QE/El, 1=RES, 2=DIS, 3=Coherent production
     fEtrue    = truth[i]->GetNeutrino().Nu().E();
     fQ2       = truth[i]->GetNeutrino().QSqr();
+    fW        = truth[i]->GetNeutrino().W();
+    fX        = truth[i]->GetNeutrino().X();
+    fY        = truth[i]->GetNeutrino().Y();
 
     nuvtxx_truth = truth[i]->GetNeutrino().Nu().Vx();
     nuvtxy_truth = truth[i]->GetNeutrino().Nu().Vy();
@@ -530,7 +543,7 @@ void MVASelect::analyze(art::Event const & evt)
 
     unsigned int sigs_i = 0;
     double sig_step = 0.1;
-    for(double sig=-2; sig<=2; sig+=sig_step){      
+    for(double sig=-2; sig<=2.01; sig+=sig_step){      
       if(knRwgts<=sigs_i)
 	mf::LogError("MVASelect") << "too many sigma steps";
       fSigs[sigs_i] = sig;
@@ -538,19 +551,18 @@ void MVASelect::analyze(art::Event const & evt)
     }    
 
     if(fReweight){ // takes a long time, only reweight if necessary
+
       rwgt::NuReweight *rwt;
       for(unsigned int r=0; r<fINukeLabel.size(); r++){
-	
-	for(double s=-2; s<=2; s+=sig_step){
-	  
-	  rwt = new rwgt::NuReweight();
-	  rwt->ConfigureINuke();
+	for(double s=-2; s<=2.01; s+=sig_step){
+          rwt = new rwgt::NuReweight();
+	  //rwt->ConfigureINuke();
 	  rwt->ReweightIntraNuke(fINukeLabel[r],s);
 	  double wgt = rwt->CalcWeight(*(truth[i]), *(gtru[i]));
 	  if(wgt>10)
 	    mf::LogVerbatim("MVASelect") << "High weight: " << wgt;
 	  this->FillINuke(fINukeLabel[r],s,wgt);
-	  
+          delete rwt;
 	} // all sigma steps s
       } // all reweights r
     } // if reweighting
@@ -567,7 +579,7 @@ void MVASelect::analyze(art::Event const & evt)
     
     unsigned int sig_i = UINT_MAX;
     for(unsigned int a=0; a<knRwgts; a++)
-      if( fSigs[a] == sig )
+      if( std::abs(fSigs[a]-sig)<1e-6 )
 	sig_i = a;
     
     if(sig_i==UINT_MAX)
