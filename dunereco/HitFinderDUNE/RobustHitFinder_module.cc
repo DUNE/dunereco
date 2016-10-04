@@ -47,6 +47,9 @@ m.thiesse@sheffield.ac.uk
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "larevt/CalibrationDBI/Interface/DetPedestalService.h"
+#include "larevt/CalibrationDBI/Interface/DetPedestalProvider.h"
+#include "dune/RunHistory/DetPedestalDUNE.h"
 
 #include <math.h>
 #include <memory>
@@ -94,16 +97,21 @@ public:
   void reconfigure(fhicl::ParameterSet const & p) override;
 
 private:
-
+  void SetTreeVariables(const ChanMap_t chanMap, const HitVec_t hitVec, const dune::HitLineFitAlg::HitLineFitResults fitresult);
+  void MakeupMissedHits(ChanMap_t & chanMap, HitVec_t & hitVec);
+  void FillHitInformation(dune::ChannelInformation & chan, dune::HitVec_t & hitVec, bool assumedHit);
   bool ValidTrigger(std::vector<unsigned int> evtTriggers, unsigned int & c1arg, unsigned int & c2arg, unsigned int & trignumarg);
   float TimeToDriftDist(float thistime, unsigned int thistpc);
   float TimeToDisplacement(float thistime);
   float TimeToX(float thistime, unsigned int thistpc);
   float hitGeomDist(TVector3 hitloc, TVector3 trigloc1, TVector3 trigloc2);
+  void Reset();
+
 
   TTree * fTree;
   int run;
   int event;
+  double t0;
   unsigned int c1;
   unsigned int c2;
   unsigned int trignum;
@@ -113,7 +121,9 @@ private:
   float c2x;
   float c2y;
   float c2z;
+  float distancecut;
   int channel;
+  int wire;
   int tpc;
   int signalsize;
   std::vector<float> signal;
@@ -122,6 +132,8 @@ private:
   float rms;
   float baselineFilter;
   float rmsFilter;
+  float pedmean;
+  float pedrms;
   float integral;
   float integralFilter;
   float sigmaintegral;
@@ -161,6 +173,16 @@ private:
   bool fitsuccess;
   bool fitrealhit;
   float segmentlength;
+  bool assumedhit;
+  int numGoodHitsChan;
+  int nwiresTPC0;
+  int nwiresTPC1;
+  int nwiresTPC2;
+  int nwiresTPC3;
+  int nwiresTPC4;
+  int nwiresTPC5;
+  int nwiresTPC6;
+  int nwiresTPC7;
 
   bool fMakeTree;
   float fHitGeomDistanceCut;
@@ -169,6 +191,13 @@ private:
   std::vector<float> fEfield;
   int fSearchPreTicks;
   int fSearchPostTicks;
+  bool fMakeupMissedHits;
+  int fMissedBufferTicksLow;
+  int fMissedBufferTicksHigh;
+  float fMinPedMean;
+  float fMaxPedMean;
+  float fMinPedRms;
+  float fMaxPedRms;
 
   float fHorizRangeMin;
   float fHorizRangeMax;
@@ -190,6 +219,7 @@ private:
   art::ServiceHandle<art::TFileService> fTfs;
   detinfo::DetectorClocks const * fClks;
   detinfo::DetectorProperties const * fDetProp;
+  const lariov::DetPedestalProvider& fPedestalRetrievalAlg = *(lar::providerFrom<lariov::DetPedestalService>());
 };
 
 
@@ -209,6 +239,8 @@ dune::RobustHitFinder::RobustHitFinder(fhicl::ParameterSet const & p)
 
 void dune::RobustHitFinder::produce(art::Event & e)
 {
+  Reset();
+
   recob::HitCollectionCreator hcol(*this, e);
 
   CLHEP::HepRandomEngine const & engine = fRng->getEngine("Seed");
@@ -241,11 +273,29 @@ void dune::RobustHitFinder::produce(art::Event & e)
   run = e.run();
   event = e.event();
 
+  
+  for (size_t iwire = 0; iwire < wireHandle->size(); ++iwire)
+    {
+      art::Ptr<recob::Wire> wire(wireHandle,iwire);
+      if (wire->View() != geo::kZ) continue;  
+      tpc = fGeom->ChannelToWire(wire->Channel())[0].TPC;
+      if (tpc==0) nwiresTPC0++;
+      else if (tpc==1) nwiresTPC1++;
+      else if (tpc==2) nwiresTPC2++;
+      else if (tpc==3) nwiresTPC3++;
+      else if (tpc==4) nwiresTPC4++;
+      else if (tpc==5) nwiresTPC5++;
+      else if (tpc==6) nwiresTPC6++;
+      else if (tpc==7) nwiresTPC7++;
+      else mf::LogInfo("RobustHitFinder") << "Unknown TPC";
+    }
+
   for (size_t i_t0 = 0; i_t0 < t0Handle->size(); i_t0++)
     {
       art::Ptr<anab::T0> pt0(t0Handle,i_t0);
+      t0 = pt0->Time();
 
-      unsigned int tick0 = static_cast<unsigned int>(fClks->TPCG4Time2Tick(pt0->Time()));
+      unsigned int tick0 = static_cast<unsigned int>(fClks->TPCG4Time2Tick(t0));
       mf::LogInfo("RobustHitFinder") << "Found t0 at TPC tick = " << tick0;
 
       std::vector<art::Ptr<raw::ExternalTrigger> > trigvec = triggers.at(i_t0);
@@ -262,7 +312,7 @@ void dune::RobustHitFinder::produce(art::Event & e)
       c2y = fCounterPositionMap[c2].first.Y();
       c2z = fCounterPositionMap[c2].first.Z();
     
-      float distancecut = fHitGeomDistanceCut;
+      distancecut = fHitGeomDistanceCut;
       if (trignum == 111)
         {
           fHorizRangeMin = -10;
@@ -290,209 +340,71 @@ void dune::RobustHitFinder::produce(art::Event & e)
       fFitAlg.SetCounterPositions(fC1Vert,fC1Horiz,fC2Vert,fC2Horiz);
       fFitAlg.SetRanges(fHorizRangeMin,fHorizRangeMax,fVertRangeMin,fVertRangeMax);
 
-      std::map<int,dune::ChannelInformation> chanMap;
-      std::vector<dune::HitInformation> hitVec;
+      dune::ChanMap_t chanMap;
 
       for (size_t iwire = 0; iwire < wireHandle->size(); ++iwire)
 	{
-	  art::Ptr<recob::Wire> wire(wireHandle,iwire);
-	  art::Ptr<raw::RawDigit> rawdigit = rawdigits.at(iwire);
+	  art::Ptr<recob::Wire> pwire(wireHandle,iwire);
+	  art::Ptr<raw::RawDigit> prawdigit = rawdigits.at(iwire);
 	  
-	  if (wire->View() != geo::kZ) continue;
+	  if (pwire->View() != geo::kZ) continue;
 	  
 	  dune::ChannelInformation chan;
 	  
-	  chan.artWire = wire;
-	  chan.artRawDigit = rawdigit;
+	  chan.artWire = pwire;
+	  chan.artRawDigit = prawdigit;
 	  
 	  chan.signalVec.clear();
 	  chan.signalFilterVec.clear();
 	  
-	  chan.channelID = wire->Channel();
+	  chan.channelID = pwire->Channel();
+	  chan.wireID = fGeom->ChannelToWire(chan.channelID)[0].Wire;
 	  chan.tpcNum = fGeom->ChannelToWire(chan.channelID)[0].TPC;
 	  
-	  chan.signalVec = wire->Signal();
+	  chan.signalVec = pwire->Signal();
 	  chan.signalSize = chan.signalVec.size();
-	  
-	  if (fSearchPreTicks > 0 && fSearchPostTicks > 0)
-	    { 
-	      fHitFinderAlg.SetSearchTicks(tick0-fSearchPreTicks,tick0+fSearchPostTicks);
-	    }	  
-	  fHitFinderAlg.FindHits(chan);
-	
-	
-	  if (chan.pulse_ends.size() < 1) continue;
-	
+
 	  double wirexyz[3];
-	  fGeom->Wire(*(fGeom->ChannelToWire(chan.channelID).begin())).GetCenter(wirexyz);
-	
-	  for (size_t i_hit = 0; i_hit < chan.pulse_ends.size(); i_hit++)
-	    {
-	      dune::HitInformation hit;
-	      hit.channelID = chan.channelID;
-	      int begin_index = chan.pulse_ends[i_hit].first;
-	      int end_index = chan.pulse_ends[i_hit].second;
-	      hit.hitBeginTick = begin_index;
-	      hit.hitEndTick = end_index;
-	      std::vector<float>::iterator beginitr = chan.signalVec.begin()+begin_index;
-	      std::vector<float>::iterator enditr = chan.signalVec.begin()+end_index;
-	      std::vector<float> pulse(beginitr,enditr);
-	      std::vector<float>::iterator fbeginitr = chan.signalFilterVec.begin()+begin_index;
-	      std::vector<float>::iterator fenditr = chan.signalFilterVec.begin()+end_index;
-	      std::vector<float> pulseFilter(fbeginitr,fenditr);
-	      hit.hitAmplitude = *std::max_element(beginitr,enditr)-chan.baseline;
-	      hit.hitAmplitudeFilter = *std::max_element(fbeginitr,fenditr)-chan.baselineFilter;
-	      hit.hitWidth = end_index-begin_index;
-	      hit.hitIntegral = std::accumulate(beginitr,enditr,0)-(hit.hitWidth*chan.baseline);
-	      hit.hitIntegralFilter = std::accumulate(fbeginitr,fenditr,0)-(hit.hitWidth*chan.baselineFilter);
-	      hit.hitSigmaIntegral = TMath::Sqrt(pulse.size())*TMath::RMS(pulse.size(),pulse.data());
-	      hit.hitSigmaIntegralFilter = TMath::Sqrt(pulseFilter.size())*TMath::RMS(pulseFilter.size(),pulseFilter.data());
-	      hit.hitPeakTick = std::distance(chan.signalVec.begin(),std::max_element(beginitr,enditr));
-	      hit.hitPeakTickFilter = std::distance(chan.signalFilterVec.begin(),std::max_element(fbeginitr,fenditr));
-	      hit.hitPeakTime = fClks->TPCTick2TrigTime(hit.hitPeakTick);
-	      hit.hitPeakTimeFilter = fClks->TPCTick2TrigTime(hit.hitPeakTickFilter);
+          fGeom->Wire(*(fGeom->ChannelToWire(chan.channelID).begin())).GetCenter(wirexyz);
+	  chan.chanz = static_cast<float>(wirexyz[2]);
+	  
+	  fHitFinderAlg.SetSearchTicks(tick0 - ((fSearchPreTicks>0) ? fSearchPreTicks : 0),
+				       tick0 + ((fSearchPostTicks>0) ? fSearchPostTicks : chan.signalSize));
+	  fHitFinderAlg.FilterWaveform(chan.signalVec,chan.signalFilterVec);
+	  fHitFinderAlg.RobustRMSBase(chan.signalVec,chan.baseline,chan.rms);
+	  fHitFinderAlg.RobustRMSBase(chan.signalFilterVec,chan.baselineFilter,chan.rmsFilter);
 
-	      hit.hitt = hit.hitPeakTime - pt0->Time()/1000;
-	   	      
-	      hit.hitx = TimeToX(hit.hitt,chan.tpcNum);
-	      hit.hity = 2.;
-	      hit.hitz = static_cast<float>(wirexyz[2]);
-	      hit.hiterrxlo = TMath::Sqrt(fabs(hit.hitx-TimeToDisplacement(fClks->TPCTick2TrigTime(hit.hitBeginTick)-pt0->Time()/1000)));
-	      hit.hiterrxhi = TMath::Sqrt(fabs(hit.hitx-TimeToDisplacement(fClks->TPCTick2TrigTime(hit.hitEndTick)-pt0->Time()/1000)));
-	      hit.hiterrylo = 0.;
-	      hit.hiterryhi = 0.;
-	      hit.hiterrzlo = sqrt(0.5);
-	      hit.hiterrzhi = sqrt(0.5);
-	      hit.driftdist = TimeToDriftDist(hit.hitt,chan.tpcNum);
-	      hit.perpdist = hitGeomDist(TVector3(hit.hitx,2.,hit.hitz),TVector3(c1x,2.,c1z),TVector3(c2x,2.,c2z));
-	      hit.countercut = false;
-	      if (hit.perpdist < distancecut) hit.countercut = true;
-	      hit.fitrealhit = false;
+	  pedmean = fPedestalRetrievalAlg.PedMean(chan.channelID);
+	  pedrms = fPedestalRetrievalAlg.PedRms(chan.channelID);
 
-	      if (trignum == 111)
-		{
-		  hit.hithoriz = hit.hitz;
-		  hit.hitvert = hit.hitx;
-		  hit.hithorizerrlo = hit.hiterrzlo;
-		  hit.hithorizerrhi = hit.hiterrzhi;
-		  hit.hitverterrlo = hit.hiterrxlo;
-		  hit.hitverterrhi = hit.hiterrxhi;
-		}
-	      else if (trignum == 112 || trignum == 113)
-		{
-		  hit.hithoriz = hit.hitx;
-		  hit.hitvert = hit.hitz;
-		  hit.hithorizerrlo = hit.hiterrxlo;
-		  hit.hithorizerrhi = hit.hiterrxhi;
-		  hit.hitverterrlo = hit.hiterrzlo;
-		  hit.hitverterrhi = hit.hiterrzhi;
-		}
+	  if (pedmean > fMaxPedMean || pedmean < fMinPedMean || pedrms > fMaxPedRms || pedrms < fMinPedRms) continue;
 
-	      recob::HitCreator temphit(*wire,
-					fGeom->ChannelToWire(chan.channelID)[0],
-					hit.hitBeginTick,
-					hit.hitEndTick,
-					hit.hitWidth,
-					hit.hitPeakTick,
-					sqrt(hit.hitWidth),
-					hit.hitAmplitude,
-					sqrt(hit.hitAmplitude),
-					hit.hitIntegral,
-					hit.hitSigmaIntegral,
-					hit.hitIntegral,
-					1,
-					-1,
-					1,
-					int(hit.hitEndTick-hit.hitBeginTick+1));
-	      hit.artHit = temphit.move();
+	  fHitFinderAlg.FindHits(chan);
 
-	      if (hit.hitx > -400 && hit.countercut) hitVec.push_back(hit);
-	    }
 	  chanMap.emplace(std::make_pair(chan.channelID,chan));
+	}
 
+      dune::HitVec_t hitVec;
+      for (auto & chanmapitr : chanMap)
+	{
+	  FillHitInformation(chanmapitr.second,hitVec,false);
 	}
 
       dune::HitLineFitAlg::HitLineFitResults fitresult;
       int retval = fFitAlg.FindTrack(hitVec,fitresult);
       if (retval == 1 || retval == 0)
 	{
-	  fitconstant = fitresult.fitconstant;
-	  fitconstanterr = fitresult.fitconstanterr;
-	  fitlinear = fitresult.fitlinear;
-	  fitlinearerr = fitresult.fitlinearerr;
-	  fitquadratic = fitresult.fitquadratic;
-	  fitquadraticerr = fitresult.fitquadraticerr;
-	  fitchi2 = fitresult.fitchi2;
-	  fitsumsqrresidual = fitresult.fitsumsqrresidual;
-	  fitmle = fitresult.fitmle;
-	  fitndf = fitresult.fitndf;
-	  fitsuccess = fitresult.fitsuccess;
-	  TF1 * model = new TF1("model","pol2",fHorizRangeMin,fHorizRangeMax);
-	  model->SetParameters(fitconstant,fitlinear,fitquadratic);
+	  if (fMakeupMissedHits) MakeupMissedHits(chanMap,hitVec);
+
+	  SetTreeVariables(chanMap,hitVec,fitresult);
+
 	  for (size_t i_hit = 0; i_hit < hitVec.size(); ++i_hit)
 	    {
 	      dune::HitInformation & hit = hitVec.at(i_hit);
 	      dune::ChannelInformation & chan = chanMap[hit.channelID];
-	      channel = chan.channelID;
-	      tpc = chan.tpcNum;
-	      signalsize = chan.signalSize;
-	      signal = chan.signalVec;
-	      signalFilter = chan.signalFilterVec;
-	      baseline = chan.baseline;
-	      rms = chan.rms;
-	      baselineFilter = chan.baselineFilter;
-	      rmsFilter = chan.rmsFilter;
-	      integral = hit.hitIntegral;
-	      integralFilter = hit.hitIntegralFilter;
-	      sigmaintegral = hit.hitSigmaIntegral;
-	      sigmaintegralFilter = hit.hitSigmaIntegralFilter;
-	      amplitude = hit.hitAmplitude;
-	      amplitudeFilter = hit.hitAmplitudeFilter;
-	      peaktick = hit.hitPeakTick;
-	      peaktickFilter = hit.hitPeakTickFilter;
-	      peaktime = hit.hitPeakTime;
-	      peaktimeFilter = hit.hitPeakTimeFilter;
-	      begintick = hit.hitBeginTick;
-	      endtick = hit.hitEndTick;
-	      width = hit.hitWidth;
-	      hitx = hit.hitx;
-	      hity = hit.hity;
-	      hitz = hit.hitz;
-	      hiterrxlo = hit.hiterrxlo;
-	      hiterrxhi = hit.hiterrxhi;
-	      hiterrylo = hit.hiterrylo;
-	      hiterryhi = hit.hiterryhi;
-	      hiterrzlo = hit.hiterrzlo;
-	      hiterrzhi = hit.hiterrzhi;
-	      perpdist = hit.perpdist;
-	      hitt = hit.hitt;
-	      driftdist = hit.driftdist;
-	      countercut = hit.countercut;
-	      fitrealhit = hit.fitrealhit;
-
-	      segmentlength = 0.449;
-	      if (fitsuccess && fitrealhit)
-		{
-		  if (trignum == 111)
-		    {
-		      double thetayz = TMath::ATan2(model->Eval(hitz+1)-model->Eval(hitz-1),2);
-		      double tan2thetayz = TMath::Power(TMath::Tan(thetayz),2);
-		      double y2z2 = ((c1y-c2y)*(c1y-c2y))/((c1z-c2z)*(c1z-c2z));
-		      double projL = sqrt(1+tan2thetayz+y2z2);
-		      segmentlength *= static_cast<float>(projL);//sqrt(1+TMath::Power(TMath::Tan(TMath::ATan2(model->Eval(hitz+1)-model->Eval(hitz-1),2)),2)+(((c1y-c2y)*(c1y-c2y))/((c1z-c2z)*(c1z-c2z))));
-		    }
-		  else if (trignum == 112 || trignum == 113)
-		    {
-		      double thetayx = TMath::ATan2(2,model->Eval(hitx+1)-model->Eval(hitx-1));
-		      double tan2thetayx = TMath::Power(TMath::Tan(thetayx),2);
-		      double y2x2 = ((c1y-c2y)*(c1y-c2y))/((c1x-c2x)*(c1x-c2x));
-		      double projL = sqrt(1+tan2thetayx*(1+y2x2));
-		      segmentlength *= static_cast<float>(projL);//sqrt(1+TMath::Power(TMath::Tan(TMath::ATan2(2,model->Eval(hitx+1)-model->Eval(hitx-1))),2)*(1+(((c1y-c2y)*(c1y-c2y))/((c1x-c2x)*(c1x-c2x)))));
-		    }
-		}
 
 	      if (fMakeTree) fTree->Fill();
-	      if (fitrealhit)
+	      if (hit.fitrealhit)
 		{
 		  hcol.emplace_back(hit.artHit,chan.artWire,chan.artRawDigit);
 		}
@@ -511,6 +423,7 @@ void dune::RobustHitFinder::beginJob()
       fTree = fTfs->make<TTree>("RobustHitFinder","RobustHitFinder");
       fTree->Branch("run",&run,"run/I");
       fTree->Branch("event",&event,"event/I");
+      fTree->Branch("t0",&t0,"t0/D");
       fTree->Branch("c1",&c1,"c1/i");
       fTree->Branch("c2",&c2,"c2/i");
       fTree->Branch("trignum",&trignum,"trignum/i");
@@ -520,7 +433,9 @@ void dune::RobustHitFinder::beginJob()
       fTree->Branch("c2x",&c2x,"c2x/F");
       fTree->Branch("c2y",&c2y,"c2y/F");
       fTree->Branch("c2z",&c2z,"c2z/F");
+      fTree->Branch("distancecut",&distancecut,"distancecut/F");
       fTree->Branch("channel",&channel,"channel/I");
+      fTree->Branch("wire",&wire,"wire/I");
       fTree->Branch("tpc",&tpc,"tpc/I");
       fTree->Branch("signalsize",&signalsize,"signalsize/I");
       //fTree->Branch("signal",&signal);
@@ -529,6 +444,8 @@ void dune::RobustHitFinder::beginJob()
       fTree->Branch("rms",&rms,"rms/F");
       fTree->Branch("baselineFilter",&baselineFilter,"baselineFilter/F");
       fTree->Branch("rmsFilter",&rmsFilter,"rmsFilter/F");
+      fTree->Branch("pedmean",&pedmean,"pedmean/F");
+      fTree->Branch("pedrms",&pedrms,"pedrms/F");
       fTree->Branch("integral",&integral,"integral/F");
       fTree->Branch("integralFilter",&integralFilter,"integralFilter/F");
       fTree->Branch("sigmaintegral",&sigmaintegral,"sigmaintegral/F");
@@ -567,7 +484,17 @@ void dune::RobustHitFinder::beginJob()
       fTree->Branch("fitmle",&fitmle,"fitmle/F");
       fTree->Branch("fitsuccess",&fitsuccess,"fitsuccess/O");
       fTree->Branch("fitrealhit",&fitrealhit,"fitrealhit/O");
+      fTree->Branch("assumedhit",&assumedhit,"assumedhit/O");
       fTree->Branch("segmentlength",&segmentlength,"segmentlength/F");
+      fTree->Branch("numGoodHitsChan",&numGoodHitsChan,"numGoodHitsChan/I");
+      fTree->Branch("nwiresTPC0",&nwiresTPC0,"nwiresTPC0/I");
+      fTree->Branch("nwiresTPC1",&nwiresTPC1,"nwiresTPC1/I");
+      fTree->Branch("nwiresTPC2",&nwiresTPC2,"nwiresTPC2/I");
+      fTree->Branch("nwiresTPC3",&nwiresTPC3,"nwiresTPC3/I");
+      fTree->Branch("nwiresTPC4",&nwiresTPC4,"nwiresTPC4/I");
+      fTree->Branch("nwiresTPC5",&nwiresTPC5,"nwiresTPC5/I");
+      fTree->Branch("nwiresTPC6",&nwiresTPC6,"nwiresTPC6/I");
+      fTree->Branch("nwiresTPC7",&nwiresTPC7,"nwiresTPC7/I");
     }
 }
 
@@ -580,10 +507,290 @@ void dune::RobustHitFinder::reconfigure(fhicl::ParameterSet const & p)
   fEfield = p.get<std::vector<float> >("Efield");
   fSearchPreTicks = p.get<int>("SearchPreTicks",-1);
   fSearchPostTicks = p.get<int>("SearchPostTicks",-1);
+  fMinPedMean = p.get<float>("MinPedMean");
+  fMaxPedMean = p.get<float>("MaxPedMean");
+  fMinPedRms = p.get<float>("MinPedRms");
+  fMaxPedRms = p.get<float>("MaxPedRms");
+  fMakeupMissedHits = p.get<bool>("MakeupMissedHits",true);
+  fMissedBufferTicksLow = p.get<int>("MissedBufferTicksLow");
+  fMissedBufferTicksHigh = p.get<int>("MissedBufferTicksHigh");
+}
+
+void dune::RobustHitFinder::MakeupMissedHits(ChanMap_t & chanMap, HitVec_t & hitVec)
+{
+  float chanbeginz = 99999;
+  float chanendz = -99999;
+  int chanbeginid = 99999;
+  int chanendid = -99999;
+  for (auto & chanitr : chanMap)
+    {
+      if (chanitr.second.tpcNum % 2 != 1) continue;
+      chanitr.second.nGoodHits = 0;
+      for (size_t i_hit = 0; i_hit < hitVec.size(); ++i_hit)
+	{
+	  dune::HitInformation & hit = hitVec.at(i_hit);
+	  if (hit.channelID == chanitr.first && hit.fitrealhit)
+	    {
+	      chanitr.second.goodHitStartTick = hit.hitBeginTick;
+	      chanitr.second.goodHitEndTick = hit.hitEndTick;
+	      chanitr.second.nGoodHits++;
+	    }
+	}
+      if (chanitr.second.nGoodHits > 0 && chanitr.second.chanz < chanbeginz)
+	{
+	  chanbeginz = chanitr.second.chanz;
+	  chanbeginid = chanitr.first;
+	}
+      if (chanitr.second.nGoodHits > 0 && chanitr.second.chanz > chanendz)
+	{
+	  chanendz = chanitr.second.chanz;
+	  chanendid = chanitr.first;
+	}
+    }
+
+  if (chanendz < chanbeginz)
+    {
+      mf::LogError("RobustHitFinder") << "Problem: chanbeginz=" << chanbeginz << " is greater than chanendz=" << chanendz;
+      return;
+    }
+
+  if (chanbeginid == 99999 || chanendid == -99999)
+    {
+      mf::LogError("RobustHitFinder") << "Track not found. No assumed hits added." << std::endl;
+      return;
+    }
+
+  if (chanMap[chanbeginid].tpcNum % 2 != chanMap[chanendid].tpcNum % 2)
+    {
+      mf::LogError("RobustHitFinder") << "Track crosses APA. Don't know how to deal with this yet.";
+      return;
+    }
+
+  std::vector<std::pair<float,int> > trackchans;
+  for (auto const & chanitr : chanMap)
+    {
+      if (chanitr.second.chanz >= chanbeginz && chanitr.second.chanz <= chanendz && chanitr.second.tpcNum % 2 == chanMap[chanbeginid].tpcNum % 2)
+	{
+	  trackchans.push_back(std::make_pair(chanitr.second.chanz,chanitr.first));
+	}
+    }
+  std::sort(trackchans.begin(),trackchans.end());
+
+  for (size_t i_tc = 0; i_tc < trackchans.size(); ++i_tc)
+    {
+      dune::ChannelInformation ch = chanMap[trackchans[i_tc].second];
+
+      if (ch.nGoodHits == 0 && ch.chanz >= chanbeginz && ch.chanz <= chanendz)
+	{
+	  int sub = 0;
+	  dune::ChannelInformation chnearlow = ch;
+	  while (chnearlow.nGoodHits != 1 && chnearlow.chanz >= chanbeginz)
+	    {
+	      ++sub;
+	      chnearlow = chanMap[trackchans[i_tc-sub].second];
+	    }
+
+	  int add = 0;
+	  dune::ChannelInformation chnearhigh = ch;
+	  while (chnearhigh.nGoodHits != 1 && chnearhigh.chanz <= chanendz)
+	    {
+	      ++add;
+	      chnearhigh = chanMap[trackchans[i_tc+add].second];
+	    }
+
+	  if (ch.tpcNum != chnearlow.tpcNum || ch.tpcNum != chnearhigh.tpcNum) continue;
+
+	  int cls = chnearlow.goodHitStartTick;
+	  int chs = chnearhigh.goodHitStartTick;
+	  int cle = chnearlow.goodHitEndTick;
+	  int che = chnearhigh.goodHitEndTick;
+	  double clz = chnearlow.chanz;
+	  double chz = chnearhigh.chanz;
+	  
+	  int chstart = cls + (((chs - cls) / (chz - clz)) * (ch.chanz - clz));
+	  int chend   = cle + (((che - cle) / (chz - clz)) * (ch.chanz - clz));
+
+	  chstart -= fMissedBufferTicksLow;
+	  chend   += fMissedBufferTicksHigh;
+
+	  ch.pulse_ends.push_back(std::make_pair(chstart,chend));
+
+	  FillHitInformation(ch,hitVec,true);
+	}
+    }
+}
+
+void dune::RobustHitFinder::SetTreeVariables(const ChanMap_t chanMap, const HitVec_t hitVec, const dune::HitLineFitAlg::HitLineFitResults fitresult)
+{
+  fitconstant = fitresult.fitconstant;
+  fitconstanterr = fitresult.fitconstanterr;
+  fitlinear = fitresult.fitlinear;
+  fitlinearerr = fitresult.fitlinearerr;
+  fitquadratic = fitresult.fitquadratic;
+  fitquadraticerr = fitresult.fitquadraticerr;
+  fitchi2 = fitresult.fitchi2;
+  fitsumsqrresidual = fitresult.fitsumsqrresidual;
+  fitmle = fitresult.fitmle;
+  fitndf = fitresult.fitndf;
+  fitsuccess = fitresult.fitsuccess;
+  TF1 * model = new TF1("model","pol2",fHorizRangeMin,fHorizRangeMax);
+  model->SetParameters(fitconstant,fitlinear,fitquadratic);
+
+  for (size_t i_hit = 0; i_hit < hitVec.size(); ++i_hit)
+    {
+      const dune::HitInformation & hit = hitVec.at(i_hit);
+      const dune::ChannelInformation & chan = chanMap.at(hit.channelID);
+      channel = chan.channelID;
+      wire = chan.wireID;
+      tpc = chan.tpcNum;
+      signalsize = chan.signalSize;
+      signal = chan.signalVec;
+      signalFilter = chan.signalFilterVec;
+      baseline = chan.baseline;
+      rms = chan.rms;
+      baselineFilter = chan.baselineFilter;
+      rmsFilter = chan.rmsFilter;
+      integral = hit.hitIntegral;
+      integralFilter = hit.hitIntegralFilter;
+      sigmaintegral = hit.hitSigmaIntegral;
+      sigmaintegralFilter = hit.hitSigmaIntegralFilter;
+      amplitude = hit.hitAmplitude;
+      amplitudeFilter = hit.hitAmplitudeFilter;
+      peaktick = hit.hitPeakTick;
+      peaktickFilter = hit.hitPeakTickFilter;
+      peaktime = hit.hitPeakTime;
+      peaktimeFilter = hit.hitPeakTimeFilter;
+      begintick = hit.hitBeginTick;
+      endtick = hit.hitEndTick;
+      width = hit.hitWidth;
+      hitx = hit.hitx;
+      hity = hit.hity;
+      hitz = hit.hitz;
+      hiterrxlo = hit.hiterrxlo;
+      hiterrxhi = hit.hiterrxhi;
+      hiterrylo = hit.hiterrylo;
+      hiterryhi = hit.hiterryhi;
+      hiterrzlo = hit.hiterrzlo;
+      hiterrzhi = hit.hiterrzhi;
+      perpdist = hit.perpdist;
+      hitt = hit.hitt;
+      driftdist = hit.driftdist;
+      countercut = hit.countercut;
+      fitrealhit = hit.fitrealhit;
+      assumedhit = hit.assumedhit;
+      numGoodHitsChan = chan.nGoodHits;
+      
+      segmentlength = 0.449;
+      if (fitsuccess && fitrealhit)
+	{
+	  if (trignum == 111)
+	    {
+	      double thetayz = TMath::ATan2(model->Eval(hitz+1)-model->Eval(hitz-1),2);
+	      double tan2thetayz = TMath::Power(TMath::Tan(thetayz),2);
+	      double y2z2 = ((c1y-c2y)*(c1y-c2y))/((c1z-c2z)*(c1z-c2z));
+	      double projL = sqrt(1+tan2thetayz+y2z2);
+	      segmentlength *= static_cast<float>(projL);
+	    }
+	  else if (trignum == 112 || trignum == 113)
+	    {
+	      double thetayx = TMath::ATan2(2,model->Eval(hitx+1)-model->Eval(hitx-1));
+	      double tan2thetayx = TMath::Power(TMath::Tan(thetayx),2);
+	      double y2x2 = ((c1y-c2y)*(c1y-c2y))/((c1x-c2x)*(c1x-c2x));
+	      double projL = sqrt(1+tan2thetayx*(1+y2x2));
+	      segmentlength *= static_cast<float>(projL);
+	    }
+	}
+    }
+}
+
+void dune::RobustHitFinder::FillHitInformation(dune::ChannelInformation & chan, dune::HitVec_t & hitVec, bool assumedHit)
+{
+  for (size_t i_hit = 0; i_hit < chan.pulse_ends.size(); i_hit++)
+    {
+      dune::HitInformation hit;
+      hit.channelID = chan.channelID;
+      int begin_index = chan.pulse_ends[i_hit].first;
+      int end_index = chan.pulse_ends[i_hit].second;
+      hit.hitBeginTick = begin_index;
+      hit.hitEndTick = end_index;
+      std::vector<float>::iterator beginitr = chan.signalVec.begin()+begin_index;
+      std::vector<float>::iterator enditr = chan.signalVec.begin()+end_index;
+      std::vector<float> pulse(beginitr,enditr);
+      std::vector<float>::iterator fbeginitr = chan.signalFilterVec.begin()+begin_index;
+      std::vector<float>::iterator fenditr = chan.signalFilterVec.begin()+end_index;
+      std::vector<float> pulseFilter(fbeginitr,fenditr);
+      hit.hitAmplitude = *std::max_element(beginitr,enditr)-chan.baseline;
+      hit.hitAmplitudeFilter = *std::max_element(fbeginitr,fenditr)-chan.baselineFilter;
+      hit.hitWidth = end_index-begin_index;
+      hit.hitIntegral = std::accumulate(beginitr,enditr,0)-(hit.hitWidth*chan.baseline);
+      hit.hitIntegralFilter = std::accumulate(fbeginitr,fenditr,0)-(hit.hitWidth*chan.baselineFilter);
+      hit.hitSigmaIntegral = TMath::Sqrt(pulse.size())*TMath::RMS(pulse.size(),pulse.data());
+      hit.hitSigmaIntegralFilter = TMath::Sqrt(pulseFilter.size())*TMath::RMS(pulseFilter.size(),pulseFilter.data());
+      hit.hitPeakTick = std::distance(chan.signalVec.begin(),std::max_element(beginitr,enditr));
+      hit.hitPeakTickFilter = std::distance(chan.signalFilterVec.begin(),std::max_element(fbeginitr,fenditr));
+      hit.hitPeakTime = fClks->TPCTick2TrigTime(hit.hitPeakTick);
+      hit.hitPeakTimeFilter = fClks->TPCTick2TrigTime(hit.hitPeakTickFilter);
+
+      hit.hitt = hit.hitPeakTime - t0/1000;
+
+      hit.hitx = TimeToX(hit.hitt,chan.tpcNum);
+      hit.hity = 2.;
+      hit.hitz = chan.chanz;
+      hit.hiterrxlo = TMath::Sqrt(fabs(hit.hitx-TimeToDisplacement(fClks->TPCTick2TrigTime(hit.hitBeginTick)-t0/1000)));
+      hit.hiterrxhi = TMath::Sqrt(fabs(hit.hitx-TimeToDisplacement(fClks->TPCTick2TrigTime(hit.hitEndTick)-t0/1000)));
+      hit.hiterrylo = 0.;
+      hit.hiterryhi = 0.;
+      hit.hiterrzlo = sqrt(0.5);
+      hit.hiterrzhi = sqrt(0.5);
+      hit.driftdist = TimeToDriftDist(hit.hitt,chan.tpcNum);
+      hit.perpdist = hitGeomDist(TVector3(hit.hitx,2.,hit.hitz),TVector3(c1x,2.,c1z),TVector3(c2x,2.,c2z));
+      hit.countercut = false;
+      if (hit.perpdist < distancecut) hit.countercut = true;
+      hit.fitrealhit = false;
+      hit.assumedhit = assumedHit;
+
+      if (trignum == 111)
+	{
+	  hit.hithoriz = hit.hitz;
+	  hit.hitvert = hit.hitx;
+	  hit.hithorizerrlo = hit.hiterrzlo;
+	  hit.hithorizerrhi = hit.hiterrzhi;
+	  hit.hitverterrlo = hit.hiterrxlo;
+	  hit.hitverterrhi = hit.hiterrxhi;
+	}
+      else if (trignum == 112 || trignum == 113)
+	{
+	  hit.hithoriz = hit.hitx;
+	  hit.hitvert = hit.hitz;
+	  hit.hithorizerrlo = hit.hiterrxlo;
+	  hit.hithorizerrhi = hit.hiterrxhi;
+	  hit.hitverterrlo = hit.hiterrzlo;
+	  hit.hitverterrhi = hit.hiterrzhi;
+	}
+      recob::HitCreator temphit(*(chan.artWire),
+				fGeom->ChannelToWire(chan.channelID)[0],
+				hit.hitBeginTick,
+				hit.hitEndTick,
+				hit.hitWidth,
+				hit.hitPeakTick,
+				sqrt(hit.hitWidth),
+				hit.hitAmplitude,
+				sqrt(hit.hitAmplitude),
+				hit.hitIntegral,
+				hit.hitSigmaIntegral,
+				hit.hitIntegral,
+				1,
+				-1,
+				1,
+				int(hit.hitEndTick-hit.hitBeginTick+1));
+      hit.artHit = temphit.move();
+      if (hit.hitx > -400 && hit.countercut) hitVec.push_back(hit);
+    }
 }
 
 bool dune::RobustHitFinder::ValidTrigger(std::vector<unsigned int> evtTriggers, unsigned int & c1arg, unsigned int & c2arg, unsigned int & trignumarg)
 {
+  c1arg=999; c2arg=999;
   int contains_111 = 0, contains_112 = 0, contains_113 = 0;
   int contains_Ntrigs = 0, contains_NU = 0, contains_NL = 0, contains_SU = 0, contains_SL = 0;
   int contains_EL = 0, contains_WU = 0, contains_TEL = 0;
@@ -629,7 +836,6 @@ bool dune::RobustHitFinder::ValidTrigger(std::vector<unsigned int> evtTriggers, 
   if (counterIDs.size() != 2) return false;
   if (trignumarg == 0) return false;
 
-  c1arg = 999; c2arg = 999;
   if (trignumarg == 112 || trignumarg == 113)
     {
       if (fCounterPositionMap[counterIDs[0]].first.X() > fCounterPositionMap[counterIDs[1]].first.X())
@@ -739,6 +945,84 @@ float dune::RobustHitFinder::TimeToX(float thistime, unsigned int thistpc)
 float dune::RobustHitFinder::hitGeomDist(TVector3 hitloc, TVector3 trigloc1, TVector3 trigloc2)
 {
   return (((hitloc-trigloc1).Cross(hitloc-trigloc2)).Mag()/(trigloc2-trigloc1).Mag());
+}
+
+void dune::RobustHitFinder::Reset()
+{
+  run = -99999;
+  event = -99999;
+  t0 = -99999;
+  c1 = 99999;
+  c2 = 99999;
+  trignum = 99999;
+  c1x = -99999;
+  c1y = -99999;
+  c1z = -99999;
+  c2x = -99999;
+  c2y = -99999;
+  c2z = -99999;
+  channel = -99999;
+  tpc = -99999;
+  wire = -99999;
+  distancecut = -99999;
+  signalsize = -99999;
+  signal.clear();
+  signalFilter.clear();
+  baseline = -99999;
+  rms = -99999;
+  baselineFilter = -99999;
+  rmsFilter = -99999;
+  pedmean = -99999;
+  pedrms = -99999;
+  integral = -99999;
+  integralFilter = -99999;
+  sigmaintegral = -99999;
+  sigmaintegralFilter = -99999;
+  amplitude = -99999;
+  amplitudeFilter = -99999;
+  peaktick = -99999;
+  peaktickFilter = -99999;
+  peaktime = -99999;
+  peaktimeFilter = -99999;
+  begintick = -99999;
+  endtick = -99999;
+  width = -99999;
+  hitx = -99999;
+  hity = -99999;
+  hitz = -99999;
+  hiterrxlo = -99999;
+  hiterrxhi = -99999;
+  hiterrylo = -99999;
+  hiterryhi = -99999;
+  hiterrzlo = -99999;
+  hiterrzhi = -99999;
+  perpdist = -99999;
+  hitt = -99999;
+  driftdist = -99999;
+  countercut = false;
+  fitconstant = -99999;
+  fitconstanterr = -99999;
+  fitlinear = -99999;
+  fitlinearerr = -99999;
+  fitquadratic = -99999;
+  fitquadraticerr = -99999;
+  fitchi2 = -99999;
+  fitsumsqrresidual = -99999;
+  fitndf = -99999;
+  fitmle = -99999;
+  fitsuccess = false;
+  fitrealhit = false;
+  assumedhit = false;
+  segmentlength = -99999;
+  nwiresTPC0 = 0;
+  nwiresTPC1 = 0;
+  nwiresTPC2 = 0;
+  nwiresTPC3 = 0;
+  nwiresTPC4 = 0;
+  nwiresTPC5 = 0;
+  nwiresTPC6 = 0;
+  nwiresTPC7 = 0;
+  numGoodHitsChan = 0;
 }
 
 DEFINE_ART_MODULE(dune::RobustHitFinder)

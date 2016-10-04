@@ -159,6 +159,13 @@ dune35t_robusthitfinder:
     DoWireAssns: true
     DoRawDigitAssns: false
     HitGeomDistanceCut: 20
+    MinPedMean: -10
+    MaxPedMean: 4000
+    MinPedRms: 0
+    MaxPedRms: 500
+    MakeupMissedHits: false
+    MissedBufferTicksLow: 0
+    MissedBufferTicksHigh: 0
     HitLineFitAlg: @local::dune35t_hitlinefitalg
     RMSHitFinderAlg: @local::dune35t_rmshitfinderalg
 }
