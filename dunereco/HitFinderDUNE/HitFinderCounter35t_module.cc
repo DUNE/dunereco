@@ -124,6 +124,7 @@ namespace dune{
     dune::HitLineFitAlg fFitAlg;
     art::ServiceHandle<art::RandomNumberGenerator> fRng;
     art::ServiceHandle<sim::LArSeedService> fSeed;
+    bool fDoHitLineFitAlg;
 
     std::map< unsigned int, std::pair < TVector3, std::vector< TVector3 > > > CounterPositionMap; // The map of counter positions....
     std::vector< std::pair< unsigned int, unsigned int > > ExternalTrigIndexVec; // My vector of counter coincidence indexes...
@@ -153,6 +154,7 @@ namespace dune{
     , fAdjacentTimeWidth   (pset.get<unsigned int>("AdjacentTimeWidth"))
     , fCollectionTimeWidth (pset.get<unsigned int>("CollectionTimeWidth"))
     , fFitAlg              (pset.get<fhicl::ParameterSet>("HitLineFitAlg"))
+    , fDoHitLineFitAlg     (pset.get<bool>("DoHitLineFitAlg",false))
   {
     fSeed->createEngine(*this,"HepJamesRandom","Seed");
     recob::HitCollectionCreator::declare_products(*this);
@@ -293,7 +295,7 @@ namespace dune{
 			    <<"\nVertexZ has co-ords " << VertexZ[0] << " " << VertexZ[1] << " " << VertexZ[2] << " " << VertexZ[3]
 			    << std::endl;
       
-      bool doHitLineFitAlg = true;
+      bool doHitLineFitAlg = fDoHitLineFitAlg;
       int trignum = -1;
       if ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() >= 6  && trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() <= 15 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() >= 28 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() <= 37 ) trignum=111; // East Lower, West Upper
       else if ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() >= 0  && trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() <= 5  && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() >= 22 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() <= 27 ) trignum=112; // South Lower, North Upper
@@ -389,7 +391,16 @@ namespace dune{
       int retval = -1;
       if (doHitLineFitAlg) retval = fFitAlg.FitLine(fitdata,bestfit);
 
-      if (retval != 1) 
+      if (!doHitLineFitAlg)
+	{
+	  for (unsigned int i_fd = 0; i_fd < fitdata.size(); ++i_fd)
+            {
+	      art::Ptr<recob::Wire> wire = ChannelHitWires.at(index_convert[i_fd]);
+	      art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(index_convert[i_fd]);
+	      hcol.emplace_back(*hits[index_convert[i_fd]],wire,rawdigits);
+	    }
+	}
+      else if (retval != 1 && doHitLineFitAlg) 
 	{
 	  std::cout << "No line fit could be found, or not enough hits in counter shadow to make a line" << std::endl;
 	  hcol.put_into(evt);
