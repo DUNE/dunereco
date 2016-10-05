@@ -80,6 +80,15 @@ dune35t_TimeBasedDisambigAlg:
                            # of mis-identified hits.
 }
 
+dune35t_hitlinefitalg:
+{
+    FitPolN: 2
+    MinStartPoints: 3
+    MinAlsoPoints: 6
+    IterationsMultiplier: 20
+    InclusionThreshold: 2
+}
+
 dune35t_hitfinder35t:
 {
     module_type:      "HitFinder35t"
@@ -110,10 +119,12 @@ dune35t_hitfindercounters:
     AdjacentWireWidth:     10
     AdjacentTimeWidth:     100
     CollectionTimeWidth:   50
+    HitLineFitAlg:         @local::dune35t_hitlinefitalg
 }
 
 dune35t_hitfindercounters_sim: @local::dune35t_hitfindercounters
 dune35t_hitfindercounters_sim.CounterModuleLabel: "simcounter"
+dune35t_hitfindercounters_sim.CounterDir:  "/dune/app/users/mthiesse/PersistentFiles/"
 dune35t_hitfindercounters_sim.CounterFile: "counterInformation_sim.txt"
 
 
@@ -136,18 +147,6 @@ dunefd_clustercrawlerhit: @local::dune35t_clustercrawlerhit
 dunefd_hitfinderfd:       @local::dune35t_hitfinder35t
 dunefd_hitfinderfd.DisambigAlg.DoCleanUpHits: false
 
-dune35t_hitlinefitalg:
-{
-    FitPolN: 2
-    MinStartPoints: 3
-    MinAlsoPoints: 6
-    IterationsMultiplier: 200
-    InclusionThreshold: 2
-}
-
-dune35t_hitfindercounters.HitLineFitAlg: @local::dune35t_hitlinefitalg
-dune35t_hitfindercounters_sim.HitLineFitAlg: @local::dune35t_hitlinefitalg
-
 dune35t_rmshitfinderalg:
 {
     WindowWidth: 50
@@ -166,7 +165,7 @@ dune35t_robusthitfinder:
     DigitModuleLabel: "caldata"
     DoWireAssns: true
     DoRawDigitAssns: false
-    HitGeomDistanceCut: 20
+    HitGeomDistanceCut: 25
     MinPedMean: -10
     MaxPedMean: 4000
     MinPedRms: 0
@@ -181,6 +180,6 @@ dune35t_robusthitfinder:
 dune35t_robusthitfindersim: @local::dune35t_robusthitfinder
 dune35t_robusthitfindersim.SearchPreTicks: 100
 dune35t_robusthitfindersim.SearchPostTicks: 4400
-dune35t_robusthitfindersim.HitGeomDistanceCut: 30
+dune35t_robusthitfindersim.HitGeomDistanceCut: 25
 
 END_PROLOG
