@@ -1,3 +1,13 @@
+/****************************************
+
+Searches waveforms for hits where the threshold
+is determined on-the-fly from the actual channel noise,
+rather than a set value for all channels.
+
+October 2016
+m.thiesse@sheffield.ac.uk
+
+****************************************/
 
 #include "RMSHitFinderAlg.h"
 

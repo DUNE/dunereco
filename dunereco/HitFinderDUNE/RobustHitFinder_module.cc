@@ -9,12 +9,7 @@
 
 /*************************************************
 
-Use this package with care, as it is unvalidated (as of 25 Aug 2016).
-Also note that it can take quite a while to run because
-of the HitLineFitAlg. Also, I don't yet trust the random seeding
-of the algorithm. Need to work on that...
-
-Let me know if there are any issues/requests/comments. 
+October 2016
 
 m.thiesse@sheffield.ac.uk
 
@@ -97,7 +92,7 @@ public:
   void reconfigure(fhicl::ParameterSet const & p) override;
 
 private:
-  void SetTreeVariables(const ChanMap_t chanMap, const HitVec_t hitVec, const dune::HitLineFitAlg::HitLineFitResults fitresult);
+  void SetTreeVariables(const dune::ChannelInformation & chan, const dune::HitInformation & hit, const dune::HitLineFitAlg::HitLineFitResults & fitresult);
   void MakeupMissedHits(ChanMap_t & chanMap, HitVec_t & hitVec);
   void FillHitInformation(dune::ChannelInformation & chan, dune::HitVec_t & hitVec, bool assumedHit);
   bool ValidTrigger(std::vector<unsigned int> evtTriggers, unsigned int & c1arg, unsigned int & c2arg, unsigned int & trignumarg);
@@ -341,7 +336,6 @@ void dune::RobustHitFinder::produce(art::Event & e)
       fFitAlg.SetParameter(0,10,fVertRangeMin,fVertRangeMax);
       fFitAlg.SetParameter(1,1,counterslope-0.15,counterslope+0.15);
       fFitAlg.SetParameter(2,0,-0.0002,0.0002);
-      //fFitAlg.SetCounterPositions(fC1Vert,fC1Horiz,fC2Vert,fC2Horiz);
       fFitAlg.SetHorizVertRanges(fHorizRangeMin,fHorizRangeMax,fVertRangeMin,fVertRangeMax);
 
       dune::ChanMap_t chanMap;
@@ -428,17 +422,17 @@ void dune::RobustHitFinder::produce(art::Event & e)
 	  hitVec[i_h].fitrealhit = fitdata[i_h].hitREAL;
 	}
 
+      if (fMakeupMissedHits && retval == 1) MakeupMissedHits(chanMap,hitVec);
+      
       if (retval == 1 || retval == 0)
 	{
-	  if (fMakeupMissedHits) MakeupMissedHits(chanMap,hitVec);
-
-	  SetTreeVariables(chanMap,hitVec,fitresult);
-
-	  for (size_t i_hit = 0; i_hit < hitVec.size(); ++i_hit)
+	  for (auto & hit : hitVec)
 	    {
-	      dune::HitInformation & hit = hitVec.at(i_hit);
+	      //dune::HitInformation & hit = hitVec.at(i_hit);//!!!!!!!!!
 	      dune::ChannelInformation & chan = chanMap[hit.channelID];
-
+	      
+	      SetTreeVariables(chan,hit,fitresult);
+	      
 	      if (fMakeTree) fTree->Fill();
 	      if (hit.fitrealhit)
 		{
@@ -562,9 +556,8 @@ void dune::RobustHitFinder::MakeupMissedHits(ChanMap_t & chanMap, HitVec_t & hit
     {
       if (chanitr.second.tpcNum % 2 != 1) continue;
       chanitr.second.nGoodHits = 0;
-      for (size_t i_hit = 0; i_hit < hitVec.size(); ++i_hit)
+      for (auto & hit : hitVec)
 	{
-	  dune::HitInformation & hit = hitVec.at(i_hit);
 	  if (hit.channelID == chanitr.first && hit.fitrealhit)
 	    {
 	      chanitr.second.goodHitStartTick = hit.hitBeginTick;
@@ -656,85 +649,83 @@ void dune::RobustHitFinder::MakeupMissedHits(ChanMap_t & chanMap, HitVec_t & hit
     }
 }
 
-void dune::RobustHitFinder::SetTreeVariables(const ChanMap_t chanMap, const HitVec_t hitVec, const dune::HitLineFitAlg::HitLineFitResults fitresult)
+void dune::RobustHitFinder::SetTreeVariables(const dune::ChannelInformation & chan, const dune::HitInformation & hit, const dune::HitLineFitAlg::HitLineFitResults & fitresult)
 {
-  fitconstant = fitresult.bestVal.at(0);
-  fitconstanterr = fitresult.bestValError.at(0);
-  fitlinear = fitresult.bestVal.at(1);
-  fitlinearerr = fitresult.bestValError.at(1);
-  fitquadratic = fitresult.bestVal.at(2);
-  fitquadraticerr = fitresult.bestValError.at(2);
-  fitchi2 = fitresult.chi2;
-  fitsumsqrresidual = fitresult.sum2resid;
-  fitmle = fitresult.mle;
-  fitndf = fitresult.ndf;
   fitsuccess = fitresult.fitsuccess;
   TF1 * model = new TF1("model","pol2",fHorizRangeMin,fHorizRangeMax);
-  model->SetParameters(fitconstant,fitlinear,fitquadratic);
-
-  for (size_t i_hit = 0; i_hit < hitVec.size(); ++i_hit)
+  if (fitsuccess)
     {
-      const dune::HitInformation & hit = hitVec.at(i_hit);
-      const dune::ChannelInformation & chan = chanMap.at(hit.channelID);
-      channel = chan.channelID;
-      wire = chan.wireID;
-      tpc = chan.tpcNum;
-      signalsize = chan.signalSize;
-      signal = chan.signalVec;
-      signalFilter = chan.signalFilterVec;
-      baseline = chan.baseline;
-      rms = chan.rms;
-      baselineFilter = chan.baselineFilter;
-      rmsFilter = chan.rmsFilter;
-      integral = hit.hitIntegral;
-      integralFilter = hit.hitIntegralFilter;
-      sigmaintegral = hit.hitSigmaIntegral;
-      sigmaintegralFilter = hit.hitSigmaIntegralFilter;
-      amplitude = hit.hitAmplitude;
-      amplitudeFilter = hit.hitAmplitudeFilter;
-      peaktick = hit.hitPeakTick;
-      peaktickFilter = hit.hitPeakTickFilter;
-      peaktime = hit.hitPeakTime;
-      peaktimeFilter = hit.hitPeakTimeFilter;
-      begintick = hit.hitBeginTick;
-      endtick = hit.hitEndTick;
-      width = hit.hitWidth;
-      hitx = hit.hitx;
-      hity = hit.hity;
-      hitz = hit.hitz;
-      hiterrxlo = hit.hiterrxlo;
-      hiterrxhi = hit.hiterrxhi;
-      hiterrylo = hit.hiterrylo;
-      hiterryhi = hit.hiterryhi;
-      hiterrzlo = hit.hiterrzlo;
-      hiterrzhi = hit.hiterrzhi;
-      perpdist = hit.perpdist;
-      hitt = hit.hitt;
-      driftdist = hit.driftdist;
-      countercut = hit.countercut;
-      fitrealhit = hit.fitrealhit;
-      assumedhit = hit.assumedhit;
-      numGoodHitsChan = chan.nGoodHits;
-      
-      segmentlength = 0.449;
-      if (fitsuccess && fitrealhit)
+      fitconstant = fitresult.bestVal.at(0);
+      fitconstanterr = fitresult.bestValError.at(0);
+      fitlinear = fitresult.bestVal.at(1);
+      fitlinearerr = fitresult.bestValError.at(1);
+      fitquadratic = fitresult.bestVal.at(2);
+      fitquadraticerr = fitresult.bestValError.at(2);
+      fitchi2 = fitresult.chi2;
+      fitsumsqrresidual = fitresult.sum2resid;
+      fitmle = fitresult.mle;
+      fitndf = fitresult.ndf;
+      model->SetParameters(fitconstant,fitlinear,fitquadratic);
+    }
+
+  channel = chan.channelID;
+  wire = chan.wireID;
+  tpc = chan.tpcNum;
+  signalsize = chan.signalSize;
+  signal = chan.signalVec;
+  signalFilter = chan.signalFilterVec;
+  baseline = chan.baseline;
+  rms = chan.rms;
+  baselineFilter = chan.baselineFilter;
+  rmsFilter = chan.rmsFilter;
+  integral = hit.hitIntegral;
+  integralFilter = hit.hitIntegralFilter;
+  sigmaintegral = hit.hitSigmaIntegral;
+  sigmaintegralFilter = hit.hitSigmaIntegralFilter;
+  amplitude = hit.hitAmplitude;
+  amplitudeFilter = hit.hitAmplitudeFilter;
+  peaktick = hit.hitPeakTick;
+  peaktickFilter = hit.hitPeakTickFilter;
+  peaktime = hit.hitPeakTime;
+  peaktimeFilter = hit.hitPeakTimeFilter;
+  begintick = hit.hitBeginTick;
+  endtick = hit.hitEndTick;
+  width = hit.hitWidth;
+  hitx = hit.hitx;
+  hity = hit.hity;
+  hitz = hit.hitz;
+  hiterrxlo = hit.hiterrxlo;
+  hiterrxhi = hit.hiterrxhi;
+  hiterrylo = hit.hiterrylo;
+  hiterryhi = hit.hiterryhi;
+  hiterrzlo = hit.hiterrzlo;
+  hiterrzhi = hit.hiterrzhi;
+  perpdist = hit.perpdist;
+  hitt = hit.hitt;
+  driftdist = hit.driftdist;
+  countercut = hit.countercut;
+  fitrealhit = hit.fitrealhit;
+  assumedhit = hit.assumedhit;
+  numGoodHitsChan = chan.nGoodHits;
+  
+  segmentlength = 0.449;
+  if (fitsuccess && fitrealhit)
+    {
+      if (trignum == 111)
 	{
-	  if (trignum == 111)
-	    {
-	      double thetayz = TMath::ATan2(model->Eval(hitz+1)-model->Eval(hitz-1),2);
-	      double tan2thetayz = TMath::Power(TMath::Tan(thetayz),2);
-	      double y2z2 = ((c1y-c2y)*(c1y-c2y))/((c1z-c2z)*(c1z-c2z));
-	      double projL = sqrt(1+tan2thetayz+y2z2);
-	      segmentlength *= static_cast<float>(projL);
-	    }
-	  else if (trignum == 112 || trignum == 113)
-	    {
-	      double thetayx = TMath::ATan2(2,model->Eval(hitx+1)-model->Eval(hitx-1));
-	      double tan2thetayx = TMath::Power(TMath::Tan(thetayx),2);
-	      double y2x2 = ((c1y-c2y)*(c1y-c2y))/((c1x-c2x)*(c1x-c2x));
-	      double projL = sqrt(1+tan2thetayx*(1+y2x2));
-	      segmentlength *= static_cast<float>(projL);
-	    }
+	  double thetayz = TMath::ATan2(model->Eval(hitz+1)-model->Eval(hitz-1),2);
+	  double tan2thetayz = TMath::Power(TMath::Tan(thetayz),2);
+	  double y2z2 = ((c1y-c2y)*(c1y-c2y))/((c1z-c2z)*(c1z-c2z));
+	  double projL = sqrt(1+tan2thetayz+y2z2);
+	  segmentlength *= static_cast<float>(projL);
+	}
+      else if (trignum == 112 || trignum == 113)
+	{
+	  double thetayx = TMath::ATan2(2,model->Eval(hitx+1)-model->Eval(hitx-1));
+	  double tan2thetayx = TMath::Power(TMath::Tan(thetayx),2);
+	  double y2x2 = ((c1y-c2y)*(c1y-c2y))/((c1x-c2x)*(c1x-c2x));
+	  double projL = sqrt(1+tan2thetayx*(1+y2x2));
+	  segmentlength *= static_cast<float>(projL);
 	}
     }
 }

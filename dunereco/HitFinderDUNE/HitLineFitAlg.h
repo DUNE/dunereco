@@ -53,7 +53,6 @@ public:
     void reconfigure(fhicl::ParameterSet const& p);
 
     int FitLine(std::vector<HitLineFitData> & data, HitLineFitResults & bestfit);
-    //void SetCounterPositions(float c1vert, float c1horiz, float c2vert, float c2horiz);
     void SetParameter(int i, double startValue, double minValue, double maxValue);
     void SetHorizVertRanges(float hmin, float hmax, float vmin, float vmax);
     void SetSeed(UInt_t seed) {
@@ -65,10 +64,6 @@ private:
     void DeterministicShuffle(std::vector<unsigned int> & vec);
     bool CheckModelParameters();
 
-    //float fC1Vert;
-    //float fC1Horiz;
-    //float fC2Vert;
-    //float fC2Horiz;
     float fVertRangeMin;
     float fVertRangeMax;
     float fHorizRangeMin;

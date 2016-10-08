@@ -1,3 +1,12 @@
+/********************************
+
+Implementation of MLESAC algorithm for robust estimation
+of model parameters in the presence of outliers.
+
+October 2016
+m.thiesse@sheffield.ac.uk
+
+********************************/
 
 #include "HitLineFitAlg.h"
 
@@ -23,11 +32,6 @@ bool dune::HitLineFitAlg::CheckModelParameters()
   if (fParIVal.size() < 2) return false;
   return true;
 }
-
-//void dune::HitLineFitAlg::SetCounterPositions(float c1vert, float c1horiz, float c2vert, float c2horiz)
-//{
-//  fC1Vert = c1vert; fC1Horiz = c1horiz; fC2Vert = c2vert; fC2Horiz = c2horiz;
-//}
 
 float dune::HitLineFitAlg::PointToLineDist(TVector3 ptloc, TVector3 linept1, TVector3 linept2)
 {
@@ -90,9 +94,6 @@ int dune::HitLineFitAlg::FitLine(std::vector<HitLineFitData> & data, HitLineFitR
       model->SetParLimits(ipar.first,ipar.second.min,ipar.second.max);
       model->SetParameter(ipar.first,ipar.second.start);
     }
-  //model->SetParLimits(0,fVertRangeMin,fVertRangeMax);
-  //model->SetParLimits(1,((fC1Vert-fC2Vert)/(fC1Horiz-fC2Horiz))-0.15,((fC1Vert-fC2Vert)/(fC1Horiz-fC2Horiz))+0.15);
-  //model->SetParLimits(2,-0.0002,0.0002);
 
   // steering parameters for the RANSAC algorithm
   // n (fMinStartPoints)       = minimum number of data points requred to fit model
@@ -237,16 +238,6 @@ int dune::HitLineFitAlg::FitLine(std::vector<HitLineFitData> & data, HitLineFitR
 		  bestfit.bestVal[ipar.first] = model->GetParameter(ipar.first);
 		  bestfit.bestValError[ipar.first] = model->GetParError(ipar.first);
 		}
-
-              //bestfit.fitconstant     = model->GetParameter("constant");
-              //bestfit.fitconstanterr  = model->GetParError(model->GetParNumber("constant"));
-              //bestfit.fitlinear       = model->GetParameter("linear");
-              //bestfit.fitlinearerr    = model->GetParError(model->GetParNumber("linear"));
-              //if (model->GetNpar() > 2)
-	      // {
-	      //  bestfit.fitquadratic    = model->GetParameter("quadratic");
-	      //   bestfit.fitquadraticerr = model->GetParError(model->GetParNumber("quadratic"));
-	      //}
               bestfit.chi2 = model->GetChisquare();
               bestfit.ndf = model->GetNDF();
               bestfit.sum2resid = ssr;
