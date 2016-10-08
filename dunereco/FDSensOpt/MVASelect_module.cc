@@ -61,6 +61,9 @@ private:
   
   MVAAlg fMVAAlg;
   double fMVAResult;
+  double fEvtcharge;
+  double fRawcharge;
+  double fWirecharge;
   std::string fMVAMethod;
 
   bool fReweight;
@@ -111,6 +114,7 @@ private:
 
   double fQ2; 
   double fEtrue; 
+  double fEreco;
   double fW;
   double fX;
   double fY;
@@ -214,7 +218,9 @@ void MVASelect::beginJob()
   fTree->Branch("event",       &fEvent,      "event/I");
   fTree->Branch("mvaresult",   &fMVAResult,  "mvaresult/D");
   fTree->Branch("weight",      &fWeight,     "weight/D");
-
+  fTree->Branch("evtcharge",   &fEvtcharge,  "evtcharge/D");
+  fTree->Branch("rawcharge",   &fRawcharge,  "rawcharge/D");
+  fTree->Branch("wirecharge",  &fWirecharge, "wirecharge/D");
   // particle counts
   fTree->Branch("nP",        &nP,         "nP/I");
   fTree->Branch("nN",        &nN,         "nN/I");
@@ -231,7 +237,7 @@ void MVASelect::beginJob()
 
   fTree->Branch("Q2",           &fQ2,           "Q2/D");
   fTree->Branch("Ev",           &fEtrue,        "Ev/D");
-  fTree->Branch("Ev_reco",      &fEtrue,        "Ev_reco/D");
+  fTree->Branch("Ev_reco",      &fEreco,        "Ev_reco/D");
   fTree->Branch("EvClass_reco", &fEvClass_reco, "EvClass_reco/I");
   fTree->Branch("coh",          &fIsCoh,        "coh/I");
   fTree->Branch("dis",          &fIsDIS,        "dis/I");
@@ -426,7 +432,15 @@ void MVASelect::analyze(art::Event const & evt)
   fSubrun = evt.id().subRun();
   fEvent = evt.id().event();
   fMVAAlg.Run(evt,fMVAResult,fWeight);
-
+  fEvtcharge = fMVAAlg.evtcharge;
+  fRawcharge = fMVAAlg.rawcharge;
+  fWirecharge = fMVAAlg.wirecharge;
+  if (fSelNuE&&!fSelNuMu){
+    fEreco = 0.183024+1.15092e-05*fWirecharge;
+  }
+  else{
+    fEreco = 0.354742+7.93412e-06*fWirecharge;
+  }
   art::Handle< std::vector<simb::MCTruth> > mct;
   std::vector< art::Ptr<simb::MCTruth> > truth;
   if( evt.getByLabel("generator", mct) )

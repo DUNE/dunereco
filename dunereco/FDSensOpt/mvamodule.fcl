@@ -19,6 +19,8 @@ dunefd_mvaselect:
     #VertexModuleLabel:       "pmtrackdc"
     #ShowerModuleLabel:       "emshowerdc"
     #CalorimetryModuleLabel:  "pmtrackcalodc"
+    RawDigitModuleLabel:     "daq"
+    WireModuleLabel:         "caldata"
     HitsModuleLabel:         "linecluster"
     TrackModuleLabel:        "pmtrack"
     ClusterModuleLabel:	     "linecluster"

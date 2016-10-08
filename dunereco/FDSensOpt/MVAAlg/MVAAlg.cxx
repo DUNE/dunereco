@@ -264,6 +264,8 @@ dunemva::MVAAlg::~MVAAlg(){
 //--------------------------------------------------------------------------------
 void dunemva::MVAAlg::reconfigure(fhicl::ParameterSet const& p){
 
+  fRawDigitModuleLabel    =   p.get< std::string >("RawDigitModuleLabel");
+  fWireModuleLabel        =   p.get< std::string >("WireModuleLabel");
   fHitsModuleLabel        =   p.get< std::string >("HitsModuleLabel");
   fTrackModuleLabel       =   p.get< std::string >("TrackModuleLabel");
   fShowerModuleLabel      =   p.get< std::string >("ShowerModuleLabel");
@@ -1125,6 +1127,18 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
   taulife = detprop->ElectronLifetime();
   isdata = evt.isRealData();
 
+  // * Raw Digits
+  art::Handle<std::vector<raw::RawDigit> > rawListHandle;
+  std::vector<art::Ptr<raw::RawDigit> > rawlist;
+  if (evt.getByLabel(fRawDigitModuleLabel,rawListHandle))
+    art::fill_ptr_vector(rawlist, rawListHandle);
+
+  // * wires
+  art::Handle< std::vector<recob::Wire>> wireListHandle;
+  std::vector<art::Ptr<recob::Wire>> wirelist;
+  if (evt.getByLabel(fWireModuleLabel, wireListHandle))
+    art::fill_ptr_vector(wirelist, wireListHandle);
+
   // * hits
   art::Handle< std::vector<recob::Hit> > hitListHandle;
   std::vector<art::Ptr<recob::Hit> > hitlist;
@@ -1160,6 +1174,33 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
   art::FindManyP<recob::Hit, recob::TrackHitMeta> fmthm(trackListHandle, evt, fTrackModuleLabel);
   art::FindManyP<recob::SpacePoint> fmhs(hitListHandle, evt, fTrackModuleLabel);
   art::FindMany<anab::Calorimetry>  fmcal(trackListHandle, evt, fCalorimetryModuleLabel);
+
+  // charge from raw digits
+  rawcharge = 0;
+  /* Comment for now as it is too slow
+  for (size_t i = 0; i<rawlist.size(); ++i){
+    if (fGeom->SignalType(rawlist[i]->Channel()) == geo::kCollection){
+      double pedestal = rawlist[i]->GetPedestal();
+      for (size_t j = 0; j<rawlist[i]->NADC(); ++j){
+        rawcharge += rawlist[i]->ADC(j)-pedestal;
+      }
+    }
+  }
+  */
+  //charge from wires
+  wirecharge = 0;
+  for (size_t i = 0; i<wirelist.size(); ++i){
+    if (fGeom->SignalType(wirelist[i]->Channel()) == geo::kCollection){
+      const recob::Wire::RegionsOfInterest_t& signalROI = wirelist[i]->SignalROI();
+      for(const auto& range : signalROI.get_ranges()){
+        const std::vector<float>& signal = range.data();
+        raw::TDCtick_t roiFirstBinTick = range.begin_index();
+        for (size_t j = 0; j<signal.size(); ++j){
+          wirecharge += signal[j]*exp((j+roiFirstBinTick)*0.5/taulife);
+        }
+      }
+    }
+  }
 
   //hit information
   nhits = hitlist.size();
