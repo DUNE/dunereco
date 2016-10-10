@@ -21,44 +21,55 @@ namespace dune {
 
   class HitLineFitAlg {
 public:
+    
+    struct HitLineFitData {
+      double hitHoriz;
+      double hitHorizErrLo;
+      double hitHorizErrHi;
+      double hitVert;
+      double hitVertErrLo;
+      double hitVertErrHi;
+      bool hitREAL;
+    };
 
     struct HitLineFitResults {
-      float fitconstant;
-      float fitconstanterr;
-      float fitlinear;
-      float fitlinearerr;
-      float fitquadratic;
-      float fitquadraticerr;
-      float fitchi2;
-      float fitsumsqrresidual;
-      float fitmle;
-      float fitndf;
+      std::map<int,float> bestVal;
+      std::map<int,float> bestValError;
+      double chi2;
+      double sum2resid;
+      double mle;
+      int ndf;
       bool fitsuccess;
+    };
+
+    struct ParVals {
+      double start;
+      double min;
+      double max;
     };
 
     HitLineFitAlg(fhicl::ParameterSet const& pset);
 
     void reconfigure(fhicl::ParameterSet const& p);
 
-    int FindTrack(std::vector<dune::HitInformation> & data, HitLineFitResults & bestfit);
-    void SetCounterPositions(float c1vert, float c1horiz, float c2vert, float c2horiz);
-    void SetRanges(float hmin, float hmax, float vmin, float vmax);
+    int FitLine(std::vector<HitLineFitData> & data, HitLineFitResults & bestfit);
+    void SetParameter(int i, double startValue, double minValue, double maxValue);
+    void SetHorizVertRanges(float hmin, float hmax, float vmin, float vmax);
     void SetSeed(UInt_t seed) {
       fSeedValue = seed;
     }
 
 private:
-    float hitGeomDist(TVector3 hitloc, TVector3 trigloc1, TVector3 trigloc2);
+    float PointToLineDist(TVector3 ptloc, TVector3 linept1, TVector3 linept2);
     void DeterministicShuffle(std::vector<unsigned int> & vec);
+    bool CheckModelParameters();
 
-    float fC1Vert;
-    float fC1Horiz;
-    float fC2Vert;
-    float fC2Horiz;
     float fVertRangeMin;
     float fVertRangeMax;
     float fHorizRangeMin;
     float fHorizRangeMax;
+
+    std::map<int,ParVals> fParIVal; 
 
     UInt_t fSeedValue;
 
