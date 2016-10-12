@@ -435,12 +435,9 @@ void MVASelect::analyze(art::Event const & evt)
   fEvtcharge = fMVAAlg.evtcharge;
   fRawcharge = fMVAAlg.rawcharge;
   fWirecharge = fMVAAlg.wirecharge;
-  if (fSelNuE&&!fSelNuMu){
-    fEreco = 0.183024+1.15092e-05*fWirecharge;
-  }
-  else{
-    fEreco = 0.354742+7.93412e-06*fWirecharge;
-  }
+  fEreco = fWirecharge/0.63/4.966e-3*23.6e-9;
+  //0.63: recombination factor, 1/4.966e-3: calorimetry constant to convert ADC to number of electrons, Wion = 23.6 eV
+
   art::Handle< std::vector<simb::MCTruth> > mct;
   std::vector< art::Ptr<simb::MCTruth> > truth;
   if( evt.getByLabel("generator", mct) )
