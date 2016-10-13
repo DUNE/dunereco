@@ -4,13 +4,13 @@ art_make(
           LIB_LIBRARIES larsim_MCCheater_BackTracker_service
                         lardataobj_RecoBase
                         lardata_RecoBaseArt
-                        larsim_Simulation lardataobj_Simulation
+                        larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
                         larevt_Filters
                         larcore_Geometry
                         larcore_Geometry_Geometry_service
-                        lardata_RecoObjects
+                        lardata_RecoObjects larreco_Deprecated
                         lardataobj_AnalysisBase
-			lardata_AnalysisAlg
+			larreco_Calorimetry
                         lardata_Utilities
                         larreco_RecoAlg_ClusterRecoUtil
 			larreco_RecoAlg_CMTool_CMToolBase
