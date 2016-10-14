@@ -468,8 +468,8 @@ void dune::RobustHitFinder::beginJob()
       fTree->Branch("wire",&wire,"wire/I");
       fTree->Branch("tpc",&tpc,"tpc/I");
       fTree->Branch("signalsize",&signalsize,"signalsize/I");
-      fTree->Branch("signal",&signal);
-      fTree->Branch("signalFilter",&signalFilter);
+      //fTree->Branch("signal",&signal);
+      //fTree->Branch("signalFilter",&signalFilter);
       fTree->Branch("baseline",&baseline,"baseline/F");
       fTree->Branch("rms",&rms,"rms/F");
       fTree->Branch("baselineFilter",&baselineFilter,"baselineFilter/F");

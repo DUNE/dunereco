@@ -4,13 +4,13 @@ art_make( BASENAME_ONLY
           LIBRARY_NAME  MVAAlg
           LIB_LIBRARIES larcore_Geometry
                         larcore_Geometry_Geometry_service
-                        larsim_Simulation lardataobj_Simulation
+                        larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
                         lardataobj_RawData
                         lardataobj_RecoBase
 		        lardata_RecoBaseArt
 			larreco_RecoAlg_PMAlg
                         lardata_Utilities
-			lardata_AnalysisAlg
+			larreco_Calorimetry
 		        IniSegAlg
 			larsim_MCCheater_BackTracker_service
                         nusimdata_SimulationBase
