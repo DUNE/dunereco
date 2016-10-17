@@ -61,6 +61,9 @@ private:
   
   MVAAlg fMVAAlg;
   double fMVAResult;
+  double fEvtcharge;
+  double fRawcharge;
+  double fWirecharge;
   std::string fMVAMethod;
 
   bool fReweight;
@@ -111,6 +114,7 @@ private:
 
   double fQ2; 
   double fEtrue; 
+  double fEreco;
   double fW;
   double fX;
   double fY;
@@ -214,7 +218,9 @@ void MVASelect::beginJob()
   fTree->Branch("event",       &fEvent,      "event/I");
   fTree->Branch("mvaresult",   &fMVAResult,  "mvaresult/D");
   fTree->Branch("weight",      &fWeight,     "weight/D");
-
+  fTree->Branch("evtcharge",   &fEvtcharge,  "evtcharge/D");
+  fTree->Branch("rawcharge",   &fRawcharge,  "rawcharge/D");
+  fTree->Branch("wirecharge",  &fWirecharge, "wirecharge/D");
   // particle counts
   fTree->Branch("nP",        &nP,         "nP/I");
   fTree->Branch("nN",        &nN,         "nN/I");
@@ -231,7 +237,7 @@ void MVASelect::beginJob()
 
   fTree->Branch("Q2",           &fQ2,           "Q2/D");
   fTree->Branch("Ev",           &fEtrue,        "Ev/D");
-  fTree->Branch("Ev_reco",      &fEtrue,        "Ev_reco/D");
+  fTree->Branch("Ev_reco",      &fEreco,        "Ev_reco/D");
   fTree->Branch("EvClass_reco", &fEvClass_reco, "EvClass_reco/I");
   fTree->Branch("coh",          &fIsCoh,        "coh/I");
   fTree->Branch("dis",          &fIsDIS,        "dis/I");
@@ -426,6 +432,11 @@ void MVASelect::analyze(art::Event const & evt)
   fSubrun = evt.id().subRun();
   fEvent = evt.id().event();
   fMVAAlg.Run(evt,fMVAResult,fWeight);
+  fEvtcharge = fMVAAlg.evtcharge;
+  fRawcharge = fMVAAlg.rawcharge;
+  fWirecharge = fMVAAlg.wirecharge;
+  fEreco = fWirecharge/0.63/4.966e-3*23.6e-9;
+  //0.63: recombination factor, 1/4.966e-3: calorimetry constant to convert ADC to number of electrons, Wion = 23.6 eV
 
   art::Handle< std::vector<simb::MCTruth> > mct;
   std::vector< art::Ptr<simb::MCTruth> > truth;

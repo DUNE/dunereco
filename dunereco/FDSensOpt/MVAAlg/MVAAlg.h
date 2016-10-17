@@ -32,6 +32,7 @@
 
 
 #include "larcore/Geometry/Geometry.h"
+#include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
@@ -40,14 +41,16 @@
 #include "lardataobj/RecoBase/TrackHitMeta.h"
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardataobj/RecoBase/OpFlash.h"
+#include "lardataobj/RawData/RawDigit.h"
+
 #include "lardataobj/AnalysisBase/Calorimetry.h"
-#include "lardata/AnalysisAlg/CalorimetryAlg.h"
+#include "larreco/Calorimetry/CalorimetryAlg.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "larsim/MCCheater/BackTracker.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
-#include "lardata/AnalysisAlg/CalorimetryAlg.h"
+#include "larreco/Calorimetry/CalorimetryAlg.h"
 #include "larcoreobj/SummaryData/POTSummary.h"
 #include "nusimdata/SimulationBase/MCFlux.h"
 
@@ -83,6 +86,47 @@ namespace dunemva{
     float OscPro(int ccnc, int nu0, int nu1, float NuE);
 
 
+    // from root script:
+
+    // all tmva reader variables must be float 
+    int   itype;
+    float weight;
+    float evtcharge;
+    float ntrack;
+    float avgtrklength;
+    float maxtrklength;
+    float trkdedx;
+    float trkrch; // (track charge)/(path charge)... path width must be set in time ticks
+    float trkrt;  // (lower half of charge)/(higher half of charge)... ~1 for tracks
+    float trkfr;  // (track charge)/(event charge)
+    float trkpida_save;
+    float nshower;
+    float showerdedx;
+    float eshower;
+    float frshower;
+    float nhitspershw;
+    float shwlength;
+    float shwmax;
+    float fract_5_wires;
+    float fract_10_wires;
+    float fract_50_wires;
+    float fract_100_wires;
+    float shwdis;
+    float shwdisx;
+    float shwdisy;
+    float shwdisz;
+    float shwcosx;
+    float shwcosy;
+    float shwcosz;
+    float trkcosx;
+    float trkcosy;
+    float trkcosz;
+    float ET;
+    
+    // Additional variables
+    double rawcharge;
+    double wirecharge;
+    
   private:
  
     void  PrepareEvent(const art::Event& event);
@@ -262,6 +306,8 @@ namespace dunemva{
     //end of ttree variables
 
     //Module labels to get data products
+    std::string fRawDigitModuleLabel;
+    std::string fWireModuleLabel;
     std::string fHitsModuleLabel;
     std::string fClusterModuleLabel;
     std::string fTrackModuleLabel;
@@ -282,44 +328,6 @@ namespace dunemva{
 
     bool fMakeAnaTree;
     bool fMakeWeightTree;
-
-    // from root script:
-
-    // all tmva reader variables must be float 
-    int   itype;
-    float weight;
-    float evtcharge;
-    float ntrack;
-    float avgtrklength;
-    float maxtrklength;
-    float trkdedx;
-    float trkrch; // (track charge)/(path charge)... path width must be set in time ticks
-    float trkrt;  // (lower half of charge)/(higher half of charge)... ~1 for tracks
-    float trkfr;  // (track charge)/(event charge)
-    float trkpida_save;
-    float nshower;
-    float showerdedx;
-    float eshower;
-    float frshower;
-    float nhitspershw;
-    float shwlength;
-    float shwmax;
-    float fract_5_wires;
-    float fract_10_wires;
-    float fract_50_wires;
-    float fract_100_wires;
-    float shwdis;
-    float shwdisx;
-    float shwdisy;
-    float shwdisz;
-    float shwcosx;
-    float shwcosy;
-    float shwcosz;
-    float trkcosx;
-    float trkcosy;
-    float trkcosz;
-    float ET;
-
 
     TH1D *mva_nue_osc;
     TH1D *mva_nc;

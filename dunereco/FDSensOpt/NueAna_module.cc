@@ -36,7 +36,7 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 #include "larreco/RecoAlg/TrackMomentumCalculator.h"
-#include "lardata/AnalysisAlg/CalorimetryAlg.h"
+#include "larreco/Calorimetry/CalorimetryAlg.h"
 #include "larcoreobj/SummaryData/POTSummary.h"
 #include "nusimdata/SimulationBase/MCFlux.h"
 
@@ -173,7 +173,7 @@ private:
   Float_t shwenergy[kMaxShower][3];  //shower energy measured on the 3 planes (GeV)
   Float_t shwdedx[kMaxShower][3];    //shower dE/dx of the initial track measured on the 3 plane (MeV/cm)
   int shwbestplane[kMaxShower];      //recommended plane for energy and dE/dx information
-  int   shwg4id[kMaxTrack];          //geant track id for the shower
+  int   shwg4id[kMaxShower];          //geant track id for the shower
 
   // flash information
   int    flash_total;                //total number of flashes
