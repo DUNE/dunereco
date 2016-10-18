@@ -121,6 +121,7 @@ dunemva::MVAAlg::MVAAlg( fhicl::ParameterSet const& p )
       fWeightTree[i]->Branch("itype",&itype,"itype/I");
 
       // all tmva reader variables must be floats
+      fWeightTree[i]->Branch("oscpro",&fOscPro,"oscpro/F");
       fWeightTree[i]->Branch("weight",&weight,"weight/F");
       fWeightTree[i]->Branch("evtcharge",&evtcharge,"evtcharge/F");
       fWeightTree[i]->Branch("ntrack",&ntrack,"ntrack/F");
@@ -377,6 +378,7 @@ void dunemva::MVAAlg::endSubRun(const art::SubRun& sr){
 void dunemva::MVAAlg::CalculateInputs( ){
 
      itype = -99999;
+     fOscPro = -99999;
      weight = -99999;
      evtcharge = -99999;
      ntrack = -99999;
@@ -443,6 +445,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
       oscpro = this->OscPro(ccnc_truth,pntype_flux,nuPDG_truth,enu_truth);
       float norm = this->Norm(ccnc_truth,pntype_flux,nuPDG_truth, subrun);
       weight = oscpro*norm;
+      fOscPro = oscpro;
       
       
       // Choose the most upstream vertex, even if it is just 

@@ -90,6 +90,7 @@ namespace dunemva{
 
     // all tmva reader variables must be float 
     int   itype;
+    float fOscPro;
     float weight;
     float evtcharge;
     float ntrack;
