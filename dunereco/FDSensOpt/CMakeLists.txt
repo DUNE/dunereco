@@ -60,13 +60,13 @@ simple_plugin(NueAna   "module"
 		        lardataobj_RawData
 		        lardataobj_RecoBase
 		        lardata_RecoBaseArt
-			lardata_AnalysisAlg
+			larreco_Calorimetry
 		        larreco_RecoAlg_PMAlg
 		        IniSegAlg
 		        larcore_Geometry
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
-			larsim_Simulation lardataobj_Simulation
+			larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
 			larsim_MCCheater_BackTracker_service
 			nusimdata_SimulationBase
                         ${ART_FRAMEWORK_CORE}
@@ -157,7 +157,7 @@ simple_plugin(IniSegReco "module"
 		      larcore_Geometry
 		      larcore_Geometry_Geometry_service
 		      lardata_Utilities
-		      larsim_Simulation lardataobj_Simulation
+		      larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
 		      larsim_MCCheater_BackTracker_service
 		      nusimdata_SimulationBase
       		      ${ART_FRAMEWORK_CORE}
@@ -179,13 +179,13 @@ simple_plugin(ShSeg   "module"
 			lardataobj_RawData
 			lardataobj_RecoBase
 			larreco_RecoAlg
-			lardata_AnalysisAlg
+			larreco_Calorimetry
 			larreco_RecoAlg_PMAlg
 			IniSegAlg
 			larcore_Geometry
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
-			larsim_Simulation lardataobj_Simulation
+			larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
 			
 			
 			larsim_MCCheater_BackTracker_service
