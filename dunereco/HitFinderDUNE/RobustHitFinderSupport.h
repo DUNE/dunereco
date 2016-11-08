@@ -31,6 +31,7 @@ public:
     int hitBeginTick;
     int hitEndTick;
     int hitWidth;     //in units of ticks
+    float hitSumADC;
 
     float hitx;
     float hity;
