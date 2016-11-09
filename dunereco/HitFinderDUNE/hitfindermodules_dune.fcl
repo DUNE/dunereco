@@ -203,4 +203,16 @@ dune35t_trackhits:
     MakeTree: true
 }
 
+protodunesp_disambig:
+{
+    module_type: "HitFinderProtoDUNESP"
+# so far there's only one algorithm so this value is ignored.
+    ChanHitLabel: "gaushit"
+    Algorithm: "Placeholder_Value"
+    DisambigAlg: 
+     {
+       TimeCut: 3
+       DistanceCut: 1
+     }
+}
 END_PROLOG
