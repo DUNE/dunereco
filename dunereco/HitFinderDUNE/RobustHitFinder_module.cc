@@ -31,7 +31,7 @@ m.thiesse@sheffield.ac.uk
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "larsim/RandomUtils/LArSeedService.h"
+#include "nutools/RandomUtils/NuRandomService.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
@@ -211,7 +211,7 @@ private:
 
   art::ServiceHandle<geo::Geometry> fGeom;
   art::ServiceHandle<art::RandomNumberGenerator> fRng;
-  art::ServiceHandle<sim::LArSeedService> fSeed;
+  art::ServiceHandle<rndm::NuRandomService> fSeed;
   art::ServiceHandle<art::TFileService> fTfs;
   detinfo::DetectorClocks const * fClks;
   detinfo::DetectorProperties const * fDetProp;
