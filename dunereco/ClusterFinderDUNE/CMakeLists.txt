@@ -13,7 +13,7 @@ art_make(
                            lardataobj_RecoBase
                            larcore_Geometry
                            larcore_Geometry_Geometry_service
-                           larsim_RandomUtils_LArSeedService_service
+                           nutools_RandomUtils_NuRandomService_service
                            nusimdata_SimulationBase
                            ${ART_FRAMEWORK_CORE}
                            ${ART_FRAMEWORK_PRINCIPAL}

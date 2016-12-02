@@ -47,7 +47,7 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 // Seed Service
-#include "larsim/RandomUtils/LArSeedService.h"
+#include "nutools/RandomUtils/NuRandomService.h"
 #include "CLHEP/Random/RandomEngine.h"
 
 // Want to include the CounterPositionMapFunction
@@ -123,7 +123,7 @@ namespace dune{
 
     dune::HitLineFitAlg fFitAlg;
     art::ServiceHandle<art::RandomNumberGenerator> fRng;
-    art::ServiceHandle<sim::LArSeedService> fSeed;
+    art::ServiceHandle<rndm::NuRandomService> fSeed;
     bool fDoHitLineFitAlg;
 
     std::map< unsigned int, std::pair < TVector3, std::vector< TVector3 > > > CounterPositionMap; // The map of counter positions....
