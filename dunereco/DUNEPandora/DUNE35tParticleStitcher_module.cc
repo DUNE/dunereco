@@ -8,7 +8,7 @@
 #include "art/Framework/Core/ModuleMacros.h"
 
 #include "TVector3.h" // ATTN Should be included in PFParticleStitcher.h
-#include "larpandora/LArPandoraInterface/PFParticleStitcher.h"
+#include "dune/DUNEPandora/PFParticleStitcher.h"
 
 namespace lar_pandora
 {
