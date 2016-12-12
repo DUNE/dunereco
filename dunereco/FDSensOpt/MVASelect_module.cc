@@ -68,6 +68,7 @@ private:
 
   bool fReweight;
   unsigned int fRun,fSubrun,fEvent;
+  double fOscPro;
   double fWeight;
   TTree* fTree;  
 
@@ -484,6 +485,8 @@ void MVASelect::analyze(art::Event const & evt)
     fW        = truth[i]->GetNeutrino().W();
     fX        = truth[i]->GetNeutrino().X();
     fY        = truth[i]->GetNeutrino().Y();
+
+    fOscPro   = fMVAAlg.OscPro(fCCNC,fBeamPdg,fNuPdg,fEtrue);
 
     nuvtxx_truth = truth[i]->GetNeutrino().Nu().Vx();
     nuvtxy_truth = truth[i]->GetNeutrino().Nu().Vy();
