@@ -219,6 +219,7 @@ void MVASelect::beginJob()
   fTree->Branch("event",       &fEvent,      "event/I");
   fTree->Branch("mvaresult",   &fMVAResult,  "mvaresult/D");
   fTree->Branch("weight",      &fWeight,     "weight/D");
+  fTree->Branch("oscpro",      &fOscPro,     "oscpro/D");
   fTree->Branch("evtcharge",   &fEvtcharge,  "evtcharge/D");
   fTree->Branch("rawcharge",   &fRawcharge,  "rawcharge/D");
   fTree->Branch("wirecharge",  &fWirecharge, "wirecharge/D");
