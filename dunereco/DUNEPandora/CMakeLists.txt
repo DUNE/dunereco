@@ -1,4 +1,3 @@
-
 # where should the scripts/..xml file be installed?  Perhaps in bin?
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
@@ -31,8 +30,7 @@ art_make( BASENAME_ONLY
                         ${CETLIB}
                         ${ROOT_BASIC_LIB_LIST}
 			${Boost_SYSTEM_LIBRARY}
-          MODULE_LIBRARIES larpandora_LArPandoraInterface 
-                           DUNEPandora
+          MODULE_LIBRARIES DUNEPandora
           )
 
 install_headers()
