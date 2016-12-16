@@ -37,6 +37,8 @@
 
 #include "TMath.h"
 #include "TTree.h"
+#include "TF1.h"
+#include "TGraph.h"
 
 namespace dune {
   class TrackHitBacktracker;
@@ -525,6 +527,10 @@ void dune::TrackHitBacktracker::getPulseStartEnd(float gausStartTick, float gaus
 
 void dune::TrackHitBacktracker::calculateHitStuff(dune::ChannelHits chits, std::vector<dune::HitStuff> & hitstuffvec)
 {
+  TF1 * gaus = new TF1("gaus","([0]/([2]*sqrt(2*3.1415926)))*exp(-0.5*(x-[1])*(x-[1])/([2]*[2]))+[3]+x*[4]",0,15000);
+  gaus->SetNpx(30000);
+  gaus->SetParLimits(2,1,14);
+
   for (unsigned int i = 0; i < chits.nhits; ++i)
     {
       std::vector<float> waveform = chits.artWire->Signal();
@@ -557,28 +563,50 @@ void dune::TrackHitBacktracker::calculateHitStuff(dune::ChannelHits chits, std::
 
       float pulseIntegral = std::accumulate(pulseADCs.begin(),pulseADCs.end(),0);
 
-      std::cout << "Channel: " << chits.chanid << "  Hit: " << i << " PreBase: " << preBaselineMean << " (" << preBaselineRMS << ")  PostBase: " << postBaselineMean << " (" << postBaselineRMS << ")  PulseIntegral: " << pulseIntegral << std::endl;
+      //int peaktick = std::distance(waveform.begin(),std::max_element(pulseStart,pulseEnd));
+      //gaus->SetParameter(1,peaktick);
+      //gaus->SetParLimits(1,peaktick-5,peaktick+5);
+
+      //TGraph * gr = new TGraph();
+      //Int_t tick = 0;
+      //for (auto adc : waveform)
+      //	{
+      //  gr->SetPoint(tick,(Double_t)tick,(Double_t)adc);
+      //  ++tick;
+      //}
+      //gr->Fit(gaus,"BQ0");
+
+      //std::cout << "Channel: " << chits.chanid << "  Hit: " << i << " PreBase: " << preBaselineMean << " (" << preBaselineRMS << ")  PostBase: " << postBaselineMean << " (" << postBaselineRMS << ")  PulseIntegral: " << pulseIntegral << std::endl;
 
       dune::HitStuff hs;
       hs.startTick = static_cast<raw::TDCtick_t>(start);
       hs.endTick = static_cast<raw::TDCtick_t>(end);
       hs.rms = sqrt((float)end - (float)start);
-      hs.peak_time = std::distance(waveform.begin(),std::max_element(pulseStart,pulseEnd));
+      //hs.rms = gaus->GetParameter(2);
+      hs.peak_time = peaktick;
       hs.sigma_peak_time = sqrt(fabs(hs.endTick-hs.startTick));
+      //hs.sigma_peak_time = gaus->GetParError(1);
       hs.peak_amplitude = *std::max_element(pulseADCs.begin(),pulseADCs.end());
+      //hs.peak_amplitude = gaus->GetParameter(0)/(gaus->GetParameter(2)*sqrt(2*3.1415926));
       hs.sigma_peak_amplitude = sqrt(hs.peak_amplitude);
       hs.hit_integral = pulseIntegral;
+      //hs.hit_integral = gaus->GetParameter(0);
       hs.hit_sigma_integral = sqrt(pulseADCs.size()) * TMath::RMS(pulseADCs.begin(),pulseADCs.end());
+      //hs.hit_sigma_integral = gaus->GetParError(0);
       hs.summedADC = std::accumulate(waveform.begin()+start,waveform.end()+end,0);
       hs.multiplicity = 1;
       hs.local_index = -1;
       hs.goodness_of_fit = 1;
       hs.dof = (int)(end-start+1);
       hs.preBaseline = preBaselineMean;
+      //hs.preBaseline = gaus->Eval(gaus->GetParameter(1)-5*gaus->GetParameter(2));
       hs.postBaseline = postBaselineMean;
+      //hs.postBaseline = gaus->Eval(gaus->GetParameter(1)+5*gaus->GetParameter(2));
       hs.preBaselineRMS = preBaselineRMS;
       hs.postBaselineRMS = postBaselineRMS;
       hitstuffvec.push_back(hs);
+
+      //delete gr;
     }
 }
 
