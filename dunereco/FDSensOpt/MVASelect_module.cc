@@ -68,6 +68,7 @@ private:
 
   bool fReweight;
   unsigned int fRun,fSubrun,fEvent;
+  float fOscPro;
   double fWeight;
   TTree* fTree;  
 
@@ -118,6 +119,19 @@ private:
   double fW;
   double fX;
   double fY;
+  double fNuMomX;
+  double fNuMomY;
+  double fNuMomZ;
+  double fNuMomT;
+
+  //Outgoing lepton stuff
+  int fLepPDG;
+  double fLepMomX;
+  double fLepMomY;
+  double fLepMomZ;
+  double fLepMomT;
+  double fLepNuAngle;
+
 
   int fIsCoh; // 1=is coherent, 0=otherwise
   int fIsDIS; // 1=is dis,      0=otherwise
@@ -218,6 +232,7 @@ void MVASelect::beginJob()
   fTree->Branch("event",       &fEvent,      "event/I");
   fTree->Branch("mvaresult",   &fMVAResult,  "mvaresult/D");
   fTree->Branch("weight",      &fWeight,     "weight/D");
+  fTree->Branch("oscpro",      &fOscPro,     "oscpro/F");
   fTree->Branch("evtcharge",   &fEvtcharge,  "evtcharge/D");
   fTree->Branch("rawcharge",   &fRawcharge,  "rawcharge/D");
   fTree->Branch("wirecharge",  &fWirecharge, "wirecharge/D");
@@ -250,6 +265,20 @@ void MVASelect::beginJob()
   fTree->Branch("W",            &fW,            "W/D");
   fTree->Branch("X",            &fX,            "X/D");
   fTree->Branch("Y",            &fY,            "Y/D");
+  fTree->Branch("NuMomX",       &fNuMomX,       "NuMomX/D");
+  fTree->Branch("NuMomY",       &fNuMomY,       "NuMomY/D");
+  fTree->Branch("NuMomZ",       &fNuMomZ,       "NuMomZ/D");
+  fTree->Branch("NuMomT",       &fNuMomT,       "NuMomT/D");
+
+  fTree->Branch("LepPDG",       &fLepPDG,       "LepPDG/I");
+  fTree->Branch("LepMomX",      &fLepMomX,       "LepMomX/D");
+  fTree->Branch("LepMomY",      &fLepMomY,       "LepMomY/D");
+  fTree->Branch("LepMomZ",      &fLepMomZ,       "LepMomZ/D");
+  fTree->Branch("LepMomT",      &fLepMomT,       "LepMomT/D");
+  fTree->Branch("LepNuAngle",   &fLepNuAngle,       "LepNuAngle/D");
+
+
+
 
   fTree->Branch("nuvtxx_truth",&nuvtxx_truth,"nuvtxx_truth/D");
   fTree->Branch("nuvtxy_truth",&nuvtxy_truth,"nuvtxy_truth/D");
@@ -484,6 +513,20 @@ void MVASelect::analyze(art::Event const & evt)
     fW        = truth[i]->GetNeutrino().W();
     fX        = truth[i]->GetNeutrino().X();
     fY        = truth[i]->GetNeutrino().Y();
+    fNuMomX   = truth[i]->GetNeutrino().Nu().Momentum().X();
+    fNuMomY   = truth[i]->GetNeutrino().Nu().Momentum().Y();
+    fNuMomZ   = truth[i]->GetNeutrino().Nu().Momentum().Z();
+    fNuMomT   = truth[i]->GetNeutrino().Nu().Momentum().T();
+
+    //Lepton stuff
+    fLepPDG     = truth[i]->GetNeutrino().Lepton().PdgCode();
+    fLepMomX    = truth[i]->GetNeutrino().Lepton().Momentum().X();
+    fLepMomY    = truth[i]->GetNeutrino().Lepton().Momentum().Y();
+    fLepMomZ    = truth[i]->GetNeutrino().Lepton().Momentum().Z();
+    fLepMomT    = truth[i]->GetNeutrino().Lepton().Momentum().T();
+    fLepNuAngle = truth[i]->GetNeutrino().Nu().Momentum().Vect().Angle(truth[i]->GetNeutrino().Lepton().Momentum().Vect());
+
+    fOscPro   = fMVAAlg.OscPro(fCCNC,fBeamPdg,fNuPdg,fEtrue);
 
     nuvtxx_truth = truth[i]->GetNeutrino().Nu().Vx();
     nuvtxy_truth = truth[i]->GetNeutrino().Nu().Vy();

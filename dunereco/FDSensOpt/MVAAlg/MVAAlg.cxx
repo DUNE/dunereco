@@ -121,6 +121,7 @@ dunemva::MVAAlg::MVAAlg( fhicl::ParameterSet const& p )
       fWeightTree[i]->Branch("itype",&itype,"itype/I");
 
       // all tmva reader variables must be floats
+      fWeightTree[i]->Branch("oscpro",&fOscPro,"oscpro/F");
       fWeightTree[i]->Branch("weight",&weight,"weight/F");
       fWeightTree[i]->Branch("evtcharge",&evtcharge,"evtcharge/F");
       fWeightTree[i]->Branch("ntrack",&ntrack,"ntrack/F");
@@ -377,6 +378,7 @@ void dunemva::MVAAlg::endSubRun(const art::SubRun& sr){
 void dunemva::MVAAlg::CalculateInputs( ){
 
      itype = -99999;
+     fOscPro = -99999;
      weight = -99999;
      evtcharge = -99999;
      ntrack = -99999;
@@ -443,6 +445,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
       oscpro = this->OscPro(ccnc_truth,pntype_flux,nuPDG_truth,enu_truth);
       float norm = this->Norm(ccnc_truth,pntype_flux,nuPDG_truth, subrun);
       weight = oscpro*norm;
+      fOscPro = oscpro;
       
       
       // Choose the most upstream vertex, even if it is just 
@@ -1036,6 +1039,7 @@ float dunemva::MVAAlg::OscPro(int ccnc, int nu0, int nu1, float NuE){
   //float sinth23=pow(sin(0.67),2);//sin(3.1415926535/4.0);
   //float sin2th13=0.094;
 
+  //FIXME osceq is created on the heap which was memory leak bound.  For now, a delete has been called at the end of the function.  This needs a more long term solution
   TF1 *osceq = 0;
   if(!osceq){
     osceq = new TF1("f2","sin(1.267*[0]*[1]/x)*sin(1.267*[0]*[1]/x)",0.,120.);
@@ -1104,6 +1108,8 @@ float dunemva::MVAAlg::OscPro(int ccnc, int nu0, int nu1, float NuE){
     std::cout << "Unknown oscillation: "
 	      << nu0 << " to " << nu1 << std::endl;
   }
+  delete osceq;
+
   return OscProb;
 } // OscPro()
 
