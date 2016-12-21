@@ -45,9 +45,9 @@ dunemva::MVAAlg::MVAAlg( fhicl::ParameterSet const& p )
     fReader.AddVariable("fract_10_wires", &fract_10_wires);
     fReader.AddVariable("fract_50_wires", &fract_50_wires);
     fReader.AddVariable("fract_100_wires", &fract_100_wires);
-    fReader.AddVariable("trkcosx", &trkcosx);
-    fReader.AddVariable("trkcosy", &trkcosy);
-    fReader.AddVariable("trkcosz", &trkcosz);
+    //fReader.AddVariable("trkcosx", &trkcosx);
+    //fReader.AddVariable("trkcosy", &trkcosy);
+    //fReader.AddVariable("trkcosz", &trkcosz);
     fReader.AddVariable("ET", &ET);
     
     // Nice to plot and verify sig/back sample composition
