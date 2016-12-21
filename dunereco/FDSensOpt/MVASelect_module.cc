@@ -77,6 +77,8 @@ private:
   double fNuECut;
   double fNuMuCut;
 
+  bool fSaveRecoInputs;
+
   void FillNormResponseHists();
   void FillINuke( rwgt::ReweightLabel_t label, double sig, double wgt);
   std::vector< rwgt::ReweightLabel_t > fINukeLabel;
@@ -244,6 +246,8 @@ void MVASelect::reconfigure(fhicl::ParameterSet const& pset)
   fNuECut  = pset.get<double>("NuECut");
   fNuMuCut = pset.get<double>("NuMuCut");
 
+  fSaveRecoInputs = pset.get<bool>("SaveRecoInputs");
+
   if(pset.get<std::string>("Select") == "nue"){
     fSelNuE  = true;
     fSelNuMu = false;
@@ -339,37 +343,38 @@ void MVASelect::beginJob()
 
   //Inputs to MVA
   //fTree->Branch("evtcharge",        &fEvtcharge,"evtcharge/F");
-  fTree->Branch("ntrack",           &fNtrack,"ntrack/F");
-  fTree->Branch("maxtrklength",     &fMaxtrklength,"maxtrklength/F");
-  fTree->Branch("avgtrklength",     &fAvgtrklength,"avgtrklength/F");
-  fTree->Branch("trkdedx",          &fTrkdedx,"trkdedx/F");
-  fTree->Branch("trkrch",           &fTrkrch,"trkrch/F");
-  fTree->Branch("trkrt",            &fTrkrt,"trkrt/F");
-  fTree->Branch("trkfr",            &fTrkfr,"trkfr/F");
-  fTree->Branch("trkpida",          &fTrkpida_save,"trkpida/F");
-  fTree->Branch("nshower",          &fNshower,"nshower/F");
-  fTree->Branch("showerdedx",       &fShowerdedx,"showerdedx/F");
-  fTree->Branch("eshower",          &fEshower,"eshower/F");
-  fTree->Branch("frshower",         &fFrshower,"frshower/F");
-  fTree->Branch("nhitspershw",      &fNhitspershw,"nhitspershw/F");
-  fTree->Branch("shwlength",        &fShwlength,"shwlength/F");
-  fTree->Branch("shwmax",           &fShwmax,"shwmax/F");
-  fTree->Branch("fract_5_wires",    &fFract_5_wires,"fract_5_wires/F");
-  fTree->Branch("fract_10_wires",   &fFract_10_wires,"fract_10_wires/F");
-  fTree->Branch("fract_50_wires",   &fFract_50_wires,"fract_50_wires/F");
-  fTree->Branch("fract_100_wires",  &fFract_100_wires,"fract_100_wires/F");
-  fTree->Branch("shwdis",           &fShwdis,"shwdis/F");
-  fTree->Branch("shwdisx",          &fShwdisx,"shwdisx/F");
-  fTree->Branch("shwdisy",          &fShwdisy,"shwdisy/F");
-  fTree->Branch("shwdisz",          &fShwdisz,"shwdisz/F");
-  fTree->Branch("shwcosx",          &fShwcosx,"shwcosx/F");
-  fTree->Branch("shwcosy",          &fShwcosy,"shwcosy/F");
-  fTree->Branch("shwcosz",          &fShwcosz,"shwcosz/F");
-  fTree->Branch("trkcosx",          &fTrkcosx,"trkcosx/F");
-  fTree->Branch("trkcosy",          &fTrkcosy,"trkcosy/F");
-  fTree->Branch("trkcosz",          &fTrkcosz,"trkcosz/F");
-  fTree->Branch("ET",               &fET,"ET/F");
-
+  if (fSaveRecoInputs){
+    fTree->Branch("ntrack",           &fNtrack,"ntrack/F");
+    fTree->Branch("maxtrklength",     &fMaxtrklength,"maxtrklength/F");
+    fTree->Branch("avgtrklength",     &fAvgtrklength,"avgtrklength/F");
+    fTree->Branch("trkdedx",          &fTrkdedx,"trkdedx/F");
+    fTree->Branch("trkrch",           &fTrkrch,"trkrch/F");
+    fTree->Branch("trkrt",            &fTrkrt,"trkrt/F");
+    fTree->Branch("trkfr",            &fTrkfr,"trkfr/F");
+    fTree->Branch("trkpida",          &fTrkpida_save,"trkpida/F");
+    fTree->Branch("nshower",          &fNshower,"nshower/F");
+    fTree->Branch("showerdedx",       &fShowerdedx,"showerdedx/F");
+    fTree->Branch("eshower",          &fEshower,"eshower/F");
+    fTree->Branch("frshower",         &fFrshower,"frshower/F");
+    fTree->Branch("nhitspershw",      &fNhitspershw,"nhitspershw/F");
+    fTree->Branch("shwlength",        &fShwlength,"shwlength/F");
+    fTree->Branch("shwmax",           &fShwmax,"shwmax/F");
+    fTree->Branch("fract_5_wires",    &fFract_5_wires,"fract_5_wires/F");
+    fTree->Branch("fract_10_wires",   &fFract_10_wires,"fract_10_wires/F");
+    fTree->Branch("fract_50_wires",   &fFract_50_wires,"fract_50_wires/F");
+    fTree->Branch("fract_100_wires",  &fFract_100_wires,"fract_100_wires/F");
+    fTree->Branch("shwdis",           &fShwdis,"shwdis/F");
+    fTree->Branch("shwdisx",          &fShwdisx,"shwdisx/F");
+    fTree->Branch("shwdisy",          &fShwdisy,"shwdisy/F");
+    fTree->Branch("shwdisz",          &fShwdisz,"shwdisz/F");
+    fTree->Branch("shwcosx",          &fShwcosx,"shwcosx/F");
+    fTree->Branch("shwcosy",          &fShwcosy,"shwcosy/F");
+    fTree->Branch("shwcosz",          &fShwcosz,"shwcosz/F");
+    fTree->Branch("trkcosx",          &fTrkcosx,"trkcosx/F");
+    fTree->Branch("trkcosy",          &fTrkcosy,"trkcosy/F");
+    fTree->Branch("trkcosz",          &fTrkcosz,"trkcosz/F");
+    fTree->Branch("ET",               &fET,"ET/F");
+  }
 
 
   const int bins_true_E = 98;
@@ -537,37 +542,38 @@ void MVASelect::analyze(art::Event const & evt)
   fWirecharge = fMVAAlg.wirecharge;
 
   //Fill MVA reco stuff
-
-   fNtrack         = fMVAAlg.ntrack;
-   fAvgtrklength   = fMVAAlg.avgtrklength;
-   fMaxtrklength   = fMVAAlg.maxtrklength;
-   fTrkdedx        = fMVAAlg.trkdedx;
-   fTrkrch         = fMVAAlg.trkrch ;
-   fTrkrt          = fMVAAlg.trkrt  ;
-   fTrkfr          = fMVAAlg.trkfr  ;
-   fTrkpida_save   = fMVAAlg.trkpida_save;
-   fNshower        = fMVAAlg.nshower;
-   fShowerdedx     = fMVAAlg.showerdedx;
-   fEshower        = fMVAAlg.eshower;
-   fFrshower       = fMVAAlg.frshower;
-   fNhitspershw    = fMVAAlg.nhitspershw;
-   fShwlength      = fMVAAlg.shwlength;
-   fShwmax         = fMVAAlg.shwmax;
-   fFract_5_wires  = fMVAAlg.fract_5_wires;
-   fFract_10_wires = fMVAAlg.fract_10_wires;
-   fFract_50_wires = fMVAAlg.fract_50_wires;
-   fFract_100_wires= fMVAAlg.fract_100_wires;
-   fShwdis         = fMVAAlg.shwdis;
-   fShwdisx        = fMVAAlg.shwdisx;
-   fShwdisy        = fMVAAlg.shwdisy;
-   fShwdisz        = fMVAAlg.shwdisz;
-   fShwcosx        = fMVAAlg.shwcosx;
-   fShwcosy        = fMVAAlg.shwcosy;
-   fShwcosz        = fMVAAlg.shwcosz;
-   fTrkcosx        = fMVAAlg.trkcosx;
-   fTrkcosy        = fMVAAlg.trkcosy;
-   fTrkcosz        = fMVAAlg.trkcosz;
-   fET             = fMVAAlg.ET;
+  if (fSaveRecoInputs){
+    fNtrack         = fMVAAlg.ntrack;
+    fAvgtrklength   = fMVAAlg.avgtrklength;
+    fMaxtrklength   = fMVAAlg.maxtrklength;
+    fTrkdedx        = fMVAAlg.trkdedx;
+    fTrkrch         = fMVAAlg.trkrch ;
+    fTrkrt          = fMVAAlg.trkrt  ;
+    fTrkfr          = fMVAAlg.trkfr  ;
+    fTrkpida_save   = fMVAAlg.trkpida_save;
+    fNshower        = fMVAAlg.nshower;
+    fShowerdedx     = fMVAAlg.showerdedx;
+    fEshower        = fMVAAlg.eshower;
+    fFrshower       = fMVAAlg.frshower;
+    fNhitspershw    = fMVAAlg.nhitspershw;
+    fShwlength      = fMVAAlg.shwlength;
+    fShwmax         = fMVAAlg.shwmax;
+    fFract_5_wires  = fMVAAlg.fract_5_wires;
+    fFract_10_wires = fMVAAlg.fract_10_wires;
+    fFract_50_wires = fMVAAlg.fract_50_wires;
+    fFract_100_wires= fMVAAlg.fract_100_wires;
+    fShwdis         = fMVAAlg.shwdis;
+    fShwdisx        = fMVAAlg.shwdisx;
+    fShwdisy        = fMVAAlg.shwdisy;
+    fShwdisz        = fMVAAlg.shwdisz;
+    fShwcosx        = fMVAAlg.shwcosx;
+    fShwcosy        = fMVAAlg.shwcosy;
+    fShwcosz        = fMVAAlg.shwcosz;
+    fTrkcosx        = fMVAAlg.trkcosx;
+    fTrkcosy        = fMVAAlg.trkcosy;
+    fTrkcosz        = fMVAAlg.trkcosz;
+    fET             = fMVAAlg.ET;
+  }
 
   fEreco = fWirecharge/0.63/4.966e-3*23.6e-9;
   //0.63: recombination factor, 1/4.966e-3: calorimetry constant to convert ADC to number of electrons, Wion = 23.6 eV
