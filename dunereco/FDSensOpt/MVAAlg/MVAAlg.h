@@ -128,6 +128,13 @@ namespace dunemva{
     double rawcharge;
     double wirecharge;
     
+    //Quantities for neutrino energy reconstruction
+    double maxTrackLength;
+    double longestTrackMCSMom;
+    double longestTrackCharge;
+    double totalEventCharge;
+    bool longestTrackContained;
+
   private:
  
     void  PrepareEvent(const art::Event& event);
@@ -150,6 +157,7 @@ namespace dunemva{
 
     void ResetVars();
     bool insideFidVol(const double posX, const double posY, const double posZ);
+    bool insideContVol(const double posX, const double posY, const double posZ);
 
     // Declare member data here.
     TTree *fTree;
@@ -320,6 +328,7 @@ namespace dunemva{
     std::string fCalorimetryModuleLabel;
 
     double fFidVolCut;
+    double fContVolCut;
 
     int isinfidvol;
     int isinfidvoltruth;
