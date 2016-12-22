@@ -40,6 +40,7 @@ m.thiesse@sheffield.ac.uk
 #include "lardataobj/AnalysisBase/T0.h"
 #include "lardata/RecoBaseArt/HitCreator.h"
 #include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/AuxDetGeo.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larevt/CalibrationDBI/Interface/DetPedestalService.h"
@@ -194,6 +195,7 @@ private:
   float fMaxPedMean;
   float fMinPedRms;
   float fMaxPedRms;
+  bool fUseMeasuredCounterPositions;
 
   float fHorizRangeMin;
   float fHorizRangeMax;
@@ -301,13 +303,47 @@ void dune::RobustHitFinder::produce(art::Event & e)
 
       if (!ValidTrigger(evtTriggers,c1,c2,trignum)) continue;
 
-      c1x = fCounterPositionMap[c1].first.X();
-      c1y = fCounterPositionMap[c1].first.Y();
-      c1z = fCounterPositionMap[c1].first.Z();
-      c2x = fCounterPositionMap[c2].first.X();
-      c2y = fCounterPositionMap[c2].first.Y();
-      c2z = fCounterPositionMap[c2].first.Z();
-    
+      if (fUseMeasuredCounterPositions)
+	{
+	  c1x = fCounterPositionMap[c1].first.X();
+	  c1y = fCounterPositionMap[c1].first.Y();
+	  c1z = fCounterPositionMap[c1].first.Z();
+	  c2x = fCounterPositionMap[c2].first.X();
+	  c2y = fCounterPositionMap[c2].first.Y();
+	  c2z = fCounterPositionMap[c2].first.Z();
+	}
+      else
+	{
+	  try
+	    {
+	      const geo::AuxDetGeo & ad = fGeom->AuxDet(c1);
+	      double center[3] = {0.,0.,0.5*ad.Length()};
+	      ad.GetCenter(center);
+	      c1x = center[0];
+	      c1y = center[1];
+	      c1z = center[2];
+	    }
+	  catch (...)
+	    {
+	      std::cout << "AuxDet " << c1 << " not found. Aborting..." << std::endl;
+	      continue;
+	    }
+	  try
+	    {
+	      const geo::AuxDetGeo & ad = fGeom->AuxDet(c2);
+              double center[3] = {0.,0.,0.5*ad.Length()};
+              ad.GetCenter(center);
+              c2x = center[0];
+              c2y = center[1];
+              c2z = center[2];
+	    }
+	  catch (...)
+	    {
+	      std::cout << "AuxDet " << c2 << " not found. Aborting..." << std::endl;
+              continue;
+            }
+	}
+
       distancecut = fHitGeomDistanceCut;
       if (trignum == 111)
         {
@@ -429,13 +465,12 @@ void dune::RobustHitFinder::produce(art::Event & e)
 	{
 	  for (auto & hit : hitVec)
 	    {
-	      //dune::HitInformation & hit = hitVec.at(i_hit);//!!!!!!!!!
 	      dune::ChannelInformation & chan = chanMap[hit.channelID];
 	      
 	      SetTreeVariables(chan,hit,fitresult);
 	      
 	      if (fMakeTree) fTree->Fill();
-	      if (hit.fitrealhit)
+	      if (hit.fitrealhit && fitresult.fitsuccess)
 		{
 		  hcol.emplace_back(hit.artHit,chan.artWire,chan.artRawDigit);
 		}
@@ -546,6 +581,7 @@ void dune::RobustHitFinder::reconfigure(fhicl::ParameterSet const & p)
   fMakeupMissedHits = p.get<bool>("MakeupMissedHits",true);
   fMissedBufferTicksLow = p.get<int>("MissedBufferTicksLow");
   fMissedBufferTicksHigh = p.get<int>("MissedBufferTicksHigh");
+  fUseMeasuredCounterPositions = p.get<bool>("UseMeasuredCounterPositions");
 }
 
 void dune::RobustHitFinder::MakeupMissedHits(ChanMap_t & chanMap, HitVec_t & hitVec)
@@ -810,22 +846,41 @@ void dune::RobustHitFinder::FillHitInformation(dune::ChannelInformation & chan, 
       hit.fitrealhit = false;
       hit.assumedhit = assumedHit;
 
+      segmentlength = 0.449;
+      if (trignum == 111)
+	{
+	  double thetayz = TMath::ATan2((hit.hitx+1)-(hit.hitx-1),2);
+	  double tan2thetayz = TMath::Power(TMath::Tan(thetayz),2);
+	  double y2z2 = ((c1y-c2y)*(c1y-c2y))/((c1z-c2z)*(c1z-c2z));
+	  double projL = sqrt(1+tan2thetayz+y2z2);
+	  segmentlength *= static_cast<float>(projL);
+	}
+      else if (trignum == 112 || trignum == 113)
+	{
+	  double thetayx = TMath::ATan2(2,(hit.hitz+1)-(hit.hitz-1));
+	  double tan2thetayx = TMath::Power(TMath::Tan(thetayx),2);
+	  double y2x2 = ((c1y-c2y)*(c1y-c2y))/((c1x-c2x)*(c1x-c2x));
+	  double projL = sqrt(1+tan2thetayx*(1+y2x2));
+	  segmentlength *= static_cast<float>(projL);
+	}
+
+
       recob::HitCreator temphit(*(chan.artWire),
 				fGeom->ChannelToWire(chan.channelID)[0],
 				hit.hitBeginTick,
 				hit.hitEndTick,
-				hit.hitWidth,
+				hit.hitWidth/sqrt(12.0),
 				hit.hitPeakTick,
-				gaus->GetParError(1),
+				hit.hitWidth/sqrt(12.0),
 				hit.hitAmplitude,
-				sqrt(hit.hitAmplitude),
+				hit.hitAmplitude/sqrt(12.0),
 				hit.hitIntegral,
 				hit.hitSigmaIntegral,
 				hit.hitSumADC,
 				1,
 				-1,
-				gaus->GetChisquare(),
-				gaus->GetNDF());
+				segmentlength,
+				(int)(hit.hitWidth-2));
       hit.artHit = temphit.move();
       if (hit.hitx > -400 && hit.countercut) hitVec.push_back(hit);
       
