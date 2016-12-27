@@ -745,19 +745,24 @@ void MVASelect::analyze(art::Event const & evt)
 
   //numu CC event with at least one reco track,
   //longest reco track is either contained or is exiting with a defined value of MCS track momentum
-  if (fNuPdg == 14 && fCCNC == 0 && fMVAAlg.maxTrackLength >= 0.0 
-      && (fMVAAlg.longestTrackContained || (!fMVAAlg.longestTrackContained && fMVAAlg.longestTrackMCSMom >= 0.0))){
-    if (fMVAAlg.longestTrackContained)
-      longestTrackMom = (fMVAAlg.maxTrackLength - intTrkMomRange) / gradTrkMomRange;
-    else
-      longestTrackMom = (fMVAAlg.longestTrackMCSMom - intTrkMomMCS) / gradTrkMomMCS;
-    corrHadEnergy = (((fMVAAlg.totalEventCharge - fMVAAlg.longestTrackCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - intHadEnergyCorr) / gradHadEnergyCorr;
-    fEreco = longestTrackMom + corrHadEnergy;
+  if (fSelNuMu){
+    if (fMVAAlg.maxTrackLength >= 0.0 && 
+        (fMVAAlg.longestTrackContained || (!fMVAAlg.longestTrackContained && fMVAAlg.longestTrackMCSMom >= 0.0))){
+      if (fMVAAlg.longestTrackContained)
+        longestTrackMom = (fMVAAlg.maxTrackLength - intTrkMomRange) / gradTrkMomRange;
+      else
+        longestTrackMom = (fMVAAlg.longestTrackMCSMom - intTrkMomMCS) / gradTrkMomMCS;
+      corrHadEnergy = (((fMVAAlg.totalEventCharge - fMVAAlg.longestTrackCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - intHadEnergyCorr) / gradHadEnergyCorr;
+      fEreco = longestTrackMom + corrHadEnergy;
+    }
+    else{
+      fEreco = fWirecharge/0.63/4.966e-3*23.6e-9; 
+    }
   }
-  else
+  else if (fSelNuE){
     fEreco = fWirecharge/0.63/4.966e-3*23.6e-9; 
   //0.63: recombination factor, 1/4.966e-3: calorimetry constant to convert ADC to number of electrons, Wion = 23.6 eV
-
+  }
   fTree->Fill();
   return;
 }

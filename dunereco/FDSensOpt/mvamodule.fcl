@@ -32,6 +32,8 @@ dunefd_mvaselect:
     FlashModuleLabel:        "opflash"
     CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
     FidVolCut:	             3.0
+    ContVolCut:              20.0
+    SaveRecoInputs:          true
 }
 
 dunefd_inisegreco:
