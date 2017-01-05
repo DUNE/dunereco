@@ -9,6 +9,7 @@
 #include <memory>
 #include <algorithm>
 #include <vector>
+#include <map>
 #include <utility>
 
 namespace dune {
@@ -30,6 +31,7 @@ public:
     int hitBeginTick;
     int hitEndTick;
     int hitWidth;     //in units of ticks
+    float hitSumADC;
 
     float hitx;
     float hity;
@@ -40,23 +42,21 @@ public:
     float hiterryhi;
     float hiterrzlo;
     float hiterrzhi;
-    float hithoriz;
-    float hitvert;
-    float hithorizerrlo;
-    float hithorizerrhi;
-    float hitverterrlo;
-    float hitverterrhi;
+
     float perpdist;
     float hitt;
     float driftdist;
 
     bool fitrealhit;
     bool countercut;
+    bool assumedhit;
 
     int channelID;
 
     recob::Hit artHit;
   };
+
+  typedef std::vector<HitInformation> HitVec_t;
 
   class ChannelInformation {
 public:
@@ -70,9 +70,16 @@ public:
     float baselineFilter;
     float rmsFilter;
     int channelID;
+    int wireID;
     int tpcNum;
+    float chanz;
+    int nGoodHits;
+    float goodHitStartTick;
+    float goodHitEndTick;
     std::vector<std::pair<int,int> > pulse_ends;
   };
+
+  typedef std::map<int,ChannelInformation> ChanMap_t;
 
 }
 

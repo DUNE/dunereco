@@ -22,7 +22,7 @@
 #include "art/Framework/Services/Optional/TFileService.h" 
 
 #include "nutools/NuReweight/art/NuReweight.h"
-
+#include "Utils/AppInit.h"
 #include "nusimdata/SimulationBase/GTruth.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCFlux.h"
@@ -61,10 +61,14 @@ private:
   
   MVAAlg fMVAAlg;
   double fMVAResult;
+  double fEvtcharge;
+  double fRawcharge;
+  double fWirecharge;
   std::string fMVAMethod;
 
   bool fReweight;
   unsigned int fRun,fSubrun,fEvent;
+  float fOscPro;
   double fWeight;
   TTree* fTree;  
 
@@ -73,9 +77,13 @@ private:
   double fNuECut;
   double fNuMuCut;
 
+  bool fSaveRecoInputs;
+
   void FillNormResponseHists();
   void FillINuke( rwgt::ReweightLabel_t label, double sig, double wgt);
   std::vector< rwgt::ReweightLabel_t > fINukeLabel;
+
+
 
   // INuke reweights
   double fSigs[knRwgts];
@@ -109,6 +117,23 @@ private:
 
   double fQ2; 
   double fEtrue; 
+  double fEreco;
+  double fW;
+  double fX;
+  double fY;
+  double fNuMomX;
+  double fNuMomY;
+  double fNuMomZ;
+  double fNuMomT;
+
+  //Outgoing lepton stuff
+  int fLepPDG;
+  double fLepMomX;
+  double fLepMomY;
+  double fLepMomZ;
+  double fLepMomT;
+  double fLepNuAngle;
+
 
   int fIsCoh; // 1=is coherent, 0=otherwise
   int fIsDIS; // 1=is dis,      0=otherwise
@@ -146,6 +171,42 @@ private:
   bool IsDIS();
 
 
+  //Inputs to MVA
+
+  //float fEvtcharge;
+  float fNtrack;
+  float fAvgtrklength;
+  float fMaxtrklength;
+  float fTrkdedx;
+  float fTrkrch; 
+  float fTrkrt;  
+  float fTrkfr;  
+  float fTrkpida_save;
+  float fNshower;
+  float fShowerdedx;
+  float fEshower;
+  float fFrshower;
+  float fNhitspershw;
+  float fShwlength;
+  float fShwmax;
+  float fFract_5_wires;
+  float fFract_10_wires;
+  float fFract_50_wires;
+  float fFract_100_wires;
+  float fShwdis;
+  float fShwdisx;
+  float fShwdisy;
+  float fShwdisz;
+  float fShwcosx;
+  float fShwcosy;
+  float fShwcosz;
+  float fTrkcosx;
+  float fTrkcosy;
+  float fTrkcosz;
+  float fET;
+
+
+
 }; // class MVASelect
 
  
@@ -155,7 +216,9 @@ MVASelect::MVASelect(fhicl::ParameterSet const& pset)
     , fMVAAlg(pset)
 {
   this->reconfigure(pset);
-
+  if (fReweight){
+    genie::utils::app_init::MesgThresholds("Messenger_production.xml");
+  }
   fINukeLabel.emplace_back(rwgt::fReweightMFP_pi);
   fINukeLabel.emplace_back(rwgt::fReweightMFP_N);
   fINukeLabel.emplace_back(rwgt::fReweightFrCEx_pi);
@@ -183,6 +246,8 @@ void MVASelect::reconfigure(fhicl::ParameterSet const& pset)
   fNuECut  = pset.get<double>("NuECut");
   fNuMuCut = pset.get<double>("NuMuCut");
 
+  fSaveRecoInputs = pset.get<bool>("SaveRecoInputs");
+
   if(pset.get<std::string>("Select") == "nue"){
     fSelNuE  = true;
     fSelNuMu = false;
@@ -207,7 +272,10 @@ void MVASelect::beginJob()
   fTree->Branch("event",       &fEvent,      "event/I");
   fTree->Branch("mvaresult",   &fMVAResult,  "mvaresult/D");
   fTree->Branch("weight",      &fWeight,     "weight/D");
-
+  fTree->Branch("oscpro",      &fOscPro,     "oscpro/F");
+  fTree->Branch("evtcharge",   &fEvtcharge,  "evtcharge/D");
+  fTree->Branch("rawcharge",   &fRawcharge,  "rawcharge/D");
+  fTree->Branch("wirecharge",  &fWirecharge, "wirecharge/D");
   // particle counts
   fTree->Branch("nP",        &nP,         "nP/I");
   fTree->Branch("nN",        &nN,         "nN/I");
@@ -224,7 +292,7 @@ void MVASelect::beginJob()
 
   fTree->Branch("Q2",           &fQ2,           "Q2/D");
   fTree->Branch("Ev",           &fEtrue,        "Ev/D");
-  fTree->Branch("Ev_reco",      &fEtrue,        "Ev_reco/D");
+  fTree->Branch("Ev_reco",      &fEreco,        "Ev_reco/D");
   fTree->Branch("EvClass_reco", &fEvClass_reco, "EvClass_reco/I");
   fTree->Branch("coh",          &fIsCoh,        "coh/I");
   fTree->Branch("dis",          &fIsDIS,        "dis/I");
@@ -234,6 +302,23 @@ void MVASelect::beginJob()
   fTree->Branch("beamPdg",      &fBeamPdg,      "beamPdg/I");
   fTree->Branch("mode",         &fMode,         "mode/I");
   fTree->Branch("ccnc",         &fCCNC,         "ccnc/I");
+  fTree->Branch("W",            &fW,            "W/D");
+  fTree->Branch("X",            &fX,            "X/D");
+  fTree->Branch("Y",            &fY,            "Y/D");
+  fTree->Branch("NuMomX",       &fNuMomX,       "NuMomX/D");
+  fTree->Branch("NuMomY",       &fNuMomY,       "NuMomY/D");
+  fTree->Branch("NuMomZ",       &fNuMomZ,       "NuMomZ/D");
+  fTree->Branch("NuMomT",       &fNuMomT,       "NuMomT/D");
+
+  fTree->Branch("LepPDG",       &fLepPDG,       "LepPDG/I");
+  fTree->Branch("LepMomX",      &fLepMomX,       "LepMomX/D");
+  fTree->Branch("LepMomY",      &fLepMomY,       "LepMomY/D");
+  fTree->Branch("LepMomZ",      &fLepMomZ,       "LepMomZ/D");
+  fTree->Branch("LepMomT",      &fLepMomT,       "LepMomT/D");
+  fTree->Branch("LepNuAngle",   &fLepNuAngle,       "LepNuAngle/D");
+
+
+
 
   fTree->Branch("nuvtxx_truth",&nuvtxx_truth,"nuvtxx_truth/D");
   fTree->Branch("nuvtxy_truth",&nuvtxy_truth,"nuvtxy_truth/D");
@@ -254,6 +339,42 @@ void MVASelect::beginJob()
   fTree->Branch("f_int_n_inel",     finuke_FrInel_N,   "f_int_n_inel[41]/D");
   fTree->Branch("f_int_n_abs",      finuke_FrAbs_N,    "f_int_n_abs[41]/D");
   fTree->Branch("f_int_n_prod",     finuke_FrPiProd_N, "f_int_n_prod[41]/D");
+
+
+  //Inputs to MVA
+  //fTree->Branch("evtcharge",        &fEvtcharge,"evtcharge/F");
+  if (fSaveRecoInputs){
+    fTree->Branch("ntrack",           &fNtrack,"ntrack/F");
+    fTree->Branch("maxtrklength",     &fMaxtrklength,"maxtrklength/F");
+    fTree->Branch("avgtrklength",     &fAvgtrklength,"avgtrklength/F");
+    fTree->Branch("trkdedx",          &fTrkdedx,"trkdedx/F");
+    fTree->Branch("trkrch",           &fTrkrch,"trkrch/F");
+    fTree->Branch("trkrt",            &fTrkrt,"trkrt/F");
+    fTree->Branch("trkfr",            &fTrkfr,"trkfr/F");
+    fTree->Branch("trkpida",          &fTrkpida_save,"trkpida/F");
+    fTree->Branch("nshower",          &fNshower,"nshower/F");
+    fTree->Branch("showerdedx",       &fShowerdedx,"showerdedx/F");
+    fTree->Branch("eshower",          &fEshower,"eshower/F");
+    fTree->Branch("frshower",         &fFrshower,"frshower/F");
+    fTree->Branch("nhitspershw",      &fNhitspershw,"nhitspershw/F");
+    fTree->Branch("shwlength",        &fShwlength,"shwlength/F");
+    fTree->Branch("shwmax",           &fShwmax,"shwmax/F");
+    fTree->Branch("fract_5_wires",    &fFract_5_wires,"fract_5_wires/F");
+    fTree->Branch("fract_10_wires",   &fFract_10_wires,"fract_10_wires/F");
+    fTree->Branch("fract_50_wires",   &fFract_50_wires,"fract_50_wires/F");
+    fTree->Branch("fract_100_wires",  &fFract_100_wires,"fract_100_wires/F");
+    fTree->Branch("shwdis",           &fShwdis,"shwdis/F");
+    fTree->Branch("shwdisx",          &fShwdisx,"shwdisx/F");
+    fTree->Branch("shwdisy",          &fShwdisy,"shwdisy/F");
+    fTree->Branch("shwdisz",          &fShwdisz,"shwdisz/F");
+    fTree->Branch("shwcosx",          &fShwcosx,"shwcosx/F");
+    fTree->Branch("shwcosy",          &fShwcosy,"shwcosy/F");
+    fTree->Branch("shwcosz",          &fShwcosz,"shwcosz/F");
+    fTree->Branch("trkcosx",          &fTrkcosx,"trkcosx/F");
+    fTree->Branch("trkcosy",          &fTrkcosy,"trkcosy/F");
+    fTree->Branch("trkcosz",          &fTrkcosz,"trkcosz/F");
+    fTree->Branch("ET",               &fET,"ET/F");
+  }
 
 
   const int bins_true_E = 98;
@@ -416,6 +537,43 @@ void MVASelect::analyze(art::Event const & evt)
   fSubrun = evt.id().subRun();
   fEvent = evt.id().event();
   fMVAAlg.Run(evt,fMVAResult,fWeight);
+  fEvtcharge = fMVAAlg.evtcharge;
+  fRawcharge = fMVAAlg.rawcharge;
+  fWirecharge = fMVAAlg.wirecharge;
+
+  //Fill MVA reco stuff
+  if (fSaveRecoInputs){
+    fNtrack         = fMVAAlg.ntrack;
+    fAvgtrklength   = fMVAAlg.avgtrklength;
+    fMaxtrklength   = fMVAAlg.maxtrklength;
+    fTrkdedx        = fMVAAlg.trkdedx;
+    fTrkrch         = fMVAAlg.trkrch ;
+    fTrkrt          = fMVAAlg.trkrt  ;
+    fTrkfr          = fMVAAlg.trkfr  ;
+    fTrkpida_save   = fMVAAlg.trkpida_save;
+    fNshower        = fMVAAlg.nshower;
+    fShowerdedx     = fMVAAlg.showerdedx;
+    fEshower        = fMVAAlg.eshower;
+    fFrshower       = fMVAAlg.frshower;
+    fNhitspershw    = fMVAAlg.nhitspershw;
+    fShwlength      = fMVAAlg.shwlength;
+    fShwmax         = fMVAAlg.shwmax;
+    fFract_5_wires  = fMVAAlg.fract_5_wires;
+    fFract_10_wires = fMVAAlg.fract_10_wires;
+    fFract_50_wires = fMVAAlg.fract_50_wires;
+    fFract_100_wires= fMVAAlg.fract_100_wires;
+    fShwdis         = fMVAAlg.shwdis;
+    fShwdisx        = fMVAAlg.shwdisx;
+    fShwdisy        = fMVAAlg.shwdisy;
+    fShwdisz        = fMVAAlg.shwdisz;
+    fShwcosx        = fMVAAlg.shwcosx;
+    fShwcosy        = fMVAAlg.shwcosy;
+    fShwcosz        = fMVAAlg.shwcosz;
+    fTrkcosx        = fMVAAlg.trkcosx;
+    fTrkcosy        = fMVAAlg.trkcosy;
+    fTrkcosz        = fMVAAlg.trkcosz;
+    fET             = fMVAAlg.ET;
+  }
 
   art::Handle< std::vector<simb::MCTruth> > mct;
   std::vector< art::Ptr<simb::MCTruth> > truth;
@@ -460,6 +618,23 @@ void MVASelect::analyze(art::Event const & evt)
     fMode     = truth[i]->GetNeutrino().Mode(); //0=QE/El, 1=RES, 2=DIS, 3=Coherent production
     fEtrue    = truth[i]->GetNeutrino().Nu().E();
     fQ2       = truth[i]->GetNeutrino().QSqr();
+    fW        = truth[i]->GetNeutrino().W();
+    fX        = truth[i]->GetNeutrino().X();
+    fY        = truth[i]->GetNeutrino().Y();
+    fNuMomX   = truth[i]->GetNeutrino().Nu().Momentum().X();
+    fNuMomY   = truth[i]->GetNeutrino().Nu().Momentum().Y();
+    fNuMomZ   = truth[i]->GetNeutrino().Nu().Momentum().Z();
+    fNuMomT   = truth[i]->GetNeutrino().Nu().Momentum().T();
+
+    //Lepton stuff
+    fLepPDG     = truth[i]->GetNeutrino().Lepton().PdgCode();
+    fLepMomX    = truth[i]->GetNeutrino().Lepton().Momentum().X();
+    fLepMomY    = truth[i]->GetNeutrino().Lepton().Momentum().Y();
+    fLepMomZ    = truth[i]->GetNeutrino().Lepton().Momentum().Z();
+    fLepMomT    = truth[i]->GetNeutrino().Lepton().Momentum().T();
+    fLepNuAngle = truth[i]->GetNeutrino().Nu().Momentum().Vect().Angle(truth[i]->GetNeutrino().Lepton().Momentum().Vect());
+
+    fOscPro   = fMVAAlg.OscPro(fCCNC,fBeamPdg,fNuPdg,fEtrue);
 
     nuvtxx_truth = truth[i]->GetNeutrino().Nu().Vx();
     nuvtxy_truth = truth[i]->GetNeutrino().Nu().Vy();
@@ -530,7 +705,7 @@ void MVASelect::analyze(art::Event const & evt)
 
     unsigned int sigs_i = 0;
     double sig_step = 0.1;
-    for(double sig=-2; sig<=2; sig+=sig_step){      
+    for(double sig=-2; sig<=2.01; sig+=sig_step){      
       if(knRwgts<=sigs_i)
 	mf::LogError("MVASelect") << "too many sigma steps";
       fSigs[sigs_i] = sig;
@@ -538,19 +713,18 @@ void MVASelect::analyze(art::Event const & evt)
     }    
 
     if(fReweight){ // takes a long time, only reweight if necessary
+
       rwgt::NuReweight *rwt;
       for(unsigned int r=0; r<fINukeLabel.size(); r++){
-	
-	for(double s=-2; s<=2; s+=sig_step){
-	  
-	  rwt = new rwgt::NuReweight();
-	  rwt->ConfigureINuke();
+	for(double s=-2; s<=2.01; s+=sig_step){
+          rwt = new rwgt::NuReweight();
+	  //rwt->ConfigureINuke();
 	  rwt->ReweightIntraNuke(fINukeLabel[r],s);
 	  double wgt = rwt->CalcWeight(*(truth[i]), *(gtru[i]));
 	  if(wgt>10)
 	    mf::LogVerbatim("MVASelect") << "High weight: " << wgt;
 	  this->FillINuke(fINukeLabel[r],s,wgt);
-	  
+          delete rwt;
 	} // all sigma steps s
       } // all reweights r
     } // if reweighting
@@ -558,6 +732,37 @@ void MVASelect::analyze(art::Event const & evt)
   } // loop through MC truth i
   
 
+  //Neutrino energy reconstruction
+  double longestTrackMom, corrHadEnergy;
+  //gradients and intercepts of calibrations of track momentum (pmtrack)
+  const double gradTrkMomRange = 430.0;
+  const double intTrkMomRange = -62.8;
+  const double gradTrkMomMCS = 0.89;
+  const double intTrkMomMCS = 0.20;
+  //gradient and intercept of hadronic energy correction (pmtrack)
+  const double gradHadEnergyCorr = 0.61;
+  const double intHadEnergyCorr = 0.083;
+
+  //numu CC event with at least one reco track,
+  //longest reco track is either contained or is exiting with a defined value of MCS track momentum
+  if (fSelNuMu){
+    if (fMVAAlg.maxTrackLength >= 0.0 && 
+        (fMVAAlg.longestTrackContained || (!fMVAAlg.longestTrackContained && fMVAAlg.longestTrackMCSMom >= 0.0))){
+      if (fMVAAlg.longestTrackContained)
+        longestTrackMom = (fMVAAlg.maxTrackLength - intTrkMomRange) / gradTrkMomRange;
+      else
+        longestTrackMom = (fMVAAlg.longestTrackMCSMom - intTrkMomMCS) / gradTrkMomMCS;
+      corrHadEnergy = (((fMVAAlg.totalEventCharge - fMVAAlg.longestTrackCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - intHadEnergyCorr) / gradHadEnergyCorr;
+      fEreco = longestTrackMom + corrHadEnergy;
+    }
+    else{
+      fEreco = fWirecharge/0.63/4.966e-3*23.6e-9; 
+    }
+  }
+  else if (fSelNuE){
+    fEreco = fWirecharge/0.63/4.966e-3*23.6e-9; 
+  //0.63: recombination factor, 1/4.966e-3: calorimetry constant to convert ADC to number of electrons, Wion = 23.6 eV
+  }
   fTree->Fill();
   return;
 }
@@ -567,7 +772,7 @@ void MVASelect::analyze(art::Event const & evt)
     
     unsigned int sig_i = UINT_MAX;
     for(unsigned int a=0; a<knRwgts; a++)
-      if( fSigs[a] == sig )
+      if( std::abs(fSigs[a]-sig)<1e-6 )
 	sig_i = a;
     
     if(sig_i==UINT_MAX)

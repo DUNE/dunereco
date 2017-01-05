@@ -10,11 +10,6 @@
     <MuonPlugin>LArMuonId</MuonPlugin>
 
     <!-- ALGORITHM SETTINGS -->
-    <!--algorithm type = "EventReading">
-         <EventFileName>/r05/lbne/mcproduction_v04_06_02/prodgenie_bnb_nu_cosmic_uboone/uBooNE_Events_100_0_reco1.pndr</EventFileName>
-         <ShouldReadEvents>true</ShouldReadEvents>
-         <SkipToEvent>0</SkipToEvent>
-    </algorithm-->
 
     <!-- COSMIC RAY RECONSTRUCTION -->
     <algorithm type = "LArListPreparation">
@@ -50,6 +45,8 @@
     <algorithm type = "LArLongitudinalAssociation"/>
     <algorithm type = "LArTransverseExtension"/>
     <algorithm type = "LArLongitudinalExtension"/>
+    <algorithm type = "LArCrossGapsAssociation"/>
+    <algorithm type = "LArCrossGapsExtension"/>
     <algorithm type = "LArBranchSplitting"><CosmicMode>true</CosmicMode></algorithm>
     <algorithm type = "LArDeltaRaySplitting"><CosmicMode>true</CosmicMode></algorithm>
     <algorithm type = "LArCrossedTrackSplitting"/>
@@ -74,6 +71,8 @@
     <algorithm type = "LArLongitudinalAssociation"/>
     <algorithm type = "LArTransverseExtension"/>
     <algorithm type = "LArLongitudinalExtension"/>
+    <algorithm type = "LArCrossGapsAssociation"/>
+    <algorithm type = "LArCrossGapsExtension"/>
     <algorithm type = "LArBranchSplitting"><CosmicMode>true</CosmicMode></algorithm>
     <algorithm type = "LArDeltaRaySplitting"><CosmicMode>true</CosmicMode></algorithm>
     <algorithm type = "LArCrossedTrackSplitting"/>
@@ -98,6 +97,8 @@
     <algorithm type = "LArLongitudinalAssociation"/>
     <algorithm type = "LArTransverseExtension"/>
     <algorithm type = "LArLongitudinalExtension"/>
+    <algorithm type = "LArCrossGapsAssociation"/>
+    <algorithm type = "LArCrossGapsExtension"/>
     <algorithm type = "LArBranchSplitting"><CosmicMode>true</CosmicMode></algorithm>
     <algorithm type = "LArDeltaRaySplitting"><CosmicMode>true</CosmicMode></algorithm>
     <algorithm type = "LArCrossedTrackSplitting"/>
@@ -124,6 +125,7 @@
             <tool type = "LArMissingTrackSegment"/>
             <tool type = "LArTrackSplitting"/>
             <tool type = "LArLongTracks"><MinMatchedFraction>0.75</MinMatchedFraction><MinXOverlapFraction>0.75</MinXOverlapFraction></tool>
+            <tool type = "LArTracksCrossingGaps"><MinMatchedFraction>0.75</MinMatchedFraction><MinXOverlapFraction>0.75</MinXOverlapFraction></tool>
             <tool type = "LArMissingTrack"/>
         </TrackTools>
     </algorithm>
@@ -149,6 +151,12 @@
         <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
     </algorithm>
     <algorithm type = "LArCosmicRayTrackMatching">
+        <InputClusterListNameU>ClustersU</InputClusterListNameU>
+        <InputClusterListNameV>ClustersV</InputClusterListNameV>
+        <InputClusterListNameW>ClustersW</InputClusterListNameW>
+        <OutputPfoListName>Particles3D</OutputPfoListName>
+    </algorithm>
+    <algorithm type = "LArCosmicRayTrackRecovery"> 
         <InputClusterListNameU>ClustersU</InputClusterListNameU>
         <InputClusterListNameV>ClustersV</InputClusterListNameV>
         <InputClusterListNameW>ClustersW</InputClusterListNameW>
@@ -266,10 +274,10 @@
         <OutputPfoListName>Particles3D</OutputPfoListName>
     </algorithm>
 
-    <!-- 2D cosmic-ray isolated hits -->  
-    <algorithm type = "LArIsolatedHitMerging">
+    <!-- 2D cosmic-ray isolated hits/clusters -->
+    <algorithm type = "LArIsolatedClusterMopUp">
         <PfoListNames>Particles3D DaughterParticles3D</PfoListNames>
-        <RemnantClusterListNames>ClustersU ClustersV ClustersW</RemnantClusterListNames>
+        <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
         <ExcludePfosContainingTracks>false</ExcludePfosContainingTracks>
     </algorithm>
 

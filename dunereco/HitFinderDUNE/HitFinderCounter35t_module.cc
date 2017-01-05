@@ -46,8 +46,14 @@
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
+// Seed Service
+#include "nutools/RandomUtils/NuRandomService.h"
+#include "CLHEP/Random/RandomEngine.h"
+
 // Want to include the CounterPositionMapFunction
 #include "dune/daqinput35t/PennToOffline.h"
+
+#include "HitLineFitAlg.h"
 
 // ROOT Includes 
 #include "TH1D.h"
@@ -115,6 +121,11 @@ namespace dune{
     unsigned int fAdjacentTimeWidth;
     unsigned int fCollectionTimeWidth;
 
+    dune::HitLineFitAlg fFitAlg;
+    art::ServiceHandle<art::RandomNumberGenerator> fRng;
+    art::ServiceHandle<rndm::NuRandomService> fSeed;
+    bool fDoHitLineFitAlg;
+
     std::map< unsigned int, std::pair < TVector3, std::vector< TVector3 > > > CounterPositionMap; // The map of counter positions....
     std::vector< std::pair< unsigned int, unsigned int > > ExternalTrigIndexVec; // My vector of counter coincidence indexes...
     double UVStartEndPointsX[4];
@@ -142,7 +153,10 @@ namespace dune{
     , fAdjacentWireWidth   (pset.get<unsigned int>("AdjacentWireWidth"))
     , fAdjacentTimeWidth   (pset.get<unsigned int>("AdjacentTimeWidth"))
     , fCollectionTimeWidth (pset.get<unsigned int>("CollectionTimeWidth"))
+    , fFitAlg              (pset.get<fhicl::ParameterSet>("HitLineFitAlg"))
+    , fDoHitLineFitAlg     (pset.get<bool>("DoHitLineFitAlg",false))
   {
+    fSeed->createEngine(*this,"HepJamesRandom","Seed");
     recob::HitCollectionCreator::declare_products(*this);
   }
   //-------------------------------------------------
@@ -176,6 +190,9 @@ namespace dune{
   void HitFinderCounter35t::produce(art::Event& evt) {
     
     if (fDebug) std::cout << "\n\nLooking at event " << evt.event() << std::endl;
+
+    CLHEP::HepRandomEngine const & engine = fRng->getEngine("Seed");
+    fFitAlg.SetSeed(engine.getSeed());
 
     // get raw::ExternalTriggers
     art::Handle< std::vector< raw::ExternalTrigger> > externalTriggerListHandle;
@@ -241,11 +258,13 @@ namespace dune{
 
     // FIXME:::::I am unsure of the best way to handle showers - lots of trigger indexes at the same time.
     //           The easiest ( and laziest ) thing to do, is to just discount events which have many triggers.
-    if ( ExternalTrigIndexVec.size() > 2 ) {
+    if ( ExternalTrigIndexVec.size() > 1 ) {
       std::cout << "Voiding this event as I have a vector of size " << ExternalTrigIndexVec.size() << std::endl;
       hcol.put_into(evt);
       return;
     }
+
+    
 
     // Loop through all the indexes to see whether to keep the hit.
     for (size_t TrigInd=0; TrigInd< ExternalTrigIndexVec.size(); ++TrigInd) {
@@ -275,6 +294,44 @@ namespace dune{
 			    <<"\nVertexY has co-ords " << VertexY[0] << " " << VertexY[1] << " " << VertexY[2] << " " << VertexY[3]
 			    <<"\nVertexZ has co-ords " << VertexZ[0] << " " << VertexZ[1] << " " << VertexZ[2] << " " << VertexZ[3]
 			    << std::endl;
+      
+      bool doHitLineFitAlg = fDoHitLineFitAlg;
+      int trignum = -1;
+      if ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() >= 6  && trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() <= 15 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() >= 28 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() <= 37 ) trignum=111; // East Lower, West Upper
+      else if ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() >= 0  && trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() <= 5  && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() >= 22 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() <= 27 ) trignum=112; // South Lower, North Upper
+      else if ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() >= 16 && trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() <= 21 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() >= 38 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() <= 43 ) trignum=113; // North Lower, South Upper
+      
+      float c1x = it1->second.first.X();
+      float c1z = it1->second.first.Z();
+      float c2x = it2->second.first.X();
+      float c2z = it2->second.first.Z();
+      if (trignum == 111)
+	{
+	  float slope = ((c1x-c2x)/(c1z-c2z));
+	  fFitAlg.SetParameter(0,10,-50,250);
+	  fFitAlg.SetParameter(1,1,slope-0.2,slope+0.2);
+	  fFitAlg.SetParameter(2,0,-0.0002,0.0002);
+	  fFitAlg.SetHorizVertRanges(-10,170,-50,250);
+	}
+      else if (trignum == 112 || trignum == 113)
+	{
+	  float slope = ((c1z-c2z)/(c1x-c2x));
+	  fFitAlg.SetParameter(0,10,-10,170);
+	  fFitAlg.SetParameter(1,1,slope-0.2,slope+0.2);
+	  fFitAlg.SetParameter(2,0,-0.0002,0.0002);
+	  fFitAlg.SetHorizVertRanges(-50,250,-10,170);
+	}
+      else
+	{
+	  doHitLineFitAlg = false;
+	}
+      if (ExternalTrigIndexVec.size() != 1) doHitLineFitAlg = false;
+
+      std::vector<dune::HitLineFitAlg::HitLineFitData> fitdata;
+      dune::HitLineFitAlg::HitLineFitResults bestfit;
+      std::map<unsigned int, size_t> index_convert;
+      unsigned int fitdataindex = 0;
+
       //*/
       // ------------------------- Get Collection wires -------------------------
       // Loop through collection plane hits first, as can use that information to help decide which TPC an induction plane hit should be on.
@@ -284,8 +341,8 @@ namespace dune{
 
 	// Collection plane wires mainly discriminated against using XZ plane
 	bool KeepHit = false;
-	art::Ptr<recob::Wire> wire = ChannelHitWires.at(HitInd);
-	art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(HitInd);
+	//art::Ptr<recob::Wire> wire = ChannelHitWires.at(HitInd);
+	//art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(HitInd);
 	
 	double WireStart[3], WireEnd[3];
 	fGeom->WireEndPoints( hits[HitInd]->WireID(), WireStart, WireEnd );
@@ -302,9 +359,66 @@ namespace dune{
 	  //	      << "\nI used the following cuts... X " << VertexX[0] << " " << VertexX[1] << " " << VertexX[2] << " " << VertexX[3] 
 	  //	      << ", and Z " << VertexZ[0] << " " << VertexZ[1] << " " << VertexZ[2] << " " << VertexZ[3]
 	  //	      << std::endl;
-	  hcol.emplace_back(*hits[HitInd], wire, rawdigits);
+	  
+	  dune::HitLineFitAlg::HitLineFitData hlfd;
+	  if (trignum == 111)
+            {
+              hlfd.hitHoriz = (float)WireEnd[2];
+              hlfd.hitVert = HitXPos;
+              hlfd.hitHorizErrLo = 0.25;
+              hlfd.hitHorizErrHi = 0.25;
+              hlfd.hitVertErrLo = 0.25;
+              hlfd.hitVertErrHi = 0.25;
+            }
+          else if (trignum == 112 || trignum == 113)
+            {
+              hlfd.hitHoriz = HitXPos;
+              hlfd.hitVert = (float)WireEnd[2];
+              hlfd.hitHorizErrLo = 0.25;
+              hlfd.hitHorizErrHi = 0.25;
+              hlfd.hitVertErrLo = 0.25;
+              hlfd.hitVertErrHi = 0.25;
+            }
+          hlfd.hitREAL = false;
+          fitdata.push_back(hlfd);
+	  index_convert[fitdataindex] = HitInd;
+	  ++fitdataindex;
+
+	  //hcol.emplace_back(*hits[HitInd], wire, rawdigits);
 	} 
       }
+
+      int retval = -1;
+      if (doHitLineFitAlg) retval = fFitAlg.FitLine(fitdata,bestfit);
+
+      if (!doHitLineFitAlg)
+	{
+	  for (unsigned int i_fd = 0; i_fd < fitdata.size(); ++i_fd)
+            {
+	      art::Ptr<recob::Wire> wire = ChannelHitWires.at(index_convert[i_fd]);
+	      art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(index_convert[i_fd]);
+	      hcol.emplace_back(*hits[index_convert[i_fd]],wire,rawdigits);
+	    }
+	}
+      else if (retval != 1 && doHitLineFitAlg) 
+	{
+	  std::cout << "No line fit could be found, or not enough hits in counter shadow to make a line" << std::endl;
+	  hcol.put_into(evt);
+	  return;
+	}
+      else
+	{
+	  for (unsigned int i_fd = 0; i_fd < fitdata.size(); ++i_fd)
+	    {
+	      if (fitdata[i_fd].hitREAL)
+		{
+		  art::Ptr<recob::Wire> wire = ChannelHitWires.at(index_convert[i_fd]);
+		  art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(index_convert[i_fd]);
+		  hcol.emplace_back(*hits[index_convert[i_fd]],wire,rawdigits);
+		}
+	    }
+	}
+
       std::cout << "After collection wires for TrigInd " << TrigInd << ", hcol has size " << hcol.size() << std::endl;
       // Got all the collection hits, so now loop through the induction plane hits.
       // ------------------------- Get Collection wires -------------------------
@@ -313,7 +427,7 @@ namespace dune{
       for( size_t HitInd = 0; HitInd < hits.size(); HitInd++ ) {
 	if ( hits[HitInd]->PeakTime()-TrigTime < 0 ) continue; // If in PreTriggerTick window then can't deduce the X position.
 	if ( hits[HitInd]->View() == geo::kZ ) continue; // If a collection wire continue...
-	if ( hits[HitInd]->PeakAmplitude() < 8 ) continue;
+	//if ( hits[HitInd]->PeakAmplitude() < 8 ) continue;
 
 
 	// An induction signal can be in either long or short drift volume...Work out X position for each of them...

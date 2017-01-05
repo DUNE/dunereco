@@ -11,9 +11,9 @@ services:
   # Load the service that manages root files for histograms.
   TFileService: { fileName: "ntuple.root" }
   TimeTracker:       {}
-  SimpleMemoryCheck:     { ignoreTotal: 1 } # default is one
+  MemoryTracker:         { ignoreTotal: 1 } # default is one
   FileCatalogMetadata:  @local::art_file_catalog_mc
-  user:         @local::dune35t_services
+                @table::dune35t_services
 }
 
 
