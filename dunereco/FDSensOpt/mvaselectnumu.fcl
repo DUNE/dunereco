@@ -1,0 +1,61 @@
+#include "services_dune.fcl"
+#include "mvamodule.fcl"
+#include "resourcetracking_services.fcl"
+
+process_name: MVASelect
+
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "mvaselect_hist.root" }
+  @table::standard_resourcetrackers
+  @table::dunefd_simulation_services
+}
+
+
+#source is now a root file
+source:
+{
+  module_type: RootInput
+#  fileNames: [ "/pnfs/dune/scratch/dunepro/v06_02_00/reco/prodgenie_nu_dune10kt_1x2x6/12878103_0/prodgenie_nu_dune10kt_1x2x6_349_20160810T051929_gen_0e9abb9d-4236-4766-a060-47b7ad1f5634_g4_detsim_reco.root",
+# "/pnfs/dune/scratch/dunepro/v06_02_00/reco/prodgenie_nue_dune10kt_1x2x6/12896229_0/prodgenie_nue_dune10kt_1x2x6_171_20160810T061454_gen_c4f3c6f7-ea2c-4e17-a48f-75cbed8fb343_g4_detsim_reco.root" ]
+  maxEvents:   -1      # Number of events to create
+}
+
+
+# Define and configure some modules to do work on each event.
+# First modules are defined; they are scheduled later.
+# Modules are grouped by type.
+physics:
+{
+
+ producers:{}
+
+ filters:{} 
+
+ analyzers:{
+    mvaselect:           @local::dunefd_mvaselect
+ }
+
+ ana:           [ mvaselect ]
+ end_paths:     [ ana ] 
+}
+
+
+
+services.Geometry: @local::dune10kt_workspace_geo
+services.Geometry.GDML: "dune10kt_v1_1x2x6.gdml"
+
+physics.analyzers.mvaselect.MVAMethod:               "BDTG"
+
+physics.analyzers.mvaselect.Select:                  "numu"
+physics.analyzers.mvaselect.WeightFile:              "/pnfs/dune/persistent/TaskForce_AnaTree/far/train/v3/BDTG_numu.weights.xml"
+physics.analyzers.mvaselect.MakeWeightTree:          false
+physics.analyzers.mvaselect.Reweight:                false
+physics.analyzers.mvaselect.MakeAnaTree:             false
+physics.analyzers.mvaselect.MakeSystHist:            false
+services.TFileService.fileName:                      "histtrain_numu.root"
+
+physics.analyzers.mvaselect.NuECut:                  0.8
+physics.analyzers.mvaselect.NuMuCut:                 0.8

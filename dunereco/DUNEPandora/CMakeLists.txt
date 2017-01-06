@@ -1,4 +1,3 @@
-
 # where should the scripts/..xml file be installed?  Perhaps in bin?
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
@@ -9,6 +8,7 @@ include_directories( $ENV{LARPANDORACONTENT_INC} )
 art_make( BASENAME_ONLY
           LIBRARY_NAME  DUNEPandora
           LIB_LIBRARIES larpandora_LArPandoraInterface
+                        lardataobj_RecoBase
                         larcore_Geometry
                         larcore_Geometry_Geometry_service
                         larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
@@ -31,8 +31,7 @@ art_make( BASENAME_ONLY
                         ${CETLIB}
                         ${ROOT_BASIC_LIB_LIST}
 			${Boost_SYSTEM_LIBRARY}
-          MODULE_LIBRARIES larpandora_LArPandoraInterface 
-                           DUNEPandora
+          MODULE_LIBRARIES DUNEPandora
           )
 
 install_headers()
