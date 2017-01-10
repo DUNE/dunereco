@@ -31,7 +31,7 @@ m.thiesse@sheffield.ac.uk
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "larsim/RandomUtils/LArSeedService.h"
+#include "nutools/RandomUtils/NuRandomService.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
@@ -40,6 +40,7 @@ m.thiesse@sheffield.ac.uk
 #include "lardataobj/AnalysisBase/T0.h"
 #include "lardata/RecoBaseArt/HitCreator.h"
 #include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/AuxDetGeo.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larevt/CalibrationDBI/Interface/DetPedestalService.h"
@@ -131,6 +132,7 @@ private:
   float pedrms;
   float integral;
   float integralFilter;
+  float sumADC;
   float sigmaintegral;
   float sigmaintegralFilter;
   float amplitude;
@@ -193,6 +195,7 @@ private:
   float fMaxPedMean;
   float fMinPedRms;
   float fMaxPedRms;
+  bool fUseMeasuredCounterPositions;
 
   float fHorizRangeMin;
   float fHorizRangeMax;
@@ -210,7 +213,7 @@ private:
 
   art::ServiceHandle<geo::Geometry> fGeom;
   art::ServiceHandle<art::RandomNumberGenerator> fRng;
-  art::ServiceHandle<sim::LArSeedService> fSeed;
+  art::ServiceHandle<rndm::NuRandomService> fSeed;
   art::ServiceHandle<art::TFileService> fTfs;
   detinfo::DetectorClocks const * fClks;
   detinfo::DetectorProperties const * fDetProp;
@@ -300,13 +303,47 @@ void dune::RobustHitFinder::produce(art::Event & e)
 
       if (!ValidTrigger(evtTriggers,c1,c2,trignum)) continue;
 
-      c1x = fCounterPositionMap[c1].first.X();
-      c1y = fCounterPositionMap[c1].first.Y();
-      c1z = fCounterPositionMap[c1].first.Z();
-      c2x = fCounterPositionMap[c2].first.X();
-      c2y = fCounterPositionMap[c2].first.Y();
-      c2z = fCounterPositionMap[c2].first.Z();
-    
+      if (fUseMeasuredCounterPositions)
+	{
+	  c1x = fCounterPositionMap[c1].first.X();
+	  c1y = fCounterPositionMap[c1].first.Y();
+	  c1z = fCounterPositionMap[c1].first.Z();
+	  c2x = fCounterPositionMap[c2].first.X();
+	  c2y = fCounterPositionMap[c2].first.Y();
+	  c2z = fCounterPositionMap[c2].first.Z();
+	}
+      else
+	{
+	  try
+	    {
+	      const geo::AuxDetGeo & ad = fGeom->AuxDet(c1);
+	      double center[3] = {0.,0.,0.5*ad.Length()};
+	      ad.GetCenter(center);
+	      c1x = center[0];
+	      c1y = center[1];
+	      c1z = center[2];
+	    }
+	  catch (...)
+	    {
+	      std::cout << "AuxDet " << c1 << " not found. Aborting..." << std::endl;
+	      continue;
+	    }
+	  try
+	    {
+	      const geo::AuxDetGeo & ad = fGeom->AuxDet(c2);
+              double center[3] = {0.,0.,0.5*ad.Length()};
+              ad.GetCenter(center);
+              c2x = center[0];
+              c2y = center[1];
+              c2z = center[2];
+	    }
+	  catch (...)
+	    {
+	      std::cout << "AuxDet " << c2 << " not found. Aborting..." << std::endl;
+              continue;
+            }
+	}
+
       distancecut = fHitGeomDistanceCut;
       if (trignum == 111)
         {
@@ -428,13 +465,12 @@ void dune::RobustHitFinder::produce(art::Event & e)
 	{
 	  for (auto & hit : hitVec)
 	    {
-	      //dune::HitInformation & hit = hitVec.at(i_hit);//!!!!!!!!!
 	      dune::ChannelInformation & chan = chanMap[hit.channelID];
 	      
 	      SetTreeVariables(chan,hit,fitresult);
 	      
 	      if (fMakeTree) fTree->Fill();
-	      if (hit.fitrealhit)
+	      if (hit.fitrealhit && fitresult.fitsuccess)
 		{
 		  hcol.emplace_back(hit.artHit,chan.artWire,chan.artRawDigit);
 		}
@@ -478,6 +514,7 @@ void dune::RobustHitFinder::beginJob()
       fTree->Branch("pedrms",&pedrms,"pedrms/F");
       fTree->Branch("integral",&integral,"integral/F");
       fTree->Branch("integralFilter",&integralFilter,"integralFilter/F");
+      fTree->Branch("sumADC",&sumADC,"sumADC/F");
       fTree->Branch("sigmaintegral",&sigmaintegral,"sigmaintegral/F");
       fTree->Branch("sigmaintegralFilter",&sigmaintegralFilter,"sigmaintegralFilter/F");
       fTree->Branch("amplitude",&amplitude,"amplitude/F");
@@ -544,107 +581,113 @@ void dune::RobustHitFinder::reconfigure(fhicl::ParameterSet const & p)
   fMakeupMissedHits = p.get<bool>("MakeupMissedHits",true);
   fMissedBufferTicksLow = p.get<int>("MissedBufferTicksLow");
   fMissedBufferTicksHigh = p.get<int>("MissedBufferTicksHigh");
+  fUseMeasuredCounterPositions = p.get<bool>("UseMeasuredCounterPositions");
 }
 
 void dune::RobustHitFinder::MakeupMissedHits(ChanMap_t & chanMap, HitVec_t & hitVec)
 {
-  float chanbeginz = 99999;
-  float chanendz = -99999;
-  int chanbeginid = 99999;
-  int chanendid = -99999;
-  for (auto & chanitr : chanMap)
+  for (int i_tpc = 0; i_tpc<8; ++i_tpc)
     {
-      if (chanitr.second.tpcNum % 2 != 1) continue;
-      chanitr.second.nGoodHits = 0;
-      for (auto & hit : hitVec)
+      float chanbeginz = 99999;
+      float chanendz = -99999;
+      int chanbeginid = 99999;
+      int chanendid = -99999;
+      for (auto & chanitr : chanMap)
 	{
-	  if (hit.channelID == chanitr.first && hit.fitrealhit)
+	  if (chanitr.second.tpcNum != i_tpc) continue;
+	  chanitr.second.nGoodHits = 0;
+	  for (auto & hit : hitVec)
 	    {
-	      chanitr.second.goodHitStartTick = hit.hitBeginTick;
-	      chanitr.second.goodHitEndTick = hit.hitEndTick;
-	      chanitr.second.nGoodHits++;
+	      if (hit.channelID == chanitr.first && hit.fitrealhit)
+		{
+		  chanitr.second.goodHitStartTick = hit.hitBeginTick;
+		  chanitr.second.goodHitEndTick = hit.hitEndTick;
+		  chanitr.second.nGoodHits++;
+		}
+	    }
+	  if (chanitr.second.nGoodHits > 0 && chanitr.second.chanz < chanbeginz)
+	    {
+	      chanbeginz = chanitr.second.chanz;
+	      chanbeginid = chanitr.first;
+	    }
+	  if (chanitr.second.nGoodHits > 0 && chanitr.second.chanz > chanendz)
+	    {
+	      chanendz = chanitr.second.chanz;
+	      chanendid = chanitr.first;
 	    }
 	}
-      if (chanitr.second.nGoodHits > 0 && chanitr.second.chanz < chanbeginz)
+      
+      if (chanendz < chanbeginz)
 	{
-	  chanbeginz = chanitr.second.chanz;
-	  chanbeginid = chanitr.first;
+	  mf::LogError("RobustHitFinder") << "Problem: chanbeginz=" << chanbeginz << " is greater than chanendz=" << chanendz;
+	  return;
 	}
-      if (chanitr.second.nGoodHits > 0 && chanitr.second.chanz > chanendz)
+      
+      if (chanbeginid == 99999 || chanendid == -99999)
 	{
-	  chanendz = chanitr.second.chanz;
-	  chanendid = chanitr.first;
+	  mf::LogError("RobustHitFinder") << "Track not found. No assumed hits added." << std::endl;
+	  return;
 	}
-    }
-
-  if (chanendz < chanbeginz)
-    {
-      mf::LogError("RobustHitFinder") << "Problem: chanbeginz=" << chanbeginz << " is greater than chanendz=" << chanendz;
-      return;
-    }
-
-  if (chanbeginid == 99999 || chanendid == -99999)
-    {
-      mf::LogError("RobustHitFinder") << "Track not found. No assumed hits added." << std::endl;
-      return;
-    }
-
-  if (chanMap[chanbeginid].tpcNum % 2 != chanMap[chanendid].tpcNum % 2)
-    {
-      mf::LogError("RobustHitFinder") << "Track crosses APA. Don't know how to deal with this yet.";
-      return;
-    }
-
-  std::vector<std::pair<float,int> > trackchans;
-  for (auto const & chanitr : chanMap)
-    {
-      if (chanitr.second.chanz >= chanbeginz && chanitr.second.chanz <= chanendz && chanitr.second.tpcNum % 2 == chanMap[chanbeginid].tpcNum % 2)
+      
+      if (chanMap[chanbeginid].tpcNum % 2 != chanMap[chanendid].tpcNum % 2)
 	{
-	  trackchans.push_back(std::make_pair(chanitr.second.chanz,chanitr.first));
+	  mf::LogError("RobustHitFinder") << "Track crosses APA. Don't know how to deal with this yet.";
+	  return;
 	}
-    }
-  std::sort(trackchans.begin(),trackchans.end());
-
-  for (size_t i_tc = 0; i_tc < trackchans.size(); ++i_tc)
-    {
-      dune::ChannelInformation ch = chanMap[trackchans[i_tc].second];
-
-      if (ch.nGoodHits == 0 && ch.chanz >= chanbeginz && ch.chanz <= chanendz)
+      
+      std::vector<std::pair<float,int> > trackchans;
+      for (auto const & chanitr : chanMap)
 	{
-	  int sub = 0;
-	  dune::ChannelInformation chnearlow = ch;
-	  while (chnearlow.nGoodHits != 1 && chnearlow.chanz >= chanbeginz)
+	  if (chanitr.second.chanz >= chanbeginz && chanitr.second.chanz <= chanendz && chanitr.second.tpcNum % 2 == chanMap[chanbeginid].tpcNum % 2)
 	    {
-	      ++sub;
-	      chnearlow = chanMap[trackchans[i_tc-sub].second];
+	      trackchans.push_back(std::make_pair(chanitr.second.chanz,chanitr.first));
 	    }
-
-	  int add = 0;
-	  dune::ChannelInformation chnearhigh = ch;
-	  while (chnearhigh.nGoodHits != 1 && chnearhigh.chanz <= chanendz)
-	    {
-	      ++add;
-	      chnearhigh = chanMap[trackchans[i_tc+add].second];
-	    }
-
-	  if (ch.tpcNum != chnearlow.tpcNum || ch.tpcNum != chnearhigh.tpcNum) continue;
-
-	  int cls = chnearlow.goodHitStartTick;
-	  int chs = chnearhigh.goodHitStartTick;
-	  int cle = chnearlow.goodHitEndTick;
-	  int che = chnearhigh.goodHitEndTick;
-	  double clz = chnearlow.chanz;
-	  double chz = chnearhigh.chanz;
+	}
+      std::sort(trackchans.begin(),trackchans.end());
+      
+      for (size_t i_tc = 0; i_tc < trackchans.size(); ++i_tc)
+	{
+	  dune::ChannelInformation ch = chanMap[trackchans[i_tc].second];
 	  
-	  int chstart = cls + (((chs - cls) / (chz - clz)) * (ch.chanz - clz));
-	  int chend   = cle + (((che - cle) / (chz - clz)) * (ch.chanz - clz));
-
-	  chstart -= fMissedBufferTicksLow;
-	  chend   += fMissedBufferTicksHigh;
-
-	  ch.pulse_ends.push_back(std::make_pair(chstart,chend));
-
-	  FillHitInformation(ch,hitVec,true);
+	  if (ch.nGoodHits == 0 && ch.chanz >= chanbeginz && ch.chanz <= chanendz)
+	    {
+	      int sub = 0;
+	      dune::ChannelInformation chnearlow = ch;
+	      while (chnearlow.nGoodHits != 1 && chnearlow.chanz >= chanbeginz)
+		{
+		  ++sub;
+		  chnearlow = chanMap[trackchans[i_tc-sub].second];
+		}
+	      
+	      int add = 0;
+	      dune::ChannelInformation chnearhigh = ch;
+	      while (chnearhigh.nGoodHits != 1 && chnearhigh.chanz <= chanendz)
+		{
+		  ++add;
+		  chnearhigh = chanMap[trackchans[i_tc+add].second];
+		}
+	      
+	      if (ch.tpcNum != chnearlow.tpcNum || ch.tpcNum != chnearhigh.tpcNum) continue;
+	      
+	      int cls = chnearlow.goodHitStartTick;
+	      int chs = chnearhigh.goodHitStartTick;
+	      int cle = chnearlow.goodHitEndTick;
+	      int che = chnearhigh.goodHitEndTick;
+	      double clz = chnearlow.chanz;
+	      double chz = chnearhigh.chanz;
+	      
+	      int chstart = cls + (((chs - cls) / (chz - clz)) * (ch.chanz - clz));
+	      int chend   = cle + (((che - cle) / (chz - clz)) * (ch.chanz - clz));
+	      
+	      chstart -= fMissedBufferTicksLow;
+	      chend   += fMissedBufferTicksHigh;
+	      
+	      if (chz-clz < 0) continue; // something really weird must've happened
+	      
+	      ch.pulse_ends.push_back(std::make_pair(chstart,chend));
+	      
+	      FillHitInformation(ch,hitVec,true);
+	    }
 	}
     }
 }
@@ -680,6 +723,7 @@ void dune::RobustHitFinder::SetTreeVariables(const dune::ChannelInformation & ch
   rmsFilter = chan.rmsFilter;
   integral = hit.hitIntegral;
   integralFilter = hit.hitIntegralFilter;
+  sumADC = hit.hitSumADC;
   sigmaintegral = hit.hitSigmaIntegral;
   sigmaintegralFilter = hit.hitSigmaIntegralFilter;
   amplitude = hit.hitAmplitude;
@@ -732,6 +776,9 @@ void dune::RobustHitFinder::SetTreeVariables(const dune::ChannelInformation & ch
 
 void dune::RobustHitFinder::FillHitInformation(dune::ChannelInformation & chan, dune::HitVec_t & hitVec, bool assumedHit)
 {
+  TF1 * gaus = new TF1("gaus","([0]/([2]*sqrt(2*3.1415926)))*exp(-0.5*(x-[1])*(x-[1])/([2]*[2]))+[3]+x*[4]",0,32000);
+  gaus->SetNpx(64000);
+
   for (size_t i_hit = 0; i_hit < chan.pulse_ends.size(); i_hit++)
     {
       dune::HitInformation hit;
@@ -750,6 +797,7 @@ void dune::RobustHitFinder::FillHitInformation(dune::ChannelInformation & chan, 
       hit.hitAmplitudeFilter = *std::max_element(fbeginitr,fenditr)-chan.baselineFilter;
       hit.hitWidth = end_index-begin_index;
       hit.hitIntegral = std::accumulate(beginitr,enditr,0)-(hit.hitWidth*chan.baseline);
+      hit.hitSumADC = hit.hitIntegral;
       hit.hitIntegralFilter = std::accumulate(fbeginitr,fenditr,0)-(hit.hitWidth*chan.baselineFilter);
       hit.hitSigmaIntegral = TMath::Sqrt(pulse.size())*TMath::RMS(pulse.size(),pulse.data());
       hit.hitSigmaIntegralFilter = TMath::Sqrt(pulseFilter.size())*TMath::RMS(pulseFilter.size(),pulseFilter.data());
@@ -757,6 +805,29 @@ void dune::RobustHitFinder::FillHitInformation(dune::ChannelInformation & chan, 
       hit.hitPeakTickFilter = std::distance(chan.signalFilterVec.begin(),std::max_element(fbeginitr,fenditr));
       hit.hitPeakTime = fClks->TPCTick2TrigTime(hit.hitPeakTick);
       hit.hitPeakTimeFilter = fClks->TPCTick2TrigTime(hit.hitPeakTickFilter);
+
+      /*
+      gaus->SetParameter(1,hit.hitPeakTick);
+      gaus->SetParLimits(1,hit.hitPeakTick-10,hit.hitPeakTick+10);
+      gaus->SetParameter(2,5);
+      gaus->SetParLimits(2,1,end_index-begin_index);
+      TGraph * gr = new TGraph();
+      Int_t tick = 0;
+      for (auto adc : chan.signalVec)
+	{
+	  gr->SetPoint(tick,(Double_t)tick,(Double_t)adc);
+	  ++tick;
+	}
+      gr->Fit(gaus,"BQ0");
+
+      hit.hitAmplitude = gaus->GetParameter(0)/(gaus->GetParameter(2)*sqrt(2*3.1415926));
+      hit.hitIntegral = gaus->GetParameter(0);
+      hit.hitSigmaIntegral = gaus->GetParError(0);
+      hit.hitSumADC = std::accumulate(beginitr,enditr,0)-((end_index-begin_index)*chan.baseline);
+      hit.hitWidth = gaus->GetParameter(2);
+      hit.hitPeakTick = gaus->GetParameter(1);
+      hit.hitPeakTime = fClks->TPCTick2TrigTime(hit.hitPeakTick);
+      */
 
       hit.hitt = hit.hitPeakTime - t0/1000;
 
@@ -767,33 +838,53 @@ void dune::RobustHitFinder::FillHitInformation(dune::ChannelInformation & chan, 
       hit.hiterrxhi = TMath::Sqrt(fabs(hit.hitx-TimeToDisplacement(fClks->TPCTick2TrigTime(hit.hitEndTick)-t0/1000)));
       hit.hiterrylo = 0.;
       hit.hiterryhi = 0.;
-      hit.hiterrzlo = sqrt(0.5);
-      hit.hiterrzhi = sqrt(0.5);
+      hit.hiterrzlo = 0.5/sqrt(12.0);
+      hit.hiterrzhi = 0.5/sqrt(12.0);
       hit.driftdist = TimeToDriftDist(hit.hitt,chan.tpcNum);
       hit.perpdist = hitGeomDist(TVector3(hit.hitx,2.,hit.hitz),TVector3(c1x,2.,c1z),TVector3(c2x,2.,c2z));
-      hit.countercut = false;
-      if (hit.perpdist < distancecut) hit.countercut = true;
+      hit.countercut = (hit.perpdist < distancecut) ? true : false;
       hit.fitrealhit = false;
       hit.assumedhit = assumedHit;
+
+      segmentlength = 0.449;
+      if (trignum == 111)
+	{
+	  double thetayz = TMath::ATan2((hit.hitx+1)-(hit.hitx-1),2);
+	  double tan2thetayz = TMath::Power(TMath::Tan(thetayz),2);
+	  double y2z2 = ((c1y-c2y)*(c1y-c2y))/((c1z-c2z)*(c1z-c2z));
+	  double projL = sqrt(1+tan2thetayz+y2z2);
+	  segmentlength *= static_cast<float>(projL);
+	}
+      else if (trignum == 112 || trignum == 113)
+	{
+	  double thetayx = TMath::ATan2(2,(hit.hitz+1)-(hit.hitz-1));
+	  double tan2thetayx = TMath::Power(TMath::Tan(thetayx),2);
+	  double y2x2 = ((c1y-c2y)*(c1y-c2y))/((c1x-c2x)*(c1x-c2x));
+	  double projL = sqrt(1+tan2thetayx*(1+y2x2));
+	  segmentlength *= static_cast<float>(projL);
+	}
+
 
       recob::HitCreator temphit(*(chan.artWire),
 				fGeom->ChannelToWire(chan.channelID)[0],
 				hit.hitBeginTick,
 				hit.hitEndTick,
-				hit.hitWidth,
+				hit.hitWidth/sqrt(12.0),
 				hit.hitPeakTick,
-				sqrt(hit.hitWidth),
+				hit.hitWidth/sqrt(12.0),
 				hit.hitAmplitude,
-				sqrt(hit.hitAmplitude),
+				hit.hitAmplitude/sqrt(12.0),
 				hit.hitIntegral,
 				hit.hitSigmaIntegral,
-				hit.hitIntegral,
+				hit.hitSumADC,
 				1,
 				-1,
-				1,
-				int(hit.hitEndTick-hit.hitBeginTick+1));
+				segmentlength,
+				(int)(hit.hitWidth-2));
       hit.artHit = temphit.move();
       if (hit.hitx > -400 && hit.countercut) hitVec.push_back(hit);
+      
+      //delete gr;
     }
 }
 
@@ -985,6 +1076,7 @@ void dune::RobustHitFinder::Reset()
   pedrms = -99999;
   integral = -99999;
   integralFilter = -99999;
+  sumADC = -99999;
   sigmaintegral = -99999;
   sigmaintegralFilter = -99999;
   amplitude = -99999;

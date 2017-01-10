@@ -82,10 +82,15 @@ namespace dunemva{
     void Run(const art::Event& evt,double& result, double& wgt);
     void endSubRun(const art::SubRun& sr);
 
+    float Norm(int ccnc, int nu0, int nu1, int subrun);
+    float OscPro(int ccnc, int nu0, int nu1, float NuE);
+
+
     // from root script:
 
     // all tmva reader variables must be float 
     int   itype;
+    float fOscPro;
     float weight;
     float evtcharge;
     float ntrack;
@@ -123,13 +128,18 @@ namespace dunemva{
     double rawcharge;
     double wirecharge;
     
+    //Quantities for neutrino energy reconstruction
+    double maxTrackLength;
+    double longestTrackMCSMom;
+    double longestTrackCharge;
+    double totalEventCharge;
+    bool longestTrackContained;
+
   private:
  
     void  PrepareEvent(const art::Event& event);
     void  MakeTree();
     void  CalculateInputs();
-    float Norm(int ccnc, int nu0, int nu1, int subrun);
-    float OscPro(int ccnc, int nu0, int nu1, float NuE);
 
     std::ofstream fFile;
 
@@ -147,6 +157,7 @@ namespace dunemva{
 
     void ResetVars();
     bool insideFidVol(const double posX, const double posY, const double posZ);
+    bool insideContVol(const double posX, const double posY, const double posZ);
 
     // Declare member data here.
     TTree *fTree;
@@ -317,6 +328,7 @@ namespace dunemva{
     std::string fCalorimetryModuleLabel;
 
     double fFidVolCut;
+    double fContVolCut;
 
     int isinfidvol;
     int isinfidvoltruth;

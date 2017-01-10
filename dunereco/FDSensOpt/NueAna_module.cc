@@ -394,7 +394,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
     trkenddcosy[i]    = larEnd[1];
     trkenddcosz[i]    = larEnd[2];
     trklen[i]         = tracklist[i]->Length();
-    trkmomrange[i]    = trkm.GetTrackMomentum(trklen[i],13);
+    if (!std::isnan(trklen[i])) trkmomrange[i]    = trkm.GetTrackMomentum(trklen[i],13);
     if (fmthm.isValid()){
       auto vhit = fmthm.at(i);
       auto vmeta = fmthm.data(i);

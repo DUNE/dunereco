@@ -80,15 +80,6 @@ dune35t_TimeBasedDisambigAlg:
                            # of mis-identified hits.
 }
 
-dune35t_hitlinefitalg:
-{
-    FitPolN: 2
-    MinStartPoints: 3
-    MinAlsoPoints: 6
-    IterationsMultiplier: 20
-    InclusionThreshold: 2
-}
-
 dune35t_hitfinder35t:
 {
     module_type:      "HitFinder35t"
@@ -107,6 +98,7 @@ dune35t_handscan:
 
 dune35t_hitlinefitalg:
 {
+    FitPolN: 2
     MinStartPoints: 3
     MinAlsoPoints: 6
     IterationsMultiplier: 20
@@ -184,23 +176,25 @@ dune35t_robusthitfinder:
     MissedBufferTicksHigh: 0
     HitLineFitAlg: @local::dune35t_hitlinefitalg
     RMSHitFinderAlg: @local::dune35t_rmshitfinderalg
+    UseMeasuredCounterPositions: true
 }
 
 dune35t_robusthitfindersim: @local::dune35t_robusthitfinder
 dune35t_robusthitfindersim.SearchPreTicks: 100
 dune35t_robusthitfindersim.SearchPostTicks: 4400
 dune35t_robusthitfindersim.HitGeomDistanceCut: 25
+dune35t_robusthitfindersim.UseMeasuredCounterPositions: false
 
-dune35t_trackhits:
+protodunesp_disambig:
 {
-    module_type: "TrackHitBacktracker"
-    WireModuleLabel: "caldata"
-    TrackModuleLabel: "pmtrackch"
-    PreBaselineTicks: 100
-    PostBaselineTicks: 100
-    PulseStartWidthMult: 1.0
-    PulseEndWidthMult: 1.5
-    MakeTree: true
+    module_type: "HitFinderProtoDUNESP"
+# so far there's only one algorithm so this value is ignored.
+    ChanHitLabel: "gaushit"
+    Algorithm: "Placeholder_Value"
+    DisambigAlg: 
+     {
+       TimeCut: 3
+       DistanceCut: 1
+     }
 }
-
 END_PROLOG

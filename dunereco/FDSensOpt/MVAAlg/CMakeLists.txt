@@ -8,6 +8,7 @@ art_make( BASENAME_ONLY
                         lardataobj_RawData
                         lardataobj_RecoBase
 		        lardata_RecoBaseArt
+			larreco_RecoAlg
 			larreco_RecoAlg_PMAlg
                         lardata_Utilities
 			larreco_Calorimetry
