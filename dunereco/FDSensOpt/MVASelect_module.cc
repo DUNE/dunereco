@@ -733,15 +733,21 @@ void MVASelect::analyze(art::Event const & evt)
   
 
   //Neutrino energy reconstruction
-  double longestTrackMom, corrHadEnergy;
+  double longestTrackMom, maxShowerEnergy, corrHadEnergy;
   //gradients and intercepts of calibrations of track momentum (pmtrack)
   const double gradTrkMomRange = 430.0;
   const double intTrkMomRange = -62.8;
   const double gradTrkMomMCS = 0.89;
   const double intTrkMomMCS = 0.20;
-  //gradient and intercept of hadronic energy correction (pmtrack)
-  const double gradHadEnergyCorr = 0.61;
-  const double intHadEnergyCorr = 0.083;
+  //gradient and intercept of numu CC hadronic energy correction (pmtrack)
+  const double gradNumuHadEnCorr = 0.61;
+  const double intNumuHadEnCorr = 0.083;
+  //gradient and intercept of shower energy correction (emshower using Pandora pfparticle with PDG code 11)
+  const double gradShwEnergy = 0.95;
+  const double intShwEnergy = -0.12;
+  //gradient and intercept of nue CC hadronic energy correction (emshower using Pandora pfparticle with PDG code 11)
+  const double gradNueHadEnCorr = 0.51;
+  const double intNueHadEnCorr = 0.28;
 
   //numu CC event with at least one reco track,
   //longest reco track is either contained or is exiting with a defined value of MCS track momentum
@@ -752,16 +758,23 @@ void MVASelect::analyze(art::Event const & evt)
         longestTrackMom = (fMVAAlg.maxTrackLength - intTrkMomRange) / gradTrkMomRange;
       else
         longestTrackMom = (fMVAAlg.longestTrackMCSMom - intTrkMomMCS) / gradTrkMomMCS;
-      corrHadEnergy = (((fMVAAlg.totalEventCharge - fMVAAlg.longestTrackCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - intHadEnergyCorr) / gradHadEnergyCorr;
+      corrHadEnergy = (((fMVAAlg.totalEventCharge - fMVAAlg.longestTrackCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - intNumuHadEnCorr) / gradNumuHadEnCorr;
       fEreco = longestTrackMom + corrHadEnergy;
     }
     else{
       fEreco = fWirecharge/0.63/4.966e-3*23.6e-9; 
     }
   }
-  else if (fSelNuE){
+  else if (fSelNuE){//nue CC event with at least one reco shower
+    if(fMVAAlg.maxShowerCharge >= 0.0){
+      maxShowerEnergy = ((fMVAAlg.maxShowerCharge * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - intShwEnergy) / gradShwEnergy;
+      corrHadEnergy = (((fMVAAlg.totalEventCharge - fMVAAlg.maxShowerCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - intNueHadEnCorr) / gradNueHadEnCorr;
+      fEreco = maxShowerEnergy + corrHadEnergy;
+    }
+    else{
     fEreco = fWirecharge/0.63/4.966e-3*23.6e-9; 
-  //0.63: recombination factor, 1/4.966e-3: calorimetry constant to convert ADC to number of electrons, Wion = 23.6 eV
+    //0.63: recombination factor, 1/4.966e-3: calorimetry constant to convert ADC to number of electrons, Wion = 23.6 eV
+    }
   }
   fTree->Fill();
   return;

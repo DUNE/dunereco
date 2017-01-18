@@ -1504,7 +1504,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
   longestTrackContained = true;
 
   int ntracks = tracklist.size();
-  trkf::TrackMomentumCalculator fTrkMomCalc;
+  trkf::TrackMomentumCalculator TrkMomCalc;
 
   if(iLongestTrack >= 0 && iLongestTrack <= ntracks-1 && iLongestTrack <= kMaxTrack-1){
     if (fmth.isValid()){
@@ -1522,7 +1522,28 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
 	}
       }
     }
-    longestTrackMCSMom = fTrkMomCalc.GetMomentumMultiScatterChi2(tracklist[iLongestTrack]);
+    longestTrackMCSMom = TrkMomCalc.GetMomentumMultiScatterChi2(tracklist[iLongestTrack]);
+  }
+
+  maxShowerCharge = -1.0;
+  double showerCharge;
+
+  if (shwListHandle.isValid()){
+    art::FindManyP<recob::Hit> fmsh(shwListHandle, evt, fShowerModuleLabel);
+    for (int i = 0; i<std::min(int(shwlist.size()),kMaxShower); ++i){
+      showerCharge = 0.0;
+      if (fmsh.isValid()){
+	std::vector< art::Ptr<recob::Hit> > vhit = fmsh.at(i);
+	for (size_t h = 0; h < vhit.size(); ++h){
+	  if (vhit[h].key()<kMaxHits){
+	    if (vhit[h]->WireID().Plane == 2)
+	      showerCharge += vhit[h]->Integral() * fCalorimetryAlg.LifetimeCorrection(vhit[h]->PeakTime(), t0);
+	  }
+	}
+      }
+      if(showerCharge > maxShowerCharge)
+	maxShowerCharge = showerCharge;
+    }
   }
 
   // flash information

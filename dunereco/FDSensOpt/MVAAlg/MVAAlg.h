@@ -134,6 +134,7 @@ namespace dunemva{
     double longestTrackCharge;
     double totalEventCharge;
     bool longestTrackContained;
+    double maxShowerCharge;
 
   private:
  
