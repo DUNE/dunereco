@@ -22,7 +22,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RawData/RawDigit.h"
-#include "lardata/RecoBaseArt/HitCreator.h"
+#include "lardata/ArtDataHelper/HitCreator.h"
 #include "lardata/Utilities/AssociationUtil.h"
 
 #include <sstream>
