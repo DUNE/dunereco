@@ -38,7 +38,7 @@ m.thiesse@sheffield.ac.uk
 #include "lardataobj/RawData/RawDigit.h"
 #include "lardataobj/RawData/ExternalTrigger.h"
 #include "lardataobj/AnalysisBase/T0.h"
-#include "lardata/RecoBaseArt/HitCreator.h"
+#include "lardata/ArtDataHelper/HitCreator.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcore/Geometry/AuxDetGeo.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"

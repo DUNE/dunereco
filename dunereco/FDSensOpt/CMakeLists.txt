@@ -59,7 +59,7 @@ cet_find_library( GREINSEHGAL NAMES ${GRSSPELLING} PATHS ENV GENIE_LIB NO_DEFAUL
 simple_plugin(NueAna   "module"
 		        lardataobj_RawData
 		        lardataobj_RecoBase
-		        lardata_RecoBaseArt
+		        lardata_ArtDataHelper
 			larreco_Calorimetry
 		        larreco_RecoAlg_PMAlg
 		        IniSegAlg
