@@ -28,7 +28,7 @@
 #include "lardataobj/RecoBase/TrackHitMeta.h"
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardataobj/RecoBase/OpFlash.h"
-#include "lardata/RecoBaseArt/TrackUtils.h" // lar::util::TrackPitchInView()
+#include "lardata/ArtDataHelper/TrackUtils.h" // lar::util::TrackPitchInView()
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"

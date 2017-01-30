@@ -7,7 +7,7 @@ art_make( BASENAME_ONLY
                         larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
                         lardataobj_RawData
                         lardataobj_RecoBase
-		        lardata_RecoBaseArt
+		        lardata_ArtDataHelper
 			larreco_RecoAlg
 			larreco_RecoAlg_PMAlg
                         lardata_Utilities

@@ -31,7 +31,7 @@ art_make( BASENAME_ONLY
 			   ${ROOT_BASIC_LIB_LIST}
          MODULE_LIBRARIES HitFinderDUNE
                            lardataobj_RecoBase
-                           lardata_RecoBaseArt
+                           lardata_ArtDataHelper
                            larcore_Geometry
                            larcore_Geometry_Geometry_service
 			   larsim_MCCheater_BackTracker_service
