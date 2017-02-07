@@ -413,7 +413,7 @@ namespace dune{
         }
       }
 
-    }
+    }//if (fDoCleanUpHits)
     else{//just take all triplets of hits
       for (size_t i = 0; i<ntpc; ++i){//loop over all TPCs
         for (size_t j = 0; j < allhitsu[i].size(); ++j){
@@ -468,9 +468,9 @@ namespace dune{
           fDisambigHits.push_back(std::pair<art::Ptr<recob::Hit>, geo::WireID>(hitsUV[i][hit],wires[bestwire]));
           fHasBeenDisambigedUV[i][hit] = 1+bestwire;
         }
-        //      else{
-        //	mf::LogWarning("DisambigAlg35t")<<"Could not find disambiguated hit for  "<<*hitsUV[i][hit]<<"\n";
-        //      }
+        else{
+          mf::LogWarning("DisambigAlg35t")<<"Could not find disambiguated hit for  "<<std::string(hitsUV[i][hit]->WireID())<<" "<<hitsUV[i][hit]->PeakTime();
+        }
       }
     }  
   }
