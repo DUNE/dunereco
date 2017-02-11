@@ -146,7 +146,8 @@ dunefd_hitcheater:	  @local::standard_hitcheater
 dunefd_fasthitfinder:     @local::dune35t_fasthitfinder
 dunefd_clustercrawlerhit: @local::dune35t_clustercrawlerhit
 dunefd_hitfinderfd:       @local::dune35t_hitfinder35t
-dunefd_hitfinderfd.DisambigAlg.DoCleanUpHits: false
+dunefd_hitfinderfd.DisambigAlg.DoCleanUpHits:  false
+dunefd_hitfinderfd.DisambigAlg.DistanceCutClu: 100
 
 dune35t_rmshitfinderalg:
 {
