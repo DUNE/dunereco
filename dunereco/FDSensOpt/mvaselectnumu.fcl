@@ -59,3 +59,23 @@ services.TFileService.fileName:                      "histtrain_numu.root"
 
 physics.analyzers.mvaselect.NuECut:                  0.8
 physics.analyzers.mvaselect.NuMuCut:                 0.8
+
+# Constants for neutrino energy reconstruction of numu CC events with pmtrack
+physics.analyzers.mvaselect.GradTrkMomRange:         406
+physics.analyzers.mvaselect.IntTrkMomRange:          -34
+physics.analyzers.mvaselect.GradTrkMomMCS:           0.90
+physics.analyzers.mvaselect.IntTrkMomMCS:            0.21
+physics.analyzers.mvaselect.GradNuMuHadEnCorr:       0.60
+physics.analyzers.mvaselect.IntNuMuHadEnCorr:        0.09
+# Constants for neutrino energy reconstruction of numu CC events with pandora
+#physics.analyzers.mvaselect.GradTrkMomRange:         395
+#physics.analyzers.mvaselect.IntTrkMomRange:          -38
+#physics.analyzers.mvaselect.GradTrkMomMCS:           1.07
+#physics.analyzers.mvaselect.IntTrkMomMCS:            0.14
+#physics.analyzers.mvaselect.GradNuMuHadEnCorr:       0.61
+#physics.analyzers.mvaselect.IntNuMuHadEnCorr:        0.0
+# Constants for neutrino energy reconstruction of nue CC events
+physics.analyzers.mvaselect.GradShwEnergy:           0.99
+physics.analyzers.mvaselect.IntShwEnergy:            -0.01
+physics.analyzers.mvaselect.GradNuEHadEnCorr:        0.54
+physics.analyzers.mvaselect.IntNuEHadEnCorr:         0.07
