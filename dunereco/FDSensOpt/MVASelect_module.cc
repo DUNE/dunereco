@@ -77,6 +77,20 @@ private:
   double fNuECut;
   double fNuMuCut;
 
+  //Neutrino energy reconstruction
+  //Gradients and intercepts of calibration of track momentum by range
+  //and corrections of MCS track momentum, hadronic energy (numu CC), shower energy and hadronic energy (nue CC)
+  double fGradTrkMomRange;
+  double fIntTrkMomRange;
+  double fGradTrkMomMCS;
+  double fIntTrkMomMCS;
+  double fGradNuMuHadEnCorr;
+  double fIntNuMuHadEnCorr;
+  double fGradShwEnergy;
+  double fIntShwEnergy;
+  double fGradNuEHadEnCorr; 
+  double fIntNuEHadEnCorr;
+
   bool fSaveRecoInputs;
 
   void FillNormResponseHists();
@@ -170,7 +184,6 @@ private:
   bool IsCC2Pi();
   bool IsDIS();
 
-
   //Inputs to MVA
 
   //float fEvtcharge;
@@ -245,6 +258,17 @@ void MVASelect::reconfigure(fhicl::ParameterSet const& pset)
   
   fNuECut  = pset.get<double>("NuECut");
   fNuMuCut = pset.get<double>("NuMuCut");
+
+  fGradTrkMomRange = pset.get<double>("GradTrkMomRange");
+  fIntTrkMomRange = pset.get<double>("IntTrkMomRange");
+  fGradTrkMomMCS = pset.get<double>("GradTrkMomMCS");
+  fIntTrkMomMCS = pset.get<double>("IntTrkMomMCS");
+  fGradNuMuHadEnCorr = pset.get<double>("GradNuMuHadEnCorr");
+  fIntNuMuHadEnCorr = pset.get<double>("IntNuMuHadEnCorr");
+  fGradShwEnergy = pset.get<double>("GradShwEnergy");
+  fIntShwEnergy = pset.get<double>("IntShwEnergy");
+  fGradNuEHadEnCorr = pset.get<double>("GradNuEHadEnCorr");
+  fIntNuEHadEnCorr = pset.get<double>("IntNuEHadEnCorr");
 
   fSaveRecoInputs = pset.get<bool>("SaveRecoInputs");
 
@@ -734,20 +758,6 @@ void MVASelect::analyze(art::Event const & evt)
 
   //Neutrino energy reconstruction
   double longestTrackMom, maxShowerEnergy, corrHadEnergy;
-  //gradients and intercepts of calibrations of track momentum (pmtrack)
-  const double gradTrkMomRange = 430.0;
-  const double intTrkMomRange = -62.8;
-  const double gradTrkMomMCS = 0.89;
-  const double intTrkMomMCS = 0.20;
-  //gradient and intercept of numu CC hadronic energy correction (pmtrack)
-  const double gradNumuHadEnCorr = 0.61;
-  const double intNumuHadEnCorr = 0.083;
-  //gradient and intercept of shower energy correction (emshower using Pandora pfparticle with PDG code 11)
-  const double gradShwEnergy = 0.95;
-  const double intShwEnergy = -0.12;
-  //gradient and intercept of nue CC hadronic energy correction (emshower using Pandora pfparticle with PDG code 11)
-  const double gradNueHadEnCorr = 0.51;
-  const double intNueHadEnCorr = 0.28;
 
   //numu CC event with at least one reco track,
   //longest reco track is either contained or is exiting with a defined value of MCS track momentum
@@ -755,10 +765,10 @@ void MVASelect::analyze(art::Event const & evt)
     if (fMVAAlg.maxTrackLength >= 0.0 && 
         (fMVAAlg.longestTrackContained || (!fMVAAlg.longestTrackContained && fMVAAlg.longestTrackMCSMom >= 0.0))){
       if (fMVAAlg.longestTrackContained)
-        longestTrackMom = (fMVAAlg.maxTrackLength - intTrkMomRange) / gradTrkMomRange;
+        longestTrackMom = (fMVAAlg.maxTrackLength - fIntTrkMomRange) / fGradTrkMomRange;
       else
-        longestTrackMom = (fMVAAlg.longestTrackMCSMom - intTrkMomMCS) / gradTrkMomMCS;
-      corrHadEnergy = (((fMVAAlg.totalEventCharge - fMVAAlg.longestTrackCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - intNumuHadEnCorr) / gradNumuHadEnCorr;
+        longestTrackMom = (fMVAAlg.longestTrackMCSMom - fIntTrkMomMCS) / fGradTrkMomMCS;
+      corrHadEnergy = (((fMVAAlg.totalEventCharge - fMVAAlg.longestTrackCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntNuMuHadEnCorr) / fGradNuMuHadEnCorr;
       fEreco = longestTrackMom + corrHadEnergy;
     }
     else{
@@ -767,8 +777,8 @@ void MVASelect::analyze(art::Event const & evt)
   }
   else if (fSelNuE){//nue CC event with at least one reco shower
     if(fMVAAlg.maxShowerCharge >= 0.0){
-      maxShowerEnergy = ((fMVAAlg.maxShowerCharge * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - intShwEnergy) / gradShwEnergy;
-      corrHadEnergy = (((fMVAAlg.totalEventCharge - fMVAAlg.maxShowerCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - intNueHadEnCorr) / gradNueHadEnCorr;
+      maxShowerEnergy = ((fMVAAlg.maxShowerCharge * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntShwEnergy) / fGradShwEnergy;
+      corrHadEnergy = (((fMVAAlg.totalEventCharge - fMVAAlg.maxShowerCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntNuEHadEnCorr) / fGradNuEHadEnCorr;
       fEreco = maxShowerEnergy + corrHadEnergy;
     }
     else{
@@ -776,6 +786,7 @@ void MVASelect::analyze(art::Event const & evt)
     //0.63: recombination factor, 1/4.966e-3: calorimetry constant to convert ADC to number of electrons, Wion = 23.6 eV
     }
   }
+
   fTree->Fill();
   return;
 }
