@@ -370,23 +370,20 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 
   double larStart[3];
   double larEnd[3];
-  std::vector<double> trackStart;
-  std::vector<double> trackEnd;
   trkf::TrackMomentumCalculator trkm;
   for(int i=0; i<std::min(int(tracklist.size()),kMaxTrack);++i){
-    trackStart.clear();
-    trackEnd.clear();
     memset(larStart, 0, 3);
     memset(larEnd, 0, 3);
-    tracklist[i]->Extent(trackStart,trackEnd); 
+    recob::Track::Point_t trackStart, trackEnd;
+    std::tie(trackStart, trackEnd) = tracklist[i]->Extent(); 
     tracklist[i]->Direction(larStart,larEnd);
     trkid[i]       = tracklist[i]->ID();
-    trkstartx[i]      = trackStart[0];
-    trkstarty[i]      = trackStart[1];
-    trkstartz[i]      = trackStart[2];
-    trkendx[i]        = trackEnd[0];
-    trkendy[i]        = trackEnd[1];
-    trkendz[i]        = trackEnd[2];
+    trkstartx[i]      = trackStart.X();
+    trkstarty[i]      = trackStart.Y();
+    trkstartz[i]      = trackStart.Z();
+    trkendx[i]        = trackEnd.X();
+    trkendy[i]        = trackEnd.Y();
+    trkendz[i]        = trackEnd.Z();
     trkstartdcosx[i]  = larStart[0];
     trkstartdcosy[i]  = larStart[1];
     trkstartdcosz[i]  = larStart[2];
