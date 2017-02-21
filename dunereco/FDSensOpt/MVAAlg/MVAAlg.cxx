@@ -457,7 +457,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
       float vtxy = 0;
       float vtxz = 100000;
       if (nvtx>0){
-	for (int i = 0; i<nvtx; ++i){
+	for (int i = 0; i<nvtx&&i<kMaxVertices; ++i){
 	  if (vtx[i][2]<vtxz){
 	    vtxx = vtx[i][0];
 	    vtxy = vtx[i][1];
