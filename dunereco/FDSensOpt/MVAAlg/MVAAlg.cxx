@@ -954,7 +954,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
       } //in fiducial volume
       else {
 	mf::LogVerbatim("MVASelect") << "  Not found in fiducial volume. nvtx=" << nvtx << " True vtx = ("
-				     << nuvtxx_truth <<", "<< nuvtxy_truth <<", "<< nuvtxz_truth << ")";
+				     << nuvtxx_truth <<", "<< nuvtxy_truth <<", "<< nuvtxz_truth << "), Reco vtx = ("<<vtxx<<", "<<vtxy<<", "<<vtxz<<")";
       }
 
       if(itype == -99999) mf::LogVerbatim("MVASelect") << "  itype not set";
