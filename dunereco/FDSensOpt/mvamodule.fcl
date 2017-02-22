@@ -12,7 +12,7 @@ dunefd_mvaselect:
     WeightFiles:             ["/dune/app/users/talion/TMVALAr/srcs/dunetpc/dune/FDSensOpt/MVAAlg/TMVAClassification_BDTG.weights.xml"]
     MakeAnaTree:             false    # Tree for general use
     MakeWeightTree:          false    # Tree for TMVAClassification input, makes weight file
-
+    MakeSystHist:            false
     #HitsModuleLabel:         "lineclusterdc"
     #TrackModuleLabel:        "pmtrackdc"
     #ClusterModuleLabel:      "lineclusterdc"
