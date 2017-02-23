@@ -33,6 +33,8 @@ dunefd_mvaselect:
     CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
     FidVolCut:	             3.0
     ContVolCut:              20.0
+    NuECut:                  0.8
+    NuMuCut:                 0.8
     SaveRecoInputs:          true
     # Constants for neutrino energy reconstruction of numu CC events with pmtrack
     GradTrkMomRange:         406
