@@ -59,8 +59,8 @@
 constexpr int kMaxTrack      = 1000;  //maximum number of tracks
 constexpr int kMaxShower     = 1000;  //maximum number of showers
 constexpr int kMaxHits       = 40000; //maximum number of hits;
-constexpr int kMaxVertices   = 100;    //max number of 3D vertices
-constexpr int kMaxPrimaries  = 20000;  //maximum number of primary particles
+constexpr int kMaxVertices   = 1000;  //max number of 3D vertices
+constexpr int kMaxPrimaries  = 20000; //maximum number of primary particles
 constexpr int kMaxFlash      = 1000;  //maximum number of flashes
 //constexpr int kMaxTrackHits  = 1000;  //maximum number of track trajectory points
 
