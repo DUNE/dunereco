@@ -29,6 +29,7 @@ art_make( BASENAME_ONLY
                            ${CLHEP}
 			   ${Boost_SYSTEM_LIBRARY}
 			   ${ROOT_BASIC_LIB_LIST}
+                           ${ROOT_GEOM}
          MODULE_LIBRARIES HitFinderDUNE
                            lardataobj_RecoBase
                            lardata_ArtDataHelper
@@ -51,6 +52,7 @@ art_make( BASENAME_ONLY
 	                   ${FHICLCPP}
 			   ${CETLIB}
                            ${ROOT_BASIC_LIB_LIST}
+                           ${ROOT_GEOM}
          )
 
 install_headers()
