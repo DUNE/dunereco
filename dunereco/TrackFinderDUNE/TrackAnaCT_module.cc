@@ -1020,7 +1020,7 @@ namespace trkf {
 	  rhists.fHtheta_yz->Fill(theta_yz);
 	  
 	  double mom = 0.;
-	  if(track.NumberFitMomentum() > 0)
+	  if(track.NumberTrajectoryPoints() > 0)
 	    mom = track.VertexMomentum();
 	  rhists.fHmom->Fill(mom);
 	  rhists.fHlen->Fill(tlen);
@@ -1035,7 +1035,7 @@ namespace trkf {
 
 	    // Analyze reversed tracks only if start momentum = end momentum.
 
-	    if(swap != 0 && track.NumberFitMomentum() > 0 &&
+	    if(swap != 0 && track.NumberTrajectoryPoints() > 0 &&
 	       std::abs(track.VertexMomentum() - track.EndMomentum()) > 1.e-3)
 	      continue;
 
@@ -1066,7 +1066,7 @@ namespace trkf {
 	      theta_xz = std::atan2(dir.X(), dir.Z());
 	      theta_yz = std::atan2(dir.Y(), dir.Z());
 
-	      if(track.NumberFitMomentum() > 0)
+	      if(track.NumberTrajectoryPoints() > 0)
 		mom = track.EndMomentum();
 	    }
 	  
