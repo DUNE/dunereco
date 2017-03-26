@@ -2,15 +2,17 @@ BEGIN_PROLOG
 
 dune_pandora:
 {
-  module_type:           "StandardPandora"
-  GeantModuleLabel:      "largeant"
-  HitFinderModuleLabel:  "hitcheat"
-  EnableMCParticles:     false
-  EnableProduction:      true 
-  EnableMonitoring:      false
-  UseHitWidths:          false
-  BuildTracks:           true
-  BuildShowers:          true
+  module_type:            "StandardPandora"
+  GeantModuleLabel:       "largeant"
+  HitFinderModuleLabel:   "hitcheat"
+  EnableMCParticles:      false
+  EnableProduction:       true 
+  EnableMonitoring:       false
+  UseHitWidths:           false
+  BuildTracks:            true
+  BuildShowers:           true
+  RunStitchingInstance:   false
+  BuildStitchedParticles: false
 }
 
 dune35t_particlestitcher:
@@ -23,28 +25,33 @@ dune35t_particlestitcher:
   EnableStitching:       true
 }
 
-dune35t_pandora:                             @local::dune_pandora
-dune35t_pandora.ConfigFile:                  "PandoraSettings_DUNE_Cosmic.xml"
-dune35t_pandora.StitchingConfigFile:         "PandoraSettings_2Drift_Stitching.xml"
-dune35t_pandora.UseShortVolume:              true
-dune35t_pandora.UseLongVolume:               true
+dune35t_pandora:  @local::dune_pandora
+dune35t_pandora.ConfigFile:                       "PandoraSettings_DUNE_Cosmic.xml"
+dune35t_pandora.StitchingConfigFile:              "PandoraSettings_DUNE_Stitching.xml"
+dune35t_pandora.RunStitchingInstance:             true
+dune35t_pandora.BuildStitchedParticles:           true
 
-dunefd_pandora:                              @local::dune_pandora
-dunefd_pandora.ConfigFile:                   "PandoraSettings_DUNE_Neutrino.xml"
-dunefd_pandora.StitchingConfigFile:          "PandoraSettings_2Drift_Stitching.xml"
-dunefd_pandora.UseLeftVolume:                true
-dunefd_pandora.UseRightVolume:               true
+dunefd_pandora:  @local::dune_pandora
+dunefd_pandora.ConfigFile:                        "PandoraSettings_DUNE_Neutrino.xml"
+dunefd_pandora.UseGlobalDriftVolume:              true
 
-protodune_pandora:                           @local::dune_pandora
-protodune_pandora.ConfigFile:                "PandoraSettings_DUNE_Neutrino.xml"
-protodune_pandora.StitchingConfigFile:       "PandoraSettings_2Drift_Stitching.xml"
-protodune_pandora.UseLeftVolume:             true
-protodune_pandora.UseRightVolume:            true
+protodune_pandoracosmic:  @local::dune_pandora 
+protodune_pandoracosmic.ConfigFile:               "PandoraSettings_DUNE_Cosmic.xml"  
+protodune_pandoracosmic.StitchingConfigFile:      "PandoraSettings_DUNE_Stitching.xml" 
+protodune_pandoracosmic.UseGlobalCoordinates:     true 
+protodune_pandoracosmic.RunStitchingInstance:     true
+protodune_pandoracosmic.BuildStitchedParticles:   true
 
-dune_pandorawriter:                          @local::dune_pandora
-dune_pandorawriter.ConfigFile:               "PandoraSettings_Write.xml"
-dune_pandorawriter.StitchingConfigFile:      "PandoraSettings_2Drift_Stitching.xml"
-dune_pandorawriter.EnableMCParticles:        true
-dune_pandorawriter.EnableProduction:         false
+protodune_pandorabeam:  @local::dune_pandora
+protodune_pandorabeam.ConfigFile:                 "PandoraSettings_DUNE_Neutrino.xml"
+protodune_pandorabeam.UseGlobalDriftVolume:       true
+
+dune_pandorawriter:  @local::dune_pandora
+dune_pandorawriter.ConfigFile:                    "PandoraSettings_Write.xml"
+dune_pandorawriter.StitchingConfigFile:           "PandoraSettings_DUNE_Stitching.xml"
+dune_pandorawriter.EnableMCParticles:             true
+dune_pandorawriter.EnableProduction:              false
+dune_pandorawriter.UniqueInstanceSettings:        true
+dune_pandorawriter.OutputGeometryXmlFile:         "dune.xml"
 
 END_PROLOG
