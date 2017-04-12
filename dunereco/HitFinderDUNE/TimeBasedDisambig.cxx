@@ -320,13 +320,13 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
       //the bin, find a bin whose distance to the mean position found is about 100 and correct the position
       //and wireid of hits in the bin.
       int BinPerPos=4;
-      int CellsPerTPC=BinPerPos*BinPerPos;//cells in xz position space
+      unsigned int CellsPerTPC=BinPerPos*BinPerPos;//cells in xz position space
       double TotalXbin=(xbound[1]-xbound[0])/double(BinPerPos);
       double TotalZbin=(zbound[1]-zbound[0])/double(BinPerPos);
       //define histograms to save y position returned in the disambiguation algorithm above for all cells in
       //xz position space
-      TH1F * YPosXZ[CellsPerTPC];
-      for (unsigned int cell=0; cell<(unsigned int)CellsPerTPC; cell++){
+      std::vector<TH1F *> YPosXZ(CellsPerTPC,0);
+      for (unsigned int cell=0; cell<YPosXZ.size(); cell++){
 	YPosXZ[cell]=new TH1F(Form("cell%d",cell),Form("cell%d",cell), 40, ybound[0], ybound[1]);
       }
 
@@ -349,14 +349,14 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
       //a variable to indicate whether the position-correction function should be applied or not
       //and variables to save minimum and maximum range of the bin whose mean position to the
       //position of the highestcontent bin is 100cm away.
-      double FirstPeakXmin[CellsPerTPC];
-      double FirstPeakXmax[CellsPerTPC];
-      double ShouldCorrect[CellsPerTPC];
-      double SecondPeakXmin[CellsPerTPC];
-      double SecondPeakXmax[CellsPerTPC];
+      std::vector<double> FirstPeakXmin(CellsPerTPC,0);
+      std::vector<double> FirstPeakXmax(CellsPerTPC,0);
+      std::vector<double> ShouldCorrect(CellsPerTPC,0);
+      std::vector<double> SecondPeakXmin(CellsPerTPC,0);
+      std::vector<double> SecondPeakXmax(CellsPerTPC,0);
 
       //loop over all histograms
-      for (unsigned int cell=0; cell<(unsigned int)CellsPerTPC; cell++){
+      for (unsigned int cell=0; cell<CellsPerTPC; cell++){
 	//define variables to save highest bincontent and the bin index
 	double HitsInFirstPeak=0;
 	int FirstPeakBin=0;
