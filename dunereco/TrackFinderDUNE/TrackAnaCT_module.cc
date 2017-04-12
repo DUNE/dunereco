@@ -1316,8 +1316,8 @@ namespace trkf {
 
 	  const art::Ptr<recob::Track> ptrack(*(it++));
 	  //	  const recob::Track& track = *ptrack;
-	  auto pcoll { ptrack };
-	  art::FindManyP<recob::SpacePoint> fs( {pcoll}, evt, fTrkSpptAssocModuleLabel);
+	  auto pcoll={ ptrack };
+	  art::FindManyP<recob::SpacePoint> fs( pcoll, evt, fTrkSpptAssocModuleLabel);
 	  // From gdb> ptype fs, the vector of Ptr<SpacePoint>s it appears is grabbed after fs.at(0)
 	  bool assns(true);
 	  try {
