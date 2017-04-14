@@ -202,8 +202,8 @@ namespace dune{
 
 		std::vector<geo::WireID>  wires = geo->ChannelToWire(hitsUV[uv][iuv]->Channel());
 		size_t wsize = wires.size();
-		size_t ndoublets[wsize];
-		size_t ntriplets[wsize];
+		std::vector<size_t> ndoublets(wsize,0);
+		std::vector<size_t> ntriplets(wsize,0);
 
 		for (size_t w=0; w<wsize; w++)
 		  {
