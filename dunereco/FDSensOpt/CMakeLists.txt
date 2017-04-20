@@ -59,7 +59,7 @@ cet_find_library( GREINSEHGAL NAMES ${GRSSPELLING} PATHS ENV GENIE_LIB NO_DEFAUL
 simple_plugin(NueAna   "module"
 		        lardataobj_RawData
 		        lardataobj_RecoBase
-		        lardata_RecoBaseArt
+		        lardata_ArtDataHelper
 			larreco_Calorimetry
 		        larreco_RecoAlg_PMAlg
 		        IniSegAlg
@@ -74,12 +74,12 @@ simple_plugin(NueAna   "module"
 			${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_OPTIONAL}
                         ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
- 			art_Persistency_Common canvas_Persistency_Common
-			art_Persistency_Provenance canvas_Persistency_Provenance
-			art_Utilities canvas_Utilities
+ 			art_Persistency_Common canvas
+			art_Persistency_Provenance canvas
+			art_Utilities canvas
 			${MF_MESSAGELOGGER}
 			${MF_UTILITIES}
-			${CETLIB}
+			cetlib cetlib_except
 			${ROOT_BASIC_LIB_LIST}
               BASENAME_ONLY
 )
@@ -97,12 +97,12 @@ simple_plugin(MVASelect   "module"
                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
                         ${ART_FRAMEWORK_SERVICES_OPTIONAL}
                         ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
-                        art_Persistency_Common canvas_Persistency_Common
-                        art_Persistency_Provenance canvas_Persistency_Provenance
-                        art_Utilities canvas_Utilities
+                        art_Persistency_Common canvas
+                        art_Persistency_Provenance canvas
+                        art_Utilities canvas
                         ${MF_MESSAGELOGGER}
                         ${MF_UTILITIES}
-                        ${CETLIB}
+                        cetlib cetlib_except
                         ${ROOT_BASIC_LIB_LIST}
 			${GALGORITHM}		
 			${GBARYONRESONANCE}
@@ -165,12 +165,12 @@ simple_plugin(IniSegReco "module"
 		      ${ART_FRAMEWORK_SERVICES_REGISTRY}
       		      ${ART_FRAMEWORK_SERVICES_OPTIONAL}
       		      ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
- 		      art_Persistency_Common canvas_Persistency_Common
-		      art_Persistency_Provenance canvas_Persistency_Provenance
-		      art_Utilities canvas_Utilities
+ 		      art_Persistency_Common canvas
+		      art_Persistency_Provenance canvas
+		      art_Utilities canvas
 		      ${MF_MESSAGELOGGER}
 		      ${MF_UTILITIES}
-		      ${CETLIB}
+		      cetlib cetlib_except
 		      ${ROOT_BASIC_LIB_LIST}
               BASENAME_ONLY
 )
@@ -195,12 +195,12 @@ simple_plugin(ShSeg   "module"
 			${ART_FRAMEWORK_SERVICES_REGISTRY}
 			${ART_FRAMEWORK_SERVICES_OPTIONAL}
 			${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
- 			art_Persistency_Common canvas_Persistency_Common
-			art_Persistency_Provenance canvas_Persistency_Provenance
-			art_Utilities canvas_Utilities
+ 			art_Persistency_Common canvas
+			art_Persistency_Provenance canvas
+			art_Utilities canvas
 			${MF_MESSAGELOGGER}
 			${MF_UTILITIES}
-			${CETLIB}
+			cetlib cetlib_except
 			${ROOT_BASIC_LIB_LIST}
 			BASENAME_ONLY
 )

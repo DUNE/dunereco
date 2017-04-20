@@ -12,7 +12,7 @@ dunefd_mvaselect:
     WeightFiles:             ["/dune/app/users/talion/TMVALAr/srcs/dunetpc/dune/FDSensOpt/MVAAlg/TMVAClassification_BDTG.weights.xml"]
     MakeAnaTree:             false    # Tree for general use
     MakeWeightTree:          false    # Tree for TMVAClassification input, makes weight file
-
+    MakeSystHist:            false
     #HitsModuleLabel:         "lineclusterdc"
     #TrackModuleLabel:        "pmtrackdc"
     #ClusterModuleLabel:      "lineclusterdc"
@@ -33,7 +33,28 @@ dunefd_mvaselect:
     CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
     FidVolCut:	             3.0
     ContVolCut:              20.0
+    NuECut:                  0.8
+    NuMuCut:                 0.8
     SaveRecoInputs:          true
+    # Constants for neutrino energy reconstruction of numu CC events with pmtrack
+    GradTrkMomRange:         406
+    IntTrkMomRange:          -34
+    GradTrkMomMCS:           0.90
+    IntTrkMomMCS:            0.21
+    GradNuMuHadEnCorr:       0.60
+    IntNuMuHadEnCorr:        0.09
+    # Constants for neutrino energy reconstruction of numu CC events with pandora
+    #GradTrkMomRange:         395
+    #IntTrkMomRange:          -38
+    #GradTrkMomMCS:           1.07
+    #IntTrkMomMCS:            0.14
+    #GradNuMuHadEnCorr:       0.61
+    #IntNuMuHadEnCorr:        0.0
+    # Constants for neutrino energy reconstruction of nue CC events
+    GradShwEnergy:           0.99
+    IntShwEnergy:            -0.01
+    GradNuEHadEnCorr:        0.54
+    IntNuEHadEnCorr:         0.07
 }
 
 dunefd_inisegreco:

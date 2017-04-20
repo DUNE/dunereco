@@ -103,6 +103,7 @@ dune35t_hitlinefitalg:
     MinAlsoPoints: 6
     IterationsMultiplier: 20
     InclusionThreshold: 2
+    LogLevel: 2
 }
 
 dune35t_hitfindercounters:
@@ -146,7 +147,8 @@ dunefd_hitcheater:	  @local::standard_hitcheater
 dunefd_fasthitfinder:     @local::dune35t_fasthitfinder
 dunefd_clustercrawlerhit: @local::dune35t_clustercrawlerhit
 dunefd_hitfinderfd:       @local::dune35t_hitfinder35t
-dunefd_hitfinderfd.DisambigAlg.DoCleanUpHits: false
+dunefd_hitfinderfd.DisambigAlg.DoCleanUpHits:  false
+dunefd_hitfinderfd.DisambigAlg.DistanceCutClu: 100
 
 dune35t_rmshitfinderalg:
 {
@@ -159,7 +161,7 @@ dune35t_rmshitfinderalg:
 dune35t_robusthitfinder:
 {
     module_type: "RobustHitFinder"
-    MakeTree: false
+    MakeTree: true
     Efield: [ 0.25, 0.620, 0.777, 1.772 ] #kV/cm --> 60kV cathode voltage
     CounterT0ModuleLabel: "t0counter"
     WireModuleLabel: "caldata"
@@ -171,12 +173,16 @@ dune35t_robusthitfinder:
     MaxPedMean: 4000
     MinPedRms: 0
     MaxPedRms: 500
-    MakeupMissedHits: false
+    MakeupMissedHits: true
     MissedBufferTicksLow: 0
     MissedBufferTicksHigh: 0
     HitLineFitAlg: @local::dune35t_hitlinefitalg
     RMSHitFinderAlg: @local::dune35t_rmshitfinderalg
     UseMeasuredCounterPositions: true
+    ConstantHitWidth: true
+    PreHitTicks: 50
+    PostHitTicks: 100
+    Simulation: false
 }
 
 dune35t_robusthitfindersim: @local::dune35t_robusthitfinder
@@ -184,6 +190,7 @@ dune35t_robusthitfindersim.SearchPreTicks: 100
 dune35t_robusthitfindersim.SearchPostTicks: 4400
 dune35t_robusthitfindersim.HitGeomDistanceCut: 25
 dune35t_robusthitfindersim.UseMeasuredCounterPositions: false
+dune35t_robusthitfindersim.Simulation: true
 
 protodunesp_disambig:
 {
@@ -191,10 +198,25 @@ protodunesp_disambig:
 # so far there's only one algorithm so this value is ignored.
     ChanHitLabel: "gaushit"
     Algorithm: "Placeholder_Value"
-    DisambigAlg: 
+    DisambigAlg:
      {
        TimeCut: 3
        DistanceCut: 1
      }
 }
+
+dune35t_trackhitbacktracker:
+{
+    module_type: "TrackHitBacktracker"
+    WireModuleLabel: "caldata"
+    TrackModuleLabel: "pmtrack"
+    PrevHitModuleLabel: "linecluster"
+    PreBaselineTicks: 100
+    PostBaselineTicks: 100
+    PulseStartWidthMult: 1.0
+    PulseEndWidthMult: 1.5
+    MakeTree: false
+}
+
+
 END_PROLOG
