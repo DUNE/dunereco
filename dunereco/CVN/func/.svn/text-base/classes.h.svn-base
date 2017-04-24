@@ -1,0 +1,85 @@
+#include "CVN/func/EventLabeledPMaps.h"
+#include "CVN/func/ProngTrainingData.h"
+#include "CVN/func/ProngSummary.h"
+#include "CVN/func/TrainingData.h"
+#include "CVN/func/Result.h"
+#include "CVN/func/Features.h"
+#include "RecoBase/Cluster.h"
+#include "RecoBase/Prong.h"
+
+#include "art/Persistency/Common/Assns.h"
+#include "art/Persistency/Common/Wrapper.h"
+
+template class std::vector<float>;
+template class std::vector<cvn::PixelMap>;
+template class art::Ptr<cvn::PixelMap>;
+template class std::vector<cvn::EventLabeledPMaps>;
+template class std::vector<cvn::ProngTrainingData>;
+template class std::vector<art::Ptr<cvn::PixelMap> >;
+template class art::Assns<rb::Cluster, cvn::PixelMap, void>;
+template class art::Assns<cvn::PixelMap, rb::Cluster, void>;
+template class art::Assns<rb::Prong, cvn::PixelMap, void>;
+template class art::Assns<cvn::PixelMap, rb::Prong, void>;
+
+template class std::pair< rb::Cluster, cvn::PixelMap >;
+template class std::pair< art::Ptr<rb::Cluster>, art::Ptr<cvn::PixelMap> >;
+template class std::pair< cvn::PixelMap, rb::Cluster >;
+template class std::pair< art::Ptr<cvn::PixelMap>, art::Ptr<rb::Cluster> >;
+template class std::pair< rb::Prong, cvn::PixelMap >;
+template class std::pair< art::Ptr<rb::Prong>, art::Ptr<cvn::PixelMap> >;
+template class std::pair< cvn::PixelMap, rb::Prong >;
+template class std::pair< art::Ptr<cvn::PixelMap>, art::Ptr<rb::Prong> >;
+
+template class art::Wrapper< std::vector<cvn::PixelMap> >;
+template class art::Wrapper<art::Assns<rb::Cluster, cvn::PixelMap, void> >;
+template class art::Wrapper<art::Assns<cvn::PixelMap, rb::Cluster, void> >;
+template class art::Wrapper<art::Assns<rb::Prong, cvn::PixelMap, void> >;
+template class art::Wrapper<art::Assns<cvn::PixelMap, rb::Prong, void> >;
+
+template class std::vector<cvn::Result>;
+template class art::Ptr<cvn::Result>;
+template class std::vector<art::Ptr<cvn::Result> >;
+template class art::Assns<rb::Cluster, cvn::Result, void>;
+template class art::Assns<cvn::Result, rb::Cluster, void>;
+template class art::Assns<rb::Prong, cvn::Result, void>;
+template class art::Assns<cvn::Result, rb::Prong, void>;
+
+template class std::pair< rb::Cluster, cvn::Result >;
+template class std::pair< art::Ptr<rb::Cluster>, art::Ptr<cvn::Result> >;
+template class std::pair< cvn::Result, rb::Cluster >;
+template class std::pair< art::Ptr<cvn::Result>, art::Ptr<rb::Cluster> >;
+template class std::pair< rb::Prong, cvn::Result >;
+template class std::pair< art::Ptr<rb::Prong>, art::Ptr<cvn::Result> >;
+template class std::pair< cvn::Result, rb::Prong >;
+template class std::pair< art::Ptr<cvn::Result>, art::Ptr<rb::Prong> >;
+
+template class art::Wrapper< std::vector<cvn::Result> >;
+template class art::Wrapper<art::Assns<rb::Cluster, cvn::Result, void> >;
+template class art::Wrapper<art::Assns<cvn::Result, rb::Cluster, void> >;
+template class art::Wrapper<art::Assns<rb::Prong, cvn::Result, void> >;
+template class art::Wrapper<art::Assns<cvn::Result, rb::Prong, void> >;
+
+template class std::vector<cvn::Features>;
+template class art::Ptr<cvn::Features>;
+template class std::vector<art::Ptr<cvn::Features> >;
+template class art::Assns<rb::Cluster, cvn::Features, void>;
+template class art::Assns<cvn::Features, rb::Cluster, void>;
+template class art::Assns<rb::Prong, cvn::Features, void>;
+template class art::Assns<cvn::Features, rb::Prong, void>;
+
+template class std::pair< rb::Cluster, cvn::Features >;
+template class std::pair< art::Ptr<rb::Cluster>, art::Ptr<cvn::Features> >;
+template class std::pair< cvn::Features, rb::Cluster >;
+template class std::pair< art::Ptr<cvn::Features>, art::Ptr<rb::Cluster> >;
+template class std::pair< rb::Prong, cvn::Features >;
+template class std::pair< art::Ptr<rb::Prong>, art::Ptr<cvn::Features> >;
+template class std::pair< cvn::Features, rb::Prong >;
+template class std::pair< art::Ptr<cvn::Features>, art::Ptr<rb::Prong> >;
+
+template class art::Wrapper< std::vector<cvn::Features> >;
+template class art::Wrapper<art::Assns<rb::Cluster, cvn::Features, void> >;
+template class art::Wrapper<art::Assns<cvn::Features, rb::Cluster, void> >;
+template class art::Wrapper<art::Assns<rb::Prong, cvn::Features, void> >;
+template class art::Wrapper<art::Assns<cvn::Features, rb::Prong, void> >;
+
+

@@ -1,0 +1,219 @@
+////////////////////////////////////////////////////////////////////////
+/// \file    PixelMapProducer.h
+/// \brief   PixelMapProducer for CVN
+/// \author  Dominick Rocco - rocco@physics.umn.edu
+////////////////////////////////////////////////////////////////////////
+
+#include  <iostream>
+#include  <ostream>
+#include  <list>
+#include  <algorithm>
+
+#include "CVN/art/PixelMapProducer.h"
+#include "CVN/func/AssignLabels.h"
+#include  "TVector2.h"
+#include  "RecoBase/CellHit.h"
+#include  "RecoBase/RecoHit.h"
+
+
+namespace cvn
+{
+
+  PixelMapProducer::PixelMapProducer(unsigned int nPlane, unsigned int nCell,
+                                     unsigned int maxPlaneGap, bool useGeV):
+  fNPlane(nPlane),
+  fNCell(nCell),
+  fMaxPlaneGap(maxPlaneGap),
+  fUseGeV(useGeV)
+  {}
+
+
+  PixelMap PixelMapProducer::CreateMap(const rb::Cluster& cluster)
+  {
+
+    Boundary bound = DefineBoundary(cluster);
+
+    return CreateMapGivenBoundary(cluster, bound);
+
+
+
+  }
+
+  PixelMap PixelMapProducer::CreateMapGivenBoundary(const rb::Cluster& cluster,
+                                                    const Boundary& bound)
+  {
+
+    PixelMap pm(fNPlane, fNCell, bound);
+
+    for(size_t iHit = 0; iHit < cluster.NCell(); ++iHit)
+    {
+      unsigned int plane                   = cluster.Cell(iHit)->Plane();
+      unsigned int cell                    = cluster.Cell(iHit)->Cell();
+      rb::RecoHit recoHit                  = cluster.RecoHit(iHit);
+      art::Ptr< rb::CellHit >cellHit = cluster.Cell(iHit);
+
+      float value;
+      if (fUseGeV) {
+        // Use GeV if we've got it.  Otherwise use GeV equivalent of PE.
+        float gev;
+        if(recoHit.IsCalibrated())
+          gev = recoHit.GeV();
+        else
+        { // Put something rough in there, just as a placeholder.
+          gev = cluster.Cell(iHit)->PE() / 15123.7; // Rough PE->GeV scale.
+        }
+
+        value = gev;
+      }
+      else { 
+        // Use PECorr if we've got it.  Otherwise use PE.  
+        float pe  = recoHit.IsCalibrated()? recoHit.PECorr() :
+                                            cluster.Cell(iHit)->PE();
+        value = pe;
+      }
+      
+      double  purity =0.0;
+      HitType label  =kEmptyHit;
+      label = HitClassify( cellHit, &label, &purity);
+      pm.Add(plane, cell, value, label, purity);
+    }
+
+    return pm;
+
+  }
+
+
+
+
+  std::ostream& operator<<(std::ostream& os, const PixelMapProducer& p)
+  {
+    os << "PixelMapProducer: "
+       << p.NCell()  <<" cells X  " <<  p.NPlane() << " planes";
+    return os;
+  }
+
+
+  unsigned int PixelMapProducer::FindVertexMaxGap(const rb::Cluster& cluster){
+    std::set<unsigned int> planes;
+    for(size_t iHit = 0; iHit < cluster.NCell(); ++iHit)
+      planes.insert(cluster.Cell(iHit)->Plane());
+
+    unsigned int firstPlane = cluster.MinPlane();
+    unsigned int previousPlane = cluster.MinPlane();
+    for(const auto& plane:planes){
+      unsigned int gap = plane - previousPlane;
+      if (gap > fMaxPlaneGap)
+      {
+        firstPlane = plane;
+      }
+      previousPlane = plane;
+    }
+    return firstPlane;
+  }
+
+  unsigned int PixelMapProducer::FindVertexWindowThreshold(
+                                                  const rb::Cluster& cluster)
+  {
+
+    unsigned int window = 8;
+    unsigned int threshold = 4;
+
+    std::map<unsigned int, unsigned int> planeMap;
+
+    /// Count the hits in each plane
+    for(size_t iHit = 0; iHit < cluster.NCell(); ++iHit)
+      planeMap[cluster.Cell(iHit)->Plane()]++;
+
+
+
+
+    for(unsigned int iPlane = cluster.MinPlane();
+                     iPlane < cluster.MaxPlane() - window; ++iPlane)
+    {
+      // Don't start a window unless there's a hit in this plane
+      if(not planeMap.count(iPlane)) continue;
+
+      // Loop over planes in the window to count up hits
+      unsigned int windowCount = 0;
+      for(unsigned int iWindow = iPlane; iWindow - iPlane < window; ++iWindow)
+      {
+        /// If we have hits in that plane, count them.
+        if(planeMap.count(iWindow))
+          windowCount += planeMap[iWindow];
+      }
+
+      // If our window count is above threshold, this is the plane we want
+      if(windowCount >= threshold)
+        return iPlane;
+
+    }
+    // If we're here, we didn't find it.  Punt by returning min plane.
+    return cluster.MinPlane();
+
+
+
+
+  }
+
+
+  std::array<unsigned int, 2> PixelMapProducer::FindCenterMedian(
+                              const rb::Cluster& cluster,
+                              unsigned int firstPlane)
+  {
+
+    std::vector<unsigned int> cells[2];
+    for(unsigned int iHit = 0; iHit < cluster.NCell(); ++iHit)
+    {
+      unsigned int plane = cluster.Cell(iHit)->Plane();
+      unsigned int view = plane%2;
+      if(not InPlaneRcvne(plane, firstPlane)) continue;
+      /// add this cell to the list for the appropriate view
+      cells[view].push_back(cluster.Cell(iHit)->Cell());
+    }
+    // Containers for and modes and maxima as we loop
+    std::array<unsigned int, 2> median;
+
+    // Do views independently
+    for(unsigned int view = 0; view < 2; ++view)
+    {
+      std::sort(cells[view].begin(), cells[view].end());
+      if(cells[view].size() > 0)
+        median[view] = cells[view][cells[view].size()/2];
+      else
+        median[view] = 0 ; // It's ok to fall back since there are no hits
+
+    }
+    return median;
+
+
+
+  }
+
+  Boundary PixelMapProducer::DefineBoundary(const rb::Cluster& cluster)
+  {
+
+    unsigned int firstPlane = FindVertexWindowThreshold(cluster);
+    std::array<unsigned int, 2> centerCell = FindCenterMedian(cluster,
+                                                            firstPlane);
+
+    Boundary bound(fNPlane, fNCell, firstPlane,
+                   centerCell[0], centerCell[1]);
+
+
+    return bound;
+  }
+
+
+
+  bool PixelMapProducer::InPlaneRcvne(unsigned int plane,
+                                      unsigned int firstPlane)
+  {
+    return plane >= firstPlane && plane < firstPlane + fNPlane;
+  }
+
+  bool PixelMapProducer::InCellRcvne(unsigned int cell, float meanCell){
+    return  fabs(cell - meanCell) <= (float) (fNCell / 2);
+  }
+
+
+}

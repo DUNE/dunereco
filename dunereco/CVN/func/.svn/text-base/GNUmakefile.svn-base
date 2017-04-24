@@ -1,0 +1,22 @@
+#
+# rocco@physics.umn.edu
+#
+include SoftRelTools/arch_spec_root.mk
+
+PACKAGE     := CVNFunc
+LIB_TYPE    := shared
+LIB         := lib$(PACKAGE)
+LIBCXXFILES := $(wildcard *.cxx)
+
+override CPPFLAGS := -I$(NUTOOLS_INC) -I$(NOVADAQ_INC) $(CPPFLAGS)
+
+LIBLINK    := -L$(SRT_PRIVATE_CONTEXT)/lib/$(SRT_SUBDIR) -L$(SRT_PUBLIC_CONTEXT)/lib/$(SRT_SUBDIR)
+
+LIBLINK_FUNC := -L$(SRT_PRIVATE_CONTEXT)/lib/$(SRT_SUBDIR) -L$(SRT_PUBLIC_CONTEXT)/lib/$(SRT_SUBDIR)
+
+########################################################################
+include SoftRelTools/standard.mk
+include SoftRelTools/arch_spec_art.mk
+include SoftRelTools/arch_spec_novadaq.mk
+
+override LIBLIBS += $(LOADLIBES) -L$(NUTOOLS_LIB) -L$(ART_LIB)  -lart_Framework_Services_Optional_TFileService_service -lart_Framework_Services_Optional_RandomNumberGenerator_service   -L$(SRT_PRIVATE_CONTEXT)/lib/$(SRT_SUBDIR) -L$(SRT_PUBLIC_CONTEXT)/lib/$(SRT_SUBDIR) -lRecoBase -lBadChanList_service -lSimulation -lSimulationBase

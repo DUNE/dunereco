@@ -1,0 +1,352 @@
+///////////////////////////////////////////////////////////////////////
+// \file    CVNClassify_module.cc
+// \brief   Analyzer for creating both slice and prong by prong CVN
+//          PixelMap objects 
+// \author  Fernanda Psihas - psihas@fnal.gov
+////////////////////////////////////////////////////////////////////////
+
+// C/C++ includes
+#include <iostream>
+#include <sstream>
+
+// ROOT includes
+#include "TTree.h"
+#include "TH2F.h"
+
+// Framework includes
+#include "art/Framework/Core/EDAnalyzer.h"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Services/Optional/TFileDirectory.h"
+#include "art/Framework/Services/Optional/TFileService.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "fhiclcpp/ParameterSet.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
+#include "art/Framework/Core/ModuleMacros.h"
+#include "art/Framework/Core/FindManyP.h"
+
+
+// NOvASoft includes
+#include "RecoBase/CellHit.h"
+#include "RecoBase/Cluster.h"
+#include "RecoBase/Prong.h"
+#include "RecoBase/Vertex.h"
+#include "Utilities/AssociationUtil.h"
+#include "SimulationBase/MCNeutrino.h"
+#include "SimulationBase/MCParticle.h"
+#include "SimulationBase/MCTruth.h"
+
+#include "Calibrator/Calibrator.h"
+#include "MCCheater/BackTracker.h"
+
+#include "CVN/func/AssignLabels.h"
+#include "CVN/func/TrainingData.h"
+#include "CVN/func/InteractionType.h"
+#include "CVN/func/EventLabeledPMaps.h"
+#include "CVN/func/ProngType.h"
+#include "CVN/func/ProngTrainingData.h"
+
+#include "TVector3.h"
+
+
+namespace cvn {
+  class CVNEventProngDump : public art::EDAnalyzer {
+  public:
+    explicit CVNEventProngDump(fhicl::ParameterSet const& pset);    
+    ~CVNEventProngDump();                        
+    
+    void analyze(const art::Event& evt); 
+    void reconfigure(const fhicl::ParameterSet& pset);
+    void beginJob();
+    void endJob();
+
+
+    
+  private:
+
+    std::string fClusterLabel;
+
+    /// Module lablel for input prongs
+    std::string    fProngModLabel;
+
+    /// Instance lablel for input 3D prongs
+    std::string    fProng3DLabel;
+
+    /// Instance lablel for input 2D prongs
+    std::string    fProng2DLabel;
+
+    /// Instance lablel for cluster pixelmaps
+    std::string    fClusterPMLabel;
+
+    /// Instance lablel for prong pixelmaps
+    std::string    fProngPMLabel;
+
+    /// Instance label for vertex
+    std::string    fVertexLabel;
+
+    /// Option to save maps for prongs
+    bool           fMapProngs;
+
+    std::string fPixelMapInput;
+    bool        fWriteMapTH2;
+
+    EventLabeledPMaps* fEventPMapsData;
+    //    ProngTrainingData* fTrain;    //    TrainingData* fTrain;
+    TTree*        fTrainTree;
+
+    art::ServiceHandle<cheat::BackTracker> fBT;
+
+    /// Function to extract TH2 from PixelMap and write to TFile
+    void WriteMapTH2(const art::Event& evt, const PixelMap& pm, bool isProng, unsigned int slice, unsigned int id);
+
+  };
+
+
+
+  //.......................................................................
+  CVNEventProngDump::CVNEventProngDump(fhicl::ParameterSet const& pset) 
+    : EDAnalyzer(pset)
+  {
+    this->reconfigure(pset);
+  }
+
+  //......................................................................
+  CVNEventProngDump::~CVNEventProngDump()
+  {  }
+
+  //......................................................................
+  void CVNEventProngDump::reconfigure(const fhicl::ParameterSet& pset)
+  {
+    fClusterLabel   = pset.get<std::string>("ClusterLabel");
+    fPixelMapInput  = pset.get<std::string>("PixelMapInput");
+    fProngModLabel  = pset.get<std::string>("ProngModLabel");
+    fProng3DLabel   = pset.get<std::string>("Prong3DLabel");
+    fProng2DLabel   = pset.get<std::string>("Prong2DLabel");
+    fClusterPMLabel = pset.get<std::string>("ClusterPMLabel");
+    fProngPMLabel   = pset.get<std::string>("ProngPMLabel");
+    fVertexLabel    = pset.get<std::string>("VertexLabel");
+    fMapProngs      = pset.get<bool>       ("MapProngs");
+    fWriteMapTH2    = pset.get<bool>       ("WriteMapTH2");
+
+  }
+      
+  //......................................................................
+  void CVNEventProngDump::beginJob()
+  {
+
+
+    art::ServiceHandle<art::TFileService> tfs;
+
+    fEventPMapsData = new EventLabeledPMaps;
+    //fTrain = new ProngTrainingData;
+
+    fTrainTree = tfs->make<TTree>("CVNTrainTree", "Training records");
+    // fTrainTree->Branch("ptrain", "cvn::ProngTrainingData", &fTrain);
+    fTrainTree->Branch("EventPMapsData", "cvn::EventLabeledPMaps", &fEventPMapsData);
+
+    
+  }
+
+  //......................................................................
+  void CVNEventProngDump::endJob()
+  {
+
+  }
+
+  //......................................................................
+  void CVNEventProngDump::analyze(const art::Event& evt)
+  {
+
+
+//    art::ServiceHandle<cheat::BackTracker>& bt = fBT;
+
+    InteractionType interaction = kOther;
+
+    // get the slices
+    art::Handle< std::vector< rb::Cluster > > clusterHandle;
+    evt.getByLabel(fClusterLabel, clusterHandle);
+    const std::vector<rb::Cluster> & clusters = *clusterHandle;
+    art::PtrVector<rb::Cluster> slices;
+    for(unsigned int i=0; i<clusterHandle->size(); ++i){
+      slices.push_back(art::Ptr<rb::Cluster>(clusterHandle, i));
+    }
+
+
+    art::FindManyP<PixelMap> fmPixelMap(clusterHandle, evt, fPixelMapInput);
+
+    std::vector<int> bestNuId;
+    std::vector<cheat::NeutrinoWithIndex> nus;
+    std::vector<std::vector<cheat::NeutrinoEffPur>> sEffPur;
+    nus = fBT->allMCTruth();
+    sEffPur = fBT->SlicesToMCTruthsTable(slices);
+    bestNuId =fBT->SliceToOrderedNuIdsByEnergy(nus, sEffPur);
+
+
+    for(size_t iClust = 0; iClust < clusters.size(); ++iClust) {
+
+      const rb::Cluster& cluster = clusters[iClust];
+      if(!fmPixelMap.isValid()) continue;
+
+      const std::vector<art::Ptr<PixelMap>> pixelMaps = fmPixelMap.at(iClust);
+      if(pixelMaps.empty()) continue;
+
+      art::Ptr<simb::MCTruth> truth;
+      if (bestNuId[iClust] != -1) 
+        truth =  sEffPur[iClust][bestNuId[iClust]].neutrinoInt;
+
+      TrainingData train;
+      float nuEnergy, lepEnergy;
+      interaction = SliceClassify(truth, cluster, nuEnergy, lepEnergy);
+      //      interaction = train.SliceClassify(cluster);
+      //      std::cout<<" Slice type =  "<<interaction<<std::endl;
+       
+      train = TrainingData(interaction, nuEnergy, lepEnergy, *pixelMaps[0]);
+  
+      if (fWriteMapTH2) WriteMapTH2(evt, train.fPMap, 0, (unsigned int)iClust, (unsigned int)iClust);
+
+
+      //      InteractionType myInt = fEventPMapsData->fSliceLabeledPM.fInt;
+      //      std::cout<<" Slice type =  "<<myInt<<std::endl;
+      std::vector<ProngTrainingData> ProngPMs;
+
+      if ( fMapProngs ){
+
+        art::FindManyP<rb::Vertex> fmv(clusterHandle, evt, fVertexLabel);
+      	art::FindManyP<rb::Prong> fmProng3D(clusterHandle, evt, art::InputTag(fProngModLabel, fProng3DLabel));
+      	art::FindManyP<rb::Prong> fmProng2D(clusterHandle, evt, art::InputTag(fProngModLabel, fProng2DLabel));
+
+      	std::vector<art::Ptr<rb::Prong>> prongs3D;
+      	std::vector<art::Ptr<rb::Prong>> prongs2D;
+        std::vector<art::Ptr<rb::Vertex>> vert;
+
+        if( fmProng2D.isValid() ) prongs2D = fmProng2D.at(iClust);
+      	if( fmProng3D.isValid() ) prongs3D = fmProng3D.at(iClust);
+        if( fmv.isValid()       ) vert     = fmv.at(iClust);
+        if( !fmProng2D.isValid() && !fmProng3D.isValid() ) continue;
+
+      	art::FindManyP<PixelMap> fmPixelMap3D(prongs3D, evt, fPixelMapInput);
+      	art::FindManyP<PixelMap> fmPixelMap2D(prongs2D, evt, fPixelMapInput);
+        TVector3 v;
+        if (!vert.empty() ) v = vert[0]->GetXYZ();
+        else v.SetXYZ(-999.,-999.,-999.);
+
+        for( unsigned int iProng = 0; iProng < prongs3D.size(); ++iProng ){
+
+      	  if( !fmPixelMap3D.isValid() ) continue;
+
+      	  const std::vector<art::Ptr<PixelMap>> pixelMaps3D = fmPixelMap3D.at(iProng);
+      	  if( pixelMaps3D.empty() ) continue;
+
+	  // Currently not stored, for pm drawing only
+      	  TrainingData pmtrain(interaction, nuEnergy, lepEnergy,
+                               *pixelMaps3D[0]);
+
+	  ProngTrainingData p_train;
+	  ProngType ptype3D, ptypeX, ptypeY;
+	  double purity3D, purityX, purityY, recE;
+          unsigned int ncellX, ncellY;
+
+	  ptype3D = ProngClassify(*prongs3D[iProng], &ptype3D, &ptypeX, &ptypeY, &purity3D, &purityX, &purityY, &recE, &ncellX, &ncellY);  	  
+	  //std::cout << "P: " << purity3D << ", " << purityX << ", " << purityY << std::endl;
+ 	  p_train = ProngTrainingData(ptype3D, ptypeX, ptypeY, purity3D, purityX, purityY, recE, ncellX, ncellY, v.X(), v.Y(), v.Z(), *pixelMaps3D[0]);
+
+
+	  ProngPMs.push_back(p_train);
+
+      	  if( fWriteMapTH2 ) WriteMapTH2(evt, p_train.fProngPMap, 1, (unsigned int)iClust, iProng);
+	  
+        }
+	
+        for( unsigned int iProng2 = 0; iProng2 < prongs2D.size(); ++iProng2 ){
+	  
+      	  if( !fmPixelMap2D.isValid() ) continue;
+
+      	  const std::vector<art::Ptr<PixelMap>> pixelMaps2D = fmPixelMap2D.at(iProng2);
+      	  if( pixelMaps2D.empty() ) continue;
+
+	  ProngTrainingData p2_train;
+	  ProngType ptype2D, ptypeX2D, ptypeY2D;
+	  double purity2D, purityX2D, purityY2D, recE;
+          unsigned int ncellX, ncellY;
+
+	  ptype2D  = ProngClassify(*prongs2D[iProng2], &ptype2D, &ptypeX2D, &ptypeY2D, &purity2D, &purityX2D, &purityY2D, &recE, &ncellX, &ncellY);  	  
+ 	  p2_train = ProngTrainingData(ptype2D, ptypeX2D, ptypeY2D, purity2D, purityX2D, purityY2D, recE, ncellX, ncellY, v.X(), v.Y(), v.Z(), *pixelMaps2D[0]);
+
+
+	  ProngPMs.push_back(p2_train);
+	
+        }
+	
+      }// MapProngs
+
+      //      if ( sliceIsSelected ){
+      fEventPMapsData->fSliceLabeledPM  = train;
+      fEventPMapsData->fProngLabeledPMs.swap(ProngPMs);	
+      	//      }
+
+      //      fTrain = &train;
+      fTrainTree->Fill();
+
+    }
+     
+
+  }
+
+  //----------------------------------------------------------------------
+
+  void CVNEventProngDump::WriteMapTH2(const art::Event& evt, const PixelMap& pm, bool isProng, unsigned int slice, unsigned int id)
+  {
+
+    std::string map;
+    if ( isProng ) map = "Prong";
+    else map = "Cluster";
+
+    std::stringstream name;
+    std::stringstream nameX;
+    std::stringstream nameY;
+    if ( isProng ){    
+      name << "PixelMap_r" << evt.run() << "_s" << evt.subRun()<< "_e" << evt.event() << "_sl" << slice << "_p" << id;
+      nameX << "PixelMap_X_r" << evt.run() << "_s" << evt.subRun()<< "_e" << evt.event() << "_sl" << slice << "_p" << id;
+      nameY << "PixelMap_Y_r" << evt.run() << "_s" << evt.subRun()<< "_e" << evt.event() << "_sl" << slice << "_p" << id;
+    }    
+    else{
+      name << "PixelMap_r" << evt.run() << "_s" << evt.subRun()<< "_e" << evt.event() << "_sl" << slice;
+      nameX << "PixelMap_X_r" << evt.run() << "_s" << evt.subRun()<< "_e" << evt.event() << "_sl" << slice;
+      nameY << "PixelMap_Y_r" << evt.run() << "_s" << evt.subRun()<< "_e" << evt.event() << "_sl" << slice;
+    }
+    TH2F* hist = pm.ToTH2();
+    TH2F* histX = pm.SingleViewToTH2(0);
+    TH2F* histY = pm.SingleViewToTH2(1);
+    hist->SetName(name.str().c_str());
+    histX->SetName(nameX.str().c_str());
+    histY->SetName(nameY.str().c_str());
+    
+    art::ServiceHandle<art::TFileService> tfs;
+    
+    TH2F* histWrite = tfs->make<TH2F>(*hist);
+    histWrite->Write();
+    TH2F* histWriteX = tfs->make<TH2F>(*histX);
+    histWriteX->Write();
+    TH2F* histWriteY = tfs->make<TH2F>(*histY);
+    histWriteY->Write();
+    
+    delete hist;
+    delete histWrite;
+    delete histX;
+    delete histWriteX;
+    delete histY;
+    delete histWriteY;
+    
+  }
+DEFINE_ART_MODULE(cvn::CVNEventProngDump);
+} // end namespace cvn
+////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+  
+
+
+//  LocalWords:  fWriteMapTH

@@ -1,0 +1,37 @@
+BEGIN_PROLOG
+
+#   This file defines the configuration for the CVNEventDump module
+
+standard_cvnevaluator:
+{
+  module_type:        CVNEvaluator
+  #==================
+  ClusterLabel:   "slicer"
+  PixelMapInput: "cvnmap"
+  ObeyPreselection: false
+  PreselectionLabels: [] # Empty list uses all
+  CaffeNetHandler:{
+    LibPath: "$CVN_LIB_PATH/"
+    DeployProto: "siamese_compact_deploy.prototxt"
+    ModelFile: "siamese_compact.caffemodel"
+    UseGeV: true
+    FeatureMap: "pool5/7x7_s1"
+  }
+
+  EigenvectorFilename: "CVN/PCA_eigenvectors_v0.root"
+}
+
+mrbrem_cvnevaluator:        @local::standard_cvnevaluator
+mrbrem_cvnevaluator.ClusterLabel: "slicermrbrem"
+mrbrem_cvnevaluator.PixelMapInput: "cvnmapmrbrem"
+
+mrcc_cvnevaluator:        @local::standard_cvnevaluator
+mrcc_cvnevaluator.ClusterLabel: "slicermrcc"
+mrcc_cvnevaluator.PixelMapInput: "cvnmapmrcc"
+
+mre_cvnevaluator:        @local::standard_cvnevaluator
+mre_cvnevaluator.ClusterLabel: "slicermre"
+mre_cvnevaluator.PixelMapInput: "cvnmapmre"
+
+
+END_PROLOG

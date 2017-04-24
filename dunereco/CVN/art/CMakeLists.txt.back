@@ -1,0 +1,37 @@
+  art_make(BASENAME_ONLY
+           LIBRARY_NAME      CVNArt
+           LIB_LIBRARIES     lardataobj_RecoBase
+                             lardataobj_RawData
+                             lardataobj_RecoBase
+                             lardata_Utilities
+                             ${LARDATA_LIB} 
+                             ${ART_FRAMEWORK_CORE}
+                             ${ART_FRAMEWORK_PRINCIPAL}
+                             ${ART_FRAMEWORK_SERVICES_REGISTRY}
+                             ${ART_FRAMEWORK_SERVICES_BASIC}
+                             ${ART_FRAMEWORK_SERVICES_OPTIONAL}
+                             ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
+                             ${ART_PERSISTENCY_COMMON}
+                             canvas_Persistency_Common
+                             ${ART_UTILITIES}
+                             canvas_Utilities
+                             ${MF_MESSAGELOGGER}
+                             ${MF_UTILITIES}
+                             ${FHICLCPP}
+                             ${CETLIB}
+                             ${ROOT_BASIC_LIB_LIST}
+                             lardataobj_RecoBase
+                             lardata_Utilities
+                             nusimdata_SimulationBase
+                             larsim_MCCheater_BackTracker_service
+                             CVNArt
+                             CVNFunc
+                             
+           DICT_LIBRARIES           
+                             CVNArt
+)
+
+
+install_headers()
+install_fhicl()
+install_source()

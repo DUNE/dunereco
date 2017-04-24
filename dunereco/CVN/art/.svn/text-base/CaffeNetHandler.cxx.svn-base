@@ -1,0 +1,187 @@
+////////////////////////////////////////////////////////////////////////
+/// \file    CaffeNetHandler.h
+/// \brief   CaffeNetHandler for CVN
+/// \author  Dominick Rocco - rocco@physics.umn.edu
+////////////////////////////////////////////////////////////////////////
+
+#include  <iostream>
+#include  <string>
+
+#include "Utilities/func/EnvExpand.h"
+
+#include "CVN/art/CaffeNetHandler.h"
+
+
+namespace cvn
+{
+
+  /// This function just returns the thing you give it, but in the meanwhile
+  /// it sets the glog level to what you pass in.
+  int LogLevel(int level)
+  {
+    FLAGS_minloglevel = level;
+    return level;
+  }
+
+
+  CaffeNetHandler::CaffeNetHandler( const std::string& libPath,
+                                    const std::string& deployProto,
+                                    const std::string& modelFile,
+                                    bool               useGeV,
+				    const std::string& featureMap):
+  fLibPath(libPath.empty() ? libPath : util::EnvExpansion(libPath)),
+  fDeployProto(fLibPath + deployProto),
+  fModelFile  (fLibPath + modelFile),
+  fUseGeV     (useGeV),
+  fFeatureMap     (featureMap),
+  fLogLevel(LogLevel(google::WARNING)),
+  fNet(fDeployProto, caffe::TEST)
+  {
+    fNet.CopyTrainedLayersFrom(fModelFile);
+  }
+
+  CaffeNetHandler::CaffeNetHandler(const fhicl::ParameterSet& pset):
+    CaffeNetHandler(
+                      pset.get<std::string>("LibPath", ""),
+                      pset.get<std::string>("DeployProto"),
+                      pset.get<std::string>("ModelFile"),
+                      pset.get<bool>("UseGeV", true),
+		      pset.get<std::string>("FeatureMap")
+                    )
+  {}
+
+  int CaffeNetHandler::NOutput() const
+  {
+    return fNet.output_blobs()[1]->shape(1);
+  }
+
+  int CaffeNetHandler::NFeatures() const
+  {
+    if(fFeatureMap==""){
+      return 1;
+    }
+    return fNet.blob_by_name(fFeatureMap)->shape(1);
+  }
+
+  std::pair<const float*, const float*> CaffeNetHandler::Predict(const PixelMap& pm)
+  {
+    std::vector<caffe::Datum> datums;
+    datums.push_back(PixelMapToDatum(pm,fUseGeV));
+    boost::dynamic_pointer_cast< caffe::MemoryDataLayer<float> >
+                              (fNet.layers()[0])->AddDatumVector(datums);
+    std::vector<caffe::Blob<float>*> result = fNet.ForwardPrefilled();
+
+    if(fFeatureMap==""){
+      float features[]={-1};
+      return std::make_pair<const float*, const float*>(result[1]->cpu_data(), features);
+    }
+
+    //Pull out the features stored in the final layer of network before the MLP layer that produces the final classifier:
+    const boost::shared_ptr<caffe::Blob<float>> features = fNet.blob_by_name(fFeatureMap);
+    
+    return std::make_pair<const float*, const float*>(result[1]->cpu_data(), features->cpu_data());
+  }
+
+  const float* CaffeNetHandler::PredictSP(const PixelMap& sliceMap, const PixelMap& prongMap)
+  {
+    std::vector<caffe::Datum> datums;
+    datums.push_back(ProngSlicePixelMapToDatum(sliceMap, prongMap,fUseGeV));
+    boost::dynamic_pointer_cast< caffe::MemoryDataLayer<float> >
+                              (fNet.layers()[0])->AddDatumVector(datums);
+    std::vector<caffe::Blob<float>*> result = fNet.ForwardPrefilled();
+    
+    return result[1]->cpu_data();
+  }
+
+  char ConvertToChar(float n, bool useGeV)
+  {
+    float peCorrChunk;
+                             // This value is 2.0 / (PE/GeV)
+    if (useGeV) peCorrChunk = 1.322e-4 / 255.0;
+    else        peCorrChunk = 2.0/255.0;
+
+    float truncateCorr = ceil(n/peCorrChunk);
+    if (truncateCorr > 255) return 255;
+    else return (char)truncateCorr;
+  }
+
+  caffe::Datum PixelMapToDatum(const PixelMap& pm, bool useGeV)
+  {
+
+    caffe::Datum datum;
+    char* pixels = NULL;
+    int channels(2), planes(0), cells(0);
+    datum.set_channels(channels);
+    planes = pm.fNPlane/2;
+    cells  = pm.fNCell;
+    datum.set_height(planes);
+    datum.set_width(cells);
+    pixels = new char[channels*planes*cells];
+    for (int iChan = 0; iChan < channels; ++iChan)
+    {
+      for (int iPlane = 0; iPlane < planes; ++iPlane)
+      {
+        for (int iCell = 0; iCell < cells; ++iCell)
+        {
+          int i = iCell + cells*(iPlane + planes*iChan);
+          float val = (iChan == 0) ?
+                      pm.fPEX.at(iCell + cells*iPlane) :
+                      pm.fPEY.at(iCell + cells*iPlane);
+
+          char pix = ConvertToChar(val, useGeV);
+          pixels[i] = pix;
+        }
+      }
+    }
+    datum.set_data(pixels, channels*planes*cells);
+    delete[] pixels;
+    return datum;
+   }
+
+  caffe::Datum ProngSlicePixelMapToDatum(const PixelMap& slicePM, const PixelMap& prongPM, bool useGeV)
+  {
+
+    caffe::Datum datum;
+    char* pixels = NULL;
+    int channels(4), planes(0), cells(0);
+    datum.set_channels(channels);
+    planes = slicePM.fNPlane/2;
+    cells  = prongPM.fNCell;
+    datum.set_height(planes);
+    datum.set_width(cells);
+    pixels = new char[channels*planes*cells];
+    for (int iChan = 0; iChan < channels; ++iChan)
+    {
+      for (int iPlane = 0; iPlane < planes; ++iPlane)
+      {
+        for (int iCell = 0; iCell < cells; ++iCell)
+        {
+          int i = iCell + cells*(iPlane + planes*iChan);
+
+          float val = 0;
+          if (iChan == 0){
+            val = slicePM.fPEX.at(iCell + cells*iPlane);
+          }
+          else if (iChan == 1){
+            val = slicePM.fPEY.at(iCell + cells*iPlane);
+          }
+          else if (iChan == 2){
+            val = prongPM.fPEX.at(iCell + cells*iPlane);
+          }
+          else if (iChan == 3){
+            val = prongPM.fPEY.at(iCell + cells*iPlane);
+          }
+
+          char pix = ConvertToChar(val, useGeV);
+          pixels[i] = pix;
+          //if(iChan==2 || iChan==3) std::cout<<val<<",";
+        }
+      }
+    }
+    //std::cout<<std::endl;
+    datum.set_data(pixels, channels*planes*cells);
+    delete[] pixels;
+    return datum;
+  }
+
+}

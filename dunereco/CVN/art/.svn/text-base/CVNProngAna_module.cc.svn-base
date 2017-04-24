@@ -1,0 +1,478 @@
+////////////////////////////////////////////////////////////////////////
+// \file    CVNProngAna_module.cc
+// \brief   Analyzer module for testing Prong CVN performace
+// \author  psihas@fnal.gov
+////////////////////////////////////////////////////////////////////////
+
+// C/C++ includes
+#include <iostream>
+#include <string>
+#include <sstream>
+
+
+// ROOT includes
+#include "TTree.h"
+#include "TH2F.h"
+#include "TH3F.h"
+#include "TFile.h"
+// Framework includes
+#include "art/Framework/Core/FileBlock.h"
+#include "art/Framework/Core/EDAnalyzer.h"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Services/Optional/TFileDirectory.h"
+#include "art/Framework/Services/Optional/TFileService.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "fhiclcpp/ParameterSet.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
+#include "art/Framework/Core/ModuleMacros.h"
+#include "art/Framework/Core/FindManyP.h"
+
+
+// NOvASoft includes
+#include "RecoBase/CellHit.h"
+#include "RecoBase/Cluster.h"
+#include "RecoBase/Prong.h"
+#include "RecoBase/PID.h"
+#include "RecoBase/Shower.h"
+#include "RecoBase/FilterList.h"
+#include "Utilities/AssociationUtil.h"
+#include "ShowerLID/ShowerLID.h"
+#include "SimulationBase/MCNeutrino.h"
+#include "SimulationBase/MCParticle.h"
+#include "SimulationBase/MCTruth.h"
+
+#include "Calibrator/Calibrator.h"
+#include "MCCheater/BackTracker.h"
+
+
+//#include "CVN/art/CaffeNetHandler.h"
+#include "CVN/func/ProngSummary.h"
+#include "CVN/func/TrainingData.h"
+#include "CVN/func/InteractionType.h"
+#include "CVN/func/AssignLabels.h"
+#include "CVN/func/Result.h"
+
+namespace cvn {
+
+
+  class CVNProngAna : public art::EDAnalyzer {
+  public:
+    explicit CVNProngAna(fhicl::ParameterSet const& pset);
+    ~CVNProngAna();
+    //void respondToOpenInputFile(const art::FileBlock& fb);
+    void analyze(const art::Event& evt);
+    void reconfigure(const fhicl::ParameterSet& pset);
+    void beginJob();
+    void endJob();
+    //void InitializeOutFile();
+    static bool CompareE( const art::Ptr<rb::Prong>& a, const art::Ptr<rb::Prong>& b);
+
+  private:
+    /// Module lablel for input clusters
+    std::string    fClusterLabel;
+
+    /// Module label for input pixel maps
+    std::string fPixelMapInput;
+
+    std::string fProngModLabel;
+
+    std::string fProng3DLabel;
+
+    std::string fCVNLabel;
+
+    std::string fShowerLabel;
+
+    std::string fShowerLIDLabel;
+
+    bool fSkipFiltered;
+
+
+    TH2F* fConfusionMatrix_00;
+    TH2F* fConfusionMatrix_30;
+    TH2F* fConfusionMatrix_50;
+
+    TH3F* fCMRecoE;
+    TH3F* fCMTrueE;
+
+    std::ofstream fEventListFile;
+
+    art::ServiceHandle<cheat::BackTracker> fBT;
+
+    //    cvn::CaffeNetHandler fHandler;
+
+    TTree *fProngIDana;
+    double prongTrueE;
+    double prongRecoE;
+    double sliceTrueE;
+    double sliceRecoE;
+    double purX;
+    double purY;
+    double pur3D;
+    double score[100];
+    double recopdg[100];
+    int    truepdg[100];
+    double truepur[100];
+    double gap;
+    double maxv;
+    int    trueIDx;
+    int    trueIDy;
+    int    trueID;
+    int    recoID;
+    int    truePDG;
+    int    recoPDG;
+    int    nhitsX;
+    int    nhitsY;
+    int    nhits3D;
+    double length;
+    double totalGeV;
+    int    run;
+    int    subrun;
+    int    event;
+    int    slice;
+    bool   leading;
+
+
+    //     Tree with nu info
+    TTree *fCVNnu;
+    ProngSummary *fInfo;
+
+    // /// Number of outputs fron neural net
+    static const unsigned int fNOutput = 10;
+    int NOutput;
+
+    TFile*          fFile;
+    std::string fCafFilename;
+    
+    static bool byScore (std::pair<int,float> i,std::pair<int,float> j){
+      return ( (i.second > j.second) );
+    }
+    // Will use to order pairs of < PDG, score >
+    static bool scoreCompare(const art::Ptr<rb::PID>& pidA, const art::Ptr<rb::PID>& pidB) {
+      return pidA->Value() > pidB->Value();
+    }
+
+  };
+
+
+
+  //.......................................................................
+  CVNProngAna::CVNProngAna(fhicl::ParameterSet const& pset)
+    : EDAnalyzer(pset),
+      fFile(0)
+  {
+    this->reconfigure(pset);
+  }
+
+  //......................................................................
+  CVNProngAna::~CVNProngAna()
+  {
+
+  }
+
+  //......................................................................
+  void CVNProngAna::reconfigure(const fhicl::ParameterSet& pset)
+  {
+    fClusterLabel   = pset.get<std::string>("ClusterLabel");
+    fPixelMapInput  = pset.get<std::string>("PixelMapInput");
+    fProngModLabel  = pset.get<std::string>("ProngModLabel");
+    fProng3DLabel   = pset.get<std::string>("Prong3DLabel");
+    fCVNLabel       = pset.get<std::string>("CVNLabel");
+    fShowerLabel    = pset.get<std::string>("ShowerLabel");
+    fShowerLIDLabel = pset.get<std::string>("ShowerLIDLabel");
+    fSkipFiltered   = pset.get<bool>("SkipFiltered");
+  }
+
+  //......................................................................
+  void CVNProngAna::beginJob()
+  {
+
+    art::ServiceHandle<art::TFileService> tfs;
+
+
+    // Confusion Matrix plots by 3D prong purity
+    fConfusionMatrix_00 =  tfs->make<TH2F>("ConfusionMatrix_00",
+                              ";True ID; CVN ID;",
+                              fNOutput, 0, fNOutput, fNOutput, 0, fNOutput);
+    fConfusionMatrix_30 =  tfs->make<TH2F>("ConfusionMatrix_30",
+                              ";True ID; CVN ID;",
+                              fNOutput, 0, fNOutput, fNOutput, 0, fNOutput);
+    fConfusionMatrix_50 =  tfs->make<TH2F>("ConfusionMatrix_50",
+                              ";True ID; CVN ID;",
+                              fNOutput, 0, fNOutput, fNOutput, 0, fNOutput);
+
+    fCMRecoE         =  tfs->make<TH3F>("CMRecoE",
+                              ";True Interaction Type; Idenitfied Type; Reco E",
+                              fNOutput, 0, fNOutput,
+                              fNOutput, 0, fNOutput,
+                              20, 0, 10);
+    fCMTrueE         =  tfs->make<TH3F>("CMTrueE",
+                              ";True Interaction Type; Idenitfied Type; Reco E",
+                              fNOutput, 0, fNOutput,
+                              fNOutput, 0, fNOutput,
+                              20, 0, 10);
+
+    fProngIDana    = tfs->make<TTree>("ProngIDana","ProngIDana");
+    fProngIDana->Branch("NOutput",&NOutput,"NOutput/I");
+    fProngIDana->Branch("gap",&gap,"gap/D");
+    fProngIDana->Branch("purX",&purX,"purX/D");
+    fProngIDana->Branch("purY",&purY,"purY/D");
+    fProngIDana->Branch("pur3D",&pur3D,"pur3D/D");
+    fProngIDana->Branch("nhitsX",&nhitsX,"nhitsX/I");
+    fProngIDana->Branch("nhitsY",&nhitsY,"nhitsY/I");
+    fProngIDana->Branch("nhits3D",&nhits3D,"nhits3D/I");
+    fProngIDana->Branch("score",&score,"score[NOutput]/D");
+    fProngIDana->Branch("recopdg",&recopdg,"recopdg[NOutput]/D");
+    fProngIDana->Branch("truepdg",&truepdg,"truepdg[NOutput]/I");
+    fProngIDana->Branch("truepur",&truepur,"truepur[NOutput]/D");
+    fProngIDana->Branch("trueIDx",&trueIDx,"trueIDx/I");
+    fProngIDana->Branch("trueIDy",&trueIDy,"trueIDy/I");
+    fProngIDana->Branch("trueID",&trueID,"trueID/I");
+    fProngIDana->Branch("recoID",&recoID,"recoID/I");
+    fProngIDana->Branch("truePDG",&truePDG,"truePDG/I");
+    fProngIDana->Branch("recoPDG",&recoPDG,"recoPDG/I");
+    fProngIDana->Branch("maxv",&maxv,"maxv/D");
+    fProngIDana->Branch("totalGeV",&totalGeV,"totalGeV/D");
+    fProngIDana->Branch("length",&length,"length/D");
+    fProngIDana->Branch("prongTrueE",&prongTrueE,"prongTrueE/D");
+    fProngIDana->Branch("prongRecoE",&prongRecoE,"prongRecoE/D");
+    fProngIDana->Branch("sliceTrueE",&sliceTrueE,"sliceTrueE/D");
+    fProngIDana->Branch("sliceRecoE",&sliceRecoE,"sliceRecoE/D");
+    fProngIDana->Branch("run",&run,"run/I");
+    fProngIDana->Branch("subrun",&subrun,"subrun/I");
+    fProngIDana->Branch("event",&event,"event/I");
+    fProngIDana->Branch("slice",&slice,"slice/I");
+    fProngIDana->Branch("leading",&leading,"leading/I");
+
+    fCVNnu    = tfs->make<TTree>("CVNnu","CVNnu");
+    fCVNnu->Branch("fPrng", "cvn::ProngSummary", &fInfo);
+
+  }
+
+  //......................................................................
+  void CVNProngAna::endJob()
+  {
+
+  }
+
+  bool CVNProngAna::CompareE( const art::Ptr<rb::Prong>& a, const art::Ptr<rb::Prong>& b)
+  {
+    return a->TotalGeV() > b->TotalGeV();
+  }
+
+  //......................................................................
+  void CVNProngAna::analyze(const art::Event& evt)
+  {
+
+    event= evt.id().event();
+    run = evt.run();
+    subrun = evt.subRun();
+
+    art::ServiceHandle<geo::Geometry> geom;
+
+    art::Ptr<simb::MCTruth> truth;
+
+    // get the slices
+    art::Handle< std::vector< rb::Cluster > > clusterHandle;
+    evt.getByLabel(fClusterLabel, clusterHandle);
+    const std::vector<rb::Cluster> & clusters = *clusterHandle;
+    art::PtrVector<rb::Cluster> slices;
+    for(unsigned int i=0; i<clusterHandle->size(); ++i){
+      slices.push_back(art::Ptr<rb::Cluster>(clusterHandle, i));
+    }
+
+
+    std::vector<int> bestNuId;
+    std::vector<cheat::NeutrinoWithIndex> nus;
+    std::vector<std::vector<cheat::NeutrinoEffPur>> sEffPur;
+    nus = fBT->allMCTruth();
+    sEffPur = fBT->SlicesToMCTruthsTable(slices);
+    bestNuId =fBT->SliceToOrderedNuIdsByEnergy(nus, sEffPur);
+
+    for(size_t iClust = 0; iClust < clusters.size(); ++iClust) {
+
+      fInfo = new ProngSummary;
+
+      slice = iClust;
+
+      const rb::Cluster& cluster = clusters[iClust];
+      if(rb::IsFiltered(evt,clusterHandle,iClust)) continue;
+      if (bestNuId[iClust] == -1) continue;
+      if (cluster.IsNoise()) continue;
+      if (fSkipFiltered && rb::IsFiltered(evt,clusterHandle,iClust) ) continue;
+      truth =  sEffPur[iClust][bestNuId[iClust]].neutrinoInt;
+
+      sliceRecoE = cluster.TotalGeV();
+      
+      sliceTrueE = 0;
+      for (unsigned int h =0; h<cluster.NCell(); ++h){
+	std::vector<sim::FLSHit> fls = fBT->HitToFLSHit(cluster.Cell(h));
+	for (unsigned int f=0; f<fls.size(); ++f){
+	  sliceTrueE += fls[f].GetEdep();
+	}
+      }
+
+      art::FindManyP<rb::Prong> fmProng3D(clusterHandle, evt, art::InputTag(fProngModLabel, fProng3DLabel));
+
+      std::vector<art::Ptr<rb::Prong>> prongs3D;
+
+      if( !fmProng3D.isValid() ) continue;
+      if( fmProng3D.isValid() ) prongs3D = fmProng3D.at(iClust);
+
+      // Sort prongs by energy here
+      std::sort(prongs3D.begin(),prongs3D.end(), CompareE);
+
+      art::FindOneP<PixelMap> fmPixelMap3D(prongs3D, evt, fPixelMapInput);
+
+      art::FindManyP<rb::PID>    fmCVNID(prongs3D, evt, fCVNLabel);
+      art::FindOneP<cvn::Result> fmCVN(prongs3D, evt, fCVNLabel);
+      art::FindOneP<rb::Shower> foSh(prongs3D, evt,fShowerLabel);
+
+      for( unsigned int iProng = 0; iProng < prongs3D.size(); ++iProng ){
+		
+	gap = -5;
+	if ( foSh.isValid() ){
+	  cet::maybe_ref<art::Ptr<rb::Shower> const> roSh(foSh.at(iProng));
+	  art::Ptr<rb::Shower> shower = roSh.ref();
+
+	  std::vector<art::Ptr<rb::Shower>> showers;
+	  showers.push_back(shower);
+
+	  art::FindOneP<slid::ShowerLID> foShLID(showers, evt,fShowerLIDLabel);
+	  if ( foShLID.isValid() ){
+	    cet::maybe_ref<art::Ptr<slid::ShowerLID> const> roShLID(foShLID.at(0));
+	    art::Ptr<slid::ShowerLID> showerLID = roShLID.ref();
+	    gap = showerLID->Gap();
+	  }
+	}
+
+	if ( !fmCVNID.isValid() ) continue;
+	std::vector< art::Ptr<rb::PID> > cvnPID = fmCVNID.at(iProng);
+
+	// Sort cvn results by PID value 
+	std::vector<double> pscore;
+	std::sort(cvnPID.begin(), cvnPID.end(), scoreCompare);
+	for( unsigned int iPID = 0; iPID < cvnPID.size(); ++iPID ){
+	  score[iPID]         = cvnPID[iPID]->Value();
+	  fInfo->prng_score[iProng][iPID] = cvnPID[iPID]->Value();
+	  fInfo->prng_recopdg[iProng][iPID] = cvnPID[iPID]->Pdg();
+	  recopdg[iPID]       =    cvnPID[iPID]->Pdg();
+	  // std::cout<<"* pdg *"<<recopdg[iPID]<<".. score .. "<<score[iPID]<<std::endl;
+	  // std::cout<<"* pdg -"<<fInfo->prng_score[iProng][iPID]<<".... "<<std::endl;
+	}
+
+	
+	ProngType ptype3D, ptypeX, ptypeY;
+	double purity3D, purityX, purityY, recE;
+	unsigned int ncellX, ncellY;
+	
+	ptype3D = ProngClassify(*prongs3D[iProng], &ptype3D, &ptypeX, &ptypeY, &purity3D, &purityX, &purityY, &recE, &ncellX, &ncellY);
+
+	std::vector< std::pair<int, double> > purPDG  = GetProngPurityByPDG(*prongs3D[iProng], &ptype3D, &purity3D);
+
+	for( unsigned int iPur = 0; iPur < purPDG.size(); ++iPur ){
+	  truepdg[iPur] = purPDG[iPur].first;
+	  truepur[iPur] = purPDG[iPur].second;
+	  fInfo->prng_truepdg[iProng][iPur] = (int)purPDG[iPur].first;
+	  fInfo->prng_truepur[iProng][iPur] = (double)purPDG[iPur].second;
+	  std::cout<<"*** pdg ***"<<purPDG[iPur].first<<"... purity... "<<purPDG[iPur].second<<std::endl;
+	  //	  std::cout<<"    pdg    "<<fInfo->prng_truepdg[iProng][iPur]<<"    purity    "<<fInfo->prng_truepur[iProng][iPur]<<std::endl;
+	}
+
+	art::Ptr<rb::Prong> prong = prongs3D[iProng];
+        
+	prongTrueE = 0;
+        for (unsigned int h =0; h<prong->NCell(); ++h){
+	  std::vector<sim::FLSHit> fls = fBT->HitToFLSHit(prong->Cell(h));
+          for (unsigned int f=0; f<fls.size(); ++f){
+            prongTrueE += fls[f].GetEdep();
+          }
+        }
+
+	if ( iProng == 0 ) leading = 1;
+	else leading = 0;
+
+	
+	TVector3 prongdir = prong->Dir();
+	TVector3 beamdir  = geom->NuMIBeamDirection();
+	float    angle    = prongdir*beamdir;
+
+	prongRecoE        = prong->TotalGeV();
+	length            = prong->TotalLength();
+	totalGeV            = prong->TotalGeV();
+
+	//	std::cout<<" ---  Lead --- "<<leading<<" --- --- E = "<<prongRecoE<<std::endl;
+
+	NOutput = fNOutput;
+	purX    = purityX;
+	purY    = purityY;
+	pur3D   = purity3D;
+	trueIDx = ptypeX;
+	trueIDy = ptypeY;
+	trueID  = ptype3D;
+	truePDG = GetPDGByPType( ptype3D );
+	recoID  = (int) GetTypeByPDG(recopdg[0]);
+	recoPDG = recopdg[0];
+        maxv    = score[0];
+	nhitsX  = ncellX;
+	nhitsY  = ncellY;
+	nhits3D = ncellX+ncellY;	
+
+        std::cout<<"Filling"<<std::endl;
+	fProngIDana->Fill();
+
+	fInfo->prng_trueIDx[iProng]  = trueIDx;
+	fInfo->prng_trueIDy[iProng]  = trueIDy;
+	fInfo->prng_trueID[iProng]   = trueID;
+	fInfo->prng_recoID[iProng]   = recoID;
+	fInfo->prng_truePDG[iProng]  = truePDG;
+	fInfo->prng_recoPDG[iProng]  = recoPDG;
+	fInfo->prng_nhitsX[iProng]   = nhitsX;
+	fInfo->prng_nhitsY[iProng]   = nhitsY;
+	fInfo->prng_nhits3D[iProng]  = nhits3D;
+	fInfo->prng_purX[iProng]     = purX;
+	fInfo->prng_purY[iProng]     = purY;
+	fInfo->prng_pur3D[iProng]    = pur3D;
+	fInfo->prng_gap[iProng]      = gap;
+	fInfo->prng_angle[iProng]    = angle;
+	fInfo->prng_maxv[iProng]     = maxv;
+	fInfo->prng_RecoE[iProng]    = -5;
+	fInfo->prng_TrueE[iProng]    = prongTrueE;
+	fInfo->prng_leading[iProng]  = leading;
+	fInfo->prng_length[iProng]   = prong->TotalLength();
+	fInfo->prng_totalGeV[iProng] = prong->TotalGeV();
+	
+	fConfusionMatrix_00->Fill(trueID, recoID);
+	if ( pur3D >= 0.30)
+	  fConfusionMatrix_30->Fill(trueID, recoID);
+	if ( pur3D >= 0.50)
+	  fConfusionMatrix_50->Fill(trueID, recoID);
+
+      }// over prongs
+
+      fInfo->Nprongs  = prongs3D.size();
+      fInfo->Npids    = 10;
+      fInfo->run      = run;
+      fInfo->subrun   = subrun;
+      fInfo->event    = event;
+      fInfo->slice    = slice;
+      fInfo->TrueE    = sliceTrueE;
+      fInfo->RecoE    = -5;
+      fInfo->totalGeV = cluster.TotalGeV();
+
+      fCVNnu->Fill();
+
+    }// slices
+
+  }
+
+DEFINE_ART_MODULE(cvn::CVNProngAna);
+} // end namespace cvn
+////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+

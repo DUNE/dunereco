@@ -1,0 +1,19 @@
+#for classes_def.xml
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
+
+art_make( BASENAME_ONLY
+          LIBRARY_NAME     CVNFunc
+          LIB_LIBRARIES    SimulationBase
+                           RecoBase
+                           BackTracker_service
+                           ${ART_FRAMEWORK_SERVICES_REGISTRY}
+                           ${CETLIB}
+                           ${boost_SYSTEM}
+                           ${ROOT_BASIC_LIB_LIST}
+          DICT_LIBRARIES   RecoBase
+                           CVNFunc
+)
+
+
+install_headers()
+install_source()

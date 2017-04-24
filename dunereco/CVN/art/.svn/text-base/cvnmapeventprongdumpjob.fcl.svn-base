@@ -1,0 +1,66 @@
+#include "services.fcl"
+#include "BackTracker.fcl"
+#include "CVNMapper.fcl"
+#include "CVNEventProngDump.fcl"
+
+process_name: CVNMapper
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "cvn_event_prong_dump_r%r_s%s_hist.root"
+                  closeFileFast: false }
+
+  @table::standard_services
+}
+
+services.BackTracker: @local::standard_backtracker
+
+# Input source is a ROOT file 
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1        # Number of events to create
+
+}
+
+outputs:
+{
+  out1:
+  {
+      module_type: RootOutput
+      fileName:    "cvnmapper_r%r_s%s.root" 
+      fastCloning: false
+  }
+}
+
+# Define and configure some modules to do work on each event.
+# First modules are defined; they are scheduled later.
+# Modules are grouped by type.
+physics:
+{
+  # Declare the modules
+  producers:
+  { 
+    cvnmap: @local::standard_cvnmapper
+  }
+
+  analyzers:
+  { 
+    cvnprongdump: @local::standard_cvneventprongdump 
+  }
+
+
+  # Build the paths
+  map: [ cvnmap]
+    analyze: [ cvnprongdump ]
+
+
+  out: [out1]
+
+
+}
+
+physics.analyzers.cvnprongdump.WriteTH2:false
+
+########################################################################

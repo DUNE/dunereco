@@ -1,0 +1,47 @@
+#include "services.fcl"
+#include "BackTracker.fcl"
+#include "CVNProngEvaluator.fcl"
+#include "CAFMaker.fcl"
+#include "CVNMapper.fcl"
+
+process_name: cvnprongevaluator
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TimeTracker:{}
+  user: @local::standard_services
+}
+services.BackTracker: @local::standard_backtracker
+
+# Input source is a ROOT file 
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1        # Number of events to create
+}
+
+outputs:
+{}
+
+# Define and configure some modules to do work on each event.
+# First modules are defined; they are scheduled later.
+# Modules are grouped by type.
+physics:
+{
+  # Declare the modules
+  producers:
+  { 
+    cvnmap: @local::standard_cvnmapper
+    cvnprongeval: @local::standard_cvnprongevaluator
+    cafmaker: @local::standard_cafmaker
+  }
+
+  # Build the paths
+  map: [cvnmap, cvnprongeval, cafmaker]
+
+}
+
+
+
+########################################################################

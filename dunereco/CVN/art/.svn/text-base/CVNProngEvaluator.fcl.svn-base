@@ -1,0 +1,28 @@
+BEGIN_PROLOG
+
+#   This file defines the configuration for the CVNEventDump module
+
+standard_cvnprongevaluator:
+{
+  module_type:        CVNProngEvaluator
+  #==================
+  ClusterLabel:   "slicer"
+  PixelMapInput: "cvnmap"
+  ProngModLabel: "fuzzykvertex"	
+  Prong3DLabel:   "Prongs3D"
+  ObeyPreselection: false
+  ProngOnly:        true
+  CaffeNetHandler:{
+    DeployProto: "/nova/ana/users/edniner/ang/deploy/google_siamese_prong_compact_8output_deploy.txt"
+    ModelFile: "/nova/ana/users/edniner/ang/model/googlenet_prongview_compact_8out_iter_210000.caffemodel"
+    UseGeV: true  
+    FeatureMap: ""
+  }
+}
+
+cvnsliceprong_evaluator: @local::standard_cvnprongevaluator
+cvnsliceprong_evaluator.ProngOnly: false
+cvnsliceprong_evaluator.CaffeNetHandler.DeployProto: "/nova/ana/users/edniner/ang/deploy/google_siamese_slice_prong_compact_8output_deploy.txt"
+cvnsliceprong_evaluator.CaffeNetHandler.ModelFile: "/nova/ana/users/edniner/ang/model/googlenet_sliceprongview_compact_8out_iter_110000.caffemodel"
+
+END_PROLOG

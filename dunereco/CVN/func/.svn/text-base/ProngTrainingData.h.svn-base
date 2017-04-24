@@ -1,0 +1,50 @@
+////////////////////////////////////////////////////////////////////////
+// \file    ProngTrainingData.h
+/// \brief   The ProngTrainingData objects contains a PixelMap and the
+///          output type within the chosen classification which will
+///          later go into the CNN
+// \author   psihas -- psihas@fnal.gov
+////////////////////////////////////////////////////////////////////////
+#ifndef CVN_PRONGTRAININGDATA_H
+#define CVN_PRONGTRAININGDATA_H
+
+#include "CVN/func/PixelMap.h"
+#include "CVN/func/ProngType.h"
+
+namespace cvn
+{
+
+
+  /// \brief   The TrainingData objects contains a PixelMap and the
+  ///          output class type, and any other bit that goes into the ANN
+
+  class ProngTrainingData
+  {
+
+  public:
+    ProngTrainingData(){};
+    ProngTrainingData(const ProngType& pronglabel, const ProngType& pronglabelX,
+                      const ProngType& pronglabelY, double purity3D, 
+                      double purityX, double purityY, double recE, 
+                      unsigned int ncellX, unsigned int ncellY, 
+                      double vX, double vY, double vZ, const PixelMap& pMap);
+
+    ProngType  fLabel3D;  ///< Class of the 3D prong
+    ProngType  fLabelX;  ///< Class of the X view prong
+    ProngType  fLabelY;  ///< Class of the Y view prong
+    double     fPurity3D;
+    double     fPurityX;
+    double     fPurityY;
+    double     fRecE;
+    unsigned int fNCellX;
+    unsigned int fNCellY;
+    double     fVertX;
+    double     fVertY;
+    double     fVertZ;
+    PixelMap   fProngPMap;   ///< PixelMap for the event
+  };
+
+} // end namespace
+
+#endif // CVN_PRONGTRAININGDATA_H
+//////////////////////////////////////////////////////////////////////////////

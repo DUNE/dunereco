@@ -1,0 +1,28 @@
+////////////////////////////////////////////////////////////////////////
+// \file    Interaction.h
+///\brief   Defines an enumeration for interaction type
+///
+// \author   rocco -- rocco@physics.umn.edu
+////////////////////////////////////////////////////////////////////////
+#ifndef CVN_SIMPLENEUTRINOTYPE_H
+#define CVN_SIMPLENEUTRINOTYPE_H
+
+#include "CVN/func/InteractionType.h"
+
+
+namespace cvn
+{
+
+  typedef enum SimpleNeutrino
+  {
+    kNumu,                ///< Numu CC interaction
+    kNue,                 ///< Nue CC QE interaction
+    kNuNC,                  ///< NC interaction
+    kNSimpleNeutrinoType  ///< Number of types, used like a vector size
+  } SimpleNeutrinoType;
+
+
+  SimpleNeutrinoType GetSimpleNeutrinoType(const InteractionType& intType);
+}
+
+#endif // CVN_SIMPLENEUTRINOTYPE_H

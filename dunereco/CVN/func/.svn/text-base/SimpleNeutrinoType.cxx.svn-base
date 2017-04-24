@@ -1,0 +1,19 @@
+
+#include "CVN/func/SimpleNeutrinoType.h"
+#include "CVN/func/InteractionType.h"
+
+namespace cvn
+{
+  /// Get Interaction_t from pdg, mode and iscc.
+  /// Setting pdg and mode to zero triggers cosmic ray
+  SimpleNeutrinoType GetSimpleNeutrinoType(const InteractionType& intType)
+  {
+
+      if (intType <= kNumuOther) return kNumu;
+      if (intType <= kNueOther)  return kNue;
+      if (intType == kNC)        return kNuNC;
+
+      return kNSimpleNeutrinoType;
+
+  }
+}

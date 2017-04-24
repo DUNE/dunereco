@@ -1,0 +1,35 @@
+////////////////////////////////////////////////////////////////////////
+// \file    EventLabeledPMaps.h
+/// \brief   The EventLabeledPMaps objects contains a PixelMap and the
+///          output class type, and any other bit that goes into the ANN
+// \author   psihas -- psihas@fnal.gov
+////////////////////////////////////////////////////////////////////////
+#ifndef CVN_EVENTLABELEDPMAPS_H
+#define CVN_EVENTLABELEDPMAPS_H
+
+#include <vector>
+#include "CVN/func/PixelMap.h"
+#include "CVN/func/TrainingData.h"
+#include "CVN/func/ProngTrainingData.h"
+
+namespace cvn
+{
+
+
+  /// \brief   The EventLabeledPMaps objects contains a PixelMap and the
+  ///          output class type, and any other bit that goes into the ANN
+
+  class EventLabeledPMaps
+  {
+
+  public:
+    EventLabeledPMaps();
+
+    TrainingData      fSliceLabeledPM;  ///< Class of the event
+    std::vector<ProngTrainingData> fProngLabeledPMs;   ///< PixelMap for the event
+  };
+
+} // end namespace
+
+#endif // CVN_TRAININGDATA_H
+//////////////////////////////////////////////////////////////////////////////

@@ -1,0 +1,43 @@
+#include "services.fcl"
+#include "BackTracker.fcl"
+#include "CVNAna.fcl"
+
+process_name: CVNEventDump
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "CVNAna_hist.root" closeFileFast: false }
+  TimeTracker:{}
+  @table::standard_services
+}
+
+services.BackTracker: @local::standard_backtracker
+
+# Input source is a ROOT file 
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1        # Number of events to create
+}
+
+# Define and configure some modules to do work on each event.
+# First modules are defined; they are scheduled later.
+# Modules are grouped by type.
+physics:
+{
+  # Declare the modules
+  analyzers:
+  { 
+    cvnana: @local::standard_cvnana
+  }
+
+  # Build the paths
+  analyze: [ cvnana ]
+
+
+}
+
+services.RunHistory.AbortIfNoMask: false
+
+########################################################################

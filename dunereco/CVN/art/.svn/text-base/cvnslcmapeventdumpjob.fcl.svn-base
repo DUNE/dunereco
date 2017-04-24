@@ -1,0 +1,68 @@
+#include "services.fcl"
+#include "BackTracker.fcl"
+#include "CalHit.fcl"
+#include "Slicer4D.fcl"
+#include "CVNMapper.fcl"
+#include "CVNEventDump.fcl"
+
+process_name: CVNMapper
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "cvn_event_dump_r%r_s%s_hist.root"
+                  closeFileFast: false }
+
+  @table::standard_services
+}
+
+services.BackTracker: @local::standard_backtracker
+
+# Input source is a ROOT file 
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1        # Number of events to create
+
+}
+
+outputs:
+{
+  out1:
+  {
+      module_type: RootOutput
+      fileName:    "cvnmapper_r%r_s%s.root" 
+      fastCloning: false
+  }
+}
+
+# Define and configure some modules to do work on each event.
+# First modules are defined; they are scheduled later.
+# Modules are grouped by type.
+physics:
+{
+  # Declare the modules
+  producers:
+  { 
+    calhit: @local::standard_calhit
+    slicer: @local::standard_slicer4d
+    cvnmap: @local::standard_cvnmapper
+  }
+
+  analyzers:
+  { 
+    cvndump: @local::standard_cvneventdump 
+  }
+
+
+  # Build the paths
+  map: [ calhit, slicer, cvnmap]
+    analyze: [ cvndump ]
+
+
+  out: [out1]
+
+
+}
+
+########################################################################

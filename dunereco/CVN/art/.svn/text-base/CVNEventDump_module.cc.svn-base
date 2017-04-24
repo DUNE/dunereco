@@ -1,0 +1,231 @@
+////////////////////////////////////////////////////////////////////////
+// \file    CVNEventDump_module.cc
+// \brief   Analyzer module for creating CVN PixelMap objects
+// \author  Dominick Rocco - rocco@physics.umn.edu
+////////////////////////////////////////////////////////////////////////
+
+// C/C++ includes
+#include <iostream>
+#include <sstream>
+
+// ROOT includes
+#include "TTree.h"
+#include "TH2F.h"
+
+// Framework includes
+#include "art/Framework/Core/EDAnalyzer.h"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Services/Optional/TFileDirectory.h"
+#include "art/Framework/Services/Optional/TFileService.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "fhiclcpp/ParameterSet.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
+#include "art/Framework/Core/ModuleMacros.h"
+#include "art/Framework/Core/FindManyP.h"
+
+
+// NOvASoft includes
+#include "RecoBase/CellHit.h"
+#include "RecoBase/Cluster.h"
+#include "Utilities/AssociationUtil.h"
+#include "SimulationBase/MCNeutrino.h"
+#include "SimulationBase/MCParticle.h"
+#include "SimulationBase/MCTruth.h"
+
+#include "Calibrator/Calibrator.h"
+#include "MCCheater/BackTracker.h"
+
+#include "CVN/func/AssignLabels.h"
+#include "CVN/func/TrainingData.h"
+#include "CVN/func/InteractionType.h"
+
+
+
+
+namespace cvn {
+  class CVNEventDump : public art::EDAnalyzer {
+  public:
+    explicit CVNEventDump(fhicl::ParameterSet const& pset);
+    ~CVNEventDump();
+
+    void analyze(const art::Event& evt);
+    void reconfigure(const fhicl::ParameterSet& pset);
+    void beginJob();
+    void endJob();
+
+
+
+  private:
+
+    std::string fClusterLabel;
+    std::string fPixelMapInput;
+    bool        fWriteMapTH2;
+
+    TrainingData* fTrain;
+    TTree*        fTrainTree;
+
+    art::ServiceHandle<cheat::BackTracker> fBT;
+
+    /// Function to extract TH2 from PixelMap and write to TFile
+    void WriteMapTH2(const art::Event& evt, int slice, const PixelMap& pm);
+
+  };
+
+
+
+  //.......................................................................
+  CVNEventDump::CVNEventDump(fhicl::ParameterSet const& pset)
+    : EDAnalyzer(pset)
+  {
+    this->reconfigure(pset);
+  }
+
+  //......................................................................
+  CVNEventDump::~CVNEventDump()
+  {  }
+
+  //......................................................................
+  void CVNEventDump::reconfigure(const fhicl::ParameterSet& pset)
+  {
+    fClusterLabel   = pset.get<std::string>("ClusterLabel");
+    fPixelMapInput  = pset.get<std::string>("PixelMapInput");
+    fWriteMapTH2    = pset.get<bool>       ("WriteMapTH2");
+
+  }
+
+  //......................................................................
+  void CVNEventDump::beginJob()
+  {
+
+
+    art::ServiceHandle<art::TFileService> tfs;
+
+    fTrainTree = tfs->make<TTree>("CVNTrainTree", "Training records");
+    fTrainTree->Branch("train", "cvn::TrainingData", &fTrain);
+
+
+  }
+
+  //......................................................................
+  void CVNEventDump::endJob()
+  {
+
+  }
+
+  //......................................................................
+  void CVNEventDump::analyze(const art::Event& evt)
+  {
+
+
+//    art::ServiceHandle<cheat::BackTracker>& bt = fBT;
+
+
+
+
+    // get the slices
+    art::Handle< std::vector< rb::Cluster > > clusterHandle;
+    evt.getByLabel(fClusterLabel, clusterHandle);
+    const std::vector<rb::Cluster> & clusters = *clusterHandle;
+    art::PtrVector<rb::Cluster> slices;
+    for(unsigned int i=0; i<clusterHandle->size(); ++i){
+      slices.push_back(art::Ptr<rb::Cluster>(clusterHandle, i));
+    }
+
+    art::FindManyP<PixelMap> fmPixelMap(clusterHandle, evt, fPixelMapInput);
+
+    std::vector<int> bestNuId;
+    std::vector<cheat::NeutrinoWithIndex> nus;
+    std::vector<std::vector<cheat::NeutrinoEffPur>> sEffPur;
+    if(fBT->HaveTruthInfo()){
+      nus = fBT->allMCTruth();
+      sEffPur = fBT->SlicesToMCTruthsTable(slices);
+      bestNuId =fBT->SliceToOrderedNuIdsByEnergy(nus, sEffPur);
+    }
+
+    for(size_t iClust = 0; iClust < clusters.size(); ++iClust) {
+      const rb::Cluster& cluster = clusters[iClust];
+      if(!fmPixelMap.isValid()) continue;
+
+
+      const std::vector<art::Ptr<PixelMap>> pixelMaps = fmPixelMap.at(iClust);
+
+      if(pixelMaps.empty()) continue;
+      InteractionType interaction = kOther;
+      float nuEnergy = 0;
+      float lepEnergy = 0;
+      art::Ptr<simb::MCTruth> truth;
+      if(fBT->HaveTruthInfo()){
+        if (bestNuId[iClust] != -1)
+          truth =  sEffPur[iClust][bestNuId[iClust]].neutrinoInt;
+        interaction = SliceClassify(truth, cluster, nuEnergy, lepEnergy);     
+      }
+
+
+      TrainingData train(interaction, nuEnergy, lepEnergy, *pixelMaps[0]);
+
+      if (fWriteMapTH2) WriteMapTH2(evt, (int)iClust, train.fPMap);
+
+      fTrain = &train;
+      fTrainTree->Fill();
+
+    }
+
+
+  }
+
+  //----------------------------------------------------------------------
+
+
+
+  void CVNEventDump::WriteMapTH2(const art::Event& evt, int slice, const PixelMap& pm)
+  {
+      std::stringstream name;
+      name << "PixelMap_r" << evt.run() << "_s" << evt.subRun()<< "_e" << evt.event() << "_sl" << slice;
+      std::stringstream nameL;
+      nameL << "PixelTruthMap_r" << evt.run() << "_s" << evt.subRun()<< "_e" << evt.event() << "_sl" << slice;
+      std::stringstream nameX;
+      nameX << "PixelMap_X_r" << evt.run() << "_s" << evt.subRun()<< "_e" << evt.event() << "_sl" << slice;
+      std::stringstream nameY;
+      nameY << "PixelMap_Y_r" << evt.run() << "_s" << evt.subRun()<< "_e" << evt.event() << "_sl" << slice;
+      TH2F* hist  = pm.ToTH2();
+      TH2F* histL = pm.ToLabTH2();
+      TH2F* histX = pm.SingleViewToTH2(0);
+      TH2F* histY = pm.SingleViewToTH2(1);
+      hist->SetName(name.str().c_str());
+      histL->SetName(nameL.str().c_str());
+      histX->SetName(nameX.str().c_str());
+      histY->SetName(nameY.str().c_str());
+
+      art::ServiceHandle<art::TFileService> tfs;
+
+      TH2F* histWrite = tfs->make<TH2F>(*hist);
+      histWrite->Write();
+      TH2F* histWriteL = tfs->make<TH2F>(*histL);
+      histWriteL->GetZaxis()->SetRangeUser(0,10);
+      histWriteL->Write();
+      TH2F* histWriteX = tfs->make<TH2F>(*histX);
+      histWriteX->Write();
+      TH2F* histWriteY = tfs->make<TH2F>(*histY);
+      histWriteY->Write();
+
+      delete hist;
+      delete histWrite;
+      delete histL;
+      delete histWriteL;
+      delete histX;
+      delete histWriteX;
+      delete histY;
+      delete histWriteY;
+
+  }
+DEFINE_ART_MODULE(cvn::CVNEventDump);
+} // end namespace cvn
+////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+

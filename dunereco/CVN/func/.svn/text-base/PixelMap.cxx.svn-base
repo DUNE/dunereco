@@ -1,0 +1,234 @@
+////////////////////////////////////////////////////////////////////////
+/// \file    PixelMap.h
+/// \brief   PixelMap for CVN
+/// \author  Dominick Rocco - rocco@physics.umn.edu
+////////////////////////////////////////////////////////////////////////
+
+#include <cassert>
+#include <iostream>
+#include <ostream>
+#include "CVN/func/PixelMap.h"
+
+namespace cvn
+{
+
+  PixelMap::PixelMap(unsigned int nPlane, unsigned int nCell,
+                     const Boundary& bound):
+  fNPlane(nPlane),
+  fNCell(nCell),
+  fPE(nPlane*nCell),
+  fPEX(((nPlane/2)+(nPlane%2))*nCell),
+  fPEY(((nPlane/2)+(nPlane%2))*nCell),
+  fPur(nPlane*nCell),
+  fPurX(((nPlane/2)+(nPlane%2))*nCell),
+  fPurY(((nPlane/2)+(nPlane%2))*nCell),
+  fLab(nPlane*nCell),
+  fLabX(((nPlane/2)+(nPlane%2))*nCell),
+  fLabY(((nPlane/2)+(nPlane%2))*nCell),
+  fBound(bound)
+  {}
+
+  void PixelMap::FillInputVector(float* input) const
+  {
+    unsigned int i = 0;
+
+    for(const auto& pe:fPE){
+      input[i] = pe;
+      ++i;
+    }
+
+  }
+
+
+  void PixelMap::Add(const unsigned int& plane, const unsigned int& cell,
+		     const float& pe, const HitType label = kEmptyHit, const double purity=0.0 )
+  {
+    unsigned int view = plane % 2;
+    if(fBound.IsWithin(plane, cell)){
+      fPE[GlobalToIndex(plane,cell)] += pe/2100.;
+      fLab[GlobalToIndex(plane,cell)] = label;
+      fPur[GlobalToIndexSingle(plane,cell)] = purity;
+      if(view==0){
+	fPEX[GlobalToIndexSingle(plane,cell)] += pe/2100.;//Why +=?
+	fLabX[GlobalToIndexSingle(plane,cell)] = label;
+	fPurX[GlobalToIndexSingle(plane,cell)] = purity;
+      }
+      else{
+	fPEY[GlobalToIndexSingle(plane,cell)] += pe/2100.;
+	fLabY[GlobalToIndexSingle(plane,cell)] = label;
+	fPurY[GlobalToIndexSingle(plane,cell)] = purity;
+      }
+    }
+  }
+
+  // void PixelMap::Add(const unsigned int& plane, const unsigned int& cell,
+  //               const float& pe)
+  // {
+  //   unsigned int view = plane % 2;
+  //   if(fBound.IsWithin(plane, cell)){
+  //     fPE[GlobalToIndex(plane,cell)] += pe/2100.;
+  //     if(view==0){
+  // 	fPEX[GlobalToIndexSingle(plane,cell)] += pe/2100.;
+  //     }
+  //     else{
+  // 	fPEY[GlobalToIndexSingle(plane,cell)] += pe/2100.;
+  //     }
+  //   }
+  // }
+
+  unsigned int  PixelMap::GlobalToIndex(const unsigned int& plane,
+                               const unsigned int& cell)
+  {
+    unsigned int view = plane % 2;
+
+    unsigned int internalPlane =  plane - fBound.FirstPlane();
+    unsigned int internalCell  =  cell - fBound.FirstCell(view);
+
+    unsigned int index = internalPlane * fNCell + internalCell % fNCell;
+
+    assert(index < fPE.size());
+
+    return index;
+  }
+
+  unsigned int  PixelMap::LocalToIndex(const unsigned int& plane,
+                               const unsigned int& cell) const
+  {
+    unsigned int index = plane * fNCell + cell % fNCell;
+
+    assert(index < fPE.size());
+    return index;
+  }
+
+  unsigned int  PixelMap::GlobalToIndexSingle(const unsigned int& plane,
+                               const unsigned int& cell)
+  {
+    unsigned int view = plane % 2;
+
+    unsigned int internalPlane =  ((plane - fBound.FirstPlane())/2);
+
+    unsigned int internalCell  =  cell - fBound.FirstCell(view);
+
+    unsigned int index = internalPlane * fNCell + internalCell % fNCell;
+
+    assert(index < fPEX.size());
+
+    return index;
+  }
+
+  void PixelMap::Print()
+  {
+
+    // Start by doing even planes
+    for(unsigned int iCell = 0; iCell < fNCell; ++iCell)
+    {
+      for(unsigned int iPlane = 0; iPlane < fNPlane; iPlane += 2)
+      {
+        unsigned int index = LocalToIndex(iPlane, iCell);
+        if( fPE[index] > 0)
+        {
+          std::cout << "*";
+        }
+        else
+        {
+          std::cout << " ";
+        }
+
+      }
+      std::cout << std::endl;
+    }
+    // Then do odd planes
+    for(unsigned int iCell = 0; iCell < fNCell; ++iCell)
+    {
+      for(unsigned int iPlane = 1; iPlane < fNPlane; iPlane += 2)
+      {
+        unsigned int index = LocalToIndex(iPlane, iCell);
+        if( fPE[index] > 0)
+        {
+          std::cout << "*";
+        }
+        else
+        {
+          std::cout << " ";
+        }
+
+      }
+      std::cout << std::endl;
+    }
+
+  }
+
+  TH2F* PixelMap::ToTH2() const
+  {
+
+    // Create a histogram, use twice as many cells to distinguish views
+    TH2F* hist = new TH2F("PixelMap", ";Plane;Cell", fNPlane, 0, fNPlane,
+                                                    fNCell*2, 0, fNCell*2);
+
+    for(unsigned int iPlane = 0; iPlane < fNPlane; ++iPlane)
+    {
+      for(unsigned int iCell = 0; iCell < fNCell; ++iCell)
+      {
+        // Add 1 to in each bin to skip underflow
+        hist->SetBinContent(iPlane+1, iCell + fNCell*(iPlane%2) + 1,
+                            fPE[LocalToIndex(iPlane, iCell)]);
+
+      }
+    }
+    return hist;
+  }
+
+  TH2F* PixelMap::ToLabTH2() const
+  {
+
+    // Create a histogram, use twice as many cells to distinguish views
+    TH2F* hist = new TH2F("PixelMap", ";Plane;Cell", fNPlane, 0, fNPlane,
+                                                    fNCell*2, 0, fNCell*2);
+
+    for(unsigned int iPlane = 0; iPlane < fNPlane; ++iPlane)
+    {
+      for(unsigned int iCell = 0; iCell < fNCell; ++iCell)
+      {
+        // Add 1 to in each bin to skip underflow
+        hist->SetBinContent(iPlane+1, iCell + fNCell*(iPlane%2) + 1,
+                            (double)fLab[LocalToIndex(iPlane, iCell)]);
+
+      }
+    }
+    return hist;
+  }
+
+  TH2F* PixelMap::SingleViewToTH2(const unsigned int& view) const
+  {
+
+    // Create a histogram
+    TH2F* hist = new TH2F("PixelMap", ";Plane;Cell", (fNPlane/2)+(fNPlane%2), 0,
+                          (fNPlane/2)+(fNPlane%2),
+                                                    fNCell, 0, fNCell);
+
+    for(unsigned int iPlane = 0; iPlane < ((fNPlane/2)+(fNPlane%2)); ++iPlane)
+    {
+      for(unsigned int iCell = 0; iCell < fNCell; ++iCell)
+      {
+        // Add 1 to in each bin to skip underflow
+	if(view==0){
+        hist->SetBinContent(iPlane+1, iCell + 1,
+                            fPEX[LocalToIndex(iPlane, iCell)]);
+	}
+	else{
+        hist->SetBinContent(iPlane+1, iCell + 1,
+                            fPEY[LocalToIndex(iPlane, iCell)]);
+	}
+      }
+    }
+    return hist;
+  }
+
+  std::ostream& operator<<(std::ostream& os, const PixelMap& m)
+  {
+    os << "PixelMap with " << m.NPixel() << " pixels, "
+                           << m.NPlane() << " planes"
+                << " by "  << m.NCell()  << " cells" ;
+    return os;
+  }
+}

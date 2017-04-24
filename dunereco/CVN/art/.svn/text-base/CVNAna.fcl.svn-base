@@ -1,0 +1,19 @@
+BEGIN_PROLOG
+
+#   This file defines the configuration for the CVNEventDump module
+
+standard_cvnana:
+{
+  module_type:        CVNAna
+  #==================
+  ClusterLabel:   "slicer"
+  PixelMapInput: "cvnmap"
+  CaffeNetHandler:{
+    DeployProto: "/cloud/login/rocco/development/ANG/deploy.txt"
+    ModelFile: "/cloud/login/rocco/development/ANG/googlenet_view_iter_1100000.caffemodel"
+  }
+}
+
+
+
+END_PROLOG

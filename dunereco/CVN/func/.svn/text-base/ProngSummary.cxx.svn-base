@@ -1,0 +1,56 @@
+/////////////////////////////////////////////////////
+// \file    ProngSummary.cxx
+// \brief   ProngSummary constructor
+/////////////////////////////////////////////////////
+
+#include "CVN/func/ProngSummary.h"
+
+namespace cvn
+{
+  ProngSummary::ProngSummary():
+    Nprongs(-5),
+    Npids(-5),
+    run(-5),
+    subrun(-5),
+    event(-5),
+    slice(-5),
+    nuTrueE(-5.0),
+    TrueE(-5.0),
+    RecoE(-5.0),
+    totalGeV(-5.0)
+  { 
+    for(unsigned int i = 0;  i < 100; ++i) {
+      prng_leading[i]  = false;
+      prng_trueIDx[i]  = -5;
+      prng_trueIDy[i]  = -5;
+      prng_trueID[i]   = -5;
+      prng_recoID[i]   = -5;
+      prng_truePDG[i]  = -5;
+      prng_recoPDG[i]  = -5;
+      prng_nhitsX[i]   = -5;
+      prng_nhitsY[i]   = -5;
+      prng_nhits3D[i]  = -5;
+      prng_purX[i]     = -5.0;
+      prng_purY[i]     = -5.0;
+      prng_pur3D[i]    = -5.0;
+      prng_gap[i]      = -5.0;
+      prng_angle[i]    = -5.0;
+      prng_maxv[i]     = -5.0;
+      prng_TrueE[i]    = -5.0;
+      prng_RecoE[i]    = -5.0;
+      prng_length[i]   = -5.0;
+      prng_totalGeV[i] = -5.0;
+      
+      for(unsigned int j = 0; j < 100; ++j) {
+	prng_score[i][j]   = -5.0;
+	prng_recopdg[i][j] = -5;
+	prng_truepdg[i][j] = -5;
+	prng_truepur[i][j] = -5.0;      
+      }
+      
+    }
+  }
+}
+//......................................................................
+
+////////////////////////////////////////////////////////////////////////

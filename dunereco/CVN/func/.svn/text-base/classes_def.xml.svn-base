@@ -1,0 +1,125 @@
+<lcgdict>
+  <class name="cvn::TrainingData" ClassVersion="14" >
+   <version ClassVersion="14" checksum="2737673572"/>
+   <version ClassVersion="13" checksum="4245758602"/>
+   <version ClassVersion="12" checksum="3522075124"/>
+   <version ClassVersion="11" checksum="1644763502"/>
+   <version ClassVersion="10" checksum="16422645"/>
+  </class>
+
+  <class name="cvn::PixelMap" ClassVersion="15" >
+   <version ClassVersion="15" checksum="1771946131"/>
+   <version ClassVersion="14" checksum="1084734483"/>
+   <version ClassVersion="13" checksum="3730271809"/>
+   <version ClassVersion="12" checksum="653693333"/>
+   <version ClassVersion="11" checksum="604899579"/>
+   <version ClassVersion="10" checksum="197322882"/>
+  </class>
+
+  <class name="cvn::Result" ClassVersion="11" >
+   <version ClassVersion="11" checksum="3978040452"/>
+   <version ClassVersion="10" checksum="1842199587"/>
+   <version ClassVersion="9" checksum="197322882"/>
+  </class>
+
+  <class name="cvn::Features" ClassVersion="11" >
+   <version ClassVersion="11" checksum="15323737"/>
+   <version ClassVersion="10" checksum="633238332"/>
+  </class>
+
+  <class name="cvn::Boundary" ClassVersion="11" >
+   <version ClassVersion="11" checksum="3161816305"/>
+   <version ClassVersion="10" checksum="2066960320"/>
+  </class>
+
+  <class name="cvn::EventLabeledPMaps" ClassVersion="11" >
+   <version ClassVersion="11" checksum="3033599187"/>
+   <version ClassVersion="10" checksum="1792922654"/>
+  </class>
+  <class name="cvn::ProngTrainingData" ClassVersion="13" >
+   <version ClassVersion="13" checksum="803542875"/>
+   <version ClassVersion="12" checksum="1701337512"/>
+   <version ClassVersion="11" checksum="1324325708"/>
+   <version ClassVersion="10" checksum="2658449471"/>
+  </class>
+
+  <class name="cvn::ProngSummary" ClassVersion="12" >
+   <version ClassVersion="12" checksum="1756564230"/>
+   <version ClassVersion="11" checksum="4092920254"/>
+   <version ClassVersion="10" checksum="3746962249"/>
+  </class>
+
+
+  <class name="std::vector<cvn::PixelMap>"          />
+  <class name="art::Ptr<cvn::PixelMap>"             />
+  <class name="std::vector<cvn::ProngTrainingData>"      />
+  <class name="std::vector<cvn::HType>"      />
+  <class name="art::Assns<rb::Cluster,cvn::PixelMap, void>" />
+  <class name="art::Assns<cvn::PixelMap,rb::Cluster, void>" />
+  <class name="art::Assns<rb::Prong,cvn::PixelMap, void>" />
+  <class name="art::Assns<cvn::PixelMap,rb::Prong, void>" />
+
+  <class name="std::pair< rb::Cluster, cvn::PixelMap > " />
+  <class name="std::pair< art::Ptr<rb::Cluster>, art::Ptr<cvn::PixelMap> >" />
+  <class name="std::pair< cvn::PixelMap, rb::Cluster > " />
+  <class name="std::pair< art::Ptr<cvn::PixelMap>, art::Ptr<rb::Cluster> >" />
+  <class name="std::pair< rb::Prong, cvn::PixelMap > " />
+  <class name="std::pair< art::Ptr<rb::Prong>, art::Ptr<cvn::PixelMap> >" />
+  <class name="std::pair< cvn::PixelMap, rb::Prong > " />
+  <class name="std::pair< art::Ptr<cvn::PixelMap>, art::Ptr<rb::Prong> >" />
+
+  <class name="art::Wrapper< std::vector<cvn::PixelMap> >"    />
+  <class name="art::Wrapper<art::Assns<rb::Cluster, cvn::PixelMap,  void> >" />
+  <class name="art::Wrapper<art::Assns<cvn::PixelMap, rb::Cluster,  void> >" />
+  <class name="art::Wrapper<art::Assns<rb::Prong, cvn::PixelMap,  void> >" />
+  <class name="art::Wrapper<art::Assns<cvn::PixelMap, rb::Prong,  void> >" />
+
+  <class name="std::vector<cvn::Result>"          />
+  <class name="art::Ptr<cvn::Result>"             />
+  <class name="art::Assns<rb::Cluster,cvn::Result, void>" />
+  <class name="art::Assns<cvn::Result,rb::Cluster, void>" />
+  <class name="art::Assns<rb::Prong,cvn::Result, void>" />
+  <class name="art::Assns<cvn::Result,rb::Prong, void>" />
+
+  <class name="std::pair< rb::Cluster, cvn::Result > " />
+  <class name="std::pair< art::Ptr<rb::Cluster>, art::Ptr<cvn::Result> >" />
+  <class name="std::pair< cvn::Result, rb::Cluster > " />
+  <class name="std::pair< art::Ptr<cvn::Result>, art::Ptr<rb::Cluster> >" />
+  <class name="std::pair< rb::Prong, cvn::Result > " />
+  <class name="std::pair< art::Ptr<rb::Prong>, art::Ptr<cvn::Result> >" />
+  <class name="std::pair< cvn::Result, rb::Prong > " />
+  <class name="std::pair< art::Ptr<cvn::Result>, art::Ptr<rb::Prong> >" />
+
+  <class name="art::Wrapper< std::vector<cvn::Result> >"    />
+  <class name="art::Wrapper<art::Assns<rb::Cluster, cvn::Result,  void> >" />
+  <class name="art::Wrapper<art::Assns<cvn::Result, rb::Cluster,  void> >" />
+  <class name="art::Wrapper<art::Assns<rb::Prong, cvn::Result,  void> >" />
+  <class name="art::Wrapper<art::Assns<cvn::Result, rb::Prong,  void> >" />
+
+  <class name="std::vector<cvn::Features>"          />
+  <class name="art::Ptr<cvn::Features>"             />
+  <class name="art::Assns<rb::Cluster,cvn::Features, void>" />
+  <class name="art::Assns<cvn::Features,rb::Cluster, void>" />
+  <class name="art::Assns<rb::Prong,cvn::Features, void>" />
+  <class name="art::Assns<cvn::Features,rb::Prong, void>" />
+
+  <class name="std::pair< rb::Cluster, cvn::Features > " />
+  <class name="std::pair< art::Ptr<rb::Cluster>, art::Ptr<cvn::Features> >" />
+  <class name="std::pair< cvn::Features, rb::Cluster > " />
+  <class name="std::pair< art::Ptr<cvn::Features>, art::Ptr<rb::Cluster> >" />
+  <class name="std::pair< rb::Prong, cvn::Features > " />
+  <class name="std::pair< art::Ptr<rb::Prong>, art::Ptr<cvn::Features> >" />
+  <class name="std::pair< cvn::Features, rb::Prong > " />
+  <class name="std::pair< art::Ptr<cvn::Features>, art::Ptr<rb::Prong> >" />
+
+  <class name="art::Wrapper< std::vector<cvn::Features> >"    />
+  <class name="art::Wrapper<art::Assns<rb::Cluster, cvn::Features,  void> >" />
+  <class name="art::Wrapper<art::Assns<cvn::Features, rb::Cluster,  void> >" />
+  <class name="art::Wrapper<art::Assns<rb::Prong, cvn::Features,  void> >" />
+  <class name="art::Wrapper<art::Assns<cvn::Features, rb::Prong,  void> >" />
+
+
+
+</lcgdict>
+
+
