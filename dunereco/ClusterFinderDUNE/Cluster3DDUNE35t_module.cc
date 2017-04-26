@@ -515,7 +515,7 @@ void Cluster3DDUNE35t::produce(art::Event &evt)
     reco::HitPairClusterMap      hitPairClusterMap;
     ClusterParametersList        clusterParametersList;
     RecobHitToPtrMap             clusterHitToArtPtrMap;
-    std::auto_ptr< HitPairList > hitPairList(new HitPairList); // Potentially lots of hits, use heap instead of stack
+    std::unique_ptr< HitPairList > hitPairList(new HitPairList); // Potentially lots of hits, use heap instead of stack
     
     // Recover the 2D hits and then organize them into data structures which will be used in the
     // DBscan algorithm for building the 3D clusters
