@@ -7,7 +7,7 @@
  */
 
 // The main include
-#include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/ParallelHitsSeedFinderAlg.h"
+#include "dune/RecoAlgDUNE/Cluster3DAlgs/ParallelHitsSeedFinderAlg.h"
 // Framework Includes
 
 // LArSoft includes

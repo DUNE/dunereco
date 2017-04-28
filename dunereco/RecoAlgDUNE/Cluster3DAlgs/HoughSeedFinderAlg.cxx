@@ -11,7 +11,7 @@
  */
 
 // The main include
-#include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/HoughSeedFinderAlg.h"
+#include "dune/RecoAlgDUNE/Cluster3DAlgs/HoughSeedFinderAlg.h"
 // Framework Includes
 
 // LArSoft includes

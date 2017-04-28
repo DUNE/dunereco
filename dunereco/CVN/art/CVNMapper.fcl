@@ -1,0 +1,17 @@
+BEGIN_PROLOG
+
+#   This file defines the configuration for the CVNEventDump module
+
+standard_cvnmapper:
+{
+  module_type:        CVNMapper
+  #==================
+  HitsModuleLabel:   "gaushit"
+  ClusterPMLabel: "cvnmap"
+  MinClusterHits: 100
+  TdcWidth:      200
+  WireLength:    500
+  TimeResolution: 500
+}
+
+END_PROLOG
