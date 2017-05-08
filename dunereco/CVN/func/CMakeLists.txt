@@ -8,7 +8,7 @@ art_make( BASENAME_ONLY
                            lardataobj_RecoBase
                            larsim_MCCheater_BackTracker_service
                            ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                           ${CETLIB}
+                           cetlib cetlib_except
                            ${Boost_FILESYSTEM_LIBRARY}            
                            ${Boost_SYSTEM_LIBRARY}
                            ${ROOT_BASIC_LIB_LIST}
