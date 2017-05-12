@@ -1,0 +1,71 @@
+#include "services_dune.fcl"
+#include "CVNMapper.fcl"
+#include "CVNEventDump.fcl"
+
+process_name: CVNMapper
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "cvn_event_dump_r%r_s%s_hist.root"
+                  closeFileFast: false }
+
+  #@table::standard_services
+}
+
+#services.BackTracker: @local::standard_backtracker
+
+# Input source is a ROOT file 
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1        # Number of events to create
+
+}
+
+outputs:
+{
+  out1:
+  {
+      module_type: RootOutput
+      fileName:    "cvnmapper_r%r_s%s.root" 
+      fastCloning: false
+      dataTier: "full-reconstructed"
+  }
+}
+
+# Define and configure some modules to do work on each event.
+# First modules are defined; they are scheduled later.
+# Modules are grouped by type.
+physics:
+{
+  # Declare the modules
+  producers:
+  { 
+    cvnmap: @local::standard_cvnmapper
+  }
+
+  analyzers:
+  { 
+    cvndump: @local::standard_cvneventdump 
+  }
+
+
+  # Build the paths
+  map: [ cvnmap ]
+  
+
+  analyze: [ cvndump ]
+
+
+  out: [out1]
+
+
+}
+
+physics.producers.cvnmap.HitsModuleLabel: "hitfd"
+physics.producers.cvnmap.TimeResolution: 1600
+physics.producers.cvnmap.PlaneLength: 500
+physics.analyzers.cvndump.WriteMapTH2: false
+
+########################################################################

@@ -10,8 +10,8 @@
 // Framework Includes
 #include "fhiclcpp/ParameterSet.h"
 
-#include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/SeedFinderAlgBase.h"
-#include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/PrincipalComponentsAlg.h"
+#include "dune/RecoAlgDUNE/Cluster3DAlgs/SeedFinderAlgBase.h"
+#include "dune/RecoAlgDUNE/Cluster3DAlgs/PrincipalComponentsAlg.h"
 
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"

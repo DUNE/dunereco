@@ -1,0 +1,41 @@
+<lcgdict>
+  <class name="cvn::TrainingData" ClassVersion="15" >
+   <version ClassVersion="15" checksum="1083930585"/>
+   <version ClassVersion="14" checksum="2737673572"/>
+   <version ClassVersion="13" checksum="4245758602"/>
+   <version ClassVersion="12" checksum="3522075124"/>
+   <version ClassVersion="11" checksum="1644763502"/>
+   <version ClassVersion="10" checksum="16422645"/>
+  </class>
+
+  <class name="cvn::PixelMap" ClassVersion="18" >
+   <version ClassVersion="18" checksum="341721657"/>
+   <version ClassVersion="17" checksum="706586784"/>
+   <version ClassVersion="16" checksum="3213795157"/>
+   <version ClassVersion="15" checksum="1771946131"/>
+   <version ClassVersion="14" checksum="1084734483"/>
+   <version ClassVersion="13" checksum="3730271809"/>
+   <version ClassVersion="12" checksum="653693333"/>
+   <version ClassVersion="11" checksum="604899579"/>
+   <version ClassVersion="10" checksum="197322882"/>
+  </class>
+
+  <class name="cvn::Boundary" ClassVersion="15" >
+   <version ClassVersion="15" checksum="3655457929"/>
+   <version ClassVersion="14" checksum="82521069"/>
+   <version ClassVersion="13" checksum="2728376333"/>
+   <version ClassVersion="12" checksum="2685329611"/>
+   <version ClassVersion="11" checksum="3161816305"/>
+   <version ClassVersion="10" checksum="2066960320"/>
+  </class>
+
+
+  <class name="std::vector<cvn::PixelMap>"          />
+  <class name="art::Ptr<cvn::PixelMap>"             />
+  <class name="std::vector<cvn::HType>"      />
+
+  <class name="art::Wrapper< std::vector<cvn::PixelMap> >"    />
+
+</lcgdict>
+
+

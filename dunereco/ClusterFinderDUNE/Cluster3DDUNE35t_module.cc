@@ -67,12 +67,12 @@
 #include "larcore/Geometry/PlaneGeo.h"
 #include "larcore/Geometry/WireGeo.h"
 
-#include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/HoughSeedFinderAlg.h"
-#include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/PCASeedFinderAlg.h"
-#include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/ParallelHitsSeedFinderAlg.h"
-#include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/PrincipalComponentsAlg.h"
-#include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/SkeletonAlg.h"
-#include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/DBScanAlg_DUNE35t.h"
+#include "dune/RecoAlgDUNE/Cluster3DAlgs/HoughSeedFinderAlg.h"
+#include "dune/RecoAlgDUNE/Cluster3DAlgs/PCASeedFinderAlg.h"
+#include "dune/RecoAlgDUNE/Cluster3DAlgs/ParallelHitsSeedFinderAlg.h"
+#include "dune/RecoAlgDUNE/Cluster3DAlgs/PrincipalComponentsAlg.h"
+#include "dune/RecoAlgDUNE/Cluster3DAlgs/SkeletonAlg.h"
+#include "dune/RecoAlgDUNE/Cluster3DAlgs/DBScanAlg_DUNE35t.h"
 #include "larreco/RecoAlg/ClusterRecoUtil/StandardClusterParamsAlg.h"
 #include "larreco/RecoAlg/ClusterRecoUtil/OverriddenClusterParamsAlg.h"
 #include "larreco/RecoAlg/ClusterParamsImportWrapper.h"
@@ -515,7 +515,7 @@ void Cluster3DDUNE35t::produce(art::Event &evt)
     reco::HitPairClusterMap      hitPairClusterMap;
     ClusterParametersList        clusterParametersList;
     RecobHitToPtrMap             clusterHitToArtPtrMap;
-    std::auto_ptr< HitPairList > hitPairList(new HitPairList); // Potentially lots of hits, use heap instead of stack
+    std::unique_ptr< HitPairList > hitPairList(new HitPairList); // Potentially lots of hits, use heap instead of stack
     
     // Recover the 2D hits and then organize them into data structures which will be used in the
     // DBscan algorithm for building the 3D clusters

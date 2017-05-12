@@ -9,7 +9,7 @@
 #include "cetlib/search_path.h"
 #include "cetlib/cpu_timer.h"
 
-#include "dunetpc/dune/RecoAlgDUNE/Cluster3DAlgs/DBScanAlg_DUNE35t.h"
+#include "dune/RecoAlgDUNE/Cluster3DAlgs/DBScanAlg_DUNE35t.h"
 
 // LArSoft includes
 #include "lardata/Utilities/AssociationUtil.h"

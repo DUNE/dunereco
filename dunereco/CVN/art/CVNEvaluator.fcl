@@ -1,0 +1,22 @@
+BEGIN_PROLOG
+
+#   This file defines the configuration for the CVNEventDump module
+
+standard_cvnevaluator:
+{
+  module_type:        CVNEvaluator
+  #==================
+  PixelMapInput: "cvnmap"
+  ResultLabel: "cvnresult"
+  CaffeNetHandler:{
+    LibPath: "/dune/app/users/radovic/cvnDUNE/v06_28_01/modelFiles/"
+    DeployProto: "v5DuneTestDeploy.prototxt"
+    ModelFile: "v5DuneTest.caffemodel"
+    FeatureMap: ""
+  }
+
+}
+
+
+
+END_PROLOG
