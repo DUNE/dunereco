@@ -24,15 +24,15 @@ cet_find_library( GLOGLIB NAMES glog PATHS ENV GLOG_LIB NO_DEFAULT_PATH )
                              ${ART_FRAMEWORK_SERVICES_OPTIONAL}
                              ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
                              ${ART_PERSISTENCY_COMMON}
-                             canvas_Persistency_Common
+                             canvas
                              art_Persistency_Provenance
-                             canvas_Persistency_Provenance 
+                             canvas 
                              ${ART_UTILITIES}
-                             canvas_Utilities
+                             canvas
                              ${MF_MESSAGELOGGER}
                              ${MF_UTILITIES}
                              ${FHICLCPP}
-                             ${CETLIB}
+                             cetlib cetlib_except
                              ${ROOT_BASIC_LIB_LIST}
                              CVNFunc
                              lardataobj_RecoBase
