@@ -24,7 +24,6 @@
 #include "larpandoracontent/LArObjects/LArTrackPfo.h"
 
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
-#include "larpandora/LArPandoraInterface/LArPandoraOutput.h"
 
 #include "dune/DUNEPandora/PFParticleStitcher.h"
 
@@ -557,7 +556,7 @@ void PFParticleStitcher::ProduceArtOutput(art::Event &evt, const PFParticleMap &
                 throw cet::exception("LArPandora") << " PFParticleStitcher::ProduceArtOutput --- Found a track without any trajectory points";
 
             // Build track
-            recob::Track newTrack(LArPandoraOutput::BuildTrack(trackCounter++, &trackStateVector)); 
+            recob::Track newTrack(this->BuildTrack(trackCounter++, &trackStateVector)); 
             outputTracks->push_back(newTrack);  
 
             util::CreateAssn(*this, evt, *(outputTracks.get()), hitVector, *(outputTracksToHits.get()));
@@ -1036,7 +1035,6 @@ void PFParticleStitcher::OrderParticleMerges(const PFParticleMergeMap &particleM
             const bool isForward(trackDirection.Dot(track->End() - track->Vertex()) > 0.0);
             const float displacement(trackDirection.Dot(detectorPosition));
             const float propagation(isForward ? +1.0 : -1.0);
-            const float dQdxEpsilon(std::numeric_limits<float>::epsilon());
 
             // Fill vector of TrackState objects
             lar_content::LArTrackStateVector trackStateVector;
@@ -1047,16 +1045,9 @@ void PFParticleStitcher::OrderParticleMerges(const PFParticleMergeMap &particleM
                 const TVector3 position(track->LocationAtPoint(pEntry));
                 const TVector3 direction(propagation * track->DirectionAtPoint(pEntry));
 
-                const float dQdxU(track->DQdxAtPoint(pEntry, geo::kU));
-                const float dQdxV(track->DQdxAtPoint(pEntry, geo::kV));
-                const float dQdxW(track->DQdxAtPoint(pEntry, geo::kW));
-
-                const pandora::HitType hitType((dQdxU > dQdxEpsilon) ? pandora::TPC_VIEW_U : (dQdxV > dQdxEpsilon) ? pandora::TPC_VIEW_V : pandora::TPC_VIEW_W);
-                const float dQdx((pandora::TPC_VIEW_U == hitType) ? dQdxU : (pandora::TPC_VIEW_V == hitType) ? dQdxV : dQdxW);
-
                 trackStateVector.push_back(lar_content::LArTrackState(
                 pandora::CartesianVector(position.x(), position.y(), position.z()), 
-                pandora::CartesianVector(direction.x(), direction.y(), direction.z()), hitType, dQdx, 1.f));
+                pandora::CartesianVector(direction.x(), direction.y(), direction.z())));
             }
 
             trajectoryMap.insert(TrackTrajectoryMap::value_type(displacement, trackStateVector));
@@ -1251,6 +1242,35 @@ float PFParticleStitcher::GetDeltaX(const pandora::CartesianVector &initialPosit
 
     return (-1.f * initialDirectionX.GetUnitVector().GetDotProduct(targetPosition - (initialPosition - initialDirection * R)));
 }
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+         
+recob::Track PFParticleStitcher::BuildTrack(const int id, const lar_content::LArTrackStateVector *const pTrackStateVector)
+{
+    mf::LogDebug("LArPandora") << "   Building Track [" << id << "], Number of trajectory points = " << pTrackStateVector->size() << std::endl;
+            
+    if (pTrackStateVector->empty())
+        throw cet::exception("LArPandora") << " PFParticleStitcher::BuildTrack --- No input trajectory points were provided ";
+            
+    // Fill list of track properties
+    std::vector<TVector3>               xyz;
+    std::vector<TVector3>               pxpypz;
+    std::vector< std::vector<double> >  dQdx(3);
+    std::vector<double>                 momentum = std::vector<double>(2, util::kBogusD);
+    
+    // Loop over trajectory points
+    for (const lar_content::LArTrackState &nextPoint : *pTrackStateVector)
+    {      
+        const TVector3 trackPosition(nextPoint.GetPosition().GetX(), nextPoint.GetPosition().GetY(), nextPoint.GetPosition().GetZ());
+        const TVector3 trackDirection(nextPoint.GetDirection().GetX(), nextPoint.GetDirection().GetY(), nextPoint.GetDirection().GetZ());
+      
+        xyz.push_back(trackPosition);
+        pxpypz.push_back(trackDirection);      
+    }       
+
+    // Return a new recob::Track object (of the Bezier variety)
+    return recob::Track(xyz, pxpypz, dQdx, momentum, id);
+}   
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------------------
