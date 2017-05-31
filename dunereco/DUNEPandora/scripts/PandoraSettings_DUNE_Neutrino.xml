@@ -110,15 +110,17 @@
             </algorithm>
 
             <!-- Shower reconstruction -->
-            <algorithm type = "LArPfoCharacterisation">
+            <algorithm type = "LArCutPfoCharacterisation">
                 <TrackPfoListName>TrackParticles3D</TrackPfoListName>
                 <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
+                <MaxShowerLengthCut>6000.</MaxShowerLengthCut>
             </algorithm>
             <algorithm type = "LArListDeletion">
                 <PfoListNames>ShowerParticles3D</PfoListNames>
             </algorithm>
-            <algorithm type = "LArClusterCharacterisation">
+            <algorithm type = "LArCutClusterCharacterisation">
                 <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
+                <MaxShowerLengthCut>6000.</MaxShowerLengthCut>
             </algorithm>
             <algorithm type = "LArShowerGrowing">
                 <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
@@ -197,10 +199,11 @@
         </ThreeDAlgorithms>
 
         <ThreeDHitAlgorithms>
-            <algorithm type = "LArPfoCharacterisation">
+            <algorithm type = "LArCutPfoCharacterisation">
                 <TrackPfoListName>TrackParticles3D</TrackPfoListName>
                 <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
                 <PostBranchAddition>true</PostBranchAddition>
+                <MaxShowerLengthCut>6000.</MaxShowerLengthCut>
             </algorithm>
             <algorithm type = "LArThreeDHitCreation">
                 <InputPfoListName>TrackParticles3D</InputPfoListName>
@@ -240,7 +243,10 @@
                 <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
                 <OutputVertexListName>NeutrinoVertices3D</OutputVertexListName>
                 <ReplaceCurrentVertexList>true</ReplaceCurrentVertexList>
-                <BeamMode>true</BeamMode>
+                <FeatureTools>
+                    <tool type = "LArEnergyKickFeature"/>
+                    <tool type = "LArLocalAsymmetryFeature"/>
+                </FeatureTools>
             </algorithm>
             <algorithm type = "LArVertexSplitting">
                 <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
@@ -321,7 +327,7 @@
         <PfoListName>AllTrackParticles3D</PfoListName>
         <VertexListName>AllDaughterVertices3D</VertexListName>
     </algorithm>
-    <algorithm type = "LArShowerParticleBuilding">
+    <algorithm type = "LArPcaShowerParticleBuilding">
         <PfoListName>AllShowerParticles3D</PfoListName>
         <VertexListName>AllDaughterVertices3D</VertexListName>
     </algorithm>

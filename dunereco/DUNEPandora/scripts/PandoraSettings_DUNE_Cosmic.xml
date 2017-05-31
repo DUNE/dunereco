@@ -335,7 +335,7 @@
         <VertexListName>Vertices3D</VertexListName>
     </algorithm>
 
-    <algorithm type = "LArShowerParticleBuilding">
+    <algorithm type = "LArPcaShowerParticleBuilding">
         <CosmicMode>true</CosmicMode>
         <PfoListName>DaughterParticles3D</PfoListName>
         <VertexListName>Vertices3D</VertexListName>
