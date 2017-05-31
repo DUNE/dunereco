@@ -113,14 +113,18 @@
             <algorithm type = "LArCutPfoCharacterisation">
                 <TrackPfoListName>TrackParticles3D</TrackPfoListName>
                 <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
-                <MaxShowerLengthCut>6000.</MaxShowerLengthCut>
+                <MaxShowerLengthCut>500.</MaxShowerLengthCut>
+                <VertexDistanceRatioCut>500.</VertexDistanceRatioCut>
             </algorithm>
             <algorithm type = "LArListDeletion">
                 <PfoListNames>ShowerParticles3D</PfoListNames>
             </algorithm>
             <algorithm type = "LArCutClusterCharacterisation">
                 <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
-                <MaxShowerLengthCut>6000.</MaxShowerLengthCut>
+                <MaxShowerLengthCut>500.</MaxShowerLengthCut>
+                <VertexDistanceRatioCut>500.</VertexDistanceRatioCut>
+                <PathLengthRatioCut>1.012</PathLengthRatioCut>
+                <RTWidthRatioCut>0.08</RTWidthRatioCut>
             </algorithm>
             <algorithm type = "LArShowerGrowing">
                 <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
@@ -203,7 +207,9 @@
                 <TrackPfoListName>TrackParticles3D</TrackPfoListName>
                 <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
                 <PostBranchAddition>true</PostBranchAddition>
-                <MaxShowerLengthCut>6000.</MaxShowerLengthCut>
+                <MaxShowerLengthCut>500.</MaxShowerLengthCut>
+                <VertexDistanceRatioCut>500.</VertexDistanceRatioCut>
+                <DTDLWidthRatioCut>0.08</DTDLWidthRatioCut>
             </algorithm>
             <algorithm type = "LArThreeDHitCreation">
                 <InputPfoListName>TrackParticles3D</InputPfoListName>
