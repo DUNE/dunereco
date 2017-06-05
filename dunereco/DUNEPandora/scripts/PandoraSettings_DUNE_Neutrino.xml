@@ -124,7 +124,7 @@
                 <MaxShowerLengthCut>500.</MaxShowerLengthCut>
                 <VertexDistanceRatioCut>500.</VertexDistanceRatioCut>
                 <PathLengthRatioCut>1.012</PathLengthRatioCut>
-                <RTWidthRatioCut>0.08</RTWidthRatioCut>
+                <ShowerWidthRatioCut>0.2</ShowerWidthRatioCut>
             </algorithm>
             <algorithm type = "LArShowerGrowing">
                 <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
