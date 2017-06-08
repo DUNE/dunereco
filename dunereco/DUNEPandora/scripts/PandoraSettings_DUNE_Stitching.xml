@@ -29,7 +29,7 @@
         <VertexListName>RecreatedVertices</VertexListName>
     </algorithm>
 
-    <algorithm type = "LArShowerParticleBuilding">
+    <algorithm type = "LArPcaShowerParticleBuilding">
         <CosmicMode>true</CosmicMode>
         <PfoListName>RecreatedPfos</PfoListName>
         <VertexListName>RecreatedVertices</VertexListName>
