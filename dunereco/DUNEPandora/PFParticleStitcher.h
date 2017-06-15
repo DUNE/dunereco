@@ -345,6 +345,14 @@ protected:
     float GetDeltaX(const pandora::CartesianVector &initialPosition, const pandora::CartesianVector &initialDirection, 
         const pandora::CartesianVector &targetPosition) const;
 
+    /**
+     *  @brief Build a recob::Track object
+     * 
+     *  @param id the id code for the track
+     *  @param pTrackStateVector the vector of trajectory points for this track
+     */
+    recob::Track BuildTrack(const int id, const lar_content::LArTrackStateVector *const pTrackStateVector);
+
     bool          m_enableMonitoring;                 ///<
     std::string   m_particleLabel;                    ///<
     std::string   m_trackLabel;                       ///<
