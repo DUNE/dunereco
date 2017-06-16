@@ -40,12 +40,6 @@ dunefddphase_gaushitfinder.AreaNorms: [13.25, 13.25]
 dunefddphase_gaushitfinder.Chi2NDFRetry: 1000.
 
 dunefddphase_dprawhitfinder:	@local::dpraw_hitfinder
-dunefddphase_dprawhitfinder.MinSig:    [6.0, 6.0]
-dunefddphase_dprawhitfinder.MinWidth:  [1.0, 1.0]
-dunefddphase_dprawhitfinder.InitWidth: [6.0, 6.0]
-dunefddphase_dprawhitfinder.AreaNorms: [13.25, 13.25]
-dunefddphase_dprawhitfinder.Chi2NDFRetry: 100.
-dunefddphase_dprawhitfinder.Chi2NDF: 1000.
 
 dune35t_hit_repeater:    @local::hit_repeater
 dune35t_disambigcheat:    @local::standard_disambigcheat
