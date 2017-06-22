@@ -39,6 +39,8 @@ dunefddphase_gaushitfinder.InitWidth: [6.0, 6.0]
 dunefddphase_gaushitfinder.AreaNorms: [13.25, 13.25]
 dunefddphase_gaushitfinder.Chi2NDFRetry: 1000.
 
+dunefddphase_dprawhitfinder:	@local::dpraw_hitfinder
+
 dune35t_hit_repeater:    @local::hit_repeater
 dune35t_disambigcheat:    @local::standard_disambigcheat
 
