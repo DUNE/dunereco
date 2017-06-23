@@ -1,6 +1,7 @@
 #include "clusteralgorithms_dune35t.fcl"
 #include "cluster3dalgorithms_dune35t.fcl"
 #include "clustermodules.fcl"
+#include "calorimetry_dune10kt.fcl"
 
 BEGIN_PROLOG
 
@@ -100,5 +101,23 @@ dune35tdata_linecluster.ClusterCrawlerAlg.fVertex2DWireErrCut:	  3 # Max wire er
 dune35tdata_linecluster.ClusterCrawlerAlg.Vertex3DCut:          10 # 2D vtx -> 3D vtx matching cut (chisq)
 dune35tdata_linecluster.ClusterCrawlerAlg.FindHammerClusters: false # look for hammer type clusters
 dune35tdata_linecluster.ClusterCrawlerAlg.RefineVertexClusters:  false
+
+dunefdmc_trajclusteralg:             @local::standard_trajclusteralg
+dunefdmc_trajclusteralg.ShowerTag:   [ 0, 50, 20, 50, 2.5, 1, 15, 2, 5, 1, 1,-5 ] #turned off for now
+# 0 Mode (<= 0 OFF, 1 = tag only, 2 = find showers)
+# 1 Max Tj MCSMom for a shower tag
+# 2 Max separation
+# 3 Min energy (MeV)
+# 4 rms width factor
+# 5 Min shower 1/2 width (WSE units)
+# 6 Min total Tj Pts
+# 7 Min Tjs
+# 8 max FOM
+# 9 Direction FOM
+#10 Max Aspect Ratio
+#11 Debug in CTP (>10 debug cotIndex + 10)
+dunefdmc_trajclusteralg.CaloAlg:     @local::dune10kt_calorimetryalgmc
+dunefdmc_trajcluster:                @local::standard_trajcluster
+dunefdmc_trajcluster.TrajClusterAlg: @local::dunefdmc_trajclusteralg
 
 END_PROLOG
