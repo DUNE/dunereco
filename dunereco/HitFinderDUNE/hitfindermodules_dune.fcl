@@ -29,7 +29,7 @@ emlikehits:
 standard_showerhitseparator:
 {
   module_type: "ShowerHitSeparator"
-  MVALabel: "emtrkmichelid"
+  MVALabel: "emtrkmichelid:emtrkmichel"
   HitLabel: "linecluster"
   MVAOutputCut: 0.6
   SaveTree: false
