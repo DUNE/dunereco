@@ -24,6 +24,17 @@ emlikehits:
     Trk3DModuleLabel: "track" # tagged tracks (hadron/muon- or cascade-like)
 }
 
+# This is the showerhitseparator that divides the output from MVA methods
+# # identifying the shower hits and track hits.
+standard_showerhitseparator:
+{
+  module_type: "ShowerHitSeparator"
+  MVALabel: "emtrkmichelid"
+  HitLabel: "linecluster"
+  MVAOutputCut: 0.6
+  SaveTree: false
+}
+
 apa_hitfinder:
 {
  module_type:         "APAHitFinder"
