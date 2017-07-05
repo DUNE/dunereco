@@ -5,7 +5,7 @@ art_make( BASENAME_ONLY
 	  		   larreco_RecoAlg
 			   larreco_RecoAlg_PMAlg
 			   larevt_Filters
-                           larcore_Geometry
+                           larcorealg_Geometry
                            larcore_Geometry_Geometry_service
                            lardata_RecoObjects larreco_Deprecated
 			   larsim_MCCheater_BackTracker_service
@@ -33,7 +33,7 @@ art_make( BASENAME_ONLY
          MODULE_LIBRARIES HitFinderDUNE
                            lardataobj_RecoBase
                            lardata_ArtDataHelper
-                           larcore_Geometry
+                           larcorealg_Geometry
                            larcore_Geometry_Geometry_service
 			   larsim_MCCheater_BackTracker_service
                            lardata_Utilities

@@ -9,7 +9,7 @@ art_make( BASENAME_ONLY
           LIBRARY_NAME  DUNEPandora
           LIB_LIBRARIES larpandora_LArPandoraInterface
                         lardataobj_RecoBase
-                        larcore_Geometry
+                        larcorealg_Geometry
                         larcore_Geometry_Geometry_service
                         larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
 			${LARPANDORACONTENT}
