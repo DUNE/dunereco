@@ -39,7 +39,7 @@
 #include "lardataobj/AnalysisBase/T0.h"
 #include "lardata/ArtDataHelper/HitCreator.h"
 #include "larcore/Geometry/Geometry.h"
-#include "larcore/Geometry/AuxDetGeo.h"
+#include "larcorealg/Geometry/AuxDetGeo.h"
 
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"

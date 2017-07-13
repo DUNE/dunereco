@@ -1,7 +1,7 @@
 
 art_make( 
 	  LIBRARY_NAME  dune_ClusterFinderDUNE          
-          LIB_LIBRARIES larcore_Geometry
+          LIB_LIBRARIES larcorealg_Geometry
 	  		dune_RecoAlgDUNE
                         lardataobj_RecoBase
                         larreco_RecoAlg_ClusterRecoUtil
@@ -11,7 +11,7 @@ art_make(
                            larsim_MCCheater_BackTracker_service
                            larevt_Filters
                            lardataobj_RecoBase
-                           larcore_Geometry
+                           larcorealg_Geometry
                            larcore_Geometry_Geometry_service
                            nutools_RandomUtils_NuRandomService_service
                            nusimdata_SimulationBase

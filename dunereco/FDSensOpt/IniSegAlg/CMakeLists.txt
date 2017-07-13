@@ -2,7 +2,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 art_make( BASENAME_ONLY
           LIBRARY_NAME  IniSegAlg
-          LIB_LIBRARIES larcore_Geometry
+          LIB_LIBRARIES larcorealg_Geometry
                         larcore_Geometry_Geometry_service
                         larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
                         lardataobj_RawData

@@ -63,7 +63,7 @@ simple_plugin(NueAna   "module"
 			larreco_Calorimetry
 		        larreco_RecoAlg_PMAlg
 		        IniSegAlg
-		        larcore_Geometry
+		        larcorealg_Geometry
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
 			larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
@@ -154,7 +154,7 @@ simple_plugin(IniSegReco "module"
 		      larreco_RecoAlg
 		      larreco_RecoAlg_PMAlg
 		      IniSegAlg
-		      larcore_Geometry
+		      larcorealg_Geometry
 		      larcore_Geometry_Geometry_service
 		      lardata_Utilities
 		      larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
@@ -182,7 +182,7 @@ simple_plugin(ShSeg   "module"
 			larreco_Calorimetry
 			larreco_RecoAlg_PMAlg
 			IniSegAlg
-			larcore_Geometry
+			larcorealg_Geometry
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
 			larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
