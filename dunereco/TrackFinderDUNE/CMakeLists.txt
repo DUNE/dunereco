@@ -2,7 +2,7 @@
 art_make( BASENAME_ONLY
 	  MODULE_LIBRARIES larreco_RecoAlg
 	  		   lardataobj_RecoBase
-                           larcore_Geometry
+                           larcorealg_Geometry
                            larcore_Geometry_Geometry_service
                            lardata_Utilities
 			   larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation

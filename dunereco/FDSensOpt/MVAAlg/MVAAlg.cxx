@@ -5,7 +5,7 @@
 
 #include "dune/FDSensOpt/MVAAlg/MVAAlg.h"
 #include "larcore/Geometry/Geometry.h"
-#include "larcore/Geometry/TPCGeo.h"
+#include "larcorealg/Geometry/TPCGeo.h"
 #include "lardata/DetectorInfo/DetectorProperties.h"
 #include "lardata/ArtDataHelper/TrackUtils.h" // lar::utils::TrackPitchInView() 
 #include "art/Framework/Services/Registry/ServiceHandle.h"
