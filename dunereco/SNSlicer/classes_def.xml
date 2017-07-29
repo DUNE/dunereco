@@ -1,0 +1,17 @@
+<!--  Include art::Wrapper lines for objects that we would like to put  -->
+<!--  into the event -->
+<!--  Include the non-wrapper lines for all objects on the art::Wrapper --> 
+<!--  lines and for all objects that are data members of those objects.-->
+ 
+<lcgdict>
+  <class name="sn::SNSlice"    ClassVersion="11">
+   <version ClassVersion="11" checksum="752314680"/>
+   <version ClassVersion="10" checksum="741821668"/>
+  </class>
+  <class name="std::vector<sn::SNSlice>"/>
+
+  <class name="std::vector<art::Ptr<recob::Hit> >"/>
+
+  <class name="art::Wrapper<sn::SNSlice>"/>
+  <class name="art::Wrapper<std::vector<sn::SNSlice> >"/>
+</lcgdict>

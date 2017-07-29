@@ -1,0 +1,61 @@
+#include "geometry_dune.fcl"
+#include "messageservice.fcl"
+#include "services_dune.fcl"
+
+#include "SNSlicer.fcl"
+
+process_name: SNSlicer
+
+services:
+{
+#  TFileService:           { fileName: "ChargeDist.root" }
+
+  TimeTracker:            {}
+
+  message:                @local::standard_info
+
+  Geometry:		  @local::dune10kt_workspace_geo
+
+  ExptGeoHelperInterface: @local::dune_geometry_helper
+
+  LArG4Parameters:        @local::dunefd_largeantparameters
+
+  BackTracker: @local::standard_backtracker
+  DetectorClocksService:          @local::dunefd_detectorclocks
+
+  PhotonBackTracker: @local::dunefd_photonbacktracker
+
+  DetectorPropertiesService: @local::dunefd_detproperties
+  LArPropertiesService: @local::dunefd_properties
+} # services
+
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1 
+}
+
+outputs:
+{
+  out1:
+  {
+    module_type: RootOutput
+    fileName: "snslicer.root"
+    fastCloning: false
+  }
+}
+
+physics:
+{
+  producers:
+  {
+    snslicer: @local::standard_snslicer
+  }
+
+  reco: [ snslicer ]
+  stream1: [ out1 ]
+
+  trigger_paths: [ reco ]
+  end_paths: [ stream1 ]
+}
+

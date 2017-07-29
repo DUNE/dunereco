@@ -1,0 +1,12 @@
+BEGIN_PROLOG
+
+standard_snslicer:
+{
+  module_type: "SNSlicer"
+
+  # DBSCAN parameters
+  Eps: 25
+  MinPts: 4
+}
+
+END_PROLOG
