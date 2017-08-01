@@ -1,0 +1,41 @@
+#include "calorimetry_dune10kt.fcl"
+#include "trackfinderalgorithms.fcl"
+
+BEGIN_PROLOG
+
+dunefd_cafmaker:
+{
+    module_type:             "CAFMAker"
+
+    MVASelectLabel:          "mvaselect"
+
+    Select:                  "numu"
+
+    MakeAnaTree:             false    # Tree for general use
+    MakeWeightTree:          false    # Tree for TMVAClassification input, makes weight file
+    MakeSystHist:            false
+    #HitsModuleLabel:         "lineclusterdc"
+    #TrackModuleLabel:        "pmtrackdc"
+    #ClusterModuleLabel:      "lineclusterdc"
+    #VertexModuleLabel:       "pmtrackdc"
+    #ShowerModuleLabel:       "emshowerdc"
+    #CalorimetryModuleLabel:  "pmtrackcalodc"
+    RawDigitModuleLabel:     "daq"
+    WireModuleLabel:         "caldata"
+    HitsModuleLabel:         "linecluster"
+    TrackModuleLabel:        "pmtrack"
+    ClusterModuleLabel:	     "linecluster"
+    VertexModuleLabel:       "pmtrack"
+    ShowerModuleLabel:       "emshower"
+    CalorimetryModuleLabel:  "pmtrackcalo"
+    GenieGenModuleLabel:     "generator"
+    POTModuleLabel:          "generator"
+    FlashModuleLabel:        "opflash"
+    CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
+    FidVolCut:	             3.0
+    ContVolCut:              20.0
+    NuECut:                  0.8
+    NuMuCut:                 0.8
+}
+
+END_PROLOG

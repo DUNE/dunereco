@@ -1,5 +1,6 @@
 #include "services_dune.fcl"
 #include "mvamodule.fcl"
+#include "CAFMaker.fcl"
 #include "resourcetracking_services.fcl"
 
 process_name: MVASelect
@@ -29,17 +30,18 @@ source:
 # Modules are grouped by type.
 physics:
 {
-
- producers:{}
-
- filters:{} 
-
- analyzers:{
+ producers:{
     mvaselect:           @local::dunefd_mvaselect
  }
 
- ana:           [ mvaselect ]
- end_paths:     [ ana ] 
+ analyzers:{
+    cafmaker:           @local::dunefd_cafmaker
+ }
+
+ prod:          [ mvaselect ]
+ ana:           [ cafmaker ]
+ trigger_paths: [ prod ]
+ end_paths:     [ ana ]
 }
 
 
@@ -51,11 +53,11 @@ physics.analyzers.mvaselect.MVAMethod:               "BDTG"
 
 physics.analyzers.mvaselect.Select:                  "nue"
 physics.analyzers.mvaselect.WeightFile:              "/pnfs/dune/persistent/TaskForce_AnaTree/far/train/v3/BDTG_nue.weights.xml"
-physics.analyzers.mvaselect.MakeWeightTree:          false
-physics.analyzers.mvaselect.Reweight:                false
-physics.analyzers.mvaselect.MakeAnaTree:             false
-physics.analyzers.mvaselect.MakeSystHist:            false
+physics.analyzers.cafmaker.MakeWeightTree:          false
+physics.analyzers.cafmaker.Reweight:                false
+physics.analyzers.cafmaker.MakeAnaTree:             false
+physics.analyzers.cafmaker.MakeSystHist:            false
 services.TFileService.fileName:                      "histtrain_nue.root"
 
-physics.analyzers.mvaselect.NuECut:                  0.8
-physics.analyzers.mvaselect.NuMuCut:                 0.8
+physics.analyzers.cafmaker.NuECut:                  0.8
+physics.analyzers.cafmaker.NuMuCut:                 0.8
