@@ -56,6 +56,8 @@ endif ( ${VMAJ} EQUAL 2 AND ${VMIN} LESS 9 )
 message(STATUS "GENIE version ${GENIE_VERSION} major ${VMAJ} minor ${VMIN} ${GRSSPELLING}")
 cet_find_library( GREINSEHGAL NAMES ${GRSSPELLING} PATHS ENV GENIE_LIB NO_DEFAULT_PATH )
 
+art_dictionary()
+
 simple_plugin(NueAna   "module"
 		        lardataobj_RawData
 		        lardataobj_RecoBase
