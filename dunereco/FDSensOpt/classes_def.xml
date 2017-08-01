@@ -1,0 +1,8 @@
+<lcgdict>
+  <class name="dunemva::MVASelectPID" ClassVersion="10" >
+
+  <class name="art::Ptr<dunemva::MVASelectPID>" />
+  <class name="art::Wrapper<dunemva::MVASelecPID >" />
+</lcgdict>
+
+

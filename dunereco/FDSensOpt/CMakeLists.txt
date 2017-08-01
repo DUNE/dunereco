@@ -3,6 +3,9 @@ add_subdirectory(MVAAlg)
 
 include_directories ( $ENV{GENIE_INC}/GENIE )
 
+#for classes_def.xml
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
+
 # genie
 cet_find_library( GALGORITHM NAMES GAlgorithm PATHS ENV GENIE_LIB NO_DEFAULT_PATH )
 cet_find_library( GBARYONRESONANCE NAMES GBaryonResonance PATHS ENV GENIE_LIB NO_DEFAULT_PATH )
