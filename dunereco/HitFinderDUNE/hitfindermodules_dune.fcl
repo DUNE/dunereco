@@ -48,7 +48,7 @@ dunefddphase_gaushitfinder.MinSig:    [6.0, 6.0]
 dunefddphase_gaushitfinder.MinWidth:  [1.0, 1.0]
 dunefddphase_gaushitfinder.InitWidth: [6.0, 6.0]
 dunefddphase_gaushitfinder.AreaNorms: [13.25, 13.25]
-dunefddphase_gaushitfinder.Chi2NDFRetry: 1000.
+#dunefddphase_gaushitfinder.Chi2NDFRetry: 1000.
 
 dunefddphase_dprawhitfinder:	@local::dpraw_hitfinder
 
@@ -64,7 +64,7 @@ dune35t_gaushitfinder.MinSig:    [6.0, 6.0, 6.0]
 dune35t_gaushitfinder.MinWidth:  [1.0, 1.0, 1.0]
 dune35t_gaushitfinder.InitWidth: [6.0, 6.0, 6.0]
 dune35t_gaushitfinder.AreaNorms: [13.25, 13.25, 13.25]
-dune35t_gaushitfinder.Chi2NDFRetry: 1000.
+#dune35t_gaushitfinder.Chi2NDFRetry: 1000.
 
 dune35t_disambigalg:
 {
