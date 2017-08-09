@@ -42,7 +42,7 @@ art_make(
                         ${Boost_SYSTEM_LIBRARY}
         )
 
-add_subdirectory(Cluster3DAlgs)
+#add_subdirectory(Cluster3DAlgs)
 
 install_headers()
 install_fhicl()
