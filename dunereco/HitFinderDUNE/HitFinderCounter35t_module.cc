@@ -643,7 +643,7 @@ namespace dune{
       // Want to fit to Z on X, and X on Y
       X[HitLoop][0] = WireStart[2];
       X[HitLoop][1] = 1;
-      Y[HitLoop]    = DriftDist + WireStart[0];
+      Y[HitLoop].Assign(DriftDist + WireStart[0]);
       TwoDLineHist->Fill(WireStart[2], DriftDist + WireStart[0]);
     } // HitLoop
     MatrixGradient( X, Y, HitVector.size(), Gradient, Intercept );
