@@ -59,6 +59,8 @@ namespace dunemva {
 
     private:
       std::string fMVASelectLabel;
+      std::string fMVASelectNueLabel;
+      std::string fMVASelectNumuLabel;
 
       double fEvtcharge;
       double fRawcharge;
@@ -167,7 +169,9 @@ namespace dunemva {
       bool IsCC2Pi();
       bool IsDIS();
 
-      float fMVAResult;
+      double fMVAResult;
+      double fMVAResultNue;
+      double fMVAResultNumu;
 
       //Inputs to MVA
 
@@ -236,6 +240,8 @@ namespace dunemva {
   void CAFMaker::reconfigure(fhicl::ParameterSet const& pset) 
   {
     fMVASelectLabel = pset.get<std::string>("MVASelectLabel");
+    fMVASelectNueLabel = pset.get<std::string>("MVASelectNueLabel");
+    fMVASelectNumuLabel = pset.get<std::string>("MVASelectNumuLabel");
 
     fReweight=pset.get<bool>("Reweight");
     fMakeSystHist=pset.get<bool>("MakeSystHist");
@@ -266,6 +272,8 @@ namespace dunemva {
     fTree->Branch("subrun",      &fSubrun,     "subrun/I");
     fTree->Branch("event",       &fEvent,      "event/I");
     fTree->Branch("mvaresult",   &fMVAResult,  "mvaresult/D");
+    fTree->Branch("mvanue",      &fMVAResultNue,  "mvanue/D");
+    fTree->Branch("mvanumu",     &fMVAResultNumu, "mvanumu/D");
     fTree->Branch("weight",      &fWeight,     "weight/D");
     fTree->Branch("oscpro",      &fOscPro,     "oscpro/F");
     fTree->Branch("evtcharge",   &fEvtcharge,  "evtcharge/D");
@@ -530,6 +538,12 @@ namespace dunemva {
     art::Handle<dunemva::MVASelectPID> pidin;
     evt.getByLabel(fMVASelectLabel, pidin);
 
+    art::Handle<dunemva::MVASelectPID> pidinnue;
+    evt.getByLabel(fMVASelectNueLabel, pidinnue);
+
+    art::Handle<dunemva::MVASelectPID> pidinnumu;
+    evt.getByLabel(fMVASelectNumuLabel, pidinnumu);
+
     fRun = evt.id().run();
     fSubrun = evt.id().subRun();
     fEvent = evt.id().event();
@@ -574,6 +588,14 @@ namespace dunemva {
       fET             = pidin->et;
 
       fEreco          = pidin->Ereco;
+    }
+
+    if(!pidinnue.failedToGet()){
+      fMVAResultNue = pidinnue->pid;
+    }
+
+    if(!pidinnumu.failedToGet()){
+      fMVAResultNumu = pidinnumu->pid;
     }
 
     art::Handle< std::vector<simb::MCTruth> > mct;
