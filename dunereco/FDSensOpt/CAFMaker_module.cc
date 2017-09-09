@@ -29,6 +29,9 @@
 #include "larcoreobj/SummaryData/POTSummary.h"
 #include "dune/FDSensOpt/MVASelectPID.h"
 
+#include "dune/CVN/func/InteractionType.h"
+#include "dune/CVN/func/Result.h"
+
 #include "TTree.h"
 #include "TH1D.h"
 #include "TH2D.h"
@@ -61,6 +64,8 @@ namespace dunemva {
       std::string fMVASelectLabel;
       std::string fMVASelectNueLabel;
       std::string fMVASelectNumuLabel;
+
+      std::string fCVNLabel;
 
       double fEvtcharge;
       double fRawcharge;
@@ -173,6 +178,10 @@ namespace dunemva {
       double fMVAResultNue;
       double fMVAResultNumu;
 
+      double fCVNResultNue;
+      double fCVNResultNumu;
+      double fCVNResultNutau;
+
       //Inputs to MVA
 
       //float fEvtcharge;
@@ -243,6 +252,8 @@ namespace dunemva {
     fMVASelectNueLabel = pset.get<std::string>("MVASelectNueLabel");
     fMVASelectNumuLabel = pset.get<std::string>("MVASelectNumuLabel");
 
+    fCVNLabel = pset.get<std::string>("CVNLabel");
+
     fReweight=pset.get<bool>("Reweight");
     fMakeSystHist=pset.get<bool>("MakeSystHist");
 
@@ -274,6 +285,9 @@ namespace dunemva {
     fTree->Branch("mvaresult",   &fMVAResult,  "mvaresult/D");
     fTree->Branch("mvanue",      &fMVAResultNue,  "mvanue/D");
     fTree->Branch("mvanumu",     &fMVAResultNumu, "mvanumu/D");
+    fTree->Branch("cvnnue",      &fCVNResultNue,   "cvnnue/D");
+    fTree->Branch("cvnnumu",     &fCVNResultNumu,  "cvnnumu/D");
+    fTree->Branch("cvnnutau",    &fCVNResultNutau, "cvnnutau/D");
     fTree->Branch("weight",      &fWeight,     "weight/D");
     fTree->Branch("oscpro",      &fOscPro,     "oscpro/F");
     fTree->Branch("evtcharge",   &fEvtcharge,  "evtcharge/D");
@@ -544,6 +558,9 @@ namespace dunemva {
     art::Handle<dunemva::MVASelectPID> pidinnumu;
     evt.getByLabel(fMVASelectNumuLabel, pidinnumu);
 
+    art::Handle<std::vector<cvn::Result>> cvnin;
+    evt.getByLabel(fCVNLabel, "cvnresult", cvnin);
+
     fRun = evt.id().run();
     fSubrun = evt.id().subRun();
     fEvent = evt.id().event();
@@ -596,6 +613,19 @@ namespace dunemva {
 
     if(!pidinnumu.failedToGet()){
       fMVAResultNumu = pidinnumu->pid;
+    }
+
+    if(!cvnin.failedToGet()){
+      using i = cvn::Interaction;
+      if(cvnin->empty() || (*cvnin)[0].fOutput.size() <= i::kNutauOther){
+        fCVNResultNue = fCVNResultNumu = fCVNResultNutau = -3;
+      }
+      else{
+        const std::vector<float>& v = (*cvnin)[0].fOutput;
+        fCVNResultNue = v[i::kNueQE] + v[i::kNueRes] + v[i::kNueDIS] + v[i::kNueOther];
+        fCVNResultNumu = v[i::kNumuQE] + v[i::kNumuRes] + v[i::kNumuDIS] + v[i::kNumuOther];
+        fCVNResultNutau = v[i::kNutauQE] + v[i::kNutauRes] + v[i::kNutauDIS] + v[i::kNutauOther];
+      }
     }
 
     art::Handle< std::vector<simb::MCTruth> > mct;

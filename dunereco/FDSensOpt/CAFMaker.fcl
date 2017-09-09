@@ -12,6 +12,8 @@ dunefd_cafmaker:
     MVASelectNueLabel:  "mvaselectnue"
     MVASelectNumuLabel: "mvaselectnumu"
 
+    CVNLabel:           "cvneval"
+
     Select:                  "numu"
 
     MakeAnaTree:             false    # Tree for general use
