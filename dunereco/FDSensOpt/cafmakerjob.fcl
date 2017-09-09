@@ -1,0 +1,67 @@
+#include "services_dune.fcl"
+#include "mvamodule.fcl"
+#include "CAFMaker.fcl"
+#include "resourcetracking_services.fcl"
+
+process_name: CAF
+
+
+services:
+{
+  TFileService: { fileName: "caf.root" }
+  @table::standard_resourcetrackers
+  @table::dunefd_simulation_services
+}
+
+
+source:
+{
+  module_type: RootInput
+  maxEvents:   -1
+}
+
+
+physics:
+{
+ producers:{
+   mvaselectnue:  @local::dunefd_mvaselect
+   mvaselectnumu: @local::dunefd_mvaselect
+ }
+
+ analyzers:{
+    cafmaker: @local::dunefd_cafmaker
+ }
+
+ prod:          [ mvaselectnue, mvaselectnumu ]
+ ana:           [ cafmaker ]
+ trigger_paths: [ prod ]
+ end_paths:     [ ana ]
+}
+
+
+services.Geometry: @local::dune10kt_workspace_geo
+services.Geometry.GDML: "dune10kt_v1_1x2x6.gdml"
+
+physics.producers.mvaselectnue.MVAMethod:  "BDTG"
+physics.producers.mvaselectnumu.MVAMethod: "BDTG"
+
+physics.producers.mvaselectnue.Select:  "nue"
+physics.producers.mvaselectnumu.Select: "numu"
+
+# FNAL paths
+physics.producers.mvaselectnue.WeightFile:              "/pnfs/dune/persistent/TaskForce_AnaTree/far/train/v3/BDTG_nue.weights.xml"
+physics.producers.mvaselectnumu.WeightFile:              "/pnfs/dune/persistent/TaskForce_AnaTree/far/train/v3/BDTG_numu.weights.xml"
+# Caltech paths
+#physics.producers.mvaselectnue.WeightFile:              "/nfs/raid11/dunedata/TaskForce_AnaTree/far/train/v3/BDTG_nue.weights.xml"
+#physics.producers.mvaselectnumu.WeightFile:              "/nfs/raid11/dunedata/TaskForce_AnaTree/far/train/v3/BDTG_numu.weights.xml"
+
+physics.analyzers.cafmaker.MakeWeightTree:          false
+physics.analyzers.cafmaker.Reweight:                false
+physics.analyzers.cafmaker.MakeAnaTree:             false
+physics.analyzers.cafmaker.MakeSystHist:            false
+
+physics.analyzers.cafmaker.NuECut:                  0.8
+physics.analyzers.cafmaker.NuMuCut:                 0.8
+
+# Pull the reco information from one of the MVA modules, choice is arbitary
+physics.analyzers.cafmaker.MVASelectLabel: "mvaselectnue"

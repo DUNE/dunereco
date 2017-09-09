@@ -277,7 +277,7 @@ namespace dunemva {
   {
 
     art::ServiceHandle<art::TFileService> tfs;
-    fTree =tfs->make<TTree>("MVASelection","Results");
+    fTree =tfs->make<TTree>("caf", "caf");
 
     fTree->Branch("run",         &fRun,        "run/I");
     fTree->Branch("subrun",      &fSubrun,     "subrun/I");
