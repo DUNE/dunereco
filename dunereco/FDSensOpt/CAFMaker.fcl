@@ -5,7 +5,7 @@ BEGIN_PROLOG
 
 dunefd_cafmaker:
 {
-    module_type:             "CAFMAker"
+    module_type:             "CAFMaker"
 
     MVASelectLabel:          "mvaselect"
 

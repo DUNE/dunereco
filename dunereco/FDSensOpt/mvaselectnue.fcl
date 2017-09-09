@@ -49,10 +49,10 @@ physics:
 services.Geometry: @local::dune10kt_workspace_geo
 services.Geometry.GDML: "dune10kt_v1_1x2x6.gdml"
 
-physics.analyzers.mvaselect.MVAMethod:               "BDTG"
+physics.producers.mvaselect.MVAMethod:               "BDTG"
 
-physics.analyzers.mvaselect.Select:                  "nue"
-physics.analyzers.mvaselect.WeightFile:              "/pnfs/dune/persistent/TaskForce_AnaTree/far/train/v3/BDTG_nue.weights.xml"
+physics.producers.mvaselect.Select:                  "nue"
+physics.producers.mvaselect.WeightFile:              "/pnfs/dune/persistent/TaskForce_AnaTree/far/train/v3/BDTG_nue.weights.xml"
 physics.analyzers.cafmaker.MakeWeightTree:          false
 physics.analyzers.cafmaker.Reweight:                false
 physics.analyzers.cafmaker.MakeAnaTree:             false
