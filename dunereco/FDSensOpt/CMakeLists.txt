@@ -56,6 +56,8 @@ endif ( ${VMAJ} EQUAL 2 AND ${VMIN} LESS 9 )
 message(STATUS "GENIE version ${GENIE_VERSION} major ${VMAJ} minor ${VMIN} ${GRSSPELLING}")
 cet_find_library( GREINSEHGAL NAMES ${GRSSPELLING} PATHS ENV GENIE_LIB NO_DEFAULT_PATH )
 
+art_dictionary()
+
 simple_plugin(NueAna   "module"
 		        lardataobj_RawData
 		        lardataobj_RecoBase
@@ -86,6 +88,69 @@ simple_plugin(NueAna   "module"
 
 simple_plugin(MVASelect   "module"
                         MVAAlg
+                        nutools_NuReweight
+                        nutools_NuReweight_art
+			nusimdata_SimulationBase
+                        ${GHEP}
+                        ${GEVGCORE}
+			${GPDG}
+                        ${ART_FRAMEWORK_CORE}
+                        ${ART_FRAMEWORK_PRINCIPAL}
+                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
+                        ${ART_FRAMEWORK_SERVICES_OPTIONAL}
+                        ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
+                        art_Persistency_Common canvas
+                        art_Persistency_Provenance canvas
+                        art_Utilities canvas
+                        ${MF_MESSAGELOGGER}
+                        ${MF_UTILITIES}
+                        cetlib cetlib_except
+                        ${ROOT_BASIC_LIB_LIST}
+			${GALGORITHM}		
+			${GBARYONRESONANCE}
+			${GBASE}
+			${GBODEKYANG}
+			${GCHARM}
+			${GCOH}
+			${GDFRC}
+			${GDIS}
+			${GCROSSSECTIONS}
+			${GDECAY}
+			${GELAS}
+			${GELFF}
+			${GHEP}
+			${GEVGCORE}
+			${GEVGMODULES}
+			${GEVGDRIVERS}
+			${GGIBUU}
+			${GHADRONTRANSP}
+			${GFRAGMENTATION}
+			${GINTERACTION}
+			${GLLEWELLYNSMITH}
+			${GMEC}
+			${GNUGAMMA}
+			${GNUE}
+			${GNTUPLE}
+			${GNUCLEAR}
+			${GNUMERICAL}
+			${GQPM}
+			${GPDG}
+			${GPDF}
+			${GQEL}
+			${GRES}
+			${GREGISTRY}
+			${GREINSEHGAL}
+			${GUTILS}
+			${GGEO}
+			${GFLUXDRIVERS}
+			${GMUELOSS}
+			${GREWEIGHT}
+			${GNUCLEONDECAY}
+			${GMESSENGER}
+              BASENAME_ONLY
+)
+
+simple_plugin(CAFMaker   "module"
                         nutools_NuReweight
                         nutools_NuReweight_art
 			nusimdata_SimulationBase
