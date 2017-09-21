@@ -7,7 +7,6 @@ dune_pandora:
   HitFinderModuleLabel:                                 "linecluster"
   EnableMCParticles:                                    false
   EnableProduction:                                     true
-  EnableMonitoring:                                     false
   UseHitWidths:                                         false
   BuildTracks:                                          true
   BuildShowers:                                         true
