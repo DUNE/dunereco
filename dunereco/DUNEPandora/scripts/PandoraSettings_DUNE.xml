@@ -548,41 +548,6 @@
     </algorithm>
 
     <!-- Final output and validation -->
-    <algorithm type = "LArEventValidation">
-        <CaloHitListName>CaloHitList2D</CaloHitListName>
-        <MCParticleListName>MCParticleList3D</MCParticleListName>
-        <PfoListName>AllMuonParticles3D</PfoListName>
-        <ClusterListNames>AllClustersU AllClustersV AllClustersW</ClusterListNames>
-        <UseRecoNeutrinosOnly>false</UseRecoNeutrinosOnly>
-        <UseTrueNeutrinosOnly>false</UseTrueNeutrinosOnly>
-        <PrintAllToScreen>false</PrintAllToScreen>
-        <PrintMatchingToScreen>true</PrintMatchingToScreen>
-        <VisualizeMatching>false</VisualizeMatching>
-        <VisualizeVertices>false</VisualizeVertices>
-        <VisualizeRemnants>false</VisualizeRemnants>
-        <WriteToTree>false</WriteToTree>
-        <OutputTree>Validation</OutputTree>
-        <OutputFile>Validation_cr.root</OutputFile>
-    </algorithm>
-
-    <algorithm type = "LArEventValidation">
-        <CaloHitListName>CaloHitList2D</CaloHitListName>
-        <MCParticleListName>MCParticleList3D</MCParticleListName>
-        <PfoListName>AllNeutrinoParticles3D</PfoListName>
-        <ClusterListNames>AllClustersU AllClustersV AllClustersW</ClusterListNames>
-        <IntegrateOverRecoNeutrinos>false</IntegrateOverRecoNeutrinos>
-        <UseRecoNeutrinosOnly>true</UseRecoNeutrinosOnly>
-        <UseTrueNeutrinosOnly>true</UseTrueNeutrinosOnly>
-        <PrintAllToScreen>false</PrintAllToScreen>
-        <PrintMatchingToScreen>true</PrintMatchingToScreen>
-        <VisualizeMatching>false</VisualizeMatching>
-        <VisualizeVertices>false</VisualizeVertices>
-        <VisualizeRemnants>false</VisualizeRemnants>
-        <WriteToTree>false</WriteToTree>
-        <OutputTree>Validation</OutputTree>
-        <OutputFile>Validation_nu.root</OutputFile>
-    </algorithm>
-
     <!--algorithm type = "LArVisualMonitoring">
         <PfoListNames>AllMuonParticles3D AllNeutrinoParticles3D</PfoListNames>
     </algorithm-->
