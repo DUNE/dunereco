@@ -1,0 +1,67 @@
+#
+# Job configuration for SP FD geometry, dumping ADC images with downsampling x6 in drift.
+# R.Sulej, Oct. 2017
+#
+
+#include "services_dune.fcl"
+#include "multitpcdump.fcl"
+#include "calorimetry_dune10kt.fcl"
+
+process_name: DataDump
+
+services:
+{
+  TFileService: { fileName: "reco_hist.root" }
+  MemoryTracker:     {}
+  TimeTracker:       {}
+  RandomNumberGenerator: {} #ART native random number generator
+  message:              @local::dune_message_services_prod_debug
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+			            @table::dunefd_simulation_services
+}
+
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1        # Number of events to create
+}
+
+physics:
+{
+ analyzers:
+ {
+  # module making ADC + MC-truth data dumps
+  datadump: @local::standard_spmultitpcdump
+ }
+
+ anadata: [ datadump ]
+
+ trigger_paths: [ ]
+ end_paths:     [ anadata ]
+}
+
+# Data preparation settings:
+#
+physics.analyzers.datadump.TrainingDataAlg.SimulationLabel: "largeant"
+physics.analyzers.datadump.TrainingDataAlg.SaveVtxFlags:    true         # save (or not) interaction and decay vertex info
+physics.analyzers.datadump.TrainingDataAlg.DriftWindow:     6            # downsampling window in drift ticks
+physics.analyzers.datadump.TrainingDataAlg.AdcDelayTicks:   0            # delay of ADC peak in drift ticks
+physics.analyzers.datadump.TrainingDataAlg.DownscaleFn:     "mean"       # downsampling function
+
+# Output content:
+#
+physics.analyzers.datadump.SaveDepositMap:  false
+physics.analyzers.datadump.SavePdgMap:      false
+
+# Calibration:
+#
+physics.analyzers.datadump.TrainingDataAlg.CalorimetryAlg:  @local::dune10kt_calorimetryalgmc
+physics.analyzers.datadump.TrainingDataAlg.CalibrateAmpl:   true
+
+# Scaling to signed byte range:
+#
+physics.analyzers.datadump.TrainingDataAlg.AdcMax: 250.0 # fix the input range
+physics.analyzers.datadump.TrainingDataAlg.AdcMin: -5.0  #  - not much on the negative values
+physics.analyzers.datadump.TrainingDataAlg.OutMax: 127.0 # fix the output range to one signed byte
+physics.analyzers.datadump.TrainingDataAlg.OutMin: -128.0
+
