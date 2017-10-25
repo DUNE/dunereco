@@ -39,7 +39,8 @@ extern "C" {
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "DisambigAlg35t.h"
-#include "larsim/MCCheater/BackTracker.h"
+#include "larsim/MCCheater/BackTrackerService.h"
+#include "larsim/MCCheater/ParticleInventoryService.h"
 #include "lardataobj/AnalysisBase/ParticleID.h"
 
 // ROOT Includes 
@@ -73,7 +74,8 @@ namespace disambigcheck{
   private:
     
     art::ServiceHandle<geo::Geometry> fGeom;
-    art::ServiceHandle<cheat::BackTracker> bt;
+    art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+    art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
     
     std::string fChanHitDisambig;
     std::string fChanHitCheater;
@@ -181,7 +183,7 @@ namespace disambigcheck{
 	uint32_t cheatwire = ChHitsCheater[h]->WireID().Wire;
 
 	std::vector<sim::IDE> ides;
-	std::vector<sim::TrackIDE> TrackIDs = bt->HitToTrackID(ChHitsCheater[h]);
+	std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(ChHitsCheater[h]);
 	double MaxE = 0;
 	int TrackID;
 	for(size_t e = 0; e < TrackIDs.size(); ++e){
@@ -191,7 +193,7 @@ namespace disambigcheck{
 	  }
 	}
 	// Now have trackID, so get PdG code and T0 etc.
-	const simb::MCParticle *particle = bt->TrackIDToParticle(TrackID);
+	const simb::MCParticle *particle = pi_serv->TrackIdToParticle_P(TrackID);
 	if ( ParticleMap.count(TrackID) == 0) {
 	  //std::cout << "Looking at key " << TrackID << " for the first time so setting the angles." << std::endl;
 	  TVector3 MC_NormMom;

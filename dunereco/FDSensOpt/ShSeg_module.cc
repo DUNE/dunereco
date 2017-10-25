@@ -41,7 +41,7 @@
 #include "lardata/Utilities/AssociationUtil.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
-#include "larsim/MCCheater/BackTracker.h"
+#include "larsim/MCCheater/ParticleInventoryService.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
@@ -283,9 +283,9 @@ bool dunefd::ShSeg::BuildSegMC(art::Event & e)
 	if (e.getByLabel(fHitsModuleLabel, hitListHandle))
 		art::fill_ptr_vector(hitlist, hitListHandle);
 
-	art::ServiceHandle<cheat::BackTracker> bt;
+	art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
 	art::ServiceHandle<geo::Geometry> geom;
-	const sim::ParticleList& plist = bt->ParticleList();
+	const sim::ParticleList& plist = pi_serv->ParticleList();
 
 	std::vector<const simb::MCParticle * > primaries = plist.GetPrimaries();
 	if (primaries.size() != 1)  return false;

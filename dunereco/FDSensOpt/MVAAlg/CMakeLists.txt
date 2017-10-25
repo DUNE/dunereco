@@ -13,7 +13,7 @@ art_make( BASENAME_ONLY
                         lardata_Utilities
 			larreco_Calorimetry
 		        IniSegAlg
-			larsim_MCCheater_BackTracker_service
+			larsim_MCCheater_BackTrackerService_service
                         nusimdata_SimulationBase
                         ${ART_FRAMEWORK_CORE}
                         ${ART_FRAMEWORK_PRINCIPAL}
