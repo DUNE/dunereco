@@ -1,0 +1,19 @@
+#include "pointidalg.fcl"
+
+BEGIN_PROLOG
+
+standard_spmultitpcdump:
+{
+    module_type:     "SPMultiTpcDump"
+
+    SaveDepositMap:  false
+    SavePdgMap:      false
+
+    GenModuleLabel:  "generator"
+    FidVolCut:	      20.0
+
+    TrainingDataAlg:        @local::standard_trainingdataalg
+}
+
+END_PROLOG
+
