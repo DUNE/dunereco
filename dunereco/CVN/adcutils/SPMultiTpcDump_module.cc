@@ -57,6 +57,7 @@ namespace nnet
   	int cryo;
   	int tpc;
   	TVector2 position[3];
+  	TVector3 vtx3d;
   };
 
   class EventImageData // full image for one plane
@@ -64,6 +65,7 @@ namespace nnet
   public:
     EventImageData(size_t w, size_t d, bool saveDep) :
         fVtxX(-9999), fVtxY(-9999),
+        fProjX(-9999), fProjY(-9999),
         fSaveDep(saveDep)
     {
         fAdc.resize(w, std::vector<float>(d, 0));
@@ -83,12 +85,29 @@ namespace nnet
     const std::vector< std::vector<int> > & pdgData(void) const { return fPdg; }
     const std::vector<int> & wirePdg(size_t widx) const { return fPdg[widx]; }
 
+    void setProjXY(const TrainingDataAlg & dataAlg, float x, float y, size_t gw, bool flipw, size_t gd, bool flipd);
+    float getProjX(void) const { return fProjX; }
+    float getProjY(void) const { return fProjY; }
+
+    int getVtxX(void) const { return fVtxX; }
+    int getVtxY(void) const { return fVtxY; }
+
   private:
     std::vector< std::vector<float> > fAdc, fDeposit;
     std::vector< std::vector<int> > fPdg;
     int fVtxX, fVtxY;
+    float fProjX, fProjY;
     bool fSaveDep;
   };
+
+  void EventImageData::setProjXY(const TrainingDataAlg & dataAlg, float x, float y, size_t gw, bool flipw, size_t gd, bool flipd)
+  {
+    if (flipw) { fProjX = gw + dataAlg.NWires() - x - 1; }
+    else { fProjX = gw + x; }
+
+    if (flipd) { fProjY = gd + dataAlg.NScaledDrifts() - y/dataAlg.DriftWindow() - 1; }
+    else { fProjY = gd + y/dataAlg.DriftWindow(); }
+  }
 
   void EventImageData::addTpc(const TrainingDataAlg & dataAlg, size_t gw, bool flipw, size_t gd, bool flipd)
   {
@@ -125,7 +144,7 @@ namespace nnet
                 int vtx_flags = (dstPdg[gd + d] | code) & nnet::TrainingDataAlg::kVtxMask;
                 dstPdg[gd + d] = vtx_flags | best_pdg; // now just overwrite pdg and keep all vtx flags
                 
-                if (code & nnet::TrainingDataAlg::kNuPri) { fVtxX = gw + w; fVtxY = gd + d; }
+                if (code & nnet::TrainingDataAlg::kNuPri) { fVtxX = gw + w; fVtxY = gd + d; } // dstAdc[gd + d] = 127; }
             }
         }
         else
@@ -139,7 +158,7 @@ namespace nnet
                 int vtx_flags = (dstPdg[gd + d] | code) & nnet::TrainingDataAlg::kVtxMask;
                 dstPdg[gd + d] = vtx_flags | best_pdg; // now just overwrite pdg and keep all vtx flags
 
-                if (code & nnet::TrainingDataAlg::kNuPri) { fVtxX = gw + w; fVtxY = gd + d; }
+                if (code & nnet::TrainingDataAlg::kNuPri) { fVtxX = gw + w; fVtxY = gd + d; } // dstAdc[gd + d] = 127; }
             }
         }
     }
@@ -255,6 +274,7 @@ namespace nnet
 	NUVTX fPointid;
 	int fCryo, fTpc, fPlane;
 	int fPdg, fInteraction;
+	int fPixX, fPixY;
 	float fPosX, fPosY;
 
 	geo::GeometryCore const* fGeometry;
@@ -278,7 +298,7 @@ namespace nnet
   {
 		art::ServiceHandle<art::TFileService> tfs;
 
-		fTree = tfs->make<TTree>("nu vertex","nu vertex tree");
+		fTree = tfs->make<TTree>("event","Event level info");
 		fTree->Branch("fRun", &fRun, "fRun/I");
 		fTree->Branch("fEvent", &fEvent, "fEvent/I");
 		fTree->Branch("fCryo", &fCryo, "fCryo/I");
@@ -286,8 +306,12 @@ namespace nnet
 		fTree->Branch("fPdg", &fPdg, "fPdg/I");
 		fTree->Branch("fInteraction", &fInteraction, "fInteraction/I");
 		
-		fTree2D = tfs->make<TTree>("nu vertex 2d","nu vertex 2d tree");
+		fTree2D = tfs->make<TTree>("plane","Vertex 2D info");
+		fTree2D->Branch("fRun", &fRun, "fRun/I");
+		fTree2D->Branch("fEvent", &fEvent, "fEvent/I");
 		fTree2D->Branch("fPlane", &fPlane, "fPlane/I");
+		fTree2D->Branch("fPixX", &fPixX, "fPixX/I");
+		fTree2D->Branch("fPixY", &fPixY, "fPixY/I");
 		fTree2D->Branch("fPosX", &fPosX, "fPosX/F");
 		fTree2D->Branch("fPosY", &fPosY, "fPosY/F");
   }
@@ -301,12 +325,16 @@ namespace nnet
 	for (auto const & mc : (*mctruthHandle))
 	{
 		if (mc.Origin() == simb::kBeamNeutrino)
-		{	
+		{
 			const TLorentzVector& pvtx = mc.GetNeutrino().Nu().Position();
-			TVector3 vtx(pvtx.X(), pvtx.Y(), pvtx.Z());	
-				
-			CorrOffset(vtx, mc.GetNeutrino().Nu());		
-		
+			TVector3 vtx(pvtx.X(), pvtx.Y(), pvtx.Z());
+
+			CorrOffset(vtx, mc.GetNeutrino().Nu());
+
+			fPointid.nupdg = mc.GetNeutrino().Nu().PdgCode();
+			fPointid.interaction = mc.GetNeutrino().CCNC();
+			fPointid.vtx3d = vtx;
+
 			if (InsideFidVol(vtx)) 
 			{	
 				double v[3] = {vtx.X(), vtx.Y(), vtx.Z()}; 
@@ -316,13 +344,11 @@ namespace nnet
 				for (size_t i = 0; i < 3; ++i)
 				{
 					if (fGeometry->TPC(tpc, cryo).HasPlane(i))
-					{fPointid.position[i] = GetProjVtx(vtx, cryo, tpc, i);}
+					{ fPointid.position[i] = GetProjVtx(vtx, cryo, tpc, i); }
 					else
-					{fPointid.position[i] = TVector2(0, 0);}
+					{ fPointid.position[i] = TVector2(0, 0); }
 				}
-				
-				fPointid.nupdg = mc.GetNeutrino().Nu().PdgCode();
-				fPointid.interaction = mc.GetNeutrino().CCNC();
+
 				fPointid.cryo = cryo;
 				fPointid.tpc = tpc;
 				
@@ -331,17 +357,22 @@ namespace nnet
 				
 				return true;	
 			}
-			else { return false; }
+			else
+			{
+				fPointid.cryo = -1;
+				fPointid.tpc = -1;
+				fCryo = -1; fTpc = -1;
+			    return false;
+			}
 		}
-	}	
-	
+	}
 	return false;
   }  
 
   //-----------------------------------------------------------------------
   void SPMultiTpcDump::analyze(const art::Event& event) 
   {
-    fEvent  = event.id().event(); 
+    fEvent  = event.id().event();
     fRun    = event.run();
     fSubRun = event.subRun();
     ResetVars();
@@ -353,10 +384,19 @@ namespace nnet
 	std::cout << "analyze " << os.str() << std::endl;
 
     size_t cryo = 0;
+    size_t plane_align0[3] = { 1, 0, 2 }; // offsets to align signals in drift direction between planes
+    size_t plane_align1[3] = { 2, 1, 0 };
+    size_t max_align = 0;
+    for (size_t i = 0; i < 3; ++i)
+    {
+        if (plane_align0[i] > max_align) max_align = plane_align0[i];
+        if (plane_align1[i] > max_align) max_align = plane_align1[i];
+    }
+
     size_t weff[3] = { 404, 404, 485 }; // effective offset in wires between consecutive tpc's, incl. dead spaces, per plane
-    size_t tpcs[3] = { 2, 2, 6 };       // FD workspace dimension in #tpc's 
+    size_t tpcs[3] = { 2, 2, 6 };       // FD workspace dimension in #tpc's
     //size_t tpcs[3] = { 4, 1, 3 };     // the same for ProtoDUNE
-    size_t apa_gap = 21;                // APA thickness (dead space in drift direction) in pixels
+    size_t apa_gap = 29;                // APA thickness (dead space in drift direction) in pixels
 
     bool goodEvent = false;
     unsigned int gd0 = 0, gd1 = 0;
@@ -367,11 +407,12 @@ namespace nnet
 	    size_t max_offset = (p < 2) ? 752 : 0;                                              // top-bottom projection max offset
 
         size_t ntotw = (tpcs[2] - 1) * weff[p] + wire_size + tpcs[1] * max_offset;          // global image size in wire direction
-        size_t ntotd = tpcs[0] * drift_size + apa_gap * tpcs[0] / 2;                        // global image size in drift direction
+        size_t ntotd = tpcs[0] * drift_size + (apa_gap + max_align) * (tpcs[0] / 2);        // global image size in drift direction
 
 	    std::cout << "Plane: " << p << ", wires: " << ntotw << " drift: " << ntotd << std::endl;
 	    EventImageData fullimg(ntotw, ntotd, fSaveDepositMap);
 
+        size_t a, maxArea = 0;
 	    for (size_t t = 0; t < fGeometry->NTPC(cryo); ++t) // loop over tpc's
 	    {
             size_t tpc_z = t / (tpcs[0] * tpcs[1]);
@@ -384,10 +425,14 @@ namespace nnet
 	        bool flip_w = false;     // need the flip in wire direction?
 	        size_t eff_p = p;        // global plane
 	        int offset = 0;
+            int p_align = 0;
 
             if (p < 2) // no wire flip nor top-bottom alignments in Z (collection) plane
             {
-	            if ((t % 4 == 0) || (t % 4 == 2)) { eff_p = (p == 1) ? 0 : 1; } // swap U and V
+	            if ((t % 4 == 0) || (t % 4 == 2))
+	            {
+	                eff_p = (p == 1) ? 0 : 1;     // swap U and V
+	            }
 
                 if ((t % 4 == 0) || (t % 4 == 1)) // bottom tpc's
                 {
@@ -400,15 +445,31 @@ namespace nnet
 
                 offset = (p == 0) ? 48 : 752;     // top-bottopm offsets
             }
+            
+            if ((t % 4 == 0) || (t % 4 == 2))
+            {
+                p_align = plane_align0[p];
+            }
+            else
+            {
+                p_align = plane_align1[p];
+            }
 
-            size_t gw = tpc_z * weff[p] + tpc_y * offset;                // global wire
-            size_t gd = tpc_x * drift_size + apa_gap * (1 + tpc_x) / 2;  // global drift
+            size_t gw = tpc_z * weff[p] + tpc_y * offset;                          // global wire
+            size_t gd = tpc_x * drift_size + apa_gap * (1 + tpc_x) / 2 + p_align;  // global drift
 
 		    fTrainingDataAlg.setEventData(event, eff_p, t, cryo); // prepare ADC and truth projections for 1 plane in 1 tpc
 		    std::cout << "   TPC: " << t << " wires: " << fTrainingDataAlg.NWires() << std::endl;
-		    if (fTrainingDataAlg.getAdcArea() > 150)
+		    a = fTrainingDataAlg.getAdcArea();
+		    if (a > 150)
 		    {
 		        fullimg.addTpc(fTrainingDataAlg, gw, flip_w, gd, flip_d);
+		        if (a > maxArea)
+		        {
+                    TVector2 vtxProj = GetProjVtx(fPointid.vtx3d, cryo, t, p);
+                    fullimg.setProjXY(fTrainingDataAlg, vtxProj.X(), vtxProj.Y(), gw, flip_w, gd, flip_d);
+		            a = maxArea;
+		        }
 		    }
 		}
 
@@ -465,17 +526,31 @@ namespace nnet
        		}
    		}
 
+        if (goodEvent)
+        {
+    		fPlane = p;
+
+  	    	fPixX = fullimg.getVtxX();
+	    	fPixY = fullimg.getVtxY();
+
+      		fPosX = fullimg.getProjX();
+    		fPosY = fullimg.getProjY();
+
+            std::cout << " *** plane:" << p << std::endl;
+            std::cout << " ***  w0:" << w0 << ", w1:" << w1 << std::endl;
+            std::cout << " ***  d0:" << d0 << ", d1:" << d1 << std::endl;
+            std::cout << " ***  pix *** x:" << fPixX << ", y:" << fPixY << std::endl;
+            std::cout << " *** proj *** x:" << fPosX << ", y:" << fPosY << std::endl << std::endl;
+
+    		fTree2D->Fill();
+    	}
+	}
+	if (goodEvent)
+	{
    		fPdg = fPointid.nupdg;
 		fInteraction = fPointid.interaction;
-
-		fPlane = p;
-			  
-  		fPosX = fPointid.position[p].X();
-		fPosY = fPointid.position[p].Y();
-
-		fTree2D->Fill();
+	    fTree->Fill();
 	}
-	if (goodEvent) { fTree->Fill(); }
   }
   
   //-----------------------------------------------------------------------
