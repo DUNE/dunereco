@@ -24,7 +24,7 @@
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardata/Utilities/AssociationUtil.h"
-#include "larsim/MCCheater/BackTracker.h"
+#include "larsim/MCCheater/ParticleInventoryService.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "larreco/RecoAlg/ProjectionMatchingAlg.h"
 #include "larreco/RecoAlg/PMAlg/PmaTrack3D.h"
@@ -273,8 +273,8 @@ void dunefd::IniSegReco::produce(art::Event& evt)
 				isinside = true;
 				chargeParticlesatVtx(evt);
 
-				art::ServiceHandle<cheat::BackTracker> bt;
-				const sim::ParticleList& plist = bt->ParticleList();
+				art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
+				const sim::ParticleList& plist = pi_serv->ParticleList();
 
 				bool photon = false;
 				for (sim::ParticleList::const_iterator ipar = plist.begin(); ipar != plist.end(); ++ipar)
@@ -779,8 +779,8 @@ TVector3 dunefd::IniSegReco::findElDir(art::Ptr<simb::MCTruth> const mctruth) co
 void dunefd::IniSegReco::chargeParticlesatVtx(art::Event const & evt)
 {
 	std::cout << " chargeParticleatVtx " << std::endl;
-	art::ServiceHandle<cheat::BackTracker> bt;
-	const sim::ParticleList& plist = bt->ParticleList();
+	art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
+	const sim::ParticleList& plist = pi_serv->ParticleList();
 
 	TVector3 pospri; bool primary = false;
 	for (sim::ParticleList::const_iterator ipar = plist.begin(); ipar != plist.end(); ++ipar)
@@ -831,8 +831,8 @@ void dunefd::IniSegReco::chargeParticlesatVtx(art::Event const & evt)
 std::vector< TVector3 > dunefd::IniSegReco::findPhDir() const
 {
 	std::vector< TVector3 > phdirs;	
-	art::ServiceHandle<cheat::BackTracker> bt;
-	const sim::ParticleList& plist = bt->ParticleList();
+	art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
+	const sim::ParticleList& plist = pi_serv->ParticleList();
 
 	for (sim::ParticleList::const_iterator ipar = plist.begin(); ipar != plist.end(); ++ipar)
 	{
@@ -844,15 +844,15 @@ std::vector< TVector3 > dunefd::IniSegReco::findPhDir() const
 		{
 			if (particle->NumberDaughters() != 2) continue;
 
-			const simb::MCParticle* daughter1 = bt->TrackIDToParticle(particle->Daughter(0));
+			const simb::MCParticle* daughter1 = pi_serv->TrackIdToParticle_P(particle->Daughter(0));
 			if (daughter1->PdgCode() != 22) continue;
 
-			const simb::MCParticle* daughter2 = bt->TrackIDToParticle(particle->Daughter(1));
+			const simb::MCParticle* daughter2 = pi_serv->TrackIdToParticle_P(particle->Daughter(1));
 			if (daughter2->PdgCode() != 22) continue; 
 			
 			if (daughter1->EndProcess() == "conv")
 			{
-				TLorentzVector mom = bt->TrackIDToParticle(particle->Daughter(0))->Momentum();
+				TLorentzVector mom = pi_serv->TrackIdToParticle_P(particle->Daughter(0))->Momentum();
 				TVector3 momvec3(mom.Px(), mom.Py(), mom.Pz());
 				dir = momvec3 * (1 / momvec3.Mag());
 				phdirs.push_back(dir);
@@ -860,7 +860,7 @@ std::vector< TVector3 > dunefd::IniSegReco::findPhDir() const
  
 			if (daughter2->EndProcess() == "conv")
 			{
-				TLorentzVector mom = bt->TrackIDToParticle(particle->Daughter(1))->Momentum();
+				TLorentzVector mom = pi_serv->TrackIdToParticle_P(particle->Daughter(1))->Momentum();
 				TVector3 momvec3(mom.Px(), mom.Py(), mom.Pz());
 				dir = momvec3 * (1 / momvec3.Mag());
 				phdirs.push_back(dir);
@@ -884,8 +884,8 @@ std::vector< TVector3 > dunefd::IniSegReco::findDirs(art::Ptr<simb::MCTruth> con
 {
 	std::vector< TVector3 > dirs;
 
-	art::ServiceHandle<cheat::BackTracker> bt;
-	const sim::ParticleList& plist = bt->ParticleList();
+	art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
+	const sim::ParticleList& plist = pi_serv->ParticleList();
 
 	for (sim::ParticleList::const_iterator ipar = plist.begin(); ipar != plist.end(); ++ipar)
 	{
