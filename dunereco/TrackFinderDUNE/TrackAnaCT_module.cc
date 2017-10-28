@@ -37,8 +37,7 @@
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
-#include "larsim/MCCheater/BackTrackerService.h"
-#include "larsim/MCCheater/ParticleInventoryService.h"
+#include "larsim/MCCheater/BackTracker.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "lardataobj/Simulation/sim.h"
 
@@ -777,9 +776,8 @@ namespace trkf {
     std::vector<const simb::MCParticle*> plist2;
     if(mc) {
 
-//      art::ServiceHandle<cheat::BackTrackerService> bt_serv;
-      art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
-      sim::ParticleList const& plist = pi_serv->ParticleList();
+      art::ServiceHandle<cheat::BackTracker> bt;
+      sim::ParticleList const& plist = bt->ParticleList();
       plist2.reserve(plist.size());
   
 
@@ -1266,8 +1264,7 @@ namespace trkf {
   void TrackAnaCT::anaStitch(const art::Event& evt)
   {
 
-    art::ServiceHandle<cheat::BackTrackerService> bt_serv;
-    art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
+    art::ServiceHandle<cheat::BackTracker> bt;
     art::ServiceHandle<geo::Geometry> geom;
     auto const *detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
@@ -1348,7 +1345,7 @@ namespace trkf {
 		rhistsStitched.fHHitWidth->Fill(hit->RMS() * 2.);
 		if (mc)
 		  {
-		    std::vector<sim::TrackIDE> tids = bt_serv->HitToTrackIDEs(hit);
+		    std::vector<sim::TrackIDE> tids = bt->HitToTrackID(hit);
 		    // more here.
 		    // Loop over track ids.
 		    bool justOne(true); // Only take first trk that contributed to this hit
@@ -1360,7 +1357,7 @@ namespace trkf {
 		      if (justOne) { vecNtrkIds.push_back(trackID); justOne=false; }
 		      // Add hit to PtrVector corresponding to this track id.
 		      rhistsStitched.fHHitTrkId->Fill(trackID); 
-		      const simb::MCParticle* part = pi_serv->TrackIdToParticle_P(trackID);
+		      const simb::MCParticle* part = bt->TrackIDToParticle(trackID);
 		      rhistsStitched.fHHitPdg->Fill(part->PdgCode()); 
 		      // This really needs to be indexed as KE deposited in volTPC, not just KE. EC, 24-July-2014.
 
@@ -1449,7 +1446,7 @@ namespace trkf {
 	  {
 	    //	    int tval = it->second; // grab trkIDs in order, since they're sorted by KE
 	    //	    int ke = it->first; // grab trkIDs in order, since they're sorted by KE
-	    //	    const simb::MCParticle* part = pi_serv->TrackIDToParticle(tval);
+	    //	    const simb::MCParticle* part = bt->TrackIDToParticle(tval);
 	    
 	    //	    std::cout << "TrackAnaCTStitch: KEmap cntr vtmp, Length ke, tval, pdg : "  << vtmp << ", " << ke <<", " << tval <<", " << part->PdgCode() << ", " << std::endl;
 
@@ -1464,7 +1461,7 @@ namespace trkf {
 	for (auto it = KEmap.rbegin(); it!=KEmap.rend(); ++it) 
 	  {
 	    int val = it->second; // grab trkIDs in order, since they're sorted by KE
-	    //	    const simb::MCParticle* part = pi_serv->TrackIDToParticle(val);
+	    //	    const simb::MCParticle* part = bt->TrackIDToParticle(val);
 	    //	    std::cout << "TrackAnaCTStitch: trk o, KEmap cntr v, KE val, pdg  hitmap[val][o].size(): "  << o <<", " << v << ", " << val <<", " << part->PdgCode() << ", " << hitmap[val][o].size() << std::endl;
 	    rhistsStitched.fNTrkIdTrks3->Fill(o,v,hitmap[val][o].size());
 	    v++;
@@ -1481,7 +1478,7 @@ namespace trkf {
       {
 	if (val != (unsigned int)sim::NoParticleId)
 	  {
-	    const simb::MCParticle* part = pi_serv->TrackIdToParticle_P( val ); 
+	    const simb::MCParticle* part = bt->TrackIDToParticle( val ); 
 	    double T(part->E() - 0.001*part->Mass());
 	    rhistsStitched.fNTrkIdTrks->Fill(std::count(v.begin(),v.end(),val));
 	    rhistsStitched.fNTrkIdTrks2->Fill(std::count(v.begin(),v.end(),val),T);

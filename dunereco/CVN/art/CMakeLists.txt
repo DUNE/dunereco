@@ -38,7 +38,7 @@ cet_find_library( GLOGLIB NAMES glog PATHS ENV GLOG_LIB NO_DEFAULT_PATH )
                              lardataobj_RecoBase
                              lardata_Utilities
                              nusimdata_SimulationBase
-                             larsim_MCCheater_BackTrackerService_service           
+                             larsim_MCCheater_BackTracker_service           
                              ${CAFFELIB}
                              ${GSLLIB}                  
                              ${HDF5LIB}

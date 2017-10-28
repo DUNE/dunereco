@@ -20,10 +20,10 @@ services:
 
   LArG4Parameters:        @local::dunefd_largeantparameters
 
-  BackTrackerService:       @local::standard_backtrackerservice
-  ParticleInventoryService: @local::standard_particleinventoryservice
+  BackTracker: @local::standard_backtracker
   DetectorClocksService:          @local::dunefd_detectorclocks
 
+  PhotonBackTracker: @local::dunefd_photonbacktracker
 
   DetectorPropertiesService: @local::dunefd_detproperties
   LArPropertiesService: @local::dunefd_properties
