@@ -5,7 +5,8 @@ simple_plugin(SNSlicer "module"
                         larcore_Geometry_Geometry_service
                         larcorealg_Geometry
                         larsim_MCCheater_BackTrackerService_service
-                        larsim_MCCheater_PhotonBackTrackerService_service
+           larsim_MCCheater_ParticleInventoryService_service
+                        larsim_MCCheater_PhotonBackTracker_service
                         larsim_Simulation
                         lardataobj_RawData
 			lardataobj_RecoBase

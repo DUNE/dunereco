@@ -7,6 +7,7 @@ art_make( BASENAME_ONLY
           LIB_LIBRARIES    nusimdata_SimulationBase
                            lardataobj_RecoBase
                            larsim_MCCheater_BackTrackerService_service
+           larsim_MCCheater_ParticleInventoryService_service
                            ${ART_FRAMEWORK_SERVICES_REGISTRY}
                            cetlib cetlib_except
                            ${Boost_FILESYSTEM_LIBRARY}            

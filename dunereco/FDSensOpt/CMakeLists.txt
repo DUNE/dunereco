@@ -70,6 +70,7 @@ simple_plugin(NueAna   "module"
 			lardata_Utilities
 			larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
 			larsim_MCCheater_BackTrackerService_service
+           larsim_MCCheater_ParticleInventoryService_service
 			nusimdata_SimulationBase
                         ${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}
@@ -224,6 +225,7 @@ simple_plugin(IniSegReco "module"
 		      lardata_Utilities
 		      larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
 		      larsim_MCCheater_BackTrackerService_service
+           larsim_MCCheater_ParticleInventoryService_service
 		      nusimdata_SimulationBase
       		      ${ART_FRAMEWORK_CORE}
 		      ${ART_FRAMEWORK_PRINCIPAL}
@@ -254,6 +256,7 @@ simple_plugin(ShSeg   "module"
 			
 			
 			larsim_MCCheater_BackTrackerService_service
+           larsim_MCCheater_ParticleInventoryService_service
 			nusimdata_SimulationBase
 			${ART_FRAMEWORK_CORE}
 			${ART_FRAMEWORK_PRINCIPAL}

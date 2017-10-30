@@ -9,6 +9,7 @@ art_make( BASENAME_ONLY
                            larcore_Geometry_Geometry_service
                            lardata_RecoObjects larreco_Deprecated
 			   larsim_MCCheater_BackTrackerService_service
+           larsim_MCCheater_ParticleInventoryService_service
                            lardata_Utilities
 			   lbne_daqinput35t
 			   nusimdata_SimulationBase
@@ -36,6 +37,7 @@ art_make( BASENAME_ONLY
                            larcorealg_Geometry
                            larcore_Geometry_Geometry_service
 			   larsim_MCCheater_BackTrackerService_service
+           larsim_MCCheater_ParticleInventoryService_service
                            lardata_Utilities
 			   nutools_RandomUtils_NuRandomService_service
 			   nusimdata_SimulationBase
