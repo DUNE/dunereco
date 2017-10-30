@@ -1,6 +1,8 @@
 #include "geometry_dune.fcl"
 #include "messageservice.fcl"
 #include "services_dune.fcl"
+#include "backtrackerservice.fcl"
+#include "particleinventoryservice.fcl"
 
 #include "SNSlicer.fcl"
 
