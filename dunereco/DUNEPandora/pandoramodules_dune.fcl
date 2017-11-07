@@ -27,7 +27,7 @@ dune35t_particlestitcher:
 {
   module_type:                                          "DUNE35tParticleStitcher"
   PFParticleModuleLabel:                                "pandora"
-  TrackModuleLabel:                                     "pandora"
+  TrackModuleLabel:                                     "pandoraTrack"
   UseXCoordinate:                                       false
   EnableMonitoring:                                     false
   EnableStitching:                                      true
@@ -61,5 +61,15 @@ dune_pandorawriter.EnableMCParticles:                   true
 dune_pandorawriter.EnableProduction:                    false
 dune_pandorawriter.UniqueInstanceSettings:              true
 dune_pandorawriter.OutputGeometryXmlFile:               "dune_drift_volumes.xml"
+
+dune_pandoraTrackCreation:
+{
+    module_type:                                        "LArPandoraTrackCreation"
+}
+
+dune_pandoraShowerCreation:
+{
+    module_type:                                        "LArPandoraShowerCreation"
+}
 
 END_PROLOG
