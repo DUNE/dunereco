@@ -42,6 +42,7 @@
 #include <cmath>
 #include <fstream>
 
+#include "TFile.h"
 #include "TTree.h"
 #include "TH2C.h" // ADC map
 #include "TH2I.h" // PDG+vertex info map
@@ -494,7 +495,8 @@ namespace nnet
    		ss1 << os.str() << "_plane_" << p; // TH2's name
 
 		art::ServiceHandle<art::TFileService> tfs;
-   		TH2C* rawHist = tfs->make<TH2C>((ss1.str() + "_raw").c_str(), "ADC", w1 - w0, w0, w1, d1 - d0, d0, d1);
+   		TH2C* rawHist = tfs->make<TH2C>((ss1.str() + "_raw").c_str(), "ADC",
+                    (int)(w1 - w0), (double)w0, (double)w1, (int)(d1 - d0), (double)d0, (double)d1);
    		
    		float zero = fTrainingDataAlg.ZeroLevel();
         for (size_t w = w0; w < w1; ++w)
@@ -508,7 +510,8 @@ namespace nnet
 
    		if (fSaveDepositMap)
    		{
-       		TH2F* depHist = tfs->make<TH2F>((ss1.str() + "_deposit").c_str(), "Deposit", w1 - w0, w0, w1, d1 - d0, d0, d1);
+       		TH2F* depHist = tfs->make<TH2F>((ss1.str() + "_deposit").c_str(), "Deposit",
+                    (int)(w1 - w0), (double)w0, (double)w1, (int)(d1 - d0), (double)d0, (double)d1);
             for (size_t w = w0; w < w1; ++w)
             {
                 auto const & edep = fullimg.wireDep(w);
@@ -518,7 +521,8 @@ namespace nnet
 
        	if (fSavePdgMap)
        	{
-   			TH2I* pdgHist = tfs->make<TH2I>((ss1.str() + "_pdg").c_str(), "PDG", w1 - w0, w0, w1, d1 - d0, d0, d1);
+   		TH2I* pdgHist = tfs->make<TH2I>((ss1.str() + "_pdg").c_str(), "PDG",
+                    (int)(w1 - w0), (double)w0, (double)w1, (int)(d1 - d0), (double)d0, (double)d1);
             for (size_t w = w0; w < w1; ++w)
             {
                 auto const & pdg = fullimg.wirePdg(w);
@@ -530,11 +534,11 @@ namespace nnet
         {
     		fPlane = p;
 
-  	    	if (fPixX > -9999) fPixX = fullimg.getVtxX() - w0;
-	    	if (fPixY > -9999) fPixY = fullimg.getVtxY() - d0;
+  	    	if (fullimg.getVtxX() > -9999) fPixX = fullimg.getVtxX() - w0;
+	    	if (fullimg.getVtxY() > -9999) fPixY = fullimg.getVtxY() - d0;
 
-      		if (fPosX > -9999) fPosX = fullimg.getProjX() - w0;
-    		if (fPosY > -9999) fPosY = fullimg.getProjY() - d0;
+      		if (fullimg.getProjX() > -9999) fPosX = fullimg.getProjX() - w0;
+    		if (fullimg.getProjY() > -9999) fPosY = fullimg.getProjY() - d0;
 
             std::cout << " *** plane:" << p << std::endl;
             std::cout << " ***   w0:" << w0 << ", w1:" << w1 << std::endl;
@@ -559,18 +563,16 @@ namespace nnet
   {
   	double vtx[3] = {vec.X(), vec.Y(), vec.Z()};
   	geo::TPCID tpcid = fGeometry->FindTPCAtPosition(vtx);
-  	
-		auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
-	
-		if (tpcid.isValid)
+
+	if (tpcid.isValid)
 	  {
-	  	float corrt0x = particle.T() * 1.e-3 * detprop->DriftVelocity();
+	  	float corrt0x = particle.T() * 1.e-3 * fDetProp->DriftVelocity();
 	  	if (fGeometry->TPC(tpcid).DetectDriftDirection() == 1) { corrt0x = corrt0x*(-1); }
 	  	
 	  	vtx[0] = vec.X() + corrt0x;
 	  }
 
-		vec.SetX(vtx[0]);
+	vec.SetX(vtx[0]);
   }
 
   //-----------------------------------------------------------------------
@@ -638,6 +640,8 @@ namespace nnet
 		fInteraction = 0;
 		fPosX = 0.0;
 		fPosY = 0.0;
+                fPixX = 0;
+                fPixY = 0;
 	}
 
 DEFINE_ART_MODULE(SPMultiTpcDump)
