@@ -530,17 +530,18 @@ namespace nnet
         {
     		fPlane = p;
 
-  	    	fPixX = fullimg.getVtxX();
-	    	fPixY = fullimg.getVtxY();
+  	    	if (fPixX > -9999) fPixX = fullimg.getVtxX() - w0;
+	    	if (fPixY > -9999) fPixY = fullimg.getVtxY() - d0;
 
-      		fPosX = fullimg.getProjX();
-    		fPosY = fullimg.getProjY();
+      		if (fPosX > -9999) fPosX = fullimg.getProjX() - w0;
+    		if (fPosY > -9999) fPosY = fullimg.getProjY() - d0;
 
             std::cout << " *** plane:" << p << std::endl;
-            std::cout << " ***  w0:" << w0 << ", w1:" << w1 << std::endl;
-            std::cout << " ***  d0:" << d0 << ", d1:" << d1 << std::endl;
+            std::cout << " ***   w0:" << w0 << ", w1:" << w1 << std::endl;
+            std::cout << " ***   d0:" << d0 << ", d1:" << d1 << std::endl;
             std::cout << " ***  pix *** x:" << fPixX << ", y:" << fPixY << std::endl;
-            std::cout << " *** proj *** x:" << fPosX << ", y:" << fPosY << std::endl << std::endl;
+            std::cout << " *** proj *** x:" << fPosX << ", y:" << fPosY << std::endl;
+            std::cout << " *** zero:" << zero << std::endl;
 
     		fTree2D->Fill();
     	}
