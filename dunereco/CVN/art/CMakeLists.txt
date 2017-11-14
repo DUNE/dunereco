@@ -15,42 +15,42 @@ cet_find_library( LEVELDBLIB NAMES leveldb PATHS ENV LEVELDB_LIB NO_DEFAULT_PATH
 cet_find_library( GFLAGSLIB NAMES gflags PATHS ENV GFLAGS_LIB NO_DEFAULT_PATH )
 cet_find_library( GLOGLIB NAMES glog PATHS ENV GLOG_LIB NO_DEFAULT_PATH )
 
-  art_make(BASENAME_ONLY
-           LIBRARY_NAME      CVNArt
-           LIB_LIBRARIES     ${ART_FRAMEWORK_CORE}
-                             ${ART_FRAMEWORK_PRINCIPAL}
-                             ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                             ${ART_FRAMEWORK_SERVICES_BASIC}
-                             ${ART_FRAMEWORK_SERVICES_OPTIONAL}
-                             ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
-                             ${ART_PERSISTENCY_COMMON}
-                             canvas
-                             art_Persistency_Provenance
-                             canvas 
-                             ${ART_UTILITIES}
-                             canvas
-                             ${MF_MESSAGELOGGER}
-                             ${MF_UTILITIES}
-                             ${FHICLCPP}
-                             cetlib cetlib_except
-                             ${ROOT_BASIC_LIB_LIST}
-                             CVNFunc
-                             lardataobj_RecoBase
-                             lardata_Utilities
-                             nusimdata_SimulationBase
-                             larsim_MCCheater_BackTrackerService_service           
-           larsim_MCCheater_ParticleInventoryService_service
-                             ${CAFFELIB}
-                             ${GSLLIB}                  
-                             ${HDF5LIB}
-                             ${PROTOBUFLIB}
-                             ${LEVELDBLIB}
-                             ${GFLAGSLIB}
-                             ${GLOGLIB}                             
+art_make(BASENAME_ONLY
+  LIBRARY_NAME      CVNArt
+  LIB_LIBRARIES     ${ART_FRAMEWORK_CORE}
+  ${ART_FRAMEWORK_PRINCIPAL}
+  ${ART_FRAMEWORK_SERVICES_REGISTRY}
+  ${ART_FRAMEWORK_SERVICES_BASIC}
+  ${ART_FRAMEWORK_SERVICES_OPTIONAL}
+  ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
+  ${ART_PERSISTENCY_COMMON}
+  canvas
+  art_Persistency_Provenance
+  canvas 
+  ${ART_UTILITIES}
+  canvas
+  ${MF_MESSAGELOGGER}
+  ${MF_UTILITIES}
+  ${FHICLCPP}
+  cetlib cetlib_except
+  ${ROOT_BASIC_LIB_LIST}
+  CVNFunc
+  lardataobj_RecoBase
+  lardata_Utilities
+  nusimdata_SimulationBase
+  larsim_MCCheater_BackTrackerService_service           
+  larsim_MCCheater_ParticleInventoryService_service
+  ${CAFFELIB}
+  ${GSLLIB}                  
+  ${HDF5LIB}
+  ${PROTOBUFLIB}
+  ${LEVELDBLIB}
+  ${GFLAGSLIB}
+  ${GLOGLIB}                             
 
-           MODULE_LIBRARIES  CVNFunc
-                             CVNArt
-)
+  MODULE_LIBRARIES  CVNFunc
+  CVNArt
+  )
 
 
 install_headers()
