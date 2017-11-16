@@ -21,8 +21,9 @@
 #include "lardataobj/RawData/raw.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
-#include "larsim/MCCheater/BackTracker.h"
-#include "larsim/MCCheater/PhotonBackTracker.h"
+//#include "larsim/MCCheater/BackTrackerService.h"
+//#include "larsim/MCCheater/ParticleInventoryService.h"
+//#include "larsim/MCCheater/PhotonBackTracker.h"
 #include "nutools/ParticleNavigation/EmEveIdCalculator.h"
 
 #include "nusimdata/SimulationBase/MCTruth.h"
@@ -83,8 +84,9 @@ namespace
 
     //    std::string fDetSimProducerLabel;
 
-    art::ServiceHandle<cheat::BackTracker> bt;
-    art::ServiceHandle<cheat::PhotonBackTracker> pbt;
+//    art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+//    art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
+//    art::ServiceHandle<cheat::PhotonBackTracker> pbt;
 
     const geo::GeometryCore& geom;
     const detinfo::DetectorProperties& dp;
