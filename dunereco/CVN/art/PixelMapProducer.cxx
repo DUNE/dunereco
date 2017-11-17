@@ -2,6 +2,9 @@
 /// \file    PixelMapProducer.h
 /// \brief   PixelMapProducer for CVN
 /// \author  Alexander Radovic - a.radovic@gmail.com
+//
+//  Modifications to allow unwrapped collection view
+//   - Leigh Whitehead - leigh.howard.whitehead@cern.ch
 ////////////////////////////////////////////////////////////////////////
 
 #include  <iostream>
@@ -20,7 +23,8 @@ namespace cvn
   PixelMapProducer::PixelMapProducer(unsigned int nWire, unsigned int nTdc, double tRes):
   fNWire(nWire),
   fNTdc(nTdc),
-  fTRes(tRes)
+  fTRes(tRes),
+  fUnwrapped(false)
   {}
 
 
@@ -45,10 +49,15 @@ namespace cvn
       {
         geo::WireID wireid = cluster[iHit]->WireID();
         const double tdc                   = cluster[iHit]->PeakTime();
-        const unsigned int wire                  = wireid.Wire;
-        const unsigned int wirePlane              = wireid.Plane;
-
+        unsigned int tempwire                  = wireid.Wire;
+        unsigned int tempPlane              = wireid.Plane;
+        // Leigh: Simple modification to unwrap the collection view wire plane
+        if(fUnwrapped){
+          GetGlobalWire(wireid.Wire,wireid.Plane,wireid.TPC,tempwire,tempPlane);
+        }
         const double pe  = cluster[iHit]->Integral();
+        const unsigned int wire = tempwire;
+        const unsigned int wirePlane = tempPlane;
         pm.Add(wire, tdc, wirePlane, pe);
     }
 
@@ -81,20 +90,23 @@ namespace cvn
     std::vector<int> wire_2;
 
     for(size_t iHit = 0; iHit < cluster.size(); ++iHit)
-      {
+    {
         geo::WireID wireid = cluster[iHit]->WireID();
         //wire.push_back(wireid.Wire);
-        if(wireid.Plane==0){
+        unsigned int globalWire;
+        unsigned int globalPlane;
+        GetGlobalWire(wireid.Wire,wireid.Plane,wireid.TPC,globalWire,globalPlane);
+        if(globalPlane==0){
           time_0.push_back(cluster[iHit]->PeakTime());
-          wire_0.push_back(wireid.Wire);
+          wire_0.push_back(globalWire);
         }
-        if(wireid.Plane==1){
+        if(globalPlane==1){
           time_1.push_back(cluster[iHit]->PeakTime());
-          wire_1.push_back(wireid.Wire);
+          wire_1.push_back(globalWire);
         }
-        if(wireid.Plane==2){
+        if(globalPlane==2){
           time_2.push_back(cluster[iHit]->PeakTime());
-          wire_2.push_back(wireid.Wire);
+          wire_2.push_back(globalWire);
         }
     }
 
@@ -131,7 +143,50 @@ namespace cvn
     return bound;
   }
 
+  void PixelMapProducer::GetGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const
+  {
+    unsigned int nWiresTPC = 400;
 
+    globalWire = localWire;
+    globalPlane = 0;
+
+    // Collection plane has more wires
+    if(plane == 2){
+      nWiresTPC=480;
+      globalPlane = 2;
+    }
+
+    // Workspace geometry has two drift regions
+    //                  |-----|-----| /  /
+    //      y ^         |  2  |  3  |/  /
+    //        | -| z    |-----|-----|  /
+    //        | /       |  1  |  0  | /
+    //  x <---|/        |-----|-----|/
+    //
+
+    int tpcMod4 = tpc%4;
+
+    // Induction views depend on the drift direction
+    if(plane < 2){
+      // For drift in negative x direction keep U and V as defined.
+      if(tpcMod4 == 0 || tpcMod4 == 3){
+        globalPlane = plane;
+      }
+      // For drift in positive x direction, swap U and V.
+      else{
+        if(plane == 0) globalPlane = 1;
+        else globalPlane = 0;
+      }
+    }
+
+    if(globalPlane != 1){
+      globalWire += (tpc/4)*nWiresTPC;
+    }
+    else{
+      globalWire += ((23-tpc)/4)*nWiresTPC;
+    }
+
+  }
 
 
 }
