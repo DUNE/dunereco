@@ -72,6 +72,7 @@ namespace dune {
   void DisambigFromSpacePoints::produce(art::Event& evt)
 {
 	auto hitsHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
+	auto spHandle = evt.getValidHandle< std::vector<recob::SpacePoint> >(fSpModuleLabel);
 
     // also get the associated wires and raw digits;
     // we assume they have been created by the same module as the hits
@@ -90,17 +91,49 @@ namespace dune {
     art::fill_ptr_vector(hits, hitsHandle);
 
 	art::FindManyP< recob::SpacePoint > spFromHit(hitsHandle, evt, fSpModuleLabel);
+	size_t totz = 0, totu = 0, totv = 0;
 	for (size_t i = 0; i < hits.size(); ++i)
 	{
 		art::Ptr<recob::Hit> hit = hits[i];
-		if (hit->SignalType() == geo::kCollection)
+		//if (hit->SignalType() == geo::kCollection)
+		if (hit->View() == geo::kZ)
 		{
+			totz += spFromHit.at(i).size();
 		}
-		else
+		else if (hit->View() == geo::kU)
 		{
-			std::cout << "n:" << spFromHit.at(i).size() << std::endl;
+			totu += spFromHit.at(i).size();
+		}
+		else if (hit->View() == geo::kV)
+		{
+			totv += spFromHit.at(i).size();
 		}
 	}
+
+	art::FindManyP< recob::Hit > hitFromSp(spHandle, evt, fSpModuleLabel);
+	size_t nz = 0, nu = 0, nv = 0;
+	for (size_t i = 0; i < spHandle->size(); ++i)
+	{
+		for (auto const & hit : hitFromSp.at(i))
+		{
+			//if (hit->SignalType() == geo::kCollection) { ++nc; }
+			//else { ++ni; }
+			if (hit->View() == geo::kZ)
+			{
+				nz += spFromHit.at(i).size();
+			}
+			else if (hit->View() == geo::kU)
+			{
+				nu += spFromHit.at(i).size();
+			}
+			else if (hit->View() == geo::kV)
+			{
+				nv += spFromHit.at(i).size();
+			}
+		}
+	}
+	std::cout << "totz:" << totz << " totu:" << totu << " totv:" << totv << std::endl;
+	std::cout << "nz:" << nz << " nu:" << nu << " nv:" << nv << std::endl;
 
 /*    
     for( size_t h = 0; h < ChHits.size(); h++ ) {
