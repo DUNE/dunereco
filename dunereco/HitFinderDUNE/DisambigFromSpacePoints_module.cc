@@ -41,9 +41,10 @@ namespace dune {
 		using Name = fhicl::Name;
 		using Comment = fhicl::Comment;
 
+		fhicl::Atom<art::InputTag> HitModuleLabel { Name("HitModuleLabel"), Comment("HitPointSolver label.") };
 		fhicl::Atom<art::InputTag> SpModuleLabel { Name("SpModuleLabel"), Comment("SpacePointSolver label.") };
     };
-    using Parameters = art::EDAnalyzer::Table<Config>;
+    using Parameters = art::EDProducer::Table<Config>;
 
     explicit DisambigFromSpacePoints(Parameters const& config);
 
@@ -51,13 +52,15 @@ namespace dune {
 
   private:
     geo::GeometryCore const* fGeom;
+	art::InputTag fHitModuleLabel;
     art::InputTag fSpModuleLabel;
   };
 
   // implementation
 
   DisambigFromSpacePoints::DisambigFromSpacePoints(DisambigFromSpacePoints::Parameters const& config) :
-    fSpModuleLabel(config().ChanHitLabel()
+    fHitModuleLabel(config().HitModuleLabel()),
+    fSpModuleLabel(config().SpModuleLabel())
   {
     // let HitCollectionCreator declare that we are going to produce
     // hits and associations with wires and raw digits
@@ -66,26 +69,40 @@ namespace dune {
     fGeom = &*(art::ServiceHandle<geo::Geometry>());
   }
 
-  void DisambigFromSpacePoints::produce(art::Event& evt) {
-    art::Handle< std::vector<recob::Hit> > ChannelHits;
-    evt.getByLabel(fChanHitLabel, ChannelHits);
+  void DisambigFromSpacePoints::produce(art::Event& evt)
+{
+	auto hitsHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
 
     // also get the associated wires and raw digits;
     // we assume they have been created by the same module as the hits
-    art::FindOneP<raw::RawDigit> ChannelHitRawDigits(ChannelHits, evt, fChanHitLabel);
-    art::FindOneP<recob::Wire>   ChannelHitWires    (ChannelHits, evt, fChanHitLabel);
+    art::FindOneP<raw::RawDigit> channelHitRawDigits(hitsHandle, evt, fHitModuleLabel);
+    art::FindOneP<recob::Wire>   channelHitWires    (hitsHandle, evt, fHitModuleLabel);
 
     // this object contains the hit collection
     // and its associations to wires and raw digits:
     recob::HitCollectionCreator hcol(*this, evt,
-       ChannelHitWires.isValid(), // doWireAssns
-       ChannelHitRawDigits.isValid() // doRawDigitAssns
+       channelHitWires.isValid(), // doWireAssns
+       channelHitRawDigits.isValid() // doRawDigitAssns
       );
-    
-    // Make hits collection
-    std::vector< art::Ptr<recob::Hit> >  ChHits;
-    art::fill_ptr_vector(ChHits, ChannelHits);
-      
+
+    // make hits collection
+    std::vector< art::Ptr<recob::Hit> > hits;
+    art::fill_ptr_vector(hits, hitsHandle);
+
+	art::FindManyP< recob::SpacePoint > spFromHit(hitsHandle, evt, fSpModuleLabel);
+	for (size_t i = 0; i < hits.size(); ++i)
+	{
+		art::Ptr<recob::Hit> hit = hits[i];
+		if (hit->SignalType() == geo::kCollection)
+		{
+		}
+		else
+		{
+			std::cout << "n:" << spFromHit.at(i).size() << std::endl;
+		}
+	}
+
+/*    
     for( size_t h = 0; h < ChHits.size(); h++ ) {
       std::vector<geo::WireID> cwids = geom->ChannelToWire(ChHits[h]->Channel());
       for(size_t w = 0; w < cwids.size(); w++) {
@@ -99,9 +116,9 @@ namespace dune {
 	      hcol.emplace_back(repeated_hit.move(), wire, rawdigits);
       }
     }
-
+*/
     // put the hit collection and associations into the event
-    hcol.put_into(evt);    
+    hcol.put_into(evt);
   }
 
   DEFINE_ART_MODULE(DisambigFromSpacePoints)

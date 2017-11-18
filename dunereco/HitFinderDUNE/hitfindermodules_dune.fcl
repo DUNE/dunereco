@@ -11,6 +11,13 @@ standard_disambigcheat:
  ChanHitLabel:        "gaushit"
 }
 
+standard_disambigfromsp:
+{
+    module_type:      "DisambigFromSpacePoints"
+    HitModuleLabel:   "gaushit"
+    SpModuleLabel:    "reco3d"
+}
+
 hit_repeater:
 {
     module_type:      "HitRepeater"
