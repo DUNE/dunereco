@@ -1,6 +1,5 @@
-if(NOT $CAFFE_LIB EQUAL "" )
+if(DEFINED ENV{CAFFE_LIB} )
  add_subdirectory(art)
 endif()
 add_subdirectory(adcutils)
 add_subdirectory(func)
-
