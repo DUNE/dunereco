@@ -9,9 +9,11 @@ standard_cvnmapper:
   HitsModuleLabel:   "gaushit"
   ClusterPMLabel: "cvnmap"
   MinClusterHits: 100
-  TdcWidth:      200
-  WireLength:    500
-  TimeResolution: 500
+  TdcWidth:      500
+#  WireLength:    500
+  WireLength:    2880 #Unwrapped collection view max (6 x 480)
+  TimeResolution: 1600
+  UnwrappedPixelMap: true
 }
 
 END_PROLOG

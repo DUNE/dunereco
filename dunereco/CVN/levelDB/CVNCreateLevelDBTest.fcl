@@ -1,0 +1,27 @@
+
+TreeName: "cvndump/CVNTrainTree"
+TrainingDataBranchName: "train"
+
+OutputFormat:   "LevelDB"
+TestOutputDir:  "output/TestLevelDB"
+TrainOutputDir: "output/TrainLevelDB"
+
+NTrainPerTest: 4 # 4 means 80/20 split
+ProgressInterval: 10
+
+SetLog: true
+ErrorIfExists: true
+CreateIfMissing: true
+WriteBufferSize: 268435456
+WriteSync: false
+MaxKeyLength: 10
+
+Labeling: "all" # all, numu, nue, nc, or energy
+WriteRegressionHDF5: false
+RegressionHDF5NameTest: "regression_test.h5"
+RegressionHDF5NameTrain: "regression_train.h5"
+
+UseGeV: true
+
+
+MaxEnergyForLabel:        5.0    # Top of energy scale when labeling with energy

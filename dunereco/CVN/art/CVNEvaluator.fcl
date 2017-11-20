@@ -9,9 +9,9 @@ standard_cvnevaluator:
   PixelMapInput: "cvnmap"
   ResultLabel: "cvnresult"
   CaffeNetHandler:{
-    LibPath: "/dune/app/users/radovic/cvnDUNE/v06_28_01/modelFiles/"
-    DeployProto: "v5DuneTestDeploy.prototxt"
-    ModelFile: "v5DuneTest.caffemodel"
+    LibPath: "/dune/app/users/radovic/cvnDUNE/v06_28_01/modelFiles/highRes/"
+    DeployProto: "highResDeploy.prototxt"
+    ModelFile: "highResV2.caffemodel"
     FeatureMap: ""
   }
 

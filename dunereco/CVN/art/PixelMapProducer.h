@@ -39,10 +39,13 @@ namespace cvn
   public:
     PixelMapProducer(unsigned int nWire, unsigned int nTdc, double tRes);
 
-
+    void SetUnwrapped(bool unwrap){fUnwrapped = unwrap;};
 
     /// Get boundaries for pixel map representation of cluster
     Boundary DefineBoundary(std::vector< art::Ptr< recob::Hit > >& cluster);
+
+    /// Function to convert to a global unwrapped wire number
+    void GetGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const; 
 
     unsigned int NWire() const {return fNWire;};
     unsigned int NTdc() const {return fNTdc;};
@@ -57,6 +60,7 @@ namespace cvn
     unsigned int      fNWire;  ///< Number of wires, length for pixel maps
     unsigned int      fNTdc;   ///< Number of tdcs, width of pixel map
     double            fTRes;
+    bool              fUnwrapped; ///< Use unwrapped pixel maps?
   };
 
 }

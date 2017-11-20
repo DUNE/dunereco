@@ -2,6 +2,8 @@
 // \file    CVNEventDump_module.cc
 // \brief   Analyzer module for creating CVN PixelMap objects
 // \author  Alexander Radovic - a.radovic@gmail.com
+//          Leigh Whitehead - leigh.howard.whitehead@cern.ch
+//           - Added in truth based fiducial volume cuts
 ////////////////////////////////////////////////////////////////////////
 
 // C/C++ includes
@@ -64,6 +66,7 @@ namespace cvn {
     std::string fPixelMapInput;
     std::string fGenieGenModuleLabel;
     bool        fWriteMapTH2;
+    bool        fApplyFidVol;
 
     TrainingData* fTrain;
     TTree*        fTrainTree;
@@ -94,7 +97,7 @@ namespace cvn {
     fPixelMapInput  = pset.get<std::string>("PixelMapInput");
     fGenieGenModuleLabel  = pset.get<std::string>("GenieGenModuleLabel");
     fWriteMapTH2    = pset.get<bool>       ("WriteMapTH2");
-
+    fApplyFidVol    = pset.get<bool>("ApplyFidVol");
   }
 
   //......................................................................
@@ -172,6 +175,14 @@ namespace cvn {
     nuEnergy = truthN.Nu().E();
     lepEnergy = truthN.Lepton().E();
     //}
+
+    if(fApplyFidVol){
+      // Get the interaction vertex from the lepton
+//      TVector3 vtx = truthN.Lepton().Position().Vect();
+      TVector3 vtx = truthN.Nu().EndPosition().Vect();
+      bool isFid = (fabs(vtx.X())<310 && fabs(vtx.Y())<550 && vtx.Z()>50 && vtx.Z()<1244);
+      if(!isFid) return;
+    }
 
     if(nhits>0){
       TrainingData train(interaction, nuEnergy, lepEnergy, *pixelmaplist[0]);

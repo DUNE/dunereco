@@ -1,0 +1,33 @@
+if( DEFINED ENV{FANN_VERSION} )
+  if( DEFINED ENV{FANNHOME} )
+    include_directories( $ENV{FANNHOME}/include )
+  elseif( DEFINED ENV{FANN_INCLUDE_DIR})
+    include_directories( $ENV{FANN_INCLUDE_DIR} )
+    SET(ENV{FANN_LIB} "$ENV{FANN_LIBRARIES_DIR}")
+  endif()
+
+  SET(ENV{BOOST_LIB} "$ENV{BOOST_FQ_DIR}/lib")
+
+  cet_find_library( FANN                  NAMES fann                  PATHS ENV FANN_LIB  NO_DEFAULT_PATH)
+  cet_find_library( BOOST_PROGRAM_OPTIONS NAMES boost_program_options PATHS ENV BOOST_LIB NO_DEFAULT_PATH)
+  cet_find_library( BOOST_IOSTREAMS       NAMES boost_iostreams       PATHS ENV BOOST_LIB NO_DEFAULT_PATH)
+
+#  art_make_exec( NAME      cvnTrain
+#                 SOURCE    cvnTrain.cc
+  art_make_exec( NAME      cvnCreateDB         
+                 SOURCE    cvnCreateDB.cc
+                 LIBRARIES ${BOOST_PROGRAM_OPTIONS}
+                           ${BOOST_IOSTREAMS}
+                           ${FANN}
+                           ${ART_UTILITIES}
+                           ${FHICLCPP}
+                           ${CETLIB}
+                           ${ROOT_BASIC_LIB_LIST}
+                           ${ROOT_CINTEX}
+                           CVNFunc
+               )
+
+endif()
+
+install_source()
+install_fhicl()

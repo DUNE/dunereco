@@ -2,7 +2,7 @@
 #include "CVNMapper.fcl"
 #include "CVNEvaluator.fcl"
 
-process_name: CVNMapper
+process_name: CVNEvaluator
 
 services:
 {
@@ -57,6 +57,6 @@ physics:
 physics.producers.cvnmap.HitsModuleLabel: "hitfd"
 physics.producers.cvnmap.TimeResolution: 1600
 physics.producers.cvnmap.PlaneLength: 500
-
+physics.producers.cvnmap.TdcWidth: 500
 
 ########################################################################
