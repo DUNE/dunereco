@@ -118,19 +118,12 @@ namespace dune {
 		{
 			//if (hit->SignalType() == geo::kCollection) { ++nc; }
 			//else { ++ni; }
-			if (hit->View() == geo::kZ)
-			{
-				nz += spFromHit.at(i).size();
-			}
-			else if (hit->View() == geo::kU)
-			{
-				nu += spFromHit.at(i).size();
-			}
-			else if (hit->View() == geo::kV)
-			{
-				nv += spFromHit.at(i).size();
-			}
+			if (hit->View() == geo::kZ) { ++nz; }
+			else if (hit->View() == geo::kU) { ++nu; }
+			else if (hit->View() == geo::kV) { ++nv; }
+			std::cout << " (" << hit->View() << ", " << hit->WireID().Wire << ", " << hit->PeakTime() << ")";
 		}
+		std::cout << std::endl;
 	}
 	std::cout << "totz:" << totz << " totu:" << totu << " totv:" << totv << std::endl;
 	std::cout << "nz:" << nz << " nu:" << nu << " nv:" << nv << std::endl;
