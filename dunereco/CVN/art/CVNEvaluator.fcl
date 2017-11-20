@@ -11,7 +11,7 @@ standard_cvnevaluator:
   CaffeNetHandler:{
     LibPath: "/dune/app/users/radovic/cvnDUNE/v06_28_01/modelFiles/highRes/"
     DeployProto: "highResDeploy.prototxt"
-    ModelFile: "highRes.caffemodel"
+    ModelFile: "highResV2.caffemodel"
     FeatureMap: ""
   }
 
