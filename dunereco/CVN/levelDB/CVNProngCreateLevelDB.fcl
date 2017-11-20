@@ -1,0 +1,17 @@
+
+CVNLabel: cvnprongdump
+TreeName: CVNTrainTree
+TrainingDataBranchName: "EventPMapsData"
+
+TestOutputDir:  "output/TestLevelDBSP"
+TrainOutputDir: "output/TrainLevelDBSP"
+
+NTrainPerTest: 4 # 4 means 80/20 split
+
+ErrorIfExists: true
+CreateIfMissing: true
+WriteBufferSize: 268435456
+WriteSync: false
+MaxKeyLength: 10
+Purity: 0.5
+UseSlice: true
