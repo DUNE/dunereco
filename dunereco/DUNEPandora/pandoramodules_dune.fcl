@@ -2,64 +2,61 @@ BEGIN_PROLOG
 
 dune_pandora:
 {
-  module_type:                                          "StandardPandora"
-  GeantModuleLabel:                                     "largeant"
-  HitFinderModuleLabel:                                 "linecluster"
-  EnableMCParticles:                                    false
-  EnableProduction:                                     true
-  EnableLineGaps:                                       true
-  UseHitWidths:                                         false
-  BuildTracks:                                          true
-  BuildShowers:                                         true
-  RunStitchingInstance:                                 false
-  BuildStitchedParticles:                               false
-  ConfigFile:                                           "PandoraSettings_DUNE.xml"
-  ShouldRunAllHitsCosmicReco:                           false
-  ShouldRunCosmicHitRemoval:                            false
-  ShouldRunSlicing:                                     false
-  ShouldRunNeutrinoRecoOption:                          false
-  ShouldRunCosmicRecoOption:                            false
-  ShouldIdentifyNeutrinoSlice:                          false
-  PrintOverallRecoStatus:                               false
+    module_type:                                                    "StandardPandora"
+    GeantModuleLabel:                                               "largeant"
+    HitFinderModuleLabel:                                           "linecluster"
+    EnableMCParticles:                                              false
+    EnableProduction:                                               true
+    EnableLineGaps:                                                 true
+    UseGlobalCoordinates:                                           true
+    UseHitWidths:                                                   false
+    ConfigFile:                                                     "PandoraSettings_DUNE.xml"
+    ShouldRunAllHitsCosmicReco:                                     false
+    ShouldRunStitching:                                             false
+    ShouldRunCosmicHitRemoval:                                      false
+    ShouldRunSlicing:                                               false
+    ShouldRunNeutrinoRecoOption:                                    false
+    ShouldRunCosmicRecoOption:                                      false
+    ShouldPerformSliceId:                                           false
+    PrintOverallRecoStatus:                                         false
 }
 
-dune35t_pandora:                                        @local::dune_pandora
-dune35t_pandora.ShouldRunAllHitsCosmicReco:             true
-dune35t_pandora.StitchingConfigFile:                    "PandoraSettings_DUNE_Stitching.xml"
-dune35t_pandora.RunStitchingInstance:                   true
-dune35t_pandora.BuildStitchedParticles:                 true
+dune35t_pandora:                                                    @local::dune_pandora
+dune35t_pandora.ShouldRunAllHitsCosmicReco:                         true
+dune35t_pandora.ShouldRunStitching:                                 true
 
-dunefd_pandora:                                         @local::dune_pandora
-dunefd_pandora.ShouldRunNeutrinoRecoOption:             true
-dunefd_pandora.UseGlobalDriftVolume:                    true
+dunefd_pandora:                                                     @local::dune_pandora
+dunefd_pandora.ShouldRunNeutrinoRecoOption:                         true
 
-protodune_pandoracosmic:                                @local::dune_pandora
-protodune_pandoracosmic.ShouldRunAllHitsCosmicReco:     true
-protodune_pandoracosmic.StitchingConfigFile:            "PandoraSettings_DUNE_Stitching.xml"
-protodune_pandoracosmic.UseGlobalCoordinates:           true
-protodune_pandoracosmic.RunStitchingInstance:           true
-protodune_pandoracosmic.BuildStitchedParticles:         true
+protodune_pandora:                                                  @local::dune_pandora
+protodune_pandora.ShouldRunAllHitsCosmicReco:                       true
+protodune_pandora.ShouldRunStitching:                               true
+protodune_pandora.ShouldRunCosmicHitRemoval:                        true
+protodune_pandora.ShouldRunSlicing:                                 true
+protodune_pandora.ShouldRunNeutrinoRecoOption:                      true
+protodune_pandora.ShouldRunCosmicRecoOption:                        true
+protodune_pandora.ShouldPerformSliceId:                             true
 
-protodune_pandorabeam:                                  @local::dune_pandora
-protodune_pandorabeam.ShouldRunNeutrinoRecoOption:      true
-protodune_pandorabeam.UseGlobalDriftVolume:             true
+protodune_pandoracosmic:                                            @local::dune_pandora
+protodune_pandoracosmic.ShouldRunAllHitsCosmicReco:                 true
+protodune_pandoracosmic.ShouldRunStitching:                         true
 
-dune_pandorawriter:                                     @local::dune_pandora
-dune_pandorawriter.ConfigFile:                          "PandoraSettings_Write.xml"
-dune_pandorawriter.StitchingConfigFile:                 "PandoraSettings_DUNE_Stitching.xml"
-dune_pandorawriter.EnableMCParticles:                   true
-dune_pandorawriter.EnableProduction:                    false
-dune_pandorawriter.UniqueInstanceSettings:              true
-dune_pandorawriter.OutputGeometryXmlFile:               "dune_drift_volumes.xml"
+protodune_pandorabeam:                                              @local::dune_pandora
+protodune_pandorabeam.ShouldRunNeutrinoRecoOption:                  true
+
+dune_pandorawriter:                                                 @local::dune_pandora
+dune_pandorawriter.ConfigFile:                                      "PandoraSettings_Write.xml"
+dune_pandorawriter.EnableMCParticles:                               true
+dune_pandorawriter.EnableProduction:                                false
 
 dune_pandoraTrackCreation:
 {
-    module_type:                                        "LArPandoraTrackCreation"
+    module_type:                                                    "LArPandoraTrackCreation"
 }
 
 dune_pandoraShowerCreation:
 {
-    module_type:                                        "LArPandoraShowerCreation"
+    module_type:                                                    "LArPandoraShowerCreation"
 }
 
 END_PROLOG
