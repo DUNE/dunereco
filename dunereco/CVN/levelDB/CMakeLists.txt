@@ -11,6 +11,7 @@ include_directories( $ENV{GLOG_INC} )
 
 cet_find_library( CAFFELIB NAMES caffe-d caffe PATHS ENV CAFFE_LIB NO_DEFAULT_PATH )
 cet_find_library( HDF5_CPPLIB NAMES hdf5_cpp PATHS ENV HDF5_LIB NO_DEFAULT_PATH )
+cet_find_library( HDF5LIB NAMES hdf5 PATHS ENV HDF5_LIB NO_DEFAULT_PATH )
 cet_find_library( PROTOBUFLIB NAMES protobuf PATHS ENV PROTOBUF_LIB NO_DEFAULT_PATH )
 cet_find_library( LEVELDBLIB NAMES leveldb PATHS ENV LEVELDB_LIB NO_DEFAULT_PATH )
 cet_find_library( LMDBLIB NAMES lmdb PATHS ENV LMDB_LIB NO_DEFAULT_PATH )
@@ -35,7 +36,7 @@ art_make_exec( cvnCreateDB
                          ${ART_UTILITIES}
                          ${BOOSTLIB}
                          ${CAFFELIB}
-                         ${HDF5_CPPLIB}
+                         ${HDF5_CPPLIB} ${HDF5LIB}
                          ${PROTOBUFLIB}
                          ${LEVELDBLIB}
                          ${LMDBLIB}
