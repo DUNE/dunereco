@@ -35,6 +35,11 @@
 
 
 namespace dune {
+  // these types to be replaced with use of feature proposed in redmine #12602
+  typedef std::map< unsigned int, std::vector< size_t > > plane_keymap;
+  typedef std::map< unsigned int, plane_keymap > tpc_plane_keymap;
+  typedef std::map< unsigned int, tpc_plane_keymap > cryo_tpc_plane_keymap;
+
   class DisambigFromSpacePoints : public art::EDProducer {
   public:
 	struct Config {
@@ -51,8 +56,19 @@ namespace dune {
     void produce(art::Event& evt);
 
   private:
+    int runOnSpacePoints(
+            const std::vector< art::Ptr<recob::Hit> > & eventHits,
+            const art::FindManyP< recob::SpacePoint > & spFromHit,
+            std::unordered_map< size_t, geo::WireID > & assignments,
+            cryo_tpc_plane_keymap & indHits, cryo_tpc_plane_keymap & unassigned) const;
+
+    int resolveUnassigned(
+            std::unordered_map< size_t, geo::WireID > & assignments,
+            const std::vector< art::Ptr<recob::Hit> > & eventHits,
+            const cryo_tpc_plane_keymap & indHits, const cryo_tpc_plane_keymap & unassigned) const;
+
     geo::GeometryCore const* fGeom;
-	art::InputTag fHitModuleLabel;
+    art::InputTag fHitModuleLabel;
     art::InputTag fSpModuleLabel;
   };
 
@@ -70,9 +86,9 @@ namespace dune {
   }
 
   void DisambigFromSpacePoints::produce(art::Event& evt)
-{
-	auto hitsHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
-	auto spHandle = evt.getValidHandle< std::vector<recob::SpacePoint> >(fSpModuleLabel);
+  {
+    auto hitsHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
+    auto spHandle = evt.getValidHandle< std::vector<recob::SpacePoint> >(fSpModuleLabel);
 
     // also get the associated wires and raw digits;
     // we assume they have been created by the same module as the hits
@@ -86,28 +102,30 @@ namespace dune {
        channelHitRawDigits.isValid() // doRawDigitAssns
       );
 
-    // make hits collection
-    std::vector< art::Ptr<recob::Hit> > hits;
-    art::fill_ptr_vector(hits, hitsHandle);
-
-	art::FindManyP< recob::SpacePoint > spFromHit(hitsHandle, evt, fSpModuleLabel);
-	size_t totz = 0, totu = 0, totv = 0;
-	for (size_t i = 0; i < hits.size(); ++i)
+    // all hits in the collection
+    std::vector< art::Ptr<recob::Hit> > eventHits;
+    art::fill_ptr_vector(eventHits, hitsHandle);
+    art::FindManyP< recob::SpacePoint > spFromHit(hitsHandle, evt, fSpModuleLabel);
+    for (size_t i = 0; i < eventHits.size(); ++i)
 	{
-		art::Ptr<recob::Hit> hit = hits[i];
+		art::Ptr<recob::Hit> hit = eventHits[i];
 		//if (hit->SignalType() == geo::kCollection)
 		if (hit->View() == geo::kZ)
 		{
-			totz += spFromHit.at(i).size();
+			//std::cout << "nc:" << spFromHit.at(i).size() << std::endl;
+			continue;
 		}
 		else if (hit->View() == geo::kU)
 		{
-			totu += spFromHit.at(i).size();
+			std::cout << "ni1:";
+		
 		}
 		else if (hit->View() == geo::kV)
 		{
-			totv += spFromHit.at(i).size();
+			std::cout << "ni2:";
 		}
+		std::cout << spFromHit.at(i).size() << ", amp:" << hit->PeakAmplitude();
+		std::cout << std::endl;
 	}
 
 	art::FindManyP< recob::Hit > hitFromSp(spHandle, evt, fSpModuleLabel);
@@ -116,17 +134,31 @@ namespace dune {
 	{
 		for (auto const & hit : hitFromSp.at(i))
 		{
-			//if (hit->SignalType() == geo::kCollection) { ++nc; }
-			//else { ++ni; }
 			if (hit->View() == geo::kZ) { ++nz; }
 			else if (hit->View() == geo::kU) { ++nu; }
 			else if (hit->View() == geo::kV) { ++nv; }
-			std::cout << " (" << hit->View() << ", " << hit->WireID().Wire << ", " << hit->PeakTime() << ")";
 		}
-		std::cout << std::endl;
 	}
-	std::cout << "totz:" << totz << " totu:" << totu << " totv:" << totv << std::endl;
-	std::cout << "nz:" << nz << " nu:" << nu << " nv:" << nv << std::endl;
+
+    cryo_tpc_plane_keymap indHits, unassignedHits;
+    std::unordered_map< size_t, geo::WireID > hitToWire;
+
+    runOnSpacePoints(eventHits, spFromHit, hitToWire, indHits, unassignedHits);
+
+    resolveUnassigned(hitToWire, eventHits, indHits, unassignedHits);
+
+    for (auto const & hw : hitToWire)
+    {
+        size_t key = hw.first;
+        geo::WireID wid = hw.second;
+
+        recob::HitCreator new_hit(*(eventHits[key]), wid);
+
+        art::Ptr<recob::Wire> wire = channelHitWires.at(key);
+        art::Ptr<raw::RawDigit> rawdigits = channelHitRawDigits.at(key);
+
+        hcol.emplace_back(new_hit.move(), wire, rawdigits);
+    }
 
 /*    
     for( size_t h = 0; h < ChHits.size(); h++ ) {
@@ -145,6 +177,94 @@ namespace dune {
 */
     // put the hit collection and associations into the event
     hcol.put_into(evt);
+  }
+
+  int DisambigFromSpacePoints::runOnSpacePoints(
+    const std::vector< art::Ptr<recob::Hit> > & eventHits,
+    const art::FindManyP< recob::SpacePoint > & spFromHit,
+    std::unordered_map< size_t, geo::WireID > & assignments,
+    cryo_tpc_plane_keymap & indHits, cryo_tpc_plane_keymap & unassigned) const
+  {
+    int nUnassigned = 0;
+    for (size_t i = 0; i < eventHits.size(); ++i)
+    {
+        const art::Ptr<recob::Hit> & hit = eventHits[i];
+        std::vector<geo::WireID> cwids = fGeom->ChannelToWire(hit->Channel());
+        if (cwids.empty()) { continue; } // add warning here
+        if (hit->SignalType() == geo::kCollection)
+        {
+            assignments[hit.key()] = cwids.front();
+        }
+        else
+        {
+            geo::WireID id = hit->WireID();
+            size_t cryo = id.Cryostat, tpc = id.TPC, plane = id.Plane;
+
+            if (spFromHit.size() == 0)
+            {
+                unassigned[cryo][tpc][plane].push_back(hit.key());
+                ++nUnassigned;
+            }
+            else
+            {
+                std::unordered_map< size_t, geo::WireID > tpcBestWire;
+                std::unordered_map< size_t, size_t > tpcScore;
+
+                for (const auto & sp : spFromHit.at(hit.key()))
+                {
+                    geo::TPCID sp_tpcid = fGeom->FindTPCAtPosition(sp->XYZ());
+                    if (!sp_tpcid.isValid) { continue; }
+
+                    const float max_dw = 1.0; // max dist to wire [wire pitch]
+                    for (size_t w = 0; w < cwids.size(); w++)
+                    {
+                        if (cwids[w].TPC != sp_tpcid.TPC) { continue; } // not that side of APA
+
+                        float sp_wire = fGeom->WireCoordinate(sp->XYZ()[1], sp->XYZ()[2], plane, sp_tpcid.TPC, cryo);
+
+                        float dw = std::fabs(sp_wire - cwids[w].Wire);
+                        if (dw < max_dw)
+                        {
+                            tpcBestWire[sp_tpcid.TPC] = cwids[w];
+                            tpcScore[sp_tpcid.TPC]++;
+                        }
+                    }
+                }
+                if (!tpcScore.empty())
+                {
+                    geo::WireID bestId;
+                    size_t maxScore = 0;
+                    for (const auto & score : tpcScore)
+                    {
+                        if (score.second > maxScore)
+                        {
+                            maxScore = score.second;
+                            bestId = tpcBestWire[score.first];
+                        }
+                    }
+                    indHits[cryo][bestId.TPC][plane].push_back(hit.key());
+                }
+                else
+                {
+                    std::cout << "***** Did not find matching wire. *****" << std::endl;
+                    unassigned[cryo][tpc][plane].push_back(hit.key());
+                    ++nUnassigned;
+                }
+            }
+        }
+    }
+
+    return nUnassigned;
+  }
+
+  int DisambigFromSpacePoints::resolveUnassigned(
+    std::unordered_map< size_t, geo::WireID > & assignments,
+    const std::vector< art::Ptr<recob::Hit> > & eventHits,
+    const cryo_tpc_plane_keymap & allIndHits, const cryo_tpc_plane_keymap & unassigned) const
+  {
+    int nLeftInPlace = 0;
+
+    return nLeftInPlace;
   }
 
   DEFINE_ART_MODULE(DisambigFromSpacePoints)
