@@ -23,16 +23,6 @@ dune_pandora:
   PrintOverallRecoStatus:                               false
 }
 
-dune35t_particlestitcher:
-{
-  module_type:                                          "DUNE35tParticleStitcher"
-  PFParticleModuleLabel:                                "pandora"
-  TrackModuleLabel:                                     "pandoraTrack"
-  UseXCoordinate:                                       false
-  EnableMonitoring:                                     false
-  EnableStitching:                                      true
-}
-
 dune35t_pandora:                                        @local::dune_pandora
 dune35t_pandora.ShouldRunAllHitsCosmicReco:             true
 dune35t_pandora.StitchingConfigFile:                    "PandoraSettings_DUNE_Stitching.xml"
