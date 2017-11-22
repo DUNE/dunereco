@@ -1,4 +1,6 @@
-#add_subdirectory(art)
+if(DEFINED ENV{CAFFE_LIB} )
+ add_subdirectory(art)
+ add_subdirectory(levelDB)
+endif()
 add_subdirectory(adcutils)
 add_subdirectory(func)
-
