@@ -49,6 +49,8 @@ namespace dune {
 
 		fhicl::Atom<art::InputTag> HitModuleLabel { Name("HitModuleLabel"), Comment("HitPointSolver label.") };
 		fhicl::Atom<art::InputTag> SpModuleLabel { Name("SpModuleLabel"), Comment("SpacePointSolver label.") };
+        fhicl::Sequence<size_t> ExcludeTPCs { Name("ExcludeTPCs"), Comment("TPC inndexes where hits are not allowed.") };
+        fhicl::Atom<float> MaxDistance { Name("MaxDistance"), Comment("Distance [cm] used to complete hits unresolved with spacepoints.") };
     };
     using Parameters = art::EDProducer::Table<Config>;
 
@@ -69,16 +71,22 @@ namespace dune {
     int resolveUnassigned(
             std::unordered_map< size_t, geo::WireID > & assignments,
             const std::vector< art::Ptr<recob::Hit> > & eventHits,
-            const cryo_tpc_plane_keymap & indHits,
+            cryo_tpc_plane_keymap & indHits,
             const std::vector<size_t> & unassigned
             ) const;
 
     geo::GeometryCore const* fGeom;
-    art::InputTag fHitModuleLabel;
-    art::InputTag fSpModuleLabel;
+    detinfo::DetectorProperties const* fDetProp;
+
+    const float fMaxDistance;
+    const std::vector< size_t > fExcludeTPCs;
+    const art::InputTag fHitModuleLabel;
+    const art::InputTag fSpModuleLabel;
   };
 
   DisambigFromSpacePoints::DisambigFromSpacePoints(DisambigFromSpacePoints::Parameters const& config) :
+    fMaxDistance(config().MaxDistance()),
+    fExcludeTPCs(config().ExcludeTPCs()),
     fHitModuleLabel(config().HitModuleLabel()),
     fSpModuleLabel(config().SpModuleLabel())
   {
@@ -87,6 +95,7 @@ namespace dune {
     // (with no particular product label)
     recob::HitCollectionCreator::declare_products(*this);
     fGeom = &*(art::ServiceHandle<geo::Geometry>());
+    fDetProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
   }
 
   void DisambigFromSpacePoints::produce(art::Event& evt)
@@ -142,7 +151,7 @@ namespace dune {
     std::cout << n << " hits undisambiguated by space points." << std::endl;
 
     n = resolveUnassigned(hitToWire, eventHits, indHits, unassignedHits);
-    std::cout << n << " hits undisambiguated at all (left on the first wire segment)." << std::endl;
+    std::cout << n << " hits undisambiguated at all (left on the first allowed wire segment)." << std::endl;
 
     for (auto const & hw : hitToWire)
     {
@@ -246,15 +255,96 @@ namespace dune {
   int DisambigFromSpacePoints::resolveUnassigned(
     std::unordered_map< size_t, geo::WireID > & assignments,
     const std::vector< art::Ptr<recob::Hit> > & eventHits,
-    const cryo_tpc_plane_keymap & allIndHits,
+    cryo_tpc_plane_keymap & allIndHits,
     const std::vector<size_t> & unassigned
     ) const
   {
     int nLeftInPlace = 0;
-    for (size_t key : unassigned)
+    std::unordered_map< size_t, geo::WireID > result;
+
+    for (const size_t key : unassigned)
     {
-        std::cout << "key:" << key << std::endl;
+        const auto & hit = eventHits[key];
+        geo::WireID id = hit->WireID();
+        size_t cryo = id.Cryostat, plane = id.Plane;
+        float hitDrift = hit->PeakTime();
+
+        std::vector<geo::WireID> cwids = fGeom->ChannelToWire(hit->Channel());
+        if (cwids.empty()) { continue; } // add warning here
+
+        const float dwMax = fMaxDistance / fGeom->TPC(0, 0).Plane(plane).WirePitch(); // max distance in wires to look for neighbors
+        const float ddMax = dwMax * fGeom->TPC(0, 0).Plane(plane).WirePitch() / std::fabs(fDetProp->GetXTicksCoefficient(0, 0));
+        const float maxDValue = 1000;
+
+        bool found = false;
+        float bestScore = maxDValue;
+        geo::WireID bestId = id;
+        for (size_t w = 0; w < cwids.size(); ++w)
+        {
+            const size_t tpc = cwids[w].TPC;
+            const size_t hitWire = cwids[w].Wire;
+
+            bool allowed = true;
+            for (auto t : fExcludeTPCs) { if (t == tpc) { allowed = false; break; } }
+            if (!allowed)
+            {
+                if (w + 1 < cwids.size()) { bestId = cwids[w + 1]; }
+                continue;
+            }
+
+            const float wirePitch = fGeom->TPC(tpc, cryo).Plane(plane).WirePitch();
+            const float driftPitch = std::fabs(fDetProp->GetXTicksCoefficient(tpc, cryo));
+        
+            std::vector<float> distBuff(4, maxDValue); // distance of n closest hits
+            const auto & keys = allIndHits[cryo][tpc][plane];
+            for (const size_t keyInd : keys)
+            {
+                const auto & hitInd = eventHits[keyInd];
+
+                auto search = assignments.find(keyInd);        // find resolved wire id
+                if (search == assignments.end()) { continue; } // should be there, add warning
+
+                float dWire = std::abs(hitWire - search->second.Wire);
+                float dDrift = std::fabs(hitDrift - hitInd->PeakTime());
+
+                if ((dWire > dwMax) || (dDrift > ddMax)) { continue; }
+
+                dWire *= wirePitch;
+                dDrift *= driftPitch;
+                float dist2 = dWire * dWire + dDrift * dDrift;
+
+                float maxd2 = 0;
+                size_t maxIdx = 0;
+                for (size_t i = 0; i < distBuff.size(); ++i )
+                {
+                    if (distBuff[i] > maxd2) { maxd2 = distBuff[i]; maxIdx = i; }
+                }
+                if (dist2 < maxd2) { distBuff[maxIdx] = dist2; }
+            }
+            float score = 0;
+            size_t nhits = 0;
+            for (size_t i = 0; i < distBuff.size(); ++i )
+            {
+                if (distBuff[i] < maxDValue) { score += distBuff[i]; ++nhits; }
+            }
+            if (nhits > 0)
+            {
+                score /= nhits;
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    bestId = cwids[w];
+                    found = true;
+                }
+            }
+        }
+        //std::cout << "plane:" << plane << ", best score: " << bestScore << std::endl;
+        result[key] = bestId;
+        if (!found) { ++nLeftInPlace; }
     }
+
+    //assignments.merge(result); // use this with C++ 17
+    assignments.insert(result.begin(), result.end());
     return nLeftInPlace;
   }
 

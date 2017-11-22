@@ -16,6 +16,8 @@ standard_disambigfromsp:
     module_type:      "DisambigFromSpacePoints"
     HitModuleLabel:   "gaushit"
     SpModuleLabel:    "reco3d"
+    ExcludeTPCs:      [0, 3, 4, 7, 8, 11] # ProtoDUNE's outer TPCs
+    MaxDistance:      10 # neighborhood distance [cm] used to complete hits unresolved with spacepoints
 }
 
 hit_repeater:
@@ -49,6 +51,13 @@ apa_hitfinder:
  ChanHitLabel:        "gaushit"
  ClusLabel:           "fuzzy"
 }
+
+dunefd_disambigfromsp:                @local::standard_disambigfromsp
+dunefd_disambigfromsp.ExcludeTPCs:    [] # workspace has no outer TPCs, but full FD has, I think
+
+pdune_disambigfromsp:                 @local::standard_disambigfromsp
+pdune_disambigfromsp.ExcludeTPCs:     [0, 3, 4, 7, 8, 11] # ProtoDUNE's outer TPCs
+
 
 dunefddphase_gaushitfinder:	@local::gaus_hitfinder
 dunefddphase_gaushitfinder.MinSig:    [6.0, 6.0]
