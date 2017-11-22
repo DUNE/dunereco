@@ -16,7 +16,7 @@ standard_disambigfromsp:
     module_type:      "DisambigFromSpacePoints"
     HitModuleLabel:   "gaushit"
     SpModuleLabel:    "reco3d"
-    ExcludeTPCs:      [0, 3, 4, 7, 8, 11] # ProtoDUNE's outer TPCs
+    ExcludeTPCs:      [] # if there are TPC volumes with no actual drift towards wires, exclude them here
     MaxDistance:      10 # neighborhood distance [cm] used to complete hits unresolved with spacepoints
 }
 
