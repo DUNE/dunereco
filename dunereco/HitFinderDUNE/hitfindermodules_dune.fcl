@@ -16,8 +16,12 @@ standard_disambigfromsp:
     module_type:      "DisambigFromSpacePoints"
     HitModuleLabel:   "gaushit"
     SpModuleLabel:    "reco3d"
-    ExcludeTPCs:      [] # if there are TPC volumes with no actual drift towards wires, exclude them here
-    MaxDistance:      10 # neighborhood distance [cm] used to complete hits unresolved with spacepoints
+    ExcludeTPCs:      []       # if there are TPC volumes with no actual drift towards wires, exclude them here
+    UseNeighbors:     true     # use neigboring hits to resolve hits missed by spacepoints
+    MaxDistance:      3        # neighborhood max distance [cm] used to resolve hits missed with spacepoints
+    MoveLeftovers:    "first"  # "repeat" - duplicate undisambiguated hits to every allowed wire segment
+                               # "first"  - put undisambiguated hits on the first allowed wire segment
+                               # "drop"   - drop undisambiguated hits from the output
 }
 
 hit_repeater:
@@ -29,7 +33,7 @@ hit_repeater:
 emlikehits:
 {
     module_type:      "EmLikeHits"
-	HitModuleLabel:   "hit"   # hits used to reconstruct tagged tracks
+    HitModuleLabel:   "hit"   # hits used to reconstruct tagged tracks
     Trk3DModuleLabel: "track" # tagged tracks (hadron/muon- or cascade-like)
 }
 
@@ -57,7 +61,7 @@ dunefd_disambigfromsp.ExcludeTPCs:    [] # workspace has no outer TPCs, but full
 
 pdune_disambigfromsp:                 @local::standard_disambigfromsp
 pdune_disambigfromsp.ExcludeTPCs:     [0, 3, 4, 7, 8, 11] # ProtoDUNE's outer TPCs
-
+pdune_disambigfromsp.MoveLeftovers:   "repeat"
 
 dunefddphase_gaushitfinder:	@local::gaus_hitfinder
 dunefddphase_gaushitfinder.MinSig:    [6.0, 6.0]
