@@ -168,6 +168,8 @@ namespace dune {
     std::unordered_map< size_t, geo::WireID > hitToWire;                 // final hit-wire assignments
     std::unordered_map< size_t, std::vector<geo::WireID> > hitToNWires;  // final hit-many-wires assignments
 
+    hitToWire.reserve(eventHits.size());
+
     int n = runOnSpacePoints(eventHits, spFromHit, spToTPC, hitToWire, indHits, unassignedHits);
     std::cout << n << " hits undisambiguated by space points." << std::endl;
 
@@ -188,10 +190,7 @@ namespace dune {
 
         recob::HitCreator new_hit(*(eventHits[key]), wid);
 
-        art::Ptr<recob::Wire> wire = channelHitWires.at(key);
-        art::Ptr<raw::RawDigit> rawdigits = channelHitRawDigits.at(key);
-
-        hcol.emplace_back(new_hit.move(), wire, rawdigits);
+        hcol.emplace_back(new_hit.move(), channelHitWires.at(key), channelHitRawDigits.at(key));
     }
 
     for (auto const & hws : hitToNWires)
@@ -201,10 +200,7 @@ namespace dune {
         {
             recob::HitCreator new_hit(*(eventHits[key]), wid);
 
-            art::Ptr<recob::Wire> wire = channelHitWires.at(key);
-            art::Ptr<raw::RawDigit> rawdigits = channelHitRawDigits.at(key);
-
-            hcol.emplace_back(new_hit.move(), wire, rawdigits);
+            hcol.emplace_back(new_hit.move(), channelHitWires.at(key), channelHitRawDigits.at(key));
         }
     }
 
