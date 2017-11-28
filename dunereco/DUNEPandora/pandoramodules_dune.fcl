@@ -10,7 +10,6 @@ dune_pandora:
     EnableLineGaps:                                                 true
     UseGlobalCoordinates:                                           true
     UseHitWidths:                                                   false
-    ConfigFile:                                                     "PandoraSettings_DUNE.xml"
     ShouldRunAllHitsCosmicReco:                                     false
     ShouldRunStitching:                                             false
     ShouldRunCosmicHitRemoval:                                      false
@@ -22,13 +21,16 @@ dune_pandora:
 }
 
 dune35t_pandora:                                                    @local::dune_pandora
+dune35t_pandora.ConfigFile:                                         "PandoraSettings_Master_Standard.xml"
 dune35t_pandora.ShouldRunAllHitsCosmicReco:                         true
 dune35t_pandora.ShouldRunStitching:                                 true
 
 dunefd_pandora:                                                     @local::dune_pandora
+dunefd_pandora.ConfigFile:                                          "PandoraSettings_Master_DUNEFD.xml"
 dunefd_pandora.ShouldRunNeutrinoRecoOption:                         true
 
 protodune_pandora:                                                  @local::dune_pandora
+protodune_pandora.ConfigFile:                                       "PandoraSettings_Master_ProtoDUNE.xml"
 protodune_pandora.ShouldRunAllHitsCosmicReco:                       true
 protodune_pandora.ShouldRunStitching:                               true
 protodune_pandora.ShouldRunCosmicHitRemoval:                        true
@@ -36,13 +38,6 @@ protodune_pandora.ShouldRunSlicing:                                 true
 protodune_pandora.ShouldRunNeutrinoRecoOption:                      true
 protodune_pandora.ShouldRunCosmicRecoOption:                        true
 protodune_pandora.ShouldPerformSliceId:                             true
-
-protodune_pandoracosmic:                                            @local::dune_pandora
-protodune_pandoracosmic.ShouldRunAllHitsCosmicReco:                 true
-protodune_pandoracosmic.ShouldRunStitching:                         true
-
-protodune_pandorabeam:                                              @local::dune_pandora
-protodune_pandorabeam.ShouldRunNeutrinoRecoOption:                  true
 
 dune_pandorawriter:                                                 @local::dune_pandora
 dune_pandorawriter.ConfigFile:                                      "PandoraSettings_Write.xml"
