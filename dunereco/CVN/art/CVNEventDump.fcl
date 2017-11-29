@@ -9,6 +9,7 @@ standard_cvneventdump:
   PixelMapInput: "cvnmap"
   GenieGenModuleLabel: "generator"
   WriteMapTH2: true
+  ApplyFidVol: true
 }
 
 
