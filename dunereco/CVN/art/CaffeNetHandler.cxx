@@ -6,6 +6,7 @@
 
 #include  <iostream>
 #include  <string>
+#include "cetlib/getenv.h"
 
 #include "dune/CVN/art/CaffeNetHandler.h"
 
@@ -25,7 +26,7 @@ namespace cvn
                                     const std::string& deployProto,
                                     const std::string& modelFile,
 				    const std::string& featureMap):
-  fLibPath(libPath),
+  fLibPath(cet::getenv(libPath)+"/duneCVNNetwork/"),
   fDeployProto(fLibPath + deployProto),
   fModelFile  (fLibPath + modelFile),
   fFeatureMap     (featureMap),
