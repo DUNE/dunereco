@@ -4,7 +4,8 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 simple_plugin(SNSlicer "module"
                         larcore_Geometry_Geometry_service
                         larcorealg_Geometry
-                        larsim_MCCheater_BackTracker_service
+                        larsim_MCCheater_BackTrackerService_service
+           larsim_MCCheater_ParticleInventoryService_service
                         larsim_MCCheater_PhotonBackTracker_service
                         larsim_Simulation
                         lardataobj_RawData
