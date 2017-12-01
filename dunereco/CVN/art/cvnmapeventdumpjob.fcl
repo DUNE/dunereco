@@ -13,7 +13,7 @@ services:
   #@table::standard_services
 }
 
-#services.BackTracker: @local::standard_backtracker
+#services.BackTrackerService: @local::standard_backtrackerservice
 
 # Input source is a ROOT file 
 source:

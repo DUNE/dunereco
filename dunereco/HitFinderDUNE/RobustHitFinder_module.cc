@@ -51,7 +51,8 @@
 
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "lardataobj/Simulation/SimChannel.h"
-#include "larsim/MCCheater/BackTracker.h"
+#include "larsim/MCCheater/BackTrackerService.h"
+#include "larsim/MCCheater/ParticleInventoryService.h"
 #include "larsim/Simulation/SimListUtils.h"
 #include "lardataobj/Simulation/sim.h"
 
@@ -1015,12 +1016,13 @@ void dune::RobustHitFinder::FillHitInformation(dune::ChannelInformation & chan, 
 void dune::RobustHitFinder::SetTreeVariablesMCTruth(const ChanMap_t & chanMap, art::Event & e)
 {
   std::vector<MCHit> MCHitVec;
-  art::ServiceHandle<cheat::BackTracker> bt;
+  art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+  art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
   art::Handle< std::vector< recob::Wire> > wireHandle;
   if (!e.getByLabel(fWireModuleLabel,wireHandle)) return;
   const lariov::ChannelStatusProvider* fCSP = &art::ServiceHandle<lariov::ChannelStatusService>()->GetProvider();
 
-  for (auto sc : bt->SimChannels())
+  for (auto sc : bt_serv->SimChannels())
     {
       bool channelexists = false;
       for (size_t i_wire = 0; i_wire < wireHandle->size(); ++i_wire)
@@ -1057,7 +1059,7 @@ void dune::RobustHitFinder::SetTreeVariablesMCTruth(const ChanMap_t & chanMap, a
               // Don't include deltas and other secondary particles because we want to
               // see how well the reconstruction discounts these other tracks
               if (abs(ideIt.trackID) != 1) continue;
-              const simb::MCParticle * part = bt->TrackIDToParticle(abs(ideIt.trackID));
+              const simb::MCParticle * part = pi_serv->TrackIdToParticle_P(abs(ideIt.trackID));
               if (part->Mother() != 0) continue;
 
               // If the track is a primary muon, then collect this IDE for this channel
