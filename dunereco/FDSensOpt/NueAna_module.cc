@@ -32,7 +32,8 @@
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
-#include "larsim/MCCheater/BackTracker.h"
+#include "larsim/MCCheater/BackTrackerService.h"
+#include "larsim/MCCheater/ParticleInventoryService.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 #include "larreco/RecoAlg/TrackMomentumCalculator.h"
@@ -301,8 +302,9 @@ void dunefd::NueAna::analyze(art::Event const & evt)
   ResetVars();
   art::ServiceHandle<geo::Geometry> geom;
   auto const *detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
-  art::ServiceHandle<cheat::BackTracker> bt;
-  const sim::ParticleList& plist = bt->ParticleList();
+  art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+  art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
+  const sim::ParticleList& plist = pi_serv->ParticleList();
 
   run = evt.run();
   subrun = evt.subRun();
@@ -445,7 +447,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
       std::map<int,double> trkide;
       for(size_t h = 0; h < allHits.size(); ++h){
 	art::Ptr<recob::Hit> hit = allHits[h];
-	std::vector<sim::TrackIDE> TrackIDs = bt->HitToTrackID(hit);
+	std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(hit);
 	for(size_t e = 0; e < TrackIDs.size(); ++e){
 	  trkide[TrackIDs[e].trackID] += TrackIDs[e].energy;
 	}	    
@@ -461,7 +463,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	}
       }
       // Now have trackID, so get PdG code and T0 etc.
-      const simb::MCParticle *particle = bt->TrackIDToParticle(TrackID);
+      const simb::MCParticle *particle = pi_serv->TrackIdToParticle_P(TrackID);
       if (particle){
 	trkg4id[i] = TrackID;
 	trkg4pdg[i] = particle->PdgCode();
@@ -501,7 +503,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	      if (sqrt(pow(spts[0]->XYZ()[0]-x,2)+
 		       pow(spts[0]->XYZ()[1]-y,2)+
 		       pow(spts[0]->XYZ()[2]-z,2))<3){
-		std::vector<sim::TrackIDE> TrackIDs = bt->HitToTrackID(hit);
+		std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(hit);
 		float toten = 0;
 		for(size_t e = 0; e < TrackIDs.size(); ++e){
 		  //sum_energy += TrackIDs[e].energy;
@@ -593,7 +595,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
       std::map<int,double> trkide;
       for(size_t h = 0; h < allHits.size(); ++h){
 	art::Ptr<recob::Hit> hit = allHits[h];
-	std::vector<sim::TrackIDE> TrackIDs = bt->HitToTrackID(hit);
+	std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(hit);
 	for(size_t e = 0; e < TrackIDs.size(); ++e){
 	  trkide[TrackIDs[e].trackID] += TrackIDs[e].energy;
 	}	    
@@ -609,7 +611,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	}
       }
       // Now have trackID, so get PdG code and T0 etc.
-      const simb::MCParticle *particle = bt->TrackIDToParticle(TrackID);
+      const simb::MCParticle *particle = pi_serv->TrackIdToParticle_P(TrackID);
       if (particle){
 	shwg4id[i] = TrackID;
       }
@@ -743,7 +745,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
     //save g4 particle information
     std::vector<const simb::MCParticle* > geant_part;
     
-    // ### Looping over all the Geant4 particles from the BackTracker ###
+    // ### Looping over all the Geant4 particles from the BackTrackerService ###
     for(size_t p = 0; p < plist.size(); ++p) 
       {
 	// ### Filling the vector with MC Particles ###
