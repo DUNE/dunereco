@@ -29,7 +29,7 @@
             <tool type = "LArCosmicRayTagging"/>
         </CosmicRayTaggingTools>
         <SliceIdTools>
-            <tool type = "LArNeutrinoId"/>
+            <tool type = "LArBeamParticleId"><BeamTPCIntersection>-33.051 461.06 0.</BeamTPCIntersection></tool>
         </SliceIdTools>
         <InputHitListName>Input</InputHitListName>
         <RecreatedPfoListName>RecreatedPfos</RecreatedPfoListName>
