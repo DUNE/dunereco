@@ -106,8 +106,12 @@ dunemva::MVAAlg::MVAAlg( fhicl::ParameterSet const& p )
 
 
     fMVAMethod =p.get< std::string >("MVAMethod");
+
+    std::string weightFileFull;
     fWeightFile=p.get< std::string >("WeightFile");
-    fReader.BookMVA(fMVAMethod, fWeightFile);
+    cet::search_path sp("FW_SEARCH_PATH");
+    sp.find_file(fWeightFile, weightFileFull);
+    fReader.BookMVA(fMVAMethod, weightFileFull);
 
   }
 

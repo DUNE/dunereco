@@ -122,6 +122,8 @@ namespace dunemva {
       double fQ2; 
       double fEtrue; 
       double fEreco;
+      double fEreco_nue;
+      double fEreco_numu;
       double fW;
       double fX;
       double fY;
@@ -310,6 +312,8 @@ namespace dunemva {
     fTree->Branch("Q2",           &fQ2,           "Q2/D");
     fTree->Branch("Ev",           &fEtrue,        "Ev/D");
     fTree->Branch("Ev_reco",      &fEreco,        "Ev_reco/D");
+    fTree->Branch("Ev_reco_nue",  &fEreco_nue,    "Ev_reco_nue/D");
+    fTree->Branch("Ev_reco_numu", &fEreco_numu,   "Ev_reco_numu/D");
     fTree->Branch("EvClass_reco", &fEvClass_reco, "EvClass_reco/I");
     fTree->Branch("coh",          &fIsCoh,        "coh/I");
     fTree->Branch("dis",          &fIsDIS,        "dis/I");
@@ -609,10 +613,12 @@ namespace dunemva {
 
     if(!pidinnue.failedToGet()){
       fMVAResultNue = pidinnue->pid;
+      fEreco_nue = pidinnue->Ereco;
     }
 
     if(!pidinnumu.failedToGet()){
       fMVAResultNumu = pidinnumu->pid;
+      fEreco_numu = pidinnumu->Ereco;
     }
 
     if(!cvnin.failedToGet()){

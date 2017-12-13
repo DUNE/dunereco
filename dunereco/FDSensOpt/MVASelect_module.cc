@@ -143,8 +143,8 @@ namespace dunemva {
   {
     std::unique_ptr<dunemva::MVASelectPID> pidout = std::make_unique<MVASelectPID>();
 
-    if(fSelNuE) pidout->pdg = 12;
-    if(fSelNuMu) pidout->pdg = 14;
+    if(fSelNuE) pidout->selectMode = 12;
+    if(fSelNuMu) pidout->selectMode = 14;
 
     // Weight seems to have osc probability etc in it. Not suitable for a reco
     // module, drop that output on the floor
