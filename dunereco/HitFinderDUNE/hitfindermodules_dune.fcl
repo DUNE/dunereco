@@ -22,6 +22,7 @@ standard_disambigfromsp:
     MoveLeftovers:    "first"  # "repeat" - duplicate undisambiguated hits to every allowed wire segment
                                # "first"  - put undisambiguated hits on the first allowed wire segment
                                # "drop"   - drop undisambiguated hits from the output
+    MonitoringPlots:  false    # create histograms of no. of unresolved hits at each stage, per plane
 }
 
 hit_repeater:

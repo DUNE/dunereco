@@ -24,6 +24,8 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Core/EDProducer.h"
+#include "art/Framework/Services/Optional/TFileService.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
 
 // LArSoft Includes
 #include "larcore/Geometry/Geometry.h"
@@ -34,6 +36,8 @@
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
+// ROOT includes
+#include "TTree.h"
 
 namespace dune {
   // these types to be replaced with use of feature proposed in redmine #12602
@@ -53,6 +57,7 @@ namespace dune {
         fhicl::Atom<bool> UseNeighbors { Name("UseNeighbors"), Comment("Use neighboring hits to complete hits unresolved with spacepoints.") };
         fhicl::Atom<float> MaxDistance { Name("MaxDistance"), Comment("Distance [cm] used to complete hits unresolved with spacepoints.") };
         fhicl::Atom<std::string> MoveLeftovers { Name("MoveLeftovers"), Comment("Mode of dealing with undisambiguated hits.") };
+        fhicl::Atom<bool> MonitoringPlots { Name("MonitoringPlots"), Comment("Create histograms of no. of unresolved hits at eacch stage, per plane.") };
     };
     using Parameters = art::EDProducer::Table<Config>;
 
@@ -68,7 +73,7 @@ namespace dune {
             std::unordered_map< size_t, geo::WireID > & assignments,
             cryo_tpc_plane_keymap & indHits,
             std::vector<size_t> & unassigned
-            ) const;
+            );
 
     int resolveUnassigned(
             std::unordered_map< size_t, geo::WireID > & assignments,
@@ -76,7 +81,7 @@ namespace dune {
             cryo_tpc_plane_keymap & indHits,
             std::vector<size_t> & unassigned,
             size_t nNeighbors
-            ) const;
+            );
 
     void assignFirstAllowedWire(
             std::unordered_map< size_t, geo::WireID > & assignments,
@@ -94,6 +99,13 @@ namespace dune {
     geo::GeometryCore const* fGeom;
     detinfo::DetectorProperties const* fDetProp;
 
+    int fRun, fEvent;
+    int fNHits[3];                // n all hits in each plane
+    int fNMissedBySpacePoints[2]; // n hits unresolved by SpacePoints in induction planes
+    int fNMissedByNeighbors[2];   // n hits unresolved by using neighboring hits
+    TTree *fTree;
+
+    const bool fMonitoringPlots;
     const bool fUseNeighbors;
     const float fMaxDistance;
     const std::string fMoveLeftovers;
@@ -103,6 +115,8 @@ namespace dune {
   };
 
   DisambigFromSpacePoints::DisambigFromSpacePoints(DisambigFromSpacePoints::Parameters const& config) :
+    fTree(0),
+    fMonitoringPlots(config().MonitoringPlots()),
     fUseNeighbors(config().UseNeighbors()),
     fMaxDistance(config().MaxDistance()),
     fMoveLeftovers(config().MoveLeftovers()),
@@ -116,10 +130,24 @@ namespace dune {
     recob::HitCollectionCreator::declare_products(*this);
     fGeom = &*(art::ServiceHandle<geo::Geometry>());
     fDetProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
+
+    if (fMonitoringPlots)
+    {
+        art::ServiceHandle<art::TFileService> tfs;
+        fTree = tfs->make<TTree>("hitstats", "Unresolved hits statistics");
+        fTree->Branch("fRun", &fRun, "fRun/I");
+        fTree->Branch("fEvent", &fEvent, "fEvent/I");
+        fTree->Branch("fNHits", fNHits, "fNHits[3]/I");
+        fTree->Branch("fNMissedBySpacePoints", fNMissedBySpacePoints, "fNMissedBySpacePoints[2]/I");
+        fTree->Branch("fNMissedByNeighbors", fNMissedByNeighbors, "fNMissedByNeighbors[2]/I");
+    }
   }
 
   void DisambigFromSpacePoints::produce(art::Event& evt)
   {
+    fRun = evt.run();
+    fEvent = evt.id().event();
+
     auto hitsHandle = evt.getValidHandle< std::vector<recob::Hit> >(fHitModuleLabel);
     auto spHandle = evt.getValidHandle< std::vector<recob::SpacePoint> >(fSpModuleLabel);
 
@@ -154,7 +182,7 @@ namespace dune {
         }
         if (tpc == geo::WireID::InvalidID)
         {
-            std::cout << "No collection hit for this spacepoint." << std::endl;
+            mf::LogWarning("DisambigFromSpacePoints") << "No collection hit for this spacepoint.";
             continue;
         }
         for (const auto & h : hits) // set mapping for Induction hits
@@ -171,17 +199,17 @@ namespace dune {
     hitToWire.reserve(eventHits.size());
 
     int n = runOnSpacePoints(eventHits, spFromHit, spToTPC, hitToWire, indHits, unassignedHits);
-    std::cout << n << " hits undisambiguated by space points." << std::endl;
+    mf::LogInfo("DisambigFromSpacePoints") << n << " hits undisambiguated by space points.";
 
     if (fUseNeighbors)
     {
         n = resolveUnassigned(hitToWire, eventHits, indHits, unassignedHits, 2);
-        std::cout << n << " hits undisambiguated by neighborhood." << std::endl;
+        mf::LogInfo("DisambigFromSpacePoints") << n << " hits undisambiguated by neighborhood.";
     }
 
     if (fMoveLeftovers == "repeat")     { assignEveryAllowedWire(hitToNWires, eventHits, unassignedHits);      }
     else if (fMoveLeftovers == "first") { assignFirstAllowedWire(hitToWire, eventHits, unassignedHits);        }
-    else                                { std::cout << "Remaining undisambiguated hits dropped." << std::endl; }
+    else                { mf::LogInfo("DisambigFromSpacePoints") << "Remaining undisambiguated hits dropped."; }
 
     for (auto const & hw : hitToWire)
     {
@@ -204,6 +232,8 @@ namespace dune {
         }
     }
 
+    if (fMonitoringPlots && fTree) { fTree->Fill(); } // save statistics if MonitoringPlots was set to true
+
     // put the hit collection and associations into the event
     hcol.put_into(evt);
   }
@@ -215,27 +245,32 @@ namespace dune {
     std::unordered_map< size_t, geo::WireID > & assignments,
     cryo_tpc_plane_keymap & indHits,
     std::vector<size_t> & unassigned
-    ) const
+    )
   {
-    int nUnassigned = 0;
+    fNHits[0] = 0; fNHits[1] = 0; fNHits[2] = 0;
+    fNMissedBySpacePoints[0] = 0;
+    fNMissedBySpacePoints[1] = 0;
+
     for (size_t i = 0; i < eventHits.size(); ++i)
     {
         const art::Ptr<recob::Hit> & hit = eventHits[i];
         std::vector<geo::WireID> cwids = fGeom->ChannelToWire(hit->Channel());
-        if (cwids.empty()) { continue; } // add warning here
+        if (cwids.empty()) { mf::LogWarning("DisambigFromSpacePoints") << "No wires for this channel???"; continue; }
         if (hit->SignalType() == geo::kCollection)
         {
             assignments[hit.key()] = cwids.front();
+            fNHits[2]++; // count collection hit
         }
         else
         {
             geo::WireID id = hit->WireID();
             size_t cryo = id.Cryostat, plane = id.Plane;
+            fNHits[plane]++; // count induction hit
 
             if (spFromHit.at(hit.key()).size() == 0)
             {
                 unassigned.push_back(hit.key());
-                ++nUnassigned;
+                fNMissedBySpacePoints[plane]++; //count unresolved hit
             }
             else
             {
@@ -279,15 +314,15 @@ namespace dune {
                 }
                 else
                 {
-                    std::cout << "**** Did not find matching wire (plane:" << plane << ")." << std::endl;
+                    mf::LogWarning("DisambigFromSpacePoints") << "Did not find matching wire (plane:" << plane << ").";
                     unassigned.push_back(hit.key());
-                    ++nUnassigned;
+                    fNMissedBySpacePoints[plane]++; //count unresolved hit
                 }
             }
         }
     }
 
-    return nUnassigned;
+    return fNMissedBySpacePoints[0] + fNMissedBySpacePoints[1];
   }
 
   int DisambigFromSpacePoints::resolveUnassigned(
@@ -296,9 +331,11 @@ namespace dune {
     cryo_tpc_plane_keymap & allIndHits,
     std::vector<size_t> & unassigned,
     size_t nNeighbors
-    ) const
+    )
   {
-    int nLeftInPlace = 0;
+    fNMissedByNeighbors[0] = 0;
+    fNMissedByNeighbors[1] = 0;
+
     std::unordered_map< size_t, geo::WireID > result;
 
     for (const size_t key : unassigned)
@@ -309,7 +346,7 @@ namespace dune {
         float hitDrift = hit->PeakTime();
 
         std::vector<geo::WireID> cwids = fGeom->ChannelToWire(hit->Channel());
-        if (cwids.empty()) { continue; } // add warning here
+        if (cwids.empty()) { mf::LogWarning("DisambigFromSpacePoints") << "No wires for this channel???"; continue; }
 
         const float dwMax = fMaxDistance / fGeom->TPC(0, 0).Plane(plane).WirePitch(); // max distance in wires to look for neighbors
         const float ddMax = dwMax * fGeom->TPC(0, 0).Plane(plane).WirePitch() / std::fabs(fDetProp->GetXTicksCoefficient(0, 0));
@@ -338,7 +375,7 @@ namespace dune {
                 auto search = assignments.find(keyInd);        // find resolved wire id
                 if (search == assignments.end())
                 {
-                    std::cout << "**** Did not find resolved wire id." << std::endl;
+                    mf::LogWarning("DisambigFromSpacePoints") << "Did not find resolved wire id.";
                     continue;
                 }
 
@@ -375,7 +412,7 @@ namespace dune {
             }
         }
         if (bestId.isValid) { result[key] = bestId; }
-        else { ++nLeftInPlace; }
+        else { fNMissedByNeighbors[plane]++; }
     }
 
     // remove from list of unassigned hits
@@ -386,7 +423,7 @@ namespace dune {
 
     //assignments.merge(result); // use this with C++ 17
     assignments.insert(result.begin(), result.end());
-    return nLeftInPlace;
+    return fNMissedByNeighbors[0] + fNMissedByNeighbors[1];
   }
 
   void DisambigFromSpacePoints::assignFirstAllowedWire(
@@ -399,7 +436,7 @@ namespace dune {
     {
         const auto & hit = eventHits[key];
         std::vector<geo::WireID> cwids = fGeom->ChannelToWire(hit->Channel());
-        if (cwids.empty()) { continue; } // add warning here
+        if (cwids.empty()) { mf::LogWarning("DisambigFromSpacePoints") << "No wires for this channel???"; continue; }
 
         geo::WireID bestId;
         for (size_t w = 0; w < cwids.size(); ++w)
@@ -411,7 +448,7 @@ namespace dune {
             if (allowed) { bestId = cwids[w]; break; }
         }
         if (bestId.isValid) { assignments[key] = bestId; }
-        else { std::cout << "None of wires is allowed for this hit???"; }
+        else { mf::LogWarning("DisambigFromSpacePoints") << "None of wires is allowed for this hit???"; }
     }
   }
 
