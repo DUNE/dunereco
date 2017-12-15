@@ -106,8 +106,12 @@ dunemva::MVAAlg::MVAAlg( fhicl::ParameterSet const& p )
 
 
     fMVAMethod =p.get< std::string >("MVAMethod");
+
+    std::string weightFileFull;
     fWeightFile=p.get< std::string >("WeightFile");
-    fReader.BookMVA(fMVAMethod, fWeightFile);
+    cet::search_path sp("FW_SEARCH_PATH");
+    sp.find_file(fWeightFile, weightFileFull);
+    fReader.BookMVA(fMVAMethod, weightFileFull);
 
   }
 
@@ -1123,8 +1127,9 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
   //std::cout << " ~~~~~~~~~~~~~~~ MVA: Getting Event Reco ~~~~~~~~~~~~~~ " << std::endl;
 
   auto const *detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
-  art::ServiceHandle<cheat::BackTracker> bt;
-  const sim::ParticleList& plist = bt->ParticleList();
+  art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+  art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
+  const sim::ParticleList& plist = pi_serv->ParticleList();
 
   run = evt.run();
   subrun = evt.subRun();
@@ -1306,7 +1311,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
       std::map<int,double> trkide;
       for(size_t h = 0; h < allHits.size(); ++h){
         art::Ptr<recob::Hit> hit = allHits[h];
-        std::vector<sim::TrackIDE> TrackIDs = bt->HitToTrackID(hit);
+        std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(hit);
         for(size_t e = 0; e < TrackIDs.size(); ++e){
           trkide[TrackIDs[e].trackID] += TrackIDs[e].energy;
         }	    
@@ -1322,7 +1327,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
         }
       }
       // Now have trackID, so get PdG code and T0 etc.
-      const simb::MCParticle *particle = bt->TrackIDToParticle(TrackID);
+      const simb::MCParticle *particle = pi_serv->TrackIdToParticle_P(TrackID);
       if (particle){
         trkg4id[i] = TrackID;
         trkg4pdg[i] = particle->PdgCode();
@@ -1362,7 +1367,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
               if (sqrt(pow(spts[0]->XYZ()[0]-x,2)+
                     pow(spts[0]->XYZ()[1]-y,2)+
                     pow(spts[0]->XYZ()[2]-z,2))<3){
-                std::vector<sim::TrackIDE> TrackIDs = bt->HitToTrackID(hit);
+                std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(hit);
                 float toten = 0;
                 for(size_t e = 0; e < TrackIDs.size(); ++e){
                   //sum_energy += TrackIDs[e].energy;
@@ -1454,7 +1459,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
         std::map<int,double> trkide;
         for(size_t h = 0; h < allHits.size(); ++h){
           art::Ptr<recob::Hit> hit = allHits[h];
-          std::vector<sim::TrackIDE> TrackIDs = bt->HitToTrackID(hit);
+          std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(hit);
           for(size_t e = 0; e < TrackIDs.size(); ++e){
             trkide[TrackIDs[e].trackID] += TrackIDs[e].energy;
           }	    
@@ -1470,7 +1475,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
           }
         }
         // Now have trackID, so get PdG code and T0 etc.
-        const simb::MCParticle *particle = bt->TrackIDToParticle(TrackID);
+        const simb::MCParticle *particle = pi_serv->TrackIdToParticle_P(TrackID);
         if (particle){
           shwg4id[i] = TrackID;
         }
@@ -1668,7 +1673,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
     //save g4 particle information
     std::vector<const simb::MCParticle* > geant_part;
 
-    // ### Looping over all the Geant4 particles from the BackTracker ###
+    // ### Looping over all the Geant4 particles from the BackTrackerService ###
     for(size_t p = 0; p < plist.size(); ++p) 
     {
       // ### Filling the vector with MC Particles ###

@@ -1,7 +1,8 @@
 
 art_make(
 	  LIBRARY_NAME  dune_RecoAlgDUNE
-          LIB_LIBRARIES larsim_MCCheater_BackTracker_service
+          LIB_LIBRARIES larsim_MCCheater_BackTrackerService_service
+           larsim_MCCheater_ParticleInventoryService_service
                         lardataobj_RecoBase
                         lardata_ArtDataHelper
                         larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation

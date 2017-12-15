@@ -1,6 +1,8 @@
 #include "geometry_dune.fcl"
 #include "messageservice.fcl"
 #include "services_dune.fcl"
+#include "backtrackerservice.fcl"
+#include "particleinventoryservice.fcl"
 
 #include "SNSlicer.fcl"
 
@@ -20,10 +22,10 @@ services:
 
   LArG4Parameters:        @local::dunefd_largeantparameters
 
-  BackTracker: @local::standard_backtracker
+  BackTrackerService:       @local::standard_backtrackerservice
+  ParticleInventoryService: @local::standard_particleinventoryservice
   DetectorClocksService:          @local::dunefd_detectorclocks
 
-  PhotonBackTracker: @local::dunefd_photonbacktracker
 
   DetectorPropertiesService: @local::dunefd_detproperties
   LArPropertiesService: @local::dunefd_properties
