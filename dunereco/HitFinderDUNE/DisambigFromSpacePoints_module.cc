@@ -379,7 +379,8 @@ namespace dune {
                     continue;
                 }
 
-                float dWire = std::abs(hitWire - search->second.Wire);
+                //float dWire = std::abs(hitWire - search->second.Wire);
+                float dWire = std::abs(float(hitWire) - float(search->second.Wire));
                 float dDrift = std::fabs(hitDrift - hitInd->PeakTime());
 
                 if ((dWire > dwMax) || (dDrift > ddMax)) { continue; }

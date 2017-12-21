@@ -224,6 +224,8 @@ namespace disambigcheck{
 	    else{
 	      incorrecthits++;
 	      ++ParticleMap[TrackID].first[1];
+
+	      std::cout<<"HYHY[x]:: tpc"<<ChHitsDisambig[w]->WireID().TPC<<" ; wire id:"<<ChHitsDisambig[w]->WireID().Wire<<" ;peaktime:"<<ChHitsDisambig[w]->PeakTime()<<std::endl;	
 	    }   
 	  }	
 	} // Loop through disambiguated hits
@@ -240,8 +242,10 @@ namespace disambigcheck{
       //double disambighitsFraction = ddisambighits / dtotalhits;
       if ( totalhits != 0 ) {
 	fCorrect  ->Fill( (double)correcthits   / (double)totalhits );
-	fMissed   ->Fill( (double)incorrecthits / (double)totalhits ); 
-	fIncorrect->Fill( (double)missinghits   / (double)totalhits ); 
+	//fMissed   ->Fill( (double)incorrecthits / (double)totalhits ); 
+	//fIncorrect->Fill( (double)missinghits   / (double)totalhits ); 
+	fMissed   ->Fill( (double)missinghits / (double)totalhits ); 
+	fIncorrect->Fill( (double)incorrecthits   / (double)totalhits ); 
 	if ( (double)correcthits / (double)totalhits == 0 ) std::cout << "WHY IS THIS EVENT NOT MATCHING ANY HITS!!!????" << std::endl;
       } // totalhits != 0
       std::cout << "\nTotal hits " << totalhits << ", correct hits " << correcthits << ", incorrect hits " << incorrecthits << ", missing hits " << missinghits << std::endl;
