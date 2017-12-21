@@ -224,8 +224,6 @@ namespace disambigcheck{
 	    else{
 	      incorrecthits++;
 	      ++ParticleMap[TrackID].first[1];
-
-	      std::cout<<"HYHY[x]:: tpc"<<ChHitsDisambig[w]->WireID().TPC<<" ; wire id:"<<ChHitsDisambig[w]->WireID().Wire<<" ;peaktime:"<<ChHitsDisambig[w]->PeakTime()<<std::endl;	
 	    }   
 	  }	
 	} // Loop through disambiguated hits
