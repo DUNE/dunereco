@@ -28,7 +28,7 @@
 #include "nusimdata/SimulationBase/MCFlux.h"
 #include "larcoreobj/SummaryData/POTSummary.h"
 #include "dune/FDSensOpt/MVASelectPID.h"
-
+#include "dune/FDSensOpt/EnergyRecoOutput.h"
 #include "dune/CVN/func/InteractionType.h"
 #include "dune/CVN/func/Result.h"
 
@@ -66,6 +66,9 @@ namespace dunemva {
       std::string fMVASelectNumuLabel;
 
       std::string fCVNLabel;
+
+      std::string fEnergyRecoNueLabel;
+      std::string fEnergyRecoNumuLabel;
 
       double fEvtcharge;
       double fRawcharge;
@@ -121,9 +124,18 @@ namespace dunemva {
 
       double fQ2; 
       double fEtrue; 
-      double fEreco;
-      double fEreco_nue;
-      double fEreco_numu;
+
+      double fErecoNue;
+      double fRecoLepEnNue;
+      double fRecoHadEnNue;
+      int fRecoMethodNue; // 1 = longest reco track + hadronic, 2 = reco shower with highest charge + hadronic, 3 = all hit charges, -1 = not set
+      double fErecoNumu; 
+      double fRecoLepEnNumu;
+      double fRecoHadEnNumu;
+      int fRecoMethodNumu; // 1 = longest reco track + hadronic, 2 = reco shower with highest charge + hadronic, 3 = all hit charges, -1 = not set
+      int fLongestTrackContNumu; // 1 = contained, 0 = exiting, -1 = not set
+      int fTrackMomMethodNumu; // 1 = range, 0 = MCS, -1 = not set
+
       double fW;
       double fX;
       double fY;
@@ -256,6 +268,9 @@ namespace dunemva {
 
     fCVNLabel = pset.get<std::string>("CVNLabel");
 
+    fEnergyRecoNueLabel = pset.get<std::string>("EnergyRecoNueLabel");
+    fEnergyRecoNumuLabel = pset.get<std::string>("EnergyRecoNumuLabel");
+
     fReweight=pset.get<bool>("Reweight");
     fMakeSystHist=pset.get<bool>("MakeSystHist");
 
@@ -311,9 +326,18 @@ namespace dunemva {
 
     fTree->Branch("Q2",           &fQ2,           "Q2/D");
     fTree->Branch("Ev",           &fEtrue,        "Ev/D");
-    fTree->Branch("Ev_reco",      &fEreco,        "Ev_reco/D");
-    fTree->Branch("Ev_reco_nue",  &fEreco_nue,    "Ev_reco_nue/D");
-    fTree->Branch("Ev_reco_numu", &fEreco_numu,   "Ev_reco_numu/D");
+
+    fTree->Branch("Ev_reco_nue",      &fErecoNue,        "Ev_reco_nue/D");
+    fTree->Branch("RecoLepEnNue",     &fRecoLepEnNue,    "RecoLepEnNue/D");
+    fTree->Branch("RecoHadEnNue",     &fRecoHadEnNue,    "RecoHadEnNue/D");
+    fTree->Branch("RecoMethodNue",    &fRecoMethodNue,   "RecoMethodNue/I");
+    fTree->Branch("Ev_reco_numu",     &fErecoNumu,       "Ev_reco_numu/D");
+    fTree->Branch("RecoLepEnNumu",    &fRecoLepEnNumu,   "RecoLepEnNumu/D");
+    fTree->Branch("RecoHadEnNumu",    &fRecoHadEnNumu,   "RecoHadEnNumu/D");
+    fTree->Branch("RecoMethodNumu",   &fRecoMethodNumu,  "RecoMethodNumu/I");
+    fTree->Branch("LongestTrackContNumu",  &fLongestTrackContNumu, "LongestTrackContNumu/I");
+    fTree->Branch("TrackMomMethodNumu",    &fTrackMomMethodNumu,   "TrackMomMethodNumu/I");
+
     fTree->Branch("EvClass_reco", &fEvClass_reco, "EvClass_reco/I");
     fTree->Branch("coh",          &fIsCoh,        "coh/I");
     fTree->Branch("dis",          &fIsDIS,        "dis/I");
@@ -565,6 +589,12 @@ namespace dunemva {
     art::Handle<std::vector<cvn::Result>> cvnin;
     evt.getByLabel(fCVNLabel, "cvnresult", cvnin);
 
+    art::Handle<dunemva::EnergyRecoOutput> ereconuein;
+    evt.getByLabel(fEnergyRecoNueLabel, ereconuein);
+
+    art::Handle<dunemva::EnergyRecoOutput> ereconumuin;
+    evt.getByLabel(fEnergyRecoNumuLabel, ereconumuin);
+
     fRun = evt.id().run();
     fSubrun = evt.id().subRun();
     fEvent = evt.id().event();
@@ -608,17 +638,24 @@ namespace dunemva {
       fTrkcosz        = pidin->trkcosz;
       fET             = pidin->et;
 
-      fEreco          = pidin->Ereco;
+      fErecoNue          = ereconuein->nuEnergy;
+      fRecoLepEnNue      = ereconuein->lepEnergy;
+      fRecoHadEnNue      = ereconuein->hadEnergy;
+      fRecoMethodNue     = ereconuein->recoMethodUsed;
+      fErecoNumu         = ereconumuin->nuEnergy;
+      fRecoLepEnNumu     = ereconumuin->lepEnergy;
+      fRecoHadEnNumu     = ereconumuin->hadEnergy;
+      fRecoMethodNumu    = ereconumuin->recoMethodUsed;
+      fLongestTrackContNumu  = ereconumuin->longestTrackContained;
+      fTrackMomMethodNumu    = ereconumuin->trackMomMethod;
     }
 
     if(!pidinnue.failedToGet()){
       fMVAResultNue = pidinnue->pid;
-      fEreco_nue = pidinnue->Ereco;
     }
 
     if(!pidinnumu.failedToGet()){
       fMVAResultNumu = pidinnumu->pid;
-      fEreco_numu = pidinnumu->Ereco;
     }
 
     if(!cvnin.failedToGet()){

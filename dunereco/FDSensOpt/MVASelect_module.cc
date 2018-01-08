@@ -65,19 +65,6 @@ namespace dunemva {
       bool fSelNuE;
       bool fSelNuMu;
 
-      //Neutrino energy reconstruction
-      //Gradients and intercepts of calibration of track momentum by range
-      //and corrections of MCS track momentum, hadronic energy (numu CC), shower energy and hadronic energy (nue CC)
-      double fGradTrkMomRange;
-      double fIntTrkMomRange;
-      double fGradTrkMomMCS;
-      double fIntTrkMomMCS;
-      double fGradNuMuHadEnCorr;
-      double fIntNuMuHadEnCorr;
-      double fGradShwEnergy;
-      double fIntShwEnergy;
-      double fGradNuEHadEnCorr; 
-      double fIntNuEHadEnCorr;
   }; // class MVASelect
 
 
@@ -106,16 +93,6 @@ namespace dunemva {
       fSelNuMu = true;
     }
 
-    fGradTrkMomRange = pset.get<double>("GradTrkMomRange");
-    fIntTrkMomRange = pset.get<double>("IntTrkMomRange");
-    fGradTrkMomMCS = pset.get<double>("GradTrkMomMCS");
-    fIntTrkMomMCS = pset.get<double>("IntTrkMomMCS");
-    fGradNuMuHadEnCorr = pset.get<double>("GradNuMuHadEnCorr");
-    fIntNuMuHadEnCorr = pset.get<double>("IntNuMuHadEnCorr");
-    fGradShwEnergy = pset.get<double>("GradShwEnergy");
-    fIntShwEnergy = pset.get<double>("IntShwEnergy");
-    fGradNuEHadEnCorr = pset.get<double>("GradNuEHadEnCorr");
-    fIntNuEHadEnCorr = pset.get<double>("IntNuEHadEnCorr");
   }
 
 
@@ -185,37 +162,6 @@ namespace dunemva {
     pidout->trkcosy        = fMVAAlg.trkcosy;
     pidout->trkcosz        = fMVAAlg.trkcosz;
     pidout->et             = fMVAAlg.ET;
-
-    //Neutrino energy reconstruction
-    double longestTrackMom, maxShowerEnergy, corrHadEnergy;
-
-    //numu CC event with at least one reco track,
-    //longest reco track is either contained or is exiting with a defined value of MCS track momentum
-    if (fSelNuMu){
-      if (fMVAAlg.maxTrackLength >= 0.0 && 
-          (fMVAAlg.longestTrackContained || (!fMVAAlg.longestTrackContained && fMVAAlg.longestTrackMCSMom >= 0.0))){
-        if (fMVAAlg.longestTrackContained)
-          longestTrackMom = (fMVAAlg.maxTrackLength - fIntTrkMomRange) / fGradTrkMomRange;
-        else
-          longestTrackMom = (fMVAAlg.longestTrackMCSMom - fIntTrkMomMCS) / fGradTrkMomMCS;
-        corrHadEnergy = (((fMVAAlg.totalEventCharge - fMVAAlg.longestTrackCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntNuMuHadEnCorr) / fGradNuMuHadEnCorr;
-        pidout->Ereco = longestTrackMom + corrHadEnergy;
-      }
-      else{
-        pidout->Ereco = pidout->wirecharge/0.63/4.966e-3*23.6e-9; 
-      }
-    }
-    else if (fSelNuE){//nue CC event with at least one reco shower
-      if(fMVAAlg.maxShowerCharge >= 0.0){
-        maxShowerEnergy = ((fMVAAlg.maxShowerCharge * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntShwEnergy) / fGradShwEnergy;
-        corrHadEnergy = (((fMVAAlg.totalEventCharge - fMVAAlg.maxShowerCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntNuEHadEnCorr) / fGradNuEHadEnCorr;
-        pidout->Ereco = maxShowerEnergy + corrHadEnergy;
-      }
-      else{
-        pidout->Ereco = pidout->wirecharge/0.63/4.966e-3*23.6e-9; 
-        //0.63: recombination factor, 1/4.966e-3: calorimetry constant to convert ADC to number of electrons, Wion = 23.6 eV
-      }
-    }
 
     evt.put(std::move(pidout));
   }

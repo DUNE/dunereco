@@ -45,8 +45,6 @@ namespace dunemva
     float trkcosz;
     float et;
 
-    // Energy output
-    float Ereco;
   };
 }
 
