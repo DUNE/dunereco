@@ -55,6 +55,7 @@ namespace dune {
         fhicl::Atom<art::InputTag> SpModuleLabel { Name("SpModuleLabel"), Comment("SpacePointSolver label.") };
         fhicl::Sequence<size_t> ExcludeTPCs { Name("ExcludeTPCs"), Comment("TPC inndexes where hits are not allowed.") };
         fhicl::Atom<bool> UseNeighbors { Name("UseNeighbors"), Comment("Use neighboring hits to complete hits unresolved with spacepoints.") };
+        fhicl::Atom<size_t> NumNeighbors { Name("NumNeighbors"), Comment("Number of neighboring hits to complete hits unresolved with spacepoints.") };
         fhicl::Atom<float> MaxDistance { Name("MaxDistance"), Comment("Distance [cm] used to complete hits unresolved with spacepoints.") };
         fhicl::Atom<std::string> MoveLeftovers { Name("MoveLeftovers"), Comment("Mode of dealing with undisambiguated hits.") };
         fhicl::Atom<bool> MonitoringPlots { Name("MonitoringPlots"), Comment("Create histograms of no. of unresolved hits at eacch stage, per plane.") };
@@ -107,6 +108,7 @@ namespace dune {
 
     const bool fMonitoringPlots;
     const bool fUseNeighbors;
+    const size_t fNumNeighbors;
     const float fMaxDistance;
     const std::string fMoveLeftovers;
     const std::vector< size_t > fExcludeTPCs;
@@ -118,12 +120,18 @@ namespace dune {
     fTree(0),
     fMonitoringPlots(config().MonitoringPlots()),
     fUseNeighbors(config().UseNeighbors()),
+    fNumNeighbors(config().NumNeighbors()),
     fMaxDistance(config().MaxDistance()),
     fMoveLeftovers(config().MoveLeftovers()),
     fExcludeTPCs(config().ExcludeTPCs()),
     fHitModuleLabel(config().HitModuleLabel()),
     fSpModuleLabel(config().SpModuleLabel())
   {
+    if (fNumNeighbors < 1)
+    {
+        throw cet::exception("DisambigFromSpacePoints") << "NumNeighbors should be at least 1." << std::endl;
+    }
+
     // let HitCollectionCreator declare that we are going to produce
     // hits and associations with wires and raw digits
     // (with no particular product label)
@@ -203,7 +211,7 @@ namespace dune {
 
     if (fUseNeighbors)
     {
-        n = resolveUnassigned(hitToWire, eventHits, indHits, unassignedHits, 2);
+        n = resolveUnassigned(hitToWire, eventHits, indHits, unassignedHits, fNumNeighbors);
         mf::LogInfo("DisambigFromSpacePoints") << n << " hits undisambiguated by neighborhood.";
     }
 
@@ -350,7 +358,6 @@ namespace dune {
 
         const float dwMax = fMaxDistance / fGeom->TPC(0, 0).Plane(plane).WirePitch(); // max distance in wires to look for neighbors
         const float ddMax = dwMax * fGeom->TPC(0, 0).Plane(plane).WirePitch() / std::fabs(fDetProp->GetXTicksCoefficient(0, 0));
-        const float maxDValue = 1000;
 
         float bestScore = 0;
         geo::WireID bestId;
@@ -365,7 +372,8 @@ namespace dune {
 
             const float wirePitch = fGeom->TPC(tpc, cryo).Plane(plane).WirePitch();
             const float driftPitch = std::fabs(fDetProp->GetXTicksCoefficient(tpc, cryo));
-        
+
+            float maxDValue = fMaxDistance*fMaxDistance;
             std::vector<float> distBuff(nNeighbors, maxDValue); // distance to n closest hits
             const auto & keys = allIndHits[cryo][tpc][plane];
             for (const size_t keyInd : keys)
