@@ -41,7 +41,7 @@
 #include "lardata/Utilities/AssociationUtil.h"
 #include "larreco/RecoAlg/TrackMomentumCalculator.h"
 
-#include "dune/FDSensOpt/EnergyRecoOutput.h"
+#include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 
 #include "TTimeStamp.h"
 #include "TTree.h"

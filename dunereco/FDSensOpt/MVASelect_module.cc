@@ -29,7 +29,7 @@
 #include "larcoreobj/SummaryData/POTSummary.h"
 #include "dune/FDSensOpt/MVAAlg/MVAAlg.h"
 
-#include "dune/FDSensOpt/MVASelectPID.h"
+#include "dune/FDSensOpt/FDSensOptData/MVASelectPID.h"
 
 #include "TTree.h"
 #include "TH1D.h"

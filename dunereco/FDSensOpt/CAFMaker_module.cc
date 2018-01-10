@@ -27,8 +27,8 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCFlux.h"
 #include "larcoreobj/SummaryData/POTSummary.h"
-#include "dune/FDSensOpt/MVASelectPID.h"
-#include "dune/FDSensOpt/EnergyRecoOutput.h"
+#include "dune/FDSensOpt/FDSensOptData/MVASelectPID.h"
+#include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 #include "dune/CVN/func/InteractionType.h"
 #include "dune/CVN/func/Result.h"
 
