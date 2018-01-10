@@ -6,7 +6,8 @@
    <version ClassVersion="10" checksum="915776737"/>
   </class>
 
-  <class name="dunemva::EnergyRecoOutput" ClassVersion="11" >
+  <class name="dune::EnergyRecoOutput" ClassVersion="12" >
+   <version ClassVersion="12" checksum="3610461455"/>
    <version ClassVersion="11" checksum="211977879"/>
    <version ClassVersion="10" checksum="9234219062"/>
   </class>
@@ -14,8 +15,8 @@
   <class name="art::Ptr<dunemva::MVASelectPID>" />
   <class name="art::Wrapper<dunemva::MVASelectPID >" />
 
-  <class name="art::Ptr<dunemva::EnergyRecoOutput>" />
-  <class name="art::Wrapper<dunemva::EnergyRecoOutput >" />
+  <class name="art::Ptr<dune::EnergyRecoOutput>" />
+  <class name="art::Wrapper<dune::EnergyRecoOutput >" />
 </lcgdict>
 
 

@@ -59,7 +59,7 @@ constexpr int kMaxTrack      = 1000;  //maximum number of tracks
 constexpr int kMaxShower     = 1000;  //maximum number of showers
 constexpr int kMaxHits       = 40000; //maximum number of hits;
 
-namespace dunemva {
+namespace dune {
 
   class EnergyReco : public art::EDProducer {
 
@@ -124,12 +124,12 @@ namespace dunemva {
   EnergyReco::EnergyReco(fhicl::ParameterSet const& pset)
     : fCaloAlg (pset.get<fhicl::ParameterSet>("CalorimetryAlg"))
   {
-    produces<dunemva::EnergyRecoOutput>();
+    produces<dune::EnergyRecoOutput>();
 
     this->reconfigure(pset);
   }
 
-  dunemva::EnergyReco::~EnergyReco(){}
+  dune::EnergyReco::~EnergyReco(){}
 
   //------------------------------------------------------------------------------
   void EnergyReco::reconfigure(fhicl::ParameterSet const& pset) 
@@ -170,7 +170,7 @@ namespace dunemva {
   //------------------------------------------------------------------------------
   void EnergyReco::produce(art::Event& evt)
   {
-    std::unique_ptr<dunemva::EnergyRecoOutput> erecoout = std::make_unique<EnergyRecoOutput>();
+    std::unique_ptr<dune::EnergyRecoOutput> erecoout = std::make_unique<EnergyRecoOutput>();
 
     this->PrepareEvent(evt);
 

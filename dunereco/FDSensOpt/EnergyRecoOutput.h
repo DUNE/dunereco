@@ -1,7 +1,7 @@
 #ifndef FDSENSOPT_ENERGYRECOOUTPUT_H
 #define FDSENSOPT_ENERGYRECOOUTPUT_H
 
-namespace dunemva
+namespace dune
 {
   class EnergyRecoOutput
   {

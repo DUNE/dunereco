@@ -589,10 +589,10 @@ namespace dunemva {
     art::Handle<std::vector<cvn::Result>> cvnin;
     evt.getByLabel(fCVNLabel, "cvnresult", cvnin);
 
-    art::Handle<dunemva::EnergyRecoOutput> ereconuein;
+    art::Handle<dune::EnergyRecoOutput> ereconuein;
     evt.getByLabel(fEnergyRecoNueLabel, ereconuein);
 
-    art::Handle<dunemva::EnergyRecoOutput> ereconumuin;
+    art::Handle<dune::EnergyRecoOutput> ereconumuin;
     evt.getByLabel(fEnergyRecoNumuLabel, ereconumuin);
 
     fRun = evt.id().run();
