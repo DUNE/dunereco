@@ -101,6 +101,8 @@ namespace dune {
       double fTotalEventCharge;
       bool fLongestTrackContained;
       double fMaxShowerCharge;
+      art::Ptr<recob::Track> fBestTrack;
+      art::Ptr<recob::Shower> fBestShower;
 
       double fGradTrkMomRange;
       double fIntTrkMomRange;
@@ -211,9 +213,14 @@ namespace dune {
 	   corrHadEnergy = (((fTotalEventCharge - fLongestTrackCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntNuMuHadEnExit) / fGradNuMuHadEnExit;
 	   erecoout->trackMomMethod = 0;
 	  }
-        erecoout->fLepLorentzVector.SetE(longestTrackMom);
+        erecoout->fLepLorentzVector.SetPx(longestTrackMom*fBestTrack->VertexDirection().X());
+        erecoout->fLepLorentzVector.SetPy(longestTrackMom*fBestTrack->VertexDirection().Y());
+        erecoout->fLepLorentzVector.SetPz(longestTrackMom*fBestTrack->VertexDirection().Z());
+        double Emu = std::sqrt(longestTrackMom*longestTrackMom+0.1056583745*0.1056583745);
+        erecoout->fLepLorentzVector.SetE(Emu);
+
         erecoout->fHadLorentzVector.SetE(corrHadEnergy);
-        erecoout->fNuLorentzVector.SetE(longestTrackMom + corrHadEnergy);
+        erecoout->fNuLorentzVector.SetE(Emu + corrHadEnergy);
       }
       else{
 	erecoout->recoMethodUsed = 3;
@@ -226,9 +233,13 @@ namespace dune {
       if(fMaxShowerCharge >= 0.0){
         maxShowerEnergy = ((fMaxShowerCharge * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntShwEnergy) / fGradShwEnergy;
         corrHadEnergy = (((fTotalEventCharge - fMaxShowerCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntNuEHadEn) / fGradNuEHadEn;
-        erecoout->fLepLorentzVector.SetE(maxShowerEnergy);
+        erecoout->fLepLorentzVector.SetPx(maxShowerEnergy*fBestShower->Direction().X());
+        erecoout->fLepLorentzVector.SetPy(maxShowerEnergy*fBestShower->Direction().Y());
+        erecoout->fLepLorentzVector.SetPz(maxShowerEnergy*fBestShower->Direction().Z());
+        double Eel = std::sqrt(maxShowerEnergy*maxShowerEnergy+0.0005109989461*0.0005109989461);
+        erecoout->fLepLorentzVector.SetE(Eel);
 	erecoout->fHadLorentzVector.SetE(corrHadEnergy);
-        erecoout->fNuLorentzVector.SetE(maxShowerEnergy + corrHadEnergy);
+        erecoout->fNuLorentzVector.SetE(Eel + corrHadEnergy);
       }
       else{
 	erecoout->recoMethodUsed = 3;
@@ -318,6 +329,7 @@ namespace dune {
       if(tracklist[i]->Length() > fMaxTrackLength){
 	fMaxTrackLength = tracklist[i]->Length();
 	iLongestTrack = i;
+        fBestTrack = tracklist[i];
       }
     }
 
@@ -358,8 +370,10 @@ namespace dune {
               showerCharge += vhit[h]->Integral() * fCaloAlg.LifetimeCorrection(vhit[h]->PeakTime(), t0);
           }
 	}
-	if(showerCharge > fMaxShowerCharge)
+	if(showerCharge > fMaxShowerCharge){
+          fBestShower = shwlist[i];
 	  fMaxShowerCharge = showerCharge;
+        }
       }
     }
   }
