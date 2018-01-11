@@ -35,6 +35,7 @@ dunefd_nuenergyreco:
     IntShwEnergy:            -0.02
     GradNuEHadEn:            0.62
     IntNuEHadEn:             0.02
+    RecombFactor:            0.63
 }
 
 END_PROLOG

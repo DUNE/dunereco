@@ -34,6 +34,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Shower.h"
+#include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h"
 
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
@@ -116,6 +117,7 @@ namespace dune {
       double fIntShwEnergy;
       double fGradNuEHadEn; 
       double fIntNuEHadEn;
+      double fRecombFactor;
   }; // class EnergyReco
 
 
@@ -153,6 +155,7 @@ namespace dune {
     fGradNuEHadEn = pset.get<double>("GradNuEHadEn");
     fIntNuEHadEn = pset.get<double>("IntNuEHadEn");
     fContVolCut = pset.get<double>("ContVolCut");
+    fRecombFactor = pset.get<double>("RecombFactor");
   }
 
 
@@ -195,14 +198,14 @@ namespace dune {
 	       && ((fMaxTrackLength - fIntTrkMomRange) / fGradTrkMomRange) / ((fLongestTrackMCSMom - fIntTrkMomMCS) / fGradTrkMomMCS) < 0.7)           
 	      {
 		longestTrackMom = (fLongestTrackMCSMom - fIntTrkMomMCS) / fGradTrkMomMCS;
-		corrHadEnergy = (((fTotalEventCharge - fLongestTrackCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntNuMuHadEnExit) / fGradNuMuHadEnExit;
+		corrHadEnergy = ((fCaloAlg.ElectronsFromADCArea(fTotalEventCharge - fLongestTrackCharge, 2) * (1.0 / fRecombFactor) / util::kGeVToElectrons) - fIntNuMuHadEnExit) / fGradNuMuHadEnExit;
                 erecoout->trackMomMethod = 0;
                 
 	      }
 	    else
 	      {
                 longestTrackMom = (fMaxTrackLength - fIntTrkMomRange) / fGradTrkMomRange;
-                corrHadEnergy = (((fTotalEventCharge - fLongestTrackCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntNuMuHadEnCont) / fGradNuMuHadEnCont;
+                corrHadEnergy = ((fCaloAlg.ElectronsFromADCArea(fTotalEventCharge - fLongestTrackCharge, 2) * (1.0 / fRecombFactor) / util::kGeVToElectrons) - fIntNuMuHadEnCont) / fGradNuMuHadEnCont;
 		erecoout->trackMomMethod = 1;
 	      }
 	  }
@@ -210,7 +213,7 @@ namespace dune {
 	  {
 	   erecoout->longestTrackContained = 0;
            longestTrackMom = (fLongestTrackMCSMom - fIntTrkMomMCS) / fGradTrkMomMCS;
-	   corrHadEnergy = (((fTotalEventCharge - fLongestTrackCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntNuMuHadEnExit) / fGradNuMuHadEnExit;
+	   corrHadEnergy = ((fCaloAlg.ElectronsFromADCArea(fTotalEventCharge - fLongestTrackCharge, 2) * (1.0 / fRecombFactor) / util::kGeVToElectrons) - fIntNuMuHadEnExit) / fGradNuMuHadEnExit;
 	   erecoout->trackMomMethod = 0;
 	  }
         erecoout->fLepLorentzVector.SetPx(longestTrackMom*fBestTrack->VertexDirection().X());
@@ -224,15 +227,15 @@ namespace dune {
       }
       else{
 	erecoout->recoMethodUsed = 3;
-        erecoout->fNuLorentzVector.SetE(fWirecharge/0.63/4.966e-3*23.6e-9);
+        erecoout->fNuLorentzVector.SetE(fCaloAlg.ElectronsFromADCArea(fWirecharge, 2)/fRecombFactor / util::kGeVToElectrons);
       }
     }
     else if (fRecoMethod == 2){//split event into reco shower with highest charge and hadronic part
       erecoout->recoMethodUsed = 2;
       //at least one reco shower
       if(fMaxShowerCharge >= 0.0){
-        maxShowerEnergy = ((fMaxShowerCharge * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntShwEnergy) / fGradShwEnergy;
-        corrHadEnergy = (((fTotalEventCharge - fMaxShowerCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntNuEHadEn) / fGradNuEHadEn;
+        maxShowerEnergy = ((fCaloAlg.ElectronsFromADCArea(fMaxShowerCharge, 2) * (1.0 / fRecombFactor) / util::kGeVToElectrons) - fIntShwEnergy) / fGradShwEnergy;
+        corrHadEnergy = ((fCaloAlg.ElectronsFromADCArea(fTotalEventCharge - fMaxShowerCharge, 2) * (1.0 / fRecombFactor) / util::kGeVToElectrons) - fIntNuEHadEn) / fGradNuEHadEn;
         erecoout->fLepLorentzVector.SetPx(maxShowerEnergy*fBestShower->Direction().X());
         erecoout->fLepLorentzVector.SetPy(maxShowerEnergy*fBestShower->Direction().Y());
         erecoout->fLepLorentzVector.SetPz(maxShowerEnergy*fBestShower->Direction().Z());
@@ -243,13 +246,13 @@ namespace dune {
       }
       else{
 	erecoout->recoMethodUsed = 3;
-        erecoout->fNuLorentzVector.SetE(fWirecharge/0.63/4.966e-3*23.6e-9);
+        erecoout->fNuLorentzVector.SetE(fCaloAlg.ElectronsFromADCArea(fWirecharge, 2)/fRecombFactor / util::kGeVToElectrons);
         //0.63: recombination factor, 1/4.966e-3: calorimetry constant to convert ADC to number of electrons, Wion = 23.6 eV
       }
     }
     else if (fRecoMethod == 3){//use charges of all hits and convert to energy
       erecoout->recoMethodUsed = 3;
-      erecoout->fNuLorentzVector.SetE(fWirecharge/0.63/4.966e-3*23.6e-9);
+      erecoout->fNuLorentzVector.SetE(fCaloAlg.ElectronsFromADCArea(fWirecharge, 2)/fRecombFactor / util::kGeVToElectrons);
     }
 
     evt.put(std::move(erecoout));
