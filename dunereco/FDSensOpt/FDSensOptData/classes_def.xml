@@ -7,7 +7,7 @@
   </class>
 
   <class name="dune::EnergyRecoOutput" ClassVersion="10" >
-   <version ClassVersion="10" checksum="1120036650"/>
+   <version ClassVersion="10" checksum="2518891177"/>
   </class>
 
   <class name="art::Ptr<dunemva::MVASelectPID>" />
