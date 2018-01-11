@@ -136,6 +136,10 @@ namespace dune {
     // hits and associations with wires and raw digits
     // (with no particular product label)
     recob::HitCollectionCreator::declare_products(*this);
+
+    // will also copy associations of SpacePoints to original hits
+    produces<art::Assns<recob::Hit, recob::SpacePoint>>();
+
     fGeom = &*(art::ServiceHandle<geo::Geometry>());
     fDetProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
@@ -170,6 +174,9 @@ namespace dune {
        channelHitWires.isValid(), // doWireAssns
        channelHitRawDigits.isValid() // doRawDigitAssns
       );
+
+    // here is the copy of associations to hits, based on original hit assns
+    auto assns = std::make_unique<art::Assns<recob::Hit, recob::SpacePoint>>(); 
 
     // all hits in the collection
     std::vector< art::Ptr<recob::Hit> > eventHits;
@@ -219,6 +226,8 @@ namespace dune {
     else if (fMoveLeftovers == "first") { assignFirstAllowedWire(hitToWire, eventHits, unassignedHits);        }
     else                { mf::LogInfo("DisambigFromSpacePoints") << "Remaining undisambiguated hits dropped."; }
 
+    auto const hitPtrMaker = art::PtrMaker<recob::Hit>(evt, *this);
+
     for (auto const & hw : hitToWire)
     {
         size_t key = hw.first;
@@ -227,6 +236,13 @@ namespace dune {
         recob::HitCreator new_hit(*(eventHits[key]), wid);
 
         hcol.emplace_back(new_hit.move(), channelHitWires.at(key), channelHitRawDigits.at(key));
+
+        size_t lastHitIdx = hcol.size() - 1;
+        auto sps = spFromHit.at(eventHits[key].key());
+        for (auto const & spPtr : sps)
+        {
+            assns->addSingle(hitPtrMaker(lastHitIdx), spPtr);
+        }
     }
 
     for (auto const & hws : hitToNWires)
@@ -237,6 +253,13 @@ namespace dune {
             recob::HitCreator new_hit(*(eventHits[key]), wid);
 
             hcol.emplace_back(new_hit.move(), channelHitWires.at(key), channelHitRawDigits.at(key));
+
+            size_t lastHitIdx = hcol.size() - 1;
+            auto sps = spFromHit.at(eventHits[key].key());
+            for (auto const & spPtr : sps)
+            {
+                assns->addSingle(hitPtrMaker(lastHitIdx), spPtr);
+            }
         }
     }
 
@@ -244,6 +267,7 @@ namespace dune {
 
     // put the hit collection and associations into the event
     hcol.put_into(evt);
+    evt.put(std::move(assns));
   }
 
   int DisambigFromSpacePoints::runOnSpacePoints(
