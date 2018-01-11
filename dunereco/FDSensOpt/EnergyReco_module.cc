@@ -281,10 +281,12 @@ namespace dune {
       art::fill_ptr_vector(wirelist, wireListHandle);
 
     // Hits
-    art::Handle< std::vector<recob::Hit> > hitListHandle;
-    std::vector<art::Ptr<recob::Hit> > hitlist;
-    if (evt.getByLabel(fHitsModuleLabel,hitListHandle))
-      art::fill_ptr_vector(hitlist, hitListHandle);
+//    art::Handle< std::vector<recob::Hit> > hitListHandle;
+//    std::vector<art::Ptr<recob::Hit> > hitlist;
+//    if (evt.getByLabel(fHitsModuleLabel,hitListHandle))
+//      art::fill_ptr_vector(hitlist, hitListHandle);
+    auto hitListHandle = evt.getValidHandle<std::vector<recob::Hit>>(fHitsModuleLabel);
+    auto const& hitlist = *hitListHandle;
 
     // Tracks
     art::Handle< std::vector<recob::Track> > trackListHandle;
@@ -320,9 +322,10 @@ namespace dune {
 
     fTotalEventCharge = 0.0;
 
-    for (size_t i = 0; i < hitlist.size(); ++i){
-      if (hitlist[i]->WireID().Plane == 2)
-	fTotalEventCharge += hitlist[i]->Integral() * fCaloAlg.LifetimeCorrection(hitlist[i]->PeakTime(), t0);
+    for (recob::Hit const& hit: hitlist) {
+      if (hit.WireID().Plane == 2){
+        fTotalEventCharge += hit.Integral() * fCaloAlg.LifetimeCorrection(hit.PeakTime(), t0);
+      }
     }
 
     fMaxTrackLength = -1.0;
