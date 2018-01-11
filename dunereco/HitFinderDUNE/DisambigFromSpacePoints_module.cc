@@ -237,11 +237,11 @@ namespace dune {
 
         hcol.emplace_back(new_hit.move(), channelHitWires.at(key), channelHitRawDigits.at(key));
 
-        size_t lastHitIdx = hcol.size() - 1;
+        auto hitPtr = hitPtrMaker(hcol.size() - 1);
         auto sps = spFromHit.at(eventHits[key].key());
         for (auto const & spPtr : sps)
         {
-            assns->addSingle(hitPtrMaker(lastHitIdx), spPtr);
+            assns->addSingle(hitPtr, spPtr);
         }
     }
 
@@ -254,11 +254,11 @@ namespace dune {
 
             hcol.emplace_back(new_hit.move(), channelHitWires.at(key), channelHitRawDigits.at(key));
 
-            size_t lastHitIdx = hcol.size() - 1;
+            auto hitPtr = hitPtrMaker(hcol.size() - 1);
             auto sps = spFromHit.at(eventHits[key].key());
             for (auto const & spPtr : sps)
             {
-                assns->addSingle(hitPtrMaker(lastHitIdx), spPtr);
+                assns->addSingle(hitPtr, spPtr);
             }
         }
     }
