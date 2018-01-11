@@ -6,10 +6,8 @@
    <version ClassVersion="10" checksum="915776737"/>
   </class>
 
-  <class name="dune::EnergyRecoOutput" ClassVersion="12" >
-   <version ClassVersion="12" checksum="3610461455"/>
-   <version ClassVersion="11" checksum="211977879"/>
-   <version ClassVersion="10" checksum="9234219062"/>
+  <class name="dune::EnergyRecoOutput" ClassVersion="10" >
+   <version ClassVersion="10" checksum="1120036650"/>
   </class>
 
   <class name="art::Ptr<dunemva::MVASelectPID>" />

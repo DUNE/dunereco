@@ -47,6 +47,7 @@
 #include "TTree.h"
 #include "TH1D.h"
 #include "TH2D.h"
+#include "TLorentzVector.h"
 
 #include "PDG/PDGCodes.h"
 #include "PDG/PDGUtils.h"
@@ -181,9 +182,6 @@ namespace dune {
     erecoout->recoMethodUsed = -1;
     erecoout->longestTrackContained = -1;
     erecoout->trackMomMethod = -1;
-    erecoout->nuEnergy = 0.0;
-    erecoout->lepEnergy = 0.0;
-    erecoout->hadEnergy = 0.0;
 
     if (fRecoMethod == 1){//split event into longest reco track and hadronic part
       erecoout->recoMethodUsed = 1;
@@ -217,13 +215,13 @@ namespace dune {
 	   corrHadEnergy = (((fTotalEventCharge - fLongestTrackCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntNuMuHadEnExit) / fGradNuMuHadEnExit;
 	   erecoout->trackMomMethod = 0;
 	  }
-        erecoout->lepEnergy = longestTrackMom;
-        erecoout->hadEnergy = corrHadEnergy;
-        erecoout->nuEnergy = longestTrackMom + corrHadEnergy;
+        erecoout->fLepLorentzVector.SetE(longestTrackMom);
+        erecoout->fHadLorentzVector.SetE(corrHadEnergy);
+        erecoout->fNuLorentzVector.SetE(longestTrackMom + corrHadEnergy);
       }
       else{
 	erecoout->recoMethodUsed = 3;
-        erecoout->nuEnergy = fWirecharge/0.63/4.966e-3*23.6e-9; 
+        erecoout->fNuLorentzVector.SetE(fWirecharge/0.63/4.966e-3*23.6e-9);
       }
     }
     else if (fRecoMethod == 2){//split event into reco shower with highest charge and hadronic part
@@ -232,19 +230,19 @@ namespace dune {
       if(fMaxShowerCharge >= 0.0){
         maxShowerEnergy = ((fMaxShowerCharge * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntShwEnergy) / fGradShwEnergy;
         corrHadEnergy = (((fTotalEventCharge - fMaxShowerCharge) * (1.0 / 0.63) * (23.6e-9 / 4.966e-3)) - fIntNuEHadEn) / fGradNuEHadEn;
-        erecoout->lepEnergy = maxShowerEnergy;
-	erecoout->hadEnergy = corrHadEnergy;
-        erecoout->nuEnergy = maxShowerEnergy + corrHadEnergy;
+        erecoout->fLepLorentzVector.SetE(maxShowerEnergy);
+	erecoout->fHadLorentzVector.SetE(corrHadEnergy);
+        erecoout->fNuLorentzVector.SetE(maxShowerEnergy + corrHadEnergy);
       }
       else{
 	erecoout->recoMethodUsed = 3;
-        erecoout->nuEnergy = fWirecharge/0.63/4.966e-3*23.6e-9; 
+        erecoout->fNuLorentzVector.SetE(fWirecharge/0.63/4.966e-3*23.6e-9);
         //0.63: recombination factor, 1/4.966e-3: calorimetry constant to convert ADC to number of electrons, Wion = 23.6 eV
       }
     }
     else if (fRecoMethod == 3){//use charges of all hits and convert to energy
       erecoout->recoMethodUsed = 3;
-      erecoout->nuEnergy = fWirecharge/0.63/4.966e-3*23.6e-9;
+      erecoout->fNuLorentzVector.SetE(fWirecharge/0.63/4.966e-3*23.6e-9);
     }
 
     evt.put(std::move(erecoout));

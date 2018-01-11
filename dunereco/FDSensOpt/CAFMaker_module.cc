@@ -638,13 +638,13 @@ namespace dunemva {
       fTrkcosz        = pidin->trkcosz;
       fET             = pidin->et;
 
-      fErecoNue          = ereconuein->nuEnergy;
-      fRecoLepEnNue      = ereconuein->lepEnergy;
-      fRecoHadEnNue      = ereconuein->hadEnergy;
+      fErecoNue          = ereconuein->fNuLorentzVector.E();
+      fRecoLepEnNue      = ereconuein->fLepLorentzVector.E();
+      fRecoHadEnNue      = ereconuein->fHadLorentzVector.E();
       fRecoMethodNue     = ereconuein->recoMethodUsed;
-      fErecoNumu         = ereconumuin->nuEnergy;
-      fRecoLepEnNumu     = ereconumuin->lepEnergy;
-      fRecoHadEnNumu     = ereconumuin->hadEnergy;
+      fErecoNumu         = ereconumuin->fNuLorentzVector.E();
+      fRecoLepEnNumu     = ereconumuin->fLepLorentzVector.E();
+      fRecoHadEnNumu     = ereconumuin->fHadLorentzVector.E();
       fRecoMethodNumu    = ereconumuin->recoMethodUsed;
       fLongestTrackContNumu  = ereconumuin->longestTrackContained;
       fTrackMomMethodNumu    = ereconumuin->trackMomMethod;
