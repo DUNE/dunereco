@@ -56,10 +56,6 @@
 #include "EVGCore/EventRecord.h"
 #include "GHEP/GHepParticle.h"
 
-constexpr int kMaxTrack      = 1000;  //maximum number of tracks
-constexpr int kMaxShower     = 1000;  //maximum number of showers
-constexpr int kMaxHits       = 40000; //maximum number of hits;
-
 namespace dune {
 
   class EnergyReco : public art::EDProducer {
@@ -310,7 +306,7 @@ namespace dune {
 
     fTotalEventCharge = 0.0;
 
-    for (int i = 0; i < std::min(int(hitlist.size()),kMaxHits); ++i){
+    for (size_t i = 0; i < hitlist.size(); ++i){
       if (hitlist[i]->WireID().Plane == 2)
 	fTotalEventCharge += hitlist[i]->Integral() * fCaloAlg.LifetimeCorrection(hitlist[i]->PeakTime(), t0);
     }
@@ -318,7 +314,7 @@ namespace dune {
     fMaxTrackLength = -1.0;
     int iLongestTrack = -1;
 
-    for (int i = 0; i < std::min(ntracks, kMaxTrack); ++i){
+    for (int i = 0; i < ntracks; ++i){
       if(tracklist[i]->Length() > fMaxTrackLength){
 	fMaxTrackLength = tracklist[i]->Length();
 	iLongestTrack = i;
@@ -331,19 +327,17 @@ namespace dune {
 
     trkf::TrackMomentumCalculator TrkMomCalc;
 
-    if(iLongestTrack >= 0 && iLongestTrack <= ntracks-1 && iLongestTrack <= kMaxTrack-1){
+    if(iLongestTrack >= 0 && iLongestTrack <= ntracks-1 ){
       if (fmth.isValid()){
 	std::vector< art::Ptr<recob::Hit> > vhit = fmth.at(iLongestTrack);
 	for (size_t h = 0; h < vhit.size(); ++h){
-	  if (vhit[h].key()<kMaxHits){
-	    if (vhit[h]->WireID().Plane == 2){
-	      fLongestTrackCharge += vhit[h]->Integral() * fCaloAlg.LifetimeCorrection(vhit[h]->PeakTime(), t0);
-	      std::vector<art::Ptr<recob::SpacePoint> > spts = fmhs.at(vhit[h].key());
-	      if (spts.size()){
-		if (!insideContVol(spts[0]->XYZ()[0], spts[0]->XYZ()[1], spts[0]->XYZ()[2]))
-		  fLongestTrackContained = false;
-	      }
-	    }
+          if (vhit[h]->WireID().Plane == 2){
+            fLongestTrackCharge += vhit[h]->Integral() * fCaloAlg.LifetimeCorrection(vhit[h]->PeakTime(), t0);
+            std::vector<art::Ptr<recob::SpacePoint> > spts = fmhs.at(vhit[h].key());
+            if (spts.size()){
+              if (!insideContVol(spts[0]->XYZ()[0], spts[0]->XYZ()[1], spts[0]->XYZ()[2]))
+                fLongestTrackContained = false;
+            }
 	  }
 	}
       }
@@ -355,16 +349,14 @@ namespace dune {
 
     if (shwListHandle.isValid()){
       art::FindManyP<recob::Hit> fmsh(shwListHandle, evt, fShowerModuleLabel);
-      for (int i = 0; i<std::min(int(shwlist.size()),kMaxShower); ++i){
+      for (size_t i = 0; i<shwlist.size(); ++i){
 	showerCharge = 0.0;
 	if (fmsh.isValid()){
 	  std::vector< art::Ptr<recob::Hit> > vhit = fmsh.at(i);
 	  for (size_t h = 0; h < vhit.size(); ++h){
-	    if (vhit[h].key()<kMaxHits){
-	      if (vhit[h]->WireID().Plane == 2)
-		showerCharge += vhit[h]->Integral() * fCaloAlg.LifetimeCorrection(vhit[h]->PeakTime(), t0);
-	    }
-	  }
+            if (vhit[h]->WireID().Plane == 2)
+              showerCharge += vhit[h]->Integral() * fCaloAlg.LifetimeCorrection(vhit[h]->PeakTime(), t0);
+          }
 	}
 	if(showerCharge > fMaxShowerCharge)
 	  fMaxShowerCharge = showerCharge;
