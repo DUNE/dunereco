@@ -14,6 +14,7 @@
   <class name="art::Wrapper<dunemva::MVASelectPID >" />
 
   <class name="art::Ptr<dune::EnergyRecoOutput>" />
+  <class name="art::Wrapper<dune::EnergyRecoOutput>" />
 
   <class name="std::pair< art::Ptr<dune::EnergyRecoOutput>, art::Ptr<recob::Track>      >"    />
   <class name="std::pair< art::Ptr<dune::EnergyRecoOutput>, art::Ptr<recob::Shower>      >"    />

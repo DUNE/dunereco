@@ -127,8 +127,8 @@ namespace dune {
     : fCaloAlg (pset.get<fhicl::ParameterSet>("CalorimetryAlg"))
   {
     produces<dune::EnergyRecoOutput>();
-    produces<art::Assns<dune::EnergyRecoOutput, recob::Track>>();
-    produces<art::Assns<dune::EnergyRecoOutput, recob::Shower>>();
+//    produces<art::Assns<dune::EnergyRecoOutput, recob::Track>>();
+//    produces<art::Assns<dune::EnergyRecoOutput, recob::Shower>>();
     this->reconfigure(pset);
   }
 
@@ -175,9 +175,9 @@ namespace dune {
   void EnergyReco::produce(art::Event& evt)
   {
     auto erecoout = std::make_unique<dune::EnergyRecoOutput>();
-    auto assnstrk = std::make_unique<art::Assns<dune::EnergyRecoOutput, recob::Track>>();
-    auto assnsshw = std::make_unique<art::Assns<dune::EnergyRecoOutput, recob::Shower>>();
-    art::PtrMaker<dune::EnergyRecoOutput> makeEnergyRecoOutputPtr(evt, *this);
+//    auto assnstrk = std::make_unique<art::Assns<dune::EnergyRecoOutput, recob::Track>>();
+//    auto assnsshw = std::make_unique<art::Assns<dune::EnergyRecoOutput, recob::Shower>>();
+//    art::PtrMaker<dune::EnergyRecoOutput> makeEnergyRecoOutputPtr(evt, *this);
     this->PrepareEvent(evt);
 
     double longestTrackMom = 0.0;
@@ -259,12 +259,12 @@ namespace dune {
       erecoout->fNuLorentzVector.SetE(fCaloAlg.ElectronsFromADCArea(fWirecharge, 2)/fRecombFactor / util::kGeVToElectrons);
     }
 
-    art::Ptr<dune::EnergyRecoOutput> EnergyRecoOutputPtr = makeEnergyRecoOutputPtr(0);
-    if (fBestTrack.isAvailable()) assnstrk->addSingle(EnergyRecoOutputPtr, fBestTrack);
-    if (fBestShower.isAvailable()) assnsshw->addSingle(EnergyRecoOutputPtr, fBestShower);
+//    art::Ptr<dune::EnergyRecoOutput> EnergyRecoOutputPtr = makeEnergyRecoOutputPtr(0);
+//    if (fBestTrack.isAvailable()) assnstrk->addSingle(EnergyRecoOutputPtr, fBestTrack);
+//    if (fBestShower.isAvailable()) assnsshw->addSingle(EnergyRecoOutputPtr, fBestShower);
     evt.put(std::move(erecoout));
-    evt.put(std::move(assnstrk));
-    evt.put(std::move(assnsshw));
+//    evt.put(std::move(assnstrk));
+//    evt.put(std::move(assnsshw));
   }
 
   //------------------------------------------------------------------------------
