@@ -1,0 +1,41 @@
+#include "calorimetry_dune10kt.fcl"
+#include "trackfinderalgorithms.fcl"
+
+BEGIN_PROLOG
+
+dunefd_nuenergyreco:
+{
+    module_type:             "EnergyReco"
+
+    # RecoMethod is method of neutrino energy reconstruction 
+    # 1 Split event into longest reco track and hadronic part, suitable for numu CC events (method 3 is used for events with no reco track)
+    # 2 Split event into reco shower with highest charge and hadronic part, suitable for nue CC events (method 3 is used for events with no reco shower)
+    # 3 Use charges of all hits and convert to energy, suitable for NC events, numu CC events with no reco track or nue CC events with no reco shower
+    RecoMethod:              1
+
+    WireModuleLabel:         "caldata"
+    HitsModuleLabel:         "linecluster"
+    TrackModuleLabel:        "pmtrack"
+    ShowerModuleLabel:       "emshower"
+    CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
+
+    # If a track has one or more hits within a distance ContVolCut cm of edge of detector, it is exiting; otherwise it is contained
+    ContVolCut:              20.0
+
+    # Gradients (Grad...) and intercepts (Int...) of calibration and corrections
+    GradTrkMomRange:         431.0
+    IntTrkMomRange:          -40.7
+    GradTrkMomMCS:           0.89
+    IntTrkMomMCS:            0.20
+    GradNuMuHadEnCont:       0.76
+    IntNuMuHadEnCont:        -0.07
+    GradNuMuHadEnExit:	     0.86
+    IntNuMuHadEnExit:        -0.08
+    GradShwEnergy:           0.985
+    IntShwEnergy:            -0.02
+    GradNuEHadEn:            0.62
+    IntNuEHadEn:             0.02
+    RecombFactor:            0.63
+}
+
+END_PROLOG
