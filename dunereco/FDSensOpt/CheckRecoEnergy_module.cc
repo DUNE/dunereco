@@ -194,14 +194,14 @@ namespace dune {
         fFitEnResNue.push_back(gausEnResNue);
       }
 
-    fGrResEnNumuCont = tfs->make<TGraphErrors>((int)(fNumuContBinEdge.size()));
-    fGrSigEnNumuCont = tfs->make<TGraphErrors>((int)(fNumuContBinEdge.size()));
+    fGrResEnNumuCont = tfs->makeAndRegister<TGraphErrors>("fGrResEnNumuCont", "fGrResEnNumuCont", (int)(fNumuContBinEdge.size())-1);
+    fGrSigEnNumuCont = tfs->makeAndRegister<TGraphErrors>("fGrSigEnNumuCont", "fGrSigEnNumuCont", (int)(fNumuContBinEdge.size())-1);
 
-    fGrResEnNumuExit = tfs->make<TGraphErrors>((int)(fNumuExitBinEdge.size()));
-    fGrSigEnNumuExit = tfs->make<TGraphErrors>((int)(fNumuExitBinEdge.size()));
+    fGrResEnNumuExit = tfs->makeAndRegister<TGraphErrors>("fGrResEnNumuExit", "fGrResEnNumuExit", (int)(fNumuExitBinEdge.size())-1);
+    fGrSigEnNumuExit = tfs->makeAndRegister<TGraphErrors>("fGrSigEnNumuExit", "fGrSigEnNumuExit", (int)(fNumuExitBinEdge.size())-1);
 
-    fGrResEnNue = tfs->make<TGraphErrors>((int)(fNueBinEdge.size()));
-    fGrSigEnNue = tfs->make<TGraphErrors>((int)(fNueBinEdge.size()));
+    fGrResEnNue = tfs->makeAndRegister<TGraphErrors>("fGrResEnNue", "fGrResEnNue", (int)(fNueBinEdge.size())-1);
+    fGrSigEnNue = tfs->makeAndRegister<TGraphErrors>("fGrSigEnNue", "fGrSigEnNue", (int)(fNueBinEdge.size())-1);
 
     return;
   }
