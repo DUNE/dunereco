@@ -214,10 +214,10 @@ namespace dune {
   void CheckRecoEnergy::analyze(art::Event const & evt)
   {
     art::Handle<dune::EnergyRecoOutput> ereconuein;
-    evt.getByLabel(fEnergyRecoNueLabel, ereconuein);
+    if (!evt.getByLabel(fEnergyRecoNueLabel, ereconuein)) return;
 
     art::Handle<dune::EnergyRecoOutput> ereconumuin;
-    evt.getByLabel(fEnergyRecoNumuLabel, ereconumuin);
+    if (!evt.getByLabel(fEnergyRecoNumuLabel, ereconumuin)) return;
 
     fRun = evt.id().run();
     fSubrun = evt.id().subRun();
