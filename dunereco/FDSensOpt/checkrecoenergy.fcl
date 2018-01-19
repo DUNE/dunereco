@@ -1,0 +1,25 @@
+#include "calorimetry_dune10kt.fcl"
+#include "trackfinderalgorithms.fcl"
+
+BEGIN_PROLOG
+
+dunefd_checkrecoenergy:
+{
+    module_type:             "CheckRecoEnergy"
+
+    EnergyRecoNueLabel:      "energyreconue"
+    EnergyRecoNumuLabel:     "energyreconumu"
+
+    # Dimensions of fiducial volume
+    FidVolXMax:               310.0
+    FidVolYMax:               550.0
+    FidVolZMin:               50.0
+    FidVolZMax:               1250.0
+
+    # Bin edges for plots of energy resolution as function of true energy
+    NumuContBinEdge:          [0.0, 1.5, 2.0, 2.5, 3.0, 8.0]
+    NumuExitBinEdge:  	      [0.0, 2.0, 2.5, 3.0, 3.5, 8.0]
+    NueBinEdge:  	      [0.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 8.0]
+}
+
+END_PROLOG

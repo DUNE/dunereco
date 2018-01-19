@@ -55,6 +55,7 @@ namespace dune {
         fhicl::Atom<art::InputTag> SpModuleLabel { Name("SpModuleLabel"), Comment("SpacePointSolver label.") };
         fhicl::Sequence<size_t> ExcludeTPCs { Name("ExcludeTPCs"), Comment("TPC inndexes where hits are not allowed.") };
         fhicl::Atom<bool> UseNeighbors { Name("UseNeighbors"), Comment("Use neighboring hits to complete hits unresolved with spacepoints.") };
+        fhicl::Atom<size_t> NumNeighbors { Name("NumNeighbors"), Comment("Number of neighboring hits to complete hits unresolved with spacepoints.") };
         fhicl::Atom<float> MaxDistance { Name("MaxDistance"), Comment("Distance [cm] used to complete hits unresolved with spacepoints.") };
         fhicl::Atom<std::string> MoveLeftovers { Name("MoveLeftovers"), Comment("Mode of dealing with undisambiguated hits.") };
         fhicl::Atom<bool> MonitoringPlots { Name("MonitoringPlots"), Comment("Create histograms of no. of unresolved hits at eacch stage, per plane.") };
@@ -107,6 +108,7 @@ namespace dune {
 
     const bool fMonitoringPlots;
     const bool fUseNeighbors;
+    const size_t fNumNeighbors;
     const float fMaxDistance;
     const std::string fMoveLeftovers;
     const std::vector< size_t > fExcludeTPCs;
@@ -118,16 +120,26 @@ namespace dune {
     fTree(0),
     fMonitoringPlots(config().MonitoringPlots()),
     fUseNeighbors(config().UseNeighbors()),
+    fNumNeighbors(config().NumNeighbors()),
     fMaxDistance(config().MaxDistance()),
     fMoveLeftovers(config().MoveLeftovers()),
     fExcludeTPCs(config().ExcludeTPCs()),
     fHitModuleLabel(config().HitModuleLabel()),
     fSpModuleLabel(config().SpModuleLabel())
   {
+    if (fNumNeighbors < 1)
+    {
+        throw cet::exception("DisambigFromSpacePoints") << "NumNeighbors should be at least 1." << std::endl;
+    }
+
     // let HitCollectionCreator declare that we are going to produce
     // hits and associations with wires and raw digits
     // (with no particular product label)
     recob::HitCollectionCreator::declare_products(*this);
+
+    // will also copy associations of SpacePoints to original hits
+    produces<art::Assns<recob::Hit, recob::SpacePoint>>();
+
     fGeom = &*(art::ServiceHandle<geo::Geometry>());
     fDetProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
@@ -162,6 +174,9 @@ namespace dune {
        channelHitWires.isValid(), // doWireAssns
        channelHitRawDigits.isValid() // doRawDigitAssns
       );
+
+    // here is the copy of associations to hits, based on original hit assns
+    auto assns = std::make_unique<art::Assns<recob::Hit, recob::SpacePoint>>(); 
 
     // all hits in the collection
     std::vector< art::Ptr<recob::Hit> > eventHits;
@@ -203,13 +218,15 @@ namespace dune {
 
     if (fUseNeighbors)
     {
-        n = resolveUnassigned(hitToWire, eventHits, indHits, unassignedHits, 2);
+        n = resolveUnassigned(hitToWire, eventHits, indHits, unassignedHits, fNumNeighbors);
         mf::LogInfo("DisambigFromSpacePoints") << n << " hits undisambiguated by neighborhood.";
     }
 
     if (fMoveLeftovers == "repeat")     { assignEveryAllowedWire(hitToNWires, eventHits, unassignedHits);      }
     else if (fMoveLeftovers == "first") { assignFirstAllowedWire(hitToWire, eventHits, unassignedHits);        }
     else                { mf::LogInfo("DisambigFromSpacePoints") << "Remaining undisambiguated hits dropped."; }
+
+    auto const hitPtrMaker = art::PtrMaker<recob::Hit>(evt, *this);
 
     for (auto const & hw : hitToWire)
     {
@@ -219,6 +236,13 @@ namespace dune {
         recob::HitCreator new_hit(*(eventHits[key]), wid);
 
         hcol.emplace_back(new_hit.move(), channelHitWires.at(key), channelHitRawDigits.at(key));
+
+        auto hitPtr = hitPtrMaker(hcol.size() - 1);
+        auto sps = spFromHit.at(eventHits[key].key());
+        for (auto const & spPtr : sps)
+        {
+            assns->addSingle(hitPtr, spPtr);
+        }
     }
 
     for (auto const & hws : hitToNWires)
@@ -229,6 +253,13 @@ namespace dune {
             recob::HitCreator new_hit(*(eventHits[key]), wid);
 
             hcol.emplace_back(new_hit.move(), channelHitWires.at(key), channelHitRawDigits.at(key));
+
+            auto hitPtr = hitPtrMaker(hcol.size() - 1);
+            auto sps = spFromHit.at(eventHits[key].key());
+            for (auto const & spPtr : sps)
+            {
+                assns->addSingle(hitPtr, spPtr);
+            }
         }
     }
 
@@ -236,6 +267,7 @@ namespace dune {
 
     // put the hit collection and associations into the event
     hcol.put_into(evt);
+    evt.put(std::move(assns));
   }
 
   int DisambigFromSpacePoints::runOnSpacePoints(
@@ -350,7 +382,6 @@ namespace dune {
 
         const float dwMax = fMaxDistance / fGeom->TPC(0, 0).Plane(plane).WirePitch(); // max distance in wires to look for neighbors
         const float ddMax = dwMax * fGeom->TPC(0, 0).Plane(plane).WirePitch() / std::fabs(fDetProp->GetXTicksCoefficient(0, 0));
-        const float maxDValue = 1000;
 
         float bestScore = 0;
         geo::WireID bestId;
@@ -365,7 +396,8 @@ namespace dune {
 
             const float wirePitch = fGeom->TPC(tpc, cryo).Plane(plane).WirePitch();
             const float driftPitch = std::fabs(fDetProp->GetXTicksCoefficient(tpc, cryo));
-        
+
+            float maxDValue = fMaxDistance*fMaxDistance;
             std::vector<float> distBuff(nNeighbors, maxDValue); // distance to n closest hits
             const auto & keys = allIndHits[cryo][tpc][plane];
             for (const size_t keyInd : keys)
