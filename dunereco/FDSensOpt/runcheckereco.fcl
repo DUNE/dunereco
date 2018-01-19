@@ -1,0 +1,39 @@
+#include "services_dune.fcl"
+#include "mvamodule.fcl"
+#include "checkrecoenergy.fcl"
+#include "resourcetracking_services.fcl"
+
+process_name: CheckEReco
+
+
+services:
+{
+  TFileService: { fileName: "CheckEReco.root" }
+  @table::standard_resourcetrackers
+  @table::dunefd_simulation_services
+}
+
+
+source:
+{
+  module_type: RootInput
+  maxEvents:   -1
+}
+
+
+physics:
+{
+ analyzers:{
+   runcheckereco:  @local::dunefd_checkrecoenergy
+ }
+
+ ana:           [ runcheckereco ]
+ trigger_paths: [     ]
+ end_paths:     [ ana ]
+}
+
+
+services.Geometry: @local::dune10kt_workspace_geo
+services.Geometry.GDML: "dune10kt_v1_1x2x6.gdml"
+
+
