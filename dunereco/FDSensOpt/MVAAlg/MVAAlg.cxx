@@ -106,8 +106,12 @@ dunemva::MVAAlg::MVAAlg( fhicl::ParameterSet const& p )
 
 
     fMVAMethod =p.get< std::string >("MVAMethod");
+
+    std::string weightFileFull;
     fWeightFile=p.get< std::string >("WeightFile");
-    fReader.BookMVA(fMVAMethod, fWeightFile);
+    cet::search_path sp("FW_SEARCH_PATH");
+    sp.find_file(fWeightFile, weightFileFull);
+    fReader.BookMVA(fMVAMethod, weightFileFull);
 
   }
 
@@ -280,7 +284,6 @@ void dunemva::MVAAlg::reconfigure(fhicl::ParameterSet const& p){
   fSelect                 =   p.get< std::string >("Select");
   fBeamMode               =   p.get< std::string >("BeamMode","FHC");
   fFidVolCut              =   p.get< double      >("FidVolCut");
-  fContVolCut             =   p.get< double      >("ContVolCut");
 }
 
 //--------------------------------------------------------------------------------
@@ -1136,8 +1139,6 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
   taulife = detprop->ElectronLifetime();
   isdata = evt.isRealData();
 
-  double t0 = detprop->TriggerOffset();
-
   // * Raw Digits
   art::Handle<std::vector<raw::RawDigit> > rawListHandle;
   std::vector<art::Ptr<raw::RawDigit> > rawlist;
@@ -1479,71 +1480,6 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
     }
   }
 
-  //reco neutrino energy information
-  totalEventCharge = 0.0;
-
-  for (int i = 0; i < nhits && i < kMaxHits ; ++i){
-    if (hitlist[i]->WireID().Plane == 2)
-      totalEventCharge += hitlist[i]->Integral() * fCalorimetryAlg.LifetimeCorrection(hitlist[i]->PeakTime(), t0);
-  }
-
-  maxTrackLength = -1.0;
-  int iLongestTrack = -1;
-
-  for (int i=0; i<std::min(int(tracklist.size()),kMaxTrack);++i){
-    if(tracklist[i]->Length() > maxTrackLength){
-      maxTrackLength = tracklist[i]->Length();
-      iLongestTrack = i;
-    }
-  }
-
-  longestTrackCharge = 0.0;
-  longestTrackMCSMom = -1.0;
-  longestTrackContained = true;
-
-  int ntracks = tracklist.size();
-  trkf::TrackMomentumCalculator TrkMomCalc;
-
-  if(iLongestTrack >= 0 && iLongestTrack <= ntracks-1 && iLongestTrack <= kMaxTrack-1){
-    if (fmth.isValid()){
-      std::vector< art::Ptr<recob::Hit> > vhit = fmth.at(iLongestTrack);
-      for (size_t h = 0; h < vhit.size(); ++h){
-        if (vhit[h].key()<kMaxHits){
-          if (vhit[h]->WireID().Plane == 2){
-            longestTrackCharge += vhit[h]->Integral() * fCalorimetryAlg.LifetimeCorrection(vhit[h]->PeakTime(), t0);
-            std::vector<art::Ptr<recob::SpacePoint> > spts = fmhs.at(vhit[h].key());
-            if (spts.size()){
-              if (!insideContVol(spts[0]->XYZ()[0], spts[0]->XYZ()[1], spts[0]->XYZ()[2]))
-                longestTrackContained = false;
-            }
-          }
-        }
-      }
-    }
-    longestTrackMCSMom = TrkMomCalc.GetMomentumMultiScatterChi2(tracklist[iLongestTrack]);
-  }
-
-  maxShowerCharge = -1.0;
-  double showerCharge;
-
-  if (shwListHandle.isValid()){
-    art::FindManyP<recob::Hit> fmsh(shwListHandle, evt, fShowerModuleLabel);
-    for (int i = 0; i<std::min(int(shwlist.size()),kMaxShower); ++i){
-      showerCharge = 0.0;
-      if (fmsh.isValid()){
-        std::vector< art::Ptr<recob::Hit> > vhit = fmsh.at(i);
-        for (size_t h = 0; h < vhit.size(); ++h){
-          if (vhit[h].key()<kMaxHits){
-            if (vhit[h]->WireID().Plane == 2)
-              showerCharge += vhit[h]->Integral() * fCalorimetryAlg.LifetimeCorrection(vhit[h]->PeakTime(), t0);
-          }
-        }
-      }
-      if(showerCharge > maxShowerCharge)
-        maxShowerCharge = showerCharge;
-    }
-  }
-
   // flash information
   flash_total = flashlist.size();
   for ( int f = 0; f < std::min(flash_total,kMaxHits); ++f ) {
@@ -1813,59 +1749,6 @@ bool dunemva::MVAAlg::insideFidVol(const double posX, const double posY, const d
   }
 
   return inside;
-}
-
-bool dunemva::MVAAlg::insideContVol(const double posX, const double posY, const double posZ)
-{
-
-  double vtx[3] = {posX, posY, posZ};
-  bool inside = false;
-
-  geo::TPCID idtpc = fGeom->FindTPCAtPosition(vtx);
-
-  if (fGeom->HasTPC(idtpc))
-  {
-    const geo::TPCGeo& tpcgeo = fGeom->GetElement(idtpc);
-    double minx = tpcgeo.MinX(); double maxx = tpcgeo.MaxX();
-    double miny = tpcgeo.MinY(); double maxy = tpcgeo.MaxY();
-    double minz = tpcgeo.MinZ(); double maxz = tpcgeo.MaxZ();
-
-    for (size_t c = 0; c < fGeom->Ncryostats(); c++)
-    {
-      const geo::CryostatGeo& cryostat = fGeom->Cryostat(c);
-      for (size_t t = 0; t < cryostat.NTPC(); t++)
-      {
-        const geo::TPCGeo& tpcg = cryostat.TPC(t);
-        if (tpcg.MinX() < minx) minx = tpcg.MinX();
-        if (tpcg.MaxX() > maxx) maxx = tpcg.MaxX();
-        if (tpcg.MinY() < miny) miny = tpcg.MinY();
-        if (tpcg.MaxY() > maxy) maxy = tpcg.MaxY();
-        if (tpcg.MinZ() < minz) minz = tpcg.MinZ();
-        if (tpcg.MaxZ() > maxz) maxz = tpcg.MaxZ();
-      }
-    }
-
-    //x
-    double dista = fabs(minx - posX);
-    double distb = fabs(posX - maxx);
-    if ((posX > minx) && (posX < maxx) &&
-        (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
-    //y
-    dista = fabs(maxy - posY);
-    distb = fabs(posY - miny);
-    if (inside && (posY > miny) && (posY < maxy) &&
-        (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
-    else inside = false;
-    //z
-    dista = fabs(maxz - posZ);
-    distb = fabs(posZ - minz);
-    if (inside && (posZ > minz) && (posZ < maxz) &&
-        (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
-    else inside = false;
-  }
-
-  return inside;
-
 }
 
 void dunemva::MVAAlg::ResetVars(){

@@ -6,7 +6,8 @@ namespace dunemva
   class MVASelectPID
   {
   public:
-    int pdg; ///< What neutrino species are we IDing?
+
+    int selectMode; ///< What neutrino species are we IDing? Use PDG code to identify numu or nue selection.
     double pid; ///< How confident are we?
 
     // Input variables
@@ -45,8 +46,6 @@ namespace dunemva
     float trkcosz;
     float et;
 
-    // Energy output
-    float Ereco;
   };
 }
 
