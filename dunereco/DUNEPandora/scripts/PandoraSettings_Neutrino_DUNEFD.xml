@@ -319,16 +319,6 @@
         <NeutrinoPfoListName>NeutrinoParticles3D</NeutrinoPfoListName>
     </algorithm>
 
-    <!-- TrackShowerAlgorithms-->
-    <algorithm type = "LArTrackParticleBuilding">
-        <PfoListName>MuonParticles3D</PfoListName>
-        <VertexListName>CRVertices3D</VertexListName>
-    </algorithm>
-    <algorithm type = "LArPcaShowerParticleBuilding">
-        <PfoListName>DeltaRayParticles3D</PfoListName>
-        <VertexListName>CRVertices3D</VertexListName>
-    </algorithm>
-
     <!-- Output list management -->
     <algorithm type = "LArPostProcessing">
         <PfoListNames>NeutrinoParticles3D TrackParticles3D ShowerParticles3D</PfoListNames>
