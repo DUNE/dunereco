@@ -144,6 +144,7 @@
     <algorithm type = "LArCutPfoCharacterisation">
         <TrackPfoListName>TrackParticles3D</TrackPfoListName>
         <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
+        <UseThreeDInformation>false</UseThreeDInformation>
         <MaxShowerLengthCut>500.</MaxShowerLengthCut>
         <VertexDistanceRatioCut>500.</VertexDistanceRatioCut>
     </algorithm>
@@ -252,6 +253,7 @@
         <TrackPfoListName>TrackParticles3D</TrackPfoListName>
         <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
         <PostBranchAddition>true</PostBranchAddition>
+        <UseThreeDInformation>false</UseThreeDInformation>
         <MaxShowerLengthCut>500.</MaxShowerLengthCut>
         <VertexDistanceRatioCut>500.</VertexDistanceRatioCut>
         <DTDLWidthRatioCut>0.08</DTDLWidthRatioCut>
