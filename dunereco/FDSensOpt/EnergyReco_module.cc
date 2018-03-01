@@ -69,7 +69,7 @@ namespace dune {
       void beginJob() override;
       void beginSubRun(art::SubRun& sr) override;
       void endSubRun(art::SubRun& sr) override;
-      void reconfigure(fhicl::ParameterSet const& pset) override;
+      void reconfigure(fhicl::ParameterSet const& pset) ;
       void produce(art::Event& evt) override;
 
     private:
