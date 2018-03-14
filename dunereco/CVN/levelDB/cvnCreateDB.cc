@@ -12,7 +12,7 @@
 #include "boost/algorithm/string/predicate.hpp"
 
 // ART/fcl stuff
-#include "art/Utilities/FirstAbsoluteOrLookupWithDotPolicy.h"
+#include "cetlib/filepath_maker.h"
 #include "fhiclcpp/intermediate_table.h"
 #include "fhiclcpp/make_ParameterSet.h"
 #include "fhiclcpp/ParameterSet.h"
@@ -665,7 +665,7 @@ po::variables_map getOptions(int argc, char*  argv[], std::string& config,
 fhicl::ParameterSet getPSet(std::string configPath)
 {
 
-  art::FirstAbsoluteOrLookupWithDotPolicy policy("FHICL_FILE_PATH");
+  cet::filepath_first_absolute_or_lookup_with_dot policy("FHICL_FILE_PATH");
 
   // parse a configuration file; obtain intermediate form
   fhicl::intermediate_table tbl;
