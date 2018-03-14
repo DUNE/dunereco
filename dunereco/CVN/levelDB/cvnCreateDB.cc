@@ -12,7 +12,7 @@
 #include "boost/algorithm/string/predicate.hpp"
 
 // ART/fcl stuff
-#include "cetlib/filepath_maker.h"
+#include "art/Utilities/FirstAbsoluteOrLookupWithDotPolicy.h"
 #include "fhiclcpp/intermediate_table.h"
 #include "fhiclcpp/make_ParameterSet.h"
 #include "fhiclcpp/ParameterSet.h"
@@ -80,7 +80,8 @@ public:
     fRegressionHDF5NameTrain (pset.get<std::string>("RegressionHDF5NameTrain")),
     fRegressionHDF5NameTest (pset.get<std::string>("RegressionHDF5NameTest")),
     fMaxEnergyForLabel (pset.get<float>("MaxEnergyForLabel")),
-    fNEvents (pset.get<unsigned int>("NEvents"))
+    fNEvents (pset.get<unsigned int>("NEvents")),
+    fPlaneLimit (pset.get<unsigned int>("NPlanes"))
   {
     if(!fLabeling.compare("all"))      fLabelingMode = kAll;
     if(!fLabeling.compare("numu"))     fLabelingMode = kNumu;
@@ -120,6 +121,8 @@ public:
   float         fMaxEnergyForLabel;
   /// Limit the number of entries in the tree to consider
   unsigned int  fNEvents;
+  /// Limit the number of wires in the output image
+  int fPlaneLimit;
 };
 
 class OutputDB {
@@ -331,6 +334,11 @@ void fill(const Config& config, std::string input)
   H5Pclose(plist);
   H5Sclose(file_space);
 
+  if(entries > chain.GetEntries()){
+    entries = chain.GetEntries();
+  }
+
+  std::cout << "Event/I:View/I:Wire/I:Time/I:Charge/F" << std::endl;
   for(unsigned int iEntry = 0; iEntry < entries; ++iEntry)
   {
     unsigned int entry = shuffled[iEntry];
@@ -347,89 +355,174 @@ void fill(const Config& config, std::string input)
 
     ///////////
     char* pixels = NULL;
-    int channels(3), planes(0), cells(0);
+    unsigned int channels(3), planes(0), cells(0);
     datum.set_channels(channels);
-    planes = 500;//fPMap_fNWire;
+//    planes = 500;//fPMap_fNWire;
+    planes = config.fPlaneLimit;//fPMap_fNWire;
     cells  = fPMap_fNTdc;
     datum.set_height(planes);
     datum.set_width(cells);
     pixels = new char[channels*planes*cells];
-    for (int iChan = 0; iChan < channels; ++iChan)
+
+    // Reverse the Y component as it points in a different direction
+    std::vector<float> yCopy = fPMap_fPEY;
+    
+    for (unsigned int iPlane = 0; iPlane < fPMap_fNWire; ++iPlane)
     {
-      for (int iPlane = 0; iPlane < planes; ++iPlane)
+      unsigned int newPlane = fPMap_fNWire - iPlane - 1;
+      for (unsigned int iCell = 0; iCell < cells; ++iCell)
       {
-        for (int iCell = 0; iCell < cells; ++iCell)
+        yCopy[iCell+cells*newPlane] = fPMap_fPEY.at(iCell + cells*iPlane);   
+      }
+    }
+
+    // Copy back
+    fPMap_fPEY = yCopy;
+
+    // Calculate the integrated charge in each plane.
+    std::vector< std::vector<float> > chargeVec;
+    for (unsigned int iChan = 0; iChan < channels; ++iChan)
+    {
+      std::vector<float> tempVec;
+      for (unsigned int iPlane = 0; iPlane < fPMap_fNWire; ++iPlane)
+      {
+        float totCharge = 0;
+        for (unsigned int iCell = 0; iCell < cells; ++iCell)
         {
-          int i = iCell + cells*(iPlane + planes*iChan);
           float val =0.;
           //std::cout<<iChan<<std::endl;
           if(iChan == 0 ){
             //std::cout<<iChan<<std::endl;
-            val=fPMap_fPEX.at(iCell + cells*iPlane);
+            val = fPMap_fPEX.at(iCell + cells*iPlane);
           }
           if(iChan == 1 ){
-            val=0.;//fPMap_fPEY.at(iCell + cells*iPlane);
+            //val=0.;//
+            val = fPMap_fPEY.at(iCell + cells*iPlane);
           }
           if(iChan == 2 ){
-            val=fPMap_fPEZ.at(iCell + cells*iPlane);
+            val = fPMap_fPEZ.at(iCell + cells*iPlane);
           }
-          // if(val!=0){
-          //   std::cout<<val<<std::endl;
-          // }
+          totCharge += val;
+        }
+        tempVec.push_back(totCharge);
+      }
+      chargeVec.push_back(tempVec);
+    }
+
+    // Now we want start planes for each view
+    std::vector<unsigned int> imageStartPlane;
+    std::vector<unsigned int> imageEndPlane;
+    imageStartPlane.push_back(0);
+    imageStartPlane.push_back(0);
+    imageStartPlane.push_back(0);
+    imageEndPlane.push_back(0);
+    imageEndPlane.push_back(0);
+    imageEndPlane.push_back(0);
+    for(unsigned int iChan = 0; iChan < chargeVec.size(); ++iChan){
+      for(unsigned int iPlane = 0; iPlane < chargeVec[iChan].size(); ++iPlane){
+//        std::cout << "- Charge in view " << iChan << " plane " << iPlane << " = " << chargeVec[iChan][iPlane] << std::endl;
+
+        // If we have got to "planes" from the end, the start needs to be this plane
+        if(chargeVec[iChan].size() - iPlane == planes){
+          imageStartPlane[iChan] = iPlane;
+          imageEndPlane[iChan] = iPlane + planes - 1;
+          break; 
+        }
+
+        // For a given plane, look to see if the next 20 planes are empty. If not, this can be out start plane.
+        int nEmpty = 0;
+        for(unsigned int p = iPlane + 1; p <= iPlane + 20; ++p){
+          if(chargeVec[iChan][p] == 0.0) ++nEmpty; 
+        } 
+        if(nEmpty < 5){
+          imageStartPlane[iChan] = iPlane;
+          imageEndPlane[iChan] = iPlane + planes - 1;
+          break; 
+        }
+      }
+    }
+//    std::cout << " -- View 0 : " << imageStartPlane[0] << ", " << imageEndPlane[0] << std::endl;
+//    std::cout << " -- View 1 : " << imageStartPlane[1] << ", " << imageEndPlane[1] << std::endl;
+//    std::cout << " -- View 2 : " << imageStartPlane[2] << ", " << imageEndPlane[2] << std::endl;
+
+    // Actually write the values to the pixels
+    for (unsigned int iChan = 0; iChan < channels; ++iChan)
+    { 
+      std::vector<float> tempVec;
+      for (unsigned int iPlane = imageStartPlane[iChan]; iPlane < imageEndPlane[iChan]; ++iPlane)
+      { 
+        for (unsigned int iCell = 0; iCell < cells; ++iCell)
+        { 
+          unsigned int i = iCell + cells*((iPlane-imageStartPlane[iChan]) + planes*iChan);
+          float val =0.;
+          if(iChan == 0 ){
+            val = fPMap_fPEX.at(iCell + cells*iPlane);
+          }
+          if(iChan == 1 ){
+            val = fPMap_fPEY.at(iCell + cells*iPlane);
+          }
+          if(iChan == 2 ){
+            val = fPMap_fPEZ.at(iCell + cells*iPlane);
+          }
           char pix = ConvertToCharDune(val,config.fSetLog);
           pixels[i] = pix;
         }
       }
     }
+ 
 
+/*
+    // For V, the standard image is reversed
+    // Let's find the last plane containing some charge
     int maxPlaneWithCharge=0;
-    for (int iChan = 0; iChan < channels; ++iChan)
+    int iChan = 1;
+    for (unsigned int iPlane = 0; iPlane < fPMap_fNWire; ++iPlane)
     {
-      for (int iPlane = 0; iPlane < planes; ++iPlane)
-        {
-          for (int iCell = 0; iCell < cells; ++iCell)
-            {
-              float val =0.;
-              if(iChan == 1 ){
-                val=fPMap_fPEY.at(iCell + cells*iPlane);
-                if(val>0){
-                  maxPlaneWithCharge=iPlane;
-                }
-              }
-            }
-        }
-    }
-    
-    int newMapEdge=500;//1000;
-    if(maxPlaneWithCharge>500){//1000){
-      newMapEdge=maxPlaneWithCharge+1;
-    }
-    
-    for (int iChan = 0; iChan < channels; ++iChan)
+      for (int iCell = 0; iCell < cells; ++iCell)
       {
-        for (int iPlane = newMapEdge; iPlane > (newMapEdge-planes); --iPlane)
-          {
-            for (int iCell = 0; iCell < cells; ++iCell)
-              {
-                int planeCount=planes-iPlane;
-                int i = iCell + cells*(planeCount + planes*iChan);
-                float val =0.;
-                //std::cout<<iChan<<std::endl;
-                // if(iChan==1&&iCell==1){
-                //   std::cout<<"Real Plane"<<iPlane<<std::endl;
-                //   std::cout<<"Fake Plane"<<planeCount<<std::endl;
-                // }
-                //std::cout<<iCell<<std::endl;
-                if(iChan == 1 ){
-                  val=fPMap_fPEY.at(iCell + cells*iPlane);
-                  char pix = ConvertToCharDune(val,config.fSetLog);
-                  pixels[i] = pix;
-                }
-              }
-          }
+        float val =0.;
+        val=fPMap_fPEY.at(iCell + cells*iPlane);
+        if(val>0){
+          maxPlaneWithCharge=iPlane;
+        }
       }
-    
-    
+    }
+  
+    for (int iPlane = maxPlaneWithCharge; iPlane > (maxPlaneWithCharge-planes); --iPlane)
+    {
+      int planeCount=maxPlaneWithCharge - iPlane;
+      for (int iCell = 0; iCell < cells; ++iCell)
+      {
+        int i = iCell + cells*(planeCount + planes*iChan);
+        float val =0.;
+        // We just need to leave the values empty if we have no charge in these planes
+        if(iPlane >= 0){
+          val=fPMap_fPEY.at(iCell + cells*iPlane);
+        }
+        else{
+          val = 0;
+        }
+        yCopy[iCell + cells*planeCount] = val;
+        char pix = ConvertToCharDune(val,config.fSetLog);
+        pixels[i] = pix;
+      }
+    }
+*/    
+/*
+    // Make a log so we can check some plots
+    for(unsigned int iView = 0; iView < channels; ++iView){
+      for(unsigned int iPlane = 0; iPlane < planes; ++iPlane){
+        for(unsigned int iCell = 0; iCell < cells; ++iCell){
+          float charge;
+          if(iView == 0) charge = fPMap_fPEX.at(iCell + cells*(iPlane+imageStartPlane[iView]));
+          if(iView == 1) charge = fPMap_fPEY.at(iCell + cells*(iPlane+imageStartPlane[iView]));
+          if(iView == 2) charge = fPMap_fPEZ.at(iCell + cells*(iPlane+imageStartPlane[iView]));
+          if(charge > 1e-3) std::cout << iEntry << " " << iView << " " << iPlane << " " << iCell << " " << charge << std::endl;
+        }
+      }
+    }  
+*/
+  
     datum.set_data(pixels, channels*planes*cells);
     delete[] pixels;
     //////////
@@ -572,7 +665,7 @@ po::variables_map getOptions(int argc, char*  argv[], std::string& config,
 fhicl::ParameterSet getPSet(std::string configPath)
 {
 
-  cet::filepath_first_absolute_or_lookup_with_dot policy("FHICL_FILE_PATH");
+  art::FirstAbsoluteOrLookupWithDotPolicy policy("FHICL_FILE_PATH");
 
   // parse a configuration file; obtain intermediate form
   fhicl::intermediate_table tbl;
