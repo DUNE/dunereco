@@ -60,11 +60,14 @@ void cvn::CVNImageUtils::SetPixelMapSize(unsigned int nWires, unsigned int nTDCs
   fPixelMapTDCs = nTDCs;
 }
 
-void cvn::CVNImageUtils::ConvertPixelMapToPixelArray(PixelMap &pm, std::vector<unsigned char> &pix){
+void cvn::CVNImageUtils::ConvertPixelMapToPixelArray(const PixelMap &pm, std::vector<unsigned char> &pix){
 
   SetPixelMapSize(pm.fNWire,pm.fNTdc);
   // Strip out the charge vectors and use these
-  ConvertChargeVectorsToPixelArray(pm.fPEX,pm.fPEY,pm.fPEZ,pix);
+  std::vector<float> v0pe = pm.fPEX;
+  std::vector<float> v1pe = pm.fPEY;
+  std::vector<float> v2pe = pm.fPEZ;
+  ConvertChargeVectorsToPixelArray(v0pe,v1pe,v2pe,pix);
 
 }
 
@@ -76,91 +79,143 @@ void cvn::CVNImageUtils::ConvertChargeVectorsToPixelArray(std::vector<float> &v0
   if(fViewReverse[0]) ReverseView(v0pe);
   if(fViewReverse[1]) ReverseView(v1pe);
   if(fViewReverse[2]) ReverseView(v2pe);
- 
-  // Calculate the integrated charge in each plane.
-  std::vector< std::vector<float> > chargeVec;
 
-  // Loop over v views, w wires and t tdcs 
-  for (unsigned int view = 0; view < fNViews; ++view)
-  {
+  // Get the integrated charge for each wire
+  std::vector< std::vector<float> > wireCharges;
+  for (unsigned int view = 0; view < fNViews; ++view){
+
     std::vector<float> tempChargeVec;
+    for (unsigned int wire = 0; wire < fPixelMapWires; ++wire){
 
-    for (unsigned int wire = 0; wire < fPixelMapWires; ++wire)
-    {
       float totCharge = 0;
-
-      for (unsigned int time = 0; time < fPixelMapTDCs; ++time)
-      {
+      for (unsigned int time = 0; time < fPixelMapTDCs; ++time){
         float val = 0.;
         unsigned int element = time + fPixelMapTDCs * wire;
-        if(view == 0 ){
-          val = v0pe[element];
-        }
-        if(view == 1 ){
-          val = v1pe[element];
-        }
-        if(view == 2 ){
-          val = v2pe[element];
-        }
+        if(view == 0 ){ val = v0pe[element]; }
+        if(view == 1 ){ val = v1pe[element]; }
+        if(view == 2 ){ val = v2pe[element]; }
         totCharge += val;
       }
       tempChargeVec.push_back(totCharge);
     }
-    chargeVec.push_back(tempChargeVec);
+    wireCharges.push_back(tempChargeVec);
   }
 
-  // Now we want start and end planes for each view
+  // Get the integrated charge for each tdc
+  std::vector< std::vector<float> > tdcCharges;
+  for (unsigned int view = 0; view < fNViews; ++view){
+
+    std::vector<float> tempChargeVec;
+    for (unsigned int time = 0; time < fPixelMapTDCs; ++time){
+
+      float totCharge = 0;
+      for (unsigned int wire = 0; wire < fPixelMapWires; ++wire){
+
+        float val = 0.;
+        unsigned int element = time + fPixelMapTDCs * wire;
+        if(view == 0 ){ val = v0pe[element]; }
+        if(view == 1 ){ val = v1pe[element]; }
+        if(view == 2 ){ val = v2pe[element]; }
+        totCharge += val;
+      }
+      tempChargeVec.push_back(totCharge);
+    }
+    tdcCharges.push_back(tempChargeVec);
+  }
+
+  // The output image consists of a rectangular regino of the pixel map
+  // We want to find the start and end wires for each view
   std::vector<unsigned int> imageStartWire(3,0);
   std::vector<unsigned int> imageEndWire(3,0);
+  // And the same for TDCs
+  std::vector<unsigned int> imageStartTDC(3,0);
+  std::vector<unsigned int> imageEndTDC(3,0);
 
-  for(unsigned int view = 0; view < chargeVec.size(); ++view){
-    for(unsigned int wire = 0; wire < chargeVec[view].size(); ++wire){
+  for(unsigned int view = 0; view < wireCharges.size(); ++view){
+    GetMinMaxWires(wireCharges[view],imageStartWire[view],imageEndWire[view]);
+    GetMinMaxTDCs(tdcCharges[view],imageStartTDC[view],imageEndTDC[view]);
 
-      // If we have got to fNWires from the end, the start needs to be this wire
-      if(chargeVec[view].size() - wire == fNWires){
-        imageStartWire[view] = wire;
-        imageEndWire[view] = wire + fNWires - 1;
-        break;
-      }
-
-      // For a given plane, look to see if the next 20 planes are empty. If not, this can be out start plane.
-      int nEmpty = 0;
-      for(unsigned int nextWire = wire + 1; nextWire <= wire + 20; ++nextWire){
-        if(chargeVec[view][nextWire] == 0.0) ++nEmpty;
-      }
-      if(nEmpty < 5){
-        imageStartWire[view] = wire;
-        imageEndWire[view] = wire + fNWires - 1;
-        break;
-      }
-    }
+    std::cout << " Wires: " << imageStartWire[view] << ", " << imageEndWire[view] << " :: TDCs: "
+                            << imageStartTDC[view]  << ", " << imageEndTDC[view]  << std::endl;
   }
 
   // Actually write the values to the pixel array
-  for (unsigned int view = 0; view < fNViews; ++view)
-  {
-    for (unsigned int wire = imageStartWire[view]; wire < imageEndWire[view]; ++wire)
-    {
-      for (unsigned int time = 0; time < fNTDCs; ++time)
-      {
-        unsigned int i = time + fNTDCs * ((wire - imageStartWire[view]) + fNWires * view);
-        float val =0.;
-        unsigned int element = time + fNTDCs * wire;
-        if(view == 0 ){
-          val = v0pe[element];
-        }
-        if(view == 1 ){
-          val = v1pe[element];
-        }
-        if(view == 2 ){
-          val = v2pe[element];
-        }
+  for (unsigned int view = 0; view < fNViews; ++view){
+    for (unsigned int wire = imageStartWire[view]; wire < imageEndWire[view]; ++wire){
+      for (unsigned int time = imageStartTDC[view]; time < imageEndTDC[view]; ++time){
+
+        float val = 0.;
+        // Get the index for the pixel map
+        unsigned int element = time + fPixelMapTDCs * wire;
+        if(view == 0 ){ val = v0pe[element]; }
+        if(view == 1 ){ val = v1pe[element]; }
+        if(view == 2 ){ val = v2pe[element]; }
+
+        // Get the index for the final image
+        unsigned int i = (time-imageStartTDC[view]) + fNTDCs * ((wire - imageStartWire[view]) + fNWires * view);
         pix[i] = ConvertChargeToChar(val);
+  
       }
     }
   }
 
   return;
+
+}
+
+void cvn::CVNImageUtils::GetMinMaxWires(std::vector<float> &wireCharges, unsigned int &minWire, unsigned int &maxWire){
+
+  minWire = 0;
+  maxWire = fNWires;
+
+  for(unsigned int wire = 0; wire < wireCharges.size(); ++wire){
+
+    // If we have got to fNWires from the end, the start needs to be this wire
+    if(wireCharges.size() - wire == fNWires){
+      minWire = wire;
+      maxWire = wire + fNWires - 1;
+      return;
+    }
+
+    // For a given plane, look to see if the next 20 planes are empty. If not, this can be out start plane.
+    int nEmpty = 0;
+    for(unsigned int nextWire = wire + 1; nextWire <= wire + 20; ++nextWire){
+      if(wireCharges[nextWire] == 0.0) ++nEmpty;
+    }
+    if(nEmpty < 5){
+      minWire = wire;
+      maxWire = wire + fNWires - 1;
+      return;
+    }
+  }
+
+}
+
+void cvn::CVNImageUtils::GetMinMaxTDCs(std::vector<float> &tdcCharges, unsigned int &minTDC, unsigned int &maxTDC){
+
+  minTDC = 0;
+  maxTDC = fNTDCs;
+
+  for(unsigned int tdc = 0; tdc < tdcCharges.size(); ++tdc){
+
+    // If we have got to fNWires from the end, the start needs to be this wire
+    if(tdcCharges.size() - tdc == fNTDCs){
+      minTDC = tdc;
+      maxTDC = tdc + fNTDCs - 1;
+      return;
+    } 
+
+    // For a given plane, look to see if the next 20 planes are empty. If not, this can be out start plane.
+    int nEmpty = 0;
+    for(unsigned int nextTDC = tdc + 1; nextTDC <= tdc + 20; ++nextTDC){
+      if(tdcCharges[nextTDC] == 0.0) ++nEmpty;
+    } 
+    if(nEmpty < 5){
+      minTDC = tdc;
+      maxTDC = tdc + fNTDCs - 1;
+      return;
+    } 
+  }
 
 }
 

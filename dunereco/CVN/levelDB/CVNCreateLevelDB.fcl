@@ -23,6 +23,8 @@ RegressionHDF5NameTrain: "regression_train.h5"
 
 UseGeV: true
 
+NEvents:    1000000
 PlaneLimit: 500
+TDCLimit:   500
 
 MaxEnergyForLabel:        5.0    # Top of energy scale when labeling with energy

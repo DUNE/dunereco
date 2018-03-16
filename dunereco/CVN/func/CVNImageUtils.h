@@ -38,7 +38,7 @@ namespace cvn
     void SetPixelMapSize(unsigned int nWires, unsigned int nTDCs);
 
     /// Convert a Pixel Map object into a single pixel array with an image size nWire x nTDC
-    void ConvertPixelMapToPixelArray(PixelMap &pm, std::vector<unsigned char> &pix);
+    void ConvertPixelMapToPixelArray(const PixelMap &pm, std::vector<unsigned char> &pix);
 
     /// Convert (up to) three vectors (sorted in the same way as the vectors in the PixelMap object) 
     /// into a single pixel array with an image size nWire x nTDC
@@ -46,6 +46,11 @@ namespace cvn
                                           std::vector<float> &v2pe, std::vector<unsigned char> &pix);  
   private:
 
+    /// Get the minimum and maximum wires from the pixel map needed to make the image
+    void GetMinMaxWires(std::vector<float> &wireCharges, unsigned int &minWire, unsigned int &maxWire); 
+
+    /// Get the minimum and maximum tdcs from the pixel map needed to make the image
+    void GetMinMaxTDCs(std::vector<float> &tdcCharges, unsigned int &minTDC, unsigned int &maxTDC); 
 
     /// Funtion to actually reverse the view
     void ReverseView(std::vector<float> &peVec);
