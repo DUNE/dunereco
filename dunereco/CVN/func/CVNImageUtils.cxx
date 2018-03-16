@@ -51,6 +51,16 @@ void cvn::CVNImageUtils::SetViewReversal(bool reverseX, bool reverseY, bool reve
   fViewReverse = {reverseX,reverseY,reverseZ};
 }
 
+void cvn::CVNImageUtils::SetViewReversal(std::vector<bool> reverseViews){
+  if(reverseViews.size() != 3){
+    std::cout << "Expected three views for view reversals... using defaults." << std::endl;
+  }
+  else{
+    SetViewReversal(reverseViews[0],reverseViews[1],reverseViews[2]);
+  }
+  return;
+}
+
 void cvn::CVNImageUtils::SetLogScale(bool setLog){
   fUseLogScale = setLog;
 }

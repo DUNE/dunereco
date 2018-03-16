@@ -82,7 +82,8 @@ public:
     fMaxEnergyForLabel (pset.get<float>("MaxEnergyForLabel")),
     fNEvents (pset.get<unsigned int>("NEvents")),
     fPlaneLimit (pset.get<unsigned int>("NPlanes")),
-    fTDCLimit (pset.get<unsigned int>("NTDCs"))
+    fTDCLimit (pset.get<unsigned int>("NTDCs")),
+    fReverseViews(pset.get<std::vector<bool> >("ReverseViews"))
   {
     if(!fLabeling.compare("all"))      fLabelingMode = kAll;
     if(!fLabeling.compare("numu"))     fLabelingMode = kNumu;
@@ -126,6 +127,8 @@ public:
   int fPlaneLimit;
   /// Limit the number of TDCs in the output image
   int fTDCLimit;
+  /// Views to reverse
+  std::vector<bool> fReverseViews;
 };
 
 class OutputDB {
@@ -340,7 +343,7 @@ void fill(const Config& config, std::string input)
     std::vector<unsigned char> pixelArray(nViews * config.fPlaneLimit * config.fTDCLimit,0);
 
     imageUtils.SetLogScale(config.fSetLog);
-    imageUtils.SetViewReversal(false,true,false);
+    imageUtils.SetViewReversal(config.fReverseViews);
     imageUtils.ConvertChargeVectorsToPixelArray(fPMap_fPEX, fPMap_fPEY, fPMap_fPEZ, pixelArray);
 
     caffe::Datum datum;

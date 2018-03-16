@@ -30,6 +30,7 @@ namespace cvn
    
     /// Function to set any views that need reversing
     void SetViewReversal(bool reverseX, bool reverseY, bool reverseZ);
+    void SetViewReversal(std::vector<bool> reverseViews);
 
     /// Set the log scale for charge
     void SetLogScale(bool setLog);
