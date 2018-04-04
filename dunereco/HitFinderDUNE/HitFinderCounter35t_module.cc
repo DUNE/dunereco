@@ -215,8 +215,12 @@ namespace dune{
       for (size_t CLoop2=0; CLoop2 < trigs.size(); ++CLoop2) {
 	if ( fabs( trigs[CLoop]->GetTrigTime() - trigs[CLoop2]->GetTrigTime()) > fCoincidenceTolerance ) continue;
 	if ( CLoop == CLoop2 ) continue;
+	// for c2: GetTrigID() is an unsigned int and always >= 0
+	//if ( (    trigs[CLoop]->GetTrigID() >= 6  && trigs[CLoop]->GetTrigID() <= 15 && trigs[CLoop2]->GetTrigID() >= 28 && trigs[CLoop2]->GetTrigID() <= 37 ) // East Lower, West Upper 
+	 //    || ( trigs[CLoop]->GetTrigID() >= 0  && trigs[CLoop]->GetTrigID() <= 5  && trigs[CLoop2]->GetTrigID() >= 22 && trigs[CLoop2]->GetTrigID() <= 27 ) // South Lower, North Upper
+	  //   || ( trigs[CLoop]->GetTrigID() >= 16 && trigs[CLoop]->GetTrigID() <= 21 && trigs[CLoop2]->GetTrigID() >= 38 && trigs[CLoop2]->GetTrigID() <= 43 ) // North Lower, South Upper
 	if ( (    trigs[CLoop]->GetTrigID() >= 6  && trigs[CLoop]->GetTrigID() <= 15 && trigs[CLoop2]->GetTrigID() >= 28 && trigs[CLoop2]->GetTrigID() <= 37 ) // East Lower, West Upper 
-	     || ( trigs[CLoop]->GetTrigID() >= 0  && trigs[CLoop]->GetTrigID() <= 5  && trigs[CLoop2]->GetTrigID() >= 22 && trigs[CLoop2]->GetTrigID() <= 27 ) // South Lower, North Upper
+	     || ( trigs[CLoop]->GetTrigID() <= 5  && trigs[CLoop2]->GetTrigID() >= 22 && trigs[CLoop2]->GetTrigID() <= 27 ) // South Lower, North Upper
 	     || ( trigs[CLoop]->GetTrigID() >= 16 && trigs[CLoop]->GetTrigID() <= 21 && trigs[CLoop2]->GetTrigID() >= 38 && trigs[CLoop2]->GetTrigID() <= 43 ) // North Lower, South Upper
 	     ) {
 	  if (fDebug) std::cout << "I have a match..."
@@ -298,7 +302,9 @@ namespace dune{
       bool doHitLineFitAlg = fDoHitLineFitAlg;
       int trignum = -1;
       if ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() >= 6  && trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() <= 15 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() >= 28 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() <= 37 ) trignum=111; // East Lower, West Upper
-      else if ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() >= 0  && trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() <= 5  && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() >= 22 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() <= 27 ) trignum=112; // South Lower, North Upper
+      // for c2: GetTrigID() is an unsigned int and always >= 0
+      //else if ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() >= 0  && trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() <= 5  && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() >= 22 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() <= 27 ) trignum=112; // South Lower, North Upper
+      else if ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() <= 5  && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() >= 22 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() <= 27 ) trignum=112; // South Lower, North Upper
       else if ( trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() >= 16 && trigs.at(ExternalTrigIndexVec[TrigInd].first)->GetTrigID() <= 21 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() >= 38 && trigs.at(ExternalTrigIndexVec[TrigInd].second)->GetTrigID() <= 43 ) trignum=113; // North Lower, South Upper
       
       float c1x = it1->second.first.X();
