@@ -1,3 +1,4 @@
+if( DEFINED ENV{TENSORFLOW_DIR} )
 simple_plugin(SPMultiTpcDump "module"
 			larcore_Geometry_Geometry_service
 			larcorealg_Geometry
@@ -20,6 +21,7 @@ simple_plugin(SPMultiTpcDump "module"
 			cetlib cetlib_except
 			${ROOT_BASIC_LIB_LIST}
 )
+endif()
 
 install_headers()
 install_fhicl()
