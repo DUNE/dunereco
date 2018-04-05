@@ -8,7 +8,8 @@ class DataGenerator(object):
   Initialization function of the class
   '''
 
-  def __init__(self, cells = 500, planes = 500, views = 3, batch_size = 32, n_labels = 2, labels = [0,1], images_path = '/', shuffle = True):
+  def __init__(self, cells = 500, planes = 500, views = 3, batch_size = 32, n_labels = 2, labels = [0,1], 
+               delimited_labels = [], filtered = False, interaction_types = True, images_path = '/', shuffle = True, y_test=[]):
       'Initialization'
 
       self.cells = cells
@@ -17,8 +18,12 @@ class DataGenerator(object):
       self.batch_size = batch_size
       self.n_labels = n_labels
       self.labels = labels
+      self.delimited_labels = delimited_labels
+      self.filtered = filtered
+      self.interaction_types = interaction_types
       self.images_path = images_path
       self.shuffle = shuffle
+      self.y_test = y_test
  
   '''
   Goes through the dataset and outputs one batch at a time.
@@ -104,17 +109,49 @@ class DataGenerator(object):
 
           # Decompress image into pixel NumPy tensor
 
-          pixels = np.fromstring(zlib.decompress(open(self.images_path + '/' + labels[ID] + '/' + ID + '.txt.gz', 'rb').read()), dtype=np.uint8, sep='').reshape(self.views, self.planes, self.cells)
+          if self.filtered:
+
+              # filtered images
+
+              pixels = np.fromstring(zlib.decompress(open(self.images_path + '/' + labels[ID] + '/' + ID + '.txt.gz', 'rb').read()), dtype=np.float64, sep='').reshape(self.views, self.planes, self.cells)
+              pixels = pixels.astype('float32')
+              pixels/=255
+
+          else:
+
+              # ordinary images
+
+              pixels = np.fromstring(zlib.decompress(open(self.images_path + '/' + labels[ID] + '/' + ID + '.txt.gz', 'rb').read()), dtype=np.uint8, sep='').reshape(self.views, self.planes, self.cells)
 
           # Store volume
 
           X[i, :, :, :] = pixels
 
+          # get y value
+          
+          if self.interaction_types:
+
+              # value from 0 to 13 (12)
+
+              y_value = self.labels[labels[ID]]
+
+          else:
+
+              # value from 0 to 3
+
+              y_value = self.delimited_labels[labels[ID]]
+
           if yield_labels:
 
               # store class/label (train, validation, and test)
 
-              y[i] = self.labels[labels[ID]]
+              y[i] = y_value
+
+          else:
+
+              # store actual label (used for the confusion matrix)
+
+              self.y_test.append(y_value)
 
       if yield_labels:
 

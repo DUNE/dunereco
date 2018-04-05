@@ -4,13 +4,13 @@ import configparser
 import ast
 import logging, sys
 
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import Dense, Dropout, Flatten, BatchNormalization
 from keras import regularizers, optimizers
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.callbacks import CSVLogger, ModelCheckpoint, EarlyStopping
 from data_generator import DataGenerator
-
+from collections import Counter
 
 '''
 ****************************************
@@ -35,7 +35,23 @@ VIEWS = int(config['images']['views'])
 PLANES = int(config['images']['planes'])
 CELLS = int(config['images']['cells'])
 LABELS = ast.literal_eval(config['images']['labels'])
-N_LABELS = len(LABELS)
+FILTERED = ast.literal_eval(config['images']['filtered'])
+
+INTERACTION_TYPES = ast.literal_eval(config['dataset']['interaction_types'])
+
+if(INTERACTION_TYPES):
+
+    # Interaction types (from 0 to 13 (12))
+
+    DELIMITED_LABELS = []
+    N_LABELS = len(Counter(LABELS.values()))
+
+else:
+
+    # Neutrino types (from 0 to 3)
+
+    DELIMITED_LABELS = ast.literal_eval(config['images']['delimited_labels'])
+    N_LABELS = len(Counter(DELIMITED_LABELS.values()))
 
 # dataset
 
@@ -59,6 +75,7 @@ PRINT_SUMMARY = ast.literal_eval(config['model']['print_summary'])
 
 # train
 
+RESUME = ast.literal_eval(config['train']['resume'])
 LEARNING_RATE = float(config['train']['lr'])
 MOMENTUM = float(config['train']['momentum'])
 DECAY = float(config['train']['decay'])
@@ -79,6 +96,9 @@ TRAIN_PARAMS =      {'planes': PLANES,
                      'batch_size': TRAIN_BATCH_SIZE,
                      'n_labels': N_LABELS,
                      'labels': LABELS,
+                     'interaction_types': INTERACTION_TYPES,
+                     'filtered': FILTERED,
+                     'delimited_labels': DELIMITED_LABELS,
                      'images_path': IMAGES_PATH,
                      'shuffle': SHUFFLE}
 
@@ -90,6 +110,9 @@ VALIDATION_PARAMS = {'planes': PLANES,
                      'batch_size': VALIDATION_BATCH_SIZE,
                      'n_labels': N_LABELS,
                      'labels': LABELS,
+                     'interaction_types': INTERACTION_TYPES,
+                     'filtered': FILTERED,
+                     'delimited_labels': DELIMITED_LABELS,
                      'images_path': IMAGES_PATH,
                      'shuffle': SHUFFLE}
 
@@ -138,69 +161,102 @@ validation_generator = DataGenerator(**VALIDATION_PARAMS).generate(labels, parti
 ****************************************
 '''
 
-logging.info('Creating model...')
+if RESUME:
+ 
+    # Resume a previous training
 
-# Input shape: (VIEWS x PLANES x CELLS)
+    logging.info('Loading model from disk...')
 
-input_shape = [VIEWS, PLANES, CELLS]
+    if CHECKPOINT_SAVE_MANY:
 
-model = Sequential()
+        # Load the last generated model
 
-# Convolutional layers
+        files = [f for f in listdir(CHECKPOINT_PATH) if isfile(join(CHECKPOINT_PATH, f))]
+        files.sort(reverse=True)
 
-model.add(Dropout(0.2, input_shape=input_shape))
+        r = re.compile(CHECKPOINT_PREFIX[1:] + '-.*-.*.h5')
 
-model.add(Conv2D(64, kernel_size=(11,11), strides=4, padding='same', input_shape=input_shape, data_format='channels_first', activation='relu'))
-#model.add(Conv2D(64, kernel_size=(7,7), strides=4, data_format='channels_first', activation='relu'))
-model.add(MaxPooling2D(pool_size=(4,4), strides=4, data_format='channels_first'))
-model.add(BatchNormalization(axis=1))
+        for fil in files:
+            if r.match(fil) is not None:
+                model = load_model(CHECKPOINT_PATH + '/' + fil)
+                break
 
-model.add(Conv2D(32, kernel_size=(7,7), strides=2, padding='same', data_format='channels_first', activation='relu'))
-model.add(MaxPooling2D(pool_size=(2,2), strides=1, data_format='channels_first'))
-model.add(BatchNormalization(axis=1))
+    else:
 
-model.add(Dropout(0.2))
+        # Load the model
+   
+        model = load_model(CHECKPOINT_PATH + CHECKPOINT_PREFIX + '.h5')
 
-# Flat data to dense layers
+else:
 
-model.add(Flatten())
+    # Start a new training
 
-# Hiddel layers
+    logging.info('Creating model...')
 
-model.add(Dense(1000, 
-#                kernel_regularizer=regularizers.l1_l2(0.001),
-#                activity_regularizer=regularizers.l1_l2(0.001),
-                activation='relu'))
+    # Input shape: (VIEWS x PLANES x CELLS)
 
-model.add(Dropout(0.4))
+    input_shape = [VIEWS, PLANES, CELLS]
 
-model.add(Dense(1000,
-#                kernel_regularizer=regularizers.l1_l2(0.001),
-#                activity_regularizer=regularizers.l1_l2(0.001),
-                activation='relu'))
+    model = Sequential()
 
-model.add(Dropout(0.6))
+    # Convolutional layers
 
-# Output layer
+    #model.add(Dropout(0.2, input_shape=input_shape))
 
-model.add(Dense(N_LABELS, activation='softmax'))
+    #model.add(Conv2D(64, kernel_size=(7,7), strides=4, padding='same', input_shape=input_shape, data_format='channels_first', activation='relu'))
+    model.add(Conv2D(64, kernel_size=(11,11), strides=4, padding='same', input_shape=input_shape, data_format='channels_first', activation='relu'))
+    #model.add(Conv2D(64, kernel_size=(7,7), strides=4, data_format='channels_first', activation='relu'))
+    model.add(MaxPooling2D(pool_size=(4,4), strides=4, data_format='channels_first'))
+    model.add(BatchNormalization(axis=1))
+
+    #model.add(Conv2D(32, kernel_size=(7,7), strides=2, padding='same', data_format='channels_first', activation='relu'))
+    model.add(Conv2D(32, kernel_size=(7,7), strides=2, padding='same', data_format='channels_first', activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2,2), strides=1, data_format='channels_first'))
+    model.add(BatchNormalization(axis=1))
+
+    model.add(Dropout(0.2))
+
+    # Flat data to dense layers
+
+    model.add(Flatten())
+
+    # Hiddel layers
+
+    model.add(Dense(1000, 
+    #                kernel_regularizer=regularizers.l1_l2(0.001),
+    #                activity_regularizer=regularizers.l1_l2(0.001),
+                    activation='relu'))
+
+    model.add(Dropout(0.2))
+
+    model.add(Dense(1000,
+    #                kernel_regularizer=regularizers.l1_l2(0.001),
+    #                activity_regularizer=regularizers.l1_l2(0.001),
+                    activation='relu'))
+
+    model.add(Dropout(0.4))
+
+    # Output layer
+
+    model.add(Dense(N_LABELS, activation='softmax'))
+
+    # Optimizer: Stochastic Gradient Descent
+
+    logging.info('Setting optimizer...')
+
+    opt = optimizers.SGD(lr=LEARNING_RATE, momentum=MOMENTUM, decay=DECAY, nesterov=False)
+
+    # Compile model
+
+    logging.info('Compiling model...')
+
+    model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
+
 
 # Print model summary
 
 if(PRINT_SUMMARY):
     model.summary()
-
-# Optimizer: Stochastic Gradient Descent
-
-logging.info('Setting optimizer...')
-
-opt = optimizers.SGD(lr=LEARNING_RATE, momentum=MOMENTUM, decay=DECAY, nesterov=False)
-
-# Compile model
-
-logging.info('Compiling model...')
-
-model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
 
 
 '''
@@ -246,7 +302,7 @@ early_stopping = EarlyStopping(monitor=monitor, patience=EARLY_STOPPING_PATIENCE
   
 # Configuring log file
 
-csv_logger = CSVLogger(LOG_PATH + LOG_PREFIX + '.log')
+csv_logger = CSVLogger(LOG_PATH + LOG_PREFIX + '.log', append=RESUME)
  
 # Callbacks
 
@@ -261,7 +317,13 @@ callbacks_list = [checkpoint, early_stopping, csv_logger]
 ****************************************
 '''
 
-logging.info('STARTING TRAINING...')
+if RESUME:
+
+    logging.info('RESUMING TRAINING...')
+
+else:
+
+    logging.info('STARTING TRAINING...')
 
 if VALIDATION_FRACTION > 0:
 
