@@ -67,18 +67,18 @@ CHECKPOINT_SAVE_MANY = ast.literal_eval(config['model']['checkpoint_save_many'])
 CHECKPOINT_SAVE_BEST_ONLY = ast.literal_eval(config['model']['checkpoint_save_best_only'])
 PRINT_SUMMARY = ast.literal_eval(config['model']['print_summary'])
 
-# prediction
+# test
 
-PREDICTION_BATCH_SIZE = int(config['test']['batch_size'])
+TEST_BATCH_SIZE = int(config['test']['batch_size'])
 
-# prediction params
+# test params
 
 y_test = []
 
-PREDICTION_PARAMS = {'planes': PLANES,
+TEST_PARAMS = {'planes': PLANES,
                'cells': CELLS,
                'views': VIEWS,
-               'batch_size': PREDICTION_BATCH_SIZE,
+               'batch_size': TEST_BATCH_SIZE,
                'n_labels': N_LABELS,
                'labels': LABELS,
                'interaction_types': INTERACTION_TYPES,
@@ -95,6 +95,8 @@ PREDICTION_PARAMS = {'planes': PLANES,
 ****************************************
 '''
 
+# Load datasets
+
 logging.info('Reading datasets from serialized files...')
 
 partition_file = open(DATASET_PATH + PARTITION_PREFIX + '.p', 'r')
@@ -105,10 +107,11 @@ labels_file = open(DATASET_PATH + LABELS_PREFIX + '.p', 'r')
 labels = pickle.load(labels_file)
 labels_file.close()
 
+# Print some dataset statistics
+
 logging.info('Number of training examples: %d', len(partition['train']))
 logging.info('Number of validation examples: %d', len(partition['validation']))
 logging.info('Number of test examples: %d', len(partition['test']))
-
 
 '''
 ****************************************
@@ -116,7 +119,7 @@ logging.info('Number of test examples: %d', len(partition['test']))
 ****************************************
 '''
 
-prediction_generator = DataGenerator(**PREDICTION_PARAMS).generate(labels, partition['test'], False)
+prediction_generator = DataGenerator(**TEST_PARAMS).generate(labels, partition['test'], False)
 
 
 '''
@@ -156,16 +159,16 @@ if(PRINT_SUMMARY):
 
 '''
 ****************************************
-************** PREDICTIONS *************
+************** TESTS *************
 ****************************************
 '''
 
-logging.info('CALCULATING PREDICTIONS...\n')
+logging.info('CALCULATING TESTS...\n')
 
 # Predict results
 
 Y_pred = model.predict_generator(generator = prediction_generator,
-                                 steps = len(partition['test'])//PREDICTION_BATCH_SIZE
+                                 steps = len(partition['test'])//TEST_BATCH_SIZE
                                  )
 
 # Report

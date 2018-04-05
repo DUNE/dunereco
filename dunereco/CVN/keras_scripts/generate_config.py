@@ -13,7 +13,7 @@ config['images']     = {'views': '3',
                         'path': '/scratch/devFilesRaw',
                         'filtered': 'False'}
 
-config['dataset']    = {'uniform': 'True',
+config['dataset']    = {'uniform': 'False',
                         'interaction_types': 'False', 
                         'path': '/scratch/cvn/dataset',
                         'partition_prefix': '/partition',
@@ -30,6 +30,8 @@ config['model']      = {'checkpoint_path': '/scratch/cvn/checkpoint',
                         'print_summary': 'True'}
 
 config['train']      = {'resume': 'False',
+                        'weighted_loss_function': 'True',
+                        'class_weights_prefix': '/class_weights',
                         'lr': '0.001',
                         'momentum': '0.9',
                         'decay': '0.000005',

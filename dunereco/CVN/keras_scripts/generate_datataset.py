@@ -6,6 +6,7 @@ import pickle
 import configparser
 import logging, sys
 
+from sklearn.utils import class_weight
 from collections import Counter
 
 '''
@@ -52,6 +53,8 @@ else:
 # train
 
 TRAIN_FRACTION = float(config['train']['fraction'])
+WEIGHTED_LOSS_FUNCTION = ast.literal_eval(config['train']['weighted_loss_function'])
+CLASS_WEIGHTS_PREFIX = config['train']['class_weights_prefix']
 
 # validation
 
@@ -73,6 +76,7 @@ if((TRAIN_FRACTION + VALIDATION_FRACTION + TEST_FRACTION) > 1):
 
 partition = {'train' : [], 'validation' : [], 'test' : []} # Train, validation, and test IDs
 labels = {}                                                # ID : label
+y_train = []
 
 if UNIFORM:
 
@@ -166,15 +170,27 @@ for path in glob.iglob(IMAGES_PATH + '/*'):
             partition['train'].append(ID)
             count += 1
 
+            # Store y train
+
+            if INTERACTION_TYPES:
+
+                y_train.append(LABELS[label])
+
+            else:
+
+                y_train.append(DELIMITED_LABELS[label])
+ 
         # Fill validation set
 
         elif(random_value < (TRAIN_FRACTION + VALIDATION_FRACTION)):
+
             partition['validation'].append(ID)
             count += 1
 
         # Fill test set
 
         elif(random_value < (TRAIN_FRACTION + VALIDATION_FRACTION + TEST_FRACTION)):
+
             partition['test'].append(ID)
             count += 1
 
@@ -188,6 +204,14 @@ logging.info('Number of training examples: %d', len(partition['train']))
 logging.info('Number of validation examples: %d', len(partition['validation']))
 logging.info('Number of test examples: %d', len(partition['test']))
 
+# Calculate class weights (used for a weighted loss function)
+
+logging.info('Calculating class weights...')
+
+class_weights = dict(enumerate(class_weight.compute_class_weight('balanced', np.unique(y_train), y_train)))
+
+logging.info('Class weights: %s', class_weights)
+
 # Serialize partition and labels
 
 logging.info('Serializing datasets...')
@@ -199,4 +223,10 @@ partition_file.close()
 labels_file = open(DATASET_PATH + LABELS_PREFIX + '.p', 'w')
 pickle.dump(labels, labels_file)
 labels_file.close()
+
+if WEIGHTED_LOSS_FUNCTION:
+
+    class_weights_file = open(DATASET_PATH + CLASS_WEIGHTS_PREFIX + '.p', 'w')
+    pickle.dump(class_weights, class_weights_file)
+    class_weights_file.close()
 

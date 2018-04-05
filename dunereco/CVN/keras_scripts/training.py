@@ -4,6 +4,7 @@ import configparser
 import ast
 import logging, sys
 
+from sklearn.utils import class_weight
 from keras.models import Sequential, load_model
 from keras.layers import Dense, Dropout, Flatten, BatchNormalization
 from keras import regularizers, optimizers
@@ -82,6 +83,8 @@ DECAY = float(config['train']['decay'])
 TRAIN_BATCH_SIZE = int(config['train']['batch_size'])
 EPOCHS = int(config['train']['epochs'])
 EARLY_STOPPING_PATIENCE = int(config['train']['early_stopping_patience'])
+WEIGHTED_LOSS_FUNCTION = ast.literal_eval(config['train']['weighted_loss_function'])
+CLASS_WEIGHTS_PREFIX = config['train']['class_weights_prefix']
 
 # validation
 
@@ -138,12 +141,22 @@ labels_file = open(DATASET_PATH + LABELS_PREFIX + '.p', 'r')
 labels = pickle.load(labels_file)
 labels_file.close()
 
+if WEIGHTED_LOSS_FUNCTION:
+
+    class_weights_file = open(DATASET_PATH + CLASS_WEIGHTS_PREFIX + '.p', 'r')
+    class_weights = pickle.load(class_weights_file)
+    class_weights_file.close()
+
+else:
+
+    class_weights = None
+
 # Print some dataset statistics
 
 logging.info('Number of training examples: %d', len(partition['train']))
 logging.info('Number of validation examples: %d', len(partition['validation']))
 logging.info('Number of test examples: %d', len(partition['test']))
-
+logging.info('Class weights: %s', class_weights)
 
 '''
 ****************************************
@@ -334,6 +347,7 @@ if VALIDATION_FRACTION > 0:
                         validation_data = validation_generator,
                         validation_steps = len(partition['validation'])//VALIDATION_BATCH_SIZE,
                         epochs = EPOCHS,
+                        class_weight = class_weights,
                         callbacks = callbacks_list
                        )
 
@@ -344,6 +358,7 @@ else:
     model.fit_generator(generator = training_generator,
                         steps_per_epoch = len(partition['train'])//TRAIN_BATCH_SIZE,
                         epochs = EPOCHS,
+                        class_weight = class_weights,
                         callbacks = callbacks_list
                        )
 
