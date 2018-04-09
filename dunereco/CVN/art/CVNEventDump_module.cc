@@ -26,18 +26,15 @@
 #include "art/Framework/Core/ModuleMacros.h"
 //#include "art/Framework/Core/FindManyP.h"
 
-
-// NOvASoft includes
+// LArSoft includes
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RawData/ExternalTrigger.h"
-
 
 #include "lardata/Utilities/AssociationUtil.h"
 #include "nusimdata/SimulationBase/MCNeutrino.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-
 #include "larsim/MCCheater/BackTracker.h"
 
 #include "dune/CVN/func/AssignLabels.h"
@@ -45,6 +42,7 @@
 #include "dune/CVN/func/InteractionType.h"
 #include "dune/CVN/func/PixelMap.h"
 
+#include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 
 
 
@@ -59,12 +57,13 @@ namespace cvn {
     void beginJob();
     void endJob();
 
-
-
   private:
 
     std::string fPixelMapInput;
     std::string fGenieGenModuleLabel;
+    std::string fEnergyNueLabel;
+    std::string fEnergyNumuLabel;
+    bool        fUseEnergyOutput;
     bool        fWriteMapTH2;
     bool        fApplyFidVol;
 
@@ -98,6 +97,9 @@ namespace cvn {
     fGenieGenModuleLabel  = pset.get<std::string>("GenieGenModuleLabel");
     fWriteMapTH2    = pset.get<bool>       ("WriteMapTH2");
     fApplyFidVol    = pset.get<bool>("ApplyFidVol");
+    fEnergyNueLabel = pset.get<std::string> ("EnergyNueLabel");  
+    fEnergyNumuLabel = pset.get<std::string> ("EnergyNumuLabel");
+    fUseEnergyOutput = pset.get<bool> ("UseEnergyOutput");
   }
 
   //......................................................................
@@ -176,6 +178,29 @@ namespace cvn {
     lepEnergy = truthN.Lepton().E();
     //}
 
+    float recoNueEnergy = 0.;
+    float recoNumuEnergy = 0.;
+    // Should we use the EnergyReco_module reconstructed energies?
+    if(fUseEnergyOutput){
+
+      // Get the nue info
+      if(fEnergyNueLabel != ""){
+        art::Handle<dune::EnergyRecoOutput> energyRecoNueHandle;
+        evt.getByLabel(fEnergyNueLabel, energyRecoNueHandle);
+
+        recoNueEnergy = energyRecoNueHandle->fNuLorentzVector.E();
+      }
+
+      // And the numu
+      if(fEnergyNumuLabel != ""){
+        art::Handle<dune::EnergyRecoOutput> energyRecoNumuHandle;
+        evt.getByLabel(fEnergyNueLabel, energyRecoNumuHandle);
+
+        recoNumuEnergy = energyRecoNumuHandle->fNuLorentzVector.E();
+      }
+
+    }
+
     if(fApplyFidVol){
       // Get the interaction vertex from the lepton
 //      TVector3 vtx = truthN.Lepton().Position().Vect();
@@ -185,7 +210,7 @@ namespace cvn {
     }
 
     if(nhits>0){
-      TrainingData train(interaction, nuEnergy, lepEnergy, *pixelmaplist[0]);
+      TrainingData train(interaction, nuEnergy, lepEnergy, recoNueEnergy, recoNumuEnergy, *pixelmaplist[0]);
 
       if (fWriteMapTH2) WriteMapTH2(evt, 0, train.fPMap);
 
