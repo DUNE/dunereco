@@ -18,7 +18,7 @@ from collections import Counter
 ****************************************
 '''
 
-logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -34,7 +34,7 @@ IMAGES_PATH = config['images']['path']
 VIEWS = int(config['images']['views'])
 PLANES = int(config['images']['planes'])
 CELLS = int(config['images']['cells'])
-LABELS = ast.literal_eval(config['images']['labels'])
+INTERACTION_LABELS = ast.literal_eval(config['images']['interaction_labels'])
 FILTERED = ast.literal_eval(config['images']['filtered'])
 
 INTERACTION_TYPES = ast.literal_eval(config['dataset']['interaction_types'])
@@ -43,15 +43,15 @@ if(INTERACTION_TYPES):
 
     # Interaction types (from 0 to 13 (12))
 
-    DELIMITED_LABELS = []
-    N_LABELS = len(Counter(LABELS.values()))
+    NEUTRINO_LABELS = []
+    N_LABELS = len(Counter(INTERACTION_LABELS.values()))
 
 else:
 
     # Neutrino types (from 0 to 3)
 
-    DELIMITED_LABELS = ast.literal_eval(config['images']['delimited_labels'])
-    N_LABELS = len(Counter(DELIMITED_LABELS.values()))
+    NEUTRINO_LABELS = ast.literal_eval(config['images']['neutrino_labels'])
+    N_LABELS = len(Counter(NEUTRINO_LABELS.values()))
 
 # dataset
 
@@ -80,10 +80,10 @@ TEST_PARAMS = {'planes': PLANES,
                'views': VIEWS,
                'batch_size': TEST_BATCH_SIZE,
                'n_labels': N_LABELS,
-               'labels': LABELS,
+               'interaction_labels': INTERACTION_LABELS,
                'interaction_types': INTERACTION_TYPES,
                'filtered': FILTERED,
-               'delimited_labels': DELIMITED_LABELS,
+               'neutrino_labels': NEUTRINO_LABELS,
                'images_path': IMAGES_PATH,
                'shuffle': SHUFFLE,
                'y_test': y_test}
@@ -159,61 +159,127 @@ if(PRINT_SUMMARY):
 
 '''
 ****************************************
-************** TESTS *************
+***************** TEST *****************
 ****************************************
 '''
 
-logging.info('CALCULATING TESTS...\n')
+logging.info('PERFORMING TEST...\n')
 
 # Predict results
 
 Y_pred = model.predict_generator(generator = prediction_generator,
                                  steps = len(partition['test'])//TEST_BATCH_SIZE
                                  )
-
-# Report
-
 y_pred = np.argmax(Y_pred, axis=1)
 y_test = y_test[0:len(y_pred)]
 
-if INTERACTION_TYPES:
-    
-    # Interaction types (from 0 to 12 (13))
-
-    target_names = ['label 0', 'label 1', 'label 2', 'label 3', 'label 4', 'label 5', 'label 6', 'label 7', 'label 8', 'label 9', 'label 10', 'label 11', 'label 13']
-
-else:
-
-    # Neutrino types (from 0 to 3)
-
-    target_names = ['fCVNResultNue', 'fCVNResultNumu', 'fCVNResultNutau', 'fCVNResultNC']
-
-logging.info('Classification report:\n')
-
-print(classification_report(y_test, y_pred, target_names=target_names))
-
-logging.info('Confusion matrix:\n')
-
-print(confusion_matrix(y_pred, y_test))
-print('\n')
-
 # Add the interaction types for each neutrino type
+
+cut = 0.7
+reca_acum = 0.0
 
 if INTERACTION_TYPES:
 
     logging.info('Adding the interaction types for each neutrino type...')
 
-    cut = 0.7
-    acum = 0.0
+    Y_pred_neutrino = np.zeros((len(Y_pred), 4))
+    y_test_neutrino = np.copy(y_test)
 
-    for p in Y_pred:
-        fCVNResultNue   = p[4] + p[5] + p[6]  + p[7]  # (4,5,6,7)
-        fCVNResultNumu  = p[0] + p[1] + p[2]  + p[3]  # (0,1,2,3)
-        fCVNResultNutau = p[8] + p[9] + p[10] + p[11] # (8,9,10,11)
-        fCVNResultNC    = p[12]                       # (13)
+    for i in range(len(Y_pred)):
 
-        if(fCVNResultNue >= cut or fCVNResultNumu >= cut or fCVNResultNutau >= cut or fCVNResultNC >= cut):
-            acum += 1
+        p = Y_pred[i]
 
-    print('acc: %.2f%%' % (acum/len(y_pred)*100))
+        # from 0 to 13 (12) labels to 0 to 13
+
+        if y_test_neutrino[i] <= 3:
+            y_test_neutrino[i] = 1
+        elif y_test_neutrino[i] <= 7:
+            y_test_neutrino[i] = 0
+        elif y_test_neutrino[i] <= 11:
+            y_test_neutrino[i] = 2
+        else:
+            y_test_neutrino[i] = 3
+
+        Y_pred_neutrino[i][0] = p[4] + p[5] + p[6]  + p[7]  # (4,5,6,7)
+        Y_pred_neutrino[i][1] = p[0] + p[1] + p[2]  + p[3]  # (0,1,2,3)
+        Y_pred_neutrino[i][2] = p[8] + p[9] + p[10] + p[11] # (8,9,10,11)
+        Y_pred_neutrino[i][3] = p[12]                       # (13)
+
+else:
+    Y_pred_neutrino = Y_pred
+    y_test_neutrino = y_test 
+
+# Report
+
+y_pred_neutrino = np.argmax(Y_pred_neutrino, axis=1)
+
+if INTERACTION_TYPES:
+    
+    # Interaction types (from 0 to 12 (13))
+
+    inter_target_names = ['interac. 0', 'interac. 1', 'interac. 2', 'interac. 3', 'interac. 4', 'interac. 5', 
+                         'interac. 6', 'interac. 7', 'interac. 8', 'interac. 9', 'interac. 10', 'interac. 11', 'interac. 13']
+
+    logging.info('Classification report (interaction types):\n')
+
+    print(classification_report(y_test, y_pred, target_names=inter_target_names))
+
+    logging.info('Interaction types confusion matrix (rows = predicted classes, cols = actual classes):\n')
+
+    print(confusion_matrix(y_pred, y_test))
+    print ''
+
+# Neutrino types (from 0 to 3)
+
+neutrino_target_names = ['fCVNResultNue', 'fCVNResultNumu', 'fCVNResultNutau', 'fCVNResultNC']
+
+logging.info('Classification report (neutrino flavours):\n')
+
+print(classification_report(y_test_neutrino, y_pred_neutrino, target_names=neutrino_target_names))
+
+logging.info('Neutrino flavours confusion matrix (rows = predicted classes, cols = actual classes):\n')
+
+
+conf2 = confusion_matrix(y_pred_neutrino, y_test_neutrino)
+print conf2
+print ''
+
+# Apply cut
+
+logging.info('Applying a cut of %.2f...\n' % cut)
+
+cut_acum = np.zeros((len(Y_pred_neutrino[0]), len(Y_pred_neutrino[0])))
+
+y_pred_neutrino_cut = []
+y_test_neutrino_cut = []
+
+for sample in range(len(Y_pred_neutrino)):
+    
+    test_flavour = y_test_neutrino[sample] # get actual class of sample
+    pred_flavour = y_pred_neutrino[sample] # get predicted class of sample
+
+    for label in range(len(Y_pred_neutrino[sample])):
+ 
+        if Y_pred_neutrino[sample][label] >= cut:
+
+            # accumulate if the probability of that label of the sample is >= cut
+            
+            y_test_neutrino_cut.append(test_flavour)
+            y_pred_neutrino_cut.append(pred_flavour)
+
+logging.info('Classification report (neutrino flavours) after applying the cut:\n')
+
+print(classification_report(y_test_neutrino_cut, y_pred_neutrino_cut, target_names=neutrino_target_names))
+
+logging.info('Neutrino flavours (after applying the cut) confusion matrix (rows = predicted classes, cols = actual classes):\n')
+
+conf3 = confusion_matrix(y_pred_neutrino_cut, y_test_neutrino_cut)
+print conf3
+print ''
+
+logging.info('Efficiency:\n')
+
+np.set_printoptions(precision=3)
+print conf3.astype('float32') / np.add.reduce(conf2)
+#print conf3.astype('float32')/conf2.astype('float32')
 
