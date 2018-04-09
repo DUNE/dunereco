@@ -14,10 +14,13 @@ namespace cvn
 
   TrainingData::TrainingData(const InteractionType& interaction,
                              float nuEnergy, float lepEnergy,
+                             float nueEnergy, float numuEnergy,
                              const PixelMap& pMap):
   fInt(interaction),
   fNuEnergy(nuEnergy),
   fLepEnergy(lepEnergy),
+  fRecoNueEnergy(nueEnergy),
+  fRecoNumuEnergy(numuEnergy),
   fPMap(pMap)
   {  }
 

@@ -10,6 +10,10 @@ standard_cvneventdump:
   GenieGenModuleLabel: "generator"
   WriteMapTH2: true
   ApplyFidVol: true
+  # Use the following to add the reco energy to the output tree
+  EnergyNueLabel: "energynue"
+  EnergyNumuLabel: "energynumu"
+  UseEnergyOutput: true
 }
 
 
