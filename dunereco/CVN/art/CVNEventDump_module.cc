@@ -194,7 +194,7 @@ namespace cvn {
       // And the numu
       if(fEnergyNumuLabel != ""){
         art::Handle<dune::EnergyRecoOutput> energyRecoNumuHandle;
-        evt.getByLabel(fEnergyNueLabel, energyRecoNumuHandle);
+        evt.getByLabel(fEnergyNumuLabel, energyRecoNumuHandle);
 
         recoNumuEnergy = energyRecoNumuHandle->fNuLorentzVector.E();
       }
