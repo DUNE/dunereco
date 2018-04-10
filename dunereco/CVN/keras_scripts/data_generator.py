@@ -8,8 +8,8 @@ class DataGenerator(object):
   Initialization function of the class
   '''
 
-  def __init__(self, cells = 500, planes = 500, views = 3, batch_size = 32, n_labels = 2, labels = [0,1], 
-               delimited_labels = [], filtered = False, interaction_types = True, images_path = '/', shuffle = True, y_test=[]):
+  def __init__(self, cells = 500, planes = 500, views = 3, batch_size = 32, n_labels = 2, interaction_labels = [0,1], 
+               neutrino_labels = [], filtered = False, interaction_types = True, images_path = '/', shuffle = True, y_test=[]):
       'Initialization'
 
       self.cells = cells
@@ -17,8 +17,8 @@ class DataGenerator(object):
       self.views = views
       self.batch_size = batch_size
       self.n_labels = n_labels
-      self.labels = labels
-      self.delimited_labels = delimited_labels
+      self.interaction_labels = interaction_labels
+      self.neutrino_labels = neutrino_labels
       self.filtered = filtered
       self.interaction_types = interaction_types
       self.images_path = images_path
@@ -133,13 +133,13 @@ class DataGenerator(object):
 
               # value from 0 to 13 (12)
 
-              y_value = self.labels[labels[ID]]
+              y_value = self.interaction_labels[labels[ID]]
 
           else:
 
               # value from 0 to 3
 
-              y_value = self.delimited_labels[labels[ID]]
+              y_value = self.neutrino_labels[labels[ID]]
 
           if yield_labels:
 

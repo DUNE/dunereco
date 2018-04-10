@@ -3,6 +3,7 @@ import pickle
 import configparser
 import ast
 import logging, sys
+import re
 
 from sklearn.utils import class_weight
 from keras.models import Sequential, load_model
@@ -35,7 +36,7 @@ IMAGES_PATH = config['images']['path']
 VIEWS = int(config['images']['views'])
 PLANES = int(config['images']['planes'])
 CELLS = int(config['images']['cells'])
-LABELS = ast.literal_eval(config['images']['labels'])
+INTERACTION_LABELS = ast.literal_eval(config['images']['interaction_labels'])
 FILTERED = ast.literal_eval(config['images']['filtered'])
 
 INTERACTION_TYPES = ast.literal_eval(config['dataset']['interaction_types'])
@@ -44,15 +45,15 @@ if(INTERACTION_TYPES):
 
     # Interaction types (from 0 to 13 (12))
 
-    DELIMITED_LABELS = []
-    N_LABELS = len(Counter(LABELS.values()))
+    NEUTRINO_LABELS = []
+    N_LABELS = len(Counter(INTERACTION_LABELS.values()))
 
 else:
 
     # Neutrino types (from 0 to 3)
 
-    DELIMITED_LABELS = ast.literal_eval(config['images']['delimited_labels'])
-    N_LABELS = len(Counter(DELIMITED_LABELS.values()))
+    NEUTRINO_LABELS = ast.literal_eval(config['images']['neutrino_labels'])
+    N_LABELS = len(Counter(NEUTRINO_LABELS.values()))
 
 # dataset
 
@@ -98,10 +99,10 @@ TRAIN_PARAMS =      {'planes': PLANES,
                      'views': VIEWS,
                      'batch_size': TRAIN_BATCH_SIZE,
                      'n_labels': N_LABELS,
-                     'labels': LABELS,
+                     'interaction_labels': INTERACTION_LABELS,
                      'interaction_types': INTERACTION_TYPES,
                      'filtered': FILTERED,
-                     'delimited_labels': DELIMITED_LABELS,
+                     'neutrino_labels': NEUTRINO_LABELS,
                      'images_path': IMAGES_PATH,
                      'shuffle': SHUFFLE}
 
@@ -112,10 +113,10 @@ VALIDATION_PARAMS = {'planes': PLANES,
                      'views': VIEWS,
                      'batch_size': VALIDATION_BATCH_SIZE,
                      'n_labels': N_LABELS,
-                     'labels': LABELS,
+                     'interaction_labels': INTERACTION_LABELS,
                      'interaction_types': INTERACTION_TYPES,
                      'filtered': FILTERED,
-                     'delimited_labels': DELIMITED_LABELS,
+                     'neutrino_labels': NEUTRINO_LABELS,
                      'images_path': IMAGES_PATH,
                      'shuffle': SHUFFLE}
 
@@ -212,6 +213,28 @@ else:
 
     model = Sequential()
 
+    '''
+    model.add(Conv2D(64, kernel_size=(11,11), strides=4, input_shape=input_shape, data_format='channels_first', activation='relu'))
+    model.add(Conv2D(64, kernel_size=(9,9), strides=3, data_format='channels_first', activation='relu'))
+    model.add(Conv2D(64, kernel_size=(7,7), strides=2, data_format='channels_first', activation='relu'))
+    model.add(Conv2D(64, kernel_size=(5,5), strides=2, data_format='channels_first', activation='relu'))
+    '''
+
+    '''
+
+    model.add(Conv2D(64, kernel_size=(11,11), strides=4, input_shape=input_shape, data_format='channels_first', activation='relu'))
+    model.add(Conv2D(64, kernel_size=(9,9), strides=3, data_format='channels_first', activation='relu'))
+    model.add(Conv2D(64, kernel_size=(7,7), strides=2, data_format='channels_first', activation='relu'))
+    model.add(Conv2D(64, kernel_size=(5,5), strides=2, data_format='channels_first', activation='relu'))
+    model.add(MaxPooling2D(pool_size=(4,4), strides=1, data_format='channels_first'))
+    model.add(BatchNormalization(axis=1))
+
+    '''
+
+    '''
+    model.add(Flatten())
+    '''
+   
     # Convolutional layers
 
     #model.add(Dropout(0.2, input_shape=input_shape))
@@ -306,7 +329,6 @@ else:
 
 checkpoint = ModelCheckpoint(filepath, monitor=monitor, verbose=1, save_best_only=CHECKPOINT_SAVE_BEST_ONLY, mode='max', period=CHECKPOINT_PERIOD)
 
-
 # Early stopping
 
 logging.info('Configuring early stopping...')
@@ -332,9 +354,32 @@ callbacks_list = [checkpoint, early_stopping, csv_logger]
 
 if RESUME:
 
+    # Resuming training...
+
+    try:
+
+        # Open previous log file in order to get the last epoch
+
+        with open(LOG_PATH + LOG_PREFIX + '.log', 'r') as logfile:
+
+            # initial_epoch = last_epoch + 1
+
+            initial_epoch = int(re.search(r'\d+', logfile.read().split('\n')[-2]).group()) + 1
+
+    except IOError:
+
+        # Previous log file does not exist. Set initial epoch to 0    
+    
+        initial_epoch = 0
+
     logging.info('RESUMING TRAINING...')
 
 else:
+
+    # Starting a new training...
+    # initial_epoch must be 0 when starting a training (not resuming it)
+
+    initial_epoch = 0
 
     logging.info('STARTING TRAINING...')
 
@@ -348,7 +393,8 @@ if VALIDATION_FRACTION > 0:
                         validation_steps = len(partition['validation'])//VALIDATION_BATCH_SIZE,
                         epochs = EPOCHS,
                         class_weight = class_weights,
-                        callbacks = callbacks_list
+                        callbacks = callbacks_list,
+                        initial_epoch = initial_epoch
                        )
 
 else:
@@ -359,7 +405,8 @@ else:
                         steps_per_epoch = len(partition['train'])//TRAIN_BATCH_SIZE,
                         epochs = EPOCHS,
                         class_weight = class_weights,
-                        callbacks = callbacks_list
+                        callbacks = callbacks_list,
+                        initial_epoch = initial_epoch
                        )
 
 

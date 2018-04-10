@@ -27,7 +27,7 @@ np.random.seed(int(config['random']['seed']))
 # images
 
 IMAGES_PATH = config['images']['path']
-LABELS = ast.literal_eval(config['images']['labels'])
+INTERACTION_LABELS = ast.literal_eval(config['images']['interaction_labels'])
 
 # dataset
 
@@ -41,14 +41,14 @@ if(INTERACTION_TYPES):
 
     # Interaction types (from 0 to 13 (12))
 
-    N_LABELS = len(Counter(LABELS.values()))
+    N_LABELS = len(Counter(INTERACTION_LABELS.values()))
 
 else:
 
     # Neutrino types (from 0 to 3)
 
-    DELIMITED_LABELS = ast.literal_eval(config['images']['delimited_labels'])
-    N_LABELS = len(Counter(DELIMITED_LABELS.values()))
+    NEUTRINO_LABELS = ast.literal_eval(config['images']['neutrino_labels'])
+    N_LABELS = len(Counter(NEUTRINO_LABELS.values()))
 
 # train
 
@@ -97,7 +97,7 @@ if UNIFORM:
 
             # Interaction types (from 0 to 12 (13))
 
-            COUNTS[LABELS[label]] += 1
+            COUNTS[INTERACTION_LABELS[label]] += 1
 
             if len_dir < MIN_DIR[0]:
 
@@ -108,7 +108,7 @@ if UNIFORM:
 
             # Neutrino types: from 0 to 3
 
-            COUNTS[DELIMITED_LABELS[label]] += 1
+            COUNTS[NEUTRINO_LABELS[label]] += 1
 
             if len_dir < MIN_DIR[0]:
 
@@ -134,13 +134,13 @@ for path in glob.iglob(IMAGES_PATH + '/*'):
 
             # Interaction types (from 0 to 13 (12))
 
-            fraction = (MIN_DIR[0]) * (COUNTS[LABELS[MIN_DIR[1]]] / COUNTS[LABELS[label]]) / len(list(label_dir))
+            fraction = (MIN_DIR[0]) * (COUNTS[INTERACTION_LABELS[MIN_DIR[1]]] / COUNTS[INTERACTION_LABELS[label]]) / len(list(label_dir))
 
         else:
 
             # Neutrino types (from 0 to 3)
 
-            fraction = (MIN_DIR[0]) * (COUNTS[DELIMITED_LABELS[MIN_DIR[1]]] / COUNTS[DELIMITED_LABELS[label]]) / len(list(label_dir))
+            fraction = (MIN_DIR[0]) * (COUNTS[NEUTRINO_LABELS[MIN_DIR[1]]] / COUNTS[NEUTRINO_LABELS[label]]) / len(list(label_dir))
 
         logging.debug('fraction: %f', fraction)  
  
@@ -174,11 +174,11 @@ for path in glob.iglob(IMAGES_PATH + '/*'):
 
             if INTERACTION_TYPES:
 
-                y_train.append(LABELS[label])
+                y_train.append(INTERACTION_LABELS[label])
 
             else:
 
-                y_train.append(DELIMITED_LABELS[label])
+                y_train.append(NEUTRINO_LABELS[label])
  
         # Fill validation set
 
@@ -209,6 +209,15 @@ logging.info('Number of test examples: %d', len(partition['test']))
 logging.info('Calculating class weights...')
 
 class_weights = dict(enumerate(class_weight.compute_class_weight('balanced', np.unique(y_train), y_train)))
+
+'''
+# Manually set class weights
+
+class_weights[0]*=0.8
+class_weights[1]*=0.8
+class_weights[2]*=1.2
+class_weights[3]*=0.8
+'''
 
 logging.info('Class weights: %s', class_weights)
 

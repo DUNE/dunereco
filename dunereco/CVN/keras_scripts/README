@@ -1,4 +1,0 @@
-config.ini : file to specify the program parameters
-generate_dataset.py : generate the train, validation, and test sequences, as well as the labels
-training.py : train the network
-test.py : test the network
