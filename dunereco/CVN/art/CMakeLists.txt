@@ -47,7 +47,7 @@ art_make(BASENAME_ONLY
   ${LEVELDBLIB}
   ${GFLAGSLIB}
   ${GLOGLIB}                             
-
+  MVAAlg
   MODULE_LIBRARIES  CVNFunc
   CVNArt
   )
