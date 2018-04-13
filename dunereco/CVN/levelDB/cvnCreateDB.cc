@@ -81,8 +81,8 @@ public:
     fRegressionHDF5NameTest (pset.get<std::string>("RegressionHDF5NameTest")),
     fMaxEnergyForLabel (pset.get<float>("MaxEnergyForLabel")),
     fNEvents (pset.get<unsigned int>("NEvents")),
-    fPlaneLimit (pset.get<unsigned int>("NPlanes")),
-    fTDCLimit (pset.get<unsigned int>("NTDCs")),
+    fPlaneLimit (pset.get<unsigned int>("PlaneLimit")),
+    fTDCLimit (pset.get<unsigned int>("TDCLimit")),
     fReverseViews(pset.get<std::vector<bool> >("ReverseViews"))
   {
     if(!fLabeling.compare("all"))      fLabelingMode = kAll;

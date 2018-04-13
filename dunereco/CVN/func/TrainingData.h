@@ -24,6 +24,7 @@ namespace cvn
     TrainingData(const InteractionType& interaction,
                  float nuEnergy, float lepEnergy,
                  float nueEnergy, float numuEnergy,
+                 float weight,
                  const PixelMap& pMap);
 
     unsigned int NOutput() const {return (unsigned int)kNIntType;};
@@ -35,6 +36,7 @@ namespace cvn
     float    fLepEnergy;      ///< True energy of outgoing lepton
     float    fRecoNueEnergy;  ///< Reconstructed energy under nue hypothesis
     float    fRecoNumuEnergy; ///< Reconstructed energy under nue hypothesis
+    float    fEventWeight;    ///< The event weight (norm * oscProb)
     PixelMap fPMap;           ///< PixelMap for the event
   };
 

@@ -18,6 +18,7 @@
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Principal/SubRun.h"
 #include "art/Framework/Services/Optional/TFileDirectory.h"
 #include "art/Framework/Services/Optional/TFileService.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
@@ -41,7 +42,7 @@
 #include "dune/CVN/func/TrainingData.h"
 #include "dune/CVN/func/InteractionType.h"
 #include "dune/CVN/func/PixelMap.h"
-
+#include "dune/FDSensOpt/MVAAlg/MVAAlg.h"
 #include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 
 
@@ -49,15 +50,18 @@
 namespace cvn {
   class CVNEventDump : public art::EDAnalyzer {
   public:
+
     explicit CVNEventDump(fhicl::ParameterSet const& pset);
     ~CVNEventDump();
 
-    void analyze(const art::Event& evt);
+    void analyze(const art::Event& evt) override;
     void reconfigure(const fhicl::ParameterSet& pset);
-    void beginJob();
-    void endJob();
+    void beginJob() override;
+    void endJob() override;
 
   private:
+
+    dunemva::MVAAlg fMVAAlg;
 
     std::string fPixelMapInput;
     std::string fGenieGenModuleLabel;
@@ -77,11 +81,10 @@ namespace cvn {
 
   };
 
-
-
   //.......................................................................
   CVNEventDump::CVNEventDump(fhicl::ParameterSet const& pset)
-    : EDAnalyzer(pset)
+    : EDAnalyzer(pset),
+    fMVAAlg(pset.get<fhicl::ParameterSet>("MVAAlg"))
   {
     this->reconfigure(pset);
   }
@@ -100,6 +103,7 @@ namespace cvn {
     fEnergyNueLabel = pset.get<std::string> ("EnergyNueLabel");  
     fEnergyNumuLabel = pset.get<std::string> ("EnergyNumuLabel");
     fUseEnergyOutput = pset.get<bool> ("UseEnergyOutput");
+    
   }
 
   //......................................................................
@@ -178,29 +182,7 @@ namespace cvn {
     lepEnergy = truthN.Lepton().E();
     //}
 
-    float recoNueEnergy = 0.;
-    float recoNumuEnergy = 0.;
-    // Should we use the EnergyReco_module reconstructed energies?
-    if(fUseEnergyOutput){
-
-      // Get the nue info
-      if(fEnergyNueLabel != ""){
-        art::Handle<dune::EnergyRecoOutput> energyRecoNueHandle;
-        evt.getByLabel(fEnergyNueLabel, energyRecoNueHandle);
-
-        recoNueEnergy = energyRecoNueHandle->fNuLorentzVector.E();
-      }
-
-      // And the numu
-      if(fEnergyNumuLabel != ""){
-        art::Handle<dune::EnergyRecoOutput> energyRecoNumuHandle;
-        evt.getByLabel(fEnergyNueLabel, energyRecoNumuHandle);
-
-        recoNumuEnergy = energyRecoNumuHandle->fNuLorentzVector.E();
-      }
-
-    }
-
+    // If outside the fiducial volume don't waste any time filling other variables
     if(fApplyFidVol){
       // Get the interaction vertex from the lepton
 //      TVector3 vtx = truthN.Lepton().Position().Vect();
@@ -209,8 +191,39 @@ namespace cvn {
       if(!isFid) return;
     }
 
+    float recoNueEnergy = 0.;
+    float recoNumuEnergy = 0.;
+    // Should we use the EnergyReco_module reconstructed energies?
+    if(fUseEnergyOutput){
+      // Get the nue info
+      if(fEnergyNueLabel != ""){
+        art::Handle<dune::EnergyRecoOutput> energyRecoNueHandle;
+        evt.getByLabel(fEnergyNueLabel, energyRecoNueHandle);
+
+        recoNueEnergy = energyRecoNueHandle->fNuLorentzVector.E();
+      }
+      // And the numu
+      if(fEnergyNumuLabel != ""){
+        art::Handle<dune::EnergyRecoOutput> energyRecoNumuHandle;
+        evt.getByLabel(fEnergyNumuLabel, energyRecoNumuHandle);
+
+        recoNumuEnergy = energyRecoNumuHandle->fNuLorentzVector.E();
+      }
+    }
+
+    // Use MVAAlg to get the event weight
+//    fMVAAlg.ResetVars();
+    // Load the event
+//    fMVAAlg.PrepareEvent(evt);
+    // This function calculates the weight (normalisation * osc. probability)
+//    fMVAAlg.CalculateInputs();
+    
+    double eventWeight = 1;
+    double mvaResult = 0; // We don't care about this, but need it for the call
+    fMVAAlg.Run(evt,mvaResult,eventWeight);
+
     if(nhits>0){
-      TrainingData train(interaction, nuEnergy, lepEnergy, recoNueEnergy, recoNumuEnergy, *pixelmaplist[0]);
+      TrainingData train(interaction, nuEnergy, lepEnergy, recoNueEnergy, recoNumuEnergy, eventWeight, *pixelmaplist[0]);
 
       if (fWriteMapTH2) WriteMapTH2(evt, 0, train.fPMap);
 
