@@ -43,7 +43,8 @@ config['train']      = {'resume': 'False',
 config['validation'] = {'batch_size': '32',
                         'fraction': '0.2'}
 
-config['test']       = {'batch_size': '32',
+config['test']       = {'cut': '0.7',
+                        'batch_size': '32',
                         'fraction': '0.2'}
 
 with open('config.ini', 'w') as configfile:

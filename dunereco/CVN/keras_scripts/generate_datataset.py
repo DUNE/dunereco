@@ -15,7 +15,7 @@ from collections import Counter
 ****************************************
 '''
 
-logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 config = configparser.ConfigParser()
 config.read('config.ini')

@@ -6,13 +6,20 @@ import logging, sys
 import re
 
 from sklearn.utils import class_weight
-from keras.models import Sequential, load_model
-from keras.layers import Dense, Dropout, Flatten, BatchNormalization
+from keras.models import Model, Sequential, load_model
+from keras.layers import Input, Dense, Activation, ZeroPadding2D, Dropout, Flatten, BatchNormalization, SeparableConv2D
 from keras import regularizers, optimizers
-from keras.layers.convolutional import Conv2D, MaxPooling2D
+from keras.layers.convolutional import Conv2D, MaxPooling2D, AveragePooling2D
 from keras.callbacks import CSVLogger, ModelCheckpoint, EarlyStopping
 from data_generator import DataGenerator
 from collections import Counter
+
+sys.path.append("/home/salonsom/cvn_tensorflow/networks")
+
+import resnet, googlenet, my_model
+
+from keras import backend as K
+K.set_image_data_format('channels_last')
 
 '''
 ****************************************
@@ -20,7 +27,7 @@ from collections import Counter
 ****************************************
 '''
 
-logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -207,80 +214,22 @@ else:
 
     logging.info('Creating model...')
 
-    # Input shape: (VIEWS x PLANES x CELLS)
+    # Input shape: (PLANES x CELLS x VIEWS)
 
-    input_shape = [VIEWS, PLANES, CELLS]
+    input_shape = [PLANES, CELLS, VIEWS]
 
-    model = Sequential()
-
-    '''
-    model.add(Conv2D(64, kernel_size=(11,11), strides=4, input_shape=input_shape, data_format='channels_first', activation='relu'))
-    model.add(Conv2D(64, kernel_size=(9,9), strides=3, data_format='channels_first', activation='relu'))
-    model.add(Conv2D(64, kernel_size=(7,7), strides=2, data_format='channels_first', activation='relu'))
-    model.add(Conv2D(64, kernel_size=(5,5), strides=2, data_format='channels_first', activation='relu'))
-    '''
-
-    '''
-
-    model.add(Conv2D(64, kernel_size=(11,11), strides=4, input_shape=input_shape, data_format='channels_first', activation='relu'))
-    model.add(Conv2D(64, kernel_size=(9,9), strides=3, data_format='channels_first', activation='relu'))
-    model.add(Conv2D(64, kernel_size=(7,7), strides=2, data_format='channels_first', activation='relu'))
-    model.add(Conv2D(64, kernel_size=(5,5), strides=2, data_format='channels_first', activation='relu'))
-    model.add(MaxPooling2D(pool_size=(4,4), strides=1, data_format='channels_first'))
-    model.add(BatchNormalization(axis=1))
-
-    '''
-
-    '''
-    model.add(Flatten())
-    '''
-   
-    # Convolutional layers
-
-    #model.add(Dropout(0.2, input_shape=input_shape))
-
-    #model.add(Conv2D(64, kernel_size=(7,7), strides=4, padding='same', input_shape=input_shape, data_format='channels_first', activation='relu'))
-    model.add(Conv2D(64, kernel_size=(11,11), strides=4, padding='same', input_shape=input_shape, data_format='channels_first', activation='relu'))
-    #model.add(Conv2D(64, kernel_size=(7,7), strides=4, data_format='channels_first', activation='relu'))
-    model.add(MaxPooling2D(pool_size=(4,4), strides=4, data_format='channels_first'))
-    model.add(BatchNormalization(axis=1))
-
-    #model.add(Conv2D(32, kernel_size=(7,7), strides=2, padding='same', data_format='channels_first', activation='relu'))
-    model.add(Conv2D(32, kernel_size=(7,7), strides=2, padding='same', data_format='channels_first', activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2,2), strides=1, data_format='channels_first'))
-    model.add(BatchNormalization(axis=1))
-
-    model.add(Dropout(0.2))
-
-    # Flat data to dense layers
-
-    model.add(Flatten())
-
-    # Hiddel layers
-
-    model.add(Dense(1000, 
-    #                kernel_regularizer=regularizers.l1_l2(0.001),
-    #                activity_regularizer=regularizers.l1_l2(0.001),
-                    activation='relu'))
-
-    model.add(Dropout(0.2))
-
-    model.add(Dense(1000,
-    #                kernel_regularizer=regularizers.l1_l2(0.001),
-    #                activity_regularizer=regularizers.l1_l2(0.001),
-                    activation='relu'))
-
-    model.add(Dropout(0.4))
-
-    # Output layer
-
-    model.add(Dense(N_LABELS, activation='softmax'))
+    #model = resnet.ResnetBuilder.build_resnet_18(input_shape, N_LABELS)
+    #model = resnet.ResnetBuilder.build_resnet_34(input_shape, N_LABELS)
+    model = resnet.ResnetBuilder.build_resnet_50(input_shape, N_LABELS)
+    #model = resnet.ResnetBuilder.build_resnet_101(input_shape, N_LABELS)
+    #model = resnet.ResnetBuilder.build_resnet_152(input_shape, N_LABELS)
+    #model = my_model.my_model(input_shape=input_shape, classes=N_LABELS)
 
     # Optimizer: Stochastic Gradient Descent
 
     logging.info('Setting optimizer...')
 
-    opt = optimizers.SGD(lr=LEARNING_RATE, momentum=MOMENTUM, decay=DECAY, nesterov=False)
+    opt = optimizers.SGD(lr=LEARNING_RATE, momentum=MOMENTUM, decay=DECAY, nesterov=True)
 
     # Compile model
 
@@ -288,6 +237,11 @@ else:
 
     model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
 
+    '''
+    model.compile(loss='categorical_crossentropy',
+              optimizer='adam',
+              metrics=['accuracy'])
+    '''
 
 # Print model summary
 
