@@ -10,13 +10,13 @@ from keras.models import Model, Sequential, load_model
 from keras.layers import Input, Dense, Activation, ZeroPadding2D, Dropout, Flatten, BatchNormalization, SeparableConv2D
 from keras import regularizers, optimizers
 from keras.layers.convolutional import Conv2D, MaxPooling2D, AveragePooling2D
-from keras.callbacks import CSVLogger, ModelCheckpoint, EarlyStopping
+from keras.callbacks import ReduceLROnPlateau, CSVLogger, ModelCheckpoint, EarlyStopping
 from data_generator import DataGenerator
 from collections import Counter
 
 sys.path.append("/home/salonsom/cvn_tensorflow/networks")
 
-import resnet, googlenet, my_model
+import resnet, resnetpa, googlenet, my_model
 
 from keras import backend as K
 K.set_image_data_format('channels_last')
@@ -218,9 +218,11 @@ else:
 
     input_shape = [PLANES, CELLS, VIEWS]
 
-    #model = resnet.ResnetBuilder.build_resnet_18(input_shape, N_LABELS)
+    #model = resnetpa.ResNetPreAct()
+
+    model = resnet.ResnetBuilder.build_resnet_18(input_shape, N_LABELS)
     #model = resnet.ResnetBuilder.build_resnet_34(input_shape, N_LABELS)
-    model = resnet.ResnetBuilder.build_resnet_50(input_shape, N_LABELS)
+    #model = resnet.ResnetBuilder.build_resnet_50(input_shape, N_LABELS)
     #model = resnet.ResnetBuilder.build_resnet_101(input_shape, N_LABELS)
     #model = resnet.ResnetBuilder.build_resnet_152(input_shape, N_LABELS)
     #model = my_model.my_model(input_shape=input_shape, classes=N_LABELS)
@@ -270,7 +272,8 @@ if VALIDATION_FRACTION > 0:
     if CHECKPOINT_SAVE_MANY:
         filepath = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '-{epoch:02d}-{val_acc:.2f}.h5'
 
-    monitor = 'val_acc'
+    monitor_acc = 'val_acc'
+    monitor_loss = 'val_loss'
 
 else:
 
@@ -279,15 +282,22 @@ else:
     if CHECKPOINT_SAVE_MANY:
         filepath = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '-{epoch:02d}-{acc:.2f}.h5'
 
-    monitor = 'acc' 
+    monitor_acc = 'acc'
+    monitor_loss = 'loss'
 
-checkpoint = ModelCheckpoint(filepath, monitor=monitor, verbose=1, save_best_only=CHECKPOINT_SAVE_BEST_ONLY, mode='max', period=CHECKPOINT_PERIOD)
+checkpoint = ModelCheckpoint(filepath, monitor=monitor_acc, verbose=1, save_best_only=CHECKPOINT_SAVE_BEST_ONLY, mode='max', period=CHECKPOINT_PERIOD)
+
+# Learning rate reducer
+
+logging.info('Configuring learning rate reducer...')
+
+lr_reducer = ReduceLROnPlateau(monitor=monitor_loss, factor=0.1, cooldown=0, patience=2, min_lr=0.5e-6, verbose=1)
 
 # Early stopping
 
 logging.info('Configuring early stopping...')
 
-early_stopping = EarlyStopping(monitor=monitor, patience=EARLY_STOPPING_PATIENCE, mode='auto')
+early_stopping = EarlyStopping(monitor=monitor_acc, patience=EARLY_STOPPING_PATIENCE, mode='auto')
   
 # Configuring log file
 
@@ -297,7 +307,7 @@ csv_logger = CSVLogger(LOG_PATH + LOG_PREFIX + '.log', append=RESUME)
 
 logging.info('Setting callbacks...')
 
-callbacks_list = [checkpoint, early_stopping, csv_logger]
+callbacks_list = [lr_reducer, checkpoint, early_stopping, csv_logger]
 
 
 '''
@@ -348,7 +358,8 @@ if VALIDATION_FRACTION > 0:
                         epochs = EPOCHS,
                         class_weight = class_weights,
                         callbacks = callbacks_list,
-                        initial_epoch = initial_epoch
+                        initial_epoch = initial_epoch,
+                        verbose = 1
                        )
 
 else:
@@ -360,7 +371,8 @@ else:
                         epochs = EPOCHS,
                         class_weight = class_weights,
                         callbacks = callbacks_list,
-                        initial_epoch = initial_epoch
+                        initial_epoch = initial_epoch,
+                        verbose = 1
                        )
 
 

@@ -169,8 +169,9 @@ logging.info('PERFORMING TEST...\n')
 # Predict results
 
 Y_pred = model.predict_generator(generator = prediction_generator,
-                                 steps = len(partition['test'])//TEST_BATCH_SIZE
-                                 )
+                                 steps = len(partition['test'])//TEST_BATCH_SIZE,
+                                 verbose = 1
+                                )
 y_pred = np.argmax(Y_pred, axis=1)
 y_test = y_test[0:len(y_pred)]
 
