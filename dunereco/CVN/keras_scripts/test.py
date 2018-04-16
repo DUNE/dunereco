@@ -69,6 +69,7 @@ PRINT_SUMMARY = ast.literal_eval(config['model']['print_summary'])
 
 # test
 
+CUT = float(config['test']['cut'])
 TEST_BATCH_SIZE = int(config['test']['batch_size'])
 
 # test params
@@ -231,7 +232,7 @@ if INTERACTION_TYPES:
 
 # Neutrino types (from 0 to 3)
 
-neutrino_target_names = ['fCVNResultNue', 'fCVNResultNumu', 'fCVNResultNutau', 'fCVNResultNC']
+neutrino_target_names = ['nue', 'numu', 'nutau', 'nc']
 
 logging.info('Classification report (neutrino flavours):\n')
 
@@ -246,7 +247,7 @@ print ''
 
 # Apply cut
 
-logging.info('Applying a cut of %.2f...\n' % cut)
+logging.info('Applying a cut of %.2f...\n' % CUT)
 
 cut_acum = np.zeros((len(Y_pred_neutrino[0]), len(Y_pred_neutrino[0])))
 
@@ -260,9 +261,9 @@ for sample in range(len(Y_pred_neutrino)):
 
     for label in range(len(Y_pred_neutrino[sample])):
  
-        if Y_pred_neutrino[sample][label] >= cut:
+        if Y_pred_neutrino[sample][label] >= CUT:
 
-            # accumulate if the probability of that label of the sample is >= cut
+            # accumulate if the probability of that label of the sample is >= CUT
             
             y_test_neutrino_cut.append(test_flavour)
             y_pred_neutrino_cut.append(pred_flavour)
@@ -277,9 +278,27 @@ conf3 = confusion_matrix(y_pred_neutrino_cut, y_test_neutrino_cut)
 print conf3
 print ''
 
+logging.info('Applying factors... confusion matrix obtained:\n')
+
+n_nue = sum(conf2[:,0])
+n_numu = sum(conf2[:,1])
+n_nutau = sum(conf2[:,2])
+n_nc = sum(conf2[:,3])
+
+float_formatter = lambda x: "%.4f" % x
+np.set_printoptions(formatter={'float_kind':float_formatter})
+
+conf4 = conf3.astype('float32') * np.array([0.114*n_numu/n_nue,1,0.0297*n_numu/n_nutau,1.0135*n_numu/n_nc])
+print conf4.astype(int)
+print ''
+
+for i in range(len(conf4[0])):
+    print 'Purity', neutrino_target_names[i], ': ', conf4[0][i] / sum(conf4[0])
+
+print ''
+
 logging.info('Efficiency:\n')
 
-np.set_printoptions(precision=3)
 print conf3.astype('float32') / np.add.reduce(conf2)
 #print conf3.astype('float32')/conf2.astype('float32')
 

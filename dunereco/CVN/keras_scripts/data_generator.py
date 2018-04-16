@@ -95,7 +95,7 @@ class DataGenerator(object):
 
       # Initialization
 
-      X = np.empty((self.batch_size, self.views, self.planes, self.cells))
+      X = np.empty((self.batch_size, self.planes, self.cells, self.views))
 
       if yield_labels:
 
@@ -114,6 +114,7 @@ class DataGenerator(object):
               # filtered images
 
               pixels = np.fromstring(zlib.decompress(open(self.images_path + '/' + labels[ID] + '/' + ID + '.txt.gz', 'rb').read()), dtype=np.float64, sep='').reshape(self.views, self.planes, self.cells)
+              pixels = np.rollaxis(pixels, 0, 3) # from 'channels_first' to 'channels_last'
               pixels = pixels.astype('float32')
               pixels/=255
 
@@ -122,6 +123,7 @@ class DataGenerator(object):
               # ordinary images
 
               pixels = np.fromstring(zlib.decompress(open(self.images_path + '/' + labels[ID] + '/' + ID + '.txt.gz', 'rb').read()), dtype=np.uint8, sep='').reshape(self.views, self.planes, self.cells)
+              pixels = np.rollaxis(pixels, 0, 3) # from 'channels_first' to 'channels_last'
 
           # Store volume
 

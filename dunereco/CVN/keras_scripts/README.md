@@ -13,10 +13,13 @@
 * [3. Training](#3-training)
 * [4. Test](#4-test)
  
+<br />
 
 ## 1. Configuration file
 
 First, you need to specify all the configuration parameters in the *config.ini* file (you can always regenerate the configuration file by executing the Python script *generate_config.py*):
+
+<br />
 
 <a name="1-1-random"></a>
 ### [random]
@@ -40,6 +43,8 @@ First, you need to specify all the configuration parameters in the *config.ini* 
 **Type:** Boolean. 
 
 **Example:** `shuffle = True`
+
+<br />
 
 <a name="1-2-images"></a>
 ### [images]
@@ -140,6 +145,8 @@ Where IMAGES_PATH corresponds to the previously described path. That path consis
 
 **Example:** `path = /scratch/devFilesRaw`
 
+<br />
+
 <a name="1-3-dataset"></a>
 ### [dataset]
 
@@ -193,6 +200,8 @@ Where IMAGES_PATH corresponds to the previously described path. That path consis
 
 **Example:** `uniform = True`
 
+<br />
+
 <a name="1-4-log"></a>
 ### [log]
 
@@ -215,6 +224,8 @@ Where IMAGES_PATH corresponds to the previously described path. That path consis
 **Type:** String.
 
 **Example:** `prefix = /output`
+
+<br />
 
 <a name="1-5-model"></a>
 ### [model]
@@ -314,6 +325,8 @@ Non-trainable params: 192
 **Type:** Integer.
 
 **Example:** `checkpoint_period = 1`
+
+<br />
 
 <a name="1-6-train"></a>
 ### [train]
@@ -430,6 +443,8 @@ Some Deep Learning frameworks (e.g., Caffe) do not use the term epoch; however, 
 
 **Example:** `momentum = 0.9`
 
+<br />
+
 <a name="1-7-validation"></a>
 ### [validation]
 
@@ -457,8 +472,20 @@ Some Deep Learning frameworks (e.g., Caffe) do not use the term epoch; however, 
 
 *NOTE:* a mini-batch consist of a set of N samples. The samples in a mini-batch are processed independently, in parallel.
 
+<br />
+
 <a name="1-8-test"></a>
 ### [test]
+
+#### - cut
+
+> cut = CUT
+
+**Description:** cut to apply during the analysis.
+
+**Type:** Floating-point.
+
+**Example:** `cut = 0.7`
 
 #### - fraction
 
@@ -484,6 +511,8 @@ Some Deep Learning frameworks (e.g., Caffe) do not use the term epoch; however, 
 
 *NOTE:* a mini-batch consist of a set of N samples. The samples in a mini-batch are processed independently, in parallel.
 
+<br />
+
 ## 2. Dataset generator
 
 Once you specified all the parameters in the *config.ini* file, you should generate the datasets by executing the Python script *dataset_generator.py* as follows:
@@ -492,11 +521,15 @@ Once you specified all the parameters in the *config.ini* file, you should gener
 
 It will create the partition and labels pickled files under the dataset directory specified in the configuration file.
 
+<br />
+
 ## 3. Training
 
 Once the datasets are created, you should start the training by executing the Python script *training.py* as follows:
 
 > ./execute.sh training.py
+
+<br />
 
 ## 4. Test
 
