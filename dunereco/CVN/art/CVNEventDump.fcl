@@ -2,12 +2,12 @@
 
 BEGIN_PROLOG
 
-#   This file defines the configuration for the CVNEventDump module 
+# Define two special versions of mvaselect, one for FHC
 standard_mvaselect_fhc: @local::dunefd_mvaselect
 standard_mvaselect_fhc.MVAMethod:  "BDTG"
 standard_mvaselect_fhc.WeightFile: "MVASelect/v2.2/TMVAClassification_BDTG.numu.weights.xml"
 standard_mvaselect_fhc.BeamMode: "FHC"
-
+# and one for RHC
 standard_mvaselect_rhc: @local::dunefd_mvaselect
 standard_mvaselect_rhc.MVAMethod:  "BDTG"
 standard_mvaselect_rhc.WeightFile: "MVASelect/v2.2/TMVAClassification_BDTG.anumu.weights.xml"
@@ -24,10 +24,12 @@ standard_cvneventdump_fhc:
   # Use the following to add the reco energy to the output tree
   EnergyNueLabel: "energynue"
   EnergyNumuLabel: "energynumu"
-  UseEnergyOutput: true
+  GetEnergyOutput: true
+  GetEventWeight: true
   MVAAlg: @local::standard_mvaselect_fhc
 }
 
+# Make the rhc version 
 standard_cvneventdump_rhc: @local::standard_cvneventdump_fhc
 standard_cvneventdump_rhc.MVAAlg: @local::standard_mvaselect_rhc
 
