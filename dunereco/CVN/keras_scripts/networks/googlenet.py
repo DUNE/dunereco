@@ -1,3 +1,7 @@
+'''
+Based on https://gist.github.com/joelouismarino/a2ede9ab3928f999575423b9887abd14
+'''
+
 from scipy.misc import imread, imresize
 
 from keras.layers import Input, Dense, Convolution2D, MaxPooling2D, AveragePooling2D, ZeroPadding2D, Dropout, Flatten, merge, Reshape, Activation
