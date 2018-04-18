@@ -16,6 +16,8 @@ namespace cvn
   {
   public:
     Result(const float* output, unsigned int& nOutputs);
+    // Vector version of the constructor
+    Result(const std::vector<float> output);
     //Result(const float* output, unsigned int& nOutputs, const float* features, unsigned int& nFeatures);
     Result();
 
@@ -26,7 +28,9 @@ namespace cvn
     unsigned int Max();
 
     /// Number of outputs, i.e. size of vector
-    unsigned int NOutput();
+    unsigned int NOutput(){
+      return fOutput.size();
+    };
 
     std::vector<float> fOutput;  ///< Vector of outputs from neural net
 

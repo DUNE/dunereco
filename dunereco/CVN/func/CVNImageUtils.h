@@ -14,6 +14,12 @@
 namespace cvn
 {
 
+  /// Useful typedefs
+  typedef std::vector<std::vector<unsigned char> > ViewVector;
+  typedef std::vector<ViewVector> ImageVector;
+  typedef std::vector<std::vector<float> > ViewVectorF;
+  typedef std::vector<ViewVectorF> ImageVectorF;
+
   /// Class containing some utility functions for all things CVN
   class CVNImageUtils
   {
@@ -41,11 +47,34 @@ namespace cvn
     /// Convert a Pixel Map object into a single pixel array with an image size nWire x nTDC
     void ConvertPixelMapToPixelArray(const PixelMap &pm, std::vector<unsigned char> &pix);
 
-    /// Convert (up to) three vectors (sorted in the same way as the vectors in the PixelMap object) 
+    /// Convert three vectors (sorted in the same way as the vectors in the PixelMap object) 
     /// into a single pixel array with an image size nWire x nTDC
     void ConvertChargeVectorsToPixelArray(std::vector<float> &v0pe, std::vector<float> &v1pe,
                                           std::vector<float> &v2pe, std::vector<unsigned char> &pix);  
+
+    /// Convert a pixel map into an image vector (contains all three views)
+    void ConvertPixelMapToImageVector(const PixelMap &pm, ImageVector &imageVec);
+
+    /// Convert a pixel map into an image vector (float version)
+    void ConvertPixelMapToImageVectorF(const PixelMap &pm, ImageVectorF &imageVec);
+
+    /// Convert three adc vectors into an image vector (contains all three views)
+    void ConvertChargeVectorsToImageVector(std::vector<float> &v0pe, std::vector<float> &v1pe,
+                                           std::vector<float> &v2pe, ImageVector &imageVec);  
+
+    /// Float version of conversion for convenience of TF interface
+    void ConvertChargeVectorsToImageVectorF(std::vector<float> &v0pe, std::vector<float> &v1pe,
+                                           std::vector<float> &v2pe, ImageVectorF &imageVec);  
+
   private:
+
+    /// Base function for conversion of the Pixel Map to our required output format
+    void ConvertChargeVectorsToViewVectors(std::vector<float> &v0pe, std::vector<float> &v1pe, std::vector<float> &v2pe,
+                                  ViewVector& view0, ViewVector& view1, ViewVector& view2);
+
+    /// Make the image vector from the view vectors
+    ImageVector BuildImageVector(ViewVector v0, ViewVector v1, ViewVector v2);
+    ImageVectorF BuildImageVectorF(ViewVectorF v0, ViewVectorF v1, ViewVectorF v2);
 
     /// Get the minimum and maximum wires from the pixel map needed to make the image
     void GetMinMaxWires(std::vector<float> &wireCharges, unsigned int &minWire, unsigned int &maxWire); 
@@ -55,6 +84,12 @@ namespace cvn
 
     /// Funtion to actually reverse the view
     void ReverseView(std::vector<float> &peVec);
+
+    /// Convert a ViewVector into a ViewVectorF
+    ViewVectorF ConvertViewVecToViewVecF(ViewVector view);
+
+    /// Convert a ImageVector into a ImageVectorF
+    ImageVectorF ConvertImageVecToImageVecF(ImageVector image);
 
     /// Number of views of each event
     unsigned int fNViews;

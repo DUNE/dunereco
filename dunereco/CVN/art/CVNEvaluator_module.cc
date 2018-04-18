@@ -43,6 +43,7 @@
 #include "dune/CVN/func/Result.h"
 #include "dune/CVN/func/PixelMap.h"
 #include "dune/CVN/art/CaffeNetHandler.h"
+#include "dune/CVN/art/TFNetHandler.h"
 
 
 namespace cvn {
@@ -64,21 +65,25 @@ namespace cvn {
     std::string fPixelMapInput;
     std::string fResultLabel;
 
-    cvn::CaffeNetHandler fHandler;
+    /// Can use Caffe or Tensorflow
+    std::string fCVNType;
+
+    cvn::CaffeNetHandler fCaffeHandler;
+    cvn::TFNetHandler fTFHandler;
 
     /// Number of outputs fron neural net
     unsigned int fNOutput;
 
   };
 
-
-
   //.......................................................................
   CVNEvaluator::CVNEvaluator(fhicl::ParameterSet const& pset):
     fPixelMapInput (pset.get<std::string>         ("PixelMapInput")),
     fResultLabel (pset.get<std::string>         ("ResultLabel")),
-    fHandler       (pset.get<fhicl::ParameterSet> ("CaffeNetHandler")),
-    fNOutput       (fHandler.NOutput())
+    fCVNType     (pset.get<std::string>         ("CVNType")),
+    fCaffeHandler       (pset.get<fhicl::ParameterSet> ("CaffeNetHandler")),
+    fTFHandler       (pset.get<fhicl::ParameterSet> ("TFNetHandler")),
+    fNOutput       (fCaffeHandler.NOutput())
   {
     produces< std::vector<cvn::Result>   >(fResultLabel);
   }
@@ -107,19 +112,41 @@ namespace cvn {
     std::unique_ptr< std::vector<Result> >
                                   resultCol(new std::vector<Result>);
 
+    /// Load in the pixel maps
     art::Handle< std::vector< cvn::PixelMap > > pixelmapListHandle;
     std::vector< art::Ptr< cvn::PixelMap > > pixelmaplist;
     if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmapListHandle))
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
 
-    if(pixelmaplist.size()>0){
-      std::pair<const float*, const float*> pairedoutput= fHandler.Predict(*pixelmaplist[0]);
-      const float* output=pairedoutput.first;
-      //const float* features=pairedoutput.second;
+    /// Make sure we have a valid name for the CVN type
+    if(fCVNType == "Caffe"){
+      if(pixelmaplist.size()>0){
+        std::pair<const float*, const float*> pairedoutput= fCaffeHandler.Predict(*pixelmaplist[0]);
+        const float* output=pairedoutput.first;
+        //const float* features=pairedoutput.second;
 
-      resultCol->emplace_back(output, fNOutput);
+        resultCol->emplace_back(output, fNOutput);
 
+      }
     }
+    else if(fCVNType == "TF" || fCVNType == "Tensorflow" || fCVNType == "TensorFlow"){
+
+      if(pixelmaplist.size() > 0){
+        /// I think we need our own TF interface as the larreco one doesn't meet our needs
+        /// The interface expects a vector of vectors of floats
+        
+        std::vector<float> networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
+
+        resultCol->emplace_back(networkOutput);
+      }
+    }
+    else{
+      mf::LogError("CVNEvaluator::produce") << "CVN Type not in the allowed list: Tensorflow, Caffe" << std::endl;
+      mf::LogError("CVNEvaluator::produce") << "Exiting without processing events" << std::endl;
+      return;
+    }
+
+
 
     evt.put(std::move(resultCol), fResultLabel);
 

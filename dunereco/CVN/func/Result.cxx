@@ -19,6 +19,11 @@ namespace cvn
     for(size_t i = 0; i < nOutputs; ++i) fOutput[i] = output[i];
   }
 
+  Result::Result(const std::vector<float> output){
+    fOutput = output;
+    
+  }
+
   Result::Result():
   fOutput()
   {}

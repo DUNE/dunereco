@@ -73,10 +73,12 @@ void cvn::CVNImageUtils::SetPixelMapSize(unsigned int nWires, unsigned int nTDCs
 void cvn::CVNImageUtils::ConvertPixelMapToPixelArray(const PixelMap &pm, std::vector<unsigned char> &pix){
 
   SetPixelMapSize(pm.fNWire,pm.fNTdc);
+
   // Strip out the charge vectors and use these
   std::vector<float> v0pe = pm.fPEX;
   std::vector<float> v1pe = pm.fPEY;
   std::vector<float> v2pe = pm.fPEZ;
+
   ConvertChargeVectorsToPixelArray(v0pe,v1pe,v2pe,pix);
 
 }
@@ -84,6 +86,98 @@ void cvn::CVNImageUtils::ConvertPixelMapToPixelArray(const PixelMap &pm, std::ve
 
 void cvn::CVNImageUtils::ConvertChargeVectorsToPixelArray(std::vector<float> &v0pe, std::vector<float> &v1pe,
                                                           std::vector<float> &v2pe, std::vector<unsigned char> &pix){
+
+  // Get the vectors
+  cvn::ViewVector view0;
+  cvn::ViewVector view1;
+  cvn::ViewVector view2;
+  ConvertChargeVectorsToViewVectors(v0pe, v1pe, v2pe, view0, view1, view2); 
+
+  // Actually write the values to the pixel array
+  for (unsigned int view = 0; view < fNViews; ++view){
+    for (unsigned int wire = 0; wire < fNWires; ++wire){
+      for (unsigned int time = 0; time < fNTDCs; ++time){
+
+        unsigned char val = 0;
+        // Get the index for the pixel map
+        if(view == 0 ){ val = view0[wire][time]; }
+        if(view == 1 ){ val = view1[wire][time]; }
+        if(view == 2 ){ val = view2[wire][time]; }
+
+        // Get the index for the final image
+        unsigned int i = time + fNTDCs * (wire + fNWires * view);
+        pix[i] = val;
+  
+      }
+    }
+  }
+
+  return;
+
+}
+
+void cvn::CVNImageUtils::ConvertPixelMapToImageVector(const cvn::PixelMap &pm, cvn::ImageVector &imageVec){
+
+  SetPixelMapSize(pm.fNWire,pm.fNTdc);
+
+  // Strip out the charge vectors and use these
+  std::vector<float> v0pe = pm.fPEX;
+  std::vector<float> v1pe = pm.fPEY;
+  std::vector<float> v2pe = pm.fPEZ;
+
+  ConvertChargeVectorsToImageVector(v0pe, v1pe, v2pe, imageVec);
+}
+
+void cvn::CVNImageUtils::ConvertPixelMapToImageVectorF(const cvn::PixelMap &pm, cvn::ImageVectorF &imageVec){
+
+  SetPixelMapSize(pm.fNWire,pm.fNTdc);
+
+  // Strip out the charge vectors and use these
+  std::vector<float> v0pe = pm.fPEX;
+  std::vector<float> v1pe = pm.fPEY;
+  std::vector<float> v2pe = pm.fPEZ;
+
+  cvn::ImageVector imageVecChar;
+  ConvertChargeVectorsToImageVector(v0pe, v1pe, v2pe, imageVecChar);
+  imageVec = ConvertImageVecToImageVecF(imageVecChar);
+}
+
+void cvn::CVNImageUtils::ConvertChargeVectorsToImageVector(std::vector<float> &v0pe, std::vector<float> &v1pe,
+                                                           std::vector<float> &v2pe, cvn::ImageVector &imageVec){
+
+  cvn::ViewVector view0;
+  cvn::ViewVector view1;
+  cvn::ViewVector view2;
+
+  ConvertChargeVectorsToViewVectors(v0pe, v1pe, v2pe, view0, view1, view2);
+
+  cvn::ImageVector newImage = BuildImageVector(view0,view1,view2);
+
+  imageVec = newImage;
+}
+
+void cvn::CVNImageUtils::ConvertChargeVectorsToImageVectorF(std::vector<float> &v0pe, std::vector<float> &v1pe,
+                                                           std::vector<float> &v2pe, cvn::ImageVectorF &imageVec){
+
+  cvn::ViewVector view0;
+  cvn::ViewVector view1;
+  cvn::ViewVector view2;
+
+  ConvertChargeVectorsToViewVectors(v0pe, v1pe, v2pe, view0, view1, view2);
+
+  // Convert the ViewVector to ViewVectorF
+  cvn::ViewVectorF floatView0 = ConvertViewVecToViewVecF(view0);
+  cvn::ViewVectorF floatView1 = ConvertViewVecToViewVecF(view1);
+  cvn::ViewVectorF floatView2 = ConvertViewVecToViewVecF(view2);
+
+  cvn::ImageVectorF newImage = BuildImageVectorF(floatView0,floatView1,floatView2);
+
+  imageVec = newImage;
+}
+
+
+void cvn::CVNImageUtils::ConvertChargeVectorsToViewVectors(std::vector<float> &v0pe, std::vector<float> &v1pe, std::vector<float> &v2pe,
+                                       cvn::ViewVector& view0, cvn::ViewVector& view1, cvn::ViewVector& view2){
 
   // Reverse requested views
   if(fViewReverse[0]) ReverseView(v0pe);
@@ -118,6 +212,7 @@ void cvn::CVNImageUtils::ConvertChargeVectorsToPixelArray(std::vector<float> &v0
     std::vector<float> tempChargeVec;
     for (unsigned int time = 0; time < fPixelMapTDCs; ++time){
 
+
       float totCharge = 0;
       for (unsigned int wire = 0; wire < fPixelMapWires; ++wire){
 
@@ -149,24 +244,25 @@ void cvn::CVNImageUtils::ConvertChargeVectorsToPixelArray(std::vector<float> &v0
                             << imageStartTDC[view]  << ", " << imageEndTDC[view]  << std::endl;
   }
 
-  // Actually write the values to the pixel array
+  // Write the values to the three vectors
   for (unsigned int view = 0; view < fNViews; ++view){
-    for (unsigned int wire = imageStartWire[view]; wire < imageEndWire[view]; ++wire){
-      for (unsigned int time = imageStartTDC[view]; time < imageEndTDC[view]; ++time){
+    cvn::ViewVector viewChargeVec;
+    for (unsigned int wire = imageStartWire[view]; wire <= imageEndWire[view]; ++wire){
+      std::vector<unsigned char> wireTDCVec;
+      for (unsigned int time = imageStartTDC[view]; time <= imageEndTDC[view]; ++time){
 
-        float val = 0.;
         // Get the index for the pixel map
         unsigned int element = time + fPixelMapTDCs * wire;
-        if(view == 0 ){ val = v0pe[element]; }
-        if(view == 1 ){ val = v1pe[element]; }
-        if(view == 2 ){ val = v2pe[element]; }
+        if(view == 0 ){ wireTDCVec.push_back(v0pe[element]); }
+        if(view == 1 ){ wireTDCVec.push_back(v1pe[element]); }
+        if(view == 2 ){ wireTDCVec.push_back(v2pe[element]); }
 
-        // Get the index for the final image
-        unsigned int i = (time-imageStartTDC[view]) + fNTDCs * ((wire - imageStartWire[view]) + fNWires * view);
-        pix[i] = ConvertChargeToChar(val);
-  
       }
+      viewChargeVec.push_back(wireTDCVec);
     }
+    if(view == 0) view0 = viewChargeVec;
+    if(view == 1) view1 = viewChargeVec;
+    if(view == 2) view2 = viewChargeVec;
   }
 
   return;
@@ -252,4 +348,74 @@ void cvn::CVNImageUtils::ReverseView(std::vector<float> &peVec){
   }
 
 }
+
+cvn::ViewVectorF cvn::CVNImageUtils::ConvertViewVecToViewVecF(cvn::ViewVector view){
+
+  cvn::ViewVectorF newVec; 
+  for(size_t w = 0; w < view.size(); ++w){
+    std::vector<float> thisWire;
+    for(size_t t = 0; t < view[w].size(); ++t){
+      thisWire.push_back(view[w][t]);
+    }
+    newVec.push_back(thisWire);
+  }
+  return newVec;
+}
+
+cvn::ImageVectorF cvn::CVNImageUtils::ConvertImageVecToImageVecF(cvn::ImageVector image){
+
+  cvn::ImageVectorF newImage; 
+  for(size_t v = 0; v < image.size(); ++v){
+    cvn::ViewVectorF thisView;
+    for(size_t w = 0; w < image[v].size(); ++w){
+      std::vector<float> thisWire;
+      for(size_t t = 0; t < image[v][w].size(); ++t){
+        thisWire.push_back(image[v][w][t]);
+      }
+      thisView.push_back(thisWire);
+    }
+    newImage.push_back(thisView);
+  }
+  return newImage;
+}
+
+cvn::ImageVector cvn::CVNImageUtils::BuildImageVector(cvn::ViewVector v0, cvn::ViewVector v1, cvn::ViewVector v2){
+
+  // Tensorflow wants things in the arrangement <wires, TDCs, views>
+  cvn::ImageVector image;
+  for(unsigned int w = 0; w < v0.size(); ++w){
+    std::vector<std::vector<unsigned char> > wireVec;
+    for(unsigned int t = 0; t < v0[0].size(); ++t){
+      std::vector<unsigned char> timeVec;
+      timeVec.push_back(v0[w][t]);
+      timeVec.push_back(v1[w][t]);
+      timeVec.push_back(v2[w][t]);
+      wireVec.push_back(timeVec);
+    } // Loop over tdcs
+    image.push_back(wireVec);
+  } // Loop over wires
+  
+  return image;
+
+}
+
+cvn::ImageVectorF cvn::CVNImageUtils::BuildImageVectorF(cvn::ViewVectorF v0, cvn::ViewVectorF v1, cvn::ViewVectorF v2){
+
+  // Tensorflow wants things in the arrangement <wires, TDCs, views>
+  cvn::ImageVectorF image;
+  for(unsigned int w = 0; w < v0.size(); ++w){
+    std::vector<std::vector<float> > wireVec;
+    for(unsigned int t = 0; t < v0[0].size(); ++t){
+      std::vector<float> timeVec;
+      timeVec.push_back(v0[w][t]);
+      timeVec.push_back(v1[w][t]);
+      timeVec.push_back(v2[w][t]);
+      wireVec.push_back(timeVec);
+    } // Loop over tdcs
+    image.push_back(wireVec);
+  } // Loop over wires
+  
+  return image;
+}
+
 
