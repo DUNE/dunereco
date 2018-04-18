@@ -36,6 +36,10 @@ class dunefd::Hit2D
 	size_t fKey;
 };
 
+#if defined __clang__
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wunused-private-field"
+#endif
 class dunefd::IniSegAlg
 {
 	public:
@@ -85,6 +89,9 @@ class dunefd::IniSegAlg
 	float const fThrcos;
 	float fCos;
 };
+#if defined __clang__
+  #pragma clang diagnostic pop
+#endif
 
 class dunefd::bDistCentLess2D :
 	public std::binary_function< Hit2D, Hit2D, bool >

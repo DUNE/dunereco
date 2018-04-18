@@ -252,7 +252,7 @@ private:
   float fC1Horiz;
   float fC2Vert;
   float fC2Horiz;
-  UInt_t fSeedValue;
+  //UInt_t fSeedValue;	// unused
   std::map<unsigned int, std::pair<TVector3, std::vector<TVector3> > > fCounterPositionMap;
 
   dune::HitLineFitAlg fFitAlg;
@@ -1174,7 +1174,9 @@ bool dune::RobustHitFinder::ValidTrigger(std::vector<unsigned int> evtTriggers, 
   for (size_t i_c = 0; i_c < evtTriggers.size(); i_c++)
     {
       unsigned int trigID = evtTriggers[i_c];
-      if (trigID >= 0 && trigID <= 5) contains_SL++;
+      // for c2: trigID is an unsigned int and always >= 0
+      //if (trigID >= 0 && trigID <= 5) contains_SL++;
+      if (trigID <= 5) contains_SL++;
       if (trigID >= 6 && trigID <= 15) contains_EL++;
       if (trigID >= 16 && trigID <= 21) contains_NL++;
       if (trigID >= 22 && trigID <= 27) contains_NU++;
