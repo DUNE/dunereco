@@ -240,8 +240,8 @@ void cvn::CVNImageUtils::ConvertChargeVectorsToViewVectors(std::vector<float> &v
     GetMinMaxWires(wireCharges[view],imageStartWire[view],imageEndWire[view]);
     GetMinMaxTDCs(tdcCharges[view],imageStartTDC[view],imageEndTDC[view]);
 
-    std::cout << " Wires: " << imageStartWire[view] << ", " << imageEndWire[view] << " :: TDCs: "
-                            << imageStartTDC[view]  << ", " << imageEndTDC[view]  << std::endl;
+//    std::cout << " Wires: " << imageStartWire[view] << ", " << imageEndWire[view] << " :: TDCs: "
+//                            << imageStartTDC[view]  << ", " << imageEndTDC[view]  << std::endl;
   }
 
   // Write the values to the three vectors

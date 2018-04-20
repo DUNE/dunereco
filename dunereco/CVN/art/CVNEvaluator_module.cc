@@ -130,13 +130,12 @@ namespace cvn {
       }
     }
     else if(fCVNType == "TF" || fCVNType == "Tensorflow" || fCVNType == "TensorFlow"){
-
+      // If we have a pixel map then use the TF interface to give us a prediction
       if(pixelmaplist.size() > 0){
-        /// I think we need our own TF interface as the larreco one doesn't meet our needs
-        /// The interface expects a vector of vectors of floats
         
         std::vector<float> networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
 
+        // cvn::Result can now take a vector of floats and works out the number of outputs
         resultCol->emplace_back(networkOutput);
       }
     }
@@ -146,7 +145,8 @@ namespace cvn {
       return;
     }
 
-
+    mf::LogInfo("CVNEvaluator::produce") << " Predicted: " << (*resultCol)[0].PredictedInteractionType() << std::endl; 
+    std::cout << " Predicted: " << (*resultCol)[0].PredictedInteractionType() << std::endl; 
 
     evt.put(std::move(resultCol), fResultLabel);
 

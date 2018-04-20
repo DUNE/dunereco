@@ -18,8 +18,12 @@ cet_find_library( GLOGLIB NAMES glog PATHS ENV GLOG_LIB NO_DEFAULT_PATH )
 
 # Tensorflow stuff
 if (DEFINED ENV{TENSORFLOW_DIR})
-#set (LARRECO_RECOALG_IMAGEPATTERNALGS_TF larreco_RecoAlg_ImagePatternAlgs_TF)
+# For some reason we apparently need to care if larreco is checked out.
+if (larreco_not_in_ups)
+set (LARRECO_RECOALG_IMAGEPATTERNALGS_TF larreco_RecoAlg_ImagePatternAlgs_TF)
+else (larreco_not_in_ups)
 cet_find_library( LARRECO_RECOALG_IMAGEPATTERNALGS_TF NAMES larreco_RecoAlg_ImagePatternAlgs_TF PATHS ENV LARRECO_LIB NO_DEFAULT_PATH)
+endif (larreco_not_in_ups)
 else(DEFINED ENV{TENSORFLOW_DIR})
 set (EXCLUDE_TF TFNetHandler.cxx)
 endif (DEFINED ENV{TENSORFLOW_DIR})

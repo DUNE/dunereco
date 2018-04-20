@@ -11,11 +11,13 @@
 #include <memory>
 
 #include "dune/CVN/func/PixelMap.h"
+#include "dune/CVN/func/InteractionType.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "larreco/RecoAlg/ImagePatternAlgs/TF/tf_graph.h"
 
 namespace cvn
 {
+
   /// Wrapper for caffe::Net which handles construction and prediction
   class TFNetHandler
   {

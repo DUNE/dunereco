@@ -31,6 +31,7 @@ namespace cvn
 
     // Construct the TF Graph object. The empty vector {} is used since the protobuf
     // file gives the names of the output layer nodes
+    mf::LogInfo("TFNetHandler") << "Loading network: " << fTFProtoBuf << std::endl;
     fTFGraph = tf::Graph::create(fTFProtoBuf.c_str(),{});
     if(!fTFGraph){
       art::Exception(art::errors::Unknown) << "Tensorflow model not found or incorrect";
@@ -61,6 +62,12 @@ namespace cvn
     vecForTF.push_back(thisImage);
 
     auto cvnResults = fTFGraph->run(vecForTF);
+
+    std::cout << "Classifier summary: ";
+    for(auto const v : cvnResults[0]){
+      std::cout << v << ", ";
+    }
+    std::cout << std::endl;
 
     return cvnResults[0];
   }
