@@ -137,9 +137,7 @@ void cvn::CVNImageUtils::ConvertPixelMapToImageVectorF(const cvn::PixelMap &pm, 
   std::vector<float> v1pe = pm.fPEY;
   std::vector<float> v2pe = pm.fPEZ;
 
-  cvn::ImageVector imageVecChar;
-  ConvertChargeVectorsToImageVector(v0pe, v1pe, v2pe, imageVecChar);
-  imageVec = ConvertImageVecToImageVecF(imageVecChar);
+  ConvertChargeVectorsToImageVectorF(v0pe, v1pe, v2pe, imageVec);
 }
 
 void cvn::CVNImageUtils::ConvertChargeVectorsToImageVector(std::vector<float> &v0pe, std::vector<float> &v1pe,
@@ -228,7 +226,7 @@ void cvn::CVNImageUtils::ConvertChargeVectorsToViewVectors(std::vector<float> &v
     tdcCharges.push_back(tempChargeVec);
   }
 
-  // The output image consists of a rectangular regino of the pixel map
+  // The output image consists of a rectangular region of the pixel map
   // We want to find the start and end wires for each view
   std::vector<unsigned int> imageStartWire(3,0);
   std::vector<unsigned int> imageEndWire(3,0);
@@ -253,10 +251,13 @@ void cvn::CVNImageUtils::ConvertChargeVectorsToViewVectors(std::vector<float> &v
 
         // Get the index for the pixel map
         unsigned int element = time + fPixelMapTDCs * wire;
-        if(view == 0 ){ wireTDCVec.push_back(v0pe[element]); }
-        if(view == 1 ){ wireTDCVec.push_back(v1pe[element]); }
-        if(view == 2 ){ wireTDCVec.push_back(v2pe[element]); }
 
+        // We have to convert to char and then convert back to a float
+        unsigned char val = 0;
+        if(view == 0){ val = ConvertChargeToChar(v0pe[element]); }
+        if(view == 1){ val = ConvertChargeToChar(v1pe[element]); }
+        if(view == 2){ val = ConvertChargeToChar(v2pe[element]); }
+        wireTDCVec.push_back(val);
       }
       viewChargeVec.push_back(wireTDCVec);
     }
@@ -266,6 +267,31 @@ void cvn::CVNImageUtils::ConvertChargeVectorsToViewVectors(std::vector<float> &v
   }
 
   return;
+
+}
+
+void cvn::CVNImageUtils::ConvertPixelArrayToImageVectorF(const std::vector<unsigned char> &pixelArray, cvn::ImageVectorF &imageVec){
+
+  // The pixel arrays is built with indices i = tdc + nTDCs(wire + nWires*view)
+
+  cvn::ViewVectorF view0; 
+  cvn::ViewVectorF view1; 
+  cvn::ViewVectorF view2;
+ 
+  for(unsigned int v = 0; v < fNViews; ++v){
+    for(unsigned int w = 0; w < fNWires; ++w){
+      std::vector<float> wireVec;
+      for(unsigned int t = 0; t < fNTDCs; ++t){
+        unsigned int index = t + fNTDCs*(w + fNWires*v);
+        wireVec.push_back(pixelArray[index]);
+      }
+      if(v==0) view0.push_back(wireVec);
+      if(v==1) view1.push_back(wireVec);
+      if(v==2) view2.push_back(wireVec);
+    }
+  }
+
+  imageVec = BuildImageVectorF(view0,view1,view2);
 
 }
 
@@ -355,7 +381,8 @@ cvn::ViewVectorF cvn::CVNImageUtils::ConvertViewVecToViewVecF(cvn::ViewVector vi
   for(size_t w = 0; w < view.size(); ++w){
     std::vector<float> thisWire;
     for(size_t t = 0; t < view[w].size(); ++t){
-      thisWire.push_back(view[w][t]);
+      float chargeSC = static_cast<float>(view[w][t]);
+      thisWire.push_back(chargeSC);
     }
     newVec.push_back(thisWire);
   }
@@ -365,16 +392,17 @@ cvn::ViewVectorF cvn::CVNImageUtils::ConvertViewVecToViewVecF(cvn::ViewVector vi
 cvn::ImageVectorF cvn::CVNImageUtils::ConvertImageVecToImageVecF(cvn::ImageVector image){
 
   cvn::ImageVectorF newImage; 
-  for(size_t v = 0; v < image.size(); ++v){
-    cvn::ViewVectorF thisView;
-    for(size_t w = 0; w < image[v].size(); ++w){
-      std::vector<float> thisWire;
-      for(size_t t = 0; t < image[v][w].size(); ++t){
-        thisWire.push_back(image[v][w][t]);
+  for(size_t w = 0; w < image.size(); ++w){
+    cvn::ViewVectorF thisWire;
+    for(size_t t = 0; t < image[w].size(); ++t){
+      std::vector<float> thisTime;
+      for(size_t v = 0; v < image[w][t].size(); ++v){
+        float chargeSC = static_cast<float>(image[w][t][v]);
+        thisTime.push_back(chargeSC);
       }
-      thisView.push_back(thisWire);
+      thisWire.push_back(thisTime);
     }
-    newImage.push_back(thisView);
+    newImage.push_back(thisWire);
   }
   return newImage;
 }
@@ -415,6 +443,8 @@ cvn::ImageVectorF cvn::CVNImageUtils::BuildImageVectorF(cvn::ViewVectorF v0, cvn
     image.push_back(wireVec);
   } // Loop over wires
   
+  
+
   return image;
 }
 

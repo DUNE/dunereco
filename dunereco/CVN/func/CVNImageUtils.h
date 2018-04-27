@@ -66,6 +66,9 @@ namespace cvn
     void ConvertChargeVectorsToImageVectorF(std::vector<float> &v0pe, std::vector<float> &v1pe,
                                            std::vector<float> &v2pe, ImageVectorF &imageVec);  
 
+    /// Convert a pixel array into a ImageVectorF
+    void ConvertPixelArrayToImageVectorF(const std::vector<unsigned char> &pixelArray, ImageVectorF &imageVec);
+
   private:
 
     /// Base function for conversion of the Pixel Map to our required output format
