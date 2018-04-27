@@ -4,7 +4,7 @@ simple_plugin(SPMultiTpcDump "module"
 			larcorealg_Geometry
 			lardataobj_RecoBase
 			larreco_Calorimetry
-			larreco_RecoAlg_ImagePatternAlgs_PointIdAlg
+			larreco_RecoAlg_ImagePatternAlgs_Tensorflow_PointIdAlg
 			larreco_RecoAlg_PMAlg
 			nusimdata_SimulationBase
 			${ART_FRAMEWORK_CORE}
