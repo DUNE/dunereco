@@ -17,6 +17,9 @@
 
 #include "larreco/RecoAlg/ImagePatternAlgs/TF/tf_graph.h"
 
+#include "TH2D.h"
+#include "TCanvas.h"
+
 namespace cvn
 {
 
@@ -49,19 +52,39 @@ namespace cvn
     imageUtils.SetImageSize(fImageWires,fImageTDCs,3);
     imageUtils.SetLogScale(fUseLogChargeScale);
 
-    ImageVectorF thisImage;
-    // Convert the image into the required format
-    imageUtils.ConvertPixelMapToImageVectorF(pm,thisImage);
-    std::cout << "Image dimensions" << std::endl;
-    std::cout << thisImage.size() << ", " << thisImage[0].size() << ", " << thisImage[0][0].size() << std::endl;
+//    std::cout << "Log Scale? " << fUseLogChargeScale << std::endl;
+//    std::cout << "Reverse views? [" << fReverseViews[0] << "," << fReverseViews[1] << "," << fReverseViews[2] << "]" << std::endl;
+//    std::cout << "Image size = (" << fImageWires << ", " << fImageTDCs << ")" << std::endl;
 
-    // Tensorflow can handle a number of events, but in this case we have one. Still,
-    // make a vector of full events. Our ImageVector contains the three images of the
-    // single event 
+    ImageVectorF thisImage;
+    imageUtils.ConvertPixelMapToImageVectorF(pm,thisImage);
     std::vector<ImageVectorF> vecForTF;
+
+/*
+    // Does this image look sensible?
+    TCanvas *can = new TCanvas("can","",0,0,800,600);
+    TH2D* hView0 = new TH2D("hView0","",500,0,500,500,0,500);
+    TH2D* hView1 = new TH2D("hView1","",500,0,500,500,0,500);
+    TH2D* hView2 = new TH2D("hView2","",500,0,500,500,0,500);
+    for(unsigned int w = 0; w < 500; ++w){
+      for(unsigned int t = 0; t < 500; ++t){
+        hView0->SetBinContent(w+1,t+1,thisImage[w][t][0]);
+        hView1->SetBinContent(w+1,t+1,thisImage[w][t][1]);
+        hView2->SetBinContent(w+1,t+1,thisImage[w][t][2]);
+      }
+    }
+    hView0->Draw("colz");
+    can->Print("view0.png");
+    hView1->Draw("colz");
+    can->Print("view1.png");
+    hView2->Draw("colz");
+    can->Print("view2.png");
+*/
     vecForTF.push_back(thisImage);
 
     auto cvnResults = fTFGraph->run(vecForTF);
+
+//    std::cout << "Number of CVN result vectors " << cvnResults.size() << " with " << cvnResults[0].size() << " categories" << std::endl;
 
     std::cout << "Classifier summary: ";
     for(auto const v : cvnResults[0]){

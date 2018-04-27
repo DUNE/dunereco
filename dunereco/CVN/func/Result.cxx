@@ -11,6 +11,7 @@
 #include <algorithm>
 
 #include "dune/CVN/func/Result.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
 
 namespace cvn
 {
@@ -31,7 +32,7 @@ namespace cvn
 
   unsigned int Result::ArgMax(){
     // Get the max element iterator and convert to vector index
-    return std::max_element(fOutput.begin(),fOutput.end()) - fOutput.begin();
+    return std::distance(fOutput.begin(),std::max_element(fOutput.begin(),fOutput.end()));
   }
 
   float Result::Max(){
@@ -68,7 +69,19 @@ namespace cvn
 
   /// Return the NC probability
   float Result::GetNCProbability(){
-    return fOutput[TFResultType::kTFNC];
+
+    // The old caffe network didn't give us an NC probability
+    // So make sure we have enough values to grab it
+    float result = -999;
+
+    if(fOutput.size() > static_cast<unsigned int>(TFResultType::kTFNC)){
+      result = fOutput[TFResultType::kTFNC];
+    }
+    else{
+      mf::LogError("cvn::Result") << "Output vector too short to include an NC probability" << std::endl;
+    }
+
+    return result;
   }
 
 }

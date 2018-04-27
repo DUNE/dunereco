@@ -44,7 +44,8 @@
 #include "dune/CVN/func/PixelMap.h"
 #include "dune/CVN/art/CaffeNetHandler.h"
 #include "dune/CVN/art/TFNetHandler.h"
-
+#include "dune/CVN/func/AssignLabels.h"
+#include "dune/CVN/func/InteractionType.h"
 
 namespace cvn {
 
@@ -74,6 +75,18 @@ namespace cvn {
     /// Number of outputs fron neural net
     unsigned int fNOutput;
 
+    unsigned int fTotal;
+    unsigned int fCorrect;
+    unsigned int fFullyCorrect;
+
+    unsigned int fTotNue;
+    unsigned int fSelNue;
+    unsigned int fTotNumu;
+    unsigned int fSelNumu;
+
+    // Three binned versions of above
+    std::vector<unsigned int> fTotNueBins;
+    std::vector<unsigned int> fSelNueBins;
   };
 
   //.......................................................................
@@ -86,6 +99,17 @@ namespace cvn {
     fNOutput       (fCaffeHandler.NOutput())
   {
     produces< std::vector<cvn::Result>   >(fResultLabel);
+    fTotal = 0;
+    fCorrect = 0;
+    fFullyCorrect = 0;
+    fTotNue = 0;
+    fSelNue = 0;
+    fTotNumu = 0;
+    fSelNumu = 0;
+
+    fTotNueBins = {0,0,0};
+    fSelNueBins = {0,0,0};
+
   }
   //......................................................................
   CVNEvaluator::~CVNEvaluator()
@@ -102,6 +126,14 @@ namespace cvn {
   //......................................................................
   void CVNEvaluator::endJob()
   {
+    float tot = static_cast<float>(fTotal);
+    std::cout << "Total of " << fTotal << " events passed the fiducial volume cut and were classified" << std::endl;
+    if(fTotal > 0)   std::cout << "Correct flavour (interaction) identification = " << 100.*(fCorrect / tot) << "% (" << 100.*(fFullyCorrect/tot) << "%)" << std::endl;
+    if(fTotNue > 0)  std::cout << "Nue efficiency  = " << 100.*(fSelNue/static_cast<float>(fTotNue)) << "%" << std::endl;
+    for(unsigned int i = 0; i < fTotNueBins.size(); ++i){
+      if(fTotNueBins[i] > 0) std::cout << "Nue efficiency " << i << "= " << 100.*(fSelNueBins[i]/static_cast<float>(fTotNueBins[i])) << "%" << std::endl;
+    }
+    if(fTotNumu > 0) std::cout << "Numu efficiency = " << 100.*(fSelNumu/static_cast<float>(fTotNumu)) << "%" << std::endl;
   }
 
   //......................................................................
@@ -145,8 +177,83 @@ namespace cvn {
       return;
     }
 
-    mf::LogInfo("CVNEvaluator::produce") << " Predicted: " << (*resultCol)[0].PredictedInteractionType() << std::endl; 
-    std::cout << " Predicted: " << (*resultCol)[0].PredictedInteractionType() << std::endl; 
+//    mf::LogInfo("CVNEvaluator::produce") << " Predicted: " << (*resultCol)[0].PredictedInteractionType() << std::endl; 
+
+    // Leigh: temporary testing code for performance
+
+    InteractionType interaction = kOther;
+
+    // * monte carlo
+    art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
+    std::vector<art::Ptr<simb::MCTruth> > mclist;
+    if(evt.getByLabel("generator",mctruthListHandle))
+      art::fill_ptr_vector(mclist, mctruthListHandle);
+
+    //unsigned short nmclist=  mclist.size();
+
+    //std::cout<<"mctruth: "<<nmclist<<std::endl;
+
+    art::Ptr<simb::MCTruth> truth = mclist[0];
+    simb::MCNeutrino truthN=truth->GetNeutrino();
+    //truth = mclist[0];
+
+    interaction = GetInteractionType(truthN);
+
+    // Get the interaction vertex from the end point of the neutrino. This is 
+    // because the start point of the lepton doesn't make sense for taus as they
+    // are decayed by the generator and not GEANT
+    TVector3 vtx = truthN.Nu().EndPosition().Vect();
+    bool isFid = (fabs(vtx.X())<310 && fabs(vtx.Y())<550 && vtx.Z()>50 && vtx.Z()<1244);
+
+    if(isFid && pixelmaplist.size() > 0){
+    
+      unsigned int correctedInt = static_cast<unsigned int>(interaction);
+      if(correctedInt == 13) correctedInt = 12;
+
+      unsigned int predInt = static_cast<unsigned int>((*resultCol)[0].PredictedInteractionType());
+      float nueProb = (*resultCol)[0].GetNueProbability();
+      float numuProb = (*resultCol)[0].GetNumuProbability();
+      float nutauProb = (*resultCol)[0].GetNutauProbability();
+      float ncProb = (*resultCol)[0].GetNCProbability();
+
+      ++fTotal;
+      std::cout << " Truth :: Predicted = " << correctedInt << " :: " << predInt << " (" << numuProb << ", " << nueProb << ", " << nutauProb << ", " << ncProb  << ")" << std::endl; 
+      if((correctedInt >= 0 && correctedInt <=3) && (predInt >= 0 && predInt <= 3)){
+        ++fCorrect;
+      }
+      if((correctedInt >= 4 && correctedInt <= 7) && (predInt >= 4 && predInt <= 7)){
+        ++fCorrect;
+      }
+      if((correctedInt >= 8 && correctedInt <=11) && (predInt >= 8 && predInt <= 11)){
+        ++fCorrect;
+      }
+      if(correctedInt == 12 && predInt == 12){
+        ++fCorrect;
+      }
+
+      if(correctedInt == predInt){
+        ++fFullyCorrect;
+      }
+
+      if(abs(truthN.Nu().PdgCode()) == 12){
+        ++fTotNue;
+        if(truthN.Nu().E() < 2.0) ++fTotNueBins[0];
+        if(truthN.Nu().E() >= 2.0 && truthN.Nu().E() <= 6.0) ++fTotNueBins[1];
+        if(truthN.Nu().E() > 6.0) ++fTotNueBins[2];
+
+        if(nueProb > 0.7){
+          ++fSelNue;
+          if(truthN.Nu().E() < 2.0) ++fSelNueBins[0];
+          if(truthN.Nu().E() >= 2.0 && truthN.Nu().E() <= 6.0) ++fSelNueBins[1];
+          if(truthN.Nu().E() > 6.0) ++fSelNueBins[2];
+        }
+      }
+      if(abs(truthN.Nu().PdgCode()) == 14){
+        ++fTotNumu;
+        if(numuProb > 0.5) ++fSelNumu;
+      } 
+  
+    }
 
     evt.put(std::move(resultCol), fResultLabel);
 
