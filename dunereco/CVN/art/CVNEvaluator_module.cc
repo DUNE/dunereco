@@ -87,6 +87,8 @@ namespace cvn {
     // Three binned versions of above
     std::vector<unsigned int> fTotNueBins;
     std::vector<unsigned int> fSelNueBins;
+    std::vector<unsigned int> fTotNumuBins;
+    std::vector<unsigned int> fSelNumuBins;
   };
 
   //.......................................................................
@@ -110,6 +112,8 @@ namespace cvn {
     fTotNueBins = {0,0,0};
     fSelNueBins = {0,0,0};
 
+    fTotNumuBins = {0,0,0};
+    fSelNumuBins = {0,0,0};
   }
   //......................................................................
   CVNEvaluator::~CVNEvaluator()
@@ -134,6 +138,9 @@ namespace cvn {
       if(fTotNueBins[i] > 0) std::cout << "Nue efficiency " << i << "= " << 100.*(fSelNueBins[i]/static_cast<float>(fTotNueBins[i])) << "%" << std::endl;
     }
     if(fTotNumu > 0) std::cout << "Numu efficiency = " << 100.*(fSelNumu/static_cast<float>(fTotNumu)) << "%" << std::endl;
+    for(unsigned int i = 0; i < fTotNumuBins.size(); ++i){
+      if(fTotNumuBins[i] > 0) std::cout << "Numu efficiency " << i << "= " << 100.*(fSelNumuBins[i]/static_cast<float>(fTotNumuBins[i])) << "%" << std::endl;
+    }
   }
 
   //......................................................................
@@ -235,7 +242,7 @@ namespace cvn {
         ++fFullyCorrect;
       }
 
-      if(abs(truthN.Nu().PdgCode()) == 12){
+      if(abs(truthN.Nu().PdgCode()) == 12 && truthN.CCNC()==0){
         ++fTotNue;
         if(truthN.Nu().E() < 2.0) ++fTotNueBins[0];
         if(truthN.Nu().E() >= 2.0 && truthN.Nu().E() <= 6.0) ++fTotNueBins[1];
@@ -248,9 +255,18 @@ namespace cvn {
           if(truthN.Nu().E() > 6.0) ++fSelNueBins[2];
         }
       }
-      if(abs(truthN.Nu().PdgCode()) == 14){
+      if(abs(truthN.Nu().PdgCode()) == 14 && truthN.CCNC()==0){
         ++fTotNumu;
-        if(numuProb > 0.5) ++fSelNumu;
+        if(truthN.Nu().E() < 2.0) ++fTotNumuBins[0];
+        if(truthN.Nu().E() >= 2.0 && truthN.Nu().E() <= 6.0) ++fTotNumuBins[1];
+        if(truthN.Nu().E() > 6.0) ++fTotNumuBins[2];
+
+        if(numuProb > 0.5){
+          ++fSelNumu;
+        if(truthN.Nu().E() < 2.0) ++fSelNumuBins[0];
+        if(truthN.Nu().E() >= 2.0 && truthN.Nu().E() <= 6.0) ++fSelNumuBins[1];
+        if(truthN.Nu().E() > 6.0) ++fSelNumuBins[2];
+        }
       } 
   
     }
