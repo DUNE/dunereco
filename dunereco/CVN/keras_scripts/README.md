@@ -61,6 +61,16 @@ First, you need to specify all the configuration parameters in the *config.ini* 
 
 *NOTE:* it must only be True if the user already filtered the images.
 
+#### - standardize
+
+> standardize = BOOLEAN
+
+**Description:** value used (if True) to normalize the pixel values (floating-point values from 0 to 1).
+
+**Type:** Boolean.
+
+**Example:** `standardize = True`
+
 #### - views 
 
 > views = NUMBER_OF_VIEWS
@@ -477,15 +487,46 @@ Some Deep Learning frameworks (e.g., Caffe) do not use the term epoch; however, 
 <a name="1-8-test"></a>
 ### [test]
 
-#### - cut
+#### - cut_nue
 
-> cut = CUT
+> cut_nue = CUT_NUE
 
-**Description:** cut to apply during the analysis.
+**Description:** nue cut to apply during the analysis.
 
 **Type:** Floating-point.
 
-**Example:** `cut = 0.7`
+**Example:** `cut_nue = 0.7`
+
+
+#### - cut_numu
+
+> cut_numu = CUT_NUMU
+
+**Description:** numu cut to apply during the analysis.
+
+**Type:** Floating-point.
+
+**Example:** `cut_numu = 0.7`
+
+#### - output_prefix
+
+> output_prefix = OUTPUT_PREFIX
+
+**Description:** represents the name prefix the NumPy output file will have (the full name would be OUTPUT_PREFIX + '.np').
+
+**Type:** String.
+
+**Example:** `prefix = /test_info'`
+
+#### - output_path
+
+> output_path = OUTPUT_PATH
+
+**Description:** path where the test output NumPy object will be stored.
+
+**Type:** String.
+
+**Example:** `output_path = /scratch/cvn/output`
 
 #### - fraction
 

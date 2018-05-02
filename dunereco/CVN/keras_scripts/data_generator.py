@@ -1,5 +1,6 @@
 import numpy as np
-import zlib
+import zlib, gzip
+from string import digits
 
 class DataGenerator(object):
   'Generates data for Keras'
@@ -8,8 +9,8 @@ class DataGenerator(object):
   Initialization function of the class
   '''
 
-  def __init__(self, cells = 500, planes = 500, views = 3, batch_size = 32, n_labels = 2, interaction_labels = [0,1], 
-               neutrino_labels = [], filtered = False, interaction_types = True, images_path = '/', shuffle = True, y_test=[]):
+  def __init__(self, cells = 500, planes = 500, views = 3, batch_size = 32, n_labels = 2, interaction_labels = [0,1], neutrino_labels = [], 
+               standardize = True, filtered = False, interaction_types = True, images_path = '/', shuffle = True, test_values=[]):
       'Initialization'
 
       self.cells = cells
@@ -22,8 +23,9 @@ class DataGenerator(object):
       self.filtered = filtered
       self.interaction_types = interaction_types
       self.images_path = images_path
+      self.standardize = standardize
       self.shuffle = shuffle
-      self.y_test = y_test
+      self.test_values = test_values
  
   '''
   Goes through the dataset and outputs one batch at a time.
@@ -36,36 +38,37 @@ class DataGenerator(object):
 
       while 1:
 
-          # Generate order of exploration of dataset
+          # Generate random order of exploration of dataset (to make each epoch different)
 
           indexes = self.__get_exploration_order(list_IDs)
 
           # Generate batches
 
-          imax = int(len(indexes)/self.batch_size)
+          imax = int(len(indexes)/self.batch_size) # number of batches
+
           for i in range(imax):
 
-              # Find list of IDs
+               # Find list of IDs for one batch
 
-              list_IDs_temp = [list_IDs[k] for k in indexes[i*self.batch_size:(i+1)*self.batch_size]]
+               list_IDs_temp = [list_IDs[k] for k in indexes[i*self.batch_size:(i+1)*self.batch_size]]
 
-              # Generate data
+               # Generate data
 
-              if yield_labels:
+               if yield_labels:
 
-                  # Train, validation, test
+                   # Train, validation
 
-                  X, y = self.__data_generation(labels, list_IDs_temp, yield_labels)
+                   X, y = self.__data_generation(labels, list_IDs_temp, yield_labels)
 
-                  yield X, y
+                   yield X, y
 
-              else:
+               else:
 
-                  # Predictions
+                   # Test, predictions
 
-                  X = self.__data_generation(labels, list_IDs_temp, yield_labels)
+                   X = self.__data_generation(labels, list_IDs_temp, yield_labels)
 
-                  yield X
+                   yield X
 
   '''
   Generates a random order of exploration for a given set of list_IDs. 
@@ -99,7 +102,7 @@ class DataGenerator(object):
 
       if yield_labels:
 
-          # only include the labels when requested (train, validation, and test)
+          # only include the labels when requested (train, validation)
 
           y = np.empty((self.batch_size), dtype = int)
 
@@ -112,11 +115,18 @@ class DataGenerator(object):
           if self.filtered:
 
               # filtered images
-
+      
               pixels = np.fromstring(zlib.decompress(open(self.images_path + '/' + labels[ID] + '/' + ID + '.txt.gz', 'rb').read()), dtype=np.float64, sep='').reshape(self.views, self.planes, self.cells)
               pixels = np.rollaxis(pixels, 0, 3) # from 'channels_first' to 'channels_last'
-              pixels = pixels.astype('float32')
-              pixels/=255
+
+              #pixels = np.transpose(pixels, (2, 1, 0))
+
+              if self.standardize:
+
+                  # standardize
+
+                  pixels = pixels.astype('float32') # 32-bit precision floating-point pixel image
+                  pixels /= 255.                    # pixel range from 0 to 1
 
           else:
 
@@ -124,6 +134,15 @@ class DataGenerator(object):
 
               pixels = np.fromstring(zlib.decompress(open(self.images_path + '/' + labels[ID] + '/' + ID + '.txt.gz', 'rb').read()), dtype=np.uint8, sep='').reshape(self.views, self.planes, self.cells)
               pixels = np.rollaxis(pixels, 0, 3) # from 'channels_first' to 'channels_last'
+
+              #pixels = np.transpose(pixels, (2, 1, 0))
+
+              if self.standardize:
+
+                  # standardize the image
+
+                  pixels = pixels.astype('float32') # 32-bit precision floating-point pixel image
+                  pixels /= 255.                    # pixel range from 0 to 1
 
           # Store volume
 
@@ -145,23 +164,30 @@ class DataGenerator(object):
 
           if yield_labels:
 
-              # store class/label (train, validation, and test)
+              # store class/label (train, validation)
 
               y[i] = y_value
 
           else:
 
-              # store actual label (used for the confusion matrix)
+              # store actual label and energy values (used for the confusion matrix and normalization)
 
-              self.y_test.append(y_value)
+              energy_values = open(self.images_path + '/' + labels[ID] + '/' + ID + '.info', 'rb').readlines()
+
+              self.test_values.append({'flavour': str(ID.split('.')[0]).translate(None, digits), 
+                                       'y_value': y_value, 
+                                       'fNuEnergy': float(energy_values[0]),
+                                       'fRecoNueEnergy': float(energy_values[1]), 
+                                       'fRecoNumuEnergy': float(energy_values[2]), 
+                                       'fEventWeight': float(energy_values[3])})
 
       if yield_labels:
 
-          # return X and Y (train, validation, and test)
+          # return X and Y (train, validation)
 
           return X, self.__sparsify(y)
 
-      # return X (predictions)
+      # return X (test, predictions)
 
       return X
 

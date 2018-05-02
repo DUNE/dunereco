@@ -4,19 +4,22 @@ import configparser
 import ast
 import logging, sys
 import re
+import os
 
 from sklearn.utils import class_weight
 from keras.models import Model, Sequential, load_model
 from keras.layers import Input, Dense, Activation, ZeroPadding2D, Dropout, Flatten, BatchNormalization, SeparableConv2D
 from keras import regularizers, optimizers
 from keras.layers.convolutional import Conv2D, MaxPooling2D, AveragePooling2D
-from keras.callbacks import ReduceLROnPlateau, CSVLogger, ModelCheckpoint, EarlyStopping
+from keras.callbacks import LearningRateScheduler, ReduceLROnPlateau, CSVLogger, ModelCheckpoint, EarlyStopping
 from data_generator import DataGenerator
 from collections import Counter
 
 sys.path.append("/home/salonsom/cvn_tensorflow/networks")
+sys.path.append("/home/salonsom/cvn_tensorflow/callbacks")
 
-import resnet, resnetpa, googlenet, my_model
+import se_resnet, resnet, resnetpa, googlenet, my_model
+import my_callbacks
 
 from keras import backend as K
 K.set_image_data_format('channels_last')
@@ -43,6 +46,7 @@ IMAGES_PATH = config['images']['path']
 VIEWS = int(config['images']['views'])
 PLANES = int(config['images']['planes'])
 CELLS = int(config['images']['cells'])
+STANDARDIZE = ast.literal_eval(config['images']['standardize'])
 INTERACTION_LABELS = ast.literal_eval(config['images']['interaction_labels'])
 FILTERED = ast.literal_eval(config['images']['filtered'])
 
@@ -111,6 +115,7 @@ TRAIN_PARAMS =      {'planes': PLANES,
                      'filtered': FILTERED,
                      'neutrino_labels': NEUTRINO_LABELS,
                      'images_path': IMAGES_PATH,
+                     'standardize': STANDARDIZE,
                      'shuffle': SHUFFLE}
 
 # validation params
@@ -125,6 +130,7 @@ VALIDATION_PARAMS = {'planes': PLANES,
                      'filtered': FILTERED,
                      'neutrino_labels': NEUTRINO_LABELS,
                      'images_path': IMAGES_PATH,
+                     'standardize': STANDARDIZE,
                      'shuffle': SHUFFLE}
 
 
@@ -192,7 +198,7 @@ if RESUME:
 
         # Load the last generated model
 
-        files = [f for f in listdir(CHECKPOINT_PATH) if isfile(join(CHECKPOINT_PATH, f))]
+        files = [f for f in os.listdir(CHECKPOINT_PATH) if os.path.isfile(os.path.join(CHECKPOINT_PATH, f))]
         files.sort(reverse=True)
 
         r = re.compile(CHECKPOINT_PREFIX[1:] + '-.*-.*.h5')
@@ -200,6 +206,9 @@ if RESUME:
         for fil in files:
             if r.match(fil) is not None:
                 model = load_model(CHECKPOINT_PATH + '/' + fil)
+
+                logging.info('Loaded model: %s', CHECKPOINT_PATH + '/' + fil)                
+
                 break
 
     else:
@@ -207,6 +216,8 @@ if RESUME:
         # Load the model
    
         model = load_model(CHECKPOINT_PATH + CHECKPOINT_PREFIX + '.h5')
+
+        logging.info('Loaded model: %s', CHECKPOINT_PATH + CHECKPOINT_PREFIX + '.h5') 
 
 else:
 
@@ -218,6 +229,7 @@ else:
 
     input_shape = [PLANES, CELLS, VIEWS]
 
+    #model = se_resnet.SEResNet(input_shape=input_shape, classes=N_LABELS)
     #model = resnetpa.ResNetPreAct()
 
     model = resnet.ResnetBuilder.build_resnet_18(input_shape, N_LABELS)
@@ -291,7 +303,8 @@ checkpoint = ModelCheckpoint(filepath, monitor=monitor_acc, verbose=1, save_best
 
 logging.info('Configuring learning rate reducer...')
 
-lr_reducer = ReduceLROnPlateau(monitor=monitor_loss, factor=0.1, cooldown=0, patience=2, min_lr=0.5e-6, verbose=1)
+#lr_reducer = LearningRateScheduler(schedule=lambda epoch,lr: (lr*0.01 if epoch % 2 == 0 else lr))
+lr_reducer = ReduceLROnPlateau(monitor=monitor_loss, factor=0.1, cooldown=0, patience=3, min_lr=0.5e-6, verbose=1)
 
 # Early stopping
 
@@ -302,12 +315,17 @@ early_stopping = EarlyStopping(monitor=monitor_acc, patience=EARLY_STOPPING_PATI
 # Configuring log file
 
 csv_logger = CSVLogger(LOG_PATH + LOG_PREFIX + '.log', append=RESUME)
- 
+
+# My callbacks
+
+my_callback = my_callbacks.MyCallback()
+
 # Callbacks
 
 logging.info('Setting callbacks...')
 
 callbacks_list = [lr_reducer, checkpoint, early_stopping, csv_logger]
+#callbacks_list = [lr_reducer, checkpoint, early_stopping, csv_logger, my_callback]
 
 
 '''

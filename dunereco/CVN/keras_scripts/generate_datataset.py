@@ -144,12 +144,15 @@ for path in glob.iglob(IMAGES_PATH + '/*'):
 
         logging.debug('fraction: %f', fraction)  
  
-    count = 0
+    count_train, count_val, count_test = (0, 0, 0)
     label_dir = glob.iglob(path + '/*')
  
     # Iterate through the files under the directory
 
     for fil in label_dir:
+
+        if(fil[-3:] != '.gz'):
+            continue
 
         if UNIFORM:
 
@@ -168,7 +171,7 @@ for path in glob.iglob(IMAGES_PATH + '/*'):
 
         if(random_value < TRAIN_FRACTION):
             partition['train'].append(ID)
-            count += 1
+            count_train += 1
 
             # Store y train
 
@@ -180,23 +183,30 @@ for path in glob.iglob(IMAGES_PATH + '/*'):
 
                 y_train.append(NEUTRINO_LABELS[label])
  
+            labels[ID] = label
+
         # Fill validation set
 
         elif(random_value < (TRAIN_FRACTION + VALIDATION_FRACTION)):
 
             partition['validation'].append(ID)
-            count += 1
+            count_val += 1
+
+            labels[ID] = label
 
         # Fill test set
 
         elif(random_value < (TRAIN_FRACTION + VALIDATION_FRACTION + TEST_FRACTION)):
 
             partition['test'].append(ID)
-            count += 1
+            count_test += 1
 
-        labels[ID] = label
+            labels[ID] = label
 
-    logging.debug('%d images', count)
+    logging.debug('%d train images', count_train)
+    logging.debug('%d val images', count_val)
+    logging.debug('%d test images', count_test)
+    logging.debug('%d total images', count_train + count_val + count_test)
 
 # Print dataset statistics
 
