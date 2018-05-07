@@ -3,23 +3,15 @@ art_make_library(
   SOURCE EventImageData.h EventImageData.cxx
   LIBRARIES    CVNFunc
   LIBRARY_NAME_VAR GLOBIMAGE
-#  lardataobj_RecoBase
-#  larsim_MCCheater_BackTrackerService_service
-#  larsim_MCCheater_ParticleInventoryService_service
-#  ${ART_FRAMEWORK_SERVICES_REGISTRY}
-#  cetlib cetlib_except
-#  ${Boost_FILESYSTEM_LIBRARY}            
-#  ${Boost_SYSTEM_LIBRARY}
-#  ${ROOT_BASIC_LIB_LIST}
-#  DICT_LIBRARIES   lardataobj_RecoBase
   )
 
+if( DEFINED ENV{TENSORFLOW_DIR} )
 simple_plugin(SPMultiTpcDump "module"
 			larcore_Geometry_Geometry_service
 			larcorealg_Geometry
 			lardataobj_RecoBase
 			larreco_Calorimetry
-			larreco_RecoAlg_ImagePatternAlgs_PointIdAlg
+			larreco_RecoAlg_ImagePatternAlgs_Tensorflow_PointIdAlg
 			larreco_RecoAlg_PMAlg
 			nusimdata_SimulationBase
 			${ART_FRAMEWORK_CORE}
@@ -37,6 +29,7 @@ simple_plugin(SPMultiTpcDump "module"
 			${ROOT_BASIC_LIB_LIST}
       ${GLOBIMAGE}
 )
+endif()
 
 install_headers()
 install_fhicl()

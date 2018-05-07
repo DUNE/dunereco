@@ -22,7 +22,7 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "larreco/RecoAlg/ImagePatternAlgs/PointIdAlg/PointIdAlg.h"
+#include "larreco/RecoAlg/ImagePatternAlgs/Tensorflow/PointIdAlg/PointIdAlg.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 
 // Framework includes
