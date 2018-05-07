@@ -1,3 +1,6 @@
+
+if( DEFINED ENV{TENSORFLOW_DIR} )
+
 art_make_library( 
   LIBRARY_NAME     GlobImage
   SOURCE EventImageData.h EventImageData.cxx
@@ -5,7 +8,6 @@ art_make_library(
   LIBRARY_NAME_VAR GLOBIMAGE
   )
 
-if( DEFINED ENV{TENSORFLOW_DIR} )
 simple_plugin(SPMultiTpcDump "module"
 			larcore_Geometry_Geometry_service
 			larcorealg_Geometry

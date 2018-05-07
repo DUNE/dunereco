@@ -38,8 +38,6 @@
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 
-#include "larsim/MCCheater/BackTracker.h"
-
 #include "dune/CVN/func/Result.h"
 #include "dune/CVN/func/PixelMap.h"
 #include "dune/CVN/art/CaffeNetHandler.h"

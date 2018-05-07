@@ -15,8 +15,6 @@
 #include "dune/CVN/art/TFNetHandler.h"
 #include "dune/CVN/func/CVNImageUtils.h"
 
-#include "larreco/RecoAlg/ImagePatternAlgs/TF/tf_graph.h"
-
 #include "TH2D.h"
 #include "TCanvas.h"
 
