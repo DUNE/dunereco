@@ -6,8 +6,8 @@ BEGIN_PROLOG
 standard_caffenethandler:
 {
   LibPath: "DUNE_PARDATA_DIR"
-  DeployProto: "networkDefinition.prototxt"
-  ModelFile: "modelWeightsV2.caffemodel"
+  DeployProto: "duneCVNNetwork/networkDefinition.prototxt"
+  ModelFile: "duneCVNNetwork/modelWeightsV2.caffemodel"
   FeatureMap: ""
   ChargeLogScale: false
   NImageWires: 500
@@ -18,9 +18,8 @@ standard_caffenethandler:
 # Configuration for the CVN TF interface
 standard_tfnethandler:
 {
-#  LibPath: "DUNE_PARDATA_DIR"
-  LibPath: "LEIGH_TEST_DIR"
-  TFProtoBuf: "duneCVNNetwork/networkDefinition.pb"
+  LibPath: "DUNE_PARDATA_DIR"
+  TFProtoBuf: "duneCVNNetwork/dune_cvn_resnet_april2018.pb"
 #  TFProtoBuf: "CnnModels/cnn_emtrkmichel_pitch_5_wire_44_drift_48_down_6_mean_notes_protoduneBeamAndCosmics_calib_cascadedouts.pb"
   ChargeLogScale: false
   NImageWires: 500
