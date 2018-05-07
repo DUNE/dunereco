@@ -249,7 +249,9 @@ namespace dune{
         std::map<int, std::pair <double,double> > ClusterStartEndTime;
         std::map<int, std::pair <int, int> > ClusterStartEndColChan;
         for(size_t j = 0; j < fDBScan.fpointId_to_clusterId.size(); ++j){
-          if (fDBScan.fpointId_to_clusterId[j]>=0&&fDBScan.fpointId_to_clusterId[j]<fDBScan.fclusters.size()) {
+	  // for c2: fDBScan.fpointId_to_clusterId[j]>=0 is always true
+          //if (fDBScan.fpointId_to_clusterId[j]>=0&&fDBScan.fpointId_to_clusterId[j]<fDBScan.fclusters.size()) {
+          if (fDBScan.fpointId_to_clusterId[j]<fDBScan.fclusters.size()) {
             ++dbcluhits[fDBScan.fpointId_to_clusterId[j]];
 
             CorrectedHitTime = allhitsu[i][j]->PeakTime() - detprop->GetXTicksOffset(allhitsu[i][j]->WireID().Plane, allhitsu[i][j]->WireID().TPC, allhitsu[i][j]->WireID().Cryostat);
@@ -325,7 +327,9 @@ namespace dune{
         dbcluhits.resize(fDBScan.fclusters.size(),0);
         boolVector.resize(fDBScan.fclusters.size(),true);
         for(size_t j = 0; j < fDBScan.fpointId_to_clusterId.size(); ++j){
-          if (fDBScan.fpointId_to_clusterId[j]>=0&&fDBScan.fpointId_to_clusterId[j]<fDBScan.fclusters.size()) {
+	  //for c2: fDBScan.fpointId_to_clusterId[j]>=0 is always true
+          //if (fDBScan.fpointId_to_clusterId[j]>=0&&fDBScan.fpointId_to_clusterId[j]<fDBScan.fclusters.size()) {
+          if (fDBScan.fpointId_to_clusterId[j]<fDBScan.fclusters.size()) {
             ++dbcluhits[fDBScan.fpointId_to_clusterId[j]];
 
             CorrectedHitTime = allhitsv[i][j]->PeakTime() - detprop->GetXTicksOffset(allhitsv[i][j]->WireID().Plane, allhitsv[i][j]->WireID().TPC, allhitsv[i][j]->WireID().Cryostat);
