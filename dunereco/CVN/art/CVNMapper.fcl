@@ -6,7 +6,8 @@ standard_cvnmapper:
 {
   module_type:        CVNMapper
   #==================
-  HitsModuleLabel:   "gaushit"
+#  HitsModuleLabel:   "gaushit"
+  HitsModuleLabel:   "hitfd"
   ClusterPMLabel: "cvnmap"
   MinClusterHits: 100
   TdcWidth:      500
