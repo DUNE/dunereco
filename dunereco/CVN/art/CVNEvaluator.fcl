@@ -6,8 +6,8 @@ BEGIN_PROLOG
 standard_caffenethandler:
 {
   LibPath: "DUNE_PARDATA_DIR"
-  DeployProto: "duneCVNNetwork/networkDefinition.prototxt"
-  ModelFile: "duneCVNNetwork/modelWeightsV2.caffemodel"
+  DeployProto: "networkDefinition.prototxt"
+  ModelFile: "modelWeightsV2.caffemodel"
   FeatureMap: ""
   ChargeLogScale: false
   NImageWires: 500
@@ -36,7 +36,6 @@ standard_cvnevaluator:
   CaffeNetHandler: @local::standard_caffenethandler
   TFNetHandler: @local::standard_tfnethandler
   CVNType: "Tensorflow"
-
 }
 
 END_PROLOG
