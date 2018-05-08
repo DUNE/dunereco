@@ -218,11 +218,11 @@ namespace cvn {
       unsigned int predInt = static_cast<unsigned int>((*resultCol)[0].PredictedInteractionType());
       float nueProb = (*resultCol)[0].GetNueProbability();
       float numuProb = (*resultCol)[0].GetNumuProbability();
-      float nutauProb = (*resultCol)[0].GetNutauProbability();
-      float ncProb = (*resultCol)[0].GetNCProbability();
+//      float nutauProb = (*resultCol)[0].GetNutauProbability();
+//      float ncProb = (*resultCol)[0].GetNCProbability();
 
       ++fTotal;
-      std::cout << " Truth :: Predicted = " << correctedInt << " :: " << predInt << " (" << numuProb << ", " << nueProb << ", " << nutauProb << ", " << ncProb  << ")" << std::endl; 
+//      std::cout << " Truth :: Predicted = " << correctedInt << " :: " << predInt << " (" << numuProb << ", " << nueProb << ", " << nutauProb << ", " << ncProb  << ")" << std::endl; 
       if((correctedInt >= 0 && correctedInt <=3) && (predInt >= 0 && predInt <= 3)){
         ++fCorrect;
       }
