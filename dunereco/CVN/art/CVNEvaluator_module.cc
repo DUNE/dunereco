@@ -128,6 +128,7 @@ namespace cvn {
   //......................................................................
   void CVNEvaluator::endJob()
   {
+    /*
     float tot = static_cast<float>(fTotal);
     std::cout << "Total of " << fTotal << " events passed the fiducial volume cut and were classified" << std::endl;
     if(fTotal > 0)   std::cout << "Correct flavour (interaction) identification = " << 100.*(fCorrect / tot) << "% (" << 100.*(fFullyCorrect/tot) << "%)" << std::endl;
@@ -139,6 +140,7 @@ namespace cvn {
     for(unsigned int i = 0; i < fTotNumuBins.size(); ++i){
       if(fTotNumuBins[i] > 0) std::cout << "Numu efficiency " << i << "= " << 100.*(fSelNumuBins[i]/static_cast<float>(fTotNumuBins[i])) << "%" << std::endl;
     }
+    */
   }
 
   //......................................................................
@@ -182,6 +184,7 @@ namespace cvn {
       return;
     }
 
+/* Truth level debug code
 //    mf::LogInfo("CVNEvaluator::produce") << " Predicted: " << (*resultCol)[0].PredictedInteractionType() << std::endl; 
 
     // Leigh: temporary testing code for performance
@@ -268,6 +271,7 @@ namespace cvn {
       } 
   
     }
+*/ // End of truth level debug code
 
     evt.put(std::move(resultCol), fResultLabel);
 
