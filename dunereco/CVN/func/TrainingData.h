@@ -23,16 +23,21 @@ namespace cvn
     TrainingData(){};
     TrainingData(const InteractionType& interaction,
                  float nuEnergy, float lepEnergy,
+                 float nueEnergy, float numuEnergy,
+                 float weight,
                  const PixelMap& pMap);
 
     unsigned int NOutput() const {return (unsigned int)kNIntType;};
 
     void FillOutputVector(float* output) const;
 
-    InteractionType  fInt;  ///< Class of the event
-    float    fNuEnergy;     ///< True energy of neutrino event
-    float    fLepEnergy;    ///< True energy of outgoing lepton
-    PixelMap fPMap;         ///< PixelMap for the event
+    InteractionType  fInt;    ///< Class of the event
+    float    fNuEnergy;       ///< True energy of neutrino event
+    float    fLepEnergy;      ///< True energy of outgoing lepton
+    float    fRecoNueEnergy;  ///< Reconstructed energy under nue hypothesis
+    float    fRecoNumuEnergy; ///< Reconstructed energy under nue hypothesis
+    float    fEventWeight;    ///< The event weight (norm * oscProb)
+    PixelMap fPMap;           ///< PixelMap for the event
   };
 
 } // end namespace

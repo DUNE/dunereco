@@ -2,6 +2,7 @@
 /// \file    CaffeNetHandler.h
 /// \brief   CaffeNetHandler for CVN
 /// \author  Alexander Radovic - a.radovic@gmail.com
+///          Leigh Whitehead   - leigh.howard.whitehead@cern.ch
 ////////////////////////////////////////////////////////////////////////
 
 #include  <iostream>
@@ -9,6 +10,8 @@
 #include "cetlib/getenv.h"
 
 #include "dune/CVN/art/CaffeNetHandler.h"
+
+#include "dune/CVN/func/CVNImageUtils.h"
 
 namespace cvn
 {
@@ -21,29 +24,35 @@ namespace cvn
     return level;
   }
 
+// Delete this constructer... it isn't very constructive (sorry)
+//  CaffeNetHandler::CaffeNetHandler( const std::string& libPath,
+//                                    const std::string& deployProto,
+//                                    const std::string& modelFile,
+//				    const std::string& featureMap):
+//  fLibPath(cet::getenv(libPath)+"/duneCVNNetwork/"),
+//  fDeployProto(fLibPath + deployProto),
+//  fModelFile  (fLibPath + modelFile),
+//  fFeatureMap     (featureMap),
+//  fLogLevel(LogLevel(google::WARNING)),
+//  fNet(fDeployProto, caffe::TEST)
+//  {
+//    fNet.CopyTrainedLayersFrom(fModelFile);
+//  }
 
-  CaffeNetHandler::CaffeNetHandler( const std::string& libPath,
-                                    const std::string& deployProto,
-                                    const std::string& modelFile,
-				    const std::string& featureMap):
-  fLibPath(cet::getenv(libPath)+"/duneCVNNetwork/"),
-  fDeployProto(fLibPath + deployProto),
-  fModelFile  (fLibPath + modelFile),
-  fFeatureMap     (featureMap),
-  fLogLevel(LogLevel(google::WARNING)),
-  fNet(fDeployProto, caffe::TEST)
+  CaffeNetHandler::CaffeNetHandler(const fhicl::ParameterSet& pset):
+    fLibPath(cet::getenv(pset.get<std::string>("LibPath", ""))+"/duneCVNNetwork/"),
+    fDeployProto(fLibPath+pset.get<std::string>("DeployProto")),
+    fModelFile  (fLibPath+pset.get<std::string>("ModelFile")),
+    fFeatureMap (pset.get<std::string>("FeatureMap")),
+    fLogLevel(LogLevel(google::WARNING)),
+    fUseLogChargeScale(pset.get<bool>("ChargeLogScale")),
+    fImageWires(pset.get<unsigned int>("NImageWires")),
+    fImageTDCs(pset.get<unsigned int>("NImageTDCs")),
+    fReverseViews(pset.get<std::vector<bool> >("ReverseViews")),
+    fNet(fDeployProto, caffe::TEST)
   {
     fNet.CopyTrainedLayersFrom(fModelFile);
   }
-
-  CaffeNetHandler::CaffeNetHandler(const fhicl::ParameterSet& pset):
-    CaffeNetHandler(
-                    pset.get<std::string>("LibPath", ""),
-                    pset.get<std::string>("DeployProto"),
-                    pset.get<std::string>("ModelFile"),
-                    pset.get<std::string>("FeatureMap")
-                    )
-  {}
   
   int CaffeNetHandler::NOutput() const
   {
@@ -77,132 +86,26 @@ namespace cvn
     return std::make_pair<const float*, const float*>(result[1]->cpu_data(), features->cpu_data());
   }
   
-  char ConvertToChar(float n)
-  {
-    float peCorrChunk;
-    // This value is 2.0 / (PE/GeV)
-    peCorrChunk = 1000.0/255.0;
-    
-    float truncateCorr = ceil(n/peCorrChunk);
-    if (truncateCorr > 255){ 
-      truncateCorr= 255.0;
-    }
-    return (char)truncateCorr;
-  }
-  
-  caffe::Datum PixelMapToDatum(const PixelMap& pm)
+  caffe::Datum CaffeNetHandler::PixelMapToDatum(const PixelMap& pm)
   {
 
+    unsigned int views = 3;
 
-    // caffe::Datum datum;
-    // char* pixels = NULL;
-    // int channels(3), planes(0), cells(0);
-    // datum.set_channels(channels);
-    // planes = pm.fNWire;
-    // cells  = pm.fNTdc;
-    // datum.set_height(planes);
-    // datum.set_width(cells);
-    // pixels = new char[channels*planes*cells];
-    // for (int iChan = 0; iChan < channels; ++iChan)
-    // {
-    //   for (int iPlane = 0; iPlane < planes; ++iPlane)
-    //   {
-    //     for (int iCell = 0; iCell < cells; ++iCell)
-    //     {
-    //       int i = iCell + cells*(iPlane + planes*iChan);
-    //       float val =0.;
-    //       if(iChan == 0 ){
-    //         val=pm.fPEX.at(iCell + cells*iPlane);
-    //       }
-    //       if(iChan == 1 ){
-    //         val=pm.fPEY.at(iCell + cells*iPlane);
-    //       }
-    //       if(iChan == 2 ){
-    //         val=pm.fPEZ.at(iCell + cells*iPlane);
-    //       }
-    //       char pix = ConvertToChar(val);
-    //       pixels[i] = pix;
-    //     }
-    //   }
-    // }
-    // datum.set_data(pixels, channels*planes*cells);
-    // delete[] pixels;
-    // return datum;
-  
+    // Use the CVNImageUtil class to produce the size of image we need
+    CVNImageUtils imageUtils(fImageWires,fImageTDCs,views);
+    // Make the pixel array that we will write into the datum
+    std::vector<unsigned char> pixelArray(views*fImageWires*fImageTDCs,0);
+    imageUtils.SetViewReversal(fReverseViews);
+    imageUtils.ConvertPixelMapToPixelArray(pm,pixelArray);
+
     caffe::Datum datum;
-    char* pixels = NULL;
-    int channels(3), planes(0), cells(0);
-    datum.set_channels(channels);
-    planes = 500; //pm.fNWire; TODO Make fcl parameter
-    cells  = pm.fNTdc;
-    datum.set_height(planes);
-    datum.set_width(cells);
-    pixels = new char[channels*planes*cells];
-    for (int iChan = 0; iChan < channels; ++iChan)
-    {
-      for (int iPlane = 0; iPlane < planes; ++iPlane)
-      {
-        for (int iCell = 0; iCell < cells; ++iCell)
-        {
-          int i = iCell + cells*(iPlane + planes*iChan);
-          float val =0.;
-          if(iChan == 0 ){
-            val=pm.fPEX.at(iCell + cells*iPlane);
-          }
-          if(iChan == 2 ){
-            val=pm.fPEZ.at(iCell + cells*iPlane);
-          }
-          char pix = ConvertToChar(val);
-          pixels[i] = pix;
-        }
-      }
-    }
+    datum.set_channels(views);
+    datum.set_height(fImageWires);
+    datum.set_width(fImageTDCs);
 
-    //work out where to flip the second induction view, so they point the same way
-    int maxPlaneWithCharge=0;
-    for (int iChan = 0; iChan < channels; ++iChan)
-    {
-      for (int iPlane = 0; iPlane < planes; ++iPlane)
-        {
-          for (int iCell = 0; iCell < cells; ++iCell)
-            {
-              float val =0.;
-              if(iChan == 1 ){
-                val=pm.fPEY.at(iCell + cells*iPlane);
-                if(val>0){
-                  maxPlaneWithCharge=iPlane;
-                }
-              }
-            }
-        }
-    }
-    int newMapEdge=planes;
-    if(maxPlaneWithCharge>planes){
-      newMapEdge=maxPlaneWithCharge+1;
-    }
-    
-    //fill the second induction view
-    for (int iChan = 0; iChan < channels; ++iChan)
-      {
-        for (int iPlane = newMapEdge; iPlane > (newMapEdge-planes); --iPlane)
-          {
-            for (int iCell = 0; iCell < cells; ++iCell)
-              {
-                int planeCount=planes-iPlane;
-                int i = iCell + cells*(planeCount + planes*iChan);
-                float val =0.;
-                if(iChan == 1 ){
-                  val=pm.fPEY.at(iCell + cells*iPlane);
-                  char pix = ConvertToChar(val);
-                  pixels[i] = pix;
-                }
-              }
-          }
-      }
-
-    datum.set_data(pixels, channels*planes*cells);
-    delete[] pixels;
+    datum.set_data(pixelArray.data(), views*fImageWires*fImageTDCs);
     return datum;
+    
    }
 
 

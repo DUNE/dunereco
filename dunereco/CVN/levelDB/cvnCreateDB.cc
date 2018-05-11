@@ -26,7 +26,7 @@
 #include "TGraph.h"
 
 // CVN stuff
-//#include "CVN/func/TrainingData.h"
+#include "dune/CVN/func/CVNImageUtils.h"
 //#include "CVN/art/CaffeNetHandler.h"
 
 // Caffe stuff
@@ -80,7 +80,10 @@ public:
     fRegressionHDF5NameTrain (pset.get<std::string>("RegressionHDF5NameTrain")),
     fRegressionHDF5NameTest (pset.get<std::string>("RegressionHDF5NameTest")),
     fMaxEnergyForLabel (pset.get<float>("MaxEnergyForLabel")),
-    fNEvents (pset.get<unsigned int>("NEvents"))
+    fNEvents (pset.get<unsigned int>("NEvents")),
+    fPlaneLimit (pset.get<unsigned int>("PlaneLimit")),
+    fTDCLimit (pset.get<unsigned int>("TDCLimit")),
+    fReverseViews(pset.get<std::vector<bool> >("ReverseViews"))
   {
     if(!fLabeling.compare("all"))      fLabelingMode = kAll;
     if(!fLabeling.compare("numu"))     fLabelingMode = kNumu;
@@ -120,6 +123,12 @@ public:
   float         fMaxEnergyForLabel;
   /// Limit the number of entries in the tree to consider
   unsigned int  fNEvents;
+  /// Limit the number of wires in the output image
+  int fPlaneLimit;
+  /// Limit the number of TDCs in the output image
+  int fTDCLimit;
+  /// Views to reverse
+  std::vector<bool> fReverseViews;
 };
 
 class OutputDB {
@@ -198,23 +207,6 @@ void OutputDB::Put(std::string &serializeKey, std::string  &serializeString) {
     }//end if put fails
   }//end if LMDB
 }//end OutputDB::Put
-
-char ConvertToCharDune(float n, bool fSetLog)
-{
-  float peCorrChunk;
-  float truncateCorr;
-  float centreScale = 0.7;
-  if(fSetLog){
-    float scaleFrac=(log(n)/log(1000));
-    truncateCorr= ceil(centreScale*scaleFrac*255.0);
-      }
-  else{
-    peCorrChunk = (1000.) / 255.0;
-    truncateCorr = ceil((n)/(peCorrChunk));
-  }
-  if (truncateCorr > 255) return (char)255;
-  else return (char)truncateCorr;
-}
 
 void fill(const Config& config, std::string input)
 {
@@ -331,108 +323,35 @@ void fill(const Config& config, std::string input)
   H5Pclose(plist);
   H5Sclose(file_space);
 
+  if(entries > chain.GetEntries()){
+    entries = chain.GetEntries();
+  }
+
   for(unsigned int iEntry = 0; iEntry < entries; ++iEntry)
   {
     unsigned int entry = shuffled[iEntry];
     chain.GetEntry(entry);
 
-    // auto maxwireelement_0= std::max_element(fPMap_fPEX.begin(), fPMap_fPEX.end());                                                                                     
-    // std::cout<<"maxwire 0: "<<*maxwireelement_0<<std::endl;                                                                                            
-    // auto maxwireelement_1= std::max_element(fPMap_fPEY.begin(), fPMap_fPEY.end());                                                                                          
-    // std::cout<<"maxwire 1: "<<*maxwireelement_1<<std::endl;                                                                                                                 
-    // auto maxwireelement_2= std::max_element(fPMap_fPEZ.begin(), fPMap_fPEZ.end());                         
-    // std::cout<<"maxwire 2: "<<*maxwireelement_2<<std::endl;   
-        
-    caffe::Datum datum; //= PixelMapToDatum(data->fPMap, config.fUseGeV);
+    unsigned int nViews = 3;
 
-    ///////////
-    char* pixels = NULL;
-    int channels(3), planes(0), cells(0);
-    datum.set_channels(channels);
-    planes = 500;//fPMap_fNWire;
-    cells  = fPMap_fNTdc;
-    datum.set_height(planes);
-    datum.set_width(cells);
-    pixels = new char[channels*planes*cells];
-    for (int iChan = 0; iChan < channels; ++iChan)
-    {
-      for (int iPlane = 0; iPlane < planes; ++iPlane)
-      {
-        for (int iCell = 0; iCell < cells; ++iCell)
-        {
-          int i = iCell + cells*(iPlane + planes*iChan);
-          float val =0.;
-          //std::cout<<iChan<<std::endl;
-          if(iChan == 0 ){
-            //std::cout<<iChan<<std::endl;
-            val=fPMap_fPEX.at(iCell + cells*iPlane);
-          }
-          if(iChan == 1 ){
-            val=0.;//fPMap_fPEY.at(iCell + cells*iPlane);
-          }
-          if(iChan == 2 ){
-            val=fPMap_fPEZ.at(iCell + cells*iPlane);
-          }
-          // if(val!=0){
-          //   std::cout<<val<<std::endl;
-          // }
-          char pix = ConvertToCharDune(val,config.fSetLog);
-          pixels[i] = pix;
-        }
-      }
-    }
+    // Create a CVNImageUtils object and use it to produce the pixels. The arguments
+    // define how large we want the output image to be
+    cvn::CVNImageUtils imageUtils(config.fPlaneLimit,config.fTDCLimit,nViews);
+    // Since we don't have a PixelMap object, we need to tell it how big it is
+    imageUtils.SetPixelMapSize(fPMap_fNWire,fPMap_fNTdc);
+    
+    std::vector<unsigned char> pixelArray(nViews * config.fPlaneLimit * config.fTDCLimit,0);
 
-    int maxPlaneWithCharge=0;
-    for (int iChan = 0; iChan < channels; ++iChan)
-    {
-      for (int iPlane = 0; iPlane < planes; ++iPlane)
-        {
-          for (int iCell = 0; iCell < cells; ++iCell)
-            {
-              float val =0.;
-              if(iChan == 1 ){
-                val=fPMap_fPEY.at(iCell + cells*iPlane);
-                if(val>0){
-                  maxPlaneWithCharge=iPlane;
-                }
-              }
-            }
-        }
-    }
-    
-    int newMapEdge=500;//1000;
-    if(maxPlaneWithCharge>500){//1000){
-      newMapEdge=maxPlaneWithCharge+1;
-    }
-    
-    for (int iChan = 0; iChan < channels; ++iChan)
-      {
-        for (int iPlane = newMapEdge; iPlane > (newMapEdge-planes); --iPlane)
-          {
-            for (int iCell = 0; iCell < cells; ++iCell)
-              {
-                int planeCount=planes-iPlane;
-                int i = iCell + cells*(planeCount + planes*iChan);
-                float val =0.;
-                //std::cout<<iChan<<std::endl;
-                // if(iChan==1&&iCell==1){
-                //   std::cout<<"Real Plane"<<iPlane<<std::endl;
-                //   std::cout<<"Fake Plane"<<planeCount<<std::endl;
-                // }
-                //std::cout<<iCell<<std::endl;
-                if(iChan == 1 ){
-                  val=fPMap_fPEY.at(iCell + cells*iPlane);
-                  char pix = ConvertToCharDune(val,config.fSetLog);
-                  pixels[i] = pix;
-                }
-              }
-          }
-      }
-    
-    
-    datum.set_data(pixels, channels*planes*cells);
-    delete[] pixels;
-    //////////
+    imageUtils.SetLogScale(config.fSetLog);
+    imageUtils.SetViewReversal(config.fReverseViews);
+    imageUtils.ConvertChargeVectorsToPixelArray(fPMap_fPEX, fPMap_fPEY, fPMap_fPEZ, pixelArray);
+
+    caffe::Datum datum;
+    datum.set_height(config.fPlaneLimit);
+    datum.set_width(config.fTDCLimit);
+
+    datum.set_data(pixelArray.data(), nViews * config.fPlaneLimit * config.fTDCLimit);
+
     datum.set_label(fInt);
 
     datum.SerializeToString(&serializeString);
@@ -509,13 +428,6 @@ void fill(const Config& config, std::string input)
     datasetTrain.write(regressionDataTrain, type);
 
   }
-
-  // if(fInt)  delete fInt;
-  // if(fPMap_fNWire)  delete fPMap_fNWire;
-  // if(fPMap_fNTdc)  delete fPMap_fNTdc;
-  // if(fPMap_fPEX)  delete fPMap_fPEX;
-  // if(fPMap_fPEY)  delete fPMap_fPEY;
-  // if(fPMap_fPEZ)  delete fPMap_fPEZ;
 
   // Clear up
   delete key;

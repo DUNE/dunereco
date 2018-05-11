@@ -30,13 +30,10 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RawData/ExternalTrigger.h"
 
-
 #include "lardata/Utilities/AssociationUtil.h"
 #include "nusimdata/SimulationBase/MCNeutrino.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-
-#include "larsim/MCCheater/BackTracker.h"
 
 #include "dune/CVN/art/PixelMapProducer.h"
 #include "dune/CVN/func/PixelMap.h"
