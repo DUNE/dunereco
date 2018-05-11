@@ -33,10 +33,10 @@ namespace cvn
   {
   public:
     /// Basic constructor, takes path to deploy prototxt and model weights
-    CaffeNetHandler(const std::string& libPath,
-                    const std::string& deployProto,
-                    const std::string& modelFile,
-                    const std::string& featureMap = "");
+//    CaffeNetHandler(const std::string& libPath,
+//                    const std::string& deployProto,
+//                    const std::string& modelFile,
+//                    const std::string& featureMap = "");
 
     /// Constructor which takes a pset with DeployProto and ModelFile fields
     CaffeNetHandler(const fhicl::ParameterSet& pset);
@@ -53,19 +53,21 @@ namespace cvn
     /// Return prediction arrays for PixelMap
     std::pair<const float*, const float*> Predict(const PixelMap& pm);
 
-    std::string fLibPath;  ///< location of deploy prototxt
-    std::string fDeployProto;  ///< location of deploy prototxt
-    std::string fModelFile;    ///< location of model weights
-    std::string fFeatureMap;    ///< which feature map to extract if any
-    int         fLogLevel;     ///< Stashed version of the log level in glog
+    std::string  fLibPath;  ///< location of deploy prototxt
+    std::string  fDeployProto;  ///< location of deploy prototxt
+    std::string  fModelFile;    ///< location of model weights
+    std::string  fFeatureMap;    ///< which feature map to extract if any
+    int          fLogLevel;     ///< Stashed version of the log level in glog
+    bool         fUseLogChargeScale;  ///< Is the charge using a log scale?
+    unsigned int fImageWires;  ///< Number of wires for the network to classify
+    unsigned int fImageTDCs;   ///< Number of tdcs for the network to classify
+    std::vector<bool> fReverseViews; ///< Do we need to reverse any views?
     caffe::Net<float> fNet;    ///< Network object
+
+    caffe::Datum PixelMapToDatum(const PixelMap& pm);
 
   };
 
-
-  char ConvertToChar(float n);
-
-  caffe::Datum PixelMapToDatum(const PixelMap& pm);
 
   /// This function just returns the thing you give it, but in the meanwhile
   /// it sets the glog level to what you pass in.

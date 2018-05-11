@@ -33,6 +33,32 @@ namespace cvn
     kNIntType          ///< Number of interaction types, used like a vector size
   } InteractionType;
 
+  /// Enumeration to describe the order of the TF network output
+  typedef enum TFResult
+  {
+    kTFNumuQE,           ///< Numu CC QE interaction
+    kTFNumuRes,          ///< Numu CC Resonant interaction
+    kTFNumuDIS,          ///< Numu CC DIS interaction
+    kTFNumuOther,        ///< Numu CC, other than above
+    kTFNueQE,            ///< Nue CC QE interaction
+    kTFNueRes,           ///< Nue CC Resonant interaction
+    kTFNueDIS,           ///< Nue CC DIS interaction
+    kTFNueOther,         ///< Nue CC, other than above
+    kTFNutauQE,          ///< Nutau CC QE interaction
+    kTFNutauRes,         ///< Nutau CC Resonant interaction
+    kTFNutauDIS,         ///< Nutau CC DIS interaction
+    kTFNutauOther,       ///< Nutau CC, other than above
+    kTFNC                ///< NC interaction
+  } TFResultType;
+
+  // Enumeration to describe the flavour-reduced TF network output
+  typedef enum TFFlavour
+  {
+    kFlavNumuCC,
+    kFlavNueCC,
+    kFlavNutauCC,
+    kFlavNC
+  } TFFlavourType; 
 
 }
 

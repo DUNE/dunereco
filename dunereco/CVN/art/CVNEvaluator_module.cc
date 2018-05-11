@@ -38,12 +38,12 @@
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 
-#include "larsim/MCCheater/BackTracker.h"
-
 #include "dune/CVN/func/Result.h"
 #include "dune/CVN/func/PixelMap.h"
 #include "dune/CVN/art/CaffeNetHandler.h"
-
+#include "dune/CVN/art/TFNetHandler.h"
+#include "dune/CVN/func/AssignLabels.h"
+#include "dune/CVN/func/InteractionType.h"
 
 namespace cvn {
 
@@ -64,23 +64,54 @@ namespace cvn {
     std::string fPixelMapInput;
     std::string fResultLabel;
 
-    cvn::CaffeNetHandler fHandler;
+    /// Can use Caffe or Tensorflow
+    std::string fCVNType;
+
+    cvn::CaffeNetHandler fCaffeHandler;
+    cvn::TFNetHandler fTFHandler;
 
     /// Number of outputs fron neural net
     unsigned int fNOutput;
 
+    unsigned int fTotal;
+    unsigned int fCorrect;
+    unsigned int fFullyCorrect;
+
+    unsigned int fTotNue;
+    unsigned int fSelNue;
+    unsigned int fTotNumu;
+    unsigned int fSelNumu;
+
+    // Three binned versions of above
+    std::vector<unsigned int> fTotNueBins;
+    std::vector<unsigned int> fSelNueBins;
+    std::vector<unsigned int> fTotNumuBins;
+    std::vector<unsigned int> fSelNumuBins;
   };
-
-
 
   //.......................................................................
   CVNEvaluator::CVNEvaluator(fhicl::ParameterSet const& pset):
     fPixelMapInput (pset.get<std::string>         ("PixelMapInput")),
     fResultLabel (pset.get<std::string>         ("ResultLabel")),
-    fHandler       (pset.get<fhicl::ParameterSet> ("CaffeNetHandler")),
-    fNOutput       (fHandler.NOutput())
+    fCVNType     (pset.get<std::string>         ("CVNType")),
+    fCaffeHandler       (pset.get<fhicl::ParameterSet> ("CaffeNetHandler")),
+    fTFHandler       (pset.get<fhicl::ParameterSet> ("TFNetHandler")),
+    fNOutput       (fCaffeHandler.NOutput())
   {
     produces< std::vector<cvn::Result>   >(fResultLabel);
+    fTotal = 0;
+    fCorrect = 0;
+    fFullyCorrect = 0;
+    fTotNue = 0;
+    fSelNue = 0;
+    fTotNumu = 0;
+    fSelNumu = 0;
+
+    fTotNueBins = {0,0,0};
+    fSelNueBins = {0,0,0};
+
+    fTotNumuBins = {0,0,0};
+    fSelNumuBins = {0,0,0};
   }
   //......................................................................
   CVNEvaluator::~CVNEvaluator()
@@ -97,6 +128,19 @@ namespace cvn {
   //......................................................................
   void CVNEvaluator::endJob()
   {
+    /*
+    float tot = static_cast<float>(fTotal);
+    std::cout << "Total of " << fTotal << " events passed the fiducial volume cut and were classified" << std::endl;
+    if(fTotal > 0)   std::cout << "Correct flavour (interaction) identification = " << 100.*(fCorrect / tot) << "% (" << 100.*(fFullyCorrect/tot) << "%)" << std::endl;
+    if(fTotNue > 0)  std::cout << "Nue efficiency  = " << 100.*(fSelNue/static_cast<float>(fTotNue)) << "%" << std::endl;
+    for(unsigned int i = 0; i < fTotNueBins.size(); ++i){
+      if(fTotNueBins[i] > 0) std::cout << "Nue efficiency " << i << "= " << 100.*(fSelNueBins[i]/static_cast<float>(fTotNueBins[i])) << "%" << std::endl;
+    }
+    if(fTotNumu > 0) std::cout << "Numu efficiency = " << 100.*(fSelNumu/static_cast<float>(fTotNumu)) << "%" << std::endl;
+    for(unsigned int i = 0; i < fTotNumuBins.size(); ++i){
+      if(fTotNumuBins[i] > 0) std::cout << "Numu efficiency " << i << "= " << 100.*(fSelNumuBins[i]/static_cast<float>(fTotNumuBins[i])) << "%" << std::endl;
+    }
+    */
   }
 
   //......................................................................
@@ -107,19 +151,127 @@ namespace cvn {
     std::unique_ptr< std::vector<Result> >
                                   resultCol(new std::vector<Result>);
 
+    /// Load in the pixel maps
     art::Handle< std::vector< cvn::PixelMap > > pixelmapListHandle;
     std::vector< art::Ptr< cvn::PixelMap > > pixelmaplist;
     if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmapListHandle))
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
 
-    if(pixelmaplist.size()>0){
-      std::pair<const float*, const float*> pairedoutput= fHandler.Predict(*pixelmaplist[0]);
-      const float* output=pairedoutput.first;
-      //const float* features=pairedoutput.second;
+    /// Make sure we have a valid name for the CVN type
+    if(fCVNType == "Caffe"){
+      if(pixelmaplist.size()>0){
+        std::pair<const float*, const float*> pairedoutput= fCaffeHandler.Predict(*pixelmaplist[0]);
+        const float* output=pairedoutput.first;
+        //const float* features=pairedoutput.second;
 
-      resultCol->emplace_back(output, fNOutput);
+        resultCol->emplace_back(output, fNOutput);
 
+      }
     }
+    else if(fCVNType == "TF" || fCVNType == "Tensorflow" || fCVNType == "TensorFlow"){
+      // If we have a pixel map then use the TF interface to give us a prediction
+      if(pixelmaplist.size() > 0){
+        
+        std::vector<float> networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
+
+        // cvn::Result can now take a vector of floats and works out the number of outputs
+        resultCol->emplace_back(networkOutput);
+      }
+    }
+    else{
+      mf::LogError("CVNEvaluator::produce") << "CVN Type not in the allowed list: Tensorflow, Caffe" << std::endl;
+      mf::LogError("CVNEvaluator::produce") << "Exiting without processing events" << std::endl;
+      return;
+    }
+
+/* Truth level debug code
+//    mf::LogInfo("CVNEvaluator::produce") << " Predicted: " << (*resultCol)[0].PredictedInteractionType() << std::endl; 
+
+    // Leigh: temporary testing code for performance
+
+    InteractionType interaction = kOther;
+
+    // * monte carlo
+    art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
+    std::vector<art::Ptr<simb::MCTruth> > mclist;
+    if(evt.getByLabel("generator",mctruthListHandle))
+      art::fill_ptr_vector(mclist, mctruthListHandle);
+
+    //unsigned short nmclist=  mclist.size();
+
+    //std::cout<<"mctruth: "<<nmclist<<std::endl;
+
+    art::Ptr<simb::MCTruth> truth = mclist[0];
+    simb::MCNeutrino truthN=truth->GetNeutrino();
+    //truth = mclist[0];
+
+    interaction = GetInteractionType(truthN);
+
+    // Get the interaction vertex from the end point of the neutrino. This is 
+    // because the start point of the lepton doesn't make sense for taus as they
+    // are decayed by the generator and not GEANT
+    TVector3 vtx = truthN.Nu().EndPosition().Vect();
+    bool isFid = (fabs(vtx.X())<310 && fabs(vtx.Y())<550 && vtx.Z()>50 && vtx.Z()<1244);
+
+    if(isFid && pixelmaplist.size() > 0){
+    
+      unsigned int correctedInt = static_cast<unsigned int>(interaction);
+      if(correctedInt == 13) correctedInt = 12;
+
+      unsigned int predInt = static_cast<unsigned int>((*resultCol)[0].PredictedInteractionType());
+      float nueProb = (*resultCol)[0].GetNueProbability();
+      float numuProb = (*resultCol)[0].GetNumuProbability();
+//      float nutauProb = (*resultCol)[0].GetNutauProbability();
+//      float ncProb = (*resultCol)[0].GetNCProbability();
+
+      ++fTotal;
+//      std::cout << " Truth :: Predicted = " << correctedInt << " :: " << predInt << " (" << numuProb << ", " << nueProb << ", " << nutauProb << ", " << ncProb  << ")" << std::endl; 
+      if((correctedInt >= 0 && correctedInt <=3) && (predInt >= 0 && predInt <= 3)){
+        ++fCorrect;
+      }
+      if((correctedInt >= 4 && correctedInt <= 7) && (predInt >= 4 && predInt <= 7)){
+        ++fCorrect;
+      }
+      if((correctedInt >= 8 && correctedInt <=11) && (predInt >= 8 && predInt <= 11)){
+        ++fCorrect;
+      }
+      if(correctedInt == 12 && predInt == 12){
+        ++fCorrect;
+      }
+
+      if(correctedInt == predInt){
+        ++fFullyCorrect;
+      }
+
+      if(abs(truthN.Nu().PdgCode()) == 12 && truthN.CCNC()==0){
+        ++fTotNue;
+        if(truthN.Nu().E() < 2.0) ++fTotNueBins[0];
+        if(truthN.Nu().E() >= 2.0 && truthN.Nu().E() <= 6.0) ++fTotNueBins[1];
+        if(truthN.Nu().E() > 6.0) ++fTotNueBins[2];
+
+        if(nueProb > 0.7){
+          ++fSelNue;
+          if(truthN.Nu().E() < 2.0) ++fSelNueBins[0];
+          if(truthN.Nu().E() >= 2.0 && truthN.Nu().E() <= 6.0) ++fSelNueBins[1];
+          if(truthN.Nu().E() > 6.0) ++fSelNueBins[2];
+        }
+      }
+      if(abs(truthN.Nu().PdgCode()) == 14 && truthN.CCNC()==0){
+        ++fTotNumu;
+        if(truthN.Nu().E() < 2.0) ++fTotNumuBins[0];
+        if(truthN.Nu().E() >= 2.0 && truthN.Nu().E() <= 6.0) ++fTotNumuBins[1];
+        if(truthN.Nu().E() > 6.0) ++fTotNumuBins[2];
+
+        if(numuProb > 0.5){
+          ++fSelNumu;
+        if(truthN.Nu().E() < 2.0) ++fSelNumuBins[0];
+        if(truthN.Nu().E() >= 2.0 && truthN.Nu().E() <= 6.0) ++fSelNumuBins[1];
+        if(truthN.Nu().E() > 6.0) ++fSelNumuBins[2];
+        }
+      } 
+  
+    }
+*/ // End of truth level debug code
 
     evt.put(std::move(resultCol), fResultLabel);
 

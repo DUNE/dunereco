@@ -1,3 +1,4 @@
+#Caffe stuff
 include_directories( $ENV{CAFFE_INC} )
 include_directories( $ENV{CAFFE_SRC} )
 include_directories( $ENV{GSL_INC}/gsl )
@@ -15,9 +16,23 @@ cet_find_library( LEVELDBLIB NAMES leveldb PATHS ENV LEVELDB_LIB NO_DEFAULT_PATH
 cet_find_library( GFLAGSLIB NAMES gflags PATHS ENV GFLAGS_LIB NO_DEFAULT_PATH )
 cet_find_library( GLOGLIB NAMES glog PATHS ENV GLOG_LIB NO_DEFAULT_PATH )
 
+# Tensorflow stuff
+if (DEFINED ENV{TENSORFLOW_DIR})
+# For some reason we apparently need to care if larreco is checked out.
+if (larreco_not_in_ups)
+set (LARRECO_RECOALG_IMAGEPATTERNALGS_TF larreco_RecoAlg_ImagePatternAlgs_Tensorflow_TF)
+else (larreco_not_in_ups)
+cet_find_library( LARRECO_RECOALG_IMAGEPATTERNALGS_TF NAMES larreco_RecoAlg_ImagePatternAlgs_Tensorflow_TF PATHS ENV LARRECO_LIB NO_DEFAULT_PATH)
+endif (larreco_not_in_ups)
+else(DEFINED ENV{TENSORFLOW_DIR})
+set (EXCLUDE_TF TFNetHandler.cxx)
+endif (DEFINED ENV{TENSORFLOW_DIR})
+
 art_make(BASENAME_ONLY
   LIBRARY_NAME      CVNArt
-  LIB_LIBRARIES     ${ART_FRAMEWORK_CORE}
+  EXCLUDE ${EXCLUDE_TF}
+  LIB_LIBRARIES CVNFunc
+  ${ART_FRAMEWORK_CORE}
   ${ART_FRAMEWORK_PRINCIPAL}
   ${ART_FRAMEWORK_SERVICES_REGISTRY}
   ${ART_FRAMEWORK_SERVICES_BASIC}
@@ -26,15 +41,12 @@ art_make(BASENAME_ONLY
   ${ART_PERSISTENCY_COMMON}
   canvas
   art_Persistency_Provenance
-  canvas 
   ${ART_UTILITIES}
-  canvas
   ${MF_MESSAGELOGGER}
   ${MF_UTILITIES}
   ${FHICLCPP}
   cetlib cetlib_except
   ${ROOT_BASIC_LIB_LIST}
-  CVNFunc
   lardataobj_RecoBase
   lardata_Utilities
   nusimdata_SimulationBase
@@ -47,7 +59,9 @@ art_make(BASENAME_ONLY
   ${LEVELDBLIB}
   ${GFLAGSLIB}
   ${GLOGLIB}                             
-
+  MVAAlg
+  larreco_RecoAlg
+  ${LARRECO_RECOALG_IMAGEPATTERNALGS_TF}
   MODULE_LIBRARIES  CVNFunc
   CVNArt
   )
