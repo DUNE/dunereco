@@ -473,7 +473,7 @@ namespace dune{
           fHasBeenDisambigedUV[i][hit] = 1+bestwire;
         }
         else{
-          mf::LogWarning("DisambigAlg35t")<<"Could not find disambiguated hit for  "<<std::string(hitsUV[i][hit]->WireID())<<" "<<hitsUV[i][hit]->PeakTime();
+          mf::LogInfo("DisambigAlg35t")<<"Could not find disambiguated hit for  "<<std::string(hitsUV[i][hit]->WireID())<<" "<<hitsUV[i][hit]->PeakTime();
         }
       }
     }  
