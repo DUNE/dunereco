@@ -43,7 +43,7 @@ art_make(BASENAME_ONLY
   art_Persistency_Provenance
   ${ART_UTILITIES}
   ${MF_MESSAGELOGGER}
-  ${MF_UTILITIES}
+  
   ${FHICLCPP}
   cetlib cetlib_except
   ${ROOT_BASIC_LIB_LIST}
