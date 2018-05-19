@@ -18,6 +18,7 @@
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Principal/SubRun.h"
 #include "art/Framework/Services/Optional/TFileDirectory.h"
 #include "art/Framework/Services/Optional/TFileService.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
@@ -26,45 +27,48 @@
 #include "art/Framework/Core/ModuleMacros.h"
 //#include "art/Framework/Core/FindManyP.h"
 
-
-// NOvASoft includes
+// LArSoft includes
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RawData/ExternalTrigger.h"
-
 
 #include "lardata/Utilities/AssociationUtil.h"
 #include "nusimdata/SimulationBase/MCNeutrino.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-
 #include "larsim/MCCheater/BackTracker.h"
 
 #include "dune/CVN/func/AssignLabels.h"
 #include "dune/CVN/func/TrainingData.h"
 #include "dune/CVN/func/InteractionType.h"
 #include "dune/CVN/func/PixelMap.h"
-
+#include "dune/FDSensOpt/MVAAlg/MVAAlg.h"
+#include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 
 
 
 namespace cvn {
   class CVNEventDump : public art::EDAnalyzer {
   public:
+
     explicit CVNEventDump(fhicl::ParameterSet const& pset);
     ~CVNEventDump();
 
-    void analyze(const art::Event& evt);
+    void analyze(const art::Event& evt) override;
     void reconfigure(const fhicl::ParameterSet& pset);
-    void beginJob();
-    void endJob();
-
-
+    void beginJob() override;
+    void endJob() override;
 
   private:
 
+    dunemva::MVAAlg fMVAAlg;
+
     std::string fPixelMapInput;
     std::string fGenieGenModuleLabel;
+    std::string fEnergyNueLabel;
+    std::string fEnergyNumuLabel;
+    bool        fGetEnergyOutput;
+    bool        fGetEventWeight;
     bool        fWriteMapTH2;
     bool        fApplyFidVol;
 
@@ -78,11 +82,10 @@ namespace cvn {
 
   };
 
-
-
   //.......................................................................
   CVNEventDump::CVNEventDump(fhicl::ParameterSet const& pset)
-    : EDAnalyzer(pset)
+    : EDAnalyzer(pset),
+    fMVAAlg(pset.get<fhicl::ParameterSet>("MVAAlg"))
   {
     this->reconfigure(pset);
   }
@@ -98,6 +101,11 @@ namespace cvn {
     fGenieGenModuleLabel  = pset.get<std::string>("GenieGenModuleLabel");
     fWriteMapTH2    = pset.get<bool>       ("WriteMapTH2");
     fApplyFidVol    = pset.get<bool>("ApplyFidVol");
+    fEnergyNueLabel = pset.get<std::string> ("EnergyNueLabel");  
+    fEnergyNumuLabel = pset.get<std::string> ("EnergyNumuLabel");
+    fGetEnergyOutput = pset.get<bool> ("GetEnergyOutput");
+    fGetEventWeight = pset.get<bool> ("GetEventWeight");
+    
   }
 
   //......................................................................
@@ -123,36 +131,17 @@ namespace cvn {
   void CVNEventDump::analyze(const art::Event& evt)
   {
 
-
-    //    art::ServiceHandle<cheat::BackTracker>& bt = fBT;
-
-
-
-
-    // get the slices
-
+    // Get the pixel maps
     art::Handle< std::vector< cvn::PixelMap > > pixelmapListHandle;
     std::vector< art::Ptr< cvn::PixelMap > > pixelmaplist;
     if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmapListHandle))
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
 
-    //std::cout<<fPixelMapInput<<std::endl;
-    //std::cout<<evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmapListHandle)<<std::endl;
-    unsigned short nhits=  pixelmaplist.size();
-
-    //std::cout<<"pixel maps: "<<nhits<<std::endl;
+    unsigned short nhits =  pixelmaplist.size();
+    // If we have no hits then return
+    if(nhits < 1) return;
 
     InteractionType interaction = kOther;
-
-
-
-    //simb::MCTruth
-    //simb::MCTruth truth;
-
-    //if(fBT->HaveTruthInfo()){
-
-
-
 
     // * monte carlo
     art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
@@ -176,26 +165,52 @@ namespace cvn {
     lepEnergy = truthN.Lepton().E();
     //}
 
+    // If outside the fiducial volume don't waste any time filling other variables
     if(fApplyFidVol){
-      // Get the interaction vertex from the lepton
-//      TVector3 vtx = truthN.Lepton().Position().Vect();
+      // Get the interaction vertex from the end point of the neutrino. This is 
+      // because the start point of the lepton doesn't make sense for taus as they
+      // are decayed by the generator and not GEANT
       TVector3 vtx = truthN.Nu().EndPosition().Vect();
       bool isFid = (fabs(vtx.X())<310 && fabs(vtx.Y())<550 && vtx.Z()>50 && vtx.Z()<1244);
       if(!isFid) return;
     }
 
-    if(nhits>0){
-      TrainingData train(interaction, nuEnergy, lepEnergy, *pixelmaplist[0]);
+    float recoNueEnergy = 0.;
+    float recoNumuEnergy = 0.;
+    // Should we use the EnergyReco_module reconstructed energies?
+    if(fGetEnergyOutput){
+      // Get the nue info
+      if(fEnergyNueLabel != ""){
+        art::Handle<dune::EnergyRecoOutput> energyRecoNueHandle;
+        evt.getByLabel(fEnergyNueLabel, energyRecoNueHandle);
 
-      if (fWriteMapTH2) WriteMapTH2(evt, 0, train.fPMap);
+        recoNueEnergy = energyRecoNueHandle->fNuLorentzVector.E();
+      }
+      // And the numu
+      if(fEnergyNumuLabel != ""){
+        art::Handle<dune::EnergyRecoOutput> energyRecoNumuHandle;
+        evt.getByLabel(fEnergyNumuLabel, energyRecoNumuHandle);
 
-      fTrain = &train;
-      fTrainTree->Fill();
+        recoNumuEnergy = energyRecoNumuHandle->fNuLorentzVector.E();
+      }
     }
 
+    // If we don't want to get the event weight then leave it as 1.0.
+    double eventWeight = 1.;
+    if(fGetEventWeight){
+      double mvaResult = 0.; // We don't care about this, but need it for the call
+      fMVAAlg.Run(evt,mvaResult,eventWeight);
+    }
 
+    // Create the training data and add it to the tree
+    TrainingData train(interaction, nuEnergy, lepEnergy, recoNueEnergy, recoNumuEnergy, eventWeight, *pixelmaplist[0]);
+    fTrain = &train;
+    fTrainTree->Fill();
 
-}
+    // Make a plot of the pixel map if required
+    if (fWriteMapTH2) WriteMapTH2(evt, 0, train.fPMap);
+
+  }
 
   //----------------------------------------------------------------------
 
