@@ -10,7 +10,14 @@ from keras.layers import (
     Input,
     Activation,
     Dense,
-    Flatten
+    Flatten,
+    Add,
+    Subtract,
+    Multiply,
+    Average,
+    Maximum,
+    Concatenate,
+    Dot
 )
 from keras.layers.convolutional import (
     Conv2D,
@@ -186,7 +193,7 @@ def _get_block(identifier):
 
 class ResnetBuilder(object):
     @staticmethod
-    def build(input_shape, num_outputs, block_fn, repetitions):
+    def build(input_shape, num_outputs, block_fn, repetitions, branches=False):
         """Builds a custom ResNet like architecture.
 
         Args:
@@ -231,10 +238,79 @@ class ResnetBuilder(object):
         pool2 = AveragePooling2D(pool_size=(block_shape[ROW_AXIS], block_shape[COL_AXIS]),
                                  strides=(1, 1))(block)
         flatten1 = Flatten()(pool2)
-        dense = Dense(units=num_outputs, kernel_initializer="he_normal",
-                      activation="softmax")(flatten1)
 
-        model = Model(inputs=input, outputs=dense)
+        if branches:
+
+            # don't include dense layer when the network has more than one branch
+
+            model = Model(inputs=input, outputs=flatten1)
+
+        else:
+
+            # last layer of the network should be a dense layer
+
+            dense = Dense(units=num_outputs, kernel_initializer="he_normal",
+                          activation="softmax")(flatten1)
+            model = Model(inputs=input, outputs=dense)
+
+        return model
+
+    @staticmethod
+    def build_resnet_18_merged(input_shape, num_outputs, merge_type='concat'):
+        
+        branches = input_shape[2] # number of branches == number of views
+        input_shape[2] = 1        # convert shape from (PLANES, CELLS, VIEWS) into (PLANES, CELLS, 1)
+
+        branches_inputs  = [] # inputs of the network branches
+        branches_outputs = [] # outputs of the network branches
+
+        for branch in range(branches):
+
+            # generate branche and save its input and output
+
+            branch_model = ResnetBuilder.build(input_shape, num_outputs, basic_block, [2, 2, 2, 2], branches=True)
+            branches_inputs.append(branch_model.input)
+            branches_outputs.append(branch_model.output)
+
+        # merge the branches
+
+        if merge_type == 'add':
+
+            merged = Add()(branches_outputs)
+ 
+        elif merge_type == 'sub':
+
+            merged = Substract()(branches_outputs)
+
+        elif merge_type == 'mul':
+
+            merged = Multiply()(branches_outputs)
+ 
+        elif merge_type == 'avg':
+
+            merged = Average()(branches_outputs)
+ 
+        elif merge_type == 'max':
+
+            merged = Maximum()(branches_outputs)
+ 
+        elif merge_type == 'dot':
+
+            merged = Dot()(branches_outputs)
+            
+        else:
+
+            merged = Concatenate()(branches_outputs)
+
+        # dense output layer
+
+        dense = Dense(units=num_outputs, kernel_initializer="he_normal", activation="softmax")(merged)
+
+        # generate final model
+
+        model = Model(branches_inputs, dense)
+        #model = Model(branches_inputs, merged)
+
         return model
 
     @staticmethod

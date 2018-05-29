@@ -240,6 +240,61 @@ Where IMAGES_PATH corresponds to the previously described path. That path consis
 <a name="1-5-model"></a>
 ### [model]
 
+#### - architecture
+
+> architecture = ARCHITECTURE
+
+**Description:** neural network architecture. It must be one of the following:
+
+- 'xception'          -> Xception          (Total params:  20,888,117; trainable params:  20,833,589; non-trainable params:  54,528).
+- 'vgg16'             -> VGG16             (Total params: 503,412,557; trainable params: 503,412,557; non-trainable params:       0).
+- 'vgg19'             -> VGG19             (Total params: 508,722,253; trainable params: 508,722,253; non-trainable params:       0).
+- 'resnet18'          -> ResNet18          (Total params:  11,193,997; trainable params:  11,186,189; non-trainable params:   7,808).
+- 'resnet34'          -> ResNet34          (Total params:  21,313,293; trainable params:  21,298,061; non-trainable params:  15,232).
+- 'resnet50'          -> ResNet50          (Total params:  23,694,221; trainable params:  23,641,101; non-trainable params:  53,120).
+- 'resnet101'         -> ResNet101         (Total params:  42,669,453; trainable params:  42,571,789; non-trainable params:  97,664).
+- 'resnet152'         -> ResNet152         (Total params:  58,382,221; trainable params:  58,238,477; non-trainable params: 143,744).
+- 'inceptionv3'       -> InceptionV3       (Total params:  21,829,421, trainable params:  21,794,989; non-trainable params:  34,432).
+- 'inceptionv4'       -> InceptionV4       (Total params:  41,194,381; trainable params:  41,131,213; non-trainable params:  63,168).
+- 'inceptionresnetv2' -> InceptionResNetV2 (Total params:  54,356,717; trainable params:  54,296,173; non-trainable params:  60,544).
+- 'resnext'           -> ResNeXt           (Total params:  89,712,576; trainable params:  89,612,096; non-trainable params: 100,480).
+- 'seresnet18'        -> SEResNet18        (Total params:  11,276,224; trainable params:  11,268,416; non-trainable params:   7,808).
+- 'seresnet34'        -> SEResNet34        (Total params:  21,461,952; trainable params:  21,446,720; non-trainable params:  15,232).
+- 'seresnet50'        -> SEResNet50        (Total params:  26,087,360; trainable params:  26,041,920; non-trainable params:  45,440).
+- 'seresnet101'       -> SEResNet101       (Total params:  47,988,672; trainable params:  47,887,936; non-trainable params: 100,736).
+- 'seresnet154'       -> SEResNet154       (Total params:  64,884,672; trainable params:  64,740,928; non-trainable params: 143,744).
+- 'mobilenet'         -> MobileNet         (Total params:   3,242,189; trainable params:   3,220,301; non-trainable params:  21,888).
+- 'densenet121'       -> DenseNet121       (Total params:   7,050,829; trainable params:   6,967,181; non-trainable params:  83,648).
+- 'densenet169'       -> DenseNet169       (Total params:  12,664,525; trainable params:  12,506,125; non-trainable params: 158,400).
+- 'densenet201'       -> DenseNet201       (Total params:  18,346,957; trainable params:  18,117,901; non-trainable params: 229,056).
+- other               -> Custom model
+
+**Type:** String.
+
+**Example:** `architecture = resnet50`
+
+#### - branches
+
+> branches = BOOLEAN
+
+**Description:** value used (if True) to split the network architecture into three branches (one for each view).
+
+**Type:** Boolean.
+
+**Example:** `branches = True`
+
+*NOTE:* THIS FEATURE IS NOT FULLY IMPLEMENTED YET.
+
+#### - parallelize
+
+> parallelize = BOOLEAN
+
+**Description:** value used (if True) to parallelize the training. It replicates the model N times (N = number of GPUs available) and splits the mini-batch among them.
+
+**Type:** Boolean.
+
+**Example:** `parallelize = True`
+
 #### - checkpoint_path
 
 > checkpoint_path = CHECKPOINT_PATH
@@ -353,7 +408,7 @@ Non-trainable params: 192
 
 *NOTE:* please, do not mix up the terms iteration and epoch: 
 
-- An iteration one pass using [mini-batch size] number of examples. Thus, the number of iterations consists of the number of passes, each pass using [mini-batch size] number of examples. To be clear, one pass = one forward pass + one backward pass (we do not count the forward pass and backward pass as two different passes). 
+- An iteration is one pass using [mini-batch size] number of examples. Thus, the number of iterations consists of the number of passes, each pass using [mini-batch size] number of examples. To be clear, one pass = one forward pass + one backward pass (we do not count the forward pass and backward pass as two different passes). 
 - An epoch is an arbitrary cutoff, generally defined as "one pass over the entire dataset" (one forward pass and one backward pass of all the training examples), used to separate training into distinct phases, which is useful for logging and periodic evaluation.
 
 Some Deep Learning frameworks (e.g., Caffe) do not use the term epoch; however, Tensorflow does.
