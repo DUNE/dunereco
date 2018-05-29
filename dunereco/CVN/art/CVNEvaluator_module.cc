@@ -38,8 +38,6 @@
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 
-#include "larsim/MCCheater/BackTracker.h"
-
 #include "dune/CVN/func/Result.h"
 #include "dune/CVN/func/PixelMap.h"
 #include "dune/CVN/art/CaffeNetHandler.h"
@@ -130,6 +128,7 @@ namespace cvn {
   //......................................................................
   void CVNEvaluator::endJob()
   {
+    /*
     float tot = static_cast<float>(fTotal);
     std::cout << "Total of " << fTotal << " events passed the fiducial volume cut and were classified" << std::endl;
     if(fTotal > 0)   std::cout << "Correct flavour (interaction) identification = " << 100.*(fCorrect / tot) << "% (" << 100.*(fFullyCorrect/tot) << "%)" << std::endl;
@@ -141,6 +140,7 @@ namespace cvn {
     for(unsigned int i = 0; i < fTotNumuBins.size(); ++i){
       if(fTotNumuBins[i] > 0) std::cout << "Numu efficiency " << i << "= " << 100.*(fSelNumuBins[i]/static_cast<float>(fTotNumuBins[i])) << "%" << std::endl;
     }
+    */
   }
 
   //......................................................................
@@ -184,6 +184,7 @@ namespace cvn {
       return;
     }
 
+/* Truth level debug code
 //    mf::LogInfo("CVNEvaluator::produce") << " Predicted: " << (*resultCol)[0].PredictedInteractionType() << std::endl; 
 
     // Leigh: temporary testing code for performance
@@ -220,11 +221,11 @@ namespace cvn {
       unsigned int predInt = static_cast<unsigned int>((*resultCol)[0].PredictedInteractionType());
       float nueProb = (*resultCol)[0].GetNueProbability();
       float numuProb = (*resultCol)[0].GetNumuProbability();
-      float nutauProb = (*resultCol)[0].GetNutauProbability();
-      float ncProb = (*resultCol)[0].GetNCProbability();
+//      float nutauProb = (*resultCol)[0].GetNutauProbability();
+//      float ncProb = (*resultCol)[0].GetNCProbability();
 
       ++fTotal;
-      std::cout << " Truth :: Predicted = " << correctedInt << " :: " << predInt << " (" << numuProb << ", " << nueProb << ", " << nutauProb << ", " << ncProb  << ")" << std::endl; 
+//      std::cout << " Truth :: Predicted = " << correctedInt << " :: " << predInt << " (" << numuProb << ", " << nueProb << ", " << nutauProb << ", " << ncProb  << ")" << std::endl; 
       if((correctedInt >= 0 && correctedInt <=3) && (predInt >= 0 && predInt <= 3)){
         ++fCorrect;
       }
@@ -270,6 +271,7 @@ namespace cvn {
       } 
   
     }
+*/ // End of truth level debug code
 
     evt.put(std::move(resultCol), fResultLabel);
 

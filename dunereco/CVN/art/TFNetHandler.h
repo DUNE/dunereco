@@ -13,7 +13,7 @@
 #include "dune/CVN/func/PixelMap.h"
 #include "dune/CVN/func/InteractionType.h"
 #include "fhiclcpp/ParameterSet.h"
-#include "larreco/RecoAlg/ImagePatternAlgs/TF/tf_graph.h"
+#include "larreco/RecoAlg/ImagePatternAlgs/Tensorflow/TF/tf_graph.h"
 
 namespace cvn
 {

@@ -15,8 +15,6 @@
 #include "dune/CVN/art/TFNetHandler.h"
 #include "dune/CVN/func/CVNImageUtils.h"
 
-#include "larreco/RecoAlg/ImagePatternAlgs/TF/tf_graph.h"
-
 #include "TH2D.h"
 #include "TCanvas.h"
 
@@ -86,11 +84,11 @@ namespace cvn
 
 //    std::cout << "Number of CVN result vectors " << cvnResults.size() << " with " << cvnResults[0].size() << " categories" << std::endl;
 
-    std::cout << "Classifier summary: ";
-    for(auto const v : cvnResults[0]){
-      std::cout << v << ", ";
-    }
-    std::cout << std::endl;
+//    std::cout << "Classifier summary: ";
+//    for(auto const v : cvnResults[0]){
+//      std::cout << v << ", ";
+//    }
+//    std::cout << std::endl;
 
     return cvnResults[0];
   }

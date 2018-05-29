@@ -23,7 +23,7 @@
 #include "larcorealg/Geometry/GeometryCore.h"
 //#include "larsim/MCCheater/BackTrackerService.h"
 //#include "larsim/MCCheater/ParticleInventoryService.h"
-//#include "larsim/MCCheater/PhotonBackTracker.h"
+//#include "larsim/MCCheater/PhotonBackTrackerService.h"
 #include "nutools/ParticleNavigation/EmEveIdCalculator.h"
 
 #include "nusimdata/SimulationBase/MCTruth.h"
@@ -86,7 +86,7 @@ namespace
 
 //    art::ServiceHandle<cheat::BackTrackerService> bt_serv;
 //    art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
-//    art::ServiceHandle<cheat::PhotonBackTracker> pbt;
+//    art::ServiceHandle<cheat::PhotonBackTrackerService> pbt;
 
     const geo::GeometryCore& geom;
     const detinfo::DetectorProperties& dp;
