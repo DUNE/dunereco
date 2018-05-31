@@ -29,7 +29,11 @@
             <tool type = "LArCosmicRayTagging"/>
         </CosmicRayTaggingTools>
         <SliceIdTools>
-            <tool type = "LArBeamParticleId"><BeamTPCIntersection>-33.051 461.06 0.</BeamTPCIntersection></tool>
+            <tool type = "LArBdtBeamParticleId">
+                <BdtName>BeamParticleId</BdtName>
+                <BdtFileName>PandoraMVAData/PandoraBdt_v03_12_00.xml</BdtFileName>
+                <MinAdaBDTScore>-0.2</MinAdaBDTScore>
+            </tool>
         </SliceIdTools>
         <InputHitListName>Input</InputHitListName>
         <RecreatedPfoListName>RecreatedPfos</RecreatedPfoListName>
@@ -46,6 +50,25 @@
         <PfoListName>RecreatedPfos</PfoListName>
         <VertexListName>RecreatedVertices</VertexListName>
     </algorithm>
+
+    <algorithm type = "LArTestBeamParticleCreation">
+        <PfoListName>RecreatedPfos</PfoListName>
+        <VertexListName>RecreatedVertices</VertexListName>
+    </algorithm>
+
+    <algorithm type = "LArEventValidation">
+        <CaloHitListName>CaloHitList2D</CaloHitListName>
+        <MCParticleListName>Input</MCParticleListName>
+        <PfoListName>RecreatedPfos</PfoListName>
+        <UseTrueNeutrinosOnly>false</UseTrueNeutrinosOnly>
+        <PrintAllToScreen>false</PrintAllToScreen>
+        <PrintMatchingToScreen>true</PrintMatchingToScreen>
+        <WriteToTree>false</WriteToTree>
+        <OutputTree>Validation</OutputTree>
+        <OutputFile>Validation.root</OutputFile>
+        <TestBeamMode>true</TestBeamMode>
+    </algorithm>
+
     <algorithm type = "LArVisualMonitoring">
         <ShowCurrentPfos>true</ShowCurrentPfos>
         <ShowDetector>true</ShowDetector>
