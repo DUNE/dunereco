@@ -103,8 +103,8 @@ dune35tdata_linecluster.ClusterCrawlerAlg.FindHammerClusters: false # look for h
 dune35tdata_linecluster.ClusterCrawlerAlg.RefineVertexClusters:  false
 
 dunefdmc_trajclusteralg:             @local::standard_trajclusteralg
-#                                    0    1   2   3    4  5   6  7  8  9 10  11   12
-dunefdmc_trajclusteralg.ShowerTag: [ 2, 100, 10, 50, 2.5, 1, 15, 3, 5, 1, 1, 10, -13 ]
+#                                     0    1   2   3    4  5   6  7   8    9   10  11  12
+dunefdmc_trajclusteralg.ShowerTag: [ -2, 100, 10, 50, 2.5, 0, 15, 3, 10, 0.7, 0.3, 10, 0 ]
 # 0 Mode (<= 0 OFF, 1 = Tag InShower tjs before 3D match, > 1 Find showers)
 # 1 Max Tj MCSMom for a shower tag
 # 2 Max InShower Tj separation

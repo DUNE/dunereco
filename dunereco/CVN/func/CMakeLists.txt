@@ -10,7 +10,7 @@ art_make( BASENAME_ONLY
   larsim_MCCheater_ParticleInventoryService_service
   ${ART_FRAMEWORK_SERVICES_REGISTRY}
   ${MF_MESSAGELOGGER}
-  ${MF_UTILITIES}
+  
   cetlib cetlib_except
   ${Boost_FILESYSTEM_LIBRARY}            
   ${Boost_SYSTEM_LIBRARY}
