@@ -54,13 +54,6 @@ namespace cvn
 
     PixelMap pm(fNWire, fNTdc, bound);
 
-    TH2D *hWiresX = new TH2D("hWireX","",3000,0,3000,400,0,400);
-    TH2D *hWiresY = new TH2D("hWireY","",3000,0,3000,400,0,400);
-    TH2D *hWiresZ = new TH2D("hWireZ","",3000,0,3000,480,0,480);
-
-    bool hasLeftTPC = false;
-    bool hasRightTPC = false;
-  
     for(size_t iHit = 0; iHit < cluster.size(); ++iHit)
     {
       geo::WireID wireid = cluster[iHit]->WireID();
@@ -69,16 +62,7 @@ namespace cvn
       unsigned int tempPlane              = wireid.Plane;
       // Leigh: Simple modification to unwrap the collection view wire plane
       if(fUnwrapped){
-        unsigned int oldWire = 0;
-        unsigned int oldPlane = 0;
         GetBetterGlobalWire(wireid.Wire,cluster[iHit]->PeakTime(),wireid.Plane,wireid.TPC,tempWire,tempPlane,temptdc);
-        GetGlobalWire(wireid.Wire,wireid.Plane,wireid.TPC,oldWire,oldPlane);
-        if(wireid.Plane == 0) hWiresX->SetBinContent(tempWire+1,wireid.Wire+1,wireid.TPC);
-        if(wireid.Plane == 1) hWiresY->SetBinContent(tempWire+1,wireid.Wire+1,wireid.TPC);
-        if(wireid.Plane == 2) hWiresZ->SetBinContent(tempWire+1,wireid.Wire+1,wireid.TPC);
-        // Test the new and old methods
-//        std::cout << "Local: " << wireid.Wire << ", " << wireid.Plane << ", " << wireid.TPC << " :: New: " << tempWire << ", " << tempPlane << " :: Old " << oldWire << ", " << oldPlane << std::endl;  
-//        std::cout << "TPC = " << wireid.TPC << std::endl;
       }
       const double pe  = cluster[iHit]->Integral();
       const unsigned int wire = tempWire;
@@ -86,16 +70,7 @@ namespace cvn
       const double tdc = temptdc;
       pm.Add(wire, tdc, wirePlane, pe);
 
-      if((wireid.TPC % 4) == 0 || (wireid.TPC % 4) == 2) hasRightTPC = true;
-      else hasLeftTPC = true;
-
     }
-
-    if(hasLeftTPC && hasRightTPC) std::cout << "*** Event spans the APA" << std::endl;
-
-    hWiresX->Write();
-    hWiresY->Write();
-    hWiresZ->Write();
 
     return pm;
 
