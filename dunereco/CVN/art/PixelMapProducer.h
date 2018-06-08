@@ -28,6 +28,8 @@
 #include "dune/CVN/func/Boundary.h"
 #include "lardataobj/RecoBase/Hit.h"
 
+#include "larcorealg/Geometry/GeometryCore.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 //#include "art/Framework/Services/Registry/ServiceHandle.h"
 //#include "Geometry/Geometry.h"
 
@@ -46,6 +48,10 @@ namespace cvn
 
     /// Function to convert to a global unwrapped wire number
     void GetGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const; 
+    /// Better global wire approach from R. Sulej
+//    void GetBetterGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const;
+    void GetBetterGlobalWire(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
+                                             unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const;
 
     unsigned int NWire() const {return fNWire;};
     unsigned int NTdc() const {return fNTdc;};
@@ -61,6 +67,9 @@ namespace cvn
     unsigned int      fNTdc;   ///< Number of tdcs, width of pixel map
     double            fTRes;
     bool              fUnwrapped; ///< Use unwrapped pixel maps?
+
+    geo::GeometryCore const* fGeometry;
+    detinfo::DetectorProperties const* fDetProp;
   };
 
 }
