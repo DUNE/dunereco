@@ -10,7 +10,7 @@ class DataGenerator(object):
   '''
 
   def __init__(self, cells = 500, planes = 500, views = 3, batch_size = 32, n_labels = 2, interaction_labels = [0,1], neutrino_labels = [], 
-               standardize = True, filtered = False, interaction_types = True, images_path = '/', shuffle = True, test_values=[]):
+               branches = True, standardize = True, filtered = False, interaction_types = True, images_path = '/', shuffle = True, test_values=[]):
       'Initialization'
 
       self.cells = cells
@@ -20,6 +20,7 @@ class DataGenerator(object):
       self.n_labels = n_labels
       self.interaction_labels = interaction_labels
       self.neutrino_labels = neutrino_labels
+      self.branches = branches
       self.filtered = filtered
       self.interaction_types = interaction_types
       self.images_path = images_path
@@ -98,7 +99,21 @@ class DataGenerator(object):
 
       # Initialization
 
-      X = np.empty((self.batch_size, self.planes, self.cells, self.views))
+      if self.branches:
+
+          # X data should be a list of length == branches
+          
+          X = []
+
+          for view in range(self.views):
+              X.append(np.empty((self.batch_size, self.planes, self.cells, 1)))
+
+      else:
+
+          # X data should't be a list because there is only one branch
+
+          X = np.empty((self.batch_size, self.planes, self.cells, self.views))
+          #X = np.empty((self.batch_size, self.planes, self.cells, 1))
 
       if yield_labels:
 
@@ -133,9 +148,6 @@ class DataGenerator(object):
               # ordinary images
 
               pixels = np.fromstring(zlib.decompress(open(self.images_path + '/' + labels[ID] + '/' + ID + '.txt.gz', 'rb').read()), dtype=np.uint8, sep='').reshape(self.views, self.planes, self.cells)
-              pixels = np.rollaxis(pixels, 0, 3) # from 'channels_first' to 'channels_last'
-
-              #pixels = np.transpose(pixels, (2, 1, 0))
 
               if self.standardize:
 
@@ -146,7 +158,18 @@ class DataGenerator(object):
 
           # Store volume
 
-          X[i, :, :, :] = pixels
+          if self.branches:
+
+              for view in range(self.views):
+
+                  X[view][i, :, :, :] = pixels[view, :, :].reshape(self.planes, self.cells, 1)
+
+          else: 
+
+              pixels = np.rollaxis(pixels, 0, 3) # from 'channels_first' to 'channels_last'
+              X[i, :, :, :] = pixels
+ 
+              #X[i, :, :, :] = pixels[2, :, :].reshape(self.planes, self.cells, 1)
 
           # get y value
           

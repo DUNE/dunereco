@@ -68,6 +68,7 @@ CHECKPOINT_PREFIX = config['model']['checkpoint_prefix']
 CHECKPOINT_SAVE_MANY = ast.literal_eval(config['model']['checkpoint_save_many'])
 CHECKPOINT_SAVE_BEST_ONLY = ast.literal_eval(config['model']['checkpoint_save_best_only'])
 PRINT_SUMMARY = ast.literal_eval(config['model']['print_summary'])
+BRANCHES = ast.literal_eval(config['model']['branches'])
 
 # test
 
@@ -75,6 +76,8 @@ OUTPUT_PATH = config['test']['output_path']
 OUTPUT_PREFIX = config['test']['output_prefix']
 CUT_NUE = float(config['test']['cut_nue'])
 CUT_NUMU = float(config['test']['cut_numu'])
+CUT_NUTAU = float(config['test']['cut_nutau'])
+CUT_NC = float(config['test']['cut_nc'])
 TEST_BATCH_SIZE = int(config['test']['batch_size'])
 
 # test params
@@ -88,6 +91,7 @@ TEST_PARAMS = {'planes': PLANES,
                'n_labels': N_LABELS,
                'interaction_labels': INTERACTION_LABELS,
                'interaction_types': INTERACTION_TYPES,
+               'branches': BRANCHES,
                'filtered': FILTERED,
                'neutrino_labels': NEUTRINO_LABELS,
                'images_path': IMAGES_PATH,
@@ -288,21 +292,33 @@ cut_weighted_conf_matrix = np.zeros((4,4), dtype='float32')
 
 for sample in range(len(Y_pred_neutrino)):
     
-    pred_flavour = int(y_pred_neutrino[sample]) # get predicted class of sample
-    test_flavour = int(y_test_neutrino[sample]) # get actual class of sample
-    weight = test_values[sample]['fEventWeight']
+    pred_flavour = int(y_pred_neutrino[sample])  # get predicted class of sample
+    test_flavour = int(y_test_neutrino[sample])  # get actual class of sample
+    weight = test_values[sample]['fEventWeight'] # event weight
 
     if Y_pred_neutrino[sample][0] >= CUT_NUE:
 
-        cut_weighted_conf_matrix[0][test_flavour] += weight
-
         # accumulate if the probability of that label of the sample is >= CUT_NUE
  
+        cut_weighted_conf_matrix[0][test_flavour] += weight
+
     if Y_pred_neutrino[sample][1] >= CUT_NUMU:
+
+        # accumulate if the probability of that label of the sample is >= CUT_NUMU
 
         cut_weighted_conf_matrix[1][test_flavour] += weight
 
-        # accumulate if the probability of that label of the sample is >= CUT_NUE
+    if Y_pred_neutrino[sample][2] >= CUT_NUTAU:
+
+        # accumulate if the probability of that label of the sample is >= CUT_NUTAU
+
+        cut_weighted_conf_matrix[2][test_flavour] += weight
+
+    if Y_pred_neutrino[sample][3] >= CUT_NC:
+
+        # accumulate if the probability of that label of the sample is >= CUT_NC
+
+        cut_weighted_conf_matrix[3][test_flavour] += weight
 
     weighted_conf_matrix[pred_flavour][test_flavour] += weight
 

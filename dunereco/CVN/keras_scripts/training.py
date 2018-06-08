@@ -1,3 +1,4 @@
+import tensorflow as tf
 import numpy as np
 import pickle
 import configparser
@@ -18,10 +19,18 @@ from collections import Counter
 sys.path.append("/home/salonsom/cvn_tensorflow/networks")
 sys.path.append("/home/salonsom/cvn_tensorflow/callbacks")
 
-import se_resnet, resnet, resnetpa, googlenet, my_model
+from keras.utils import multi_gpu_model
+
+import networks
 import my_callbacks
 
 from keras import backend as K
+import tensorflow as tf
+sess = tf.Session()
+init = tf.global_variables_initializer()
+sess.run(init)
+K.set_session(sess)
+
 K.set_image_data_format('channels_last')
 
 '''
@@ -79,12 +88,15 @@ LOG_PREFIX = config['log']['prefix']
 
 # model
 
+ARCHITECTURE = config['model']['architecture']
 CHECKPOINT_PATH = config['model']['checkpoint_path']
 CHECKPOINT_PREFIX = config['model']['checkpoint_prefix']
 CHECKPOINT_SAVE_MANY = ast.literal_eval(config['model']['checkpoint_save_many'])
 CHECKPOINT_SAVE_BEST_ONLY = ast.literal_eval(config['model']['checkpoint_save_best_only'])
 CHECKPOINT_PERIOD = int(config['model']['checkpoint_period'])
+PARALLELIZE = ast.literal_eval(config['model']['parallelize'])
 PRINT_SUMMARY = ast.literal_eval(config['model']['print_summary'])
+BRANCHES = ast.literal_eval(config['model']['branches'])
 
 # train
 
@@ -112,6 +124,7 @@ TRAIN_PARAMS =      {'planes': PLANES,
                      'n_labels': N_LABELS,
                      'interaction_labels': INTERACTION_LABELS,
                      'interaction_types': INTERACTION_TYPES,
+                     'branches': BRANCHES,
                      'filtered': FILTERED,
                      'neutrino_labels': NEUTRINO_LABELS,
                      'images_path': IMAGES_PATH,
@@ -127,6 +140,7 @@ VALIDATION_PARAMS = {'planes': PLANES,
                      'n_labels': N_LABELS,
                      'interaction_labels': INTERACTION_LABELS,
                      'interaction_types': INTERACTION_TYPES,
+                     'branches': BRANCHES,
                      'filtered': FILTERED,
                      'neutrino_labels': NEUTRINO_LABELS,
                      'images_path': IMAGES_PATH,
@@ -205,7 +219,8 @@ if RESUME:
 
         for fil in files:
             if r.match(fil) is not None:
-                model = load_model(CHECKPOINT_PATH + '/' + fil)
+                print(CHECKPOINT_PATH + '/' + fil)
+                model = load_model(CHECKPOINT_PATH + '/' + fil, custom_objects={"tf": tf})
 
                 logging.info('Loaded model: %s', CHECKPOINT_PATH + '/' + fil)                
 
@@ -228,34 +243,69 @@ else:
     # Input shape: (PLANES x CELLS x VIEWS)
 
     input_shape = [PLANES, CELLS, VIEWS]
+    #input_shape = [PLANES, CELLS, 1]
 
-    #model = se_resnet.SEResNet(input_shape=input_shape, classes=N_LABELS)
-    #model = resnetpa.ResNetPreAct()
 
-    model = resnet.ResnetBuilder.build_resnet_18(input_shape, N_LABELS)
-    #model = resnet.ResnetBuilder.build_resnet_34(input_shape, N_LABELS)
-    #model = resnet.ResnetBuilder.build_resnet_50(input_shape, N_LABELS)
-    #model = resnet.ResnetBuilder.build_resnet_101(input_shape, N_LABELS)
-    #model = resnet.ResnetBuilder.build_resnet_152(input_shape, N_LABELS)
-    #model = my_model.my_model(input_shape=input_shape, classes=N_LABELS)
+    '''
+
+    Create model. Options (argument 'network'):
+
+                                              Total params  Trainable params  Non-trainable params
+
+    'xception'          -> Xception             20,888,117        20,833,589                54,528
+    'vgg16'             -> VGG16               503,412,557       503,412,557                     0
+    'vgg19'             -> VGG19               508,722,253       508,722,253                     0
+    'resnet18'          -> ResNet18             11,193,997        11,186,189                 7,808
+    'resnet34'          -> ResNet34             21,313,293        21,298,061                15,232
+    'resnet50'          -> ResNet50             23,694,221        23,641,101                53,120
+    'resnet101'         -> ResNet101            42,669,453        42,571,789                97,664
+    'resnet152'         -> ResNet152            58,382,221        58,238,477               143,744
+    'inceptionv3'       -> InceptionV3          21,829,421        21,794,989                34,432
+    'inceptionv4'       -> InceptionV4          41,194,381        41,131,213                63,168
+    'inceptionresnetv2' -> InceptionResNetV2    54,356,717        54,296,173                60,544
+    'resnext'           -> ResNeXt              89,712,576        89,612,096               100,480
+    'seresnet18'        -> SEResNet18           11,276,224        11,268,416                 7,808
+    'seresnet34'        -> SEResNet34           21,461,952        21,446,720                15,232
+    'seresnet50'        -> SEResNet50           26,087,360        26,041,920                45,440
+    'seresnet101'       -> SEResNet101          47,988,672        47,887,936               100,736
+    'seresnet154'       -> SEResNet154          64,884,672        64,740,928               143,744
+    'mobilenet'         -> MobileNet             3,242,189         3,220,301                21,888
+    'densenet121'       -> DenseNet121           7,050,829         6,967,181                83,648
+    'densenet169'       -> DenseNet169          12,664,525        12,506,125               158,400
+    'densenet201'       -> DenseNet201          18,346,957        18,117,901               229,056
+    other               -> Custom model
+ 
+    '''
+
+    model = networks.create_model(network=ARCHITECTURE, num_classes=N_LABELS, input_shape=input_shape)
 
     # Optimizer: Stochastic Gradient Descent
 
     logging.info('Setting optimizer...')
 
-    opt = optimizers.SGD(lr=LEARNING_RATE, momentum=MOMENTUM, decay=DECAY, nesterov=True)
+    opt = optimizers.SGD(lr=LEARNING_RATE, momentum=MOMENTUM, decay=DECAY, nesterov=True) # SGD
+    #opt = optimizers.RMSprop(lr=0.045, rho=0.9, epsilon=1.0, decay=0.9)                  # RMSprop
+    #opt = optimizers.Adam(lr=1e-3)							  # Adam
+
+    if PARALLELIZE:
+
+        # Parallelize the model (use all the available GPUs)
+
+        try:
+
+            model = multi_gpu_model(model, cpu_relocation=True)
+
+            logging.info('Training using multiple GPUs...')
+   
+        except:
+
+            logging.info('Training using single GPU or CPU...')
 
     # Compile model
 
     logging.info('Compiling model...')
 
     model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
-
-    '''
-    model.compile(loss='categorical_crossentropy',
-              optimizer='adam',
-              metrics=['accuracy'])
-    '''
 
 # Print model summary
 
@@ -318,7 +368,9 @@ csv_logger = CSVLogger(LOG_PATH + LOG_PREFIX + '.log', append=RESUME)
 
 # My callbacks
 
-my_callback = my_callbacks.MyCallback()
+#my_callback = my_callbacks.MyCallback()
+#my_callback = my_callbacks.InceptionV4Callback()
+my_callback = my_callbacks.IterationsCallback(validation_generator=validation_generator, validation_steps=len(partition['validation'])//VALIDATION_BATCH_SIZE)
 
 # Callbacks
 
