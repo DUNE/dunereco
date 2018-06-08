@@ -80,8 +80,7 @@ namespace cvn
 //        std::cout << "Local: " << wireid.Wire << ", " << wireid.Plane << ", " << wireid.TPC << " :: New: " << tempWire << ", " << tempPlane << " :: Old " << oldWire << ", " << oldPlane << std::endl;  
 //        std::cout << "TPC = " << wireid.TPC << std::endl;
       }
-//      const double pe  = cluster[iHit]->Integral();
-      const double pe  = static_cast<double>(wireid.TPC);
+      const double pe  = cluster[iHit]->Integral();
       const unsigned int wire = tempWire;
       const unsigned int wirePlane = tempPlane;
       const double tdc = temptdc;
