@@ -451,7 +451,7 @@ namespace dune{
           fAPAGeo.ChannelToAPA(hitsUV[i][u2.first]->Channel(), apa2, cryo2);
           if (apa1!=apa2) continue;
           geo::WireID hitwire = geo->ChannelToWire(hitsUV[i][u2.first]->Channel())[u2.second-1];
-          double wire_pitch = geo->WirePitch(0,1,hitwire.Plane,hitwire.TPC,hitwire.Cryostat);    //wire pitch in cm
+          double wire_pitch = geo->WirePitch(hitwire.Plane,hitwire.TPC,hitwire.Cryostat);    //wire pitch in cm
           for (size_t w = 0; w<wires.size(); ++w){
             if (wires[w].TPC!= hitwire.TPC) continue;
             if (nearbyhits[w]<0) nearbyhits[w] = 0;
@@ -473,7 +473,7 @@ namespace dune{
           fHasBeenDisambigedUV[i][hit] = 1+bestwire;
         }
         else{
-          mf::LogWarning("DisambigAlg35t")<<"Could not find disambiguated hit for  "<<std::string(hitsUV[i][hit]->WireID())<<" "<<hitsUV[i][hit]->PeakTime();
+          mf::LogInfo("DisambigAlg35t")<<"Could not find disambiguated hit for  "<<std::string(hitsUV[i][hit]->WireID())<<" "<<hitsUV[i][hit]->PeakTime();
         }
       }
     }  

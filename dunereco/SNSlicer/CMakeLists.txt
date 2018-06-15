@@ -22,7 +22,7 @@ simple_plugin(SNSlicer "module"
                         art_Persistency_Provenance canvas_Persistency_Provenance
                         art_Utilities canvas_Utilities
                         ${MF_MESSAGELOGGER}
-                        ${MF_UTILITIES}
+                        
                         ${CETLIB}
                         ${ROOT_BASIC_LIB_LIST}
 )
@@ -32,7 +32,7 @@ cet_make( LIBRARIES lardataobj_RawData
                     canvas_Persistency_Provenance
                     canvas_Utilities
                     MF_MessageLogger
-                    MF_Utilities
+                    
                     cetlib
                     ${ROOT_BASIC_LIB_LIST}
                     NO_DICTIONARY )
