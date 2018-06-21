@@ -29,7 +29,8 @@ namespace cvn
     fNWire(nWire),
     fNTdc(nTdc),
     fTRes(tRes),
-    fUnwrapped(false)
+    fUnwrapped(2),
+    fProtoDUNE(false)
   {
 
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());  
@@ -54,6 +55,9 @@ namespace cvn
 
     PixelMap pm(fNWire, fNTdc, bound);
 
+//    bool hasLeftTPC = false;
+//    bool hasRightTPC = false;
+
     for(size_t iHit = 0; iHit < cluster.size(); ++iHit)
     {
       geo::WireID wireid = cluster[iHit]->WireID();
@@ -61,8 +65,17 @@ namespace cvn
       unsigned int tempWire                  = wireid.Wire;
       unsigned int tempPlane              = wireid.Plane;
       // Leigh: Simple modification to unwrap the collection view wire plane
-      if(fUnwrapped){
-        GetBetterGlobalWire(wireid.Wire,cluster[iHit]->PeakTime(),wireid.Plane,wireid.TPC,tempWire,tempPlane,temptdc);
+      if(!fProtoDUNE){
+        if(fUnwrapped == 1){
+          GetDUNEGlobalWireTDC(wireid.Wire,cluster[iHit]->PeakTime(),wireid.Plane,wireid.TPC,tempWire,tempPlane,temptdc);
+        }
+        else if(fUnwrapped == 2){
+          // Old method that has problems with the APA crossers, kept for old times' sake
+          GetDUNEGlobalWire(wireid.Wire,wireid.Plane,wireid.TPC,tempWire,tempPlane);
+        }
+      }
+      else{
+        GetProtoDUNEGlobalWire(wireid.Wire,wireid.Plane,wireid.TPC,tempWire,tempPlane);
       }
       const double pe  = cluster[iHit]->Integral();
       const unsigned int wire = tempWire;
@@ -70,7 +83,15 @@ namespace cvn
       const double tdc = temptdc;
       pm.Add(wire, tdc, wirePlane, pe);
 
+//      if(wireid.TPC % 4 == 1 || wireid.TPC % 4 == 3){
+//        hasLeftTPC = true;
+//      }
+//      else{
+//        hasRightTPC = true;
+//      }
     }
+
+//    if(hasLeftTPC && hasRightTPC) std::cout << "EVENT SPANS BOTH SIDES OF THE APA" << std::endl;
 
     return pm;
 
@@ -107,8 +128,16 @@ namespace cvn
       unsigned int globalWire = wireid.Wire;
       unsigned int globalPlane = wireid.Plane;
       double globalTime = cluster[iHit]->PeakTime();
-      if(fUnwrapped){
-        GetBetterGlobalWire(wireid.Wire,cluster[iHit]->PeakTime(),wireid.Plane,wireid.TPC,globalWire,globalPlane,globalTime);
+      if(!fProtoDUNE){
+        if(fUnwrapped == 1){
+          GetDUNEGlobalWireTDC(wireid.Wire,cluster[iHit]->PeakTime(),wireid.Plane,wireid.TPC,globalWire,globalPlane,globalTime);
+        }
+        else if(fUnwrapped == 2){
+          GetDUNEGlobalWire(wireid.Wire,wireid.Plane,wireid.TPC,globalWire,globalPlane);
+        }
+      }
+      else{
+        GetProtoDUNEGlobalWire(wireid.Wire,wireid.Plane,wireid.TPC,globalWire,globalPlane);
       }
 
       if(globalPlane==0){
@@ -134,6 +163,8 @@ namespace cvn
     double tsum_2 = std::accumulate(time_2.begin(), time_2.end(), 0.0);
     double tmean_2 = tsum_2 / time_2.size();
 
+    std::cout << "Boundary wire vector sizes: " << wire_0.size() << ", " << wire_1.size() << ", " << wire_2.size() << std::endl;
+
     auto minwireelement_0= std::min_element(wire_0.begin(), wire_0.end());
     //std::cout<<"minwire 0: "<<*minwireelement_0<<std::endl;
     auto minwireelement_1= std::min_element(wire_1.begin(), wire_1.end());
@@ -149,16 +180,19 @@ namespace cvn
     //std::cout<<"maxwire 2: "<<*maxwireelement_2<<std::endl;
 
 
-    int minwire_0 = *minwireelement_0-1;
-    int minwire_1 = *minwireelement_1-1;
-    int minwire_2 = *minwireelement_2-1;
+    int minwire_0 = 0;
+    int minwire_1 = 0;
+    int minwire_2 = 0;
+    if(wire_0.size() > 0) minwire_0 = *minwireelement_0-1;
+    if(wire_1.size() > 0) minwire_1 = *minwireelement_1-1;
+    if(wire_2.size() > 0) minwire_2 = *minwireelement_2-1;
 
     Boundary bound(fNWire,fTRes,minwire_0,minwire_1,minwire_2,tmean_0,tmean_1,tmean_2);
 
     return bound;
   }
 
-  void PixelMapProducer::GetGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const
+  void PixelMapProducer::GetDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const
   {
     unsigned int nWiresTPC = 400;
 
@@ -173,7 +207,7 @@ namespace cvn
 
     // Workspace geometry has two drift regions
     //                  |-----|-----| /  /
-    //      y ^         |  2  |  3  |/  /
+    //      y ^         |  3  |  2  |/  /
     //        | -| z    |-----|-----|  /
     //        | /       |  1  |  0  | /
     //  x <---|/        |-----|-----|/
@@ -204,7 +238,7 @@ namespace cvn
   }
 
   // Based on Robert's code in adcutils
-  void PixelMapProducer::GetBetterGlobalWire(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc, 
+  void PixelMapProducer::GetDUNEGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc, 
                                              unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const
   {
 
@@ -275,71 +309,55 @@ namespace cvn
     else{
       globalTDC = localTDC + drift_size + apa_size;
     }
-/*
-      //size_t weff[3] = { 404, 404, 485 }; // effective offset in wires between consecutive tpc's, incl. dead spaces, per plane
-      size_t weff[3] = { 400, 400, 480 }; // effective offset in wires between consecutive tpc's... no dead space
-      size_t tpcs[3] = { 2, 2, 6 };       // FD workspace dimension in #tpc's
-
-      size_t tpc_z = tpc / (tpcs[0] * tpcs[1]);
-      size_t tpc_y = (tpc / tpcs[0]) % tpcs[1];
-//      size_t tpc_x = tpc % tpcs[0];
-
-      // Always zero for now
-      unsigned short cryo = 0;
-
-      int dir = fGeometry->TPC(tpc, cryo).DetectDriftDirection();
-      std::cout << "TPC = " << tpc << " :: " << "Drift direction = " << dir << std::endl;
-      bool flip_w = false;     // need the flip in wire direction?
-      globalPlane = plane;        // global plane
-      int offset = 0;
-//      int p_align = 0;
-
-      if (plane < 2) // no wire flip nor top-bottom alignments in Z (collection) plane
-      {
-        // For TPCs with negative drift direction
-        if ((tpc % 4 == 0) || (tpc % 4 == 3))
-        //if (dir == -1)
-        {
-          globalPlane = (plane == 1) ? 0 : 1;     // swap U and V
-        }
-
-        if((tpc % 4) > 1){
-          if(dir > 0) flip_w = (globalPlane == 1);
-          else flip_w = (globalPlane == 0);
-        }
-
-//        if ((tpc % 4 == 0) || (tpc % 4 == 1)) // bottom tpcs
-//        {
-//          flip_w = (dir > 0) ? (globalPlane == 1) : (globalPlane == 0);
-//        }
-//        else                              // top tpc's
-//        {
-//          flip_w = (dir < 0) ? (globalPlane == 1) : (globalPlane == 0);
-//        }
-
-        offset = (plane == 0) ? 48 : 752;     // top-bottom offsets
-      }
-
-      globalWire = tpc_z * weff[plane] + tpc_y*offset + localWire;
-      if(flip_w){
-          globalWire = tpc_z*weff[plane] + tpc_y*offset + weff[plane] - localWire - 1;
-      }
-
-      if ((t % 4 == 0) || (t % 4 == 2))
-      {
-        p_align = plane_align0[p];
-      }
-      else
-      {
-        p_align = plane_align1[p];
-      }
-
-      size_t gw = tpc_z * weff[p] + tpc_y * offset;                          // global wire
-      size_t gd = tpc_x * drift_size + apa_gap * (1 + tpc_x) / 2 + p_align;  // global drift
-*/
-
   }
+
+  // Special case for ProtoDUNE where we want to extract single particles to mimic CCQE interactions. The output pixel maps should be the same as the workspace
+  // but we need different treatment of the wire numbering
+  void PixelMapProducer::GetProtoDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const
+  { 
+    unsigned int nWiresTPC = 400;
+    
+    globalWire = localWire;
+    globalPlane = 0;
+    
+    // Collection plane has more wires
+    if(plane == 2){
+      nWiresTPC=480;
+      globalPlane = 2;
+    }
+    
+    // ProtoDUNE has a central CPA so times are fine
+    // It (annoyingly) has two dummy TPCs on the sides
+    //                  
+    //      y ^       |-|-----|-----|-|   /
+    //        | -| z  | |     |     | |  /
+    //        | /     |3|  2  |  1  |0| /
+    //  x <---|/      |-|-----|-----|-|/
+    //
+    
+    int tpcMod4 = tpc%4;
+    // tpcMod4: 1 for -ve drift, 2 for +ve drift
+    
+    // Induction views depend on the drift direction
+    if(plane < 2){
+      // For drift in negative x direction keep U and V as defined.
+      if(tpcMod4 == 1){
+        globalPlane = plane;
+      }
+      // For drift in positive x direction, swap U and V.
+      else{
+        if(plane == 0) globalPlane = 1;
+        else globalPlane = 0;
+      }
+    }
+    
+    if(globalPlane != 1){
+      globalWire += (tpc/4)*nWiresTPC;
+    }
+    else{
+      globalWire += ((12-tpc)/4)*nWiresTPC;
+    }
+  
+  }
+
 }
-
-
-

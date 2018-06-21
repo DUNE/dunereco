@@ -73,6 +73,9 @@ namespace cvn {
     /// Number of outputs fron neural net
     unsigned int fNOutput;
 
+    /// If there are multiple pixel maps per event can we use them?
+    bool fMultiplePMs;
+
     unsigned int fTotal;
     unsigned int fCorrect;
     unsigned int fFullyCorrect;
@@ -96,7 +99,8 @@ namespace cvn {
     fCVNType     (pset.get<std::string>         ("CVNType")),
     fCaffeHandler       (pset.get<fhicl::ParameterSet> ("CaffeNetHandler")),
     fTFHandler       (pset.get<fhicl::ParameterSet> ("TFNetHandler")),
-    fNOutput       (fCaffeHandler.NOutput())
+    fNOutput       (fCaffeHandler.NOutput()),
+    fMultiplePMs (pset.get<bool> ("MultiplePMs"))
   {
     produces< std::vector<cvn::Result>   >(fResultLabel);
     fTotal = 0;
@@ -173,9 +177,17 @@ namespace cvn {
       if(pixelmaplist.size() > 0){
         
         std::vector<float> networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
-
         // cvn::Result can now take a vector of floats and works out the number of outputs
         resultCol->emplace_back(networkOutput);
+
+        // Classify other pixel maps if they exist
+        if(fMultiplePMs){
+          for(unsigned int p = 1; p < pixelmaplist.size(); ++p){
+            std::vector<float> output = fTFHandler.Predict(*pixelmaplist[p]);
+            resultCol->emplace_back(output);
+          }
+        }
+
       }
     }
     else{
@@ -183,8 +195,8 @@ namespace cvn {
       mf::LogError("CVNEvaluator::produce") << "Exiting without processing events" << std::endl;
       return;
     }
-
-/* Truth level debug code
+/*
+// Truth level debug code
 //    mf::LogInfo("CVNEvaluator::produce") << " Predicted: " << (*resultCol)[0].PredictedInteractionType() << std::endl; 
 
     // Leigh: temporary testing code for performance
@@ -213,16 +225,22 @@ namespace cvn {
     TVector3 vtx = truthN.Nu().EndPosition().Vect();
     bool isFid = (fabs(vtx.X())<310 && fabs(vtx.Y())<550 && vtx.Z()>50 && vtx.Z()<1244);
 
-    if(isFid && pixelmaplist.size() > 0){
+
+//    if(isFid && pixelmaplist.size() > 0){
     
       unsigned int correctedInt = static_cast<unsigned int>(interaction);
       if(correctedInt == 13) correctedInt = 12;
 
-      unsigned int predInt = static_cast<unsigned int>((*resultCol)[0].PredictedInteractionType());
+    if(isFid){
+      std::cout << "This fiducial event is a true " << truthN.Nu().PdgCode() << " and is it CC? " << (truthN.CCNC()==0) << " (" << correctedInt << ")" << std::endl;
       float nueProb = (*resultCol)[0].GetNueProbability();
       float numuProb = (*resultCol)[0].GetNumuProbability();
-//      float nutauProb = (*resultCol)[0].GetNutauProbability();
-//      float ncProb = (*resultCol)[0].GetNCProbability();
+      float nutauProb = (*resultCol)[0].GetNutauProbability();
+      float ncProb = (*resultCol)[0].GetNCProbability();
+      std::cout << "Summed probabilities " << numuProb << ", " << nueProb << ", " << nutauProb << ", " << ncProb << std::endl;
+    }
+
+      unsigned int predInt = static_cast<unsigned int>((*resultCol)[0].PredictedInteractionType());
 
       ++fTotal;
 //      std::cout << " Truth :: Predicted = " << correctedInt << " :: " << predInt << " (" << numuProb << ", " << nueProb << ", " << nutauProb << ", " << ncProb  << ")" << std::endl; 

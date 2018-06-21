@@ -60,6 +60,39 @@ namespace cvn
     kFlavNC
   } TFFlavourType; 
 
+  // It might be a good idea to consider topology information. 
+  // We should use base two here so we can & and | results.
+  typedef enum Topology
+  {
+    kTopUnset   = 0x00000,
+    // Flavours
+    kTopNumu    = 0x00001,
+    kTopNue     = 0x00002,
+    kTopNutau   = 0x00004,
+    kTopNC      = 0x00008,
+    // Topologies - protons
+    kTop0proton = 0x00010,
+    kTop1proton = 0x00020,
+    kTop2proton = 0x00040,
+    kTopNproton = 0x00080,
+    // Topologies - pions
+    kTop0pion   = 0x00100,
+    kTop1pion   = 0x00200,
+    kTop2pion   = 0x00400,
+    kTopNpion   = 0x00800,
+    // Topologies - pizeros
+    kTop0pizero = 0x01000,
+    kTop1pizero = 0x02000,
+    kTop2pizero = 0x04000,
+    kTopNpizero = 0x08000,
+    // Topologies - neutrons
+    kTop0neutron = 0x10000,
+    kTop1neutron = 0x20000,
+    kTop2neutron = 0x40000,
+    kTopNneutron = 0x80000
+    
+  } TopologyType;
+
 }
 
 #endif // CVN_INTERACTIONTYPE_H

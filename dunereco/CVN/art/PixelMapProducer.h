@@ -41,17 +41,17 @@ namespace cvn
   public:
     PixelMapProducer(unsigned int nWire, unsigned int nTdc, double tRes);
 
-    void SetUnwrapped(bool unwrap){fUnwrapped = unwrap;};
+    void SetUnwrapped(unsigned short unwrap){fUnwrapped = unwrap;};
+    void SetProtoDUNE(){fProtoDUNE = true;};
 
     /// Get boundaries for pixel map representation of cluster
     Boundary DefineBoundary(std::vector< art::Ptr< recob::Hit > >& cluster);
 
     /// Function to convert to a global unwrapped wire number
-    void GetGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const; 
-    /// Better global wire approach from R. Sulej
-//    void GetBetterGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const;
-    void GetBetterGlobalWire(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
-                                             unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const;
+    void GetDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const; 
+    void GetDUNEGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
+                              unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const;
+    void GetProtoDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const; 
 
     unsigned int NWire() const {return fNWire;};
     unsigned int NTdc() const {return fNTdc;};
@@ -66,7 +66,8 @@ namespace cvn
     unsigned int      fNWire;  ///< Number of wires, length for pixel maps
     unsigned int      fNTdc;   ///< Number of tdcs, width of pixel map
     double            fTRes;
-    bool              fUnwrapped; ///< Use unwrapped pixel maps?
+    unsigned short    fUnwrapped; ///< Use unwrapped pixel maps?
+    bool              fProtoDUNE; ///< Do we want to use this for particle extraction from protoDUNE?
 
     geo::GeometryCore const* fGeometry;
     detinfo::DetectorProperties const* fDetProp;

@@ -36,6 +36,19 @@ standard_cvnevaluator:
   CaffeNetHandler: @local::standard_caffenethandler
   TFNetHandler: @local::standard_tfnethandler
   CVNType: "Tensorflow"
+  MultiplePMs: false
+}
+
+standard_cvnevaluator_protodune:
+{
+  module_type:        CVNEvaluator
+  #==================
+  PixelMapInput: "cvnmap"
+  ResultLabel: "cvnresult"
+  CaffeNetHandler: @local::standard_caffenethandler
+  TFNetHandler: @local::standard_tfnethandler
+  CVNType: "Tensorflow"
+  MultiplePMs: true
 }
 
 END_PROLOG

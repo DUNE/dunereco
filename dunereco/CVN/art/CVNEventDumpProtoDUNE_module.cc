@@ -1,9 +1,8 @@
 ////////////////////////////////////////////////////////////////////////
-// \file    CVNEventDump_module.cc
-// \brief   Analyzer module for creating CVN PixelMap objects
-// \author  Alexander Radovic - a.radovic@gmail.com
-//          Leigh Whitehead - leigh.howard.whitehead@cern.ch
-//           - Added in truth based fiducial volume cuts
+// \file    CVNEventDumpProtoDUNE_module.cc
+// \brief   Analyzer module for creating CVN PixelMap objects using protoDUNE particles
+// \author  Leigh Whitehead - leigh.howard.whitehead@cern.ch
+// 
 ////////////////////////////////////////////////////////////////////////
 
 // C/C++ includes
@@ -25,7 +24,6 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Core/ModuleMacros.h"
-//#include "art/Framework/Core/FindManyP.h"
 
 // LArSoft includes
 #include "lardataobj/RecoBase/Hit.h"
@@ -42,17 +40,14 @@
 #include "dune/CVN/func/TrainingData.h"
 #include "dune/CVN/func/InteractionType.h"
 #include "dune/CVN/func/PixelMap.h"
-#include "dune/FDSensOpt/MVAAlg/MVAAlg.h"
-#include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
-
 
 
 namespace cvn {
-  class CVNEventDump : public art::EDAnalyzer {
+  class CVNEventDumpProtoDUNE : public art::EDAnalyzer {
   public:
 
-    explicit CVNEventDump(fhicl::ParameterSet const& pset);
-    ~CVNEventDump();
+    explicit CVNEventDumpProtoDUNE(fhicl::ParameterSet const& pset);
+    ~CVNEventDumpProtoDUNE();
 
     void analyze(const art::Event& evt) override;
     void reconfigure(const fhicl::ParameterSet& pset);
@@ -61,21 +56,12 @@ namespace cvn {
 
   private:
 
-    dunemva::MVAAlg fMVAAlg;
-
     std::string fPixelMapInput;
-    std::string fGenieGenModuleLabel;
-    std::string fEnergyNueLabel;
-    std::string fEnergyNumuLabel;
-    bool        fGetEnergyOutput;
-    bool        fGetEventWeight;
     bool        fWriteMapTH2;
     bool        fApplyFidVol;
 
     TrainingData* fTrain;
     TTree*        fTrainTree;
-
-    //art::ServiceHandle<cheat::BackTracker> fBT;
 
     /// Function to extract TH2 from PixelMap and write to TFile
     void WriteMapTH2(const art::Event& evt, int slice, const PixelMap& pm);
@@ -83,33 +69,25 @@ namespace cvn {
   };
 
   //.......................................................................
-  CVNEventDump::CVNEventDump(fhicl::ParameterSet const& pset)
-    : EDAnalyzer(pset),
-    fMVAAlg(pset.get<fhicl::ParameterSet>("MVAAlg"))
+  CVNEventDumpProtoDUNE::CVNEventDumpProtoDUNE(fhicl::ParameterSet const& pset)
+    : EDAnalyzer(pset)
   {
     this->reconfigure(pset);
   }
 
   //......................................................................
-  CVNEventDump::~CVNEventDump()
+  CVNEventDumpProtoDUNE::~CVNEventDumpProtoDUNE()
   {  }
 
   //......................................................................
-  void CVNEventDump::reconfigure(const fhicl::ParameterSet& pset)
+  void CVNEventDumpProtoDUNE::reconfigure(const fhicl::ParameterSet& pset)
   {
     fPixelMapInput  = pset.get<std::string>("PixelMapInput");
-    fGenieGenModuleLabel  = pset.get<std::string>("GenieGenModuleLabel");
     fWriteMapTH2    = pset.get<bool>       ("WriteMapTH2");
-    fApplyFidVol    = pset.get<bool>("ApplyFidVol");
-    fEnergyNueLabel = pset.get<std::string> ("EnergyNueLabel");  
-    fEnergyNumuLabel = pset.get<std::string> ("EnergyNumuLabel");
-    fGetEnergyOutput = pset.get<bool> ("GetEnergyOutput");
-    fGetEventWeight = pset.get<bool> ("GetEventWeight");
-    
   }
 
   //......................................................................
-  void CVNEventDump::beginJob()
+  void CVNEventDumpProtoDUNE::beginJob()
   {
 
 
@@ -122,13 +100,13 @@ namespace cvn {
   }
 
   //......................................................................
-  void CVNEventDump::endJob()
+  void CVNEventDumpProtoDUNE::endJob()
   {
 
   }
 
   //......................................................................
-  void CVNEventDump::analyze(const art::Event& evt)
+  void CVNEventDumpProtoDUNE::analyze(const art::Event& evt)
   {
 
     // Get the pixel maps
@@ -137,80 +115,22 @@ namespace cvn {
     if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmapListHandle))
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
 
-    unsigned short nhits =  pixelmaplist.size();
-    // If we have no hits then return
-    if(nhits < 1) return;
+    std::cout << "Found " << pixelmaplist.size() << " pixel maps in event" << std::endl;
 
-    InteractionType interaction = kOther;
+    for(unsigned int p = 0; p < pixelmaplist.size(); ++p){
 
-    // * monte carlo
-    art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
-    std::vector<art::Ptr<simb::MCTruth> > mclist;
-    if(evt.getByLabel(fGenieGenModuleLabel,mctruthListHandle))
-      art::fill_ptr_vector(mclist, mctruthListHandle);
+      // We will have to just fake the truth information we would usually have for the events
+      InteractionType interaction = kOther;
 
-    //unsigned short nmclist=  mclist.size();
+      // Create the training data and add it to the tree
+      TrainingData train(interaction, 0.0, 0.0, 0.0, 0.0, 1.0, *pixelmaplist[p]);
+      fTrain = &train;
+      fTrainTree->Fill();
 
-    //std::cout<<"mctruth: "<<nmclist<<std::endl;
-
-    art::Ptr<simb::MCTruth> truth = mclist[0];
-    simb::MCNeutrino truthN=truth->GetNeutrino();
-    //truth = mclist[0];
-
-    interaction = GetInteractionType(truthN);
-    TopologyType topology = GetTopology(*truth);
-    std::cout << "Got the topology = " << topology << std::endl;
-    float nuEnergy = 0;
-    float lepEnergy = 0;
-//    if(truth.NeutrinoSet()){
-      nuEnergy = truthN.Nu().E();
-      lepEnergy = truthN.Lepton().E();
-//    }
-
-    // If outside the fiducial volume don't waste any time filling other variables
-    if(fApplyFidVol){
-      // Get the interaction vertex from the end point of the neutrino. This is 
-      // because the start point of the lepton doesn't make sense for taus as they
-      // are decayed by the generator and not GEANT
-      TVector3 vtx = truthN.Nu().EndPosition().Vect();
-      bool isFid = (fabs(vtx.X())<310 && fabs(vtx.Y())<550 && vtx.Z()>50 && vtx.Z()<1244);
-      if(!isFid) return;
+      // Make a plot of the pixel map if required
+      if (fWriteMapTH2) WriteMapTH2(evt, p, train.fPMap);
+    
     }
-
-    float recoNueEnergy = 0.;
-    float recoNumuEnergy = 0.;
-    // Should we use the EnergyReco_module reconstructed energies?
-    if(fGetEnergyOutput){
-      // Get the nue info
-      if(fEnergyNueLabel != ""){
-        art::Handle<dune::EnergyRecoOutput> energyRecoNueHandle;
-        evt.getByLabel(fEnergyNueLabel, energyRecoNueHandle);
-
-        recoNueEnergy = energyRecoNueHandle->fNuLorentzVector.E();
-      }
-      // And the numu
-      if(fEnergyNumuLabel != ""){
-        art::Handle<dune::EnergyRecoOutput> energyRecoNumuHandle;
-        evt.getByLabel(fEnergyNumuLabel, energyRecoNumuHandle);
-
-        recoNumuEnergy = energyRecoNumuHandle->fNuLorentzVector.E();
-      }
-    }
-
-    // If we don't want to get the event weight then leave it as 1.0.
-    double eventWeight = 1.;
-    if(fGetEventWeight){
-      double mvaResult = 0.; // We don't care about this, but need it for the call
-      fMVAAlg.Run(evt,mvaResult,eventWeight);
-    }
-
-    // Create the training data and add it to the tree
-    TrainingData train(interaction, nuEnergy, lepEnergy, recoNueEnergy, recoNumuEnergy, eventWeight, *pixelmaplist[0]);
-    fTrain = &train;
-    fTrainTree->Fill();
-
-    // Make a plot of the pixel map if required
-    if (fWriteMapTH2) WriteMapTH2(evt, 0, train.fPMap);
 
   }
 
@@ -218,7 +138,7 @@ namespace cvn {
 
 
 
-  void CVNEventDump::WriteMapTH2(const art::Event& evt, int slice, const PixelMap& pm)
+  void CVNEventDumpProtoDUNE::WriteMapTH2(const art::Event& evt, int slice, const PixelMap& pm)
   {
       std::stringstream name;
       name << "PixelMap_r" << evt.run() << "_s" << evt.subRun()<< "_e" << evt.event() << "_sl" << slice;
@@ -268,7 +188,7 @@ namespace cvn {
 
   }
 
-DEFINE_ART_MODULE(cvn::CVNEventDump)
+DEFINE_ART_MODULE(cvn::CVNEventDumpProtoDUNE)
 } // end namespace cvn
 ////////////////////////////////////////////////////////////////////////
 

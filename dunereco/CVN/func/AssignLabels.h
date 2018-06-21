@@ -20,6 +20,9 @@ namespace cvn
   InteractionType GetInteractionType(simb::MCNeutrino& truth);
   InteractionType GetInteractionTypeFromSlice(int nuPDG, bool nuCCNC,
                                               int nuMode );
+
+  // Use the topology information
+  TopologyType GetTopology(const simb::MCTruth &truth);
 }
 
 #endif // CVN_ASSIGNLABELS_H

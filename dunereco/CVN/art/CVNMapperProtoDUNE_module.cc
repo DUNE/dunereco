@@ -1,7 +1,8 @@
 ////////////////////////////////////////////////////////////////////////
-// \file    CVNMapper_module.cc
-// \brief   Producer module for creating CVN PixelMap objects
-// \author  Alexander Radovic - a.radovic@gmail.com
+// \file    CVNMapperProtoDUNE_module.cc
+// \brief   Producer module for creating CVN PixelMaps for individual
+//          particles in ProtoDUNE
+// \author  Leigh Whitehead - leigh.howard.whitehead@cern.ch
 ////////////////////////////////////////////////////////////////////////
 
 // C/C++ includes
@@ -21,12 +22,14 @@
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
-//#include "art/Framework/Core/FindManyP.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "canvas/Persistency/Common/Assns.h"
+#include "canvas/Persistency/Common/FindManyP.h"
 
 // LArSoft includes
 #include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/Shower.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RawData/ExternalTrigger.h"
 
@@ -44,10 +47,10 @@
 
 namespace cvn {
 
-  class CVNMapper : public art::EDProducer {
+  class CVNMapperProtoDUNE : public art::EDProducer {
   public:
-    explicit CVNMapper(fhicl::ParameterSet const& pset);
-    ~CVNMapper();
+    explicit CVNMapperProtoDUNE(fhicl::ParameterSet const& pset);
+    ~CVNMapperProtoDUNE();
 
     void produce(art::Event& evt);
     void beginJob();
@@ -56,8 +59,11 @@ namespace cvn {
 
 
   private:
-    /// Module lablel for input clusters
-    std::string    fHitsModuleLabel;
+    /// Module label for input tracks
+    std::string    fTrackLabel;
+
+    /// Module label for input showers
+    std::string    fShowerLabel;
 
     /// Instance lablel for cluster pixelmaps
     std::string    fClusterPMLabel;
@@ -82,6 +88,9 @@ namespace cvn {
     // 0 means no unwrap, 1 means unwrap in wire, 2 means unwrap in wire and time
     unsigned short fUnwrappedPixelMap;
 
+    /// Track length cut
+    float fTrackLengthCut;
+
     /// PixelMapProducer does the work for us
     PixelMapProducer fProducer;
 
@@ -90,14 +99,16 @@ namespace cvn {
 
 
   //.......................................................................
-  CVNMapper::CVNMapper(fhicl::ParameterSet const& pset):
-  fHitsModuleLabel  (pset.get<std::string>    ("HitsModuleLabel")),
+  CVNMapperProtoDUNE::CVNMapperProtoDUNE(fhicl::ParameterSet const& pset):
+  fTrackLabel  (pset.get<std::string>    ("TrackLabel")),
+  fShowerLabel  (pset.get<std::string>    ("ShowerLabel")),
   fClusterPMLabel(pset.get<std::string>    ("ClusterPMLabel")),
   fMinClusterHits(pset.get<unsigned short> ("MinClusterHits")),
   fTdcWidth     (pset.get<unsigned short> ("TdcWidth")),
   fWireLength   (pset.get<unsigned short> ("WireLength")),
   fTimeResolution   (pset.get<unsigned short> ("TimeResolution")),
   fUnwrappedPixelMap(pset.get<unsigned short> ("UnwrappedPixelMap")),
+  fTrackLengthCut(pset.get<unsigned short> ("TrackLengthCut")),
   fProducer      (fWireLength, fTdcWidth, fTimeResolution)
   {
 
@@ -106,7 +117,7 @@ namespace cvn {
   }
 
   //......................................................................
-  CVNMapper::~CVNMapper()
+  CVNMapperProtoDUNE::~CVNMapperProtoDUNE()
   {
     //======================================================================
     // Clean up any memory allocated by your module
@@ -114,48 +125,68 @@ namespace cvn {
   }
 
   //......................................................................
-  void CVNMapper::beginJob()
+  void CVNMapperProtoDUNE::beginJob()
   {  }
 
   //......................................................................
-  void CVNMapper::endJob()
+  void CVNMapperProtoDUNE::endJob()
   {
   }
 
   //......................................................................
-  void CVNMapper::produce(art::Event& evt)
+  void CVNMapperProtoDUNE::produce(art::Event& evt)
   {
-    // Use unwrapped pixel maps if requested
-    // 0 means no unwrap, 1 means unwrap in wire, 2 means unwrap in wire and time
-    fProducer.SetUnwrapped(fUnwrappedPixelMap);
-
-    art::Handle< std::vector< recob::Hit > > hitListHandle;
-    std::vector< art::Ptr< recob::Hit > > hitlist;
-    if (evt.getByLabel(fHitsModuleLabel, hitListHandle))
-      art::fill_ptr_vector(hitlist, hitListHandle);
-    unsigned short nhits = hitlist.size();
 
     //Declaring containers for things to be stored in event
-    std::unique_ptr< std::vector<cvn::PixelMap> >
-      pmCol(new std::vector<cvn::PixelMap>);
+    std::unique_ptr< std::vector<cvn::PixelMap> > pmCol(new std::vector<cvn::PixelMap>);
 
-    if(nhits>fMinClusterHits){
-      //std::cout<<"nhits: "<<nhits<<std::endl;
-      PixelMap pm = fProducer.CreateMap(hitlist);
-      pmCol->push_back(pm);
+    // Use unwrapped pixel maps if requested
+    // For protoDUNE unwrapped if > 0
+    fProducer.SetUnwrapped(fUnwrappedPixelMap);
+    fProducer.SetProtoDUNE();
+
+    // Get the list of tracks and showers and their associated hits
+    auto allTracks=evt.getValidHandle<std::vector<recob::Track> >(fTrackLabel);
+    const art::FindManyP<recob::Hit> findTrackHits(allTracks,evt,fTrackLabel);
+
+    auto allShowers=evt.getValidHandle<std::vector<recob::Shower> >(fShowerLabel);
+    const art::FindManyP<recob::Hit> findShowerHits(allShowers,evt,fShowerLabel);
+
+    std::cout << "Event contains " << allTracks->size() << " tracks and " << allShowers->size() << " showers" << std::endl;
+
+    // Iterate over the tracks and showers making a PixelMap for each 
+    for(unsigned int t = 0; t < allTracks->size(); ++t){
+
+      std::vector<art::Ptr<recob::Hit> > trackHits = findTrackHits.at(t);
+      if(trackHits.size()>fMinClusterHits && (*allTracks)[t].Length() > fTrackLengthCut){
+//        std::cout << "Making PixelMap number " << pmCol->size() + 1 << " with " << trackHits.size() << " hits" << std::endl; 
+
+        PixelMap pm = fProducer.CreateMap(trackHits);
+        pmCol->push_back(pm);
+      }
+
     }
-    //pm.Print();
-    //Boundary bound = pm.Bound();
-    //}
+
+    for(unsigned int s = 0; s < allShowers->size(); ++s){
+
+      std::vector<art::Ptr<recob::Hit> > showerHits = findShowerHits.at(s);
+      if(showerHits.size()>fMinClusterHits){
+        PixelMap pm = fProducer.CreateMap(showerHits);
+        pmCol->push_back(pm);
+      }
+    }
+
+    std::cout << "Made " << pmCol->size() << " pixel maps for this event" << std::endl;
+    
     evt.put(std::move(pmCol), fClusterPMLabel);
-    //std::cout<<"Map Complete!"<<std::endl;
+
   }
 
   //----------------------------------------------------------------------
 
 
 
-DEFINE_ART_MODULE(cvn::CVNMapper)
+DEFINE_ART_MODULE(cvn::CVNMapperProtoDUNE)
 } // end namespace cvn
 ////////////////////////////////////////////////////////////////////////
 
