@@ -89,7 +89,10 @@ namespace cvn
     kTop0neutron = 0x10000,
     kTop1neutron = 0x20000,
     kTop2neutron = 0x40000,
-    kTopNneutron = 0x80000
+    kTopNneutron = 0x80000,
+
+    // Antineutrino
+    kTopIsAntiNeutrino = 0x100000
     
   } TopologyType;
 

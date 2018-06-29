@@ -23,6 +23,12 @@ namespace cvn
   fRecoNueEnergy(nueEnergy),
   fRecoNumuEnergy(numuEnergy),
   fEventWeight(weight),
+  fUseTopology(false),
+  fNuPDG(0),
+  fNProton(-1),
+  fNPion(-1),
+  fNPizero(-1),
+  fNNeutron(-1),
   fPMap(pMap)
   {  }
 
@@ -33,8 +39,17 @@ namespace cvn
       output[i] = 0;
 
     output[fInt] = 1;
+  }
 
+  void TrainingData::SetTopologyInformation(int pdg, int nprot, int npion, int npi0, int nneut){
 
+    fUseTopology = true;
+
+    fNuPDG = pdg;
+    fNProton = nprot;
+    fNPion = npion;
+    fNPizero = npi0;
+    fNNeutron = nneut;
 
   }
 

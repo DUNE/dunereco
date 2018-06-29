@@ -157,9 +157,11 @@ namespace cvn {
     simb::MCNeutrino truthN=truth->GetNeutrino();
     //truth = mclist[0];
 
-    interaction = GetInteractionType(truthN);
-    TopologyType topology = GetTopology(*truth);
-    std::cout << "Got the topology = " << topology << std::endl;
+    AssignLabels labels;
+
+    interaction = labels.GetInteractionType(truthN);
+    TopologyType topology = labels.GetTopology(*truth);
+    labels.PrintTopology(topology);
     float nuEnergy = 0;
     float lepEnergy = 0;
 //    if(truth.NeutrinoSet()){
@@ -206,6 +208,13 @@ namespace cvn {
 
     // Create the training data and add it to the tree
     TrainingData train(interaction, nuEnergy, lepEnergy, recoNueEnergy, recoNumuEnergy, eventWeight, *pixelmaplist[0]);
+    // Set the topology information
+    int topPDG = labels.GetPDGFromTopology(topology);
+    int nprot = labels.GetNProtons(topology);
+    int npion = labels.GetNPions(topology);
+    int npi0  = labels.GetNPizeros(topology);
+    int nneut = labels.GetNNeutrons(topology);
+    train.SetTopologyInformation(topPDG, nprot, npion, npi0, nneut);
     fTrain = &train;
     fTrainTree->Fill();
 

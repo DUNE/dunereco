@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////////
 // \file    Assignlabels.h
-///\brief   Defines an enumeration for prong classification
+///\brief   Utility class for ruth labels
 ///
-// \author psihas@fnal.gov
+// \author  Leigh Whitehead leigh.howard.whitehead@cern.ch
 ////////////////////////////////////////////////////////////////////////
 #ifndef CVN_ASSIGNLABELS_H
 #define CVN_ASSIGNLABELS_H
@@ -17,12 +17,27 @@
 namespace cvn
 {
 
-  InteractionType GetInteractionType(simb::MCNeutrino& truth);
-  InteractionType GetInteractionTypeFromSlice(int nuPDG, bool nuCCNC,
-                                              int nuMode );
+  class AssignLabels{
 
-  // Use the topology information
-  TopologyType GetTopology(const simb::MCTruth &truth);
+    public:
+
+    AssignLabels(){};
+    ~AssignLabels(){};
+
+    InteractionType GetInteractionType(simb::MCNeutrino& truth);
+    InteractionType GetInteractionTypeFromSlice(int nuPDG, bool nuCCNC,
+                                                int nuMode );
+
+    // Use the topology information
+    TopologyType GetTopology(const simb::MCTruth &truth);
+    void PrintTopology(TopologyType &top);
+    unsigned short GetNProtons(TopologyType top);
+    unsigned short GetNPions(TopologyType top);
+    unsigned short GetNPizeros(TopologyType top);
+    unsigned short GetNNeutrons(TopologyType top);
+    short GetPDGFromTopology(TopologyType top);
+    
+  };
 }
 
 #endif // CVN_ASSIGNLABELS_H

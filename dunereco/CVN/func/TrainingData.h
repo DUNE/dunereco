@@ -31,12 +31,25 @@ namespace cvn
 
     void FillOutputVector(float* output) const;
 
+    // Set topology information separately to save having a large number of 
+    // arguments in the constructor.
+    void SetTopologyInformation(int pdg, int nprot, int npion, int npi0, int nneut);
+
     InteractionType  fInt;    ///< Class of the event
     float    fNuEnergy;       ///< True energy of neutrino event
     float    fLepEnergy;      ///< True energy of outgoing lepton
     float    fRecoNueEnergy;  ///< Reconstructed energy under nue hypothesis
     float    fRecoNumuEnergy; ///< Reconstructed energy under nue hypothesis
     float    fEventWeight;    ///< The event weight (norm * oscProb)
+ 
+    // If we are using topology information, store it here
+    bool fUseTopology;
+    int  fNuPDG;
+    int  fNProton;
+    int  fNPion;
+    int  fNPizero;
+    int  fNNeutron;
+
     PixelMap fPMap;           ///< PixelMap for the event
   };
 
