@@ -34,6 +34,8 @@ First, you need to specify all the configuration parameters in the *config.ini* 
 
 **Example:** `seed = 7`
 
+*NOTE:* use -1 for a random seed.
+
 #### - shuffle
 
 > shuffle = BOOLEAN

@@ -6,6 +6,7 @@ import ast
 import logging, sys
 import re
 import os
+import time
 
 from sklearn.utils import class_weight
 from keras.models import Model, Sequential, load_model
@@ -16,11 +17,13 @@ from keras.callbacks import LearningRateScheduler, ReduceLROnPlateau, CSVLogger,
 from data_generator import DataGenerator
 from collections import Counter
 
+sys.path.append("/home/salonsom/cvn_tensorflow/loss")
 sys.path.append("/home/salonsom/cvn_tensorflow/networks")
 sys.path.append("/home/salonsom/cvn_tensorflow/callbacks")
 
 from keras.utils import multi_gpu_model
 
+import multitask_loss
 import networks
 import my_callbacks
 
@@ -46,7 +49,12 @@ config.read('config.ini')
 
 # random
 
-np.random.seed(int(config['random']['seed']))
+SEED = int(config['random']['seed'])
+
+if SEED == -1:
+    SEED = int(time.time())    
+
+np.random.seed(SEED)
 SHUFFLE = ast.literal_eval(config['random']['shuffle'])
 
 # images
@@ -74,6 +82,8 @@ else:
 
     NEUTRINO_LABELS = ast.literal_eval(config['images']['neutrino_labels'])
     N_LABELS = len(Counter(NEUTRINO_LABELS.values()))
+
+N_LABELS = 8 # multitask
 
 # dataset
 
@@ -161,19 +171,16 @@ labels = {}                                                # ID : label
 
 logging.info('Loading datasets from serialized files...')
 
-partition_file = open(DATASET_PATH + PARTITION_PREFIX + '.p', 'r')
-partition = pickle.load(partition_file)
-partition_file.close()
+with open(DATASET_PATH + PARTITION_PREFIX + '.p', 'r') as partition_file:
+    partition = pickle.load(partition_file)
 
-labels_file = open(DATASET_PATH + LABELS_PREFIX + '.p', 'r')
-labels = pickle.load(labels_file)
-labels_file.close()
+with open(DATASET_PATH + LABELS_PREFIX + '.p', 'r') as labels_file:
+    labels = pickle.load(labels_file)
 
 if WEIGHTED_LOSS_FUNCTION:
 
-    class_weights_file = open(DATASET_PATH + CLASS_WEIGHTS_PREFIX + '.p', 'r')
-    class_weights = pickle.load(class_weights_file)
-    class_weights_file.close()
+    with open(DATASET_PATH + CLASS_WEIGHTS_PREFIX + '.p', 'r') as class_weights_file:
+        class_weights = pickle.load(class_weights_file)
 
 else:
 
@@ -220,7 +227,9 @@ if RESUME:
         for fil in files:
             if r.match(fil) is not None:
                 print(CHECKPOINT_PATH + '/' + fil)
-                model = load_model(CHECKPOINT_PATH + '/' + fil, custom_objects={"tf": tf})
+                model = load_model(CHECKPOINT_PATH + '/' + fil, 
+                                   custom_objects={'tf': tf, 'masked_loss': multitask_loss.masked_loss, 'multitask_loss': multitask_loss.multitask_loss,
+                                                   'masked_loss_binary': multitask_loss.masked_loss_binary, 'masked_loss_categorical': multitask_loss.masked_loss_categorical})
 
                 logging.info('Loaded model: %s', CHECKPOINT_PATH + '/' + fil)                
 
@@ -230,7 +239,7 @@ if RESUME:
 
         # Load the model
    
-        model = load_model(CHECKPOINT_PATH + CHECKPOINT_PREFIX + '.h5')
+        model = load_model(CHECKPOINT_PATH + CHECKPOINT_PREFIX + '.h5', custom_objects={'masked_loss': multitask_loss.masked_loss, 'multitask_loss': multitask_loss.multitask_loss})
 
         logging.info('Loaded model: %s', CHECKPOINT_PATH + CHECKPOINT_PREFIX + '.h5') 
 
@@ -242,38 +251,41 @@ else:
 
     # Input shape: (PLANES x CELLS x VIEWS)
 
-    input_shape = [PLANES, CELLS, VIEWS]
-    #input_shape = [PLANES, CELLS, 1]
-
+    #input_shape = [PLANES, CELLS, VIEWS]
+    input_shape = [PLANES, CELLS, 1]
 
     '''
 
     Create model. Options (argument 'network'):
 
-                                              Total params  Trainable params  Non-trainable params
+                                                   Total params  Trainable params  Non-trainable params
 
-    'xception'          -> Xception             20,888,117        20,833,589                54,528
-    'vgg16'             -> VGG16               503,412,557       503,412,557                     0
-    'vgg19'             -> VGG19               508,722,253       508,722,253                     0
-    'resnet18'          -> ResNet18             11,193,997        11,186,189                 7,808
-    'resnet34'          -> ResNet34             21,313,293        21,298,061                15,232
-    'resnet50'          -> ResNet50             23,694,221        23,641,101                53,120
-    'resnet101'         -> ResNet101            42,669,453        42,571,789                97,664
-    'resnet152'         -> ResNet152            58,382,221        58,238,477               143,744
-    'inceptionv3'       -> InceptionV3          21,829,421        21,794,989                34,432
-    'inceptionv4'       -> InceptionV4          41,194,381        41,131,213                63,168
-    'inceptionresnetv2' -> InceptionResNetV2    54,356,717        54,296,173                60,544
-    'resnext'           -> ResNeXt              89,712,576        89,612,096               100,480
-    'seresnet18'        -> SEResNet18           11,276,224        11,268,416                 7,808
-    'seresnet34'        -> SEResNet34           21,461,952        21,446,720                15,232
-    'seresnet50'        -> SEResNet50           26,087,360        26,041,920                45,440
-    'seresnet101'       -> SEResNet101          47,988,672        47,887,936               100,736
-    'seresnet154'       -> SEResNet154          64,884,672        64,740,928               143,744
-    'mobilenet'         -> MobileNet             3,242,189         3,220,301                21,888
-    'densenet121'       -> DenseNet121           7,050,829         6,967,181                83,648
-    'densenet169'       -> DenseNet169          12,664,525        12,506,125               158,400
-    'densenet201'       -> DenseNet201          18,346,957        18,117,901               229,056
-    other               -> Custom model
+    'xception'            -> Xception                20,888,117        20,833,589                54,528
+    'vgg16'               -> VGG-16                 503,412,557       503,412,557                     0
+    'vgg19'               -> VGG-19                 508,722,253       508,722,253                     0
+    'resnet18'            -> ResNet-18               11,193,997        11,186,189                 7,808
+    'resnet34'            -> ResNet-34               21,313,293        21,298,061                15,232
+    'resnet50'            -> ResNet-50               23,694,221        23,641,101                53,120
+    'resnet101'           -> ResNet-101              42,669,453        42,571,789                97,664
+    'resnet152'           -> ResNet-152              58,382,221        58,238,477               143,744
+    'inceptionv3'         -> Inception-v3            21,829,421        21,794,989                34,432
+    'inceptionv4'         -> Inception-v4            41,194,381        41,131,213                63,168
+    'inceptionresnetv2'   -> Inception-ResNet-v2     54,356,717        54,296,173                60,544
+    'resnext'             -> ResNeXt                 89,712,576        89,612,096               100,480
+    'seresnet18'          -> SE-ResNet-18            11,276,224        11,268,416                 7,808
+    'seresnet34'          -> SE-ResNet-34            21,461,952        21,446,720                15,232
+    'seresnet50'          -> SE-ResNet-50            26,087,360        26,041,920                45,440
+    'seresnet101'         -> SE-ResNet-101           47,988,672        47,887,936               100,736
+    'seresnet154'         -> SE-ResNet-154           64,884,672        64,740,928               143,744
+    'seresnetsaul'        -> SE-ResNet-Saul          22,072,768        22,055,744                17,024
+    'seinceptionv3'       -> SE-Inception-v3         23,480,365        23,445,933                34,432
+    'seinceptionresnetv2' -> SE-Inception-ResNet-v2  64,094,445        64,033,901                60,544
+    'seresnext'           -> SE-ResNeXt              97,869,632        97,869,632               100,480
+    'mobilenet'           -> MobileNet                3,242,189         3,220,301                21,888
+    'densenet121'         -> DenseNet-121             7,050,829         6,967,181                83,648
+    'densenet169'         -> DenseNet-169            12,664,525        12,506,125               158,400
+    'densenet201'         -> DenseNet-201            18,346,957        18,117,901               229,056
+    other                 -> Custom model
  
     '''
 
@@ -284,8 +296,9 @@ else:
     logging.info('Setting optimizer...')
 
     opt = optimizers.SGD(lr=LEARNING_RATE, momentum=MOMENTUM, decay=DECAY, nesterov=True) # SGD
-    #opt = optimizers.RMSprop(lr=0.045, rho=0.9, epsilon=1.0, decay=0.9)                  # RMSprop
-    #opt = optimizers.Adam(lr=1e-3)							  # Adam
+    #opt = optimizers.SGD(lr=0.045, momentum=MOMENTUM, decay=DECAY, nesterov=True)         # SGD
+    #opt = optimizers.RMSprop(lr=0.045, rho=0.9, decay=0.94, clipnorm=2.0)                 # RMSprop (rho = Decay factor, decay = Learning rate decay over each update)
+    #opt = optimizers.Adam(lr=1e-3)							   # Adam
 
     if PARALLELIZE:
 
@@ -305,13 +318,20 @@ else:
 
     logging.info('Compiling model...')
 
-    model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
+    #model.compile(loss=multitask_loss.masked_loss, optimizer=opt, metrics=['accuracy']) 
+    model.compile(loss={'neutrino': multitask_loss.masked_loss_binary, 'flavour': multitask_loss.masked_loss_categorical, 'interaction': multitask_loss.masked_loss_categorical}, 
+                  #loss={'flavour': multitask_loss.masked_loss_categorical, 'interaction': multitask_loss.masked_loss_categorical}, 
+                  #loss_weights={'flavour': 0.5, 'interaction': 0.5},
+                  #loss_weights={'neutrino': 0.25, 'flavour': 1.0, 'interaction': 0.5},
+                  loss_weights={'neutrino': 0.33, 'flavour': 0.33, 'interaction': 0.33},
+                  optimizer=opt, metrics=['accuracy']) 
+    #model.compile(loss=multitask_loss.multitask_loss, optimizer=opt, metrics=['accuracy']) 
+    #model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
 
 # Print model summary
 
 if(PRINT_SUMMARY):
     model.summary()
-
 
 '''
 ****************************************
@@ -332,9 +352,11 @@ if VALIDATION_FRACTION > 0:
     # Validation accuracy
 
     if CHECKPOINT_SAVE_MANY:
-        filepath = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '-{epoch:02d}-{val_acc:.2f}.h5'
+        #filepath = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '-{epoch:02d}-{val_acc:.2f}.h5'
+        filepath = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '-{epoch:02d}-{val_flavour_acc:.2f}.h5'
 
-    monitor_acc = 'val_acc'
+    monitor_acc = 'val_flavour_acc'
+    #monitor_acc = 'val_acc'i
     monitor_loss = 'val_loss'
 
 else:
@@ -354,7 +376,7 @@ checkpoint = ModelCheckpoint(filepath, monitor=monitor_acc, verbose=1, save_best
 logging.info('Configuring learning rate reducer...')
 
 #lr_reducer = LearningRateScheduler(schedule=lambda epoch,lr: (lr*0.01 if epoch % 2 == 0 else lr))
-lr_reducer = ReduceLROnPlateau(monitor=monitor_loss, factor=0.1, cooldown=0, patience=3, min_lr=0.5e-6, verbose=1)
+lr_reducer = ReduceLROnPlateau(monitor=monitor_loss, factor=0.1, cooldown=0, patience=10, min_lr=0.5e-6, verbose=1)
 
 # Early stopping
 
@@ -368,15 +390,17 @@ csv_logger = CSVLogger(LOG_PATH + LOG_PREFIX + '.log', append=RESUME)
 
 # My callbacks
 
-#my_callback = my_callbacks.MyCallback()
+my_callback = my_callbacks.MyCallback()
 #my_callback = my_callbacks.InceptionV4Callback()
-my_callback = my_callbacks.IterationsCallback(validation_generator=validation_generator, validation_steps=len(partition['validation'])//VALIDATION_BATCH_SIZE)
+#my_callback = my_callbacks.IterationsCallback(validation_generator=validation_generator, validation_steps=len(partition['validation'])//VALIDATION_BATCH_SIZE)
 
 # Callbacks
 
 logging.info('Setting callbacks...')
 
-callbacks_list = [lr_reducer, checkpoint, early_stopping, csv_logger]
+callbacks_list = [checkpoint, csv_logger]
+#callbacks_list = [checkpoint, csv_logger, my_callback]
+#callbacks_list = [lr_reducer, checkpoint, early_stopping, csv_logger]
 #callbacks_list = [lr_reducer, checkpoint, early_stopping, csv_logger, my_callback]
 
 
@@ -423,6 +447,7 @@ if VALIDATION_FRACTION > 0:
 
     model.fit_generator(generator = training_generator,
                         steps_per_epoch = len(partition['train'])//TRAIN_BATCH_SIZE,
+                        #steps_per_epoch = 90000,
                         validation_data = validation_generator,
                         validation_steps = len(partition['validation'])//VALIDATION_BATCH_SIZE,
                         epochs = EPOCHS,

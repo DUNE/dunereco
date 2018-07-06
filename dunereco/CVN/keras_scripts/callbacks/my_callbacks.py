@@ -17,12 +17,23 @@ class InceptionV4Callback(keras.callbacks.Callback):
         def on_train_begin(self, logs={}):
                 current_lr = K.get_value(self.model.optimizer.lr)
                 print "Learning rate:", current_lr
-                new_lr = current_lr * math.exp(-0.94)
+                new_lr = current_lr * 0.94
                 K.set_value(self.model.optimizer.lr, new_lr)
                 new_lr = K.get_value(self.model.optimizer.lr)
                 print "New learning rate:", new_lr
                 return
 
+class InceptionV3Callback(keras.callbacks.Callback):
+	def on_epoch_end(self, epoch, logs={}):
+                if epoch % 2 == 1:
+                    current_lr = K.get_value(self.model.optimizer.lr)
+                    print "Learning rate:", current_lr
+                    new_lr = current_lr * 0.94
+                    K.set_value(self.model.optimizer.lr, new_lr)
+                    new_lr = K.get_value(self.model.optimizer.lr)
+                    print "New learning rate:", new_lr
+                return
+  
 class IterationsCallback(keras.callbacks.Callback):
 
         def __init__(self, validation_generator, validation_steps):

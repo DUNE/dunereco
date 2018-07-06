@@ -5,6 +5,8 @@ import ntpath
 import pickle
 import configparser
 import logging, sys
+import time
+import random
 
 from sklearn.utils import class_weight
 from collections import Counter
@@ -22,7 +24,12 @@ config.read('config.ini')
 
 # random
 
-np.random.seed(int(config['random']['seed']))
+SEED = int(config['random']['seed'])
+
+if SEED == -1:
+    SEED = int(time.time())
+
+np.random.seed(SEED)
 
 # images
 
@@ -36,7 +43,8 @@ PARTITION_PREFIX = config['dataset']['partition_prefix']
 LABELS_PREFIX = config['dataset']['labels_prefix']
 UNIFORM = ast.literal_eval(config['dataset']['uniform'])
 INTERACTION_TYPES = ast.literal_eval(config['dataset']['interaction_types'])
-
+NEUTRINO_LABELS = ast.literal_eval(config['images']['neutrino_labels'])
+ 
 if(INTERACTION_TYPES):
 
     # Interaction types (from 0 to 13 (12))
@@ -47,7 +55,6 @@ else:
 
     # Neutrino types (from 0 to 3)
 
-    NEUTRINO_LABELS = ast.literal_eval(config['images']['neutrino_labels'])
     N_LABELS = len(Counter(NEUTRINO_LABELS.values()))
 
 # train
@@ -77,6 +84,8 @@ if((TRAIN_FRACTION + VALIDATION_FRACTION + TEST_FRACTION) > 1):
 partition = {'train' : [], 'validation' : [], 'test' : []} # Train, validation, and test IDs
 labels = {}                                                # ID : label
 y_train = []
+y1_class_weights = []
+y2_class_weights = []
 
 if UNIFORM:
 
@@ -149,19 +158,23 @@ for path in glob.iglob(IMAGES_PATH + '/*'):
  
     # Iterate through the files under the directory
 
-    for fil in label_dir:
+    count = 0
+
+    fils = list(label_dir)
+    random.shuffle(fils)
+
+    for fil in fils:
 
         if(fil[-3:] != '.gz'):
             continue
 
-        if UNIFORM:
+        # REMOVE
+        if label == "13" and count  >= 886894:
+            break
 
-            # only use a uniform subset
+        count+=1
+        # END REMOVE        
 
-            random_value = np.random.uniform(0,1)
-
-            if(random_value >= fraction):
-                continue
 
         ID = fil[:-7].split('/')[-1]  # it is basically the filename without '.txt.gz'
 
@@ -170,20 +183,29 @@ for path in glob.iglob(IMAGES_PATH + '/*'):
         # Fill training set
 
         if(random_value < TRAIN_FRACTION):
-            partition['train'].append(ID)
-            count_train += 1
 
-            # Store y train
+            random_value_uni = np.random.uniform(0,1)
 
-            if INTERACTION_TYPES:
+            if not UNIFORM or random_value_uni < fraction:
 
-                y_train.append(INTERACTION_LABELS[label])
+                partition['train'].append(ID)
+                count_train += 1
 
-            else:
+                # Store y train
 
-                y_train.append(NEUTRINO_LABELS[label])
+                if INTERACTION_TYPES:
+
+                    y_train.append(INTERACTION_LABELS[label])
+                    y1_class_weights.append(NEUTRINO_LABELS[label])
+
+                    if label != '13':
+                        y2_class_weights.append(int(INTERACTION_LABELS[label])%4)
+
+                else:
+
+                    y_train.append(NEUTRINO_LABELS[label])
  
-            labels[ID] = label
+                labels[ID] = label
 
         # Fill validation set
 
@@ -218,7 +240,14 @@ logging.info('Number of test examples: %d', len(partition['test']))
 
 logging.info('Calculating class weights...')
 
-class_weights = dict(enumerate(class_weight.compute_class_weight('balanced', np.unique(y_train), y_train)))
+#class_weights = dict(enumerate(class_weight.compute_class_weight('balanced', np.unique(y_train), y_train)))
+class_weights1 = dict(enumerate(class_weight.compute_class_weight('balanced', np.unique(y1_class_weights), y1_class_weights)))
+class_weights2 = dict(enumerate(class_weight.compute_class_weight('balanced', np.unique(y2_class_weights), y2_class_weights)))
+
+class_weights = class_weights1
+
+for i in range(4):
+    class_weights[i+4] = class_weights2[i]
 
 '''
 # Manually set class weights
@@ -235,17 +264,13 @@ logging.info('Class weights: %s', class_weights)
 
 logging.info('Serializing datasets...')
 
-partition_file = open(DATASET_PATH + PARTITION_PREFIX + '.p', 'w')
-pickle.dump(partition, partition_file)
-partition_file.close()
+with open(DATASET_PATH + PARTITION_PREFIX + '.p', 'w') as partition_file:
+    pickle.dump(partition, partition_file)
 
-labels_file = open(DATASET_PATH + LABELS_PREFIX + '.p', 'w')
-pickle.dump(labels, labels_file)
-labels_file.close()
+with open(DATASET_PATH + LABELS_PREFIX + '.p', 'w') as labels_file:
+    pickle.dump(labels, labels_file)
 
 if WEIGHTED_LOSS_FUNCTION:
 
-    class_weights_file = open(DATASET_PATH + CLASS_WEIGHTS_PREFIX + '.p', 'w')
-    pickle.dump(class_weights, class_weights_file)
-    class_weights_file.close()
-
+    with open(DATASET_PATH + CLASS_WEIGHTS_PREFIX + '.p', 'w') as class_weights_file:
+        pickle.dump(class_weights, class_weights_file)

@@ -124,22 +124,17 @@ def SEResNet(input_shape=None,
                                       require_flatten=False)
 
     if input_tensor is None:
-        img_input = Input(shape=input_shape)
-    else:
-        if not K.is_keras_tensor(input_tensor):
-            img_input = Input(tensor=input_tensor, shape=input_shape)
-        else:
-            img_input = input_tensor
+        #img_input = Input(shape=input_shape)
+        img_input1 = Input(shape=input_shape)
+        img_input2 = Input(shape=input_shape)
+        img_input3 = Input(shape=input_shape)
+        img_input  = [img_input1, img_input2, img_input3]
 
     x = _create_se_resnet(classes, img_input, include_top, initial_conv_filters,
                           filters, depth, width, bottleneck, weight_decay, pooling)
 
-    # Ensure that the model takes into account
-    # any potential predecessors of `input_tensor`.
-    if input_tensor is not None:
-        inputs = get_source_inputs(input_tensor)
-    else:
-        inputs = img_input
+    inputs = img_input
+
     # Create model.
     model = Model(inputs=inputs, outputs=x, name='resnext')
 
@@ -358,9 +353,33 @@ def _create_se_resnet(classes, img_input, include_top, initial_conv_filters, fil
                 be applied.
     Returns: a Keras Model
     '''
+
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
     N = list(depth)
 
+    # branches
+    branches = []
+
+    for i in range(len(img_input)):
+ 
+        # block 1 (initial conv block)
+        branch = Conv2D(initial_conv_filters, (7, 7), padding='same', use_bias=False, strides=(2, 2),
+                   kernel_initializer='he_normal', kernel_regularizer=l2(weight_decay))(img_input[i])
+
+        branch = MaxPooling2D((3, 3), strides=(2, 2), padding='same')(branch)
+
+        # block 2 (projection block)
+        for i in range(N[0]):
+            if bottleneck:
+                branch = _resnet_bottleneck_block(branch, filters[0], width)
+            else:
+                branch = _resnet_block(branch, filters[0], width)
+        
+        branches.append(branch)
+
+    x = concatenate(branches)
+
+    '''
     # block 1 (initial conv block)
     x = Conv2D(initial_conv_filters, (7, 7), padding='same', use_bias=False, strides=(2, 2),
                kernel_initializer='he_normal', kernel_regularizer=l2(weight_decay))(img_input)
@@ -373,6 +392,7 @@ def _create_se_resnet(classes, img_input, include_top, initial_conv_filters, fil
             x = _resnet_bottleneck_block(x, filters[0], width)
         else:
             x = _resnet_block(x, filters[0], width)
+    '''
 
     # block 3 - N
     for k in range(1, len(N)):
@@ -392,13 +412,17 @@ def _create_se_resnet(classes, img_input, include_top, initial_conv_filters, fil
 
     if include_top:
         x = GlobalAveragePooling2D()(x)
+
         x0 = Dense(1, use_bias=False, kernel_regularizer=l2(weight_decay),
                   activation='sigmoid', name='neutrino')(x)
+
         x1 = Dense(classes//2, use_bias=False, kernel_regularizer=l2(weight_decay),
                   activation='softmax', name='flavour')(x)
+
         x2 = Dense(classes//2, use_bias=False, kernel_regularizer=l2(weight_decay),
                   activation='softmax', name='interaction')(x)
     
+        #x = [x1, x2]
         x = [x0, x1, x2]    
         #x = concatenate([x0, x1, x2])
     else:

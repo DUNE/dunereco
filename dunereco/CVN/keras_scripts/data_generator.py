@@ -130,9 +130,10 @@ class DataGenerator(object):
           if self.filtered:
 
               # filtered images
-      
-              pixels = np.fromstring(zlib.decompress(open(self.images_path + '/' + labels[ID] + '/' + ID + '.txt.gz', 'rb').read()), dtype=np.float64, sep='').reshape(self.views, self.planes, self.cells)
-              pixels = np.rollaxis(pixels, 0, 3) # from 'channels_first' to 'channels_last'
+
+              with open(self.images_path + '/' + labels[ID] + '/' + ID + '.txt.gz', 'rb') as image_file:      
+                  pixels = np.fromstring(zlib.decompress(image_file.read()), dtype=np.float64, sep='').reshape(self.views, self.planes, self.cells)
+                  pixels = np.rollaxis(pixels, 0, 3) # from 'channels_first' to 'channels_last'
 
               #pixels = np.transpose(pixels, (2, 1, 0))
 
@@ -147,7 +148,8 @@ class DataGenerator(object):
 
               # ordinary images
 
-              pixels = np.fromstring(zlib.decompress(open(self.images_path + '/' + labels[ID] + '/' + ID + '.txt.gz', 'rb').read()), dtype=np.uint8, sep='').reshape(self.views, self.planes, self.cells)
+              with open(self.images_path + '/' + labels[ID] + '/' + ID + '.txt.gz', 'rb') as image_file:
+                  pixels = np.fromstring(zlib.decompress(image_file.read()), dtype=np.uint8, sep='').reshape(self.views, self.planes, self.cells)
 
               if self.standardize:
 
@@ -155,6 +157,8 @@ class DataGenerator(object):
 
                   pixels = pixels.astype('float32') # 32-bit precision floating-point pixel image
                   pixels /= 255.                    # pixel range from 0 to 1
+
+          flavour = str(ID.split('.')[0]).translate(None, digits)          
 
           # Store volume
 
@@ -168,7 +172,7 @@ class DataGenerator(object):
 
               pixels = np.rollaxis(pixels, 0, 3) # from 'channels_first' to 'channels_last'
               X[i, :, :, :] = pixels
- 
+
               #X[i, :, :, :] = pixels[2, :, :].reshape(self.planes, self.cells, 1)
 
           # get y value
@@ -185,6 +189,9 @@ class DataGenerator(object):
 
               y_value = self.neutrino_labels[labels[ID]]
 
+          if flavour[0] == 'a':
+              y_value += 13
+
           if yield_labels:
 
               # store class/label (train, validation)
@@ -197,8 +204,8 @@ class DataGenerator(object):
 
               energy_values = open(self.images_path + '/' + labels[ID] + '/' + ID + '.info', 'rb').readlines()
 
-              self.test_values.append({'flavour': str(ID.split('.')[0]).translate(None, digits), 
-                                       'y_value': y_value, 
+              self.test_values.append({'flavour': flavour, 
+                                       'y_value': y_value,
                                        'fNuEnergy': float(energy_values[0]),
                                        'fRecoNueEnergy': float(energy_values[1]), 
                                        'fRecoNumuEnergy': float(energy_values[2]), 
@@ -208,7 +215,7 @@ class DataGenerator(object):
 
           # return X and Y (train, validation)
 
-          return X, self.__sparsify(y)
+          return X, self.sparsify3(y)
 
       # return X (test, predictions)
 
@@ -222,8 +229,53 @@ class DataGenerator(object):
   should y be a list of numerical values.
   '''
 
-  def __sparsify(self, y):
+  def sparsify2(self, y):
       'Returns labels in binary NumPy array'
 
-      return np.array([[1 if y[i] == j else 0 for j in range(self.n_labels)] for i in range(y.shape[0])])
+      res1, res2 = [], []
 
+      for i in range(y.shape[0]):
+
+          bi_y1 = [0, 0, 0, 0]  # CC Numu, CC Nue, CC Nutau
+          bi_y2 = [0, 0, 0, 0]  # CC QE, CC Res, CC DIS, CC Other
+
+          bi_y1[(y[i] // 4)] = 1 # CC Numu, CC Nue, CC Nutau
+          bi_y2[(y[i] %  4)] = 1 # CC QE, CC Res, CC DIS, CC Other
+
+          if y[i] == 12:
+              bi_y3 = [-1, -1, -1, -1]
+
+          res1.append(bi_y1)
+          res2.append(bi_y2)
+
+      return [np.array(res1), np.array(res2)]
+
+  def sparsify3(self, y):
+      'Returns labels in binary NumPy array'
+
+      res1, res2, res3 = [], [], []
+
+      for i in range(y.shape[0]):
+
+          bi_y1 = [0]           # neutrino/antineutrino
+          bi_y2 = [0, 0, 0, 0]  # CC Numu, CC Nue, CC Nutau
+          bi_y3 = [0, 0, 0, 0]  # CC QE, CC Res, CC DIS, CC Other
+
+          quotient = y[i] // 13
+
+          if quotient > 0:
+              y[i] %= 13   # from 0 to 12
+              bi_y1[0] = 1 # antineutrino
+
+          bi_y2[(y[i] // 4)] = 1 # CC Numu, CC Nue, CC Nutau
+          bi_y3[(y[i] %  4)] = 1 # CC QE, CC Res, CC DIS, CC Other
+
+          if y[i] == 12:
+              bi_y1 = [-1]
+              bi_y3 = [-1, -1, -1, -1]
+
+          res1.append(bi_y1)
+          res2.append(bi_y2)
+          res3.append(bi_y3)
+
+      return [np.array(res1), np.array(res2), np.array(res3)]

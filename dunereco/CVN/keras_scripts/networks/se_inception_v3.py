@@ -28,6 +28,7 @@ from keras.layers import MaxPooling2D
 from keras.layers import AveragePooling2D
 from keras.layers import GlobalAveragePooling2D
 from keras.layers import GlobalMaxPooling2D
+from keras.layers import concatenate
 from keras.engine.topology import get_source_inputs
 from keras.utils.data_utils import get_file
 from keras import backend as K
@@ -362,7 +363,12 @@ def SEInceptionV3(include_top=True,
     if include_top:
         # Classification block
         x = GlobalAveragePooling2D(name='avg_pool')(x)
-        x = Dense(classes, activation='softmax', name='predictions')(x)
+        #x = Dense(classes, activation='softmax', name='predictions')(x)
+        #x = Dense(classes, activation='sigmoid', name='predictions')(x)
+        x1 = Dense(classes//2, activation='softmax', name='predictions1')(x)
+        x2 = Dense(classes//2, activation='softmax', name='predictions2')(x)
+        x = concatenate([x1, x2])
+
     else:
         if pooling == 'avg':
             x = GlobalAveragePooling2D()(x)
