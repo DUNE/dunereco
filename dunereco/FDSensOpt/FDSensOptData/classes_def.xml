@@ -6,7 +6,8 @@
    <version ClassVersion="10" checksum="915776737"/>
   </class>
 
-  <class name="dune::EnergyRecoOutput" ClassVersion="10" >
+  <class name="dune::EnergyRecoOutput" ClassVersion="11" >
+   <version ClassVersion="11" checksum="2452043187"/>
    <version ClassVersion="10" checksum="2518891177"/>
   </class>
 
