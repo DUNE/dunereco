@@ -323,12 +323,8 @@
 
     <!-- Track and shower building -->
     <algorithm type = "LArTrackParticleBuilding">
-        <PfoListName>NeutrinoParticles3D</PfoListName>
-        <VertexListName>NeutrinoVertices3D</VertexListName>
-    </algorithm>
-    <algorithm type = "LArPcaShowerParticleBuilding">
-        <PfoListName>NeutrinoParticles3D</PfoListName>
-        <VertexListName>NeutrinoVertices3D</VertexListName>
+        <PfoListName>TrackParticles3D</PfoListName>
+        <VertexListName>DaughterVertices3D</VertexListName>
     </algorithm>
 
     <!-- Output list management -->
