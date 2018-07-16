@@ -120,7 +120,7 @@ namespace cvn
         top = static_cast<cvn::TopologyType>(top | kTopNumu);
       }
       else if(abs(nu.Nu().PdgCode()) == 16){
-        top = static_cast<cvn::TopologyType>(top | kTopNue);
+        top = static_cast<cvn::TopologyType>(top | kTopNutau);
       }   
     }
     else{
