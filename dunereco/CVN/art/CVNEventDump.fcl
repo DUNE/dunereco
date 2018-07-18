@@ -27,6 +27,8 @@ standard_cvneventdump_fhc:
   GetEnergyOutput: true
   GetEventWeight: true
   MVAAlg: @local::standard_mvaselect_fhc
+  UseTopology: true
+  TopologyHitsCut: 50
 }
 
 # Make the rhc version 
@@ -38,7 +40,7 @@ standard_cvneventdump_protodune:
   module_type:   CVNEventDumpProtoDUNE
   PixelMapInput: "cvnmap"
   WriteMapTH2:   true
-
+  UseTopology: false 
 }
 
 

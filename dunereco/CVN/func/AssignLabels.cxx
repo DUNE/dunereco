@@ -4,6 +4,7 @@
 #include "dune/CVN/func/InteractionType.h"
 #include "dune/CVN/func/TrainingData.h"
 #include "larsim/MCCheater/BackTrackerService.h"
+#include "larsim/MCCheater/ParticleInventoryService.h"
 
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
@@ -13,6 +14,7 @@
 
 namespace cvn
 {
+
   /// Get Interaction_t from pdg, mode and iscc.
   /// Setting pdg and mode to zero triggers cosmic ray
   InteractionType AssignLabels::GetInteractionType(simb::MCNeutrino& truth)
@@ -105,11 +107,11 @@ namespace cvn
 
   // This function uses purely the information from the neutrino generator to
   // find all of the final-state particles that contribute to the event.
-  TopologyType AssignLabels::GetTopology(const simb::MCTruth &truth){
+  TopologyType AssignLabels::GetTopology(const art::Ptr<simb::MCTruth> truth, unsigned int nTopologyHits = 0){
 
     TopologyType top = cvn::kTopUnset;
 
-    const simb::MCNeutrino &nu = truth.GetNeutrino();
+    const simb::MCNeutrino &nu = truth->GetNeutrino();
 
     // Find out the neutrino flavour and CC/NC
     if(nu.CCNC() == simb::kCC){
@@ -134,7 +136,7 @@ namespace cvn
     std::cout << "Topology after neutrino flavour = " << top << " :: " << nu.Nu().PdgCode() << std::endl;
 
     // Now we need to do some final state particle counting.
-    unsigned int nParticle = truth.NParticles();
+//    unsigned int nParticle = truth.NParticles();
 
     unsigned short nProton = 0;
     unsigned short nPion = 0; // Charged pions, that is
@@ -143,14 +145,24 @@ namespace cvn
 
     // We need an instance of the backtracker to find the number of simulated hits for each track
     art::ServiceHandle<cheat::BackTrackerService> backTrack;
+    art::ServiceHandle<cheat::ParticleInventoryService> partService;
 
     // Loop over all of the particles
-    for(unsigned int p = 0; p < nParticle; ++p){
+//    for(unsigned int p = 0; p < nParticle; ++p){
+    for(auto const thisPart : partService->MCTruthToParticles_Ps(truth)){
 
-      int pdg = truth.GetParticle(p).PdgCode();
+//      const simb::MCParticle& part = truth.GetParticle(p);
+      const simb::MCParticle& part = *thisPart;
+
+      int pdg = part.PdgCode();
 
       // Make sure this is a final state particle
-      if(truth.GetParticle(p).StatusCode() != 1){
+      if(part.StatusCode() != 1){
+        continue;
+      }
+
+      // Make sure this particle is a daughter of the neutrino
+      if(part.Mother() != 0){
         continue;
       }
 
@@ -159,16 +171,34 @@ namespace cvn
         continue;
       }
 
+      // Also don't care about nuclear recoils
+      if(pdg > 1000000){
+        continue;
+      }
+
       // Find how many SimIDEs the track has
-      unsigned int nSimIDE = backTrack->TrackIdToSimIDEs_Ps(truth.GetParticle(p).TrackId()).size();
+      unsigned int nSimIDE = backTrack->TrackIdToSimIDEs_Ps(part.TrackId()).size();
 
       // Check if we have more than 100 MeV of kinetic energy
-      float ke = truth.GetParticle(p).E() - truth.GetParticle(p).Mass();
+      float ke = part.E() - part.Mass();
       //    if( ke < 0.0){
       //      continue;
       //    }
 
-      std::cout << "Final state particle " << pdg << " with ke " << ke << " and " << nSimIDE << " true hits" << std::endl;
+      // Special case for pi-zeros since it is the decay photons and their pair produced electrons that deposit energy
+      if(pdg == 111 || pdg == 2112){
+        // Decay photons
+        for(int d = 0; d < part.NumberDaughters(); ++d){
+          nSimIDE = backTrack->TrackIdToSimIDEs_Ps(part.Daughter(d)).size();
+        }
+      }
+
+      // Do we pass the number of hits cut?
+      if(nSimIDE < nTopologyHits){
+        continue;
+      }
+
+      std::cout << "Final state particle " << pdg << " with ke " << ke << " GeV, " << nSimIDE << " true hits and " << part.NumberDaughters() << " daughters" << std::endl;
 
       switch(abs(pdg)){
         case 111 : ++nPizero;  break;

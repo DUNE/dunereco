@@ -10,7 +10,7 @@
 
 #include "dune/CVN/func/InteractionType.h"
 #include "dune/CVN/func/PixelMap.h"
-
+#include "art/Framework/Principal/Handle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 
 
@@ -29,7 +29,7 @@ namespace cvn
                                                 int nuMode );
 
     // Use the topology information
-    TopologyType GetTopology(const simb::MCTruth &truth);
+    TopologyType GetTopology(const art::Ptr<simb::MCTruth> truth, unsigned int nTopologyHits);
     void PrintTopology(TopologyType &top);
     unsigned short GetNProtons(TopologyType top);
     unsigned short GetNPions(TopologyType top);
@@ -37,6 +37,10 @@ namespace cvn
     unsigned short GetNNeutrons(TopologyType top);
     short GetPDGFromTopology(TopologyType top);
     
+    private:
+
+    unsigned int fTopologyHitsCut;
+  
   };
 }
 

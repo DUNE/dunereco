@@ -71,6 +71,9 @@ namespace cvn {
     bool        fGetEventWeight;
     bool        fWriteMapTH2;
     bool        fApplyFidVol;
+    bool        fUseTopology;
+    unsigned int fTopologyHits; // Number of hits for a track to be considered detectable 
+                                   // for topology definitions.
 
     TrainingData* fTrain;
     TTree*        fTrainTree;
@@ -105,7 +108,8 @@ namespace cvn {
     fEnergyNumuLabel = pset.get<std::string> ("EnergyNumuLabel");
     fGetEnergyOutput = pset.get<bool> ("GetEnergyOutput");
     fGetEventWeight = pset.get<bool> ("GetEventWeight");
-    
+    fUseTopology  = pset.get<bool>("UseTopology");
+    fTopologyHits = pset.get<unsigned int>("TopologyHitsCut");    
   }
 
   //......................................................................
@@ -160,8 +164,11 @@ namespace cvn {
     AssignLabels labels;
 
     interaction = labels.GetInteractionType(truthN);
-    TopologyType topology = labels.GetTopology(*truth);
-    labels.PrintTopology(topology);
+    TopologyType topology = TopologyType::kTopUnset;
+    if(fUseTopology){
+      topology = labels.GetTopology(truth,fTopologyHits);
+      labels.PrintTopology(topology);
+    }
     float nuEnergy = 0;
     float lepEnergy = 0;
 //    if(truth.NeutrinoSet()){
@@ -214,7 +221,9 @@ namespace cvn {
     int npion = labels.GetNPions(topology);
     int npi0  = labels.GetNPizeros(topology);
     int nneut = labels.GetNNeutrons(topology);
-    train.SetTopologyInformation(topPDG, nprot, npion, npi0, nneut);
+    if(fUseTopology){
+      train.SetTopologyInformation(topPDG, nprot, npion, npi0, nneut);
+    }
     fTrain = &train;
     fTrainTree->Fill();
 
