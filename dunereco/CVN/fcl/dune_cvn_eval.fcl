@@ -1,0 +1,51 @@
+#include "services_dune.fcl"
+#include "CVNMapper.fcl"
+#include "CVNEvaluator.fcl"
+
+process_name: CVNEvaluator
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "cvn_event_dump_r%r_s%s_hist.root"
+                  closeFileFast: false }
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+                        @table::dunefd_simulation_services
+  #@table::standard_services
+}
+
+# Input source is a ROOT file 
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1        # Number of events to create
+
+}
+
+# Define and configure some modules to do work on each event.
+# First modules are defined; they are scheduled later.
+# Modules are grouped by type.
+physics:
+{
+  # Declare the modules
+  producers:
+  { 
+    cvnmap:     @local::standard_cvnmapper
+    cvneva:     @local::standard_cvnevaluator
+  }
+
+  # Build the paths
+  map: [cvnmap, cvneva ]
+}
+
+physics.producers.cvnmap.HitsModuleLabel: "hitfd"
+physics.producers.cvnmap.TimeResolution: 1600
+physics.producers.cvnmap.WireLength: 2880
+physics.producers.cvnmap.TdcWidth: 500
+physics.producers.cvnmap.UnwrappedPixelMap: 1
+
+physics.producers.cvneva.TFNetHandler.TFProtoBuf: "duneCVNNetwork/dune_cvn_resnet_april2018.pb"
+physics.producers.cvneva.TFNetHandler.LibPath:    "DUNE_PARDATA_DIR"
+
+########################################################################
+
