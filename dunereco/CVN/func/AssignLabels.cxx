@@ -3,7 +3,7 @@
 #include "dune/CVN/func/AssignLabels.h"
 #include "dune/CVN/func/InteractionType.h"
 #include "dune/CVN/func/TrainingData.h"
-#include "larsim/MCCheater/BackTracker.h"
+#include "larsim/MCCheater/BackTrackerService.h"
 
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
@@ -141,6 +141,9 @@ namespace cvn
     unsigned short nPizero = 0;
     unsigned short nNeutron = 0;
 
+    // We need an instance of the backtracker to find the number of simulated hits for each track
+    art::ServiceHandle<cheat::BackTrackerService> backTrack;
+
     // Loop over all of the particles
     for(unsigned int p = 0; p < nParticle; ++p){
 
@@ -156,13 +159,16 @@ namespace cvn
         continue;
       }
 
+      // Find how many SimIDEs the track has
+      unsigned int nSimIDE = backTrack->TrackIdToSimIDEs_Ps(truth.GetParticle(p).TrackId()).size();
+
       // Check if we have more than 100 MeV of kinetic energy
       float ke = truth.GetParticle(p).E() - truth.GetParticle(p).Mass();
       //    if( ke < 0.0){
       //      continue;
       //    }
 
-      std::cout << "Final state particle " << pdg << " with ke " << ke << std::endl;
+      std::cout << "Final state particle " << pdg << " with ke " << ke << " and " << nSimIDE << " true hits" << std::endl;
 
       switch(abs(pdg)){
         case 111 : ++nPizero;  break;
@@ -280,7 +286,7 @@ namespace cvn
 
   short AssignLabels::GetPDGFromTopology(TopologyType top){
 
-    unsigned short nu = 0;
+    short nu = 0;
 
     if(top & cvn::kTopNue)   nu = 12;
     if(top & cvn::kTopNumu)  nu = 14;
