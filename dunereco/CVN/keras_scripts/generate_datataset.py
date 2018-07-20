@@ -1,10 +1,19 @@
+"""
+This is the dataset generator module.
+"""
+
+__version__ = '1.0'
+__author__ = 'Saul Alonso-Monsalve'
+__email__ = "saul.alonso.monsalve@cern.ch"
+
 import numpy as np
 import glob
 import ast
 import ntpath
 import pickle
 import configparser
-import logging, sys
+import logging
+import sys
 import time
 import random
 
@@ -20,7 +29,7 @@ from collections import Counter
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read('config/config.ini')
 
 # random
 
@@ -34,7 +43,6 @@ np.random.seed(SEED)
 # images
 
 IMAGES_PATH = config['images']['path']
-INTERACTION_LABELS = ast.literal_eval(config['images']['interaction_labels'])
 
 # dataset
 
@@ -42,21 +50,7 @@ DATASET_PATH = config['dataset']['path']
 PARTITION_PREFIX = config['dataset']['partition_prefix']
 LABELS_PREFIX = config['dataset']['labels_prefix']
 UNIFORM = ast.literal_eval(config['dataset']['uniform'])
-INTERACTION_TYPES = ast.literal_eval(config['dataset']['interaction_types'])
-NEUTRINO_LABELS = ast.literal_eval(config['images']['neutrino_labels'])
  
-if(INTERACTION_TYPES):
-
-    # Interaction types (from 0 to 13 (12))
-
-    N_LABELS = len(Counter(INTERACTION_LABELS.values()))
-
-else:
-
-    # Neutrino types (from 0 to 3)
-
-    N_LABELS = len(Counter(NEUTRINO_LABELS.values()))
-
 # train
 
 TRAIN_FRACTION = float(config['train']['fraction'])
@@ -75,6 +69,16 @@ if((TRAIN_FRACTION + VALIDATION_FRACTION + TEST_FRACTION) > 1):
     logging.error('(TRAIN_FRACTION + VALIDATION_FRACTION + TEST_FRACTION) must be <= 1')
     exit(-1)
 
+def normalize(value):
+    if value > 2:
+        return 3
+    return value 
+
+def normalize2(value):
+    if value < 0:
+        return 1
+    return 0 
+
 '''
 ****************************************
 *************** DATASETS ***************
@@ -89,141 +93,93 @@ y2_class_weights = []
 
 if UNIFORM:
 
-    # calculate uniform constants
-
-    logging.info('Calculating uniform constants...')
-
-    COUNTS = np.zeros(N_LABELS, dtype=int)
-    MIN_DIR = [float("inf"), '']
-
-    for path in glob.iglob(IMAGES_PATH + '/*'):
-
-        label = ntpath.basename(path) # label
-        label_dir = glob.iglob(path + '/*')
-        len_dir = float(len(list(label_dir)))
-
-        if INTERACTION_TYPES:
-
-            # Interaction types (from 0 to 12 (13))
-
-            COUNTS[INTERACTION_LABELS[label]] += 1
-
-            if len_dir < MIN_DIR[0]:
-
-                MIN_DIR[0] = len_dir
-                MIN_DIR[1] = label
-
-        else:
-
-            # Neutrino types: from 0 to 3
-
-            COUNTS[NEUTRINO_LABELS[label]] += 1
-
-            if len_dir < MIN_DIR[0]:
-
-                MIN_DIR[0] = len_dir
-                MIN_DIR[1] = label
+    pass
 
 # Iterate through label folders
 
 logging.info('Filling datasets...')
 
-for path in glob.iglob(IMAGES_PATH + '/*'):
+for images_path in glob.iglob(IMAGES_PATH + '/*'):
 
-    logging.debug('path: %s', path)
-
-    label = ntpath.basename(path) # label
-    label_dir = glob.iglob(path + '/*')
-
-    if UNIFORM:
-
-        # Calculate fraction
-
-        if INTERACTION_TYPES:
-
-            # Interaction types (from 0 to 13 (12))
-
-            fraction = (MIN_DIR[0]) * (COUNTS[INTERACTION_LABELS[MIN_DIR[1]]] / COUNTS[INTERACTION_LABELS[label]]) / len(list(label_dir))
-
-        else:
-
-            # Neutrino types (from 0 to 3)
-
-            fraction = (MIN_DIR[0]) * (COUNTS[NEUTRINO_LABELS[MIN_DIR[1]]] / COUNTS[NEUTRINO_LABELS[label]]) / len(list(label_dir))
-
-        logging.debug('fraction: %f', fraction)  
- 
     count_train, count_val, count_test = (0, 0, 0)
-    label_dir = glob.iglob(path + '/*')
- 
-    # Iterate through the files under the directory
 
-    count = 0
+    print images_path
+    files = list(glob.iglob(images_path + "/images/*"))
+    random.shuffle(files)
 
-    fils = list(label_dir)
-    random.shuffle(fils)
+    for imagefile in files:
+        #print imagefile
+        ID = imagefile.split("/")[-1][:-3] 
+        infofile = images_path + '/info/' + ID + '.info'
 
-    for fil in fils:
+        #print infofile
 
-        if(fil[-3:] != '.gz'):
-            continue
+        info = open(infofile, 'r').readlines()
+        fInt = int(info[0].strip())
+        flavour = fInt // 4
+        interaction = fInt % 4
 
-        # REMOVE
-        if label == "13" and count  >= 886894:
-            break
+        fNuEnergy = float(info[1].strip())
+        fLepEnergy = float(info[2].strip())
+        fRecoNueEnergy = float(info[3].strip())
+        fRecoNumuEnergy = float(info[4].strip())
+        fEventWeight = float(info[5].strip())
 
-        count+=1
-        # END REMOVE        
+        fNuPDG = normalize2(int(info[6].strip()))
+        fNProton = normalize(int(info[7].strip()))
+        fNPion = normalize(int(info[8].strip()))
+        fNPizero = normalize(int(info[9].strip()))
+        fNNeutron = normalize(int(info[10].strip()))
 
+        if fInt == 13:
+            fNuPDG = -1
+            flavour = 3
+            interaction = -1
 
-        ID = fil[:-7].split('/')[-1]  # it is basically the filename without '.txt.gz'
+        '''
+        print "Info:", info
+        print "fInt:", fInt
+        print "flavour:", flavour
+        print "interaction:", interaction
+        print "fNuEnergy:", fNuEnergy
+        print "fLepEnergy:", fLepEnergy
+        print "fRecoNueEnergy:", fRecoNueEnergy
+        print "fRecoNumuEnergy:", fRecoNumuEnergy
+        print "fEventWeight:", fEventWeight
+        print "fNuPDG:", fNuPDG
+        print "fNProton:", fNProton
+        print "fNPion:", fNPion
+        print "fNPizero:", fNPizero
+        print "fNNeutron:", fNNeutron
+        '''
 
         random_value = np.random.uniform(0,1)
 
         # Fill training set
 
         if(random_value < TRAIN_FRACTION):
-
             random_value_uni = np.random.uniform(0,1)
-
             if not UNIFORM or random_value_uni < fraction:
-
                 partition['train'].append(ID)
+                labels[ID] = [fNuPDG, flavour, interaction, fNProton, fNPion, fNPizero, fNNeutron]
+
                 count_train += 1
-
-                # Store y train
-
-                if INTERACTION_TYPES:
-
-                    y_train.append(INTERACTION_LABELS[label])
-                    y1_class_weights.append(NEUTRINO_LABELS[label])
-
-                    if label != '13':
-                        y2_class_weights.append(int(INTERACTION_LABELS[label])%4)
-
-                else:
-
-                    y_train.append(NEUTRINO_LABELS[label])
- 
-                labels[ID] = label
 
         # Fill validation set
 
         elif(random_value < (TRAIN_FRACTION + VALIDATION_FRACTION)):
-
             partition['validation'].append(ID)
-            count_val += 1
+            labels[ID] = [fNuPDG, flavour, interaction, fNProton, fNPion, fNPizero, fNNeutron]
 
-            labels[ID] = label
+            count_val += 1
 
         # Fill test set
 
         elif(random_value < (TRAIN_FRACTION + VALIDATION_FRACTION + TEST_FRACTION)):
-
             partition['test'].append(ID)
-            count_test += 1
+            labels[ID] = [fNuPDG, flavour, interaction, fNProton, fNPion, fNPizero, fNNeutron]
 
-            labels[ID] = label
+            count_test += 1
 
     logging.debug('%d train images', count_train)
     logging.debug('%d val images', count_val)
@@ -236,30 +192,6 @@ logging.info('Number of training examples: %d', len(partition['train']))
 logging.info('Number of validation examples: %d', len(partition['validation']))
 logging.info('Number of test examples: %d', len(partition['test']))
 
-# Calculate class weights (used for a weighted loss function)
-
-logging.info('Calculating class weights...')
-
-#class_weights = dict(enumerate(class_weight.compute_class_weight('balanced', np.unique(y_train), y_train)))
-class_weights1 = dict(enumerate(class_weight.compute_class_weight('balanced', np.unique(y1_class_weights), y1_class_weights)))
-class_weights2 = dict(enumerate(class_weight.compute_class_weight('balanced', np.unique(y2_class_weights), y2_class_weights)))
-
-class_weights = class_weights1
-
-for i in range(4):
-    class_weights[i+4] = class_weights2[i]
-
-'''
-# Manually set class weights
-
-class_weights[0]*=0.8
-class_weights[1]*=0.8
-class_weights[2]*=1.2
-class_weights[3]*=0.8
-'''
-
-logging.info('Class weights: %s', class_weights)
-
 # Serialize partition and labels
 
 logging.info('Serializing datasets...')
@@ -269,8 +201,3 @@ with open(DATASET_PATH + PARTITION_PREFIX + '.p', 'w') as partition_file:
 
 with open(DATASET_PATH + LABELS_PREFIX + '.p', 'w') as labels_file:
     pickle.dump(labels, labels_file)
-
-if WEIGHTED_LOSS_FUNCTION:
-
-    with open(DATASET_PATH + CLASS_WEIGHTS_PREFIX + '.p', 'w') as class_weights_file:
-        pickle.dump(class_weights, class_weights_file)

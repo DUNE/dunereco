@@ -1,39 +1,43 @@
+"""
+This is the train module.
+"""
+
+__version__ = '1.0'
+__author__ = 'Saul Alonso-Monsalve'
+__email__ = "saul.alonso.monsalve@cern.ch"
+
 import tensorflow as tf
 import numpy as np
 import pickle
 import configparser
 import ast
-import logging, sys
+import logging
+import sys
 import re
 import os
 import time
 
-from sklearn.utils import class_weight
+sys.path.append("/raid/cvn_tensorflow/modules")
+sys.path.append("/raid/cvn_tensorflow/networks")
+
+from keras import backend as K, regularizers, optimizers
+from keras.utils import multi_gpu_model
 from keras.models import Model, Sequential, load_model
 from keras.layers import Input, Dense, Activation, ZeroPadding2D, Dropout, Flatten, BatchNormalization, SeparableConv2D
-from keras import regularizers, optimizers
-from keras.layers.convolutional import Conv2D, MaxPooling2D, AveragePooling2D
 from keras.callbacks import LearningRateScheduler, ReduceLROnPlateau, CSVLogger, ModelCheckpoint, EarlyStopping
-from data_generator import DataGenerator
+from keras.layers.convolutional import Conv2D, MaxPooling2D, AveragePooling2D
+from keras.regularizers import l2
 from collections import Counter
-
-sys.path.append("/home/salonsom/cvn_tensorflow/loss")
-sys.path.append("/home/salonsom/cvn_tensorflow/networks")
-sys.path.append("/home/salonsom/cvn_tensorflow/callbacks")
-
-from keras.utils import multi_gpu_model
-
-import multitask_loss
+from sklearn.utils import class_weight
+from data_generator import DataGenerator
 import networks
+import my_losses
 import my_callbacks
 
-from keras import backend as K
-import tensorflow as tf
 sess = tf.Session()
 init = tf.global_variables_initializer()
 sess.run(init)
 K.set_session(sess)
-
 K.set_image_data_format('channels_last')
 
 '''
@@ -45,14 +49,14 @@ K.set_image_data_format('channels_last')
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read('config/config.ini')
 
 # random
 
 SEED = int(config['random']['seed'])
 
 if SEED == -1:
-    SEED = int(time.time())    
+    SEED = int(time.time()) # random seed   
 
 np.random.seed(SEED)
 SHUFFLE = ast.literal_eval(config['random']['shuffle'])
@@ -64,26 +68,6 @@ VIEWS = int(config['images']['views'])
 PLANES = int(config['images']['planes'])
 CELLS = int(config['images']['cells'])
 STANDARDIZE = ast.literal_eval(config['images']['standardize'])
-INTERACTION_LABELS = ast.literal_eval(config['images']['interaction_labels'])
-FILTERED = ast.literal_eval(config['images']['filtered'])
-
-INTERACTION_TYPES = ast.literal_eval(config['dataset']['interaction_types'])
-
-if(INTERACTION_TYPES):
-
-    # Interaction types (from 0 to 13 (12))
-
-    NEUTRINO_LABELS = []
-    N_LABELS = len(Counter(INTERACTION_LABELS.values()))
-
-else:
-
-    # Neutrino types (from 0 to 3)
-
-    NEUTRINO_LABELS = ast.literal_eval(config['images']['neutrino_labels'])
-    N_LABELS = len(Counter(NEUTRINO_LABELS.values()))
-
-N_LABELS = 8 # multitask
 
 # dataset
 
@@ -105,6 +89,7 @@ CHECKPOINT_SAVE_MANY = ast.literal_eval(config['model']['checkpoint_save_many'])
 CHECKPOINT_SAVE_BEST_ONLY = ast.literal_eval(config['model']['checkpoint_save_best_only'])
 CHECKPOINT_PERIOD = int(config['model']['checkpoint_period'])
 PARALLELIZE = ast.literal_eval(config['model']['parallelize'])
+GPUS = int(config['model']['gpus'])
 PRINT_SUMMARY = ast.literal_eval(config['model']['print_summary'])
 BRANCHES = ast.literal_eval(config['model']['branches'])
 
@@ -119,6 +104,7 @@ EPOCHS = int(config['train']['epochs'])
 EARLY_STOPPING_PATIENCE = int(config['train']['early_stopping_patience'])
 WEIGHTED_LOSS_FUNCTION = ast.literal_eval(config['train']['weighted_loss_function'])
 CLASS_WEIGHTS_PREFIX = config['train']['class_weights_prefix']
+MAX_QUEUE_SIZE = int(config['train']['max_queue_size'])
 
 # validation
 
@@ -127,35 +113,25 @@ VALIDATION_BATCH_SIZE = int(config['validation']['batch_size'])
 
 # train params
 
-TRAIN_PARAMS =      {'planes': PLANES,
-                     'cells': CELLS,
-                     'views': VIEWS,
-                     'batch_size': TRAIN_BATCH_SIZE,
-                     'n_labels': N_LABELS,
-                     'interaction_labels': INTERACTION_LABELS,
-                     'interaction_types': INTERACTION_TYPES,
-                     'branches': BRANCHES,
-                     'filtered': FILTERED,
-                     'neutrino_labels': NEUTRINO_LABELS,
-                     'images_path': IMAGES_PATH,
-                     'standardize': STANDARDIZE,
-                     'shuffle': SHUFFLE}
+TRAIN_PARAMS = {'planes':PLANES,
+                'cells':CELLS,
+                'views':VIEWS,
+                'batch_size':TRAIN_BATCH_SIZE,
+                'branches':BRANCHES,
+                'images_path':IMAGES_PATH,
+                'standardize':STANDARDIZE,
+                'shuffle':SHUFFLE}
 
 # validation params
 
-VALIDATION_PARAMS = {'planes': PLANES,
-                     'cells': CELLS,
-                     'views': VIEWS,
-                     'batch_size': VALIDATION_BATCH_SIZE,
-                     'n_labels': N_LABELS,
-                     'interaction_labels': INTERACTION_LABELS,
-                     'interaction_types': INTERACTION_TYPES,
-                     'branches': BRANCHES,
-                     'filtered': FILTERED,
-                     'neutrino_labels': NEUTRINO_LABELS,
-                     'images_path': IMAGES_PATH,
-                     'standardize': STANDARDIZE,
-                     'shuffle': SHUFFLE}
+VALIDATION_PARAMS = {'planes':PLANES,
+                     'cells':CELLS,
+                     'views':VIEWS,
+                     'batch_size':VALIDATION_BATCH_SIZE,
+                     'branches':BRANCHES,
+                     'images_path':IMAGES_PATH,
+                     'standardize':STANDARDIZE,
+                     'shuffle':SHUFFLE}
 
 
 '''
@@ -178,12 +154,9 @@ with open(DATASET_PATH + LABELS_PREFIX + '.p', 'r') as labels_file:
     labels = pickle.load(labels_file)
 
 if WEIGHTED_LOSS_FUNCTION:
-
     with open(DATASET_PATH + CLASS_WEIGHTS_PREFIX + '.p', 'r') as class_weights_file:
         class_weights = pickle.load(class_weights_file)
-
 else:
-
     class_weights = None
 
 # Print some dataset statistics
@@ -209,16 +182,20 @@ validation_generator = DataGenerator(**VALIDATION_PARAMS).generate(labels, parti
 ****************************************
 '''
 
-if RESUME:
- 
-    # Resume a previous training
+# Optimizer: Stochastic Gradient Descent
 
+logging.info('Setting optimizer...')
+
+opt = optimizers.SGD(lr=LEARNING_RATE, momentum=MOMENTUM, decay=DECAY, nesterov=True) # SGD
+#opt = optimizers.RMSprop(lr=0.045, rho=0.9, decay=0.94, clipnorm=2.0)                # RMSprop (rho = Decay factor, decay = Learning rate decay over each update)
+#opt = optimizers.Adam(lr=1e-3)							      # Adam
+
+if RESUME:
+    # Resume a previous training
     logging.info('Loading model from disk...')
 
     if CHECKPOINT_SAVE_MANY:
-
         # Load the last generated model
-
         files = [f for f in os.listdir(CHECKPOINT_PATH) if os.path.isfile(os.path.join(CHECKPOINT_PATH, f))]
         files.sort(reverse=True)
 
@@ -226,36 +203,32 @@ if RESUME:
 
         for fil in files:
             if r.match(fil) is not None:
-                print(CHECKPOINT_PATH + '/' + fil)
-                model = load_model(CHECKPOINT_PATH + '/' + fil, 
-                                   custom_objects={'tf': tf, 'masked_loss': multitask_loss.masked_loss, 'multitask_loss': multitask_loss.multitask_loss,
-                                                   'masked_loss_binary': multitask_loss.masked_loss_binary, 'masked_loss_categorical': multitask_loss.masked_loss_categorical})
-
+                filename = CHECKPOINT_PATH + '/' + fil
+                sequential_model = load_model(filename, 
+                                              custom_objects={'tf':tf, 
+                                                              'masked_loss':my_losses.masked_loss, 
+                                                              'multitask_loss':my_losses.multitask_loss,
+                                                              'masked_loss_binary':my_losses.masked_loss_binary, 
+                                                              'masked_loss_categorical':my_losses.masked_loss_categorical})
                 logging.info('Loaded model: %s', CHECKPOINT_PATH + '/' + fil)                
-
                 break
-
     else:
-
         # Load the model
-   
-        model = load_model(CHECKPOINT_PATH + CHECKPOINT_PREFIX + '.h5', custom_objects={'masked_loss': multitask_loss.masked_loss, 'multitask_loss': multitask_loss.multitask_loss})
+        filename = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '.h5'
+        sequential_model = load_model(filename, custom_objects={'masked_loss':my_losses.masked_loss, 'my_losses':my_losses.my_losses})
 
         logging.info('Loaded model: %s', CHECKPOINT_PATH + CHECKPOINT_PREFIX + '.h5') 
-
 else:
-
     # Start a new training
-
     logging.info('Creating model...')
 
-    # Input shape: (PLANES x CELLS x VIEWS)
-
-    #input_shape = [PLANES, CELLS, VIEWS]
-    input_shape = [PLANES, CELLS, 1]
+    # Input shape
+    if BRANCHES:
+        input_shape = [PLANES, CELLS, 1]     # Input: VIEWS x [PLANES x CELLS x 1]
+    else:
+        input_shape = [PLANES, CELLS, VIEWS] # Input: [PLANES x CELLS x VIEWS]
 
     '''
-
     Create model. Options (argument 'network'):
 
                                                    Total params  Trainable params  Non-trainable params
@@ -286,51 +259,68 @@ else:
     'densenet169'         -> DenseNet-169            12,664,525        12,506,125               158,400
     'densenet201'         -> DenseNet-201            18,346,957        18,117,901               229,056
     other                 -> Custom model
- 
     '''
 
-    model = networks.create_model(network=ARCHITECTURE, num_classes=N_LABELS, input_shape=input_shape)
+    aux_model = networks.create_model(network=ARCHITECTURE, input_shape=input_shape)
+    aux_model.layers.pop() # remove the last layer of the model
 
-    # Optimizer: Stochastic Gradient Descent
+    weight_decay = 1e-4
 
-    logging.info('Setting optimizer...')
+    x0 = Dense(1, use_bias=False, kernel_regularizer=l2(weight_decay),
+               activation='sigmoid', name='fNuPDG')(aux_model.layers[-1].output)
+    x1 = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+               activation='softmax', name='flavour')(aux_model.layers[-1].output)
+    x2 = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+               activation='softmax', name='interaction')(aux_model.layers[-1].output)
+    x3 = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+               activation='softmax', name='fNProton')(aux_model.layers[-1].output)
+    x4 = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+               activation='softmax', name='fNPion')(aux_model.layers[-1].output)
+    x5 = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+               activation='softmax', name='fNPizero')(aux_model.layers[-1].output)
+    x6 = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+               activation='softmax', name='fNNeutron')(aux_model.layers[-1].output)
+    x = [x0, x1, x2, x3, x4, x5, x6] 
 
-    opt = optimizers.SGD(lr=LEARNING_RATE, momentum=MOMENTUM, decay=DECAY, nesterov=True) # SGD
-    #opt = optimizers.SGD(lr=0.045, momentum=MOMENTUM, decay=DECAY, nesterov=True)         # SGD
-    #opt = optimizers.RMSprop(lr=0.045, rho=0.9, decay=0.94, clipnorm=2.0)                 # RMSprop (rho = Decay factor, decay = Learning rate decay over each update)
-    #opt = optimizers.Adam(lr=1e-3)							   # Adam
+    sequential_model = Model(inputs=aux_model.inputs, outputs=x, name='resnext')
 
-    if PARALLELIZE:
+if PARALLELIZE:
+    # Parallelize the model (use all the available GPUs)
+    try:
+        model = multi_gpu_model(sequential_model, gpus=GPUS, cpu_relocation=True)
+        num_outputs = len(sequential_model.output_names)
+        model.layers[-(num_outputs+1)].set_weights(sequential_model.get_weights()) # set the same weights as the sequential model
+        logging.info('Training using %d GPUs...', GPUS)
+    except:
+        model = sequential_model
+        logging.info('Training using single GPU or CPU...')
+else:
+    model = sequential_model
 
-        # Parallelize the model (use all the available GPUs)
-
-        try:
-
-            model = multi_gpu_model(model, cpu_relocation=True)
-
-            logging.info('Training using multiple GPUs...')
-   
-        except:
-
-            logging.info('Training using single GPU or CPU...')
-
+if not model._is_compiled:
     # Compile model
-
     logging.info('Compiling model...')
 
-    #model.compile(loss=multitask_loss.masked_loss, optimizer=opt, metrics=['accuracy']) 
-    model.compile(loss={'neutrino': multitask_loss.masked_loss_binary, 'flavour': multitask_loss.masked_loss_categorical, 'interaction': multitask_loss.masked_loss_categorical}, 
-                  #loss={'flavour': multitask_loss.masked_loss_categorical, 'interaction': multitask_loss.masked_loss_categorical}, 
-                  #loss_weights={'flavour': 0.5, 'interaction': 0.5},
-                  #loss_weights={'neutrino': 0.25, 'flavour': 1.0, 'interaction': 0.5},
-                  loss_weights={'neutrino': 0.33, 'flavour': 0.33, 'interaction': 0.33},
-                  optimizer=opt, metrics=['accuracy']) 
-    #model.compile(loss=multitask_loss.multitask_loss, optimizer=opt, metrics=['accuracy']) 
+    #model.compile(loss=my_losses.masked_loss, optimizer=opt, metrics=['accuracy']) 
+    model.compile(#loss={'neutrino': my_losses.masked_loss_binary, 'flavour': my_losses.masked_loss_categorical, 'interaction': my_losses.masked_loss_categorical}, 
+                  loss={'fNuPDG':my_losses.masked_loss_binary,
+                        'flavour':my_losses.masked_loss_categorical, 
+                        'interaction':my_losses.masked_loss_categorical,
+                        'fNProton':my_losses.masked_loss_categorical,
+                        'fNPion':my_losses.masked_loss_categorical,
+                        'fNPizero':my_losses.masked_loss_categorical,
+                        'fNNeutron':my_losses.masked_loss_categorical},
+                  #loss_weights={'neutrino':0.25, 'flavour':1.0, 'interaction': 0.5},
+                  #loss_weights={'neutrino':0.33, 'flavour':0.33, 'interaction':0.33},
+                  optimizer=opt, 
+                  metrics=['accuracy']) 
     #model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
 
-# Print model summary
-
 if(PRINT_SUMMARY):
+    # Print model summary
+    if PARALLELIZE:
+        sequential_model.summary()
+
     model.summary()
 
 '''
@@ -348,35 +338,35 @@ logging.info('Configuring checkpointing...')
 filepath = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '.h5'
 
 if VALIDATION_FRACTION > 0:
-
     # Validation accuracy
-
     if CHECKPOINT_SAVE_MANY:
         #filepath = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '-{epoch:02d}-{val_acc:.2f}.h5'
         filepath = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '-{epoch:02d}-{val_flavour_acc:.2f}.h5'
 
     monitor_acc = 'val_flavour_acc'
-    #monitor_acc = 'val_acc'i
-    monitor_loss = 'val_loss'
-
+    #monitor_acc = 'val_acc'
+    monitor_loss = 'val_flavour_loss'
+    #monitor_acc = 'val_loss'
 else:
-
     # Training accuracy
-
     if CHECKPOINT_SAVE_MANY:
         filepath = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '-{epoch:02d}-{acc:.2f}.h5'
 
     monitor_acc = 'acc'
     monitor_loss = 'loss'
 
-checkpoint = ModelCheckpoint(filepath, monitor=monitor_acc, verbose=1, save_best_only=CHECKPOINT_SAVE_BEST_ONLY, mode='max', period=CHECKPOINT_PERIOD)
+if PARALLELIZE:
+    #checkpoint = my_callbacks.MultiGPUCheckpointCallback(filepath, sequential_model, monitor=monitor_acc, verbose=1, save_best_only=CHECKPOINT_SAVE_BEST_ONLY, mode='max', period=CHECKPOINT_PERIOD)
+    checkpoint = my_callbacks.ModelCheckpointDetached(filepath, monitor=monitor_acc, verbose=1, save_best_only=CHECKPOINT_SAVE_BEST_ONLY, save_weights_only=False, mode='max', period=CHECKPOINT_PERIOD)
+else:
+    checkpoint = ModelCheckpoint(filepath, monitor=monitor_acc, verbose=1, save_best_only=CHECKPOINT_SAVE_BEST_ONLY, mode='max', period=CHECKPOINT_PERIOD)
 
 # Learning rate reducer
 
 logging.info('Configuring learning rate reducer...')
 
 #lr_reducer = LearningRateScheduler(schedule=lambda epoch,lr: (lr*0.01 if epoch % 2 == 0 else lr))
-lr_reducer = ReduceLROnPlateau(monitor=monitor_loss, factor=0.1, cooldown=0, patience=10, min_lr=0.5e-6, verbose=1)
+lr_reducer = ReduceLROnPlateau(monitor=monitor_loss, factor=0.1, cooldown=0, patience=2, min_lr=0.5e-6, verbose=1)
 
 # Early stopping
 
@@ -398,9 +388,9 @@ my_callback = my_callbacks.MyCallback()
 
 logging.info('Setting callbacks...')
 
-callbacks_list = [checkpoint, csv_logger]
+#callbacks_list = [checkpoint, csv_logger]
 #callbacks_list = [checkpoint, csv_logger, my_callback]
-#callbacks_list = [lr_reducer, checkpoint, early_stopping, csv_logger]
+callbacks_list = [lr_reducer, checkpoint, early_stopping, csv_logger]
 #callbacks_list = [lr_reducer, checkpoint, early_stopping, csv_logger, my_callback]
 
 
@@ -411,29 +401,20 @@ callbacks_list = [checkpoint, csv_logger]
 '''
 
 if RESUME:
-
     # Resuming training...
-
     try:
-
         # Open previous log file in order to get the last epoch
 
         with open(LOG_PATH + LOG_PREFIX + '.log', 'r') as logfile:
-
             # initial_epoch = last_epoch + 1
-
             initial_epoch = int(re.search(r'\d+', logfile.read().split('\n')[-2]).group()) + 1
 
     except IOError:
-
         # Previous log file does not exist. Set initial epoch to 0    
-    
         initial_epoch = 0
 
     logging.info('RESUMING TRAINING...')
-
 else:
-
     # Starting a new training...
     # initial_epoch must be 0 when starting a training (not resuming it)
 
@@ -442,32 +423,27 @@ else:
     logging.info('STARTING TRAINING...')
 
 if VALIDATION_FRACTION > 0:
-
     # Training with validation
-
-    model.fit_generator(generator = training_generator,
-                        steps_per_epoch = len(partition['train'])//TRAIN_BATCH_SIZE,
-                        #steps_per_epoch = 90000,
-                        validation_data = validation_generator,
-                        validation_steps = len(partition['validation'])//VALIDATION_BATCH_SIZE,
-                        epochs = EPOCHS,
-                        class_weight = class_weights,
-                        callbacks = callbacks_list,
-                        initial_epoch = initial_epoch,
-                        verbose = 1
-                       )
-
+    validation_data = validation_generator
+    validation_steps = len(partition['validation'])//VALIDATION_BATCH_SIZE
 else:
-
     # Training without validation
+    validation_data = None
+    validation_steps = None
 
-    model.fit_generator(generator = training_generator,
-                        steps_per_epoch = len(partition['train'])//TRAIN_BATCH_SIZE,
-                        epochs = EPOCHS,
-                        class_weight = class_weights,
-                        callbacks = callbacks_list,
-                        initial_epoch = initial_epoch,
-                        verbose = 1
-                       )
+# TRAINING
 
+model.fit_generator(generator=training_generator,
+                    steps_per_epoch=len(partition['train'])//TRAIN_BATCH_SIZE,
+                    validation_data=validation_data,
+                    validation_steps=validation_steps,
+                    epochs=EPOCHS,
+                    class_weight=class_weights,
+                    callbacks=callbacks_list,
+                    initial_epoch=initial_epoch,
+                    max_queue_size=MAX_QUEUE_SIZE,
+                    verbose=1,
+                    use_multiprocessing=False,
+                    workers=1
+                   )
 
