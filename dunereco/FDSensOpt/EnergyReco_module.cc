@@ -184,15 +184,24 @@ namespace dune {
     double maxShowerEnergy = 0.0;
     double corrHadEnergy = 0.0;
 
+    erecoout->fRecoVertex.SetX(0.0);
+    erecoout->fRecoVertex.SetY(0.0);
+    erecoout->fRecoVertex.SetZ(0.0);
     erecoout->recoMethodUsed = -1;
     erecoout->longestTrackContained = -1;
     erecoout->trackMomMethod = -1;
+
 
     if (fRecoMethod == 1){//split event into longest reco track and hadronic part
       erecoout->recoMethodUsed = 1;
       //at least one reco track, longest reco track is either contained or is exiting with a defined value of MCS track momentum
       if (fMaxTrackLength >= 0.0 && 
           (fLongestTrackContained || (!fLongestTrackContained && fLongestTrackMCSMom >= 0.0))){
+
+        erecoout->fRecoVertex.SetX(fBestTrack->Start().X());
+	erecoout->fRecoVertex.SetY(fBestTrack->Start().Y());
+	erecoout->fRecoVertex.SetZ(fBestTrack->Start().Z());
+
         if(fLongestTrackContained)
 	  {
 	    erecoout->longestTrackContained = 1;
@@ -238,8 +247,14 @@ namespace dune {
       erecoout->recoMethodUsed = 2;
       //at least one reco shower
       if(fMaxShowerCharge >= 0.0){
+
+	erecoout->fRecoVertex.SetX(fBestShower->ShowerStart().X());
+        erecoout->fRecoVertex.SetY(fBestShower->ShowerStart().Y());
+        erecoout->fRecoVertex.SetZ(fBestShower->ShowerStart().Z());
+
         maxShowerEnergy = ((fCaloAlg.ElectronsFromADCArea(fMaxShowerCharge, 2) * (1.0 / fRecombFactor) / util::kGeVToElectrons) - fIntShwEnergy) / fGradShwEnergy;
         corrHadEnergy = ((fCaloAlg.ElectronsFromADCArea(fTotalEventCharge - fMaxShowerCharge, 2) * (1.0 / fRecombFactor) / util::kGeVToElectrons) - fIntNuEHadEn) / fGradNuEHadEn;
+
         erecoout->fLepLorentzVector.SetPx(maxShowerEnergy*fBestShower->Direction().X());
         erecoout->fLepLorentzVector.SetPy(maxShowerEnergy*fBestShower->Direction().Y());
         erecoout->fLepLorentzVector.SetPz(maxShowerEnergy*fBestShower->Direction().Z());
