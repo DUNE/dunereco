@@ -7,3 +7,5 @@ if( DEFINED ENV{TENSORFLOW_DIR} )
   add_subdirectory(adcutils)
 endif ()
 add_subdirectory(func)
+add_subdirectory(fcl)
+
