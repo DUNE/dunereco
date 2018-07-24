@@ -8,6 +8,7 @@
 #define CVN_TRAININGDATA_H
 
 #include "dune/CVN/func/InteractionType.h"
+#include "dune/CVN/func/AssignLabels.h"
 
 namespace cvn
 {
@@ -33,7 +34,9 @@ namespace cvn
 
     // Set topology information separately to save having a large number of 
     // arguments in the constructor.
-    void SetTopologyInformation(int pdg, int nprot, int npion, int npi0, int nneut);
+    void SetTopologyInformation(int pdg, int nproton, int npion,
+                                int npizero, int nneutron, int toptype,
+                                int toptypealt);
 
     InteractionType  fInt;    ///< Class of the event
     float    fNuEnergy;       ///< True energy of neutrino event
@@ -49,6 +52,8 @@ namespace cvn
     int  fNPion;
     int  fNPizero;
     int  fNNeutron;
+    int  fTopologyType;
+    int  fTopologyTypeAlt;
 
     PixelMap fPMap;           ///< PixelMap for the event
   };

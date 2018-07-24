@@ -164,10 +164,9 @@ namespace cvn {
     AssignLabels labels;
 
     interaction = labels.GetInteractionType(truthN);
-    TopologyType topology = TopologyType::kTopUnset;
     if(fUseTopology){
-      topology = labels.GetTopology(truth,fTopologyHits);
-      labels.PrintTopology(topology);
+      labels.GetTopology(truth,fTopologyHits);
+      labels.PrintTopology();
     }
     float nuEnergy = 0;
     float lepEnergy = 0;
@@ -216,13 +215,15 @@ namespace cvn {
     // Create the training data and add it to the tree
     TrainingData train(interaction, nuEnergy, lepEnergy, recoNueEnergy, recoNumuEnergy, eventWeight, *pixelmaplist[0]);
     // Set the topology information
-    int topPDG = labels.GetPDGFromTopology(topology);
-    int nprot = labels.GetNProtons(topology);
-    int npion = labels.GetNPions(topology);
-    int npi0  = labels.GetNPizeros(topology);
-    int nneut = labels.GetNNeutrons(topology);
+    int topPDG     = labels.GetPDG();
+    int nprot      = labels.GetNProtons();
+    int npion      = labels.GetNPions();
+    int npi0       = labels.GetNPizeros();
+    int nneut      = labels.GetNNeutrons();
+    int toptype    = labels.GetTopologyType();
+    int toptypealt = labels.GetTopologyTypeAlt();
     if(fUseTopology){
-      train.SetTopologyInformation(topPDG, nprot, npion, npi0, nneut);
+      train.SetTopologyInformation(topPDG, nprot, npion, npi0, nneut, toptype, toptypealt);
     }
     fTrain = &train;
     fTrainTree->Fill();

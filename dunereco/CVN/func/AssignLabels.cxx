@@ -14,6 +14,11 @@
 
 namespace cvn
 {
+  /// Default constructor
+  AssignLabels::AssignLabels()
+  : nProton(0), nPion(0), nPizero(0), nNeutron(0),
+    pdgCode(0), tauMode(0)
+  {}
 
   /// Get Interaction_t from pdg, mode and iscc.
   /// Setting pdg and mode to zero triggers cosmic ray
@@ -107,41 +112,45 @@ namespace cvn
 
   // This function uses purely the information from the neutrino generator to
   // find all of the final-state particles that contribute to the event.
-  TopologyType AssignLabels::GetTopology(const art::Ptr<simb::MCTruth> truth, unsigned int nTopologyHits = 0){
-
-    TopologyType top = cvn::kTopUnset;
+  void AssignLabels::GetTopology(const art::Ptr<simb::MCTruth> truth, unsigned int nTopologyHits = 0){
 
     const simb::MCNeutrino &nu = truth->GetNeutrino();
 
-    // Find out the neutrino flavour and CC/NC
-    if(nu.CCNC() == simb::kCC){
-      if(abs(nu.Nu().PdgCode()) == 12){
-        top = static_cast<cvn::TopologyType>(top | kTopNue);
+    // Get neutrino flavour
+    pdgCode = nu.Nu().PdgCode();
+
+    // Get tau topology, if necessary
+    tauMode = kNotNutau;
+    if (abs(pdgCode) == 16) {
+      tauMode = kNutauHad;
+      for (int p = 0; p < truth->NParticles(); ++p) {
+        if (truth->GetParticle(p).StatusCode() != 1) continue;
+        int pdg = abs(truth->GetParticle(p).PdgCode());
+        int parent = truth->GetParticle(p).Mother();
+        while (parent > 0) parent = truth->GetParticle(parent).Mother();
+
+        if (parent == 0) {
+          if (pdg == 11) {
+            tauMode = kNutauE;
+            break;
+          } else if (pdg == 13) {
+            tauMode = kNutauMu;
+            break;
+          }
+        }
       }
-      else if(abs(nu.Nu().PdgCode()) == 14){
-        top = static_cast<cvn::TopologyType>(top | kTopNumu);
-      }
-      else if(abs(nu.Nu().PdgCode()) == 16){
-        top = static_cast<cvn::TopologyType>(top | kTopNutau);
-      }   
-    }
-    else{
-      top = static_cast<cvn::TopologyType>(top | kTopNC);
     }
 
-    if(nu.Nu().PdgCode() < 0){
-      top = static_cast<cvn::TopologyType>(top | kTopIsAntiNeutrino);
-    }
-
-    std::cout << "Topology after neutrino flavour = " << top << " :: " << nu.Nu().PdgCode() << std::endl;
+    std::cout << "Neutrino PDG code is " << pdgCode
+      << ", tau interaction type is " << tauMode << std::endl;
 
     // Now we need to do some final state particle counting.
 //    unsigned int nParticle = truth.NParticles();
 
-    unsigned short nProton = 0;
-    unsigned short nPion = 0; // Charged pions, that is
-    unsigned short nPizero = 0;
-    unsigned short nNeutron = 0;
+    nProton = 0;
+    nPion = 0; // Charged pions, that is
+    nPizero = 0;
+    nNeutron = 0;
 
     // We need an instance of the backtracker to find the number of simulated hits for each track
     art::ServiceHandle<cheat::BackTrackerService> backTrack;
@@ -211,121 +220,91 @@ namespace cvn
     }
 
     // Assign the enums based on the counters
-    switch(nProton){
-      case 0  : top = static_cast<cvn::TopologyType>(top | kTop0proton); break;
-      case 1  : top = static_cast<cvn::TopologyType>(top | kTop1proton); break;
-      case 2  : top = static_cast<cvn::TopologyType>(top | kTop2proton); break;
-      default : top = static_cast<cvn::TopologyType>(top | kTopNproton); break;
-    }
+    // switch(nProton){
+    //   case 0  : top = static_cast<cvn::TopologyType>(top | kTop0proton); break;
+    //   case 1  : top = static_cast<cvn::TopologyType>(top | kTop1proton); break;
+    //   case 2  : top = static_cast<cvn::TopologyType>(top | kTop2proton); break;
+    //   default : top = static_cast<cvn::TopologyType>(top | kTopNproton); break;
+    // }
 
-    switch(nPion){
-      case 0  : top = static_cast<cvn::TopologyType>(top | kTop0pion); break;
-      case 1  : top = static_cast<cvn::TopologyType>(top | kTop1pion); break;
-      case 2  : top = static_cast<cvn::TopologyType>(top | kTop2pion); break;
-      default : top = static_cast<cvn::TopologyType>(top | kTopNpion); break;
-    }
+    // switch(nPion){
+    //   case 0  : top = static_cast<cvn::TopologyType>(top | kTop0pion); break;
+    //   case 1  : top = static_cast<cvn::TopologyType>(top | kTop1pion); break;
+    //   case 2  : top = static_cast<cvn::TopologyType>(top | kTop2pion); break;
+    //   default : top = static_cast<cvn::TopologyType>(top | kTopNpion); break;
+    // }
 
-    switch(nPizero){
-      case 0  : top = static_cast<cvn::TopologyType>(top | kTop0pizero); break;
-      case 1  : top = static_cast<cvn::TopologyType>(top | kTop1pizero); break;
-      case 2  : top = static_cast<cvn::TopologyType>(top | kTop2pizero); break;
-      default : top = static_cast<cvn::TopologyType>(top | kTopNpizero); break;
-    }
+    // switch(nPizero){
+    //   case 0  : top = static_cast<cvn::TopologyType>(top | kTop0pizero); break;
+    //   case 1  : top = static_cast<cvn::TopologyType>(top | kTop1pizero); break;
+    //   case 2  : top = static_cast<cvn::TopologyType>(top | kTop2pizero); break;
+    //   default : top = static_cast<cvn::TopologyType>(top | kTopNpizero); break;
+    // }
 
-    switch(nNeutron){
-      case 0  : top = static_cast<cvn::TopologyType>(top | kTop0neutron); break;
-      case 1  : top = static_cast<cvn::TopologyType>(top | kTop1neutron); break;
-      case 2  : top = static_cast<cvn::TopologyType>(top | kTop2neutron); break;
-      default : top = static_cast<cvn::TopologyType>(top | kTopNneutron); break;
-    }
+    // switch(nNeutron){
+    //   case 0  : top = static_cast<cvn::TopologyType>(top | kTop0neutron); break;
+    //   case 1  : top = static_cast<cvn::TopologyType>(top | kTop1neutron); break;
+    //   case 2  : top = static_cast<cvn::TopologyType>(top | kTop2neutron); break;
+    //   default : top = static_cast<cvn::TopologyType>(top | kTopNneutron); break;
+    // }
 
-    std::cout << "Final topology : " << top << " with particle counts " << nProton << ", " << nPion << ", " << nPizero << ", " << nNeutron << std::endl;
+    std::cout << "Particle counts: " << nProton << ", " << nPion << ", " << nPizero << ", " << nNeutron << std::endl;
 
-    return top;
+    // return top;
 
   }
 
-  void AssignLabels::PrintTopology(TopologyType &top){
-    unsigned short nu = GetPDGFromTopology(top);
+  void AssignLabels::PrintTopology(){
+
     std::cout << "== Topology Information ==" << std::endl;
-    std::cout << " - Raw Topology = " << top << std::endl;
 
-    std::cout << " - Neutrino flavour (1 = NC) = " << nu << std::endl;
+    std::cout << " - Neutrino PDG code = " << pdgCode << std::endl;
 
-    unsigned short nProton = GetNProtons(top);
     std::cout << " - Number of protons (3 means >2) = " << nProton << std::endl;
 
-    unsigned short nPion = GetNPions(top);
     std::cout << " - Number of charged pions (3 means >2) = " << nPion << std::endl;
 
-    unsigned short nPizero = GetNPizeros(top);
     std::cout << " - Number of pizeros (3 means >2) = " << nPizero << std::endl;
 
-    unsigned short nNeutron = GetNNeutrons(top);
     std::cout << " - Number of neutrons (3 means >2) = " << nNeutron << std::endl;
 
+    std::cout << " - Topology type is " << GetTopologyType() << std::endl;
+
+    std::cout << " - Alternate topology type is " << GetTopologyTypeAlt() << std::endl;
+
   }
 
-  unsigned short AssignLabels::GetNProtons(TopologyType top){
+  bool AssignLabels::IsAntineutrino() {
 
-    unsigned short nProton = 0;
+    if (pdgCode < 0) return true;
+    else return false;
 
-    if(top & cvn::kTop0proton) nProton = 0;
-    if(top & cvn::kTop1proton) nProton = 1;
-    if(top & cvn::kTop2proton) nProton = 2;
-    if(top & cvn::kTopNproton) nProton = 3;
-
-    return nProton;
   }
 
-  unsigned short AssignLabels::GetNPions(TopologyType top){
+  unsigned short AssignLabels::GetTopologyType() {
 
-    unsigned short nPion = 0;
-
-    if(top & cvn::kTop0pion) nPion = 0;
-    if(top & cvn::kTop1pion) nPion = 1;
-    if(top & cvn::kTop2pion) nPion = 2;
-    if(top & cvn::kTopNpion) nPion = 3;
-
-    return nPion;
+    if (abs(pdgCode) == 12) return kTopNue;
+    if (abs(pdgCode) == 14) return kTopNumu;
+    if (abs(pdgCode) == 16) {
+      if (tauMode == kNutauE)   return kTopNutauE;
+      if (tauMode == kNutauMu)  return kTopNutauMu;
+      if (tauMode == kNutauHad) return kTopNutauHad;
+    }
+    if (pdgCode == 0) return kTopNC;
+    throw std::runtime_error("Topology type not recognised!");
   }
 
-  unsigned short AssignLabels::GetNPizeros(TopologyType top){
+  unsigned short AssignLabels::GetTopologyTypeAlt() {
 
-    unsigned short nPizero = 0;
-
-    if(top & cvn::kTop0pizero) nPizero = 0;
-    if(top & cvn::kTop1pizero) nPizero = 1;
-    if(top & cvn::kTop2pizero) nPizero = 2;
-    if(top & cvn::kTopNpizero) nPizero = 3;
-
-    return nPizero;
-  }
-  
-  unsigned short AssignLabels::GetNNeutrons(TopologyType top){
-
-    unsigned short nNeutron = 0;
-
-    if(top & cvn::kTop0neutron) nNeutron = 0;
-    if(top & cvn::kTop1neutron) nNeutron = 1;
-    if(top & cvn::kTop2neutron) nNeutron = 2;
-    if(top & cvn::kTopNneutron) nNeutron = 3;
-
-    return nNeutron;
-  }
-
-  short AssignLabels::GetPDGFromTopology(TopologyType top){
-
-    short nu = 0;
-
-    if(top & cvn::kTopNue)   nu = 12;
-    if(top & cvn::kTopNumu)  nu = 14;
-    if(top & cvn::kTopNutau) nu = 16;
-    if(top & cvn::kTopNC) nu = 1;
-
-    if(top & cvn::kTopIsAntiNeutrino) nu = nu * -1;
-
-    return nu;
+    if (abs(pdgCode) == 12) return kTopNueLike;
+    if (abs(pdgCode) == 14) return kTopNumuLike;
+    if (abs(pdgCode) == 16) {
+      if (tauMode == kNutauE)   return kTopNueLike;
+      if (tauMode == kNutauMu)  return kTopNumuLike;
+      if (tauMode == kNutauHad) return kTopNutauLike;
+    }
+    if (pdgCode == 0) return kTopNCLike;
+    throw std::runtime_error("Topology type not recognised!");
   }
 
 }

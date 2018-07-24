@@ -21,7 +21,7 @@ namespace cvn
 
     public:
 
-    AssignLabels(){};
+    AssignLabels();
     ~AssignLabels(){};
 
     InteractionType GetInteractionType(simb::MCNeutrino& truth);
@@ -29,17 +29,28 @@ namespace cvn
                                                 int nuMode );
 
     // Use the topology information
-    TopologyType GetTopology(const art::Ptr<simb::MCTruth> truth, unsigned int nTopologyHits);
-    void PrintTopology(TopologyType &top);
-    unsigned short GetNProtons(TopologyType top);
-    unsigned short GetNPions(TopologyType top);
-    unsigned short GetNPizeros(TopologyType top);
-    unsigned short GetNNeutrons(TopologyType top);
-    short GetPDGFromTopology(TopologyType top);
+    void GetTopology(const art::Ptr<simb::MCTruth> truth, unsigned int nTopologyHits);
+    void PrintTopology();
+    unsigned short GetNProtons()  { return nProton;  };
+    unsigned short GetNPions()    { return nPion;    };
+    unsigned short GetNPizeros()  { return nPizero;  };
+    unsigned short GetNNeutrons() { return nNeutron; };
+    unsigned short GetPDG()       { return pdgCode;  };
+    unsigned short TauMode()      { return tauMode;  };
+    bool IsAntineutrino();
+    unsigned short GetTopologyType();
+    unsigned short GetTopologyTypeAlt();
     
     private:
 
     unsigned int fTopologyHitsCut;
+
+    unsigned short nProton;
+    unsigned short nPion;
+    unsigned short nPizero;
+    unsigned short nNeutron;
+    unsigned short pdgCode;
+    unsigned short tauMode;
   
   };
 }

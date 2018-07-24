@@ -29,6 +29,8 @@ namespace cvn
   fNPion(-1),
   fNPizero(-1),
   fNNeutron(-1),
+  fTopologyType(-1),
+  fTopologyTypeAlt(-1),
   fPMap(pMap)
   {  }
 
@@ -41,15 +43,20 @@ namespace cvn
     output[fInt] = 1;
   }
 
-  void TrainingData::SetTopologyInformation(int pdg, int nprot, int npion, int npi0, int nneut){
+  void TrainingData::SetTopologyInformation(int pdg, int nproton,
+    int npion, int npizero, int nneutron, int toptype,
+    int toptypealt){
 
     fUseTopology = true;
 
     fNuPDG = pdg;
-    fNProton = nprot;
+    fNProton = nproton;
     fNPion = npion;
-    fNPizero = npi0;
-    fNNeutron = nneut;
+    fNPizero = npizero;
+    fNNeutron = nneutron;
+
+    fTopologyType = toptype;
+    fTopologyTypeAlt = toptypealt;
 
   }
 
