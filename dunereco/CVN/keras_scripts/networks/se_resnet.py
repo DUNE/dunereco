@@ -392,15 +392,8 @@ def _create_se_resnet(classes, img_input, include_top, initial_conv_filters, fil
 
     if include_top:
         x = GlobalAveragePooling2D()(x)
-        x0 = Dense(1, use_bias=False, kernel_regularizer=l2(weight_decay),
+        x = Dense(classes, use_bias=False, kernel_regularizer=l2(weight_decay),
                   activation='sigmoid', name='neutrino')(x)
-        x1 = Dense(classes//2, use_bias=False, kernel_regularizer=l2(weight_decay),
-                  activation='softmax', name='flavour')(x)
-        x2 = Dense(classes//2, use_bias=False, kernel_regularizer=l2(weight_decay),
-                  activation='softmax', name='interaction')(x)
-    
-        x = [x0, x1, x2]    
-        #x = concatenate([x0, x1, x2])
     else:
         if pooling == 'avg':
             x = GlobalAveragePooling2D()(x)

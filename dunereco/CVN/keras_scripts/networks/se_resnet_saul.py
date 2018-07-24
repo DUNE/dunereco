@@ -124,10 +124,11 @@ def SEResNet(input_shape=None,
                                       require_flatten=False)
 
     if input_tensor is None:
-        #img_input = Input(shape=input_shape)
-        img_input1 = Input(shape=input_shape)
-        img_input2 = Input(shape=input_shape)
-        img_input3 = Input(shape=input_shape)
+
+        img_input1 = Input(shape=input_shape, name='view0')
+        img_input2 = Input(shape=input_shape, name='view1')
+        img_input3 = Input(shape=input_shape, name='view2')
+
         img_input  = [img_input1, img_input2, img_input3]
 
     x = _create_se_resnet(classes, img_input, include_top, initial_conv_filters,
@@ -412,19 +413,8 @@ def _create_se_resnet(classes, img_input, include_top, initial_conv_filters, fil
 
     if include_top:
         x = GlobalAveragePooling2D()(x)
-
-        x0 = Dense(1, use_bias=False, kernel_regularizer=l2(weight_decay),
-                  activation='sigmoid', name='neutrino')(x)
-
-        x1 = Dense(classes//2, use_bias=False, kernel_regularizer=l2(weight_decay),
-                  activation='softmax', name='flavour')(x)
-
-        x2 = Dense(classes//2, use_bias=False, kernel_regularizer=l2(weight_decay),
-                  activation='softmax', name='interaction')(x)
-    
-        #x = [x1, x2]
-        x = [x0, x1, x2]    
-        #x = concatenate([x0, x1, x2])
+        x = Dense(classes, use_bias=False, kernel_regularizer=l2(weight_decay),
+                  activation='sigmoid', name='output')(x)
     else:
         if pooling == 'avg':
             x = GlobalAveragePooling2D()(x)
