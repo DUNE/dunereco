@@ -117,7 +117,12 @@ namespace cvn
     const simb::MCNeutrino &nu = truth->GetNeutrino();
 
     // Get neutrino flavour
-    pdgCode = nu.Nu().PdgCode();
+    if(nu.CCNC() == simb::kCC){
+      pdgCode = nu.Nu().PdgCode();
+    }
+    else{
+      pdgCode = 1;
+    }
 
     // Get tau topology, if necessary
     tauMode = kNotNutau;
@@ -290,7 +295,7 @@ namespace cvn
       if (tauMode == kNutauMu)  return kTopNutauMu;
       if (tauMode == kNutauHad) return kTopNutauHad;
     }
-    if (pdgCode == 0) return kTopNC;
+    if (pdgCode == 1) return kTopNC;
     throw std::runtime_error("Topology type not recognised!");
   }
 
@@ -303,7 +308,7 @@ namespace cvn
       if (tauMode == kNutauMu)  return kTopNumuLike;
       if (tauMode == kNutauHad) return kTopNutauLike;
     }
-    if (pdgCode == 0) return kTopNCLike;
+    if (pdgCode == 1) return kTopNCLike;
     throw std::runtime_error("Topology type not recognised!");
   }
 
