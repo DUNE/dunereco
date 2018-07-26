@@ -141,9 +141,8 @@ namespace cvn {
     if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmapListHandle))
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
 
-    unsigned short nhits =  pixelmaplist.size();
-    // If we have no hits then return
-    if(nhits < 1) return;
+    // If we have no pixel map then return
+    if(pixelmaplist.size() == 0) return;
 
     InteractionType interaction = kOther;
 
@@ -166,7 +165,7 @@ namespace cvn {
     interaction = labels.GetInteractionType(truthN);
     if(fUseTopology){
       labels.GetTopology(truth,fTopologyHits);
-      labels.PrintTopology();
+//      labels.PrintTopology();
     }
     float nuEnergy = 0;
     float lepEnergy = 0;

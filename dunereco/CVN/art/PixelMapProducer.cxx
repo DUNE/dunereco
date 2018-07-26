@@ -60,6 +60,7 @@ namespace cvn
 
     for(size_t iHit = 0; iHit < cluster.size(); ++iHit)
     {
+
       geo::WireID wireid = cluster[iHit]->WireID();
       double temptdc                   = cluster[iHit]->PeakTime();
       unsigned int tempWire                  = wireid.Wire;
@@ -83,15 +84,7 @@ namespace cvn
       const double tdc = temptdc;
       pm.Add(wire, tdc, wirePlane, pe);
 
-//      if(wireid.TPC % 4 == 1 || wireid.TPC % 4 == 3){
-//        hasLeftTPC = true;
-//      }
-//      else{
-//        hasRightTPC = true;
-//      }
     }
-
-//    if(hasLeftTPC && hasRightTPC) std::cout << "EVENT SPANS BOTH SIDES OF THE APA" << std::endl;
 
     return pm;
 
@@ -288,12 +281,6 @@ namespace cvn
         if(plane == 0) globalPlane = 1;
         else globalPlane = 0;
       }
-
-      // Need to apply an offset for the upper TPCs
-//      if(tpcMod4 > 1){ 
-//        offset = (globalPlane == 0) ? 48 : 752;     // top-bottom offsets
-//        offset = -1*dir*48;
-//      }
     }
 
     if(globalPlane != 1){

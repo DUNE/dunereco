@@ -303,11 +303,11 @@ void cvn::CVNImageUtils::GetMinMaxWires(std::vector<float> &wireCharges, unsigne
   for(unsigned int wire = 0; wire < wireCharges.size(); ++wire){
 
     // If we have got to fNWires from the end, the start needs to be this wire
-    if(wireCharges.size() - wire == fNWires){
-      minWire = wire;
-      maxWire = wire + fNWires - 1;
-      return;
-    }
+//    if(wireCharges.size() - wire == fNWires){
+//      minWire = wire;
+//      maxWire = wire + fNWires - 1;
+//      return;
+//    }
 
     // For a given plane, look to see if the next 20 planes are empty. If not, this can be out start plane.
     int nEmpty = 0;
@@ -320,6 +320,25 @@ void cvn::CVNImageUtils::GetMinMaxWires(std::vector<float> &wireCharges, unsigne
       return;
     }
   }
+
+  // If we don't find a region where we have fewer than 5 empty planes then we just want to select the 500 wires containing
+  // the most charge
+  float maxCharge = 0.;
+  unsigned int firstWire = 0;
+  for(unsigned int wire = 0; wire < wireCharges.size() - fNWires; ++wire){
+    float windowCharge = 0.;
+    for(unsigned int nextwire = wire; nextwire < wire + fNWires; ++nextwire){
+      windowCharge += wireCharges[nextwire];
+    } 
+    if(windowCharge > maxCharge){
+      maxCharge = windowCharge;
+      firstWire = wire;
+    }
+  } 
+  minWire = firstWire;
+  maxWire = firstWire + fNWires - 1;
+
+  std::cout << "Used alternate method to get min and max wires due to vertex determination failure: " << minWire << ", " << maxWire << std::endl;
 
 }
 

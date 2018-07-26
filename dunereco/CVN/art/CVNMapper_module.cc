@@ -140,7 +140,6 @@ namespace cvn {
       pmCol(new std::vector<cvn::PixelMap>);
 
     if(nhits>fMinClusterHits){
-      //std::cout<<"nhits: "<<nhits<<std::endl;
       PixelMap pm = fProducer.CreateMap(hitlist);
       pmCol->push_back(pm);
     }

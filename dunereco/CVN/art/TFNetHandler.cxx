@@ -50,34 +50,10 @@ namespace cvn
     imageUtils.SetImageSize(fImageWires,fImageTDCs,3);
     imageUtils.SetLogScale(fUseLogChargeScale);
 
-//    std::cout << "Log Scale? " << fUseLogChargeScale << std::endl;
-//    std::cout << "Reverse views? [" << fReverseViews[0] << "," << fReverseViews[1] << "," << fReverseViews[2] << "]" << std::endl;
-//    std::cout << "Image size = (" << fImageWires << ", " << fImageTDCs << ")" << std::endl;
-
     ImageVectorF thisImage;
     imageUtils.ConvertPixelMapToImageVectorF(pm,thisImage);
     std::vector<ImageVectorF> vecForTF;
 
-/*
-    // Does this image look sensible?
-    TCanvas *can = new TCanvas("can","",0,0,800,600);
-    TH2D* hView0 = new TH2D("hView0","",500,0,500,500,0,500);
-    TH2D* hView1 = new TH2D("hView1","",500,0,500,500,0,500);
-    TH2D* hView2 = new TH2D("hView2","",500,0,500,500,0,500);
-    for(unsigned int w = 0; w < 500; ++w){
-      for(unsigned int t = 0; t < 500; ++t){
-        hView0->SetBinContent(w+1,t+1,thisImage[w][t][0]);
-        hView1->SetBinContent(w+1,t+1,thisImage[w][t][1]);
-        hView2->SetBinContent(w+1,t+1,thisImage[w][t][2]);
-      }
-    }
-    hView0->Draw("colz");
-    can->Print("view0.png");
-    hView1->Draw("colz");
-    can->Print("view1.png");
-    hView2->Draw("colz");
-    can->Print("view2.png");
-*/
     vecForTF.push_back(thisImage);
 
     auto cvnResults = fTFGraph->run(vecForTF);
@@ -86,6 +62,15 @@ namespace cvn
 
     std::cout << "Classifier summary: ";
     for(auto const v : cvnResults[0]){
+      std::cout << v << ", ";
+    }
+    std::cout << std::endl;
+
+    // Leigh - test the new framework for easier access to multiple output architectures
+    std::vector<std::vector<std::vector<float>>> newCVNResult = fTFGraph->runMultiOutput(vecForTF);
+    std::vector<float> newResult = newCVNResult[0][0];
+    std::cout << "New method classifier summary: ";
+    for(auto const v : newResult){
       std::cout << v << ", ";
     }
     std::cout << std::endl;

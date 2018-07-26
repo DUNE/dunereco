@@ -146,8 +146,8 @@ namespace cvn
       }
     }
 
-    std::cout << "Neutrino PDG code is " << pdgCode
-      << ", tau interaction type is " << tauMode << std::endl;
+//    std::cout << "Neutrino PDG code is " << pdgCode
+//      << ", tau interaction type is " << tauMode << std::endl;
 
     // Now we need to do some final state particle counting.
 //    unsigned int nParticle = truth.NParticles();
@@ -194,7 +194,7 @@ namespace cvn
       unsigned int nSimIDE = backTrack->TrackIdToSimIDEs_Ps(part.TrackId()).size();
 
       // Check if we have more than 100 MeV of kinetic energy
-      float ke = part.E() - part.Mass();
+      // float ke = part.E() - part.Mass();
       //    if( ke < 0.0){
       //      continue;
       //    }
@@ -212,7 +212,7 @@ namespace cvn
         continue;
       }
 
-      std::cout << "Final state particle " << pdg << " with ke " << ke << " GeV, " << nSimIDE << " true hits and " << part.NumberDaughters() << " daughters" << std::endl;
+//      std::cout << "Final state particle " << pdg << " with ke " << ke << " GeV, " << nSimIDE << " true hits and " << part.NumberDaughters() << " daughters" << std::endl;
 
       switch(abs(pdg)){
         case 111 : ++nPizero;  break;
