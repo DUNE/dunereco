@@ -303,11 +303,12 @@ void cvn::CVNImageUtils::GetMinMaxWires(std::vector<float> &wireCharges, unsigne
   for(unsigned int wire = 0; wire < wireCharges.size(); ++wire){
 
     // If we have got to fNWires from the end, the start needs to be this wire
-//    if(wireCharges.size() - wire == fNWires){
+    if(wireCharges.size() - wire == fNWires){
 //      minWire = wire;
 //      maxWire = wire + fNWires - 1;
-//      return;
-//    }
+      break;
+      //return;
+    }
 
     // For a given plane, look to see if the next 20 planes are empty. If not, this can be out start plane.
     int nEmpty = 0;
