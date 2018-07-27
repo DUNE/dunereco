@@ -1402,7 +1402,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
             pitch = 0;
           }
         }
-        if (pitch*numhits){
+        if ( pitch && numhits ) {
           trkg4initdedx[i] = sum_energy/(numhits*pitch);
         }
         else{
