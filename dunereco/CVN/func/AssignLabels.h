@@ -49,7 +49,7 @@ namespace cvn
     unsigned short nPion;
     unsigned short nPizero;
     unsigned short nNeutron;
-    unsigned short pdgCode;
+    short pdgCode;
     unsigned short tauMode;
   
   };
