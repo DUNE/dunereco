@@ -541,7 +541,7 @@ void dunefd::NueAna::analyze(art::Event const & evt)
 	    pitch = 0;
 	  }
 	}
-	if (pitch*numhits){
+	if ( pitch && numhits ) {
 	  trkg4initdedx[i] = sum_energy/(numhits*pitch);
 	}
 	else{
