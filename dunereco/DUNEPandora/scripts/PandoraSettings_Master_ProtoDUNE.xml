@@ -42,13 +42,6 @@
         <VisualizeOverallRecoStatus>false</VisualizeOverallRecoStatus>
     </algorithm>
 
-    <algorithm type = "LArTestBeamParticleCreation">
-        <PfoListName>RecreatedPfos</PfoListName>
-        <VertexListName>RecreatedVertices</VertexListName>
-        <KeepStartVertex>false</KeepStartVertex>
-        <KeepInteractionVertex>true</KeepInteractionVertex>
-    </algorithm>
-
     <algorithm type = "LArVisualMonitoring">
         <ShowCurrentPfos>true</ShowCurrentPfos>
         <ShowDetector>true</ShowDetector>
