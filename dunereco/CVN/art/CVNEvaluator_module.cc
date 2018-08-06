@@ -176,14 +176,53 @@ namespace cvn {
       // If we have a pixel map then use the TF interface to give us a prediction
       if(pixelmaplist.size() > 0){
         
-        std::vector<float> networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
+        std::vector< std::vector<float> > networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
         // cvn::Result can now take a vector of floats and works out the number of outputs
         resultCol->emplace_back(networkOutput);
+
+        /*
+        for(auto const& resaux: (*resultCol))
+        {
+            std::cout << "Is antineutrino: " << resaux.GetIsAntineutrinoProbability() << std::endl;
+            std::cout << "CC Numu: " << resaux.GetNumuProbability() << std::endl;
+            std::cout << "CC Nue: " << resaux.GetNueProbability() << std::endl;
+            std::cout << "CC Nutau: " << resaux.GetNutauProbability() << std::endl;
+            std::cout << "NC: " << resaux.GetNCProbability() << std::endl;
+            std::cout << "CC QE: " << resaux.GetQEProbability() << std::endl;
+            std::cout << "CC Res: " << resaux.GetResProbability() << std::endl;
+            std::cout << "CC DIS: " << resaux.GetDISProbability() << std::endl;
+            std::cout << "CC Other: " << resaux.GetOtherProbability() << std::endl;
+            std::cout << "0 Protons: " << resaux.Get0protonsProbability() << std::endl;
+            std::cout << "1 Protons: " << resaux.Get1protonsProbability() << std::endl;
+            std::cout << "2 Protons: " << resaux.Get2protonsProbability() << std::endl;
+            std::cout << ">2 Protons: " << resaux.GetNprotonsProbability() << std::endl;
+            std::cout << "0 Pions: " << resaux.Get0pionsProbability() << std::endl;
+            std::cout << "1 Pions: " << resaux.Get1pionsProbability() << std::endl;
+            std::cout << "2 Pions: " << resaux.Get2pionsProbability() << std::endl;
+            std::cout << ">3 Pions: " << resaux.GetNpionsProbability() << std::endl;
+            std::cout << "0 Pizeros: " << resaux.Get0pizerosProbability() << std::endl;
+            std::cout << "1 Pizeros: " << resaux.Get1pizerosProbability() << std::endl;
+            std::cout << "2 Pizeros: " << resaux.Get2pizerosProbability() << std::endl;
+            std::cout << ">2 Pizeros: " << resaux.GetNpizerosProbability() << std::endl;
+            std::cout << "0 Neutrons: " << resaux.Get0neutronsProbability() << std::endl;
+            std::cout << "1 Neutrons: " << resaux.Get1neutronsProbability() << std::endl;
+            std::cout << "2 Neutrons: " << resaux.Get2neutronsProbability() << std::endl;
+            std::cout << ">2 Neutrons: " << resaux.GetNneutronsProbability() << std::endl << std::endl;
+
+            std::cout << "Is antineutrino: " << resaux.PredictedIsAntineutrino() << std::endl;  
+            std::cout << "Predicted flavour: " << resaux.PredictedFlavour() << std::endl; 
+            std::cout << "Predicted interaction: " << resaux.PredictedInteraction() << std::endl; 
+            std::cout << "Predicted protons: " << resaux.PredictedProtons() << std::endl; 
+            std::cout << "Predicted pions: " << resaux.PredictedPions() << std::endl; 
+            std::cout << "Predicted pizeros: " << resaux.PredictedPizeros() << std::endl; 
+            std::cout << "Predicted neutrons: " << resaux.PredictedNeutrons() << std::endl; 
+        }
+        */
 
         // Classify other pixel maps if they exist
         if(fMultiplePMs){
           for(unsigned int p = 1; p < pixelmaplist.size(); ++p){
-            std::vector<float> output = fTFHandler.Predict(*pixelmaplist[p]);
+            std::vector< std::vector<float> > output = fTFHandler.Predict(*pixelmaplist[p]);
             resultCol->emplace_back(output);
           }
         }

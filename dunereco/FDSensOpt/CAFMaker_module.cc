@@ -660,14 +660,18 @@ namespace dunemva {
 
     if(!cvnin.failedToGet()){
       using i = cvn::Interaction;
-      if(cvnin->empty() || (*cvnin)[0].fOutput.size() <= i::kNutauOther){
+      //if(cvnin->empty() || (*cvnin)[0].fOutput[0].size() <= i::kNutauOther){
+      if(cvnin->empty()){
         fCVNResultNue = fCVNResultNumu = fCVNResultNutau = -3;
       }
       else{
-        const std::vector<float>& v = (*cvnin)[0].fOutput;
-        fCVNResultNue = v[i::kNueQE] + v[i::kNueRes] + v[i::kNueDIS] + v[i::kNueOther];
-        fCVNResultNumu = v[i::kNumuQE] + v[i::kNumuRes] + v[i::kNumuDIS] + v[i::kNumuOther];
-        fCVNResultNutau = v[i::kNutauQE] + v[i::kNutauRes] + v[i::kNutauDIS] + v[i::kNutauOther];
+        //const std::vector<float>& v = (*cvnin)[0].fOutput;
+        //fCVNResultNue = v[i::kNueQE] + v[i::kNueRes] + v[i::kNueDIS] + v[i::kNueOther];
+        //fCVNResultNumu = v[i::kNumuQE] + v[i::kNumuRes] + v[i::kNumuDIS] + v[i::kNumuOther];
+        //fCVNResultNutau = v[i::kNutauQE] + v[i::kNutauRes] + v[i::kNutauDIS] + v[i::kNutauOther];
+        fCVNResultNue = (*cvnin)[0].GetNueProbability();
+        fCVNResultNumu = (*cvnin)[0].GetNumuProbability(); 
+        fCVNResultNutau = (*cvnin)[0].GetNutauProbability();
       }
     }
 

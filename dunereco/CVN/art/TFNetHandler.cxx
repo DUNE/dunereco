@@ -33,14 +33,14 @@ namespace cvn
     // Construct the TF Graph object. The empty vector {} is used since the protobuf
     // file gives the names of the output layer nodes
     mf::LogInfo("TFNetHandler") << "Loading network: " << fTFProtoBuf << std::endl;
-    fTFGraph = tf::Graph::create(fTFProtoBuf.c_str(),{});
+    fTFGraph = tf::Graph::create(fTFProtoBuf.c_str(),{},pset.get<int>("NInputs"),pset.get<int>("NOutputs"));
     if(!fTFGraph){
       art::Exception(art::errors::Unknown) << "Tensorflow model not found or incorrect";
     }
 
   }
   
-  std::vector<float> TFNetHandler::Predict(const PixelMap& pm)
+  std::vector< std::vector<float> > TFNetHandler::Predict(const PixelMap& pm)
   {
    
     CVNImageUtils imageUtils;
@@ -56,13 +56,19 @@ namespace cvn
 
     vecForTF.push_back(thisImage);
 
-    auto cvnResults = fTFGraph->run(vecForTF);
+    std::vector< std::vector< std::vector< float > > > cvnResults = fTFGraph->run(vecForTF); // shape(samples, #outputs, output_size)
 
 //    std::cout << "Number of CVN result vectors " << cvnResults.size() << " with " << cvnResults[0].size() << " categories" << std::endl;
 
     std::cout << "Classifier summary: ";
-    for(auto const v : cvnResults[0]){
-      std::cout << v << ", ";
+    std::cout << std::endl;
+    int output_index = 0;
+    for(auto const & output : cvnResults[0])
+    {
+      std::cout << "Output " << output_index++ << ": ";
+      for(auto const v : output)
+          std::cout << v << ", ";
+      std::cout << std::endl;
     }
     std::cout << std::endl;
 
@@ -77,7 +83,8 @@ namespace cvn
 
     return cvnResults[0];
   }
- 
+
+  /* 
   // The standard output has 13 elements, this function sums the convenient ones 
   std::vector<float> TFNetHandler::PredictFlavour(const PixelMap& pm){
 
@@ -101,6 +108,7 @@ namespace cvn
 
     return flavourResults;
   }
+  */
 
 }
 

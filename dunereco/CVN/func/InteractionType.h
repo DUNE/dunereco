@@ -51,7 +51,26 @@ namespace cvn
     kTFNC                ///< NC interaction
   } TFResultType;
 
-  // Enumeration to describe the flavour-reduced TF network output
+  // Enumeration to describe the different outputs of the TF multioutput network
+  typedef enum TFMultioutputs
+  {
+    is_antineutrino,
+    flavour,
+    interaction,
+    protons,
+    pions,
+    pizeros,
+    neutrons
+  } TFMultioutputsType;
+
+  // Enumeration to describe the is_antineutrino-reduced TF multioutput network
+  typedef enum TFIsAntineutrino
+  {
+    kNeutrino,
+    kAntineutrino
+  } TFIsAntineutrinoType; 
+
+  // Enumeration to describe the flavour-reduced TF multioutput network
   typedef enum TFFlavour
   {
     kFlavNumuCC,
@@ -59,6 +78,51 @@ namespace cvn
     kFlavNutauCC,
     kFlavNC
   } TFFlavourType; 
+
+  // Enumeration to describe the interaction-reduced TF multioutput network
+  typedef enum TFInteraction
+  {
+    kInteQECC,
+    kInteResCC,
+    kInteDISCC,
+    kInteOtherCC
+  } TFInteractionType; 
+
+  // Enumeration to describe the protons (topology information) TF multioutput network
+  typedef enum TFTopologyProtons
+  {
+    kTop0proton,
+    kTop1proton,
+    kTop2proton,
+    kTopNproton
+  } TFTopologyProtonsType; 
+
+  // Enumeration to describe the pions (topology information) TF multioutput network
+  typedef enum TFTopologyPions
+  {
+    kTop0pion,
+    kTop1pion,
+    kTop2pion,
+    kTopNpion
+  } TFTopologyPionsType; 
+
+  // Enumeration to describe the pizeros (topology information) TF multioutput network
+  typedef enum TFTopologyPizeros
+  {
+    kTop0pizero,
+    kTop1pizero,
+    kTop2pizero,
+    kTopNpizero
+  } TFTopologyPizerosType; 
+
+  // Enumeration to describe the neutrons (topology information) TF multioutput network
+  typedef enum TFTopologyNeutrons
+  {
+    kTop0neutron,
+    kTop1neutron,
+    kTop2neutron,
+    kTopNneutron
+  } TFTopologyNeutronsType; 
 
   // // It might be a good idea to consider topology information. 
   // // We should use base two here so we can & and | results.

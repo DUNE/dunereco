@@ -211,6 +211,7 @@ simple_plugin(CAFMaker   "module"
 			${GREWEIGHT}
 			${GNUCLEONDECAY}
 			${GMESSENGER}
+                        CVNFunc
               BASENAME_ONLY
 )
 

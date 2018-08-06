@@ -24,6 +24,8 @@ standard_tfnethandler:
   NImageWires: 500
   NImageTDCs  : 500
   ReverseViews: [false,true,false]
+  NInputs: 3
+  NOutputs: 7
 }
 
 standard_cvnevaluator:
