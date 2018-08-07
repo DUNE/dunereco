@@ -121,9 +121,9 @@ dunefdmc_trajclusteralg.ShowerTag: [ -2, 100, 10, 50, 2.5, 0, 15, 3, 10, 0.7, 0.
 dunefdmc_trajclusteralg.CaloAlg:     @local::dune10kt_calorimetryalgmc
 dunefdmc_trajcluster:                @local::standard_trajcluster
 dunefdmc_trajcluster.TrajClusterAlg: @local::dunefdmc_trajclusteralg
+dunefdmc_trajcluster.HitModuleLabel: "hitfd"
 
 protodunespmc_trajclusteralg:       @local::standard_trajclusteralg
-protodunespmc_trajclusteralg.HitFinderModuleLabel:  "hitpdune"
 protodunespmc_trajclusteralg.Mode:          1 # Mode 4: only reconstruct in DebugTPC and DebugPlane
 protodunespmc_trajclusteralg.HitErrFac:   0.5
 protodunespmc_trajclusteralg.MakeNewHits:   true
@@ -172,5 +172,5 @@ protodunespmc_trajclusteralg.ShowerTag: [ 1, 100, 10, 50, 2.5, 1, 15, 3, 5, 1, 1
 # 12 Print 2D showers in plane (0,1,2) or all planes (3) or just 3D matching (4)
 protodunespmc_trajcluster:                @local::standard_trajcluster
 protodunespmc_trajcluster.TrajClusterAlg: @local::protodunespmc_trajclusteralg
-
+protodunespmc_trajcluster.HitModuleLabel: "hitpdune"
 END_PROLOG
