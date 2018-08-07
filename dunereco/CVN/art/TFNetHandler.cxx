@@ -3,6 +3,7 @@
 /// \brief   TFNetHandler for CVN
 /// \author  Alexander Radovic - a.radovic@gmail.com
 ///          Leigh Whitehead   - leigh.howard.whitehead@cern.ch
+///          Saul Alonso Monsalve - saul.alonso.monsalve@cern.ch
 ////////////////////////////////////////////////////////////////////////
 
 #include  <iostream>
@@ -40,6 +41,22 @@ namespace cvn
 
   }
   
+  bool check(std::vector< std::vector< float > > outputs)
+  {
+    if (outputs.size() == 1) return true;
+    size_t aux = 0;
+    for (size_t o = 0; o < outputs.size(); ++o)
+    {   
+        size_t aux2 = 0;
+
+        for (size_t i = 0; i < outputs[o].size(); ++i)
+            if (outputs[o][i] == 0.0 || outputs[o][i] == 1.0)
+                aux2++;
+        if (aux2 == outputs[o].size()) aux++;
+    }
+    return aux == outputs.size() ? false : true;        
+  }
+
   std::vector< std::vector<float> > TFNetHandler::Predict(const PixelMap& pm)
   {
    
@@ -56,9 +73,15 @@ namespace cvn
 
     vecForTF.push_back(thisImage);
 
-    std::vector< std::vector< std::vector< float > > > cvnResults = fTFGraph->run(vecForTF); // shape(samples, #outputs, output_size)
+    std::vector< std::vector< std::vector< float > > > cvnResults; // shape(samples, #outputs, output_size)
+    bool status = false;
 
-//    std::cout << "Number of CVN result vectors " << cvnResults.size() << " with " << cvnResults[0].size() << " categories" << std::endl;
+    do{ // do until it gets a correct result
+        // std::cout << "Number of CVN result vectors " << cvnResults.size() << " with " << cvnResults[0].size() << " categories" << std::endl;
+        cvnResults = fTFGraph->run(vecForTF);
+        status = check(cvnResults[0]);
+        //std::cout << "Status: " << status << std::endl;
+    }while(status == false);
 
     std::cout << "Classifier summary: ";
     std::cout << std::endl;

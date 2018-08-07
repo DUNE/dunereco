@@ -111,6 +111,7 @@ tf::Graph::~Graph()
     fSession->Close();
     delete fSession;
 }
+
 // -------------------------------------------------------------------
 
 std::vector< std::vector< std::vector<float> > > tf::Graph::run(
@@ -191,7 +192,6 @@ std::vector< std::vector< std::vector< float > > > tf::Graph::run(const std::vec
     for(int i = 0; i<n_outputs; ++i)
         std::cout << fOutputNames[i] << std::endl;
     */
-
     //std::cout << "run session" << std::endl;
 
     std::vector<tensorflow::Tensor> outputs;

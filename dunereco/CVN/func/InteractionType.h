@@ -3,6 +3,7 @@
 ///\brief   Defines an enumeration for interaction type
 ///
 // \author   radovic -- a.radovic@gmail.com
+//           Saul Alonso Monsalve -- saul.alonso.monsalve@cern.ch
 ////////////////////////////////////////////////////////////////////////
 #ifndef CVN_INTERACTION_H
 #define CVN_INTERACTION_H

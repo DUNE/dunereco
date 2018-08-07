@@ -2,7 +2,7 @@
 //// Class:       Graph
 //// Authors:     R.Sulej (Robert.Sulej@cern.ch), from DUNE, FNAL/NCBJ, Sept. 2017
 ///               P.Plonski,                      from DUNE, WUT, Sept. 2017
-////
+////              S. Alonso Monsalve,             from DUNE, CERN, Aug. 2018
 //// Iterface to run Tensorflow graph saved to a file. First attempts, almost functional.
 ////
 ////////////////////////////////////////////////////////////////////////////////////////////////////

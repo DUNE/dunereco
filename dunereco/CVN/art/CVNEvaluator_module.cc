@@ -2,6 +2,7 @@
 // \file    CVNEvaluator_module.cc
 // \brief   Producer module creating CVN neural net results
 // \author  Alexander Radovic - a.radovic@gmail.com
+//          Saul Alonso Monsalve - saul.alonso.monsalve@cern.ch
 ////////////////////////////////////////////////////////////////////////
 
 // C/C++ includes
