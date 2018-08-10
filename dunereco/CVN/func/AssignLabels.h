@@ -35,7 +35,7 @@ namespace cvn
     unsigned short GetNPions()    { return nPion;    };
     unsigned short GetNPizeros()  { return nPizero;  };
     unsigned short GetNNeutrons() { return nNeutron; };
-    unsigned short GetPDG()       { return pdgCode;  };
+    short GetPDG()       { return pdgCode;  };
     unsigned short TauMode()      { return tauMode;  };
     bool IsAntineutrino();
     unsigned short GetTopologyType();
