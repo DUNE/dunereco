@@ -172,4 +172,11 @@ protodunespmc_trajclusteralg.ShowerTag: [ 3, 100, 10, 50, 2.5, 1, 15, 3, 5, 1, 1
 protodunespmc_trajcluster:                @local::standard_trajcluster
 protodunespmc_trajcluster.TrajClusterAlg: @local::protodunespmc_trajclusteralg
 protodunespmc_trajcluster.HitModuleLabel: "hitpdune"
+
+protodunespmc_dbcluster3d:                @local::standard_dbcluster3d
+protodunespmc_dbcluster3d.DBScan3DAlg.epsilon: 10
+protodunespmc_dbcluster3d.DBScan3DAlg.minpts: 2
+protodunespmc_dbcluster3d.MinHitDis: 1000
+
+
 END_PROLOG
