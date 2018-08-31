@@ -19,7 +19,7 @@ standard_caffenethandler:
 standard_tfnethandler:
 {
   LibPath: "DUNE_PARDATA_DIR"
-  TFProtoBuf: "duneCVNNetwork/dune_cvn_resnet_april2018.pb"
+  TFProtoBuf: "duneCVNNetwork/dune_cvn_resnet_august2018.pb"
   ChargeLogScale: false
   NImageWires: 500
   NImageTDCs  : 500
