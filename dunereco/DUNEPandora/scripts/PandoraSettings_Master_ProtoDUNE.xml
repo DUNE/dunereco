@@ -31,8 +31,8 @@
         <SliceIdTools>
             <tool type = "LArBdtBeamParticleId">
                 <BdtName>BeamParticleId</BdtName>
-                <BdtFileName>PandoraMVAData/PandoraBdt_v03_12_00.xml</BdtFileName>
-                <MinAdaBDTScore>-0.2</MinAdaBDTScore>
+                <BdtFileName>PandoraMVAData/PandoraBdt_v03_14_00.xml</BdtFileName>
+                <MinAdaBDTScore>-0.225</MinAdaBDTScore>
             </tool>
         </SliceIdTools>
         <InputHitListName>Input</InputHitListName>
@@ -40,22 +40,6 @@
         <RecreatedClusterListName>RecreatedClusters</RecreatedClusterListName>
         <RecreatedVertexListName>RecreatedVertices</RecreatedVertexListName>
         <VisualizeOverallRecoStatus>false</VisualizeOverallRecoStatus>
-    </algorithm>
-
-    <algorithm type = "LArTrackParticleBuilding">
-        <PfoListName>RecreatedPfos</PfoListName>
-        <VertexListName>RecreatedVertices</VertexListName>
-    </algorithm>
-    <algorithm type = "LArPcaShowerParticleBuilding">
-        <PfoListName>RecreatedPfos</PfoListName>
-        <VertexListName>RecreatedVertices</VertexListName>
-    </algorithm>
-
-    <algorithm type = "LArTestBeamParticleCreation">
-        <PfoListName>RecreatedPfos</PfoListName>
-        <VertexListName>RecreatedVertices</VertexListName>
-        <KeepStartVertex>false</KeepStartVertex>
-        <KeepInteractionVertex>true</KeepInteractionVertex>
     </algorithm>
 
     <algorithm type = "LArVisualMonitoring">
