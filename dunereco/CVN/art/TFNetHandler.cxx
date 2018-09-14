@@ -41,7 +41,7 @@ namespace cvn
 
   }
   
-  bool check(std::vector< std::vector< float > > outputs)
+  bool check(const std::vector< std::vector< float > > & outputs)
   {
     if (outputs.size() == 1) return true;
     size_t aux = 0;
@@ -55,6 +55,16 @@ namespace cvn
         if (aux2 == outputs[o].size()) aux++;
     }
     return aux == outputs.size() ? false : true;        
+  }
+
+  void fillZeros(std::vector< std::vector< float > > & outputs)
+  {
+    for (size_t o = 0; o < outputs.size(); ++o)
+    {
+        for (size_t i = 0; i < outputs[o].size(); ++i)
+            outputs[o][i] = 0.0;
+    }
+    return;
   }
 
   std::vector< std::vector<float> > TFNetHandler::Predict(const PixelMap& pm)
@@ -76,11 +86,20 @@ namespace cvn
     std::vector< std::vector< std::vector< float > > > cvnResults; // shape(samples, #outputs, output_size)
     bool status = false;
 
+    int counter = 0;
+
     do{ // do until it gets a correct result
         // std::cout << "Number of CVN result vectors " << cvnResults.size() << " with " << cvnResults[0].size() << " categories" << std::endl;
         cvnResults = fTFGraph->run(vecForTF);
         status = check(cvnResults[0]);
         //std::cout << "Status: " << status << std::endl;
+        counter++;
+        if(counter==10){
+            std::cout << "Error, CVN never outputing a correct result. Filling result with zeros.";
+            std::cout << std::endl;
+            fillZeros(cvnResults[0]);
+            break;
+        }
     }while(status == false);
 
     std::cout << "Classifier summary: ";
