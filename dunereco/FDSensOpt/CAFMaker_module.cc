@@ -31,6 +31,8 @@
 #include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 #include "dune/CVN/func/InteractionType.h"
 #include "dune/CVN/func/Result.h"
+#include "dune/RegCVN/func/RegCVNResult.h"
+
 
 #include "TTree.h"
 #include "TH1D.h"
@@ -66,6 +68,7 @@ namespace dunemva {
       std::string fMVASelectNumuLabel;
 
       std::string fCVNLabel;
+      std::string fRegCVNLabel;
 
       std::string fEnergyRecoNueLabel;
       std::string fEnergyRecoNumuLabel;
@@ -219,6 +222,7 @@ namespace dunemva {
       double fCVNResult2Neutrons;
       double fCVNResultNNeutrons;
 
+      float  fRegCVNNueE;
       //Inputs to MVA
 
       //float fEvtcharge;
@@ -289,7 +293,8 @@ namespace dunemva {
     fMVASelectNueLabel = pset.get<std::string>("MVASelectNueLabel");
     fMVASelectNumuLabel = pset.get<std::string>("MVASelectNumuLabel");
 
-    fCVNLabel = pset.get<std::string>("CVNLabel");
+    fCVNLabel    = pset.get<std::string>("CVNLabel");
+    fRegCVNLabel = pset.get<std::string>("RegCVNLabel");
 
     fEnergyRecoNueLabel = pset.get<std::string>("EnergyRecoNueLabel");
     fEnergyRecoNumuLabel = pset.get<std::string>("EnergyRecoNumuLabel");
@@ -368,6 +373,7 @@ namespace dunemva {
     fTree->Branch("Q2",           &fQ2,           "Q2/D");
     fTree->Branch("Ev",           &fEtrue,        "Ev/D");
 
+    fTree->Branch("RegCVNNueE",       &fRegCVNNueE,      "RegCVNNueE/F");
     fTree->Branch("Ev_reco_nue",      &fErecoNue,        "Ev_reco_nue/D");
     fTree->Branch("RecoLepEnNue",     &fRecoLepEnNue,    "RecoLepEnNue/D");
     fTree->Branch("RecoHadEnNue",     &fRecoHadEnNue,    "RecoHadEnNue/D");
@@ -630,6 +636,9 @@ namespace dunemva {
     art::Handle<std::vector<cvn::Result>> cvnin;
     evt.getByLabel(fCVNLabel, "cvnresult", cvnin);
 
+    art::Handle<std::vector<cvn::RegCVNResult>> regcvnin;
+    evt.getByLabel(fRegCVNLabel, "regcvnresult", regcvnin);
+
     art::Handle<dune::EnergyRecoOutput> ereconuein;
     evt.getByLabel(fEnergyRecoNueLabel, ereconuein);
 
@@ -742,6 +751,14 @@ namespace dunemva {
         fCVNResult2Neutrons = (*cvnin)[0].Get2neutronsProbability();
         fCVNResultNNeutrons = (*cvnin)[0].GetNneutronsProbability(); 
 
+      }
+    }
+
+    fRegCVNNueE = -1;  // initializing
+    if(!regcvnin.failedToGet()){
+      if (!regcvnin->empty()){
+        const std::vector<float>& v = (*regcvnin)[0].fOutput;
+        fRegCVNNueE = v[0];
       }
     }
 

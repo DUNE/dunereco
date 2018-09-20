@@ -156,8 +156,6 @@
         <OverwriteExistingId>true</OverwriteExistingId>
         <MaxShowerLengthCut>500.</MaxShowerLengthCut>
         <VertexDistanceRatioCut>500.</VertexDistanceRatioCut>
-        <PathLengthRatioCut>1.012</PathLengthRatioCut>
-        <ShowerWidthRatioCut>0.2</ShowerWidthRatioCut>
     </algorithm>
     <algorithm type = "LArShowerGrowing">
         <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
@@ -253,10 +251,9 @@
         <TrackPfoListName>TrackParticles3D</TrackPfoListName>
         <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
         <PostBranchAddition>true</PostBranchAddition>
-        <UseThreeDInformation>false</UseThreeDInformation>
+	<UseThreeDInformation>false</UseThreeDInformation>
         <MaxShowerLengthCut>500.</MaxShowerLengthCut>
         <VertexDistanceRatioCut>500.</VertexDistanceRatioCut>
-        <DTDLWidthRatioCut>0.08</DTDLWidthRatioCut>
     </algorithm>
     <algorithm type = "LArThreeDHitCreation">
         <InputPfoListName>TrackParticles3D</InputPfoListName>
@@ -319,6 +316,13 @@
     </algorithm>
     <algorithm type = "LArNeutrinoProperties">
         <NeutrinoPfoListName>NeutrinoParticles3D</NeutrinoPfoListName>
+    </algorithm>
+    <algorithm type = "LArTestBeamParticleCreation">
+        <ParentPfoListName>NeutrinoParticles3D</ParentPfoListName>
+        <TrackPfoListName>TrackParticles3D</TrackPfoListName>
+        <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
+        <ParentVertexListName>NeutrinoVertices3D</ParentVertexListName>
+        <DaughterVertexListName>DaughterVertices3D</DaughterVertexListName>
     </algorithm>
 
     <!-- Track and shower building -->

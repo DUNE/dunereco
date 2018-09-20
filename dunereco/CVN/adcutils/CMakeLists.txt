@@ -26,7 +26,7 @@ simple_plugin(SPMultiTpcDump "module"
 			art_Utilities
 			canvas
 			${MF_MESSAGELOGGER}
-			${MF_UTILITIES}
+			
 			cetlib cetlib_except
 			${ROOT_BASIC_LIB_LIST}
       ${GLOBIMAGE}

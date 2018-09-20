@@ -81,7 +81,7 @@ simple_plugin(NueAna   "module"
 			art_Persistency_Provenance canvas
 			art_Utilities canvas
 			${MF_MESSAGELOGGER}
-			${MF_UTILITIES}
+			
 			cetlib cetlib_except
 			${ROOT_BASIC_LIB_LIST}
               BASENAME_ONLY
@@ -104,7 +104,7 @@ simple_plugin(MVASelect   "module"
                         art_Persistency_Provenance canvas
                         art_Utilities canvas
                         ${MF_MESSAGELOGGER}
-                        ${MF_UTILITIES}
+                        
                         cetlib cetlib_except
                         ${ROOT_BASIC_LIB_LIST}
 			${GALGORITHM}		
@@ -167,7 +167,7 @@ simple_plugin(CAFMaker   "module"
                         art_Persistency_Provenance canvas
                         art_Utilities canvas
                         ${MF_MESSAGELOGGER}
-                        ${MF_UTILITIES}
+                        
                         cetlib cetlib_except
                         ${ROOT_BASIC_LIB_LIST}
 			${GALGORITHM}		
@@ -237,7 +237,7 @@ simple_plugin(IniSegReco "module"
 		      art_Persistency_Provenance canvas
 		      art_Utilities canvas
 		      ${MF_MESSAGELOGGER}
-		      ${MF_UTILITIES}
+		      
 		      cetlib cetlib_except
 		      ${ROOT_BASIC_LIB_LIST}
               BASENAME_ONLY
@@ -268,7 +268,7 @@ simple_plugin(ShSeg   "module"
 			art_Persistency_Provenance canvas
 			art_Utilities canvas
 			${MF_MESSAGELOGGER}
-			${MF_UTILITIES}
+			
 			cetlib cetlib_except
 			${ROOT_BASIC_LIB_LIST}
 			BASENAME_ONLY
@@ -296,7 +296,7 @@ simple_plugin(EnergyReco   "module"
                         art_Persistency_Provenance canvas
                         art_Utilities canvas
                         ${MF_MESSAGELOGGER}
-                        ${MF_UTILITIES}
+                        
                         ${CETLIB}
                         ${ROOT_BASIC_LIB_LIST}
                         ${GALGORITHM}
@@ -359,7 +359,7 @@ simple_plugin(CheckRecoEnergy   "module"
                         art_Persistency_Provenance canvas
                         art_Utilities canvas
                         ${MF_MESSAGELOGGER}
-                        ${MF_UTILITIES}
+                        
                         cetlib cetlib_except
                         ${ROOT_BASIC_LIB_LIST}
                         ${GALGORITHM}           

@@ -77,27 +77,6 @@
         <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
     </algorithm>
 
-    <!-- VertexAlgorithms -->
-    <algorithm type = "LArCandidateVertexCreation">
-        <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
-        <OutputVertexListName>CandidateVertices3D</OutputVertexListName>
-        <ReplaceCurrentVertexList>true</ReplaceCurrentVertexList>
-        <EnableCrossingCandidates>false</EnableCrossingCandidates>
-    </algorithm>
-    <algorithm type = "LArEnergyKickVertexSelection">
-        <InputCaloHitListNames>CaloHitListU CaloHitListV CaloHitListW</InputCaloHitListNames>
-        <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
-        <OutputVertexListName>NeutrinoVertices3D</OutputVertexListName>
-        <ReplaceCurrentVertexList>true</ReplaceCurrentVertexList>
-        <FeatureTools>
-            <tool type = "LArEnergyKickFeature"/>
-            <tool type = "LArLocalAsymmetryFeature"/>
-        </FeatureTools>
-    </algorithm>
-    <algorithm type = "LArVertexSplitting">
-        <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
-    </algorithm>
-
     <!-- ThreeDTrackAlgorithms -->
     <algorithm type = "LArThreeDTransverseTracks">
         <InputClusterListNameU>ClustersU</InputClusterListNameU>
@@ -156,8 +135,6 @@
         <OverwriteExistingId>true</OverwriteExistingId>
         <MaxShowerLengthCut>500.</MaxShowerLengthCut>
         <VertexDistanceRatioCut>500.</VertexDistanceRatioCut>
-        <PathLengthRatioCut>1.012</PathLengthRatioCut>
-        <ShowerWidthRatioCut>0.2</ShowerWidthRatioCut>
     </algorithm>
     <algorithm type = "LArShowerGrowing">
         <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
@@ -234,29 +211,14 @@
         <MinClusterLength>1.</MinClusterLength>
     </algorithm>
 
-    <!-- TwoDMopUpAlgorithms -->
-    <algorithm type = "LArBoundedClusterMopUp">
-        <PfoListNames>ShowerParticles3D</PfoListNames>
-        <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
-    </algorithm>
-    <algorithm type = "LArConeClusterMopUp">
-        <PfoListNames>ShowerParticles3D</PfoListNames>
-        <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
-    </algorithm>
-    <algorithm type = "LArNearbyClusterMopUp">
-        <PfoListNames>ShowerParticles3D</PfoListNames>
-        <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
-    </algorithm>
-
     <!-- ThreeDHitAlgorithms -->
     <algorithm type = "LArCutPfoCharacterisation">
         <TrackPfoListName>TrackParticles3D</TrackPfoListName>
         <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
-        <PostBranchAddition>true</PostBranchAddition>
         <UseThreeDInformation>false</UseThreeDInformation>
+        <PostBranchAddition>true</PostBranchAddition>
         <MaxShowerLengthCut>500.</MaxShowerLengthCut>
         <VertexDistanceRatioCut>500.</VertexDistanceRatioCut>
-        <DTDLWidthRatioCut>0.08</DTDLWidthRatioCut>
     </algorithm>
     <algorithm type = "LArThreeDHitCreation">
         <InputPfoListName>TrackParticles3D</InputPfoListName>
@@ -283,56 +245,26 @@
         </HitCreationTools>
     </algorithm>
 
-    <!-- ThreeDMopUpAlgorithms -->
-    <algorithm type = "LArSlidingConePfoMopUp">
-        <InputPfoListNames>TrackParticles3D ShowerParticles3D</InputPfoListNames>
-        <DaughterListNames>ClustersU ClustersV ClustersW TrackClusters3D ShowerClusters3D</DaughterListNames>
+    <!-- SliceCreation -->
+    <algorithm type = "LArSlicing">
+        <InputCaloHitListNameU>CaloHitListU</InputCaloHitListNameU>
+        <InputCaloHitListNameV>CaloHitListV</InputCaloHitListNameV>
+        <InputCaloHitListNameW>CaloHitListW</InputCaloHitListNameW>
+        <InputClusterListNameU>ClustersU</InputClusterListNameU>
+        <InputClusterListNameV>ClustersV</InputClusterListNameV>
+        <InputClusterListNameW>ClustersW</InputClusterListNameW>
+        <OutputClusterListName>SliceClusters</OutputClusterListName>
+        <OutputPfoListName>SliceParticles</OutputPfoListName>
+        <tool type = "LArEventSlicing" description = "SliceCreation">
+            <TrackPfoListName>TrackParticles3D</TrackPfoListName>
+            <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
+        </tool>
+        <algorithm type = "LArListDeletion" description = "SlicingListDeletion">
+            <PfoListNames>TrackParticles3D ShowerParticles3D</PfoListNames>
+            <ClusterListNames>ClustersU ClustersV ClustersW TrackClusters3D ShowerClusters3D</ClusterListNames>
+        </algorithm>
     </algorithm>
-    <algorithm type = "LArSlidingConeClusterMopUp">
-        <InputPfoListNames>TrackParticles3D ShowerParticles3D</InputPfoListNames>
-        <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
-    </algorithm>
-    <algorithm type = "LArIsolatedClusterMopUp">
-        <PfoListNames>TrackParticles3D ShowerParticles3D</PfoListNames>
-        <DaughterListNames>ClustersU ClustersV ClustersW</DaughterListNames>
-        <AddHitsAsIsolated>true</AddHitsAsIsolated>
-    </algorithm>
-
-    <!-- NeutrinoAlgorithms -->
-    <algorithm type = "LArNeutrinoCreation">
-       <InputVertexListName>NeutrinoVertices3D</InputVertexListName>
-       <NeutrinoPfoListName>NeutrinoParticles3D</NeutrinoPfoListName>
-    </algorithm>
-    <algorithm type = "LArNeutrinoHierarchy">
-        <NeutrinoPfoListName>NeutrinoParticles3D</NeutrinoPfoListName>
-        <DaughterPfoListNames>TrackParticles3D ShowerParticles3D</DaughterPfoListNames>
-        <DisplayPfoInfoMap>false</DisplayPfoInfoMap>
-        <PfoRelationTools>
-            <tool type = "LArVertexAssociatedPfos"/>
-            <tool type = "LArEndAssociatedPfos"/>
-            <tool type = "LArBranchAssociatedPfos"/>
-        </PfoRelationTools>
-    </algorithm>
-    <algorithm type = "LArNeutrinoDaughterVertices">
-        <NeutrinoPfoListName>NeutrinoParticles3D</NeutrinoPfoListName>
-        <OutputVertexListName>DaughterVertices3D</OutputVertexListName>
-    </algorithm>
-    <algorithm type = "LArNeutrinoProperties">
-        <NeutrinoPfoListName>NeutrinoParticles3D</NeutrinoPfoListName>
-    </algorithm>
-
-    <!-- Track and shower building -->
-    <algorithm type = "LArTrackParticleBuilding">
-        <PfoListName>TrackParticles3D</PfoListName>
-        <VertexListName>DaughterVertices3D</VertexListName>
-    </algorithm>
-
-    <!-- Output list management -->
-    <algorithm type = "LArPostProcessing">
-        <PfoListNames>NeutrinoParticles3D TrackParticles3D ShowerParticles3D</PfoListNames>
-        <VertexListNames>NeutrinoVertices3D DaughterVertices3D CandidateVertices3D</VertexListNames>
-        <ClusterListNames>ClustersU ClustersV ClustersW TrackClusters3D ShowerClusters3D</ClusterListNames>
-        <CaloHitListNames>CaloHitListU CaloHitListV CaloHitListW CaloHitList2D</CaloHitListNames>
-        <CurrentPfoListReplacement>NeutrinoParticles3D</CurrentPfoListReplacement>
+    <algorithm type = "LArListChanging">
+        <PfoListName>SliceParticles</PfoListName>
     </algorithm>
 </pandora>

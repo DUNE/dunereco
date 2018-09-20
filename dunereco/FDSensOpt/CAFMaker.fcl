@@ -13,6 +13,7 @@ dunefd_cafmaker:
     MVASelectNumuLabel: "mvaselectnumu"
 
     CVNLabel:           "cvneval"
+    RegCVNLabel:        "regcvneval"
 
     EnergyRecoNueLabel:      "energyreconue"
     EnergyRecoNumuLabel:     "energyreconumu"
