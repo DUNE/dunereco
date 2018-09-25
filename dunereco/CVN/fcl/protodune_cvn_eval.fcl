@@ -40,13 +40,14 @@ physics:
   map: [ cvnmap,cvneval ]
 
 }
-
-physics.producers.cvnmap.TrackLabel: "pandora"
-physics.producers.cvnmap.ShowerLabel: "pandora"
+physics.producers.cvnmap.HitsModuleLabel:  "hitpdune"
+physics.producers.cvnmap.TrackLabel: "pandoraTrack"
+physics.producers.cvnmap.ShowerLabel: "pandoraShower"
 physics.producers.cvnmap.TimeResolution: 1600
 physics.producers.cvnmap.WireLength: 2880
 physics.producers.cvnmap.TdcWidth: 500
 physics.producers.cvnmap.IsProtoDUNE: true
 physics.producers.cvnmap.TrackLengthCut: 100
+physics.producers.cvnmap.UseWholeEvent: true
 ########################################################################
 

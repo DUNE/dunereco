@@ -59,6 +59,9 @@ namespace cvn {
 
 
   private:
+    /// Module label for input hits
+    std::string    fHitsModuleLabel;
+
     /// Module label for input tracks
     std::string    fTrackLabel;
 
@@ -91,6 +94,9 @@ namespace cvn {
     /// Track length cut
     float fTrackLengthCut;
 
+    /// Use the whole event instead of each track and shower
+    bool fUseWholeEvent;
+
     /// PixelMapProducer does the work for us
     PixelMapProducer fProducer;
 
@@ -100,6 +106,7 @@ namespace cvn {
 
   //.......................................................................
   CVNMapperProtoDUNE::CVNMapperProtoDUNE(fhicl::ParameterSet const& pset):
+  fHitsModuleLabel  (pset.get<std::string>    ("HitsModuleLabel")),
   fTrackLabel  (pset.get<std::string>    ("TrackLabel")),
   fShowerLabel  (pset.get<std::string>    ("ShowerLabel")),
   fClusterPMLabel(pset.get<std::string>    ("ClusterPMLabel")),
@@ -109,6 +116,7 @@ namespace cvn {
   fTimeResolution   (pset.get<unsigned short> ("TimeResolution")),
   fUnwrappedPixelMap(pset.get<unsigned short> ("UnwrappedPixelMap")),
   fTrackLengthCut(pset.get<unsigned short> ("TrackLengthCut")),
+  fUseWholeEvent(pset.get<bool> ("UseWholeEvent")),
   fProducer      (fWireLength, fTdcWidth, fTimeResolution)
   {
 
@@ -145,34 +153,51 @@ namespace cvn {
     fProducer.SetUnwrapped(fUnwrappedPixelMap);
     fProducer.SetProtoDUNE();
 
-    // Get the list of tracks and showers and their associated hits
-    auto allTracks=evt.getValidHandle<std::vector<recob::Track> >(fTrackLabel);
-    const art::FindManyP<recob::Hit> findTrackHits(allTracks,evt,fTrackLabel);
-
-    auto allShowers=evt.getValidHandle<std::vector<recob::Shower> >(fShowerLabel);
-    const art::FindManyP<recob::Hit> findShowerHits(allShowers,evt,fShowerLabel);
-
-    std::cout << "Event contains " << allTracks->size() << " tracks and " << allShowers->size() << " showers" << std::endl;
-
-    // Iterate over the tracks and showers making a PixelMap for each 
-    for(unsigned int t = 0; t < allTracks->size(); ++t){
-
-      std::vector<art::Ptr<recob::Hit> > trackHits = findTrackHits.at(t);
-      if(trackHits.size()>fMinClusterHits && (*allTracks)[t].Length() > fTrackLengthCut){
-//        std::cout << "Making PixelMap number " << pmCol->size() + 1 << " with " << trackHits.size() << " hits" << std::endl; 
-
-        PixelMap pm = fProducer.CreateMap(trackHits);
+    // Use the whole event just like we would for the FD
+    if(fUseWholeEvent){
+      art::Handle< std::vector< recob::Hit > > hitListHandle;
+      std::vector< art::Ptr< recob::Hit > > hitlist;
+      if (evt.getByLabel(fHitsModuleLabel, hitListHandle))
+        art::fill_ptr_vector(hitlist, hitListHandle);
+      unsigned short nhits = hitlist.size();
+  
+      std::cout << "nhits: " << nhits << std::endl; // REMOVE 
+ 
+      if(nhits>fMinClusterHits){
+        PixelMap pm = fProducer.CreateMap(hitlist);
         pmCol->push_back(pm);
       }
-
     }
-
-    for(unsigned int s = 0; s < allShowers->size(); ++s){
-
-      std::vector<art::Ptr<recob::Hit> > showerHits = findShowerHits.at(s);
-      if(showerHits.size()>fMinClusterHits){
-        PixelMap pm = fProducer.CreateMap(showerHits);
-        pmCol->push_back(pm);
+    else{
+      // Get the list of tracks and showers and their associated hits
+      auto allTracks=evt.getValidHandle<std::vector<recob::Track> >(fTrackLabel);
+      const art::FindManyP<recob::Hit> findTrackHits(allTracks,evt,fTrackLabel);
+  
+      auto allShowers=evt.getValidHandle<std::vector<recob::Shower> >(fShowerLabel);
+      const art::FindManyP<recob::Hit> findShowerHits(allShowers,evt,fShowerLabel);
+  
+      std::cout << "Event contains " << allTracks->size() << " tracks and " << allShowers->size() << " showers" << std::endl;
+  
+      // Iterate over the tracks and showers making a PixelMap for each 
+      for(unsigned int t = 0; t < allTracks->size(); ++t){
+  
+        std::vector<art::Ptr<recob::Hit> > trackHits = findTrackHits.at(t);
+        if(trackHits.size()>fMinClusterHits && (*allTracks)[t].Length() > fTrackLengthCut){
+  //        std::cout << "Making PixelMap number " << pmCol->size() + 1 << " with " << trackHits.size() << " hits" << std::endl; 
+  
+          PixelMap pm = fProducer.CreateMap(trackHits);
+          pmCol->push_back(pm);
+        }
+  
+      }
+  
+      for(unsigned int s = 0; s < allShowers->size(); ++s){
+  
+        std::vector<art::Ptr<recob::Hit> > showerHits = findShowerHits.at(s);
+        if(showerHits.size()>fMinClusterHits){
+          PixelMap pm = fProducer.CreateMap(showerHits);
+          pmCol->push_back(pm);
+        }
       }
     }
 
