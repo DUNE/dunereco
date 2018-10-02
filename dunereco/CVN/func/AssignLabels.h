@@ -43,7 +43,7 @@ namespace cvn
     
     private:
 
-    unsigned int fTopologyHitsCut;
+    // unused unsigned int fTopologyHitsCut;
 
     unsigned short nProton;
     unsigned short nPion;
