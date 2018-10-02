@@ -13,7 +13,7 @@
 #include "dune/CVN/func/PixelMap.h"
 #include "dune/CVN/func/InteractionType.h"
 #include "fhiclcpp/ParameterSet.h"
-#include "larreco/RecoAlg/ImagePatternAlgs/Tensorflow/TF/tf_graph.h"
+#include "dune/CVN/tf/tf_graph.h"
 
 namespace cvn
 {
@@ -33,7 +33,7 @@ namespace cvn
     int NFeatures() const;
 
     /// Return prediction arrays for PixelMap
-    std::vector<float> Predict(const PixelMap& pm);
+    std::vector< std::vector<float> > Predict(const PixelMap& pm);
 
     /// Return four element vector with summed numu, nue, nutau and NC elements
     std::vector<float> PredictFlavour(const PixelMap& pm);

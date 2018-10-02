@@ -19,12 +19,13 @@ standard_caffenethandler:
 standard_tfnethandler:
 {
   LibPath: "DUNE_PARDATA_DIR"
-  TFProtoBuf: "duneCVNNetwork/dune_cvn_resnet_april2018.pb"
-#  TFProtoBuf: "CnnModels/cnn_emtrkmichel_pitch_5_wire_44_drift_48_down_6_mean_notes_protoduneBeamAndCosmics_calib_cascadedouts.pb"
+  TFProtoBuf: "duneCVNNetwork/dune_cvn_resnet_august2018.pb"
   ChargeLogScale: false
   NImageWires: 500
   NImageTDCs  : 500
   ReverseViews: [false,true,false]
+  NInputs: 3
+  NOutputs: 7
 }
 
 standard_cvnevaluator:
@@ -36,6 +37,19 @@ standard_cvnevaluator:
   CaffeNetHandler: @local::standard_caffenethandler
   TFNetHandler: @local::standard_tfnethandler
   CVNType: "Tensorflow"
+  MultiplePMs: false
+}
+
+standard_cvnevaluator_protodune:
+{
+  module_type:        CVNEvaluator
+  #==================
+  PixelMapInput: "cvnmap"
+  ResultLabel: "cvnresult"
+  CaffeNetHandler: @local::standard_caffenethandler
+  TFNetHandler: @local::standard_tfnethandler
+  CVNType: "Tensorflow"
+  MultiplePMs: true
 }
 
 END_PROLOG

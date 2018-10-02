@@ -5,4 +5,4 @@ if [ "$#" -ne 3 ]; then
   exit 1
 fi
 
-singularity exec -e -p /home/singularity/ML/ubuntu16-ML-keras-210-tf4.simg python $1 $2 $3
+python $1 $2 $3

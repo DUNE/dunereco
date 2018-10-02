@@ -8,6 +8,7 @@
 #define CVN_TRAININGDATA_H
 
 #include "dune/CVN/func/InteractionType.h"
+#include "dune/CVN/func/AssignLabels.h"
 
 namespace cvn
 {
@@ -31,12 +32,29 @@ namespace cvn
 
     void FillOutputVector(float* output) const;
 
+    // Set topology information separately to save having a large number of 
+    // arguments in the constructor.
+    void SetTopologyInformation(int pdg, int nproton, int npion,
+                                int npizero, int nneutron, int toptype,
+                                int toptypealt);
+
     InteractionType  fInt;    ///< Class of the event
     float    fNuEnergy;       ///< True energy of neutrino event
     float    fLepEnergy;      ///< True energy of outgoing lepton
     float    fRecoNueEnergy;  ///< Reconstructed energy under nue hypothesis
     float    fRecoNumuEnergy; ///< Reconstructed energy under nue hypothesis
     float    fEventWeight;    ///< The event weight (norm * oscProb)
+ 
+    // If we are using topology information, store it here
+    bool fUseTopology;
+    int  fNuPDG;
+    int  fNProton;
+    int  fNPion;
+    int  fNPizero;
+    int  fNNeutron;
+    int  fTopologyType;
+    int  fTopologyTypeAlt;
+
     PixelMap fPMap;           ///< PixelMap for the event
   };
 

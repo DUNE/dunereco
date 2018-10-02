@@ -1,6 +1,6 @@
 BEGIN_PROLOG
 
-#   This file defines the configuration for the CVNEventDump module
+#   This file defines the configuration for the CVNMapper and CVNMapperProtoDUNE modules
 
 standard_cvnmapper:
 {
@@ -14,7 +14,25 @@ standard_cvnmapper:
 #  WireLength:    500
   WireLength:    2880 #Unwrapped collection view max (6 x 480)
   TimeResolution: 1600
-  UnwrappedPixelMap: true
+  UnwrappedPixelMap: 1
+}
+
+standard_cvnmapper_protodune:
+{
+  module_type:        CVNMapperProtoDUNE
+  #==================
+  HitsModuleLabel:   "hitpdune"
+  TrackLabel:   "pandora"
+  ShowerLabel:  "pandora"
+  ClusterPMLabel: "cvnmap"
+  MinClusterHits: 50
+  TdcWidth:      500
+#  WireLength:    500
+  WireLength:    2880 #Unwrapped collection view max (6 x 480)
+  TimeResolution: 1600
+  UnwrappedPixelMap: 1
+  TrackLengthCut: 100
+  UseWholeEvent: false
 }
 
 END_PROLOG
