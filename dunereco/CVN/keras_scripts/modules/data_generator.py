@@ -18,13 +18,14 @@ class DataGenerator(object):
     Initialization function of the class
     '''
     def __init__(self, cells=500, planes=500, views=3, batch_size=32, branches=True, 
-                 standardize=True, images_path = '/', shuffle=True, test_values=[]):
+                 outputs=7, standardize=True, images_path = '/', shuffle=True, test_values=[]):
         'Initialization'
         self.cells = cells
         self.planes = planes
         self.views = views
         self.batch_size = batch_size
         self.branches = branches
+        self.outputs = outputs
         self.images_path = images_path
         self.standardize = standardize
         self.shuffle = shuffle
@@ -97,16 +98,16 @@ class DataGenerator(object):
 
         if yield_labels:
             # only include the labels when requested (train, validation)
-            y = np.empty((self.batch_size, 7), dtype = int)
+            if self.outputs == 1:
+                y = np.empty((self.batch_size), dtype = int)
+            else:
+                y = np.empty((self.batch_size, self.outputs), dtype = int)
 
         # Generate data
         for i, ID in enumerate(list_IDs_temp):
             # Decompress image into pixel NumPy tensor
-            #with open(self.images_path + '/' + labels[ID] + '/' + ID + '.txt.gz', 'rb') as image_file:
-            #    pixels = np.fromstring(zlib.decompress(image_file.read()), dtype=np.uint8, sep='').reshape(self.views, self.planes, self.cells)
             with open(self.images_path + '/' + ID.split('.')[0].lstrip('a') + '/images/' + ID + '.gz', 'rb') as image_file:
                 pixels = np.fromstring(zlib.decompress(image_file.read()), dtype=np.uint8, sep='').reshape(self.views, self.planes, self.cells)
-
             #pixels = np.load(self.images_path + '/' + labels[ID] + '/' + ID + '.npy')
 
             if self.standardize:
@@ -141,6 +142,10 @@ class DataGenerator(object):
 
         if yield_labels:
             # return X and Y (train, validation)
+            if self.outputs == 1:
+                return X, self.sparsify1(y)
+            if self.outputs == 5:
+                return X, self.sparsify5(y)
             return X, self.sparsify7(y)
 
         # return X (test, predictions)
@@ -152,6 +157,11 @@ class DataGenerator(object):
     which is why we need the sparsify function to perform this task, 
     should y be a list of numerical values.
     '''
+
+    def sparsify1(self, y):
+        'Returns labels in binary NumPy array'
+        return np.array([[1 if y[i] == j else 1 if y[i]-1 == j and j == 12 else 0 for j in range(13)] for i in range(y.shape[0])])
+
     def sparsify2(self, y):
         'Returns labels in binary NumPy array'
         res = [None]*2
@@ -197,16 +207,26 @@ class DataGenerator(object):
         else:
             obj[value] = 1
 
+    def sparsify5(self, y):
+        'Returns labels in binary NumPy array'
+        res = [None]*self.outputs     
+
+        for i in range(0,len(res)): # flavour, fNProton, fNPion, fNPizero, fNNeutron
+            res[i] = np.zeros((y.shape[0], 4), dtype=int)      
+
+        for i in range(y.shape[0]):
+            for j in range(len(res)):
+                self.normalize(y[i][j], res[j][i])
+
+        return res
+
     def sparsify7(self, y):
         'Returns labels in binary NumPy array'
-        res = [None]*7        
+        res = [None]*self.outputs
         res[0] = np.zeros((y.shape[0], 1), dtype=int) # fNuPDG
-        res[1] = np.zeros((y.shape[0], 4), dtype=int) # flavour
-        res[2] = np.zeros((y.shape[0], 4), dtype=int) # interaction
-        res[3] = np.zeros((y.shape[0], 4), dtype=int) # fNProton
-        res[4] = np.zeros((y.shape[0], 4), dtype=int) # fNPion
-        res[5] = np.zeros((y.shape[0], 4), dtype=int) # fNPizero
-        res[6] = np.zeros((y.shape[0], 4), dtype=int) # fNNeutron
+
+        for i in range(1,len(res)): # flavour, interaction, fNProton, fNPion, fNPizero, fNNeutron
+            res[i] = np.zeros((y.shape[0], 4), dtype=int)      
 
         for i in range(y.shape[0]):
             for j in range(len(res)):

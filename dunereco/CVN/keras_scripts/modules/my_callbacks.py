@@ -190,10 +190,10 @@ class ModelCheckpointDetached(keras.callbacks.Callback):
                     detachmodel(self.model).save(filepath, overwrite=True)
 
 class MyCallback(keras.callbacks.Callback):
-        def on_train_begin(self, logs={}):
+        def on_epoch_end(self, epoch, logs={}):
                 current_lr = K.get_value(self.model.optimizer.lr)
                 print "Learning rate:", current_lr
-                new_lr = current_lr * 0.1
+                new_lr = current_lr * 0.95
                 K.set_value(self.model.optimizer.lr, new_lr)
                 new_lr = K.get_value(self.model.optimizer.lr)
                 print "New learning rate:", new_lr

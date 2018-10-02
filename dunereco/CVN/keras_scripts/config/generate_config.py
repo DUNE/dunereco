@@ -36,7 +36,8 @@ config['model']      = {'architecture':'resnet50',
                         'parallelize':'False',
                         'gpus':'8',
                         'print_summary':'False',
-                        'branches':'False'}
+                        'branches':'False',
+                        'outputs':'5'}
 
 config['train']      = {'resume':'False',
                         'weighted_loss_function':'False',

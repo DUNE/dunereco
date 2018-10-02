@@ -12,13 +12,17 @@ import pickle
 import configparser
 import ast
 import logging
+import os
 import sys
 import re
-import os
 import time
 
-sys.path.append("/raid/cvn_tensorflow/modules")
-sys.path.append("/raid/cvn_tensorflow/networks")
+# manually specify the GPUs to use
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2,3" 
+
+sys.path.append(os.path.join(sys.path[0], 'modules'))
+sys.path.append(os.path.join(sys.path[0], 'networks'))
 
 from keras import backend as K, regularizers, optimizers
 from keras.utils import multi_gpu_model
@@ -92,6 +96,7 @@ PARALLELIZE = ast.literal_eval(config['model']['parallelize'])
 GPUS = int(config['model']['gpus'])
 PRINT_SUMMARY = ast.literal_eval(config['model']['print_summary'])
 BRANCHES = ast.literal_eval(config['model']['branches'])
+OUTPUTS = int(config['model']['outputs'])
 
 # train
 
@@ -118,6 +123,7 @@ TRAIN_PARAMS = {'planes':PLANES,
                 'views':VIEWS,
                 'batch_size':TRAIN_BATCH_SIZE,
                 'branches':BRANCHES,
+                'outputs': OUTPUTS,
                 'images_path':IMAGES_PATH,
                 'standardize':STANDARDIZE,
                 'shuffle':SHUFFLE}
@@ -129,6 +135,7 @@ VALIDATION_PARAMS = {'planes':PLANES,
                      'views':VIEWS,
                      'batch_size':VALIDATION_BATCH_SIZE,
                      'branches':BRANCHES,
+                     'outputs': OUTPUTS,
                      'images_path':IMAGES_PATH,
                      'standardize':STANDARDIZE,
                      'shuffle':SHUFFLE}
@@ -187,8 +194,8 @@ validation_generator = DataGenerator(**VALIDATION_PARAMS).generate(labels, parti
 logging.info('Setting optimizer...')
 
 opt = optimizers.SGD(lr=LEARNING_RATE, momentum=MOMENTUM, decay=DECAY, nesterov=True) # SGD
-#opt = optimizers.RMSprop(lr=0.045, rho=0.9, decay=0.94, clipnorm=2.0)                # RMSprop (rho = Decay factor, decay = Learning rate decay over each update)
-#opt = optimizers.Adam(lr=1e-3)							      # Adam
+#opt = optimizers.RMSprop(lr=0.045, rho=0.9, decay=0.94, epsilon=None, clipnorm=2.0)    # RMSprop (rho = Decay factor, decay = Learning rate decay over each update)
+#opt = optimizers.Adam(lr=1e-3)							       # Adam
 
 if RESUME:
     # Resume a previous training
@@ -266,21 +273,37 @@ else:
 
     weight_decay = 1e-4
 
-    x0 = Dense(1, use_bias=False, kernel_regularizer=l2(weight_decay),
-               activation='sigmoid', name='fNuPDG')(aux_model.layers[-1].output)
-    x1 = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
-               activation='softmax', name='flavour')(aux_model.layers[-1].output)
-    x2 = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
-               activation='softmax', name='interaction')(aux_model.layers[-1].output)
-    x3 = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
-               activation='softmax', name='fNProton')(aux_model.layers[-1].output)
-    x4 = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
-               activation='softmax', name='fNPion')(aux_model.layers[-1].output)
-    x5 = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
-               activation='softmax', name='fNPizero')(aux_model.layers[-1].output)
-    x6 = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
-               activation='softmax', name='fNNeutron')(aux_model.layers[-1].output)
-    x = [x0, x1, x2, x3, x4, x5, x6] 
+    x = [None]*OUTPUTS
+
+    if OUTPUTS == 1:
+        x[0] = Dense(13, use_bias=False, kernel_regularizer=l2(weight_decay),
+                     activation='softmax', name='categories')(aux_model.layers[-1].output)
+    elif OUTPUTS == 5:
+        x[0] = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+                     activation='softmax', name='flavour')(aux_model.layers[-1].output)
+        x[1] = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+                     activation='softmax', name='protons')(aux_model.layers[-1].output)
+        x[2] = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+                     activation='softmax', name='pions')(aux_model.layers[-1].output)
+        x[3] = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+                     activation='softmax', name='pizeros')(aux_model.layers[-1].output)
+        x[4] = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+                     activation='softmax', name='neutrons')(aux_model.layers[-1].output)
+    else:
+        x[0] = Dense(1, use_bias=False, kernel_regularizer=l2(weight_decay),
+                     activation='sigmoid', name='is_antineutrino')(aux_model.layers[-1].output)
+        x[1] = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+                     activation='softmax', name='flavour')(aux_model.layers[-1].output)
+        x[2] = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+                     activation='softmax', name='interaction')(aux_model.layers[-1].output)
+        x[3] = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+                     activation='softmax', name='protons')(aux_model.layers[-1].output)
+        x[4] = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+                     activation='softmax', name='pions')(aux_model.layers[-1].output)
+        x[5] = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+                     activation='softmax', name='pizeros')(aux_model.layers[-1].output)
+        x[6] = Dense(4, use_bias=False, kernel_regularizer=l2(weight_decay),
+                     activation='softmax', name='neutrons')(aux_model.layers[-1].output)
 
     sequential_model = Model(inputs=aux_model.inputs, outputs=x, name='resnext')
 
@@ -301,15 +324,26 @@ if not model._is_compiled:
     # Compile model
     logging.info('Compiling model...')
 
+    if OUTPUTS == 1:
+        model_loss = {'categories':my_losses.masked_loss_categorical}
+    elif OUTPUTS == 5:
+        model_loss = {'flavour':my_losses.masked_loss_categorical,
+                      'protons':my_losses.masked_loss_categorical,
+                      'pions':my_losses.masked_loss_categorical,
+                      'pizeros':my_losses.masked_loss_categorical,
+                      'neutrons':my_losses.masked_loss_categorical}
+    else:
+        model_loss = {'is_antineutrino':my_losses.masked_loss_binary,
+                      'flavour':my_losses.masked_loss_categorical,
+                      'interaction':my_losses.masked_loss_categorical,
+                      'protons':my_losses.masked_loss_categorical,
+                      'pions':my_losses.masked_loss_categorical,
+                      'pizeros':my_losses.masked_loss_categorical,
+                      'neutrons':my_losses.masked_loss_categorical}
+
     #model.compile(loss=my_losses.masked_loss, optimizer=opt, metrics=['accuracy']) 
     model.compile(#loss={'neutrino': my_losses.masked_loss_binary, 'flavour': my_losses.masked_loss_categorical, 'interaction': my_losses.masked_loss_categorical}, 
-                  loss={'fNuPDG':my_losses.masked_loss_binary,
-                        'flavour':my_losses.masked_loss_categorical, 
-                        'interaction':my_losses.masked_loss_categorical,
-                        'fNProton':my_losses.masked_loss_categorical,
-                        'fNPion':my_losses.masked_loss_categorical,
-                        'fNPizero':my_losses.masked_loss_categorical,
-                        'fNNeutron':my_losses.masked_loss_categorical},
+                  loss=model_loss,
                   #loss_weights={'neutrino':0.25, 'flavour':1.0, 'interaction': 0.5},
                   #loss_weights={'neutrino':0.33, 'flavour':0.33, 'interaction':0.33},
                   optimizer=opt, 
@@ -320,7 +354,6 @@ if(PRINT_SUMMARY):
     # Print model summary
     if PARALLELIZE:
         sequential_model.summary()
-
     model.summary()
 
 '''
@@ -338,20 +371,22 @@ logging.info('Configuring checkpointing...')
 filepath = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '.h5'
 
 if VALIDATION_FRACTION > 0:
-    # Validation accuracy
-    if CHECKPOINT_SAVE_MANY:
-        #filepath = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '-{epoch:02d}-{val_acc:.2f}.h5'
-        filepath = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '-{epoch:02d}-{val_flavour_acc:.2f}.h5'
-
-    monitor_acc = 'val_flavour_acc'
-    #monitor_acc = 'val_acc'
-    monitor_loss = 'val_flavour_loss'
-    #monitor_acc = 'val_loss'
+    if OUTPUTS == 1:
+        # Validation accuracy
+        if CHECKPOINT_SAVE_MANY:
+            filepath = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '-{epoch:02d}-{val_acc:.2f}.h5'
+        monitor_acc = 'val_acc'
+        monitor_loss = 'val_loss'
+    else:
+        # Validation accuracy
+        if CHECKPOINT_SAVE_MANY:
+            filepath = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '-{epoch:02d}-{val_flavour_acc:.2f}.h5'
+        monitor_acc = 'val_flavour_acc'
+        monitor_loss = 'val_flavour_loss'
 else:
     # Training accuracy
     if CHECKPOINT_SAVE_MANY:
         filepath = CHECKPOINT_PATH + CHECKPOINT_PREFIX + '-{epoch:02d}-{acc:.2f}.h5'
-
     monitor_acc = 'acc'
     monitor_loss = 'loss'
 
@@ -366,7 +401,8 @@ else:
 logging.info('Configuring learning rate reducer...')
 
 #lr_reducer = LearningRateScheduler(schedule=lambda epoch,lr: (lr*0.01 if epoch % 2 == 0 else lr))
-lr_reducer = ReduceLROnPlateau(monitor=monitor_loss, factor=0.1, cooldown=0, patience=2, min_lr=0.5e-6, verbose=1)
+#lr_reducer = ReduceLROnPlateau(monitor=monitor_loss, factor=0.1, cooldown=0, patience=2, min_lr=0.5e-6, verbose=1)
+lr_reducer = ReduceLROnPlateau(monitor=monitor_acc, mode='max', factor=0.1, cooldown=0, patience=10, min_lr=0.5e-6, verbose=1)
 
 # Early stopping
 
@@ -390,8 +426,8 @@ logging.info('Setting callbacks...')
 
 #callbacks_list = [checkpoint, csv_logger]
 #callbacks_list = [checkpoint, csv_logger, my_callback]
-callbacks_list = [lr_reducer, checkpoint, early_stopping, csv_logger]
-#callbacks_list = [lr_reducer, checkpoint, early_stopping, csv_logger, my_callback]
+#callbacks_list = [lr_reducer, checkpoint, early_stopping, csv_logger]
+callbacks_list = [lr_reducer, checkpoint, early_stopping, csv_logger, my_callback]
 
 
 '''
@@ -404,7 +440,6 @@ if RESUME:
     # Resuming training...
     try:
         # Open previous log file in order to get the last epoch
-
         with open(LOG_PATH + LOG_PREFIX + '.log', 'r') as logfile:
             # initial_epoch = last_epoch + 1
             initial_epoch = int(re.search(r'\d+', logfile.read().split('\n')[-2]).group()) + 1
@@ -412,14 +447,11 @@ if RESUME:
     except IOError:
         # Previous log file does not exist. Set initial epoch to 0    
         initial_epoch = 0
-
     logging.info('RESUMING TRAINING...')
 else:
     # Starting a new training...
     # initial_epoch must be 0 when starting a training (not resuming it)
-
     initial_epoch = 0
-
     logging.info('STARTING TRAINING...')
 
 if VALIDATION_FRACTION > 0:

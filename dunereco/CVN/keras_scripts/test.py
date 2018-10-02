@@ -16,8 +16,9 @@ import sys
 import os
 import time
 
-sys.path.append("/raid/cvn_tensorflow/modules")
+sys.path.append(os.path.join(sys.path[0], 'modules'))
 
+from random import shuffle
 from keras import optimizers
 from sklearn.metrics import classification_report, confusion_matrix
 from os import listdir
@@ -26,6 +27,10 @@ from keras.models import load_model
 from data_generator import DataGenerator
 from collections import Counter
 import my_losses
+
+# manually specify the GPUs to use
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 '''
 ****************************************
@@ -47,6 +52,7 @@ if SEED == -1:
 
 np.random.seed(SEED)
 SHUFFLE = ast.literal_eval(config['random']['shuffle'])
+SHUFFLE = False
 
 # images
 
@@ -71,6 +77,7 @@ CHECKPOINT_SAVE_BEST_ONLY = ast.literal_eval(config['model']['checkpoint_save_be
 PRINT_SUMMARY = ast.literal_eval(config['model']['print_summary'])
 BRANCHES = ast.literal_eval(config['model']['branches'])
 PARALLELIZE = ast.literal_eval(config['model']['parallelize'])
+OUTPUTS = int(config['model']['outputs'])
 
 # test
 
@@ -91,6 +98,7 @@ TEST_PARAMS = {'planes':PLANES,
                'views':VIEWS,
                'batch_size':TEST_BATCH_SIZE,
                'branches':BRANCHES,
+               'outputs': OUTPUTS,
                'images_path':IMAGES_PATH,
                'standardize':STANDARDIZE,
                'shuffle':SHUFFLE,
@@ -153,11 +161,14 @@ if CHECKPOINT_SAVE_MANY:
                                                'masked_loss_binary': my_losses.masked_loss_binary, 
                                                'masked_loss_categorical': my_losses.masked_loss_categorical})
             logging.info('Loaded model: %s', CHECKPOINT_PATH + '/' + fil)
-
             break
 else:
     # Load the model
-    model = load_model(CHECKPOINT_PATH + CHECKPOINT_PREFIX + '.h5', custom_objects={'masked_loss':my_losses.masked_loss,'my_losses':my_losses.my_losses})
+    model = load_model(CHECKPOINT_PATH + CHECKPOINT_PREFIX + '.h5',
+                       custom_objects={'masked_loss':my_losses.masked_loss,
+                                       'multitask_loss': my_losses.multitask_loss,
+                                       'masked_loss_binary': my_losses.masked_loss_binary,
+                                       'masked_loss_categorical': my_losses.masked_loss_categorical})
   
     logging.info('Loaded model: %s', CHECKPOINT_PATH + CHECKPOINT_PREFIX + '.h5')
 
@@ -174,236 +185,303 @@ if(PRINT_SUMMARY):
 
 logging.info('PERFORMING TEST...\n')
 
+is_antineutrino_target_names = ['neutrino', 'antineutrino', 'NULL']
+flavour_target_names = ['CC Numu', 'CC Nue', 'CC Nutau', 'NC']
+interaction_target_names = ['CC QE', 'CC Res', 'CC DIS', 'CC Other', 'NULL']
+categories_target_names = ['category 0', 'category 1', 'category 2', 'category 3', 'category 4', 'category 5', 'category 6', 
+                           'category 7', 'category 8', 'category 9', 'category 10', 'category 11', 'category 13']
+protons_target_names = ['0', '1', '2', '>2']
+pions_target_names = ['0', '1', '2', '>2']
+pizeros_target_names = ['0', '1', '2', '>2']
+neutrons_target_names = ['0', '1', '2', '>2']
+
 # Predict results
 
 Y_pred = model.predict_generator(generator = prediction_generator,
-                                 #steps = len(partition['test'])//TEST_BATCH_SIZE,
-                                 steps = 20,
+                                 steps = len(partition['test'])//TEST_BATCH_SIZE,
                                  verbose = 1
                                 )
 
 #np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)}, threshold=np.nan)
 
-test_values = np.array(test_values[0:Y_pred[0].shape[0]]) # array with energies and weights
+if OUTPUTS == 1:
+    # Single-output network
+    test_values = np.array(test_values[0:Y_pred.shape[0]]) # array with y true value, energies and weights
 
-y_pred0 = np.around(Y_pred[0]).reshape((Y_pred[0].shape[0], 1)).astype(int) # 1-DIM array of predicted values (fNuPDG)
-y_pred1 = np.argmax(Y_pred[1], axis=1).reshape((Y_pred[1].shape[0], 1))     # 1-DIM array of predicted values (flavour)
-y_pred2 = np.argmax(Y_pred[2], axis=1).reshape((Y_pred[2].shape[0], 1))     # 1-DIM array of predicted values (interaction)
-y_pred3 = np.zeros(y_pred1.shape, dtype=int)                                # 1-DIM array of predicted values (categories)
-y_pred4 = np.argmax(Y_pred[3], axis=1).reshape((Y_pred[3].shape[0], 1))     # 1-DIM array of predicted values (fNProton)
-y_pred5 = np.argmax(Y_pred[4], axis=1).reshape((Y_pred[4].shape[0], 1))     # 1-DIM array of predicted values (fNPion)
-y_pred6 = np.argmax(Y_pred[5], axis=1).reshape((Y_pred[5].shape[0], 1))     # 1-DIM array of predicted values (fNPizero)
-y_pred7 = np.argmax(Y_pred[6], axis=1).reshape((Y_pred[6].shape[0], 1))     # 1-DIM array of predicted values (fNNeutron)
+    y_pred_categories = np.argmax(Y_pred, axis=1).reshape((Y_pred.shape[0], 1)) # 1-DIM array of predicted values (categories)
+    Y_pred_flavour = np.zeros((Y_pred.shape[0], 4))                             # 2-DIM array of predicted values (flavour)
 
-y_test0 = np.array([aux['y_value'][0] for aux in test_values]).reshape(y_pred0.shape)
-y_test1 = np.array([aux['y_value'][1] for aux in test_values]).reshape(y_pred1.shape)
-y_test2 = np.array([aux['y_value'][2] for aux in test_values]).reshape(y_pred2.shape)
-y_test3 = np.zeros(y_test1.shape, dtype=int)
-y_test4 = np.array([aux['y_value'][3] for aux in test_values]).reshape(y_pred4.shape)
-y_test5 = np.array([aux['y_value'][4] for aux in test_values]).reshape(y_pred5.shape)
-y_test6 = np.array([aux['y_value'][5] for aux in test_values]).reshape(y_pred6.shape)
-y_test7 = np.array([aux['y_value'][6] for aux in test_values]).reshape(y_pred7.shape)
+    y_test_categories = np.array([12 if aux['y_value'] == 13 else aux['y_value'] for aux in test_values]).reshape(y_pred_categories.shape) # 1-DIM array of test values (categories)
+    y_test_flavour = np.zeros(y_test_categories.shape, dtype=int) # 1-DIM array of test values (flavour)
 
-# manually set y_pred3 and y_test3
+    # manually set y_pred_flavour and y_test_flavour
 
-for i in range(y_pred3.shape[0]):
-    # inter
-    y_pred3[i] = y_pred2[i]
-    y_test3[i] = y_test2[i]    
+    for i in range(Y_pred_flavour.shape[0]):
+        y_test_flavour[i] = y_test_categories[i]//4 # from  0-13 to 0-3
 
-    # flavour
-    y_pred3[i] += (y_pred1[i]*4)
-    y_test3[i] += (y_test1[i]*4)
+        # Add the interaction types for each neutrino type
+        p = Y_pred[i]
+        Y_pred_flavour[i][0] = p[0] + p[1] + p[2]  + p[3]  # NUMU  (0,1,2,3)
+        Y_pred_flavour[i][1] = p[4] + p[5] + p[6]  + p[7]  # NUE   (4,5,6,7)
+        Y_pred_flavour[i][2] = p[8] + p[9] + p[10] + p[11] # NUTAU (8,9,10,11)
+        Y_pred_flavour[i][3] = p[12]                       # NC    (13)
 
-    if y_pred1[i] == 3:
-        y_pred0[i] = 2
-        y_pred2[i] = 4
-        y_pred3[i] = 12
+    y_pred_flavour = np.argmax(Y_pred_flavour, axis=1) # 1-DIM array of predicted values (flavour)
 
-    if y_test1[i] == 3:
-        y_test0[i] = 2
-        y_test2[i] = 4
-        y_test3[i] = 12
+    # flavour 
 
+    logging.info('flavour report:\n')
+    print(classification_report(y_test_flavour, y_pred_flavour, target_names=flavour_target_names))
+    logging.info('flavour confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    flavour_conf_matrix = confusion_matrix(y_pred_flavour, y_test_flavour)
+    print flavour_conf_matrix, '\n'
 
+    # categories
 
-#np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)}, threshold=np.nan)
+    logging.info('categories report:\n')
+    print(classification_report(y_test_categories, y_pred_categories, target_names=categories_target_names))
+    logging.info('categories confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    categories_conf_matrix = confusion_matrix(y_pred_categories, y_test_categories)
+    print categories_conf_matrix, '\n'
 
-fNuPDG_target_names = ['neutrino', 'antineutrino', 'NULL']
-flavour_target_names = ['CC Numu', 'CC Nue', 'CC Nutau', 'NC']
-interaction_target_names = ['CC QE', 'CC Res', 'CC DIS', 'CC Other', 'NULL']
-categories_target_names = ['category 0', 'category 1', 'category 2', 'category 3', 'category 4', 'category 5', 'category 6', 
-                           'category 7', 'category 8', 'category 9', 'category 10', 'category 11', 'category 13']
-fNProton_target_names = ['0', '1', '2', '>2']
-fNPion_target_names = ['0', '1', '2', '>2']
-fNPizero_target_names = ['0', '1', '2', '>2']
-fNNeutron_target_names = ['0', '1', '2', '>2']
+    # Apply cuts
 
-# fNuPDG
+    logging.info('Applying a numu cut of %.2f, a nue cut of %.2f, a nutau cut of %.2f, and a NC cut of %.2f...\n' % (CUT_NUMU, CUT_NUE, CUT_NUTAU, CUT_NC))
 
-logging.info('fNuPDG report:\n')
-print(classification_report(y_test0, y_pred0, target_names=fNuPDG_target_names))
-logging.info('fNuPDG confusion matrix (rows = predicted classes, cols = actual classes):\n')
-fNuPDG_conf_matrix = confusion_matrix(y_pred0, y_test0)
-print fNuPDG_conf_matrix, '\n'
+    weighted_conf_matrix     = np.zeros((4,4), dtype='float32')
+    cut_weighted_conf_matrix = np.zeros((4,4), dtype='float32')
 
-# flavour 
+    for sample in range(len(Y_pred_flavour)):
+        pred_flavour = int(y_pred_flavour[sample])  # get predicted class of sample
+        test_flavour = int(y_test_flavour[sample])  # get actual class of sample
+        weight = test_values[sample]['fEventWeight'] # event weight
+        if Y_pred_flavour[sample][0] >= CUT_NUMU:
+            cut_weighted_conf_matrix[0][test_flavour] += weight
+        if Y_pred_flavour[sample][1] >= CUT_NUE:
+            cut_weighted_conf_matrix[1][test_flavour] += weight
+        if Y_pred_flavour[sample][2] >= CUT_NUTAU:
+            cut_weighted_conf_matrix[2][test_flavour] += weight
+        if Y_pred_flavour[sample][3] >= CUT_NC:
+            cut_weighted_conf_matrix[3][test_flavour] += weight
+        weighted_conf_matrix[pred_flavour][test_flavour] += weight
 
-logging.info('flavour report:\n')
-print(classification_report(y_test1, y_pred1, target_names=flavour_target_names))
-logging.info('flavour confusion matrix (rows = predicted classes, cols = actual classes):\n')
-flavour_conf_matrix = confusion_matrix(y_pred1, y_test1)
-print flavour_conf_matrix, '\n'
+    # Confusion matrix - neutrino flavour (weighted)
 
-# interaction
+    logging.info('Neutrino flavour weighted confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    print weighted_conf_matrix.astype(int), '\n'
+    logging.info('Neutrino flavour weighted confusion matrix (rows = predicted classes, cols = actual classes) after applying the nue and numu cuts:\n')
+    print cut_weighted_conf_matrix.astype(int), '\n'
+    float_formatter = lambda x: "%.4f" % x
+    np.set_printoptions(formatter={'float_kind':float_formatter})
 
-logging.info('interaction report:\n')
-print(classification_report(y_test2, y_pred2, target_names=interaction_target_names))
-logging.info('interaction confusion matrix (rows = predicted classes, cols = actual classes):\n')
-interaction_conf_matrix = confusion_matrix(y_pred2, y_test2)
-print interaction_conf_matrix, '\n'
+    # Purity confusion matrix
 
-# categories
+    purity_conf_matrix = np.copy(cut_weighted_conf_matrix)
+    for i in range(cut_weighted_conf_matrix.shape[0]):
+        row_sum = np.sum(purity_conf_matrix[i])
+        if(row_sum > 0):
+            for j in range(cut_weighted_conf_matrix.shape[1]):
+                purity_conf_matrix[i][j] /= row_sum
+    logging.info('Purity confusion matrix (rows = predicted classes, cols = actual classes)\n')
+    print purity_conf_matrix, '\n'
 
-logging.info('categories report:\n')
-print(classification_report(y_test3, y_pred3, target_names=categories_target_names))
-logging.info('categories confusion matrix (rows = predicted classes, cols = actual classes):\n')
-categories_conf_matrix = confusion_matrix(y_pred3, y_test3)
-print categories_conf_matrix, '\n'
+    # Efficiency confusion matrix
 
-# fNProton
+    logging.info('Efficiency confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    efficiency_conf_matrix = cut_weighted_conf_matrix.astype('float32')/ np.add.reduce(weighted_conf_matrix)
+    print efficiency_conf_matrix, '\n'
+else:
+    # Multi-output network
+    test_values = np.array(test_values[0:Y_pred[0].shape[0]]) # array with y true values, energies and weights
 
-logging.info('fNProton report:\n')
-print(classification_report(y_test4, y_pred4, target_names=fNProton_target_names))
-logging.info('fNProton confusion matrix (rows = predicted classes, cols = actual classes):\n')
-fNProton_conf_matrix = confusion_matrix(y_pred4, y_test4)
-print fNProton_conf_matrix, '\n'
+    y_pred_is_antineutrino = np.around(Y_pred[0]).reshape((Y_pred[0].shape[0], 1)).astype(int) # 1-DIM array of predicted values (is_antineutrino)
+    y_pred_flavour = np.argmax(Y_pred[1], axis=1).reshape((Y_pred[1].shape[0], 1))             # 1-DIM array of predicted values (flavour)
+    y_pred_interaction = np.argmax(Y_pred[2], axis=1).reshape((Y_pred[2].shape[0], 1))         # 1-DIM array of predicted values (interaction)
+    y_pred_categories = np.zeros(y_pred_flavour.shape, dtype=int)                              # 1-DIM array of predicted values (categories)
+    y_pred_protons = np.argmax(Y_pred[3], axis=1).reshape((Y_pred[3].shape[0], 1))             # 1-DIM array of predicted values (protons)
+    y_pred_pions = np.argmax(Y_pred[4], axis=1).reshape((Y_pred[4].shape[0], 1))               # 1-DIM array of predicted values (pions)
+    y_pred_pizeros = np.argmax(Y_pred[5], axis=1).reshape((Y_pred[5].shape[0], 1))             # 1-DIM array of predicted values (pizeros)
+    y_pred_neutrons = np.argmax(Y_pred[6], axis=1).reshape((Y_pred[6].shape[0], 1))            # 1-DIM array of predicted values (neutrons)
 
-# fNPion
+    y_test_is_antineutrino = np.array([aux['y_value'][0] for aux in test_values]).reshape(y_pred_is_antineutrino.shape)
+    y_test_flavour = np.array([aux['y_value'][1] for aux in test_values]).reshape(y_pred_flavour.shape)
+    y_test_interaction = np.array([aux['y_value'][2] for aux in test_values]).reshape(y_pred_interaction.shape)
+    y_test_categories = np.zeros(y_test_flavour.shape, dtype=int)
+    y_test_protons = np.array([aux['y_value'][3] for aux in test_values]).reshape(y_pred_protons.shape)
+    y_test_pions = np.array([aux['y_value'][4] for aux in test_values]).reshape(y_pred_pions.shape)
+    y_test_pizeros = np.array([aux['y_value'][5] for aux in test_values]).reshape(y_pred_pizeros.shape)
+    y_test_neutrons = np.array([aux['y_value'][6] for aux in test_values]).reshape(y_pred_neutrons.shape)
+  
+    # manually set y_pred_categories and y_test_categories
 
-logging.info('fNPion report:\n')
-print(classification_report(y_test5, y_pred5, target_names=fNPion_target_names))
-logging.info('fNPion confusion matrix (rows = predicted classes, cols = actual classes):\n')
-fNPion_conf_matrix = confusion_matrix(y_pred5, y_test5)
-print fNPion_conf_matrix, '\n'
+    for i in range(y_pred_categories.shape[0]):
+        # inter
+        y_pred_categories[i] = y_pred_interaction[i]
+        y_test_categories[i] = y_test_interaction[i]    
 
-# fNPizero
+        # flavour
+        y_pred_categories[i] += (y_pred_flavour[i]*4)
+        y_test_categories[i] += (y_test_flavour[i]*4)
 
-logging.info('fNPizero report:\n')
-print(classification_report(y_test6, y_pred6, target_names=fNPizero_target_names))
-logging.info('fNPizero confusion matrix (rows = predicted classes, cols = actual classes):\n')
-fNPizero_conf_matrix = confusion_matrix(y_pred6, y_test6)
-print fNPizero_conf_matrix, '\n'
+        if y_pred_flavour[i] == 3:
+            y_pred_is_antineutrino[i] = 2
+            y_pred_interaction[i] = 4
+            y_pred_categories[i] = 12
 
-# fNNeutron
+        if y_test_flavour[i] == 3:
+            y_test_is_antineutrino[i] = 2
+            y_test_interaction[i] = 4
+            y_test_categories[i] = 12
 
-logging.info('fNNeutron report:\n')
-print(classification_report(y_test7, y_pred7, target_names=fNNeutron_target_names))
-logging.info('fNNeutron confusion matrix (rows = predicted classes, cols = actual classes):\n')
-fNNeutron_conf_matrix = confusion_matrix(y_pred7, y_test7)
-print fNNeutron_conf_matrix, '\n'
+    #np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)}, threshold=np.nan)
 
-# Apply cuts
+    # is_antineutrino
 
-logging.info('Applying a nue cut of %.2f, a numu cut of %.2f, a nutau cut of %.2f, and a NC cut of %.2f...\n' % (CUT_NUE, CUT_NUMU, CUT_NUTAU, CUT_NC))
+    logging.info('is_antineutrino report:\n')
+    print(classification_report(y_test_is_antineutrino, y_pred_is_antineutrino, target_names=is_antineutrino_target_names))
+    logging.info('is_antineutrino confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    is_antineutrino_conf_matrix = confusion_matrix(y_pred_is_antineutrino, y_test_is_antineutrino)
+    print is_antineutrino_conf_matrix, '\n'
 
-weighted_conf_matrix     = np.zeros((4,4), dtype='float32')
-cut_weighted_conf_matrix = np.zeros((4,4), dtype='float32')
+    # flavour 
 
-for sample in range(len(Y_pred[1])):
-    pred_flavour = int(y_pred1[sample])  # get predicted class of sample
-    test_flavour = int(y_test1[sample])  # get actual class of sample
-    weight = test_values[sample]['fEventWeight'] # event weight
+    logging.info('flavour report:\n')
+    print(classification_report(y_test_flavour, y_pred_flavour, target_names=flavour_target_names))
+    logging.info('flavour confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    flavour_conf_matrix = confusion_matrix(y_pred_flavour, y_test_flavour)
+    print flavour_conf_matrix, '\n'
 
-    if Y_pred[1][sample][0] >= CUT_NUE:
-        # accumulate if the probability of that label of the sample is >= CUT_NUE
-        cut_weighted_conf_matrix[0][test_flavour] += weight
+    # interaction
 
-    if Y_pred[1][sample][1] >= CUT_NUMU:
-        # accumulate if the probability of that label of the sample is >= CUT_NUMU
-        cut_weighted_conf_matrix[1][test_flavour] += weight
+    logging.info('interaction report:\n')
+    print(classification_report(y_test_interaction, y_pred_interaction, target_names=interaction_target_names))
+    logging.info('interaction confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    interaction_conf_matrix = confusion_matrix(y_pred_interaction, y_test_interaction)
+    print interaction_conf_matrix, '\n'
 
-    if Y_pred[1][sample][2] >= CUT_NUTAU:
-        # accumulate if the probability of that label of the sample is >= CUT_NUTAU
-        cut_weighted_conf_matrix[2][test_flavour] += weight
+    # categories
 
-    if Y_pred[1][sample][3] >= CUT_NC:
-        # accumulate if the probability of that label of the sample is >= CUT_NC
-        cut_weighted_conf_matrix[3][test_flavour] += weight
+    logging.info('categories report:\n')
+    print(classification_report(y_test_categories, y_pred_categories, target_names=categories_target_names))
+    logging.info('categories confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    categories_conf_matrix = confusion_matrix(y_pred_categories, y_test_categories)
+    print categories_conf_matrix, '\n'
 
-    weighted_conf_matrix[pred_flavour][test_flavour] += weight
+    # protons
 
-# Confusion matrix - neutrino types (weighted)
+    logging.info('protons report:\n')
+    print(classification_report(y_test_protons, y_pred_protons, target_names=protons_target_names))
+    logging.info('protons confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    protons_conf_matrix = confusion_matrix(y_pred_protons, y_test_protons)
+    print protons_conf_matrix, '\n'
 
-logging.info('Neutrino types weighted confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    # pions
 
-print weighted_conf_matrix.astype(int), '\n'
+    logging.info('pions report:\n')
+    print(classification_report(y_test_pions, y_pred_pions, target_names=pions_target_names))
+    logging.info('pions confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    pions_conf_matrix = confusion_matrix(y_pred_pions, y_test_pions)
+    print pions_conf_matrix, '\n'
 
-logging.info('Neutrino types weighted confusion matrix (rows = predicted classes, cols = actual classes) after applying the nue and numu cuts:\n')
+    # pizeros
 
-print cut_weighted_conf_matrix.astype(int), '\n'
+    logging.info('pizeros report:\n')
+    print(classification_report(y_test_pizeros, y_pred_pizeros, target_names=pizeros_target_names))
+    logging.info('pizeros confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    pizeros_conf_matrix = confusion_matrix(y_pred_pizeros, y_test_pizeros)
+    print pizeros_conf_matrix, '\n'
 
-float_formatter = lambda x: "%.4f" % x
-np.set_printoptions(formatter={'float_kind':float_formatter})
+    # neutrons
 
-# Purity confusion matrix
+    logging.info('neutrons report:\n')
+    print(classification_report(y_test_neutrons, y_pred_neutrons, target_names=neutrons_target_names))
+    logging.info('neutrons confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    neutrons_conf_matrix = confusion_matrix(y_pred_neutrons, y_test_neutrons)
+    print neutrons_conf_matrix, '\n'
 
-purity_conf_matrix = np.copy(cut_weighted_conf_matrix)
+    # Apply cuts
 
-for i in range(cut_weighted_conf_matrix.shape[0]):
-    row_sum = np.sum(purity_conf_matrix[i])
-    if(row_sum > 0):
-        for j in range(cut_weighted_conf_matrix.shape[1]):
-            purity_conf_matrix[i][j] /= row_sum
+    logging.info('Applying a numu cut of %.2f, a nue cut of %.2f, a nutau cut of %.2f, and a NC cut of %.2f...\n' % (CUT_NUMU, CUT_NUE, CUT_NUTAU, CUT_NC))
 
-logging.info('Purity confusion matrix (rows = predicted classes, cols = actual classes)\n')
+    weighted_conf_matrix     = np.zeros((4,4), dtype='float32')
+    cut_weighted_conf_matrix = np.zeros((4,4), dtype='float32')
 
-print purity_conf_matrix, '\n'
+    for sample in range(len(Y_pred[1])):
+        pred_flavour = int(y_pred_flavour[sample])   # get predicted class of sample
+        test_flavour = int(y_test_flavour[sample])   # get actual class of sample
+        weight = test_values[sample]['fEventWeight'] # event weight
+        if Y_pred[1][sample][0] >= CUT_NUMU:
+            cut_weighted_conf_matrix[0][test_flavour] += weight
+        if Y_pred[1][sample][1] >= CUT_NUE:
+            cut_weighted_conf_matrix[1][test_flavour] += weight
+        if Y_pred[1][sample][2] >= CUT_NUTAU:
+            cut_weighted_conf_matrix[2][test_flavour] += weight
+        if Y_pred[1][sample][3] >= CUT_NC:
+            cut_weighted_conf_matrix[3][test_flavour] += weight
+        weighted_conf_matrix[pred_flavour][test_flavour] += weight
 
-# Efficiency confusion matrix
+    # Confusion matrix - neutrino flavour (weighted)
 
-logging.info('Efficiency confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    logging.info('Neutrino flavour weighted confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    print weighted_conf_matrix.astype(int), '\n'
+    logging.info('Neutrino flavour weighted confusion matrix (rows = predicted classes, cols = actual classes) after applying the nue and numu cuts:\n')
+    print cut_weighted_conf_matrix.astype(int), '\n'
+    float_formatter = lambda x: "%.4f" % x
+    np.set_printoptions(formatter={'float_kind':float_formatter})
 
-efficiency_conf_matrix = cut_weighted_conf_matrix.astype('float32')/ np.add.reduce(weighted_conf_matrix)
+    # Purity confusion matrix
 
-print efficiency_conf_matrix, '\n'
+    purity_conf_matrix = np.copy(cut_weighted_conf_matrix)
+    for i in range(cut_weighted_conf_matrix.shape[0]):
+        row_sum = np.sum(purity_conf_matrix[i])
+        if(row_sum > 0):
+            for j in range(cut_weighted_conf_matrix.shape[1]):
+                purity_conf_matrix[i][j] /= row_sum
+    logging.info('Purity confusion matrix (rows = predicted classes, cols = actual classes)\n')
+    print purity_conf_matrix, '\n'
 
-# Dump test information
+    # Efficiency confusion matrix
 
-logging.info('Dumping test information to \'%s\'...\n' % (OUTPUT_PATH + OUTPUT_PREFIX + '.np'))
+    logging.info('Efficiency confusion matrix (rows = predicted classes, cols = actual classes):\n')
+    efficiency_conf_matrix = cut_weighted_conf_matrix.astype('float32')/ np.add.reduce(weighted_conf_matrix)
+    print efficiency_conf_matrix, '\n'
 
-test_info = {'test_values':test_values,                  # Energy and weight values
-             'Y_pred':Y_pred,                            # 3-DIM array of original probability predicted values
-             'y_pred0':y_pred0,                          # 1-DIM array of fNuPDG predicted values
-             'y_pred1':y_pred1,                          # 1-DIM array of flavour predicted values
-             'y_pred2':y_pred2,                          # 1-DIM array of interaction predicted values
-             'y_pred3':y_pred3,                          # 1-DIM array of categories predicted values
-             'y_pred4':y_pred4,                          # 1-DIM array of fNProton predicted values
-             'y_pred5':y_pred5,                          # 1-DIM array of fNPion predicted values
-             'y_pred6':y_pred6,                          # 1-DIM array of fNPizero predicted values
-             'y_pred7':y_pred7,                          # 1-DIM array of fNNeutron predicted values
-             'y_test0':y_test0,                          # 1-DIM array of fNuPDG test values
-             'y_test1':y_test1,                          # 1-DIM array of flavour test values
-             'y_test2':y_test2,                          # 1-DIM array of interaction test values
-             'y_test3':y_test3,                          # 1-DIM array of categories test values
-             'y_test4':y_test4,                          # 1-DIM array of fNProton test values
-             'y_test5':y_test5,                          # 1-DIM array of fNPion test values
-             'y_test6':y_test6,                          # 1-DIM array of fNPizero test values
-             'y_test7':y_test7,                          # 1-DIM array of fNNeutron test values
-             'fNuPDG_cm':fNuPDG_conf_matrix,             # fNuPDG confusion matrix
-             'flavour_cm':flavour_conf_matrix,           # flavour confusion matrix
-             'interaction_cm':interaction_conf_matrix,   # interaction confusion matrix
-             'categories_cm':categories_conf_matrix,     # categories confusion matrix
-             'fNProton_cm':fNProton_conf_matrix,         # fNProton confusion matrix
-             'fNPion_cm':fNPion_conf_matrix,             # fNPion confusion matrix
-             'fNPizero_cm':fNPizero_conf_matrix,         # fNPizero confusion matrix
-             'fNNeutron_cm':fNNeutron_conf_matrix,       # fNNeutron confusion matrix
-             'cut_weighted_cm':cut_weighted_conf_matrix, # Weighted neutrino types confusion matrix (after the cut)
-             'purity_cm':purity_conf_matrix,             # Purity confusion matrix
-             'efficiency_cm':efficiency_conf_matrix      # Efficiency confusion matrix
-            }
+    # Dump test information
 
-test_info = np.array(test_info)
+    logging.info('Dumping test information to \'%s\'...\n' % (OUTPUT_PATH + OUTPUT_PREFIX + '.np'))
 
-with open(OUTPUT_PATH + OUTPUT_PREFIX + '.np', 'w') as test_info_file:
-    test_info.dump(test_info_file)
+    test_info = {'test_values':test_values,                        # Energy and weight values
+                 'Y_pred':Y_pred,                                  # 3-DIM array of original probability predicted values
+                 'y_pred_is_antineutrino':y_pred_is_antineutrino,  # 1-DIM array of is_antineutrino predicted values
+                 'y_test_is_antineutrino':y_test_is_antineutrino,  # 1-DIM array of is_antineutrino test values
+                 'y_pred_flavour':y_pred_flavour,                  # 1-DIM array of flavour predicted values
+                 'y_test_flavour':y_test_flavour,                  # 1-DIM array of flavour test values
+                 'y_pred_interaction':y_pred_interaction,          # 1-DIM array of interaction predicted values
+                 'y_test_interaction':y_test_interaction,          # 1-DIM array of interaction test values
+                 'y_pred_categories':y_pred_categories,            # 1-DIM array of categories predicted values
+                 'y_test_categories':y_test_categories,            # 1-DIM array of categories test values
+                 'y_pred_protons':y_pred_protons,                  # 1-DIM array of protons predicted values
+                 'y_test_protons':y_test_protons,                  # 1-DIM array of protons test values
+                 'y_pred_pions':y_pred_pions,                      # 1-DIM array of pions predicted values
+                 'y_test_pions':y_test_pions,                      # 1-DIM array of pions test values
+                 'y_pred_pizeros':y_pred_pizeros,                  # 1-DIM array of pizeros predicted values
+                 'y_test_pizeros':y_test_pizeros,                  # 1-DIM array of pizeros test values
+                 'y_pred_neutrons':y_pred_neutrons,                # 1-DIM array of neutrons predicted values
+                 'y_test_neutrons':y_test_neutrons,                # 1-DIM array of neutrons test values
+                 'is_antineutrino_cm':is_antineutrino_conf_matrix, # is_antineutrino confusion matrix
+                 'flavour_cm':flavour_conf_matrix,                 # flavour confusion matrix
+                 'interaction_cm':interaction_conf_matrix,         # interaction confusion matrix
+                 'categories_cm':categories_conf_matrix,           # categories confusion matrix
+                 'protons_cm':protons_conf_matrix,                 # protons confusion matrix
+                 'pions_cm':pions_conf_matrix,                     # pions confusion matrix
+                 'pizeros_cm':pizeros_conf_matrix,                 # pizeros confusion matrix
+                 'neutrons_cm':neutrons_conf_matrix,               # neutrons confusion matrix
+                 'cut_weighted_cm':cut_weighted_conf_matrix,       # Weighted neutrino types confusion matrix (after the cut)
+                 'purity_cm':purity_conf_matrix,                   # Purity confusion matrix
+                 'efficiency_cm':efficiency_conf_matrix            # Efficiency confusion matrix
+                }
+
+    test_info = np.array(test_info)
+
+    with open(OUTPUT_PATH + OUTPUT_PREFIX + '.np', 'w') as test_info_file:
+        test_info.dump(test_info_file)

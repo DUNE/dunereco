@@ -40,7 +40,8 @@ namespace cvn
     }
 
   }
-  
+ 
+  // Check the network outputs
   bool check(const std::vector< std::vector< float > > & outputs)
   {
     if (outputs.size() == 1) return true;
@@ -57,12 +58,13 @@ namespace cvn
     return aux == outputs.size() ? false : true;        
   }
 
-  void fillZeros(std::vector< std::vector< float > > & outputs)
+  // Fill outputs with value -3
+  void fillEmpty(std::vector< std::vector< float > > & outputs)
   {
     for (size_t o = 0; o < outputs.size(); ++o)
     {
         for (size_t i = 0; i < outputs[o].size(); ++i)
-            outputs[o][i] = 0.0;
+            outputs[o][i] = -3.0;
     }
     return;
   }
@@ -97,7 +99,7 @@ namespace cvn
         if(counter==10){
             std::cout << "Error, CVN never outputing a correct result. Filling result with zeros.";
             std::cout << std::endl;
-            fillZeros(cvnResults[0]);
+            fillEmpty(cvnResults[0]);
             break;
         }
     }while(status == false);
