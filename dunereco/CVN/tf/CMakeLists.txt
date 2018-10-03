@@ -1,9 +1,11 @@
-# Tensorflow stuff
-if (DEFINED ENV{TENSORFLOW_DIR})
-# For some reason we apparently need to care if larreco is checked out.
-else(DEFINED ENV{TENSORFLOW_DIR})
-set (EXCLUDE_TF TFNetHandler.cxx)
-endif (DEFINED ENV{TENSORFLOW_DIR})
+if( DEFINED ENV{TENSORFLOW_DIR} )
+# This is a hack for a broken tensorflow link, which
+  # requires -lrt for glibc earlier than 2.17 (i.e. SLF6)
+  # We take advantage of OSTYPE defined by cetbuildtools
+  if ( "${OSTYPE}" MATCHES "slf6" )
+    set(FOR_TENSORFLOW "-lrt")
+  endif ()
+endif ()
 
 #art_make(
 #          LIB_LIBRARIES
@@ -17,8 +19,7 @@ endif (DEFINED ENV{TENSORFLOW_DIR})
 
 art_make(BASENAME_ONLY
   LIBRARY_NAME      CVNTf
-  EXCLUDE ${EXCLUDE_TF}
-  LIB_LIBRARIES CVNFunc
+  LIB_LIBRARIES
   ${ART_FRAMEWORK_CORE}
   ${ART_FRAMEWORK_PRINCIPAL}
   ${ART_FRAMEWORK_SERVICES_REGISTRY}
@@ -42,8 +43,6 @@ art_make(BASENAME_ONLY
   #larsim_MCCheater_BackTrackerService_service           
   #larsim_MCCheater_ParticleInventoryService_service
   MVAAlg
-  MODULE_LIBRARIES  CVNFunc
-  CVNTf
   )
 
 
