@@ -49,6 +49,9 @@
   <class name="std::vector<cvn::Result>"          />
   <class name="art::Ptr<cvn::Result>"             />
   <class name="art::Wrapper< std::vector<cvn::Result> >"    />
+
+  <class name="std::vector<std::vector<float> >"          />
+  <class name="art::Wrapper< std::vector<std::vector<float> > >"    />
   
 </lcgdict>
 
