@@ -79,7 +79,8 @@ namespace cvn {
     unsigned int fMaxWireGap;
 
     /// Use unwrapped pixel maps?
-    bool fUnwrappedPixelMap;
+    // 0 means no unwrap, 1 means unwrap in wire, 2 means unwrap in wire and time
+    unsigned short fUnwrappedPixelMap;
 
     /// PixelMapProducer does the work for us
     PixelMapProducer fProducer;
@@ -96,7 +97,7 @@ namespace cvn {
   fTdcWidth     (pset.get<unsigned short> ("TdcWidth")),
   fWireLength   (pset.get<unsigned short> ("WireLength")),
   fTimeResolution   (pset.get<unsigned short> ("TimeResolution")),
-  fUnwrappedPixelMap(pset.get<bool> ("UnwrappedPixelMap")),
+  fUnwrappedPixelMap(pset.get<unsigned short> ("UnwrappedPixelMap")),
   fProducer      (fWireLength, fTdcWidth, fTimeResolution)
   {
 
@@ -125,6 +126,7 @@ namespace cvn {
   void CVNMapper::produce(art::Event& evt)
   {
     // Use unwrapped pixel maps if requested
+    // 0 means no unwrap, 1 means unwrap in wire, 2 means unwrap in wire and time
     fProducer.SetUnwrapped(fUnwrappedPixelMap);
 
     art::Handle< std::vector< recob::Hit > > hitListHandle;
@@ -138,7 +140,6 @@ namespace cvn {
       pmCol(new std::vector<cvn::PixelMap>);
 
     if(nhits>fMinClusterHits){
-      //std::cout<<"nhits: "<<nhits<<std::endl;
       PixelMap pm = fProducer.CreateMap(hitlist);
       pmCol->push_back(pm);
     }

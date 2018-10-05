@@ -1,7 +1,16 @@
+"""
+This is the plot module.
+"""
+
+__version__ = '1.0'
+__author__ = 'Saul Alonso-Monsalve'
+__email__ = "saul.alonso.monsalve@cern.ch"
+
 import configparser
 import ast
 import re
-import logging, sys
+import logging
+import sys
 
 from os import listdir
 from os.path import isfile, join
@@ -17,7 +26,7 @@ from keras.utils import plot_model
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read('config/config.ini')
 
 # model
 

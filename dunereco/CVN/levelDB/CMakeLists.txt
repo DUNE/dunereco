@@ -48,5 +48,27 @@ art_make_exec( cvnCreateDB
                          CVNFunc
                )
 
+art_make_exec( cvnCreateZlibImages       
+               SOURCE    cvnCreateZlibImages.cc
+               LIBRARIES ${ART_FRAMEWORK_CORE}
+                         ${ART_FRAMEWORK_PRINCIPAL}
+                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
+                         ${ART_FRAMEWORK_SERVICES_BASIC}
+                         ${ART_FRAMEWORK_SERVICES_OPTIONAL}
+                         ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
+                         ${ART_PERSISTENCY_COMMON}
+                         canvas
+                         art_Persistency_Provenance
+                         z
+                         ${ART_UTILITIES}
+                         ${BOOSTLIB}
+                         ${GLOGLIB}
+                         ${FHICLCPP}
+                         ${CETLIB}
+                         ${ROOT_BASIC_LIB_LIST}
+                         CVNFunc
+               )
+
+
 install_source()
 install_fhicl()

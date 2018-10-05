@@ -22,6 +22,7 @@ from keras.layers import GlobalAveragePooling2D
 from keras.layers import GlobalMaxPooling2D
 from keras.layers import Conv2D
 from keras.layers import add
+from keras.layers import concatenate
 from keras.layers import multiply
 from keras.regularizers import l2
 from keras.utils import conv_utils
@@ -140,7 +141,7 @@ def SEResNet(input_shape=None,
     else:
         inputs = img_input
     # Create model.
-    model = Model(inputs, x, name='resnext')
+    model = Model(inputs=inputs, outputs=x, name='resnext')
 
     # load weights
 
@@ -392,7 +393,7 @@ def _create_se_resnet(classes, img_input, include_top, initial_conv_filters, fil
     if include_top:
         x = GlobalAveragePooling2D()(x)
         x = Dense(classes, use_bias=False, kernel_regularizer=l2(weight_decay),
-                  activation='softmax')(x)
+                  activation='sigmoid', name='neutrino')(x)
     else:
         if pooling == 'avg':
             x = GlobalAveragePooling2D()(x)

@@ -304,9 +304,7 @@ void cvn::CVNImageUtils::GetMinMaxWires(std::vector<float> &wireCharges, unsigne
 
     // If we have got to fNWires from the end, the start needs to be this wire
     if(wireCharges.size() - wire == fNWires){
-      minWire = wire;
-      maxWire = wire + fNWires - 1;
-      return;
+      break;
     }
 
     // For a given plane, look to see if the next 20 planes are empty. If not, this can be out start plane.
@@ -321,6 +319,25 @@ void cvn::CVNImageUtils::GetMinMaxWires(std::vector<float> &wireCharges, unsigne
     }
   }
 
+  // If we don't find a region where we have fewer than 5 empty planes then we just want to select the fNWires wires containing
+  // the most charge
+  float maxCharge = 0.;
+  unsigned int firstWire = 0;
+  for(unsigned int wire = 0; wire < wireCharges.size() - fNWires; ++wire){
+    float windowCharge = 0.;
+    for(unsigned int nextwire = wire; nextwire < wire + fNWires; ++nextwire){
+      windowCharge += wireCharges[nextwire];
+    } 
+    if(windowCharge > maxCharge){
+      maxCharge = windowCharge;
+      firstWire = wire;
+    }
+  } 
+  minWire = firstWire;
+  maxWire = firstWire + fNWires - 1;
+
+  std::cout << "Used alternate method to get min and max wires due to vertex determination failure: " << minWire << ", " << maxWire << std::endl;
+
 }
 
 void cvn::CVNImageUtils::GetMinMaxTDCs(std::vector<float> &tdcCharges, unsigned int &minTDC, unsigned int &maxTDC){
@@ -332,12 +349,10 @@ void cvn::CVNImageUtils::GetMinMaxTDCs(std::vector<float> &tdcCharges, unsigned 
 
     // If we have got to fNWires from the end, the start needs to be this wire
     if(tdcCharges.size() - tdc == fNTDCs){
-      minTDC = tdc;
-      maxTDC = tdc + fNTDCs - 1;
-      return;
+      break;
     } 
 
-    // For a given plane, look to see if the next 20 planes are empty. If not, this can be out start plane.
+    // For a given tdc, look to see if the next 20 tdcs are empty. If not, this can be out start tdc.
     int nEmpty = 0;
     for(unsigned int nextTDC = tdc + 1; nextTDC <= tdc + 20; ++nextTDC){
       if(tdcCharges[nextTDC] == 0.0) ++nEmpty;
@@ -348,6 +363,26 @@ void cvn::CVNImageUtils::GetMinMaxTDCs(std::vector<float> &tdcCharges, unsigned 
       return;
     } 
   }
+
+  // If we don't find a region where we have fewer than 5 empty tdcs then we just want to select the fNTDCs tdcs containing
+  // the most charge
+  float maxCharge = 0.;
+  unsigned int firstTDC = 0;
+  for(unsigned int tdc = 0; tdc < tdcCharges.size() - fNTDCs; ++tdc){
+    float windowCharge = 0.;
+    for(unsigned int nexttdc = tdc; nexttdc < tdc + fNTDCs; ++nexttdc){
+      windowCharge += tdcCharges[nexttdc];
+    }
+    if(windowCharge > maxCharge){
+      maxCharge = windowCharge;
+      firstTDC = tdc;
+    }
+  }
+  minTDC = firstTDC;
+  maxTDC = firstTDC + fNTDCs - 1;
+
+  std::cout << "Used alternate method to get min and max tdcs due to vertex determination failure: " << minTDC << ", " << maxTDC << std::endl;
+
 
 }
 

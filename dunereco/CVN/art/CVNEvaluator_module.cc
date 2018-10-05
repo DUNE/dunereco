@@ -2,6 +2,7 @@
 // \file    CVNEvaluator_module.cc
 // \brief   Producer module creating CVN neural net results
 // \author  Alexander Radovic - a.radovic@gmail.com
+//          Saul Alonso Monsalve - saul.alonso.monsalve@cern.ch
 ////////////////////////////////////////////////////////////////////////
 
 // C/C++ includes
@@ -73,6 +74,9 @@ namespace cvn {
     /// Number of outputs fron neural net
     unsigned int fNOutput;
 
+    /// If there are multiple pixel maps per event can we use them?
+    bool fMultiplePMs;
+
     unsigned int fTotal;
     unsigned int fCorrect;
     unsigned int fFullyCorrect;
@@ -96,7 +100,8 @@ namespace cvn {
     fCVNType     (pset.get<std::string>         ("CVNType")),
     fCaffeHandler       (pset.get<fhicl::ParameterSet> ("CaffeNetHandler")),
     fTFHandler       (pset.get<fhicl::ParameterSet> ("TFNetHandler")),
-    fNOutput       (fCaffeHandler.NOutput())
+    fNOutput       (fCaffeHandler.NOutput()),
+    fMultiplePMs (pset.get<bool> ("MultiplePMs"))
   {
     produces< std::vector<cvn::Result>   >(fResultLabel);
     fTotal = 0;
@@ -172,10 +177,57 @@ namespace cvn {
       // If we have a pixel map then use the TF interface to give us a prediction
       if(pixelmaplist.size() > 0){
         
-        std::vector<float> networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
-
+        std::vector< std::vector<float> > networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
         // cvn::Result can now take a vector of floats and works out the number of outputs
         resultCol->emplace_back(networkOutput);
+
+        /*
+        for(auto const& resaux: (*resultCol))
+        {
+            std::cout << "Is antineutrino: " << resaux.GetIsAntineutrinoProbability() << std::endl;
+            std::cout << "CC Numu: " << resaux.GetNumuProbability() << std::endl;
+            std::cout << "CC Nue: " << resaux.GetNueProbability() << std::endl;
+            std::cout << "CC Nutau: " << resaux.GetNutauProbability() << std::endl;
+            std::cout << "NC: " << resaux.GetNCProbability() << std::endl;
+            std::cout << "CC QE: " << resaux.GetQEProbability() << std::endl;
+            std::cout << "CC Res: " << resaux.GetResProbability() << std::endl;
+            std::cout << "CC DIS: " << resaux.GetDISProbability() << std::endl;
+            std::cout << "CC Other: " << resaux.GetOtherProbability() << std::endl;
+            std::cout << "0 Protons: " << resaux.Get0protonsProbability() << std::endl;
+            std::cout << "1 Protons: " << resaux.Get1protonsProbability() << std::endl;
+            std::cout << "2 Protons: " << resaux.Get2protonsProbability() << std::endl;
+            std::cout << ">2 Protons: " << resaux.GetNprotonsProbability() << std::endl;
+            std::cout << "0 Pions: " << resaux.Get0pionsProbability() << std::endl;
+            std::cout << "1 Pions: " << resaux.Get1pionsProbability() << std::endl;
+            std::cout << "2 Pions: " << resaux.Get2pionsProbability() << std::endl;
+            std::cout << ">3 Pions: " << resaux.GetNpionsProbability() << std::endl;
+            std::cout << "0 Pizeros: " << resaux.Get0pizerosProbability() << std::endl;
+            std::cout << "1 Pizeros: " << resaux.Get1pizerosProbability() << std::endl;
+            std::cout << "2 Pizeros: " << resaux.Get2pizerosProbability() << std::endl;
+            std::cout << ">2 Pizeros: " << resaux.GetNpizerosProbability() << std::endl;
+            std::cout << "0 Neutrons: " << resaux.Get0neutronsProbability() << std::endl;
+            std::cout << "1 Neutrons: " << resaux.Get1neutronsProbability() << std::endl;
+            std::cout << "2 Neutrons: " << resaux.Get2neutronsProbability() << std::endl;
+            std::cout << ">2 Neutrons: " << resaux.GetNneutronsProbability() << std::endl << std::endl;
+
+            std::cout << "Is antineutrino: " << resaux.PredictedIsAntineutrino() << std::endl;  
+            std::cout << "Predicted flavour: " << resaux.PredictedFlavour() << std::endl; 
+            std::cout << "Predicted interaction: " << resaux.PredictedInteraction() << std::endl; 
+            std::cout << "Predicted protons: " << resaux.PredictedProtons() << std::endl; 
+            std::cout << "Predicted pions: " << resaux.PredictedPions() << std::endl; 
+            std::cout << "Predicted pizeros: " << resaux.PredictedPizeros() << std::endl; 
+            std::cout << "Predicted neutrons: " << resaux.PredictedNeutrons() << std::endl; 
+        }
+        */
+
+        // Classify other pixel maps if they exist
+        if(fMultiplePMs){
+          for(unsigned int p = 1; p < pixelmaplist.size(); ++p){
+            std::vector< std::vector<float> > output = fTFHandler.Predict(*pixelmaplist[p]);
+            resultCol->emplace_back(output);
+          }
+        }
+
       }
     }
     else{
@@ -183,8 +235,8 @@ namespace cvn {
       mf::LogError("CVNEvaluator::produce") << "Exiting without processing events" << std::endl;
       return;
     }
-
-/* Truth level debug code
+/*
+// Truth level debug code
 //    mf::LogInfo("CVNEvaluator::produce") << " Predicted: " << (*resultCol)[0].PredictedInteractionType() << std::endl; 
 
     // Leigh: temporary testing code for performance
@@ -213,16 +265,22 @@ namespace cvn {
     TVector3 vtx = truthN.Nu().EndPosition().Vect();
     bool isFid = (fabs(vtx.X())<310 && fabs(vtx.Y())<550 && vtx.Z()>50 && vtx.Z()<1244);
 
-    if(isFid && pixelmaplist.size() > 0){
+
+//    if(isFid && pixelmaplist.size() > 0){
     
       unsigned int correctedInt = static_cast<unsigned int>(interaction);
       if(correctedInt == 13) correctedInt = 12;
 
-      unsigned int predInt = static_cast<unsigned int>((*resultCol)[0].PredictedInteractionType());
+    if(isFid){
+      std::cout << "This fiducial event is a true " << truthN.Nu().PdgCode() << " and is it CC? " << (truthN.CCNC()==0) << " (" << correctedInt << ")" << std::endl;
       float nueProb = (*resultCol)[0].GetNueProbability();
       float numuProb = (*resultCol)[0].GetNumuProbability();
-//      float nutauProb = (*resultCol)[0].GetNutauProbability();
-//      float ncProb = (*resultCol)[0].GetNCProbability();
+      float nutauProb = (*resultCol)[0].GetNutauProbability();
+      float ncProb = (*resultCol)[0].GetNCProbability();
+      std::cout << "Summed probabilities " << numuProb << ", " << nueProb << ", " << nutauProb << ", " << ncProb << std::endl;
+    }
+
+      unsigned int predInt = static_cast<unsigned int>((*resultCol)[0].PredictedInteractionType());
 
       ++fTotal;
 //      std::cout << " Truth :: Predicted = " << correctedInt << " :: " << predInt << " (" << numuProb << ", " << nueProb << ", " << nutauProb << ", " << ncProb  << ")" << std::endl; 
