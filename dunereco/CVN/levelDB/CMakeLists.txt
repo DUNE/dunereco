@@ -59,6 +59,7 @@ art_make_exec( cvnCreateZlibImages
                          ${ART_PERSISTENCY_COMMON}
                          canvas
                          art_Persistency_Provenance
+                         z
                          ${ART_UTILITIES}
                          ${BOOSTLIB}
                          ${GLOGLIB}
