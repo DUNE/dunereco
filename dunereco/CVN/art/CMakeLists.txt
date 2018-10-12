@@ -8,6 +8,8 @@ include_directories( $ENV{LEVELDB_INC} )
 include_directories( $ENV{GFLAGS_INC} )
 include_directories( $ENV{GLOG_INC} )
 
+find_package( ZLIB REQUIRED )
+
 cet_find_library( CAFFELIB NAMES caffe-d caffe PATHS ENV CAFFE_LIB NO_DEFAULT_PATH )
 cet_find_library( GSLLIB NAMES gsl PATHS ENV GSL_LIB NO_DEFAULT_PATH )
 cet_find_library( HDF5LIB NAMES hdf5 PATHS ENV HDF5_LIB NO_DEFAULT_PATH )
@@ -43,8 +45,7 @@ art_make(BASENAME_ONLY
   canvas
   art_Persistency_Provenance
   ${ART_UTILITIES}
-  ${MF_MESSAGELOGGER}
-  
+  ${MF_MESSAGELOGGER}  
   ${FHICLCPP}
   cetlib cetlib_except
   ${ROOT_BASIC_LIB_LIST}
@@ -58,6 +59,7 @@ art_make(BASENAME_ONLY
   ${HDF5LIB}
   ${PROTOBUFLIB}
   ${LEVELDBLIB}
+  ${ZLIB_LIBRARIES}
   ${GFLAGSLIB}
   ${GLOGLIB}                             
   MVAAlg
@@ -66,6 +68,7 @@ art_make(BASENAME_ONLY
   MODULE_LIBRARIES CVNFunc
   CVNTf
   CVNArt
+  stdc++fs
   )
 
 

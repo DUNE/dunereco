@@ -66,7 +66,7 @@ namespace cvn
 
     /// Draw pixel map to the screen.  This is pretty hokey and the aspect ratio
     /// is totally unrealistic.
-    void Print();
+    void Print() const;
 
     /// Return the pixel map as a 2D histogram for visualization.
     TH2F* ToTH2() const;

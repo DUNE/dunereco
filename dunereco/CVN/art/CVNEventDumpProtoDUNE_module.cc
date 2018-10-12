@@ -123,7 +123,7 @@ namespace cvn {
       InteractionType interaction = kOther;
 
       // Create the training data and add it to the tree
-      TrainingData train(interaction, 0.0, 0.0, 0.0, 0.0, 1.0, *pixelmaplist[p]);
+      TrainingData train(interaction, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, *pixelmaplist[p]);
       fTrain = &train;
       fTrainTree->Fill();
 

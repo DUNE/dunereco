@@ -67,6 +67,7 @@ namespace cvn {
     std::string fGenieGenModuleLabel;
     std::string fEnergyNueLabel;
     std::string fEnergyNumuLabel;
+    std::string fEnergyNutauLabel;
     bool        fGetEnergyOutput;
     bool        fGetEventWeight;
     bool        fWriteMapTH2;
@@ -106,6 +107,7 @@ namespace cvn {
     fApplyFidVol    = pset.get<bool>("ApplyFidVol");
     fEnergyNueLabel = pset.get<std::string> ("EnergyNueLabel");  
     fEnergyNumuLabel = pset.get<std::string> ("EnergyNumuLabel");
+    fEnergyNutauLabel = pset.get<std::string> ("EnergyNutauLabel");
     fGetEnergyOutput = pset.get<bool> ("GetEnergyOutput");
     fGetEventWeight = pset.get<bool> ("GetEventWeight");
     fUseTopology  = pset.get<bool>("UseTopology");
@@ -186,6 +188,7 @@ namespace cvn {
 
     float recoNueEnergy = 0.;
     float recoNumuEnergy = 0.;
+    float recoNutauEnergy = 0.;
     // Should we use the EnergyReco_module reconstructed energies?
     if(fGetEnergyOutput){
       // Get the nue info
@@ -202,6 +205,13 @@ namespace cvn {
 
         recoNumuEnergy = energyRecoNumuHandle->fNuLorentzVector.E();
       }
+      // And the nutau
+      if(fEnergyNutauLabel != ""){
+        art::Handle<dune::EnergyRecoOutput> energyRecoNutauHandle;
+        evt.getByLabel(fEnergyNutauLabel, energyRecoNutauHandle);
+
+        recoNutauEnergy = energyRecoNutauHandle->fNuLorentzVector.E();
+      }
     }
 
     // If we don't want to get the event weight then leave it as 1.0.
@@ -212,7 +222,8 @@ namespace cvn {
     }
 
     // Create the training data and add it to the tree
-    TrainingData train(interaction, nuEnergy, lepEnergy, recoNueEnergy, recoNumuEnergy, eventWeight, *pixelmaplist[0]);
+    TrainingData train(interaction, nuEnergy, lepEnergy, recoNueEnergy,
+      recoNumuEnergy, recoNutauEnergy, eventWeight, *pixelmaplist[0]);
     // Set the topology information
     int topPDG     = labels.GetPDG();
     int nprot      = labels.GetNProtons();

@@ -121,7 +121,7 @@ namespace cvn
     return index;
   }
 
-  void PixelMap::Print()
+  void PixelMap::Print() const
   {
 
     // Start by doing even wires

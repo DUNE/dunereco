@@ -123,6 +123,9 @@ void fill(const Config& config, std::string input)
   int  fNPizero = -1;
   int  fNNeutron = -1;
 
+  int  fTopologyType = -1;
+  int  fTopologyTypeAlt = -1;
+
   chain.SetBranchAddress("fNuEnergy", &fNuEnergy);
   chain.SetBranchAddress("fLepEnergy", &fLepEnergy);
   chain.SetBranchAddress("fRecoNueEnergy", &fRecoNueEnergy);
@@ -134,6 +137,9 @@ void fill(const Config& config, std::string input)
   chain.SetBranchAddress("fNPion", &fNPion);
   chain.SetBranchAddress("fNPizero", &fNPizero);
   chain.SetBranchAddress("fNNeutron", &fNNeutron);
+
+  chain.SetBranchAddress("fTopologyType", &fTopologyType);
+  chain.SetBranchAddress("fTopologyTypeAlt", &fTopologyTypeAlt);
 
   unsigned int entries = chain.GetEntries();
   if(config.fNEvents < entries){
@@ -280,7 +286,10 @@ void fill(const Config& config, std::string input)
                 info_file << fNProton << std::endl;
                 info_file << fNPion << std::endl;
                 info_file << fNPizero << std::endl;         
-                info_file << fNNeutron;        
+                info_file << fNNeutron << std::endl;
+
+                info_file << fTopologyType << std::endl;
+                info_file << fTopologyTypeAlt;        
 
                 info_file.close(); // close file
 
