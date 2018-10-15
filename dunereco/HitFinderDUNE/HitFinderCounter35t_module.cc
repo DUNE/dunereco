@@ -191,7 +191,9 @@ namespace dune{
     
     if (fDebug) std::cout << "\n\nLooking at event " << evt.event() << std::endl;
 
-    CLHEP::HepRandomEngine const & engine = fRng->getEngine("Seed");
+    CLHEP::HepRandomEngine const & engine = fRng->getEngine(art::ScheduleID::first(),
+                                                            moduleDescription().moduleLabel(),
+							    "Seed");
     fFitAlg.SetSeed(engine.getSeed());
 
     // get raw::ExternalTriggers
