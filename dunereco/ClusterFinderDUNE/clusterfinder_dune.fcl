@@ -178,5 +178,7 @@ protodunespmc_dbcluster3d.DBScan3DAlg.epsilon: 10
 protodunespmc_dbcluster3d.DBScan3DAlg.minpts: 2
 protodunespmc_dbcluster3d.MinHitDis: 1000
 
+protodunespmc_linecluster:                    @local::standard_linecluster
+protodunespmc_linecluster.DoRawDigitAssns:    true
 
 END_PROLOG
