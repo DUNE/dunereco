@@ -226,7 +226,7 @@ namespace dune {
     else if (fMoveLeftovers == "first") { assignFirstAllowedWire(hitToWire, eventHits, unassignedHits);        }
     else                { mf::LogInfo("DisambigFromSpacePoints") << "Remaining undisambiguated hits dropped."; }
 
-    auto const hitPtrMaker = art::PtrMaker<recob::Hit>(evt, *this);
+    auto const hitPtrMaker = art::PtrMaker<recob::Hit>(evt);
 
     for (auto const & hw : hitToWire)
     {
@@ -512,4 +512,3 @@ namespace dune {
 
 } // end of dune namespace
 #endif 
-
