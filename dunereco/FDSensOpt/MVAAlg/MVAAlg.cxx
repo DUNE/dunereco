@@ -7,7 +7,7 @@
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/TPCGeo.h"
 #include "lardataalg/DetectorInfo/DetectorProperties.h"
-#include "lardata/ArtDataHelper/TrackUtils.h" // lar::utils::TrackPitchInView() 
+#include "lardata/ArtDataHelper/TrackUtils.h" // lar::utils::TrackPitchInView()
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "TPrincipal.h"
 #include "TVectorD.h"
@@ -277,7 +277,7 @@ void dunemva::MVAAlg::reconfigure(fhicl::ParameterSet const& p){
   fClusterModuleLabel     =   p.get< std::string >("ClusterModuleLabel");
   fVertexModuleLabel      =   p.get< std::string >("VertexModuleLabel");
   fGenieGenModuleLabel    =   p.get< std::string >("GenieGenModuleLabel");
-  fPOTModuleLabel         =   p.get< std::string >("POTModuleLabel"); 
+  fPOTModuleLabel         =   p.get< std::string >("POTModuleLabel");
   fFlashModuleLabel       =   p.get< std::string >("FlashModuleLabel");
   fCalorimetryModuleLabel =   p.get< std::string >("CalorimetryModuleLabel");
   fSelect                 =   p.get< std::string >("Select");
@@ -417,7 +417,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
   // ccnc  = ccnc_truth;
   // pntype_flux is the original type
   // nuPDG_truth is the type at the FD
-  //NuPdg = std::abs(nuPDG_truth); 
+  //NuPdg = std::abs(nuPDG_truth);
 
   itype = -1;
   if (ccnc_truth==1){
@@ -437,14 +437,14 @@ void dunemva::MVAAlg::CalculateInputs( ){
   }
   else if (std::abs(nuPDG_truth)==16){
     // NuTau background
-    itype = 4; 
+    itype = 4;
   }
   if (itype == -1){
     //std::cout << "Unknown type: "
-    //	  << pntype_flux << " to " << nuPDG_truth
-    //	  << " (ccnc=" << ccnc_truth << ")"
-    //	  << std::endl;
-  }      
+    //    << pntype_flux << " to " << nuPDG_truth
+    //    << " (ccnc=" << ccnc_truth << ")"
+    //    << std::endl;
+  }
 
   oscpro = this->OscPro(ccnc_truth,pntype_flux,nuPDG_truth,enu_truth);
   float norm = this->Norm(ccnc_truth,pntype_flux,nuPDG_truth, subrun);
@@ -452,7 +452,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
   fOscPro = oscpro;
 
 
-  // Choose the most upstream vertex, even if it is just 
+  // Choose the most upstream vertex, even if it is just
   //   the beginning of a single track
   bool findvtx = false;
   float vtxx = 0;
@@ -507,7 +507,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
 
   // Try to approximate transverse energy
   unsigned int ntracks_notvtx(0);
-  if(findvtx && ntracks_reco>0){	
+  if(findvtx && ntracks_reco>0){
 
     double Edir[3] = {0.,0.,0.};
     double Etot(0.);
@@ -546,7 +546,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
       Edir[0] /= Etot;
       Edir[1] /= Etot;
       Edir[2] /= Etot;
-    }	
+    }
 
     ET = std::sqrt( Edir[0]*Edir[0] + Edir[1]*Edir[1] );
     //ET /= Etot;
@@ -656,9 +656,9 @@ void dunemva::MVAAlg::CalculateInputs( ){
       if (hit_plane[i]==2){
         evtcharge += hit_charge[i]*exp(hit_peakT[i]*0.5/taulife);
         //evtcharge += hit_charge[i];
-        //	    if (run==20000000&&event==4137){
-        //	      std::cout<<hit_wire[i]<<" "<<shwwire0<<" "<<shwwire1<<std::endl;
-        //	    }
+        //          if (run==20000000&&event==4137){
+        //            std::cout<<hit_wire[i]<<" "<<shwwire0<<" "<<shwwire1<<std::endl;
+        //          }
         if (hit_shwkey[i]==ishw){
           //if (lastwire == -1) lastwire = hit_wire[i];
           //if (hit_wire[i]<lastwire) offset = 479;
@@ -670,20 +670,20 @@ void dunemva::MVAAlg::CalculateInputs( ){
             shwwire1 = hit_wire[i]+offset;
           }
           //lastwire = hit_wire[i];
-          //	      if (hit_trkkey[i]>=0){
+          //          if (hit_trkkey[i]>=0){
           //		if (sqrt(pow(trkstartx[hit_trkkey[i]]-vtxx,2)+
-          //			 pow(trkstarty[hit_trkkey[i]]-vtxy,2)+
-          //			 pow(trkstartz[hit_trkkey[i]]-vtxz,2))<shwdis)
-          //		  shwdis = sqrt(pow(trkstartx[hit_trkkey[i]]-vtxx,2)+
+          //                     pow(trkstarty[hit_trkkey[i]]-vtxy,2)+
+          //                     pow(trkstartz[hit_trkkey[i]]-vtxz,2))<shwdis)
+          //              shwdis = sqrt(pow(trkstartx[hit_trkkey[i]]-vtxx,2)+
           //				pow(trkstarty[hit_trkkey[i]]-vtxy,2)+
           //				pow(trkstartz[hit_trkkey[i]]-vtxz,2));
           //		if (sqrt(pow(trkendx[hit_trkkey[i]]-vtxx,2)+
-          //			 pow(trkendy[hit_trkkey[i]]-vtxy,2)+
-          //			 pow(trkendz[hit_trkkey[i]]-vtxz,2))<shwdis)
-          //		  shwdis = sqrt(pow(trkendx[hit_trkkey[i]]-vtxx,2)+
+          //                     pow(trkendy[hit_trkkey[i]]-vtxy,2)+
+          //                     pow(trkendz[hit_trkkey[i]]-vtxz,2))<shwdis)
+          //              shwdis = sqrt(pow(trkendx[hit_trkkey[i]]-vtxx,2)+
           //				pow(trkendy[hit_trkkey[i]]-vtxy,2)+
           //				pow(trkendz[hit_trkkey[i]]-vtxz,2));
-          //	      }
+          //          }
         }
       }
     }
@@ -697,7 +697,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
       shwlength = 0;
     }
     //	if (run==20000001&&event==4394){
-    //	  std::cout<<ishw<<" "<<shwwire0<<" "<<shwwire1<<std::endl;
+    //    std::cout<<ishw<<" "<<shwwire0<<" "<<shwwire1<<std::endl;
     //	}
 
     if (itrk!=-1){ // itrk is track index of longest track
@@ -711,7 +711,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
         for (size_t j = 0; j<fGeom->NTPC(); ++j){
           tothits += vtrktick[j][i].size();
         }
-        if (tothits>maxhits[0]){ // vtrktick[i] is a map from wire number to charge 
+        if (tothits>maxhits[0]){ // vtrktick[i] is a map from wire number to charge
           if (ipl[1]!=-1){ // dont do first time (i=0)
             maxhits[1] = maxhits[0];
             ipl[1] = ipl[0];
@@ -727,11 +727,11 @@ void dunemva::MVAAlg::CalculateInputs( ){
       }
 
       //int totwires = 0;
-      //	  int startw[2] = {-1,-1};
-      //	  for (int i = 0; i<2; ++i){
-      //	    if (ipl[i]==-1) continue;
-      //	    int startw[i] = int(vtrkdedx[ipl[i]].begin()->first+0.3*(vtrkdedx[ipl[i]].rbegin()->first-vtrkdedx[ipl[i]].begin()->first));
-      //	  }
+      //          int startw[2] = {-1,-1};
+      //          for (int i = 0; i<2; ++i){
+      //            if (ipl[i]==-1) continue;
+      //            int startw[i] = int(vtrkdedx[ipl[i]].begin()->first+0.3*(vtrkdedx[ipl[i]].rbegin()->first-vtrkdedx[ipl[i]].begin()->first));
+      //          }
 
       /* can't calculate using vtrkdedx yet since PANDORA didn't save hit_dEds for each hit
          for (int i = 0; i<2; ++i){
@@ -761,7 +761,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
                 pida += hit_dEds[i]*pow(hit_resrange[i],0.42);
                 ++npida;
               }
-            } 
+            }
             if (vtrktick[hit_tpc[i]][ipl[j]].find(hit_wire[i])!=vtrktick[hit_tpc[i]][ipl[j]].end()){
               if (std::abs(vtrktick[hit_tpc[i]][ipl[j]][hit_wire[i]]-hit_peakT[i])<200){
                 vhitq.push_back(hit_charge[i]);
@@ -769,7 +769,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
                 if (hit_trkkey[i] == itrk){
                   qtrk+=hit_charge[i];
                 } // if hit is actually in the longest track
-              } // if event-hit is within 200 ticks of track-hit on this wire 
+              } // if event-hit is within 200 ticks of track-hit on this wire
             } // if event-hit wire is in track-hit map (wire-->peak time), track has a hit on this wire
 
             // sum the denominator to get trk charge fraction of event charge
@@ -840,7 +840,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
     if (shwwires.size()){
       nhitspershw = float(totalshwhits)/shwwires.size();
     }
-    else 
+    else
       nhitspershw = 0;
 
     shwmax = 0;
@@ -912,15 +912,15 @@ void dunemva::MVAAlg::CalculateInputs( ){
 
 
     //	if (maxtrklength<300&&
-    //	    evtcharge>1e5&&
-    //	    evtcharge<5e6&&
-    //	    nshower>0&&
-    //	    eshower>0.5&&
-    //	    subrun<666){
-    //	  if (itype==0) fWeightTree[1]->Fill();
-    //	  if (itype==1) fWeightTree[2]->Fill();
-    //	  if (itype==2) fWeightTree[3]->Fill();
-    //	  fWeightTree[0]->Fill();
+    //      evtcharge>1e5&&
+    //      evtcharge<5e6&&
+    //      nshower>0&&
+    //      eshower>0.5&&
+    //      subrun<666){
+    //    if (itype==0) fWeightTree[1]->Fill();
+    //    if (itype==1) fWeightTree[2]->Fill();
+    //    if (itype==2) fWeightTree[3]->Fill();
+    //    fWeightTree[0]->Fill();
     //	}
 
     if(fMakeWeightTree){
@@ -943,7 +943,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
         if (itype==2) fWeightTree[1]->Fill(); // signal (numucc)
         if (itype==1) fWeightTree[2]->Fill(); // NC background
         if (itype==0) fWeightTree[3]->Fill(); // CC background (nuecc)
-      } 
+      }
       else if(fSelect=="nue"){
         if (itype==0) fWeightTree[1]->Fill(); // signal (nuecc)
         if (itype==1) fWeightTree[2]->Fill(); // NC background
@@ -1039,7 +1039,7 @@ float dunemva::MVAAlg::Norm(int ccnc, int nu0, int nu1, int subrun){
 float dunemva::MVAAlg::OscPro(int ccnc, int nu0, int nu1, float NuE){
 
   float osc_dm2=0.002457;
-  float osc_L=1300.; 
+  float osc_L=1300.;
   //float sinth23=pow(sin(0.67),2);//sin(3.1415926535/4.0);
   //float sin2th13=0.094;
 
@@ -1085,7 +1085,7 @@ float dunemva::MVAAlg::OscPro(int ccnc, int nu0, int nu1, float NuE){
   NumuToNutau = 1 - NumuSurvival - NumuToNue;
   NueToNutau = 1 - NueSurvival - NumuToNue;
 
-  NueToNumu = NumuToNue;  
+  NueToNumu = NumuToNue;
 
   if (ccnc==1){
     OscProb = 1;
@@ -1236,7 +1236,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
   TVector3 larEnd;
   for(int i=0; i<std::min(int(tracklist.size()),kMaxTrack);++i){
     recob::Track::Point_t trackStart, trackEnd;
-    std::tie(trackStart, trackEnd) = tracklist[i]->Extent(); 
+    std::tie(trackStart, trackEnd) = tracklist[i]->Extent();
     larStart = tracklist[i]->VertexDirection();
     larEnd = tracklist[i]->EndDirection();
 
@@ -1310,7 +1310,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
         std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(hit);
         for(size_t e = 0; e < TrackIDs.size(); ++e){
           trkide[TrackIDs[e].trackID] += TrackIDs[e].energy;
-        }	    
+        }
       }
       // Work out which IDE despoited the most charge in the hit if there was more than one.
       double maxe = -1;
@@ -1427,15 +1427,15 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
 
     for (int i = 0; i<std::min(int(shwlist.size()),kMaxShower); ++i){
       shwid[i] = shwlist[i]->ID();
-      shwdcosx[i] = shwlist[i]->Direction().X(); 
-      shwdcosy[i] = shwlist[i]->Direction().Y(); 
-      shwdcosz[i] = shwlist[i]->Direction().Z(); 
+      shwdcosx[i] = shwlist[i]->Direction().X();
+      shwdcosy[i] = shwlist[i]->Direction().Y();
+      shwdcosz[i] = shwlist[i]->Direction().Z();
       shwstartx[i] = shwlist[i]->ShowerStart().X();
       shwstarty[i] = shwlist[i]->ShowerStart().Y();
       shwstartz[i] = shwlist[i]->ShowerStart().Z();
       for (size_t j = 0; j<(shwlist[i]->Energy()).size(); ++j){
         shwenergy[i][j] = shwlist[i]->Energy()[j];
-      }      
+      }
       for (size_t j = 0; j<(shwlist[i]->dEdx()).size(); ++j){
         shwdedx[i][j] = shwlist[i]->dEdx()[j];
       }
@@ -1458,7 +1458,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
           std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(hit);
           for(size_t e = 0; e < TrackIDs.size(); ++e){
             trkide[TrackIDs[e].trackID] += TrackIDs[e].energy;
-          }	    
+          }
         }
         // Work out which IDE despoited the most charge in the hit if there was more than one.
         double maxe = -1;
@@ -1543,7 +1543,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
 
         float mindist2 = 9999; // cm;
         TVector3 nuvtx(nuvtxx_truth, nuvtxy_truth, nuvtxz_truth);
-        infidvol = insideFidVol(nuvtxx_truth, nuvtxy_truth, nuvtxz_truth); 
+        infidvol = insideFidVol(nuvtxx_truth, nuvtxy_truth, nuvtxz_truth);
         //find the closest reco vertex to the neutrino mc truth
         if (infidvol)
         {
@@ -1605,10 +1605,10 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
     std::vector<const simb::MCParticle* > geant_part;
 
     // ### Looping over all the Geant4 particles from the BackTrackerService ###
-    for(size_t p = 0; p < plist.size(); ++p) 
+    for(size_t p = 0; p < plist.size(); ++p)
     {
       // ### Filling the vector with MC Particles ###
-      geant_part.push_back(plist.Particle(p)); 
+      geant_part.push_back(plist.Particle(p));
     }
 
     //std::cout<<"No of geant part= "<<geant_part.size()<<std::endl;
@@ -1688,7 +1688,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
 
   }//is neutrino
 
-  if(fMakeAnaTree) 
+  if(fMakeAnaTree)
     fTree->Fill();
 
 }
@@ -1696,7 +1696,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
 
 
 
-bool dunemva::MVAAlg::insideFidVol(const double posX, const double posY, const double posZ) 
+bool dunemva::MVAAlg::insideFidVol(const double posX, const double posY, const double posZ)
 {
 
   double vtx[3] = {posX, posY, posZ};
@@ -1705,7 +1705,7 @@ bool dunemva::MVAAlg::insideFidVol(const double posX, const double posY, const d
   geo::TPCID idtpc = fGeom->FindTPCAtPosition(vtx);
 
   if (fGeom->HasTPC(idtpc))
-  {		
+  {
     const geo::TPCGeo& tpcgeo = fGeom->GetElement(idtpc);
     double minx = tpcgeo.MinX(); double maxx = tpcgeo.MaxX();
     double miny = tpcgeo.MinY(); double maxy = tpcgeo.MaxY();
@@ -1715,21 +1715,21 @@ bool dunemva::MVAAlg::insideFidVol(const double posX, const double posY, const d
     {
       const geo::CryostatGeo& cryostat = fGeom->Cryostat(c);
       for (size_t t = 0; t < cryostat.NTPC(); t++)
-      {	
+      {
         const geo::TPCGeo& tpcg = cryostat.TPC(t);
         if (tpcg.MinX() < minx) minx = tpcg.MinX();
-        if (tpcg.MaxX() > maxx) maxx = tpcg.MaxX(); 
+        if (tpcg.MaxX() > maxx) maxx = tpcg.MaxX();
         if (tpcg.MinY() < miny) miny = tpcg.MinY();
         if (tpcg.MaxY() > maxy) maxy = tpcg.MaxY();
         if (tpcg.MinZ() < minz) minz = tpcg.MinZ();
         if (tpcg.MaxZ() > maxz) maxz = tpcg.MaxZ();
       }
-    }	
+    }
 
 
     //x
     double dista = fabs(minx - posX);
-    double distb = fabs(posX - maxx); 
+    double distb = fabs(posX - maxx);
     if ((posX > minx) && (posX < maxx) &&
         (dista > fFidVolCut) && (distb > fFidVolCut)) inside = true;
     //y
@@ -1851,24 +1851,24 @@ void dunemva::MVAAlg::ResetVars(){
   vtxrecomcy = 9999;
   vtxrecomcz = 9999;
 
-  mcevts_truth = -9999; 
-  nuPDG_truth = -9999;  
-  ccnc_truth = -9999;    
-  mode_truth = -9999;   
-  enu_truth = -9999;     
-  Q2_truth = -9999;       
-  W_truth = -9999;        
+  mcevts_truth = -9999;
+  nuPDG_truth = -9999;
+  ccnc_truth = -9999;
+  mode_truth = -9999;
+  enu_truth = -9999;
+  Q2_truth = -9999;
+  W_truth = -9999;
   X_truth = -9999;
   Y_truth = -9999;
   hitnuc_truth = -9999;
   target_truth = -9999;
-  nuvtxx_truth = -9999;   
-  nuvtxy_truth = -9999;   
-  nuvtxz_truth = -9999;   
-  nu_dcosx_truth = -9999; 
-  nu_dcosy_truth = -9999; 
-  nu_dcosz_truth = -9999; 
-  lep_mom_truth = -9999;  
+  nuvtxx_truth = -9999;
+  nuvtxy_truth = -9999;
+  nuvtxz_truth = -9999;
+  nu_dcosx_truth = -9999;
+  nu_dcosy_truth = -9999;
+  nu_dcosz_truth = -9999;
+  lep_mom_truth = -9999;
   lep_dcosx_truth = -9999;
   lep_dcosy_truth = -9999;
   lep_dcosz_truth = -9999;
