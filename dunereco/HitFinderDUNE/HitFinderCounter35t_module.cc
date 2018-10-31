@@ -141,8 +141,8 @@ namespace dune{
   //-------------------------------------------------
   //-------------------------------------------------
   HitFinderCounter35t::HitFinderCounter35t(fhicl::ParameterSet const& pset) 
-    :
-    fDebug                 (pset.get<bool>("Debug"))
+    : EDProducer{pset}
+    , fDebug               (pset.get<bool>("Debug"))
     , fHitsModuleLabel     (pset.get< std::string >("HitsModuleLabel"   ))
     , fCounterModuleLabel  (pset.get< std::string >("CounterModuleLabel"))
     , fCounterDir          (pset.get< std::string >("CounterDir" ))

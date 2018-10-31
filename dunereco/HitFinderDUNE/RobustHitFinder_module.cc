@@ -273,7 +273,8 @@ private:
 
 
 dune::RobustHitFinder::RobustHitFinder(fhicl::ParameterSet const & p)
-  : fFitAlg(p.get<fhicl::ParameterSet>("HitLineFitAlg")),
+  : EDProducer{p},
+    fFitAlg(p.get<fhicl::ParameterSet>("HitLineFitAlg")),
     fHitFinderAlg(p.get<fhicl::ParameterSet>("RMSHitFinderAlg")),
     fClks(lar::providerFrom<detinfo::DetectorClocksService>()),
     fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
