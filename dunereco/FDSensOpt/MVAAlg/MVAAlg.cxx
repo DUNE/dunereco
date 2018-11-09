@@ -15,7 +15,6 @@
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "canvas/Persistency/Common/FindOneP.h"
 #include "lardata/Utilities/AssociationUtil.h"
-#include "larreco/RecoAlg/TrackMomentumCalculator.h"
 
 //--------------------------------------------------------------------------------
 dunemva::MVAAlg::MVAAlg( fhicl::ParameterSet const& p )
