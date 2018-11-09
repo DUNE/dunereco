@@ -423,7 +423,7 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 				for  (size_t t = 0; t < tracklist.size(); ++t)
 				{
 					if (!tracklist[t]->NumberTrajectoryPoints()) continue;
-					TVector3 pos_p = tracklist[t]->LocationAtPoint(0);
+					TVector3 pos_p = tracklist[t]->LocationAtPoint<TVector3>(0);
 
 					float temp = pos_p.X();
 					if (temp > 0) temp -= t0Corr(evt, pvtx);
@@ -442,7 +442,7 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 						minzvtx.SetXYZ(pos_p.X(), pos_p.Y(), pos_p.Z());
 					}			
 		
-					TVector3 pos_end = tracklist[t]->LocationAtPoint(tracklist[t]->NumberTrajectoryPoints()-1);
+					TVector3 pos_end = tracklist[t]->LocationAtPoint<TVector3>(tracklist[t]->NumberTrajectoryPoints()-1);
 					temp = pos_end.X();
 					if (temp > 0) temp -= t0Corr(evt, pvtx);
 					else temp += t0Corr(evt, pvtx);
@@ -497,7 +497,7 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 						// use recob::Track functionality as much as possible
 						const double setlength = 2.5; double length = 0.0; // cm
 
-						TVector3 pos_p = recotrack->LocationAtPoint(0); 
+						TVector3 pos_p = recotrack->LocationAtPoint<TVector3>(0); 
 						float px = pos_p.X();
 						if (px > 0) px -= t0Corr(evt, pvtx);
 						else px += t0Corr(evt, pvtx);
@@ -525,15 +525,15 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 							size_t fp = 0; bool hitcoll = false;
 							for (size_t p = 0; p < recotrack->NumberTrajectoryPoints(); ++p)
 								if (recotrack->DQdxAtPoint(p, geo::kZ) > 0) 
-								{pos_p = recotrack->LocationAtPoint(p); fp = p; hitcoll = true; break;}
+								{pos_p = recotrack->LocationAtPoint<TVector3>(p); fp = p; hitcoll = true; break;}
 					
 							// loop over trajectory point to get dQdx.
 							if (hitcoll)
 								for (size_t p = (fp+1); p < recotrack->NumberTrajectoryPoints(); ++p)
 								{
-									TVector3 pos = recotrack->LocationAtPoint(p);
+									TVector3 pos = recotrack->LocationAtPoint<TVector3>(p);
 									length += std::sqrt(pma::Dist2(pos_p, pos));
-									pos_p = recotrack->LocationAtPoint(p);
+									pos_p = recotrack->LocationAtPoint<TVector3>(p);
 
 									if (length > setlength) break;
 									dx = length;	
@@ -569,7 +569,7 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 					// use recob::Track functionality as much as possible
 					const double setlength = 2.5; double length = 0.0; // cm
 
-					TVector3 pos_p = recotrack->LocationAtPoint(0);
+					TVector3 pos_p = recotrack->LocationAtPoint<TVector3>(0);
 					float px = pos_p.X();
 					if (px > 0) px -= t0Corr(evt, pvtx);
 					else px += t0Corr(evt, pvtx);
@@ -592,15 +592,15 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 
 					size_t fp = 0; bool hitcoll = false;
 					for (size_t p = 0; p < recotrack->NumberTrajectoryPoints(); ++p)
-						if (recotrack->DQdxAtPoint(p, geo::kZ) > 0) {pos_p = recotrack->LocationAtPoint(p); fp = p; hitcoll = true; break;}
+						if (recotrack->DQdxAtPoint(p, geo::kZ) > 0) {pos_p = recotrack->LocationAtPoint<TVector3>(p); fp = p; hitcoll = true; break;}
 					
 					// loop over trajectory point to get dQdx.
 					if (hitcoll)
 						for (size_t p = (fp+1); p < recotrack->NumberTrajectoryPoints(); ++p)
 						{
-							TVector3 pos = recotrack->LocationAtPoint(p);
+							TVector3 pos = recotrack->LocationAtPoint<TVector3>(p);
 							length += std::sqrt(pma::Dist2(pos_p, pos));
-							pos_p = recotrack->LocationAtPoint(p);
+							pos_p = recotrack->LocationAtPoint<TVector3>(p);
 
 							if (length > setlength) break;
 							dx = length;	

@@ -131,8 +131,8 @@ void dunefd::IniSegAlg::Find3dTrack()
 		TVector3 dir(larStart[0], larStart[1], larStart[2]);
 	
 		if (!trk->NumberTrajectoryPoints()) continue;
-		TVector3 pos_p = trk->LocationAtPoint(0);
-		TVector3 pos_end = trk->LocationAtPoint(trk->NumberTrajectoryPoints()-1);
+		TVector3 pos_p = trk->LocationAtPoint<TVector3>(0);
+		TVector3 pos_end = trk->LocationAtPoint<TVector3>(trk->NumberTrajectoryPoints()-1);
 
 		double dist = std::sqrt(pma::Dist2(pos_p, fMcVtx3d));		
 
