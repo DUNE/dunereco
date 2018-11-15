@@ -495,7 +495,7 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 						std::vector< art::Ptr<recob::Hit> > recoinihit = fb.at(recotrack.key());
 					
 						// use recob::Track functionality as much as possible
-						const double setlength = 2.5; double length = 0.0; // cm
+						// const double setlength = 2.5; double length = 0.0; // cm
 
 						TVector3 pos_p = recotrack->LocationAtPoint<TVector3>(0); 
 						float px = pos_p.X();
@@ -522,6 +522,17 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 							cos = recoini.GetCos();
 							coslrx = mcdir3d[v].X(); coslry = mcdir3d[v].Y(); coslrz = mcdir3d[v].Z();
 
+							/*************************************************************/
+							/*                          WARNING                          */
+							/*************************************************************/
+							/* The dQdx information in recob::Track has been deprecated  */
+							/* since 2016 and in 11/2018 the recob::Track interface was  */
+							/* changed and DQdxAtPoint and NumberdQdx were removed.      */
+							/* Therefore the code below is now commented out             */
+							/* (note that it was most likely not functional anyways).    */
+							/* For any issue please contact: larsoft-team@fnal.gov       */
+							/*************************************************************/
+							/*
 							size_t fp = 0; bool hitcoll = false;
 							for (size_t p = 0; p < recotrack->NumberTrajectoryPoints(); ++p)
 								if (recotrack->DQdxAtPoint(p, geo::kZ) > 0) 
@@ -540,9 +551,10 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 									double dqdx_p = recotrack->DQdxAtPoint(p, geo::kZ);
 									if (dqdx_p > 0) lep_dedx += recoinihit[p]->SummedADC();
 								}
-
 					
 							if (dx > 0.0) lep_dedx /= dx;
+							*/
+							/*************************************************************/
 						}
 					}
 				}	
@@ -567,7 +579,7 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 					std::vector< art::Ptr<recob::Hit> > recoinihit = fb.at(recotrack.key());
 					
 					// use recob::Track functionality as much as possible
-					const double setlength = 2.5; double length = 0.0; // cm
+					// const double setlength = 2.5; double length = 0.0; // cm
 
 					TVector3 pos_p = recotrack->LocationAtPoint<TVector3>(0);
 					float px = pos_p.X();
@@ -590,6 +602,17 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 					cos = recoini.GetCos();
 					coslrx = mcdir3d.X(); coslry = mcdir3d.Y(); coslrz = mcdir3d.Z();
 
+					/*************************************************************/
+					/*                          WARNING                          */
+					/*************************************************************/
+					/* The dQdx information in recob::Track has been deprecated  */
+					/* since 2016 and in 11/2018 the recob::Track interface was  */
+					/* changed and DQdxAtPoint and NumberdQdx were removed.      */
+					/* Therefore the code below is now commented out             */
+					/* (note that it was most likely not functional anyways).    */
+					/* For any issue please contact: larsoft-team@fnal.gov       */
+					/*************************************************************/
+					/*
 					size_t fp = 0; bool hitcoll = false;
 					for (size_t p = 0; p < recotrack->NumberTrajectoryPoints(); ++p)
 						if (recotrack->DQdxAtPoint(p, geo::kZ) > 0) {pos_p = recotrack->LocationAtPoint<TVector3>(p); fp = p; hitcoll = true; break;}
@@ -608,6 +631,8 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 							if (dqdx_p > 0) lep_dedx += recoinihit[p]->SummedADC();
 						}
 					if (dx > 0.0) lep_dedx /= dx;
+					*/
+					/*************************************************************/
 				}
 				
 			}
@@ -1024,7 +1049,10 @@ recob::Track dunefd::IniSegReco::convertFrom(pma::Track3D const & src)
 	{
 		mf::LogError("IniSegReco") << "pma::Track3D to recob::Track conversion problem.";
 	}
-	return recob::Track(xyz, dircos, std::vector< std::vector< double > >(0), std::vector< double >(2, util::kBogusD), trkindex);
+	return recob::Track(recob::TrackTrajectory(recob::tracking::convertCollToPoint(xyz),
+						   recob::tracking::convertCollToVector(dircos),
+						   recob::Track::Flags_t(xyz.size()), false),
+			    0, -1., 0, recob::tracking::SMatrixSym55(), recob::tracking::SMatrixSym55(), trkindex);
 }
 
 /***********************************************************************/

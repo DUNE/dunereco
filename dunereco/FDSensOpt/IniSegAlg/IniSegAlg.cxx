@@ -119,15 +119,15 @@ void dunefd::IniSegAlg::FindCluster()
 
 void dunefd::IniSegAlg::Find3dTrack()
 {
-	double larStart[3] = {0.0, 0.0, 0.0};
-  	double larEnd[3] = {0.0, 0.0, 0.0};
+	TVector3 larStart;
+	TVector3 larEnd;
 
 	double maxcos = 0.0; 
 	const double thrdist = 10; // cm
 
 	for (auto& trk: fSelTrks)
 	{
-		trk->Direction(larStart,larEnd); // correct, check both directions
+	        std::tie(larStart,larEnd) = trk->Direction<TVector3>(); // correct, check both directions
 		TVector3 dir(larStart[0], larStart[1], larStart[2]);
 	
 		if (!trk->NumberTrajectoryPoints()) continue;

@@ -1032,9 +1032,8 @@ namespace trkf {
 
 	    // Calculate the global-to-local rotation matrix.
 
-	    TMatrixD rot(3,3);
 	    int start_point = (swap == 0 ? 0 : ntraj-1);
-	    track.GlobalToLocalRotationAtPoint(start_point, rot);
+	    TMatrixD rot = track.GlobalToLocalRotationAtPoint<TMatrixD>(start_point);
 
 	    // Update track data for reversed case.
 
