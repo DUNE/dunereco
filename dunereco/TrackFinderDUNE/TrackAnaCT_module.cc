@@ -121,18 +121,7 @@ namespace {
   //----------------------------------------------------------------------------
   double length(const recob::Track& track)
   {
-    double result = 0.;
-    TVector3 disp = track.LocationAtPoint(0);
-    int n = track.NumberTrajectoryPoints();
-
-    for(int i = 1; i < n; ++i) {
-      const TVector3& pos = track.LocationAtPoint(i);
-      disp -= pos;
-      result += disp.Mag();
-      disp = pos;
-    }
-    //    mf::LogVerbatim("output") << " length (track) " << result;
-    return result;
+    return track.Length();
   }
 
   // Length of MC particle.
@@ -992,9 +981,9 @@ namespace trkf {
 	
 	int ntraj = track.NumberTrajectoryPoints();
 	if(ntraj > 0) {
-	  TVector3 pos = track.Vertex();
-	  TVector3 dir = track.VertexDirection();
-	  TVector3 end = track.End();
+	  TVector3 pos = track.Vertex<TVector3>();
+	  TVector3 dir = track.VertexDirection<TVector3>();
+	  TVector3 end = track.End<TVector3>();
 	  pos[0] += trackdx;
 	  end[0] += trackdx;
 	  
@@ -1043,9 +1032,8 @@ namespace trkf {
 
 	    // Calculate the global-to-local rotation matrix.
 
-	    TMatrixD rot(3,3);
 	    int start_point = (swap == 0 ? 0 : ntraj-1);
-	    track.GlobalToLocalRotationAtPoint(start_point, rot);
+	    TMatrixD rot = track.GlobalToLocalRotationAtPoint<TMatrixD>(start_point);
 
 	    // Update track data for reversed case.
 
@@ -1057,9 +1045,9 @@ namespace trkf {
 	      rot(1, 2) = -rot(1, 2);
 	      rot(2, 2) = -rot(2, 2);
 
-	      pos = track.End();
-	      dir = -track.EndDirection();
-	      end = track.Vertex();
+	      pos = track.End<TVector3>();
+	      dir = -track.EndDirection<TVector3>();
+	      end = track.Vertex<TVector3>();
 	      pos[0] += trackdx;
 	      end[0] += trackdx;
 	  
@@ -1206,12 +1194,12 @@ namespace trkf {
 	  // Dump track information here.
 
 	  if(pdump) {
-	    TVector3 pos = track.Vertex();
-	    TVector3 dir = track.VertexDirection();
-	    TVector3 end = track.End();
+	    TVector3 pos = track.Vertex<TVector3>();
+	    TVector3 dir = track.VertexDirection<TVector3>();
+	    TVector3 end = track.End<TVector3>();
 	    pos[0] += trackdx;
 	    end[0] += trackdx;
-	    TVector3 enddir = track.EndDirection();
+	    TVector3 enddir = track.EndDirection<TVector3>();
 	    double pstart = track.VertexMomentum();
 	    double pend = track.EndMomentum();
 	    *pdump << "\nOffset"

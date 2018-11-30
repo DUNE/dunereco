@@ -1232,8 +1232,8 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
   //track information
   ntracks_reco=tracklist.size();
 
-  TVector3 larStart;
-  TVector3 larEnd;
+  recob::Track::Vector_t larStart;
+  recob::Track::Vector_t larEnd;
   for(int i=0; i<std::min(int(tracklist.size()),kMaxTrack);++i){
     recob::Track::Point_t trackStart, trackEnd;
     std::tie(trackStart, trackEnd) = tracklist[i]->Extent(); 
@@ -1247,12 +1247,12 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
     trkendx[i]        = trackEnd.X();
     trkendy[i]        = trackEnd.Y();
     trkendz[i]        = trackEnd.Z();
-    trkstartdcosx[i]  = larStart[0];
-    trkstartdcosy[i]  = larStart[1];
-    trkstartdcosz[i]  = larStart[2];
-    trkenddcosx[i]    = larEnd[0];
-    trkenddcosy[i]    = larEnd[1];
-    trkenddcosz[i]    = larEnd[2];
+    trkstartdcosx[i]  = larStart.X();
+    trkstartdcosy[i]  = larStart.Y();
+    trkstartdcosz[i]  = larStart.Z();
+    trkenddcosx[i]    = larEnd.X();
+    trkenddcosy[i]    = larEnd.Y();
+    trkenddcosz[i]    = larEnd.Z();
     trklen[i]         = tracklist[i]->Length();
     if (fmthm.isValid()){
       auto vhit = fmthm.at(i);
