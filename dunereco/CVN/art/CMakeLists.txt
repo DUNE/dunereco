@@ -19,11 +19,11 @@ cet_find_library( GLOGLIB NAMES glog PATHS ENV GLOG_LIB NO_DEFAULT_PATH )
 # Tensorflow stuff
 if (DEFINED ENV{TENSORFLOW_DIR})
 # For some reason we apparently need to care if larreco is checked out.
-if (larreco_not_in_ups)
-set (LARRECO_RECOALG_IMAGEPATTERNALGS_TF larreco_RecoAlg_ImagePatternAlgs_Tensorflow_TF)
-else (larreco_not_in_ups)
-cet_find_library( LARRECO_RECOALG_IMAGEPATTERNALGS_TF NAMES larreco_RecoAlg_ImagePatternAlgs_Tensorflow_TF PATHS ENV LARRECO_LIB NO_DEFAULT_PATH)
-endif (larreco_not_in_ups)
+#if (larreco_not_in_ups)
+#set (LARRECO_RECOALG_IMAGEPATTERNALGS_TF larreco_RecoAlg_ImagePatternAlgs_Tensorflow_TF)
+#else (larreco_not_in_ups)
+#cet_find_library( LARRECO_RECOALG_IMAGEPATTERNALGS_TF NAMES larreco_RecoAlg_ImagePatternAlgs_Tensorflow_TF PATHS ENV LARRECO_LIB NO_DEFAULT_PATH)
+#endif (larreco_not_in_ups)
 else(DEFINED ENV{TENSORFLOW_DIR})
 set (EXCLUDE_TF TFNetHandler.cxx)
 endif (DEFINED ENV{TENSORFLOW_DIR})
@@ -32,6 +32,7 @@ art_make(BASENAME_ONLY
   LIBRARY_NAME      CVNArt
   EXCLUDE ${EXCLUDE_TF}
   LIB_LIBRARIES CVNFunc
+  CVNTf
   ${ART_FRAMEWORK_CORE}
   ${ART_FRAMEWORK_PRINCIPAL}
   ${ART_FRAMEWORK_SERVICES_REGISTRY}
@@ -60,9 +61,10 @@ art_make(BASENAME_ONLY
   ${GFLAGSLIB}
   ${GLOGLIB}                             
   MVAAlg
-  larreco_RecoAlg
+  #larreco_RecoAlg
   ${LARRECO_RECOALG_IMAGEPATTERNALGS_TF}
-  MODULE_LIBRARIES  CVNFunc
+  MODULE_LIBRARIES CVNFunc
+  CVNTf
   CVNArt
   )
 

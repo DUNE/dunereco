@@ -3,6 +3,7 @@
 /// \brief   TFNetHandler for CVN
 /// \author  Alexander Radovic - a.radovic@gmail.com
 ///          Leigh Whitehead   - leigh.howard.whitehead@cern.ch
+///          Saul Alonso Monsalve - saul.alonso.monsalve@cern.ch
 ////////////////////////////////////////////////////////////////////////
 
 #include  <iostream>
@@ -33,14 +34,42 @@ namespace cvn
     // Construct the TF Graph object. The empty vector {} is used since the protobuf
     // file gives the names of the output layer nodes
     mf::LogInfo("TFNetHandler") << "Loading network: " << fTFProtoBuf << std::endl;
-    fTFGraph = tf::Graph::create(fTFProtoBuf.c_str(),{});
+    fTFGraph = tf::Graph::create(fTFProtoBuf.c_str(),{},pset.get<int>("NInputs"),pset.get<int>("NOutputs"));
     if(!fTFGraph){
       art::Exception(art::errors::Unknown) << "Tensorflow model not found or incorrect";
     }
 
   }
-  
-  std::vector<float> TFNetHandler::Predict(const PixelMap& pm)
+ 
+  // Check the network outputs
+  bool check(const std::vector< std::vector< float > > & outputs)
+  {
+    if (outputs.size() == 1) return true;
+    size_t aux = 0;
+    for (size_t o = 0; o < outputs.size(); ++o)
+    {   
+        size_t aux2 = 0;
+
+        for (size_t i = 0; i < outputs[o].size(); ++i)
+            if (outputs[o][i] == 0.0 || outputs[o][i] == 1.0)
+                aux2++;
+        if (aux2 == outputs[o].size()) aux++;
+    }
+    return aux == outputs.size() ? false : true;        
+  }
+
+  // Fill outputs with value -3
+  void fillEmpty(std::vector< std::vector< float > > & outputs)
+  {
+    for (size_t o = 0; o < outputs.size(); ++o)
+    {
+        for (size_t i = 0; i < outputs[o].size(); ++i)
+            outputs[o][i] = -3.0;
+    }
+    return;
+  }
+
+  std::vector< std::vector<float> > TFNetHandler::Predict(const PixelMap& pm)
   {
    
     CVNImageUtils imageUtils;
@@ -50,49 +79,56 @@ namespace cvn
     imageUtils.SetImageSize(fImageWires,fImageTDCs,3);
     imageUtils.SetLogScale(fUseLogChargeScale);
 
-//    std::cout << "Log Scale? " << fUseLogChargeScale << std::endl;
-//    std::cout << "Reverse views? [" << fReverseViews[0] << "," << fReverseViews[1] << "," << fReverseViews[2] << "]" << std::endl;
-//    std::cout << "Image size = (" << fImageWires << ", " << fImageTDCs << ")" << std::endl;
-
     ImageVectorF thisImage;
     imageUtils.ConvertPixelMapToImageVectorF(pm,thisImage);
     std::vector<ImageVectorF> vecForTF;
 
-/*
-    // Does this image look sensible?
-    TCanvas *can = new TCanvas("can","",0,0,800,600);
-    TH2D* hView0 = new TH2D("hView0","",500,0,500,500,0,500);
-    TH2D* hView1 = new TH2D("hView1","",500,0,500,500,0,500);
-    TH2D* hView2 = new TH2D("hView2","",500,0,500,500,0,500);
-    for(unsigned int w = 0; w < 500; ++w){
-      for(unsigned int t = 0; t < 500; ++t){
-        hView0->SetBinContent(w+1,t+1,thisImage[w][t][0]);
-        hView1->SetBinContent(w+1,t+1,thisImage[w][t][1]);
-        hView2->SetBinContent(w+1,t+1,thisImage[w][t][2]);
-      }
-    }
-    hView0->Draw("colz");
-    can->Print("view0.png");
-    hView1->Draw("colz");
-    can->Print("view1.png");
-    hView2->Draw("colz");
-    can->Print("view2.png");
-*/
     vecForTF.push_back(thisImage);
 
-    auto cvnResults = fTFGraph->run(vecForTF);
+    std::vector< std::vector< std::vector< float > > > cvnResults; // shape(samples, #outputs, output_size)
+    bool status = false;
 
-//    std::cout << "Number of CVN result vectors " << cvnResults.size() << " with " << cvnResults[0].size() << " categories" << std::endl;
+    int counter = 0;
 
-//    std::cout << "Classifier summary: ";
-//    for(auto const v : cvnResults[0]){
+    do{ // do until it gets a correct result
+        // std::cout << "Number of CVN result vectors " << cvnResults.size() << " with " << cvnResults[0].size() << " categories" << std::endl;
+        cvnResults = fTFGraph->run(vecForTF);
+        status = check(cvnResults[0]);
+        //std::cout << "Status: " << status << std::endl;
+        counter++;
+        if(counter==10){
+            std::cout << "Error, CVN never outputing a correct result. Filling result with zeros.";
+            std::cout << std::endl;
+            fillEmpty(cvnResults[0]);
+            break;
+        }
+    }while(status == false);
+
+    std::cout << "Classifier summary: ";
+    std::cout << std::endl;
+    int output_index = 0;
+    for(auto const & output : cvnResults[0])
+    {
+      std::cout << "Output " << output_index++ << ": ";
+      for(auto const v : output)
+          std::cout << v << ", ";
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
+    // Leigh - test the new framework for easier access to multiple output architectures
+//    std::vector<std::vector<std::vector<float>>> newCVNResult = fTFGraph->runMultiOutput(vecForTF);
+//    std::vector<float> newResult = newCVNResult[0][0];
+//    std::cout << "New method classifier summary: ";
+//    for(auto const v : newResult){
 //      std::cout << v << ", ";
 //    }
 //    std::cout << std::endl;
 
     return cvnResults[0];
   }
- 
+
+  /* 
   // The standard output has 13 elements, this function sums the convenient ones 
   std::vector<float> TFNetHandler::PredictFlavour(const PixelMap& pm){
 
@@ -116,6 +152,7 @@ namespace cvn
 
     return flavourResults;
   }
+  */
 
 }
 

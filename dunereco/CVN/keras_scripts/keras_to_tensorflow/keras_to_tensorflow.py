@@ -70,7 +70,7 @@ parser.add_argument('-num_outputs', action="store",
 parser.add_argument('-graph_def', action="store", 
                     dest='graph_def', type=bool, default=False)
 parser.add_argument('-output_node_prefix', action="store", 
-                    dest='output_node_prefix', type=str, default='output_node')
+                    dest='output_node_prefix', type=str, default='output_')
 parser.add_argument('-quantize', action="store", 
                     dest='quantize', type=bool, default=False)
 parser.add_argument('-theano_backend', action="store", 
@@ -124,8 +124,30 @@ except ValueError as err:
 num_output = args.num_outputs
 pred = [None]*num_output
 pred_node_names = [None]*num_output
+
+'''
 for i in range(num_output):
     pred_node_names[i] = args.output_node_prefix+str(i)
+    pred[i] = tf.identity(net_model.outputs[i], name=pred_node_names[i])
+'''
+
+for i in range(num_output):
+    pred_node_names[i] = args.output_node_prefix
+    if i == 0:
+        pred_node_names[i] += 'is_antineutrino'
+    elif i == 1:
+        pred_node_names[i] += 'flavour'
+    elif i == 2:
+        pred_node_names[i] += 'interaction'
+    elif i == 3:
+        pred_node_names[i] += 'protons'
+    elif i == 4:
+        pred_node_names[i] += 'pions'
+    elif i == 5:
+        pred_node_names[i] += 'pizeros'
+    else:
+        pred_node_names[i] += 'neutrons'
+
     pred[i] = tf.identity(net_model.outputs[i], name=pred_node_names[i])
 print('output nodes names are: ', pred_node_names)
 

@@ -1,0 +1,45 @@
+===============================================================================
+ This directory contains some example .fcl files to run different CVN jobs
+===============================================================================
+
+===============================================================================
+ Producing event dump files for DUNE 
+===============================================================================
+
+  - This is the basis of the image generation
+  - There are separate .fcl files for fhc and rhc as the dump files contain
+    pot weights. These weights depend on the beam polarity, and whilst not
+    used directly (and are hardcoded in the CAFAna framework), then can be
+    useful for making quick plots at training time. The use of these weights
+    and the reconstructed energy from the MVA algorithms can be disabled.
+
+  dune_cvn_event_dump_fhc.fcl
+    - The standard event dump configuration for DUNE FHC mode
+
+  dune_cvn_event_dump_rhc.fcl
+    - The standard event dump configuration for DUNE RHC mode
+
+===============================================================================
+ Evaluating DUNE events with the CVN
+===============================================================================
+
+  dune_cvn_eval.fcl
+   - This is the standard configuration to evaluate DUNE events with the CVN
+
+===============================================================================
+  ProtoDUNE specific configurations
+===============================================================================
+
+ - It is important to note and remember that protoDUNE does not have any
+   neutrino interactions. However, in order to test the CVN we can extract
+   single reconstructed particles and generate separate images for all
+   of them.
+
+ protodune_cvn_event_dump.fcl
+  - Produces a separate "event" dump for each reconstructed track and shower
+    object in DUNE. A track length cut is applied in order to ensure these
+    tracks are cosmic muons.
+
+ protodune_cvn_eval.fcl
+  - Standard configuration to evaluate each reconstructed object separately
+    using the CVN.

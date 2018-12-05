@@ -71,6 +71,9 @@ namespace cvn {
     bool        fGetEventWeight;
     bool        fWriteMapTH2;
     bool        fApplyFidVol;
+    bool        fUseTopology;
+    unsigned int fTopologyHits; // Number of hits for a track to be considered detectable 
+                                   // for topology definitions.
 
     TrainingData* fTrain;
     TTree*        fTrainTree;
@@ -105,7 +108,8 @@ namespace cvn {
     fEnergyNumuLabel = pset.get<std::string> ("EnergyNumuLabel");
     fGetEnergyOutput = pset.get<bool> ("GetEnergyOutput");
     fGetEventWeight = pset.get<bool> ("GetEventWeight");
-    
+    fUseTopology  = pset.get<bool>("UseTopology");
+    fTopologyHits = pset.get<unsigned int>("TopologyHitsCut");    
   }
 
   //......................................................................
@@ -137,9 +141,8 @@ namespace cvn {
     if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmapListHandle))
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
 
-    unsigned short nhits =  pixelmaplist.size();
-    // If we have no hits then return
-    if(nhits < 1) return;
+    // If we have no pixel map then return
+    if(pixelmaplist.size() == 0) return;
 
     InteractionType interaction = kOther;
 
@@ -157,13 +160,19 @@ namespace cvn {
     simb::MCNeutrino truthN=truth->GetNeutrino();
     //truth = mclist[0];
 
-    interaction = GetInteractionType(truthN);
+    AssignLabels labels;
+
+    interaction = labels.GetInteractionType(truthN);
+    if(fUseTopology){
+      labels.GetTopology(truth,fTopologyHits);
+//      labels.PrintTopology();
+    }
     float nuEnergy = 0;
     float lepEnergy = 0;
-    //if(truth.NeutrinoSet()){
-    nuEnergy = truthN.Nu().E();
-    lepEnergy = truthN.Lepton().E();
-    //}
+//    if(truth.NeutrinoSet()){
+      nuEnergy = truthN.Nu().E();
+      lepEnergy = truthN.Lepton().E();
+//    }
 
     // If outside the fiducial volume don't waste any time filling other variables
     if(fApplyFidVol){
@@ -204,6 +213,17 @@ namespace cvn {
 
     // Create the training data and add it to the tree
     TrainingData train(interaction, nuEnergy, lepEnergy, recoNueEnergy, recoNumuEnergy, eventWeight, *pixelmaplist[0]);
+    // Set the topology information
+    int topPDG     = labels.GetPDG();
+    int nprot      = labels.GetNProtons();
+    int npion      = labels.GetNPions();
+    int npi0       = labels.GetNPizeros();
+    int nneut      = labels.GetNNeutrons();
+    int toptype    = labels.GetTopologyType();
+    int toptypealt = labels.GetTopologyTypeAlt();
+    if(fUseTopology){
+      train.SetTopologyInformation(topPDG, nprot, npion, npi0, nneut, toptype, toptypealt);
+    }
     fTrain = &train;
     fTrainTree->Fill();
 
