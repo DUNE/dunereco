@@ -147,8 +147,8 @@ bool EmLikeHits::isCloseToTrack(TVector2 p, const recob::Track& trk,
 	bool isClose = false;
 	for (size_t i = 0; i < trk.NumberTrajectoryPoints() - 1; ++i)
 	{
-		TVector2 p0 = pma::GetVectorProjectionToPlane(trk.LocationAtPoint(i), view, tpc, cryo);
-		TVector2 p1 = pma::GetVectorProjectionToPlane(trk.LocationAtPoint(i + 1), view, tpc, cryo);
+		TVector2 p0 = pma::GetVectorProjectionToPlane(trk.LocationAtPoint<TVector3>(i), view, tpc, cryo);
+		TVector2 p1 = pma::GetVectorProjectionToPlane(trk.LocationAtPoint<TVector3>(i + 1), view, tpc, cryo);
 		double d2 = getDist2(p, p0, p1);
 
 		double dpx = fabs(p0.X() - p1.X());
