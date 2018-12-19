@@ -323,6 +323,8 @@
         <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
         <ParentVertexListName>NeutrinoVertices3D</ParentVertexListName>
         <DaughterVertexListName>DaughterVertices3D</DaughterVertexListName>
+        <KeepInteractionVertex>false</KeepInteractionVertex>
+        <KeepStartVertex>true</KeepStartVertex>
     </algorithm>
 
     <!-- Track and shower building -->
