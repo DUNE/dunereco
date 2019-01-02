@@ -1,5 +1,7 @@
 <lcgdict>
-  <class name="cvn::TrainingData" ClassVersion="17" >
+  <class name="cvn::TrainingData" ClassVersion="19" >
+   <version ClassVersion="19" checksum="1702019780"/>
+   <version ClassVersion="18" checksum="3823694423"/>
    <version ClassVersion="17" checksum="1317152102"/>
    <version ClassVersion="16" checksum="66694600"/>
    <version ClassVersion="15" checksum="1083930585"/>
@@ -22,7 +24,8 @@
    <version ClassVersion="10" checksum="197322882"/>
   </class>
 
-  <class name="cvn::Result" ClassVersion="11" >
+  <class name="cvn::Result" ClassVersion="12" >
+   <version ClassVersion="12" checksum="2580228795"/>
    <version ClassVersion="11" checksum="3978040452"/>
    <version ClassVersion="10" checksum="197322882"/>
   </class>
@@ -46,6 +49,9 @@
   <class name="std::vector<cvn::Result>"          />
   <class name="art::Ptr<cvn::Result>"             />
   <class name="art::Wrapper< std::vector<cvn::Result> >"    />
+
+  <class name="std::vector<std::vector<float> >"          />
+  <class name="art::Wrapper< std::vector<std::vector<float> > >"    />
   
 </lcgdict>
 

@@ -274,7 +274,7 @@ namespace dune {
       erecoout->fNuLorentzVector.SetE(fCaloAlg.ElectronsFromADCArea(fWirecharge, 2)/fRecombFactor / util::kGeVToElectrons);
     }
 
-    art::ProductID const prodId = getProductID<dune::EnergyRecoOutput>();
+    art::ProductID const prodId = evt.getProductID<dune::EnergyRecoOutput>();
     art::EDProductGetter const* prodGetter = evt.productGetter(prodId);
     art::Ptr<dune::EnergyRecoOutput> EnergyRecoOutputPtr{ prodId, 0U, prodGetter };
     //art::Ptr<dune::EnergyRecoOutput> EnergyRecoOutputPtr = makeEnergyRecoOutputPtr(0);
@@ -474,5 +474,3 @@ namespace dune {
 } // namespace dunemva
 
 #endif // EnergyReco_H
-
-
