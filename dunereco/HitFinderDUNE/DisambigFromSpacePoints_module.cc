@@ -346,7 +346,7 @@ namespace dune {
                 }
                 else
                 {
-                    mf::LogWarning("DisambigFromSpacePoints") << "Did not find matching wire (plane:" << plane << ").";
+		  //mf::LogWarning("DisambigFromSpacePoints") << "Did not find matching wire (plane:" << plane << ").";
                     unassigned.push_back(hit.key());
                     fNMissedBySpacePoints[plane]++; //count unresolved hit
                 }
