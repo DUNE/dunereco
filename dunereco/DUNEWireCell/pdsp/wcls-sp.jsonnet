@@ -23,7 +23,7 @@
 local epoch = std.extVar('epoch');  // eg "dynamic", "after", "before", "perfect"
 local reality = std.extVar('reality');
 local sigoutform = std.extVar('signal_output_form');  // eg "sparse" or "dense"
-
+local readoutform = std.extVar('readout_form'); // eg "long" or "default"
 
 local wc = import 'wirecell.jsonnet';
 local g = import 'pgraph.jsonnet';
@@ -33,8 +33,14 @@ local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
 
 local data_params = import 'params.jsonnet';
 local simu_params = import 'simparams.jsonnet';
-local params = if reality == 'data' then data_params else simu_params;
+local params1 = if reality == 'data' then data_params else simu_params;
+local params = params1 {
+  daq: super.daq {
 
+    // Number of readout ticks.  See also sim.response.nticks.
+    nticks: if readoutform == 'long' then 15000 else 6000,
+  },
+};
 
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local tools = tools_maker(params);
