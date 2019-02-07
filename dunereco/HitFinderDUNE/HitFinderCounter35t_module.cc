@@ -152,7 +152,7 @@ namespace dune{
     , fCollectionTimeWidth (pset.get<unsigned int>("CollectionTimeWidth"))
     , fFitAlg              (pset.get<fhicl::ParameterSet>("HitLineFitAlg"))
     , fDoHitLineFitAlg     (pset.get<bool>("DoHitLineFitAlg",false))
-    , fEngine{art::ServiceHandle<rndm::NuRandomService>{}->createEngine(*this,"HepJamesRandom","Seed")}
+    , fEngine(art::ServiceHandle<rndm::NuRandomService>{}->createEngine(*this,"HepJamesRandom","Seed"))
   {
     recob::HitCollectionCreator::declare_products(*this);
   }

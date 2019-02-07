@@ -277,7 +277,7 @@ dune::RobustHitFinder::RobustHitFinder(fhicl::ParameterSet const & p)
     fHitFinderAlg(p.get<fhicl::ParameterSet>("RMSHitFinderAlg")),
     fClks(lar::providerFrom<detinfo::DetectorClocksService>()),
     fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>()),
-    fEngine{art::ServiceHandle<rndm::NuRandomService>{}->createEngine(*this,"HepJamesRandom","Seed")}
+    fEngine(art::ServiceHandle<rndm::NuRandomService>{}->createEngine(*this,"HepJamesRandom","Seed"))
 {
   this->reconfigure(p);
 
