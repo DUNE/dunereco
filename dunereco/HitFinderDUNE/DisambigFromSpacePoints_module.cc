@@ -197,7 +197,7 @@ namespace dune {
         }
         if (tpc == geo::WireID::InvalidID)
         {
-            mf::LogWarning("DisambigFromSpacePoints") << "No collection hit for this spacepoint.";
+	  //mf::LogWarning("DisambigFromSpacePoints") << "No collection hit for this spacepoint.";
             continue;
         }
         for (const auto & h : hits) // set mapping for Induction hits
@@ -346,7 +346,7 @@ namespace dune {
                 }
                 else
                 {
-                    mf::LogWarning("DisambigFromSpacePoints") << "Did not find matching wire (plane:" << plane << ").";
+		  //mf::LogWarning("DisambigFromSpacePoints") << "Did not find matching wire (plane:" << plane << ").";
                     unassigned.push_back(hit.key());
                     fNMissedBySpacePoints[plane]++; //count unresolved hit
                 }
