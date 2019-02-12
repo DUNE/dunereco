@@ -72,9 +72,8 @@ namespace dune{
   
     explicit HitFinderCounter35t(fhicl::ParameterSet const& pset);
 
-    void produce(art::Event& evt);
-    void beginJob();
-    void endJob();
+    void produce(art::Event& evt) override;
+    void beginJob() override;
   
   private:
 
@@ -122,8 +121,6 @@ namespace dune{
     unsigned int fCollectionTimeWidth;
 
     dune::HitLineFitAlg fFitAlg;
-    art::ServiceHandle<art::RandomNumberGenerator> fRng;
-    art::ServiceHandle<rndm::NuRandomService> fSeed;
     bool fDoHitLineFitAlg;
 
     std::map< unsigned int, std::pair < TVector3, std::vector< TVector3 > > > CounterPositionMap; // The map of counter positions....
@@ -134,7 +131,7 @@ namespace dune{
     int    TrigTime=0;
 
     TH2F* TwoDLineHist;
-  protected:
+    CLHEP::HepRandomEngine& fEngine;
   }; // class HitFinderCounter35t
   
   
@@ -155,8 +152,8 @@ namespace dune{
     , fCollectionTimeWidth (pset.get<unsigned int>("CollectionTimeWidth"))
     , fFitAlg              (pset.get<fhicl::ParameterSet>("HitLineFitAlg"))
     , fDoHitLineFitAlg     (pset.get<bool>("DoHitLineFitAlg",false))
+    , fEngine(art::ServiceHandle<rndm::NuRandomService>{}->createEngine(*this,"HepJamesRandom","Seed"))
   {
-    fSeed->createEngine(*this,"HepJamesRandom","Seed");
     recob::HitCollectionCreator::declare_products(*this);
   }
   //-------------------------------------------------
@@ -183,18 +180,11 @@ namespace dune{
 
   }
   //-------------------------------------------------
-  void HitFinderCounter35t::endJob() {
-  
-  }
-  //-------------------------------------------------
   void HitFinderCounter35t::produce(art::Event& evt) {
     
     if (fDebug) std::cout << "\n\nLooking at event " << evt.event() << std::endl;
 
-    CLHEP::HepRandomEngine const & engine = fRng->getEngine(art::ScheduleID::first(),
-                                                            moduleDescription().moduleLabel(),
-							    "Seed");
-    fFitAlg.SetSeed(engine.getSeed());
+    fFitAlg.SetSeed(fEngine.getSeed());
 
     // get raw::ExternalTriggers
     art::Handle< std::vector< raw::ExternalTrigger> > externalTriggerListHandle;
