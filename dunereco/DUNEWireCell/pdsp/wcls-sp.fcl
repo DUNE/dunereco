@@ -56,6 +56,10 @@ physics :{
 
                // Save output signal waveforms (recob::Wire) in "sparse" or "dense" form
                signal_output_form: "sparse"
+
+               // Set the waveform sample length, eg, 6000, 15000, "auto"
+               // nsample: 6000
+
             }
          }
       }
