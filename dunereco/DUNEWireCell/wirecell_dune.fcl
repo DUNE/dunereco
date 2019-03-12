@@ -95,9 +95,6 @@ protodunespdata_wctsp:
             
             # Save output signal waveforms (recob::Wire) in "sparse" or "dense" form
             signal_output_form: "sparse"
-
-            # Set readout window: "long" has 15000 ticks, "default" has 6000 ticks
-            readout_form: "default"
         }
     }
 }

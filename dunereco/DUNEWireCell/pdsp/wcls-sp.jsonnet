@@ -23,7 +23,8 @@
 local epoch = std.extVar('epoch');  // eg "dynamic", "after", "before", "perfect"
 local reality = std.extVar('reality');
 local sigoutform = std.extVar('signal_output_form');  // eg "sparse" or "dense"
-local readoutform = std.extVar('readout_form'); // eg "long" or "default"
+// local nsample_ext = std.extVar('nsample'); // eg 6000, 10000, or "auto"
+// local nsample = if nsample_ext == 'auto' then 6000 else std.parseInt(nsample_ext); // set auto to 0 once larwirecell fixed
 
 local wc = import 'wirecell.jsonnet';
 local g = import 'pgraph.jsonnet';
@@ -33,14 +34,7 @@ local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
 
 local data_params = import 'params.jsonnet';
 local simu_params = import 'simparams.jsonnet';
-local params1 = if reality == 'data' then data_params else simu_params;
-local params = params1 {
-  daq: super.daq {
-
-    // Number of readout ticks.  See also sim.response.nticks.
-    nticks: if readoutform == 'long' then 15000 else 6000,
-  },
-};
+local params = if reality == 'data' then data_params else simu_params;
 
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local tools = tools_maker(params);
@@ -71,7 +65,8 @@ local wcls_input = {
     data: {
       art_tag: raw_input_label,
       frame_tags: ['orig'],  // this is a WCT designator
-      nticks: params.daq.nticks,
+      //nticks: params.daq.nticks,
+      // nticks: nsample,
     },
   }, nin=0, nout=1),
 
@@ -99,7 +94,8 @@ local wcls_output = {
       anode: wc.tn(tools.anode),
       digitize: true,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['raw'],
-      nticks: params.daq.nticks,
+      //nticks: params.daq.nticks,
+      // nticks: nsample,
       chanmaskmaps: ['bad'],
     },
   }, nin=1, nout=1, uses=[tools.anode]),
@@ -117,11 +113,12 @@ local wcls_output = {
       anode: wc.tn(mega_anode),
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
-      nticks: params.daq.nticks,
+      //nticks: params.daq.nticks,
+      // nticks: nsample,
       chanmaskmaps: [],
-      summary_tags: ["threshold"], // retagger makes this tag
+      summary_tags: ['threshold'],  // retagger makes this tag
       //  just one threshold value
-      summary_operator: { threshold: "set" },
+      summary_operator: { threshold: 'set' },
 
     },
   }, nin=1, nout=1, uses=[mega_anode]),
@@ -140,7 +137,7 @@ local chndb = [{
 local nf_maker = import 'pgrapher/experiment/pdsp/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local sp = sp_maker(params, tools, { sparse: sigoutform == "sparse"} );
+local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
 local sp_pipes = [sp.make_sigproc(tools.anodes[n], n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local multimagnify = import 'pgrapher/experiment/pdsp/multimagnify.jsonnet';
