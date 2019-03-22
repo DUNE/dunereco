@@ -1,0 +1,34 @@
+<lcgdict>
+
+  <class name="cnn::RegCNNResult" ClassVersion="12" >
+   <version ClassVersion="12" checksum="1659677415"/>
+   <version ClassVersion="11" checksum="4105004439"/>
+   <version ClassVersion="10" checksum="197322882"/>
+  </class>
+
+
+  <class name="cnn::RegPixelMap" ClassVersion="12" >
+   <version ClassVersion="12" checksum="991971656"/>
+   <version ClassVersion="11" checksum="2817099520"/>
+   <version ClassVersion="10" checksum="2107046998"/>
+  </class>
+
+  <class name="cnn::RegCNNBoundary" ClassVersion="12" >
+   <version ClassVersion="12" checksum="2631011710"/>
+   <version ClassVersion="11" checksum="4234958254"/>
+   <version ClassVersion="10" checksum="206696030"/>
+  </class>
+
+
+  <class name="std::vector<cnn::RegPixelMap>"          />
+  <class name="art::Ptr<cnn::RegPixelMap>"             />
+  <class name="art::Wrapper< std::vector<cnn::RegPixelMap> >"    />
+
+  <class name="std::vector<cnn::RegCNNResult>"          />
+  <class name="art::Ptr<cnn::RegCNNResult>"             />
+  <class name="art::Wrapper< std::vector<cnn::RegCNNResult> >"    />
+  
+  <class name="std::vector<cnn::HType>"      />
+</lcgdict>
+
+

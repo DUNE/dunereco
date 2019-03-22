@@ -1,0 +1,13 @@
+BEGIN_PROLOG 
+
+regcnn_analysistree:
+{
+  module_type:        "RegCNNAna"
+  MCGenModuleLabel:   "generator"
+  RegCNNModuleLabel:  "regcnneval"
+  HitsModuleLabel:    "linecluster"
+  EnergyRecoNueLabel: "energyreconue"
+  RegCNNResultLabel:  "regcnnresult"
+}
+
+END_PROLOG

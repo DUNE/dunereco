@@ -1,0 +1,22 @@
+BEGIN_PROLOG
+
+#   This file defines the configuration for the RegCNNEventDump module
+
+standard_regcnnmapper:
+{
+  module_type:        RegCNNMapper
+  #==================
+  HitsModuleLabel:   "linecluster"
+  ClusterPMLabel: "regcnnmap"
+  GlobalWireMethod: 1
+  MinClusterHits: 1
+  TdcWidth:      280 # time width of pixel map
+  WireLength:    400 # wire width of pixel map
+  TimeResolution: 6 
+  UseRecoVertex: 0
+  RegCNNModuleLabel: "regcnneval"
+  RegCNNResultLabel: "regcnnresult"
+}
+
+
+END_PROLOG
