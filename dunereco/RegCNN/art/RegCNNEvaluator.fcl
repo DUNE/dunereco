@@ -7,7 +7,7 @@ BEGIN_PROLOG
 standard_tfregnethandler:
 {
   LibPath: "DUNE_PARDATA_DIR"
-  TFProtoBuf: "duneRegCVNNetwork/dune_model.pb"
+  TFProtoBuf: "duneRegCNN/dune_model_weighted_20180922-102010.pb"
   NInputs : 3
   ReverseViews: [false,false,false]
   OutputName: []
