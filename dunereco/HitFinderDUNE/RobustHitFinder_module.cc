@@ -25,7 +25,6 @@
 #include "art/Framework/Principal/Run.h"
 #include "art/Framework/Principal/SubRun.h"
 #include "art/Framework/Services/Optional/TFileService.h"
-#include "art/Framework/Services/Optional/RandomNumberGenerator.h"
 #include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -259,8 +258,6 @@ private:
   dune::RMSHitFinderAlg fHitFinderAlg;
 
   art::ServiceHandle<geo::Geometry> fGeom;
-  art::ServiceHandle<art::RandomNumberGenerator> fRng;
-  art::ServiceHandle<rndm::NuRandomService> fSeed;
   art::ServiceHandle<art::TFileService> fTfs;
   detinfo::DetectorClocks const * fClks;
   detinfo::DetectorProperties const * fDetProp;
@@ -269,18 +266,20 @@ private:
   //throwaway variables
   float temppedmean;
   float temppedrms;
+
+  CLHEP::HepRandomEngine& fEngine;
 };
 
 
 dune::RobustHitFinder::RobustHitFinder(fhicl::ParameterSet const & p)
-  : fFitAlg(p.get<fhicl::ParameterSet>("HitLineFitAlg")),
+  : EDProducer{p},
+    fFitAlg(p.get<fhicl::ParameterSet>("HitLineFitAlg")),
     fHitFinderAlg(p.get<fhicl::ParameterSet>("RMSHitFinderAlg")),
     fClks(lar::providerFrom<detinfo::DetectorClocksService>()),
-    fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>())
+    fDetProp(lar::providerFrom<detinfo::DetectorPropertiesService>()),
+    fEngine(art::ServiceHandle<rndm::NuRandomService>{}->createEngine(*this,"HepJamesRandom","Seed"))
 {
   this->reconfigure(p);
-
-  fSeed->createEngine(*this,"HepJamesRandom","Seed");
 
   recob::HitCollectionCreator::declare_products(*this);
 }
@@ -291,8 +290,7 @@ void dune::RobustHitFinder::produce(art::Event & e)
 
   recob::HitCollectionCreator hcol(*this, e);
 
-  CLHEP::HepRandomEngine const & engine = fRng->getEngine("Seed");
-  fFitAlg.SetSeed(engine.getSeed());
+  fFitAlg.SetSeed(fEngine.getSeed());
 
   // get recob::Wires
   art::Handle< std::vector< recob::Wire> > wireHandle;

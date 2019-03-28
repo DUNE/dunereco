@@ -269,7 +269,10 @@ recob::Track dunefd::ShSeg::ConvertFrom(pma::Track3D const & src)
 	{
 		mf::LogError("IniSegReco") << "pma::Track3D to recob::Track conversion problem.";
 	}
-	return recob::Track(xyz, dircos, std::vector< std::vector< double > >(0), std::vector< double >(2, util::kBogusD), fTrkindex);	
+	return recob::Track(recob::TrackTrajectory(recob::tracking::convertCollToPoint(xyz),
+						   recob::tracking::convertCollToVector(dircos),
+						   recob::Track::Flags_t(xyz.size()), false),
+			    0, -1., 0, recob::tracking::SMatrixSym55(), recob::tracking::SMatrixSym55(), fTrkindex);
 }
 
 /******************************************************************************/
