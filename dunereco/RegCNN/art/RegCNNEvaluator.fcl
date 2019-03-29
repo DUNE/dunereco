@@ -1,0 +1,27 @@
+BEGIN_PROLOG
+
+#   This file defines the configuration for the RegCNNEventDump module
+
+
+# Configuration for the RegCNN TF interface
+standard_tfregnethandler:
+{
+  LibPath: "DUNE_PARDATA_DIR"
+  TFProtoBuf: "duneRegCNN/dune_model_weighted_20180922-102010.pb"
+  NInputs : 3
+  ReverseViews: [false,false,false]
+  OutputName: []
+}
+
+standard_regcnnevaluator:
+{
+  module_type:        RegCNNEvaluator
+  #==================
+  PixelMapInput: "regcnnmap"
+  ResultLabel: "regcnnresult"
+  TFNetHandler: @local::standard_tfregnethandler
+  CNNType: "Tensorflow"
+  Target: "nueenergy"
+}
+
+END_PROLOG

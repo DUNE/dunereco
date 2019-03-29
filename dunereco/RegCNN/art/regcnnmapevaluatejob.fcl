@@ -1,0 +1,71 @@
+#include "services_dune.fcl"
+#include "RegCNNMapper.fcl"
+#include "RegCNNEvaluator.fcl"
+#include "tools_dune.fcl"
+
+process_name: RegCNNEvaluator
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "regcnn_evaluator_r%r_s%s_hist.root"
+                  closeFileFast: false }
+  @table::dunefd_reco_services
+  #@table::standard_services
+  TimeTracker:       {}
+  RandomNumberGenerator: {}
+  MemoryTracker:         { } # default is one
+  message:      @local::dune_message_services_prod
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+                        @table::dunefd_simulation_services
+
+}
+
+#services.BackTrackerService: @local::standard_backtrackerservice
+
+# Input source is a ROOT file 
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1        # Number of events to create
+
+}
+
+outputs:
+{
+  out1:
+  {
+      module_type: RootOutput
+      fileName:    "regcnnevaluator_r%r_s%s.root" 
+      fastCloning: false
+      dataTier: "full-reconstructed"
+  }
+}
+
+# Define and configure some modules to do work on each event.
+# First modules are defined; they are scheduled later.
+# Modules are grouped by type.
+physics:
+{
+  # Declare the modules
+  producers:
+  { 
+    regcnnmap:  @local::standard_regcnnmapper
+    regcnneval: @local::standard_regcnnevaluator
+  }
+
+  # Build the paths
+  map: [ regcnnmap, regcnneval ]
+  
+  out: [out1]
+
+
+}
+
+physics.producers.regcnnmap.HitsModuleLabel: "linecluster"
+physics.producers.regcnnmap.TimeResolution: 6
+physics.producers.regcnnmap.WireLength: 400
+physics.producers.regcnnmap.TdcWidth: 280
+
+
+########################################################################
