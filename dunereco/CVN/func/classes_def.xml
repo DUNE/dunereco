@@ -41,11 +41,19 @@
    <version ClassVersion="10" checksum="2066960320"/>
   </class>
 
+  <class name="cvn::GCNGraph" ClassVersion="10">
+   <version ClassVersion="10" checksum="3305168692"/>
+
+  </class>
 
   <class name="std::vector<cvn::PixelMap>"          />
   <class name="art::Ptr<cvn::PixelMap>"             />
   <class name="std::vector<cvn::HType>"      />
   <class name="art::Wrapper< std::vector<cvn::PixelMap> >"    />
+
+  <class name="std::vector<cvn::GCNGraph>"          />
+  <class name="art::Ptr<cvn::GCNGraph>"             />
+  <class name="art::Wrapper< std::vector<cvn::GCNGraph> >"    />
 
   <class name="std::vector<cvn::Result>"          />
   <class name="art::Ptr<cvn::Result>"             />

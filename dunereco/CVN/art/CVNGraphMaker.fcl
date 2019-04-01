@@ -1,0 +1,15 @@
+BEGIN_PROLOG
+
+#   This file defines the configuration for the CVNGraphMaker module
+
+standard_cvngraphmaker:
+{
+  module_type:        CVNGraphMaker
+  #==================
+  SpacePointLabel:   "spacepointsolver"
+  GraphLabel: "cvngraph"
+  MinClusterHits: 100
+  NeighbourRadius: 3.0 # Distance in cm
+}
+
+END_PROLOG
