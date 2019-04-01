@@ -1,0 +1,17 @@
+BEGIN_PROLOG
+
+standard_regcnneventdump_fhc:
+{
+  module_type:        RegCNNEventDump
+  #==================
+  PixelMapInput: "regcnnmap"
+  GenieGenModuleLabel: "generator"
+  WriteMapTH2: true
+  ApplyFidVol: true
+  # Use the following to add the reco energy to the output tree
+}
+
+# Make the rhc version 
+standard_regcnneventdump_rhc: @local::standard_regcnneventdump_fhc
+
+END_PROLOG

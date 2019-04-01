@@ -1,0 +1,46 @@
+#include "services_dune.fcl" 
+#include "RegCNNAna.fcl" 
+#include "mvamodule.fcl"
+#include "energyreco.fcl"
+#include "tools_dune.fcl"
+
+process_name: RegCNNAna
+
+services: 
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "regcnn_ana_r%r_s%s_hist.root" 
+                  closeFileFast: false } 
+  @table::dunefd_reco_services
+}
+
+source:  
+{
+  module_type: RootInput 
+  maxEvents:  -1   
+}
+
+physics: 
+{    
+  producers:
+  {
+    mvaselectnue:   @local::dunefd_mvaselect
+    energyreconue:  @local::dunefd_nuenergyreco
+  }
+  analyzers:   
+  {
+    regcnnana:  @local::regcnn_analysistree
+  }  
+  prod:          [ mvaselectnue, energyreconue ]
+  myana: [ regcnnana ] 
+  trigger_paths: [ prod ]
+  end_paths: [myana]
+}
+services.Geometry: @local::dune10kt_workspace_geo
+services.Geometry.GDML: "dune10kt_v1_1x2x6.gdml"
+
+physics.producers.mvaselectnue.MVAMethod:  "BDTG"
+physics.producers.mvaselectnue.Select:  "nue"
+physics.producers.mvaselectnue.WeightFile: "MVASelect/v2.2/TMVAClassification_BDTG.nue.weights.xml" 
+
+physics.producers.energyreconue.RecoMethod:   2
