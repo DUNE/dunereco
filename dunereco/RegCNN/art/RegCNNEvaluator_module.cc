@@ -136,14 +136,13 @@ namespace cnn {
         std::vector<float> networkOutput;
         if (fTarget == "nueenergy"){
             networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
-            std::cout << "-->" << networkOutput[0] << std::endl;
+            //std::cout << "-->" << networkOutput[0] << std::endl;
         }
         else if (fTarget == "nuevertex"){
             float center_of_mass[6] = {0};
             getCM(*pixelmaplist[0], center_of_mass);
-            std::cout << "cm: " << center_of_mass[0] << " " << center_of_mass[1] << " " << center_of_mass[2] << std::endl;
             networkOutput = fTFHandler.Predict(*pixelmaplist[0], center_of_mass);
-            std::cout << networkOutput[0] << " " << networkOutput[1] << " " << networkOutput[2] << std::endl;
+            //std::cout << networkOutput[0] << " " << networkOutput[1] << " " << networkOutput[2] << std::endl;
         } else {
             std::cout << "Wrong Target" << std::endl;
             abort();
