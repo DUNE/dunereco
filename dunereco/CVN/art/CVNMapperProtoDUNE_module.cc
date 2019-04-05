@@ -105,7 +105,7 @@ namespace cvn {
 
 
   //.......................................................................
-  CVNMapperProtoDUNE::CVNMapperProtoDUNE(fhicl::ParameterSet const& pset):
+  CVNMapperProtoDUNE::CVNMapperProtoDUNE(fhicl::ParameterSet const& pset): EDProducer{pset},
   fHitsModuleLabel  (pset.get<std::string>    ("HitsModuleLabel")),
   fTrackLabel  (pset.get<std::string>    ("TrackLabel")),
   fShowerLabel  (pset.get<std::string>    ("ShowerLabel")),

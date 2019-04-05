@@ -90,7 +90,7 @@ namespace cvn {
 
 
   //.......................................................................
-  CVNMapper::CVNMapper(fhicl::ParameterSet const& pset):
+  CVNMapper::CVNMapper(fhicl::ParameterSet const& pset): EDProducer{pset},
   fHitsModuleLabel  (pset.get<std::string>    ("HitsModuleLabel")),
   fClusterPMLabel(pset.get<std::string>    ("ClusterPMLabel")),
   fMinClusterHits(pset.get<unsigned short> ("MinClusterHits")),

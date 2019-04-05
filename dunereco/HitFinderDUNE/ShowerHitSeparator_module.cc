@@ -80,7 +80,7 @@ namespace shs {
 
   // implementation
 
-  ShowerHitSeparator::ShowerHitSeparator(fhicl::ParameterSet const& pset) {
+  ShowerHitSeparator::ShowerHitSeparator(fhicl::ParameterSet const& pset) : EDProducer{pset} {
 
     this->reconfigure(pset);
 

@@ -94,7 +94,7 @@ namespace cvn {
   };
 
   //.......................................................................
-  CVNEvaluator::CVNEvaluator(fhicl::ParameterSet const& pset):
+  CVNEvaluator::CVNEvaluator(fhicl::ParameterSet const& pset): EDProducer{pset},
     fPixelMapInput (pset.get<std::string>         ("PixelMapInput")),
     fResultLabel (pset.get<std::string>         ("ResultLabel")),
     fCVNType     (pset.get<std::string>         ("CVNType")),

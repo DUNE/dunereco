@@ -121,7 +121,7 @@ private:
 
 /******************************************************************************/
 
-dunefd::ShSeg::ShSeg(fhicl::ParameterSet const & p) :
+dunefd::ShSeg::ShSeg(fhicl::ParameterSet const & p) : EDProducer{p},
 	fCalorimetryAlg(p.get<fhicl::ParameterSet>("CalorimetryAlg")),
 	fProjectionMatchingAlg(p.get< fhicl::ParameterSet >("ProjectionMatchingAlg"))	
 	{

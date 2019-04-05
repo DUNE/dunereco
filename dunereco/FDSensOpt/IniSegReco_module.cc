@@ -140,7 +140,7 @@ private:
 // ------------------------------------------------------
 
 dunefd::IniSegReco::IniSegReco(fhicl::ParameterSet const & pset)
-: fProjectionMatchingAlg(pset.get< fhicl::ParameterSet >("ProjectionMatchingAlg"))
+: EDProducer{pset}, fProjectionMatchingAlg(pset.get< fhicl::ParameterSet >("ProjectionMatchingAlg"))
 {
 	this->reconfigure(pset);
 	produces< std::vector<recob::Track> >();
