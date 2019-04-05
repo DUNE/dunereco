@@ -6,6 +6,7 @@ art_make_library(
   SOURCE EventImageData.h EventImageData.cxx
   LIBRARIES    CVNFunc
   LIBRARY_NAME_VAR GLOBIMAGE
+  ${ART_ROOT_IO_TFILESERVICE_SERVICE}
   )
 
 simple_plugin(SPMultiTpcDump "module"
