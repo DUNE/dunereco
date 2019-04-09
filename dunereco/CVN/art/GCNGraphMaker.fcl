@@ -1,13 +1,12 @@
 BEGIN_PROLOG
 
-#   This file defines the configuration for the CVNGraphMaker module
+#   This file defines the configuration for the GCNGraphMaker module
 
-standard_cvngraphmaker:
+standard_gcngraphmaker:
 {
-  module_type:        CVNGraphMaker
+  module_type:        GCNGraphMaker
   #==================
   SpacePointLabel:   "spacepointsolver"
-  GraphLabel: "cvngraph"
   MinClusterHits: 100
   NeighbourRadius: 3.0 # Distance in cm
 }

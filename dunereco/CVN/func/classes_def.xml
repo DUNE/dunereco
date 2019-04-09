@@ -41,7 +41,8 @@
    <version ClassVersion="10" checksum="2066960320"/>
   </class>
 
-  <class name="cvn::GCNGraph" ClassVersion="10">
+  <class name="cvn::GCNGraph" ClassVersion="11">
+   <version ClassVersion="11" checksum="1251091300"/>
    <version ClassVersion="10" checksum="3305168692"/>
 
   </class>

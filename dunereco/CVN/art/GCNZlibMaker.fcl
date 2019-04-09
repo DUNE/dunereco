@@ -1,0 +1,16 @@
+BEGIN_PROLOG
+ 
+standard_gcnzlibmaker:
+{
+  module_type: GCNZlibMaker
+  #==================
+  OutputDir: "."
+  GraphLabel: "gcngraph"
+  TopologyHitsCut: 100
+  GenieGenModuleLabel: "generator"
+  EnergyNueLabel: "energynue"
+  EnergyNumuLabel: "energynumu"
+  EnergyNutauLabel: "energynutau"
+}
+
+END_PROLOG

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <ostream>
 #include "dune/CVN/func/GCNGraph.h"
+#include "dune/CVN/func/GCNGraphNode.h"
 
 namespace cvn
 {
@@ -15,67 +16,45 @@ namespace cvn
   GCNGraph::GCNGraph()
   {}
 
-  GCNGraph::GCNGraph(std::vector<std::vector<float>> positions,std::vector<std::vector<float>> features):
-  fNodePositions(positions),
-  fNodeFeatures(features)
+  GCNGraph::GCNGraph(std::vector<GCNGraphNode> nodes):
+  fNodes(nodes)
   {
-    if(fNodePositions.size() != fNodeFeatures.size()){
+
+  }
+
+  GCNGraph::GCNGraph(std::vector<std::vector<float>> positions,std::vector<std::vector<float>> features)
+  {
+    if(positions.size() != features.size()){
       std::cerr << "The number of nodes must be the same for the position and feature vectors" << std::endl;
       assert(0);
+    }
+    for(unsigned int n = 0; n < positions.size(); ++n){
+      this->AddNode(positions.at(n),features.at(n));
     }
   }
 
   // Add a new node
   void GCNGraph::AddNode(std::vector<float> position, std::vector<float> features){
-    fNodePositions.push_back(position);
-    fNodeFeatures.push_back(features);
+    GCNGraphNode newNode(position,features);
+    fNodes.push_back(newNode);
   }
 
   // Get the number of nodes
   const unsigned int GCNGraph::GetNumberOfNodes() const{
-    return fNodePositions.size();
-  }
-
-  // Get number of features
-  const unsigned int GCNGraph::GetNumberOfNodeFeatures() const{
-    if(this->GetNumberOfNodes() == 0){
-      std::cerr << "GCNGraph::GetNumberOfNodeFeatures(): Graph object has no nodes, returning 0" << std::endl;
-      return 0;
-    }
-    else return fNodeFeatures.size();
+    return fNodes.size();
   }
 
   // Access nodes
-  const std::pair<const std::vector<float>,const std::vector<float>> GCNGraph::GetNode(const unsigned int index) const{
+  const GCNGraphNode GCNGraph::GetNode(const unsigned int index) const{
 
     if(this->GetNumberOfNodes() == 0){
       std::cerr << "GCNGraph::GetNode(): Can't access node with index " << index << std::endl;
       assert(0);
     }
 
-    std::pair<const std::vector<float>,const std::vector<float>> node = std::make_pair(fNodePositions[index],fNodeFeatures[index]);
-    return node;
+    return fNodes.at(index);
   }
 
-  const std::vector<float> GCNGraph::GetNodePosition(const unsigned int index) const{
-    if(this->GetNumberOfNodes() == 0){
-      std::cerr << "GCNGraph::GetNode(): Can't access node with index " << index << std::endl;
-      assert(0);
-    }
-
-    std::vector<float> node = fNodePositions[index];
-    return node;
-  }
-
-  const std::vector<float> GCNGraph::GetNodeFeatures(const unsigned int index) const{
-    if(this->GetNumberOfNodes() == 0){
-      std::cerr << "GCNGraph::GetNode(): Can't access node with index " << index << std::endl;
-      assert(0);
-    }
-
-    std::vector<float> node = fNodeFeatures[index];
-    return node;
-  }
 
   // Return minimum and maximum coordinate values ((xmin,xmax),(ymin,ymax),(zmin,zmax))
   const std::vector<std::pair<float,float>> GCNGraph::GetMinMaxPositions() const{
@@ -85,13 +64,14 @@ namespace cvn
 
     for(unsigned int i = 0; i < 3; ++i) minMaxVals.push_back(dummyPair);
 
-    for(std::vector<float> node : fNodePositions){
-      if(node[0] < minMaxVals[0].first) minMaxVals[0].first = node[0];
-      if(node[1] < minMaxVals[1].first) minMaxVals[1].first = node[1];
-      if(node[2] < minMaxVals[2].first) minMaxVals[2].first = node[2];
-      if(node[0] > minMaxVals[0].second) minMaxVals[0].second = node[0];
-      if(node[1] > minMaxVals[1].second) minMaxVals[1].second = node[1];
-      if(node[2] > minMaxVals[2].second) minMaxVals[2].second = node[2];
+    for(GCNGraphNode node : fNodes){
+      std::vector<float> nodePos = node.GetPosition();
+      if(nodePos[0] < minMaxVals[0].first) minMaxVals[0].first = nodePos[0];
+      if(nodePos[1] < minMaxVals[1].first) minMaxVals[1].first = nodePos[1];
+      if(nodePos[2] < minMaxVals[2].first) minMaxVals[2].first = nodePos[2];
+      if(nodePos[0] > minMaxVals[0].second) minMaxVals[0].second = nodePos[0];
+      if(nodePos[1] > minMaxVals[1].second) minMaxVals[1].second = nodePos[1];
+      if(nodePos[2] > minMaxVals[2].second) minMaxVals[2].second = nodePos[2];
     }
  
     return minMaxVals;

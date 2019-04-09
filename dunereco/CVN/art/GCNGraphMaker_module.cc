@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////
-// \file    CVNGraphMaker_module.cc
+// \file    GCNGraphMaker_module.cc
 // \brief   Producer module for creating CVN Graph objects
 // \author  Leigh H. Whitehead - leigh.howard.whitehead@cern.ch 
 ////////////////////////////////////////////////////////////////////////
@@ -7,10 +7,6 @@
 // C/C++ includes
 #include <iostream>
 #include <sstream>
-
-// ROOT includes
-#include "TTree.h"
-#include "TH2F.h"
 
 // Framework includes
 #include "art/Framework/Core/EDProducer.h"
@@ -31,19 +27,15 @@
 #include "lardataobj/RawData/ExternalTrigger.h"
 
 #include "lardata/Utilities/AssociationUtil.h"
-#include "nusimdata/SimulationBase/MCNeutrino.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
 
 #include "dune/CVN/func/GCNGraph.h"
-#include "dune/CVN/func/TrainingData.h"
 
 namespace cvn {
 
-  class CVNGraphMaker : public art::EDProducer {
+  class GCNGraphMaker : public art::EDProducer {
   public:
-    explicit CVNGraphMaker(fhicl::ParameterSet const& pset);
-    ~CVNGraphMaker();
+    explicit GCNGraphMaker(fhicl::ParameterSet const& pset);
+    ~GCNGraphMaker();
 
     void produce(art::Event& evt);
     void beginJob();
@@ -72,19 +64,20 @@ namespace cvn {
 
 
   //.......................................................................
-  CVNGraphMaker::CVNGraphMaker(fhicl::ParameterSet const& pset):
+  GCNGraphMaker::GCNGraphMaker(fhicl::ParameterSet const& pset):
   fSpacePointLabel (pset.get<std::string>    ("SpacePointLabel")),
   fGraphLabel      (pset.get<std::string>    ("GraphLabel")),
   fMinClusterHits  (pset.get<unsigned short> ("MinClusterHits")),
   fNeighbourRadius (pset.get<float>("NeighbourRadius"))
   {
 
-    produces< std::vector<cvn::PixelMap>   >(fGraphLabel);
+//    produces< std::vector<cvn::GCNGraph>   >(fGraphLabel);
+    produces< std::vector<cvn::GCNGraph>   >();
 
   }
 
   //......................................................................
-  CVNGraphMaker::~CVNGraphMaker()
+  GCNGraphMaker::~GCNGraphMaker()
   {
     //======================================================================
     // Clean up any memory allocated by your module
@@ -92,16 +85,16 @@ namespace cvn {
   }
 
   //......................................................................
-  void CVNGraphMaker::beginJob()
+  void GCNGraphMaker::beginJob()
   {  }
 
   //......................................................................
-  void CVNGraphMaker::endJob()
+  void GCNGraphMaker::endJob()
   {
   }
 
   //......................................................................
-  void CVNGraphMaker::produce(art::Event& evt)
+  void GCNGraphMaker::produce(art::Event& evt)
   {
 
     // Get the space points from the event
@@ -113,7 +106,8 @@ namespace cvn {
 
     // Create the Graph vector and fill it if we have enough hits
     std::unique_ptr<std::vector<cvn::GCNGraph>> graphs(new std::vector<cvn::GCNGraph>);
-    if(pointList.size() < fMinClusterHits){
+//    std::cout << "GCNGraphMaker: checking if we have enough space points (" << pointList.size() << " / " << fMinClusterHits << ")" << std::endl;
+    if(pointList.size() >= fMinClusterHits){
 
       cvn::GCNGraph newGraph;
 
@@ -134,20 +128,25 @@ namespace cvn {
         std::vector<float> features;
         features.push_back(neighbourMap.at(sp->ID()));
 
+//        std::cout << "GCNGraphMaker: adding node with " << neighbourMap.at(sp->ID()) << " neighbours (" << fNeighbourRadius << " cm" << std::endl;
+
         // Get the features... what will this be?!
         newGraph.AddNode(position,features);
       }
+
+      std::cout << "GCNGraphMaker: produced GCNGraph object with " << newGraph.GetNumberOfNodes() << " nodes" << std::endl;
 
       // Add out graph to the vector
       graphs->push_back(newGraph);
     }
 
     // Write our graph to the event
-    evt.put(std::move(graphs), fGraphLabel);
+//    evt.put(std::move(graphs), fGraphLabel);
+    evt.put(std::move(graphs));
   }
 
   //----------------------------------------------------------------------
-  void CVNGraphMaker::GetNeighbours(std::map<int,unsigned int> &neighbourMap, const std::vector<art::Ptr<recob::SpacePoint>> &points) const{
+  void GCNGraphMaker::GetNeighbours(std::map<int,unsigned int> &neighbourMap, const std::vector<art::Ptr<recob::SpacePoint>> &points) const{
 
     for(art::Ptr<recob::SpacePoint> sp0 : points){
       // We want an entry even if it ends up being zero
@@ -166,7 +165,7 @@ namespace cvn {
 
   }
 
-  float CVNGraphMaker::GetDistanceBetweenPoints(const double *p1, const double *p2) const{
+  float GCNGraphMaker::GetDistanceBetweenPoints(const double *p1, const double *p2) const{
     float dx = p2[0] - p1[0];
     float dy = p2[1] - p1[1];
     float dz = p2[2] - p1[2];
@@ -174,7 +173,7 @@ namespace cvn {
   }
 
 
-DEFINE_ART_MODULE(cvn::CVNGraphMaker)
+DEFINE_ART_MODULE(cvn::GCNGraphMaker)
 } // end namespace cvn
 ////////////////////////////////////////////////////////////////////////
 
