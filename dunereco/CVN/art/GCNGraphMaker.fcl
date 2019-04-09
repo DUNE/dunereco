@@ -6,7 +6,7 @@ standard_gcngraphmaker:
 {
   module_type:        GCNGraphMaker
   #==================
-  SpacePointLabel:   "spacepointsolver"
+  SpacePointLabel:   "pandora"
   MinClusterHits: 100
   NeighbourRadius: 3.0 # Distance in cm
 }

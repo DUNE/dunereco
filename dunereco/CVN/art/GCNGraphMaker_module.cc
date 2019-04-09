@@ -47,9 +47,6 @@ namespace cvn {
     /// Module label for input space points
     std::string fSpacePointLabel;
 
-    /// Module label for output graphs
-    std::string fGraphLabel;
-
     /// Minimum number of space points to produce a graph
     unsigned short fMinClusterHits;
 
@@ -66,12 +63,10 @@ namespace cvn {
   //.......................................................................
   GCNGraphMaker::GCNGraphMaker(fhicl::ParameterSet const& pset):
   fSpacePointLabel (pset.get<std::string>    ("SpacePointLabel")),
-  fGraphLabel      (pset.get<std::string>    ("GraphLabel")),
   fMinClusterHits  (pset.get<unsigned short> ("MinClusterHits")),
   fNeighbourRadius (pset.get<float>("NeighbourRadius"))
   {
 
-//    produces< std::vector<cvn::GCNGraph>   >(fGraphLabel);
     produces< std::vector<cvn::GCNGraph>   >();
 
   }
@@ -141,7 +136,6 @@ namespace cvn {
     }
 
     // Write our graph to the event
-//    evt.put(std::move(graphs), fGraphLabel);
     evt.put(std::move(graphs));
   }
 
