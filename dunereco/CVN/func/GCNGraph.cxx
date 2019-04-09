@@ -115,7 +115,30 @@ namespace cvn
     return this->GetSpacialExtent()[2];
   }
 
-  std::ostream& operator<<(std::ostream& os, const GCNGraph& m)
+
+  // This function returns a vector of the format for a graph 
+  // with N nodes and M features per node
+  // (node0_posx, node0_posy, node0_posz, node0_feature0, ... ,node0_featureM,...
+  // (nodeN_posx, nodeN_posy, nodeN_posz, nodeN_feature0, ... ,nodeN_featureM)
+  const std::vector<float> GCNGraph::ConvertGraphToVector() const{
+
+    std::vector<float> nodeVector;
+
+    for(const GCNGraphNode &node : fNodes){
+      // First add the position components
+      for(const float pos : node.GetPosition()){
+        nodeVector.push_back(pos);
+      }
+      // Now add the features
+      for(const float feat : node.GetFeatures()){
+        nodeVector.push_back(feat);
+      }
+    }
+
+    return nodeVector; 
+  }
+
+ std::ostream& operator<<(std::ostream& os, const GCNGraph& m)
   {
     os << "GCNGraph with " << m.GetNumberOfNodes() << " nodes, ";
     return os;

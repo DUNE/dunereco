@@ -49,6 +49,9 @@ namespace cvn
     const float GetSpacialExtentY() const;
     const float GetSpacialExtentZ() const;
 
+    /// Function to linearise the graph to a vector for zlib file creation
+    const std::vector<float> ConvertGraphToVector() const;
+
   private:
 
     /// Store the nodes

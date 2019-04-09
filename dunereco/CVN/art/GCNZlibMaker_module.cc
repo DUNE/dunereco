@@ -55,8 +55,6 @@ namespace cvn {
 
     std::string out_dir;
 
-    std::vector<float> ConvertGraphToVector(const GCNGraph &graph);
-
   };
 
   //......................................................................
@@ -177,12 +175,8 @@ namespace cvn {
     // Now write the zlib file using this information
     // We need to extract all of the information into a single vector to write
     // into the compressed file format
-    std::vector<float> vectorToWrite = this->ConvertGraphToVector(*(graphs[0]));
+    const std::vector<float> vectorToWrite = graphs[0]->ConvertGraphToVector();
  
-    std::cout << "GCNZlibMaker: graph compressed to vector of size " << vectorToWrite.size() << std::endl;
-    for(unsigned int i = 0; i < vectorToWrite.size(); ++i)
-      std::cout << vectorToWrite[i] << std::endl;
-
     ulong src_len = vectorToWrite.size() *sizeof(float);
     ulong dest_len = compressBound(src_len);     // calculate size of the compressed data               
     char* ostream = (char *) malloc(dest_len);  // allocate memory for the compressed data
@@ -258,34 +252,5 @@ namespace cvn {
 
   }
     
-  std::vector<float> GCNZlibMaker::ConvertGraphToVector(const GCNGraph &graph){
-
-    const unsigned int nNodes = graph.GetNumberOfNodes();
-    // If we somehow have an empty graph then make an empty vector
-    if(nNodes == 0) return std::vector<float>();
-
-    std::vector<float> nodeVector;
-
-    for(unsigned int n = 0; n < nNodes; ++n){
-      GCNGraphNode node = graph.GetNode(n);
-      // First add the position components
-      //std::cout << "Node with position ";
-      for(const float pos : node.GetPosition()){
-        //std::cout << pos << ", ";
-        nodeVector.push_back(pos);
-      }
-      // Now add the features
-      //std::cout << "and features: ";
-      for(const float feat : node.GetFeatures()){
-        //std::cout << feat << ", ";
-        nodeVector.push_back(feat);
-      }
-      //std::cout << std::endl;
-    }
-
-    return nodeVector;
-    
-  }
-
 DEFINE_ART_MODULE(cvn::GCNZlibMaker)
 } // namespace cvn
