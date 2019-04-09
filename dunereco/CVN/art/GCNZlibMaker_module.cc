@@ -269,18 +269,18 @@ namespace cvn {
     for(unsigned int n = 0; n < nNodes; ++n){
       GCNGraphNode node = graph.GetNode(n);
       // First add the position components
-      std::cout << "Node with position ";
+      //std::cout << "Node with position ";
       for(const float pos : node.GetPosition()){
-        std::cout << pos << ", ";
+        //std::cout << pos << ", ";
         nodeVector.push_back(pos);
       }
       // Now add the features
-      std::cout << "and features: ";
+      //std::cout << "and features: ";
       for(const float feat : node.GetFeatures()){
-        std::cout << feat << ", ";
+        //std::cout << feat << ", ";
         nodeVector.push_back(feat);
       }
-      std::cout << std::endl;
+      //std::cout << std::endl;
     }
 
     return nodeVector;
