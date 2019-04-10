@@ -29,6 +29,7 @@
 #include "lardata/Utilities/AssociationUtil.h"
 
 #include "dune/CVN/func/GCNGraph.h"
+#include "dune/CVN/func/GCNFeatureUtils.h"
 
 namespace cvn {
 
@@ -53,9 +54,6 @@ namespace cvn {
     /// Radius for calculating number of neighbours
     float fNeighbourRadius;
 
-    float GetDistanceBetweenPoints(const double *p1, const double *p2) const;
-
-    void GetNeighbours(std::map<int,unsigned int> &neighbourMap, const std::vector<art::Ptr<recob::SpacePoint>> &points) const;
   };
 
 
@@ -106,10 +104,12 @@ namespace cvn {
 
       cvn::GCNGraph newGraph;
 
+      // Get the utility to help us calculate features
+      cvn::GCNFeatureUtils graphUtil;
+
       // We can calculate the number of neighbours for each space point with some radius
       // Store the number of neighbours for each spacepoint ID
-      std::map<int,unsigned int> neighbourMap;
-      this->GetNeighbours(neighbourMap,pointList);
+      const std::map<int,unsigned int> neighbourMap = graphUtil.GetAllNeighbours(evt,fNeighbourRadius,fSpacePointLabel);
 
       for(art::Ptr<recob::SpacePoint> sp : pointList){
 
@@ -121,11 +121,11 @@ namespace cvn {
         
         // Calculate some features
         std::vector<float> features;
+        // The neighbour map gives us our first feature
         features.push_back(neighbourMap.at(sp->ID()));
+        // How about charge?
+        features.push_back(graphUtil.GetSpacePointCharge(*sp,evt,fSpacePointLabel));
 
-//        std::cout << "GCNGraphMaker: adding node with " << neighbourMap.at(sp->ID()) << " neighbours (" << fNeighbourRadius << " cm" << std::endl;
-
-        // Get the features... what will this be?!
         newGraph.AddNode(position,features);
       }
 
@@ -137,33 +137,6 @@ namespace cvn {
 
     // Write our graph to the event
     evt.put(std::move(graphs));
-  }
-
-  //----------------------------------------------------------------------
-  void GCNGraphMaker::GetNeighbours(std::map<int,unsigned int> &neighbourMap, const std::vector<art::Ptr<recob::SpacePoint>> &points) const{
-
-    for(art::Ptr<recob::SpacePoint> sp0 : points){
-      // We want an entry even if it ends up being zero
-      neighbourMap[sp0->ID()] = 0;
-
-      for(art::Ptr<recob::SpacePoint> sp1 : points){
-
-        if(sp0->ID() == sp1->ID()) continue;
-
-        float dist = this->GetDistanceBetweenPoints(sp0->XYZ(),sp1->XYZ());
-        if(dist < fNeighbourRadius){
-          ++neighbourMap[sp0->ID()];
-        }
-      }
-    }
-
-  }
-
-  float GCNGraphMaker::GetDistanceBetweenPoints(const double *p1, const double *p2) const{
-    float dx = p2[0] - p1[0];
-    float dy = p2[1] - p1[1];
-    float dz = p2[2] - p1[2];
-    return sqrt(dx*dx + dy*dy + dz*dz);
   }
 
 
