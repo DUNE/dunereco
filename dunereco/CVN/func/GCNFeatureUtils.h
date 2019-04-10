@@ -24,13 +24,13 @@ namespace cvn
     GCNFeatureUtils();
     ~GCNFeatureUtils();
 
-  /// Get the number of neighbours within rangeCut cm of this space point
-  const unsigned int GetSpacePointNeighbours(const recob::SpacePoint &sp, art::Event const &evt, const float rangeCut, const std::string &spLabel) const;
-  /// Get a map of the number of neighbours for each space point ID. Using this function is much less wasteful
-  /// than repeated calls to the above function
-  const std::map<int,unsigned int> GetAllNeighbours(art::Event const &evt, const float rangeCut, const std::string &spLabel) const;
-  /// Use the association between space points and hits to return a charge
-  const float GetSpacePointCharge(const recob::SpacePoint &sp, art::Event const &evt, const std::string &spLabel) const;
+    /// Get the number of neighbours within rangeCut cm of this space point
+    const unsigned int GetSpacePointNeighbours(const recob::SpacePoint &sp, art::Event const &evt, const float rangeCut, const std::string &spLabel) const;
+    /// Get a map of the number of neighbours for each space point ID. Using this function is much less wasteful
+    /// than repeated calls to the above function
+    const std::map<int,unsigned int> GetAllNeighbours(art::Event const &evt, const float rangeCut, const std::string &spLabel) const;
+    /// Use the association between space points and hits to return a charge
+    const float GetSpacePointCharge(const recob::SpacePoint &sp, art::Event const &evt, const std::string &spLabel) const;
 
   private:
 
