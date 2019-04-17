@@ -7,6 +7,8 @@ if( DEFINED ENV{TENSORFLOW_DIR} )
   endif ()
 endif ()
 
+cet_find_library( PROTOBUFLIB NAMES protobuf PATHS ENV PROTOBUF_LIB NO_DEFAULT_PATH )
+
 #art_make(
 #          LIB_LIBRARIES
 #                        ${FHICLCPP}
@@ -28,7 +30,7 @@ art_make(BASENAME_ONLY
   ${ART_ROOT_IO_TFILESERVICE_SERVICE}
   ${ART_PERSISTENCY_COMMON}
   pthread
-  protobuf
+  ${PROTOBUFLIB}
   canvas
   art_Persistency_Provenance
   ${ART_UTILITIES}
