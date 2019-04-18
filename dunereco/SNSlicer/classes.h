@@ -4,7 +4,4 @@
 
 #include <vector>
 
-template class std::vector<sn::SNSlice>;
 
-template class art::Wrapper<sn::SNSlice>;
-template class art::Wrapper<std::vector<sn::SNSlice>>;
