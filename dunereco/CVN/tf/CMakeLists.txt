@@ -8,6 +8,7 @@ if( DEFINED ENV{TENSORFLOW_DIR} )
 endif ()
 
 cet_find_library( PROTOBUFLIB NAMES protobuf PATHS ENV PROTOBUF_LIB NO_DEFAULT_PATH )
+cet_find_library( TENSORFLOW NAMES tensorflow-core PATHS ENV TENSORFLOW_LIB NO_DEFAULT_PATH )
 
 #art_make(
 #          LIB_LIBRARIES
