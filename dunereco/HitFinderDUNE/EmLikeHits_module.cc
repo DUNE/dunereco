@@ -92,7 +92,7 @@ private:
 };
 // ------------------------------------------------------
 
-EmLikeHits::EmLikeHits(fhicl::ParameterSet const & p)
+EmLikeHits::EmLikeHits(fhicl::ParameterSet const & p) : EDProducer{p}
 {
         this->reconfigure(p);
         produces< std::vector<recob::Hit> >();

@@ -28,8 +28,8 @@ art_make_exec( cvnCreateDB
                          ${ART_FRAMEWORK_PRINCIPAL}
                          ${ART_FRAMEWORK_SERVICES_REGISTRY}
                          ${ART_FRAMEWORK_SERVICES_BASIC}
-                         ${ART_FRAMEWORK_SERVICES_OPTIONAL}
-                         ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
+                         ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
+                         ${ART_ROOT_IO_TFILESERVICE_SERVICE}
                          ${ART_PERSISTENCY_COMMON}
                          canvas
                          art_Persistency_Provenance
@@ -54,8 +54,8 @@ art_make_exec( cvnCreateZlibImages
                          ${ART_FRAMEWORK_PRINCIPAL}
                          ${ART_FRAMEWORK_SERVICES_REGISTRY}
                          ${ART_FRAMEWORK_SERVICES_BASIC}
-                         ${ART_FRAMEWORK_SERVICES_OPTIONAL}
-                         ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
+                         ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
+                         ${ART_ROOT_IO_TFILESERVICE_SERVICE}
                          ${ART_PERSISTENCY_COMMON}
                          canvas
                          art_Persistency_Provenance

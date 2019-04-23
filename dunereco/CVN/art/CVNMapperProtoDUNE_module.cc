@@ -17,8 +17,8 @@
 #include "art/Framework/Core/EDProducer.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Services/Optional/TFileDirectory.h"
-#include "art/Framework/Services/Optional/TFileService.h"
+#include "art_root_io/TFileDirectory.h"
+#include "art_root_io/TFileService.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -105,7 +105,7 @@ namespace cvn {
 
 
   //.......................................................................
-  CVNMapperProtoDUNE::CVNMapperProtoDUNE(fhicl::ParameterSet const& pset):
+  CVNMapperProtoDUNE::CVNMapperProtoDUNE(fhicl::ParameterSet const& pset): EDProducer{pset},
   fHitsModuleLabel  (pset.get<std::string>    ("HitsModuleLabel")),
   fTrackLabel  (pset.get<std::string>    ("TrackLabel")),
   fShowerLabel  (pset.get<std::string>    ("ShowerLabel")),
