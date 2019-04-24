@@ -41,7 +41,7 @@
 
 #include "dune/CVN/func/Result.h"
 #include "dune/CVN/func/PixelMap.h"
-#include "dune/CVN/art/CaffeNetHandler.h"
+//#include "dune/CVN/art/CaffeNetHandler.h"
 #include "dune/CVN/art/TFNetHandler.h"
 #include "dune/CVN/func/AssignLabels.h"
 #include "dune/CVN/func/InteractionType.h"
@@ -68,7 +68,7 @@ namespace cvn {
     /// Can use Caffe or Tensorflow
     std::string fCVNType;
 
-    cvn::CaffeNetHandler fCaffeHandler;
+    //cvn::CaffeNetHandler fCaffeHandler;
     cvn::TFNetHandler fTFHandler;
 
     /// Number of outputs fron neural net
@@ -98,9 +98,9 @@ namespace cvn {
     fPixelMapInput (pset.get<std::string>         ("PixelMapInput")),
     fResultLabel (pset.get<std::string>         ("ResultLabel")),
     fCVNType     (pset.get<std::string>         ("CVNType")),
-    fCaffeHandler       (pset.get<fhicl::ParameterSet> ("CaffeNetHandler")),
+    //fCaffeHandler       (pset.get<fhicl::ParameterSet> ("CaffeNetHandler")),
     fTFHandler       (pset.get<fhicl::ParameterSet> ("TFNetHandler")),
-    fNOutput       (fCaffeHandler.NOutput()),
+    //fNOutput       (fCaffeHandler.NOutput()),
     fMultiplePMs (pset.get<bool> ("MultiplePMs"))
   {
     produces< std::vector<cvn::Result>   >(fResultLabel);
@@ -163,6 +163,7 @@ namespace cvn {
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
 
     /// Make sure we have a valid name for the CVN type
+    /*
     if(fCVNType == "Caffe"){
       if(pixelmaplist.size()>0){
         std::pair<const float*, const float*> pairedoutput= fCaffeHandler.Predict(*pixelmaplist[0]);
@@ -172,8 +173,8 @@ namespace cvn {
         resultCol->emplace_back(output, fNOutput);
 
       }
-    }
-    else if(fCVNType == "TF" || fCVNType == "Tensorflow" || fCVNType == "TensorFlow"){
+    }*/
+    if(fCVNType == "TF" || fCVNType == "Tensorflow" || fCVNType == "TensorFlow"){
       // If we have a pixel map then use the TF interface to give us a prediction
       if(pixelmaplist.size() > 0){
         
@@ -231,7 +232,7 @@ namespace cvn {
       }
     }
     else{
-      mf::LogError("CVNEvaluator::produce") << "CVN Type not in the allowed list: Tensorflow, Caffe" << std::endl;
+      mf::LogError("CVNEvaluator::produce") << "CVN Type not in the allowed list: Tensorflow" << std::endl;
       mf::LogError("CVNEvaluator::produce") << "Exiting without processing events" << std::endl;
       return;
     }
