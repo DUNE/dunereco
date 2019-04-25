@@ -67,7 +67,7 @@ namespace cnn {
     cnn::TFRegNetHandler fTFHandler;
 
     /// Number of outputs fron neural net
-    unsigned int fNOutput;
+    //unsigned int fNOutput;
 
     void getCM(const RegPixelMap& pm, float* cm_list);
   };

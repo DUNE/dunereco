@@ -72,7 +72,7 @@ namespace cvn {
     cvn::TFNetHandler fTFHandler;
 
     /// Number of outputs fron neural net
-    unsigned int fNOutput;
+    //unsigned int fNOutput;
 
     /// If there are multiple pixel maps per event can we use them?
     bool fMultiplePMs;
