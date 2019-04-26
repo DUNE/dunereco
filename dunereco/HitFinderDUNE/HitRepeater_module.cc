@@ -61,7 +61,8 @@ namespace dune {
 
   // implementation
 
-  HitRepeater::HitRepeater(fhicl::ParameterSet const& pset) {
+  HitRepeater::HitRepeater(fhicl::ParameterSet const& pset)
+  : EDProducer(pset) {
     this->reconfigure(pset);
     // let HitCollectionCreator declare that we are going to produce
     // hits and associations with wires and raw digits

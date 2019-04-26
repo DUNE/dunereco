@@ -7,7 +7,5 @@
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Shower.h"
 
-template class art::Ptr<dunemva::MVASelectPID>;
-template class art::Ptr<dune::EnergyRecoOutput>;
 
 
