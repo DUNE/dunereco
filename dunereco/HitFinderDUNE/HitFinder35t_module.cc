@@ -76,6 +76,7 @@ namespace dune{
   //-------------------------------------------------
   //-------------------------------------------------
   HitFinder35t::HitFinder35t(fhicl::ParameterSet const& pset) :
+    EDProducer(pset),
     fDisambigAlg(pset.get< fhicl::ParameterSet >("DisambigAlg")),
     fTimeBasedDisambigAlg(pset.get< fhicl::ParameterSet >("TimeBasedDisambigAlg"))
   {

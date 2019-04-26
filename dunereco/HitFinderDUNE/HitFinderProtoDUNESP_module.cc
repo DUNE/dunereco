@@ -74,6 +74,7 @@ namespace dune{
   //-------------------------------------------------
   //-------------------------------------------------
   HitFinderProtoDUNESP::HitFinderProtoDUNESP(fhicl::ParameterSet const& pset) :
+    EDProducer(pset),
     fDisambigAlg(pset.get< fhicl::ParameterSet >("DisambigAlg"))
   {
     this->reconfigure(pset);

@@ -73,7 +73,7 @@ private:
 };
 
 
-HitHandScan::HitHandScan(fhicl::ParameterSet const & p)
+HitHandScan::HitHandScan(fhicl::ParameterSet const & p) : EDProducer{p}
 {
   this->reconfigure(p);
   recob::HitCollectionCreator::declare_products(*this);
