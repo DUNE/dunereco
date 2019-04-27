@@ -76,7 +76,7 @@ namespace cvn {
 
     /// Maximum gap in wires at front of cluster to prevent pruning of upstream
     /// hits
-    unsigned int fMaxWireGap;
+    //unsigned int fMaxWireGap;
 
     /// Use unwrapped pixel maps?
     // 0 means no unwrap, 1 means unwrap in wire, 2 means unwrap in wire and time

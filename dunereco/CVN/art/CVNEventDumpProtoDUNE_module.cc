@@ -58,7 +58,7 @@ namespace cvn {
 
     std::string fPixelMapInput;
     bool        fWriteMapTH2;
-    bool        fApplyFidVol;
+    //bool        fApplyFidVol;
 
     TrainingData* fTrain;
     TTree*        fTrainTree;
