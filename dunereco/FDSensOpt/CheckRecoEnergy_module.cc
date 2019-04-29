@@ -20,7 +20,7 @@
 #include "art/Framework/Principal/SubRun.h"
 #include "fhiclcpp/ParameterSet.h" 
 #include "messagefacility/MessageLogger/MessageLogger.h" 
-#include "art/Framework/Services/Optional/TFileService.h" 
+#include "art_root_io/TFileService.h"
 
 #include "nutools/NuReweight/art/NuReweight.h"
 #include "Utils/AppInit.h"

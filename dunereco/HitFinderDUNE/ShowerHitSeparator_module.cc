@@ -30,7 +30,7 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Core/EDProducer.h"
-#include "art/Framework/Services/Optional/TFileService.h"
+#include "art_root_io/TFileService.h"
 
 // LArSoft Includes
 #include "lardataobj/RawData/RawDigit.h"
@@ -80,7 +80,7 @@ namespace shs {
 
   // implementation
 
-  ShowerHitSeparator::ShowerHitSeparator(fhicl::ParameterSet const& pset) {
+  ShowerHitSeparator::ShowerHitSeparator(fhicl::ParameterSet const& pset) : EDProducer{pset} {
 
     this->reconfigure(pset);
 

@@ -62,7 +62,7 @@ dunefd_disambigfromsp:                @local::standard_disambigfromsp
 dunefd_disambigfromsp.ExcludeTPCs:    [] # workspace has no outer TPCs, but full FD has, I think
 
 pdune_disambigfromsp:                 @local::standard_disambigfromsp
-pdune_disambigfromsp.ExcludeTPCs:     [0, 3, 4, 7, 8, 11] # ProtoDUNE's outer TPCs
+pdune_disambigfromsp.ExcludeTPCs:     []
 pdune_disambigfromsp.MoveLeftovers:   "repeat"
 
 dunefddphase_gaushitfinder:	@local::gaus_hitfinder
