@@ -221,8 +221,8 @@ void fill(const Config& config, std::string input)
     //std::cout << "[DEBUG] channels*planes*cells: " << channels*planes*cells << std::endl; 
     
     std::cout << "[DEBUG] label: " << fInt << std::endl;
-    ulong srcLen = nViews * config.fPlaneLimit * config.fTDCLimit; // pixelArray length
-    ulong destLen = compressBound(srcLen);     // calculate size of the compressed data               
+    unsigned long srcLen = nViews * config.fPlaneLimit * config.fTDCLimit; // pixelArray length
+    unsigned long destLen = compressBound(srcLen);     // calculate size of the compressed data               
     char* ostream = (char *) malloc(destLen);  // allocate memory for the compressed data
 
     int res = compress((Bytef *) ostream, &destLen, (Bytef *) &pixelArray[0], srcLen); // compress pixels 
