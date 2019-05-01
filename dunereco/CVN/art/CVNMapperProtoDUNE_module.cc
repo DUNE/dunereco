@@ -9,10 +9,6 @@
 #include <iostream>
 #include <sstream>
 
-// ROOT includes
-#include "TTree.h"
-#include "TH2F.h"
-
 // Framework includes
 #include "art/Framework/Core/EDProducer.h"
 #include "art/Framework/Principal/Event.h"
@@ -30,13 +26,6 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Shower.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardataobj/RawData/ExternalTrigger.h"
-
-#include "lardata/Utilities/AssociationUtil.h"
-#include "nusimdata/SimulationBase/MCNeutrino.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
 
 #include "dune/CVN/art/PixelMapProducer.h"
 #include "dune/CVN/func/PixelMap.h"
