@@ -8,8 +8,6 @@ include_directories( $ENV{GSL_INC}/gsl )
 #include_directories( $ENV{GFLAGS_INC} )
 #include_directories( $ENV{GLOG_INC} )
 
-find_package( ZLIB REQUIRED )
-
 #cet_find_library( CAFFELIB NAMES caffe-d caffe PATHS ENV CAFFE_LIB NO_DEFAULT_PATH )
 cet_find_library( GSLLIB NAMES gsl PATHS ENV GSL_LIB NO_DEFAULT_PATH )
 #cet_find_library( HDF5LIB NAMES hdf5 PATHS ENV HDF5_LIB NO_DEFAULT_PATH )
@@ -39,24 +37,25 @@ art_make(BASENAME_ONLY
   ${ART_FRAMEWORK_PRINCIPAL}
   ${ART_FRAMEWORK_SERVICES_REGISTRY}
   ${ART_FRAMEWORK_SERVICES_BASIC}
+  ${ART_FRAMEWORK_SERVICES_OPTIONAL}
   ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
   ${ART_ROOT_IO_TFILESERVICE_SERVICE}
   ${ART_PERSISTENCY_COMMON}
   canvas
   art_Persistency_Provenance
   ${ART_UTILITIES}
-  ${MF_MESSAGELOGGER}  
+  ${MF_MESSAGELOGGER}
+  z
   ${FHICLCPP}
   cetlib cetlib_except
   ${ROOT_BASIC_LIB_LIST}
   lardataobj_RecoBase
   lardata_Utilities
   nusimdata_SimulationBase
-  larsim_MCCheater_BackTrackerService_service           
-  larsim_MCCheater_ParticleInventoryService_service
+#  larsim_MCCheater_BackTrackerService_service           
+#  larsim_MCCheater_ParticleInventoryService_service
   #${CAFFELIB}
   ${GSLLIB}                  
-  ${ZLIB_LIBRARIES}
   #${HDF5LIB}
   #${PROTOBUFLIB}
   #${LEVELDBLIB}
@@ -64,11 +63,11 @@ art_make(BASENAME_ONLY
   #${GLOGLIB}                             
   MVAAlg
   #larreco_RecoAlg
-  ${LARRECO_RECOALG_IMAGEPATTERNALGS_TF}
+#  ${LARRECO_RECOALG_IMAGEPATTERNALGS_TF}
+  stdc++fs
   MODULE_LIBRARIES CVNFunc
   CVNTf
   CVNArt
-  stdc++fs
   )
 
 

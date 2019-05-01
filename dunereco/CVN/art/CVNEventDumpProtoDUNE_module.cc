@@ -34,7 +34,6 @@
 #include "nusimdata/SimulationBase/MCNeutrino.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "larsim/MCCheater/BackTracker.h"
 
 #include "dune/CVN/func/AssignLabels.h"
 #include "dune/CVN/func/TrainingData.h"

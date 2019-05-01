@@ -36,7 +36,6 @@
 #include "nusimdata/SimulationBase/MCNeutrino.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "larsim/MCCheater/BackTracker.h"
 
 #include "dune/CVN/func/AssignLabels.h"
 #include "dune/CVN/func/TrainingData.h"
@@ -78,8 +77,6 @@ namespace cvn {
 
     TrainingData* fTrain;
     TTree*        fTrainTree;
-
-    //art::ServiceHandle<cheat::BackTracker> fBT;
 
     /// Function to extract TH2 from PixelMap and write to TFile
     void WriteMapTH2(const art::Event& evt, int slice, const PixelMap& pm);
