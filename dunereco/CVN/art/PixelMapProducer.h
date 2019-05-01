@@ -11,18 +11,7 @@
 #include <array>
 #include <vector>
 
-// Framework includes
-#include "art/Framework/Core/EDProducer.h"
-#include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art_root_io/TFileDirectory.h"
-#include "art_root_io/TFileService.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "fhiclcpp/ParameterSet.h"
-#include "messagefacility/MessageLogger/MessageLogger.h"
-//#include "art/Framework/Core/FindManyP.h"
-#include "art/Framework/Core/ModuleMacros.h"
-#include "canvas/Persistency/Common/Assns.h"
 
 #include "dune/CVN/func/PixelMap.h"
 #include "dune/CVN/func/Boundary.h"
@@ -30,8 +19,6 @@
 
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-//#include "art/Framework/Services/Registry/ServiceHandle.h"
-//#include "Geometry/Geometry.h"
 
 namespace cvn
 {

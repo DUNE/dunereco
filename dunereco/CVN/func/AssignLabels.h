@@ -7,6 +7,7 @@
 #ifndef CVN_ASSIGNLABELS_H
 #define CVN_ASSIGNLABELS_H
 
+#include "art/Framework/Principal/Handle.h"
 
 #include "dune/CVN/func/InteractionType.h"
 #include "nusimdata/SimulationBase/MCTruth.h"

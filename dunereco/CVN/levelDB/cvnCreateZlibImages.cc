@@ -24,12 +24,8 @@
 #include "fhiclcpp/ParameterSet.h"
 
 // ROOT stuff
-#include "TSystem.h"
-#include "TFile.h"
-#include "TTree.h"
 #include "TChain.h"
-#include "TCanvas.h"
-#include "TGraph.h"
+#include "TFile.h"
 
 // CVN stuff
 #include "dune/CVN/func/CVNImageUtils.h"
