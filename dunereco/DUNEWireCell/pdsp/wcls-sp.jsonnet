@@ -42,9 +42,6 @@ local tools = tools_maker(params);
 local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 
-// for dumping numpy array for debugging
-//local io = import "pgrapher/common/fileio.jsonnet";
-
 //local nf_maker = import "pgrapher/experiment/pdsp/nf.jsonnet";
 //local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
 
@@ -134,11 +131,35 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field],  // pnode extension
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local nf_maker = import 'pgrapher/experiment/pdsp/nf.jsonnet';
-local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
+// local nf_maker = import 'pgrapher/experiment/pdsp/nf.jsonnet';
+// local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
+
+// an empty omnibus noise filter
+// for suppressing bad channels stored in the noise db
+local obnf = [
+g.pnode({
+  type: 'OmnibusNoiseFilter',
+  name: 'nf%d' %n,
+  data: {
+
+    // This is the number of bins in various filters
+    // nsamples: params.nf.nsamples,
+
+    channel_filters: [],
+    grouped_filters: [],
+    channel_status_filters: [],
+    noisedb: wc.tn(chndb[n]),
+    intraces: 'orig%d' % n,  // frame tag get all traces
+    outtraces: 'raw%d' % n,
+  },
+}, uses=[chndb[n], tools.anodes[n]], nin=1, nout=1
+)
+for n in std.range(0, std.length(tools.anodes) - 1)
+];
+local nf_pipes = [g.pipeline([obnf[n]], name='nf%d'%n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
-local sp_pipes = [sp.make_sigproc(tools.anodes[n], n) for n in std.range(0, std.length(tools.anodes) - 1)];
+local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
 local multimagnify = import 'pgrapher/experiment/pdsp/multimagnify.jsonnet';
 local magoutput = 'protodune-data-check.root';
@@ -180,7 +201,7 @@ local nfsp_pipes = [
   g.pipeline([
                chsel_pipes[n],
                //magnify_pipes[n],
-               //nf_pipes[n],
+               nf_pipes[n],
                //magnify_pipes2[n],
                sp_pipes[n],
                //magnify_pipes3[n],
@@ -219,38 +240,7 @@ local retagger = g.pnode({
 local sink = g.pnode({ type: 'DumpFrames' }, nin=1, nout=0);
 
 
-//local magnifio1 = g.pnode({
-//  type: 'MagnifySink',
-//  name: 'deconmag1',
-//  data: {
-//    output_filename: magoutput,
-//    root_file_mode: 'UPDATE',
-//    frames: [],
-//    anode: wc.tn(tools.anode),
-//  },
-//}, nin=1, nout=1);
-//local magnifio2 = g.pnode({
-//  type: 'MagnifySink',
-//  name: 'deconmag2',
-//  data: {
-//    output_filename: magoutput,
-//    root_file_mode: 'UPDATE',
-//    frames: [],
-//    anode: wc.tn(tools.anode),
-//  },
-//}, nin=1, nout=1);
-//local magnifio3 = g.pnode({
-//  type: 'MagnifySink',
-//  name: 'deconmag3',
-//  data: {
-//    output_filename: magoutput,
-//    root_file_mode: 'UPDATE',
-//    frames: [],
-//    anode: wc.tn(tools.anode),
-//  },
-//}, nin=1, nout=1);
-
-//local graph = g.pipeline([wcls_input.adc_digits,  rootfile_creation_frames, magnifio1, fanpipe, magnifio2, retagger, magnifio3, wcls_output.sp_signals, sink]);
+//local graph = g.pipeline([wcls_input.adc_digits, rootfile_creation_frames, fanpipe, retagger, wcls_output.sp_signals, sink]);
 local graph = g.pipeline([wcls_input.adc_digits, fanpipe, retagger, wcls_output.sp_signals, sink]);
 
 local app = {
