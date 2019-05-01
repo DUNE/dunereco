@@ -9,8 +9,6 @@
 
 
 #include "dune/CVN/func/InteractionType.h"
-#include "dune/CVN/func/PixelMap.h"
-#include "art/Framework/Principal/Handle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 
 

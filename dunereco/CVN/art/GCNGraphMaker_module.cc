@@ -20,10 +20,6 @@
 
 // LArSoft includes
 #include "lardataobj/RecoBase/SpacePoint.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardataobj/RawData/ExternalTrigger.h"
-
-#include "lardata/Utilities/AssociationUtil.h"
 
 #include "dune/CVN/func/GCNGraph.h"
 #include "dune/CVN/func/GCNFeatureUtils.h"
