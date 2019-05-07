@@ -180,5 +180,5 @@ protodunespmc_dbcluster3d.MinHitDis: 1000
 
 protodunespmc_linecluster:                    @local::standard_linecluster
 protodunespmc_linecluster.DoRawDigitAssns:    true
-
+protodunespmc_linecluster.ClusterCrawlerAlg.KinkAngCut: [0.2, 0.2, 0.2] # Max kink angle
 END_PROLOG
