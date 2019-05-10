@@ -130,7 +130,7 @@ std::vector< std::vector< std::vector<float> > > tf::Graph::run(
 
     std::vector< tensorflow::Tensor > _x;
 
-    // Single-output network
+    // Single-input network
     if (n_inputs == 1)
     {
         _x.push_back(tensorflow::Tensor(tensorflow::DT_FLOAT, tensorflow::TensorShape({ samples, rows, cols, depth })));
@@ -148,7 +148,7 @@ std::vector< std::vector< std::vector<float> > > tf::Graph::run(
             }
         }
     }
-    // Multi-output network
+    // Multi-input network
     else
     {
         for(int i=0; i<depth; ++i){
@@ -166,7 +166,7 @@ std::vector< std::vector< std::vector<float> > > tf::Graph::run(
                     for (long long int c = 0; c < cols; ++c) {
                         const auto & col = row[c];
                         long long int d = view;
-                        input_map(s, r, c, d) = col[d];
+                        input_map(s, r, c, 0) = col[d];
                     }
                 }
             }
