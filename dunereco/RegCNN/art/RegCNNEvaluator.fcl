@@ -13,15 +13,29 @@ standard_tfregnethandler:
   OutputName: []
 }
 
+
+standard_regcnnvtxhandler:
+{
+  HitsModuleLabel:   "linecluster"
+  TFNetHandler1st: @local::standard_tfregnethandler
+  TFNetHandler2nd: @local::standard_tfregnethandler
+  GlobalWireMethod: 2
+  MinClusterHits: 1
+  TdcWidth:      24 # time width of pixel map
+  WireLength:    42 # wire width of pixel map
+  TimeResolution: 6
+}
+
 standard_regcnnevaluator:
 {
   module_type:        RegCNNEvaluator
   #==================
   PixelMapInput: "regcnnmap"
   ResultLabel: "regcnnresult"
-  TFNetHandler: @local::standard_tfregnethandler
+  TFNetHandler:     @local::standard_tfregnethandler
   CNNType: "Tensorflow"
   Target: "nueenergy"
+  RegCNNVtxHandler: @local::standard_regcnnvtxhandler
 }
 
 END_PROLOG

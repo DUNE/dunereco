@@ -1,0 +1,129 @@
+#include "services_dune.fcl" 
+#include "mvamodule.fcl"
+#include "energyreco.fcl"
+#include "RegCNNEventDump.fcl"
+#include "RegCNNMapper.fcl"
+#include "RegCNNEvaluator.fcl"
+#include "RegCNNVertexAna.fcl" 
+#include "tools_dune.fcl"
+
+process_name: RegCNNVtxAna
+
+services: 
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "regcnn_ana_r%r_s%s_hist.root" 
+                  closeFileFast: false } 
+  @table::dunefd_reco_services
+}
+
+source:  
+{
+  module_type: RootInput 
+  maxEvents:  -1   
+}
+
+physics: 
+{    
+  producers:
+  {
+    mvaselectnue:   @local::dunefd_mvaselect
+    energyreconue:  @local::dunefd_nuenergyreco
+    regcnnvtxmap1st:     @local::standard_regcnnmapper
+    regcnnvtxeval1st:    @local::standard_regcnnevaluator
+    regcnnvtxmap2nd:     @local::standard_regcnnmapper
+    regcnnvtxeval2nd:    @local::standard_regcnnevaluator
+    regcnnvtxmapz:       @local::standard_regcnnmapper
+    regcnnvtxevalz:      @local::standard_regcnnevaluator
+    regcnnvtxmap2b:      @local::standard_regcnnmapper
+    regcnnvtxeval2b:     @local::standard_regcnnevaluator
+  }
+  analyzers:   
+  {
+    regcnnvtxana:  @local::regcnnvtx_analysistree
+  }  
+  prod: [ mvaselectnue, energyreconue,
+    regcnnvtxmap1st, regcnnvtxeval1st, regcnnvtxmap2nd, regcnnvtxeval2nd, 
+    regcnnvtxmapz, regcnnvtxevalz, regcnnvtxmap2b, regcnnvtxeval2b
+ ]
+  myana: [ regcnnvtxana ] 
+  trigger_paths: [ prod ]
+  end_paths: [myana]
+}
+services.Geometry: @local::dune10kt_workspace_geo
+services.Geometry.GDML: "dune10kt_v1_1x2x6.gdml"
+
+physics.producers.mvaselectnue.MVAMethod:  "BDTG"
+physics.producers.mvaselectnue.Select:  "nue"
+physics.producers.mvaselectnue.WeightFile: "MVASelect/v2.2/TMVAClassification_BDTG.nue.weights.xml" 
+
+physics.producers.energyreconue.RecoMethod:   2
+
+physics.analyzers.regcnnvtxana.RegCNNVtxModuleLabel: "regcnnvtxevalz"
+physics.analyzers.regcnnvtxana.RegCNNVtxResultLabel: "regcnnvtxresultz"
+physics.analyzers.regcnnvtxana.RegCNNVtx1ststepModuleLabel: "regcnnvtxeval1st"
+physics.analyzers.regcnnvtxana.RegCNNVtx1ststepResultLabel: "regcnnvtxresult1st"
+physics.analyzers.regcnnvtxana.RegCNNVtx2ndstepModuleLabel: "regcnnvtxeval2nd"
+physics.analyzers.regcnnvtxana.RegCNNVtx2ndstepResultLabel: "regcnnvtxresult2nd"
+physics.analyzers.regcnnvtxana.RegCNNVtxModule2Label: "regcnnvtxeval2b"
+physics.analyzers.regcnnvtxana.RegCNNVtxResult2Label: "regcnnvtxresult2b"
+
+
+physics.producers.regcnnvtxmap1st.GlobalWireMethod: 2
+physics.producers.regcnnvtxmap1st.ClusterPMLabel: "regcnnvtxmap1st"
+physics.producers.regcnnvtxeval1st.PixelMapInput: "regcnnvtxmap1st"
+physics.producers.regcnnvtxeval1st.ResultLabel: "regcnnvtxresult1st"
+physics.producers.regcnnvtxeval1st.TFNetHandler.LibPath: "MRB_INSTALL"
+physics.producers.regcnnvtxeval1st.Target: "nuevertex"
+physics.producers.regcnnvtxeval1st.TFNetHandler.NInputs: 4
+physics.producers.regcnnvtxeval1st.TFNetHandler.TFProtoBuf: "duneRegCNNNetwork/dune_nue_vertices_20190211-114359.pb"
+
+physics.producers.regcnnvtxmap2nd.GlobalWireMethod: 2
+physics.producers.regcnnvtxmap2nd.WireLength: 100
+physics.producers.regcnnvtxmap2nd.TdcWidth: 70
+physics.producers.regcnnvtxmap2nd.UseRecoVertex: 1
+physics.producers.regcnnvtxmap2nd.RegCNNResultLabel: "regcnnvtxresult1st"
+physics.producers.regcnnvtxmap2nd.RegCNNModuleLabel: "regcnnvtxeval1st"
+physics.producers.regcnnvtxmap2nd.ClusterPMLabel: "regcnnvtxmap2nd"
+physics.producers.regcnnvtxeval2nd.PixelMapInput: "regcnnvtxmap2nd"
+physics.producers.regcnnvtxeval2nd.ResultLabel: "regcnnvtxresult2nd"
+physics.producers.regcnnvtxeval2nd.TFNetHandler.LibPath: "MRB_INSTALL"
+physics.producers.regcnnvtxeval2nd.Target: "nuevertex"
+physics.producers.regcnnvtxeval2nd.TFNetHandler.NInputs: 4
+physics.producers.regcnnvtxeval2nd.TFNetHandler.TFProtoBuf: "duneRegCNNNetwork/dune_nue_vertices_20190225-213320.pb"
+
+physics.producers.regcnnvtxmapz.GlobalWireMethod: 2
+physics.producers.regcnnvtxmapz.WireLength: 42
+physics.producers.regcnnvtxmapz.TdcWidth: 24
+physics.producers.regcnnvtxmapz.UseRecoVertex: 1
+physics.producers.regcnnvtxmapz.RegCNNResultLabel: "regcnnvtxresult2nd"
+physics.producers.regcnnvtxmapz.RegCNNModuleLabel: "regcnnvtxeval2nd"
+physics.producers.regcnnvtxmapz.ClusterPMLabel: "regcnnvtxmapz"
+physics.producers.regcnnvtxevalz.PixelMapInput: "regcnnvtxmapz"
+physics.producers.regcnnvtxevalz.ResultLabel: "regcnnvtxresultz"
+physics.producers.regcnnvtxevalz.TFNetHandler.LibPath: "MRB_INSTALL"
+physics.producers.regcnnvtxevalz.Target: "nuevertex"
+physics.producers.regcnnvtxevalz.TFNetHandler.NInputs: 4
+physics.producers.regcnnvtxevalz.TFNetHandler.TFProtoBuf: "duneRegCNNNetwork/dune_nue_vertices_20190411-130923.pb"
+
+
+physics.producers.regcnnvtxmap2b.GlobalWireMethod: 2
+physics.producers.regcnnvtxmap2b.WireLength: 600
+physics.producers.regcnnvtxmap2b.TdcWidth: 280
+physics.producers.regcnnvtxmap2b.UseRecoVertex: 0
+physics.producers.regcnnvtxmap2b.ClusterPMLabel: "regcnnvtxmap2b"
+physics.producers.regcnnvtxeval2b.PixelMapInput: "regcnnvtxmap2b"
+physics.producers.regcnnvtxeval2b.ResultLabel: "regcnnvtxresult2b"
+physics.producers.regcnnvtxeval2b.Target: "nuevertex_on_img"
+
+physics.producers.regcnnvtxeval2b.RegCNNVtxHandler.GlobalWireMethod: 2
+physics.producers.regcnnvtxeval2b.RegCNNVtxHandler.WireLength: 42
+physics.producers.regcnnvtxeval2b.RegCNNVtxHandler.TdcWidth: 24
+physics.producers.regcnnvtxeval2b.RegCNNVtxHandler.TFNetHandler1st.LibPath: "MRB_INSTALL"
+physics.producers.regcnnvtxeval2b.RegCNNVtxHandler.TFNetHandler1st.NInputs: 3
+physics.producers.regcnnvtxeval2b.RegCNNVtxHandler.TFNetHandler1st.TFProtoBuf: "duneRegCNNNetwork/dune_nue_vertices_on_img_20190423-213724.pb"
+physics.producers.regcnnvtxeval2b.RegCNNVtxHandler.TFNetHandler2nd.LibPath: "MRB_INSTALL"
+physics.producers.regcnnvtxeval2b.RegCNNVtxHandler.TFNetHandler2nd.NInputs: 4
+physics.producers.regcnnvtxeval2b.RegCNNVtxHandler.TFNetHandler2nd.TFProtoBuf: "duneRegCNNNetwork/dune_nue_vertices_cascade_20190429-141848.pb"
+
+

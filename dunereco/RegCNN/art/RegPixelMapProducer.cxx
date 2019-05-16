@@ -44,7 +44,7 @@ namespace cnn
 
   }
 
-  RegPixelMap RegPixelMapProducer::CreateMap(std::vector< art::Ptr< recob::Hit > >& cluster, art::FindManyP<recob::Wire> fmwire, const float *vtx)
+  RegPixelMap RegPixelMapProducer::CreateMap(std::vector< art::Ptr< recob::Hit > >& cluster, art::FindManyP<recob::Wire> fmwire, const std::vector<float> &vtx)
   {
     hitwireidx.clear();
     tmin_each_wire.clear();
@@ -116,7 +116,7 @@ namespace cnn
             GetDUNEGlobalWireTDC(wireid, (float)tt, globalWire, globalplane, globaltick);
             tdc = (int)round(globaltick);
           }
-	  pm.Add((int)globalWire, tdc, globalplane, correctedadc);
+	  pm.Add((int)globalWire, tdc, globalplane, correctedadc, wireid.TPC);
     
         } // end of tt
       } // end of iwireptr
@@ -252,7 +252,7 @@ namespace cnn
     return bound;
   }
 
-  RegCNNBoundary RegPixelMapProducer::DefineBoundary(std::vector< art::Ptr< recob::Hit > >& cluster, const float *vtx)
+  RegCNNBoundary RegPixelMapProducer::DefineBoundary(std::vector< art::Ptr< recob::Hit > >& cluster, const std::vector<float> &vtx)
   {
 
       unsigned int temp_wire = cluster[0]->WireID().Wire;
@@ -274,42 +274,53 @@ namespace cnn
 	  if (temp_time_max < cluster[iHit]->PeakTime()) temp_time_max = cluster[iHit]->PeakTime();
 	  if (temp_trms_max < cluster[iHit]->RMS()) temp_trms_max = (float)cluster[iHit]->RMS();
       }
-      double regvtx_loc[3] = {(double)vtx[0], (double)vtx[1], (double)vtx[2]};
-      int rawcrys = 0;
+
       double center_wire[3] = {-99999, -99999, -99999};
       double center_tick[3] = {-99999, -99999, -99999};
-
-      bool inTPC = false;
-      if (geom->FindTPCAtPosition(regvtx_loc).isValid) inTPC = true;
-      if (inTPC){
-          for (int iplane = 0; iplane<3; iplane++){
-              int rawtpc = (int) (geom->FindTPCAtPosition(regvtx_loc)).TPC;
-              geo::PlaneGeo const& planegeo_temp = geom->Plane(iplane);
-              geo::WireID w1;
-              try { 
-                  w1 = geom->NearestWireID(regvtx_loc, iplane, rawtpc, rawcrys);
-              }
-              catch (geo::InvalidWireError const& e){
-	          if (!e.hasSuggestedWire()) throw;
-		  w1 = planegeo_temp.ClosestWireID(e.suggestedWireID());
-	      }
-              double time1 = detprop->ConvertXToTicks(regvtx_loc[0], iplane, rawtpc, rawcrys);
-              if (fGlobalWireMethod == 1){
-	          std::cout << "You Can't use this with GlobalWireMethod = 1" << std::endl;
-                  abort();
-              } else if (fGlobalWireMethod == 2){
-                  double globalWire  = (double)w1.Wire;
-                  unsigned int globalPlane = w1.Plane;
-                  float globalTDC = (float)time1;
-                  GetDUNEGlobalWireTDC(w1, time1, globalWire, globalPlane, globalTDC);
-                  center_wire[globalPlane] = globalWire;
-		  center_tick[globalPlane] = (double)globalTDC;
-              } else {
-                  std::cout << "Wrong Global Wire Method" << std::endl;
-                  abort();
-              }
-          } // end of iplane
-      } // end of inTPC
+      unsigned int size_vtx = (unsigned int) vtx.size();
+      if (size_vtx == 3){
+          double regvtx_loc[3] = {(double)vtx[0], (double)vtx[1], (double)vtx[2]};
+          int rawcrys = 0;
+          bool inTPC = false;
+          if (geom->FindTPCAtPosition(regvtx_loc).isValid) inTPC = true;
+          if (inTPC){
+              for (int iplane = 0; iplane<3; iplane++){
+                  int rawtpc = (int) (geom->FindTPCAtPosition(regvtx_loc)).TPC;
+                  geo::PlaneGeo const& planegeo_temp = geom->Plane(iplane);
+                  geo::WireID w1;
+                  try { 
+                      w1 = geom->NearestWireID(regvtx_loc, iplane, rawtpc, rawcrys);
+                  }
+                  catch (geo::InvalidWireError const& e){
+                      if (!e.hasSuggestedWire()) throw;
+            	  w1 = planegeo_temp.ClosestWireID(e.suggestedWireID());
+                  }
+                  double time1 = detprop->ConvertXToTicks(regvtx_loc[0], iplane, rawtpc, rawcrys);
+                  if (fGlobalWireMethod == 1){
+                      std::cout << "You Can't use this with GlobalWireMethod = 1" << std::endl;
+                      abort();
+                  } else if (fGlobalWireMethod == 2){
+                      double globalWire  = (double)w1.Wire;
+                      unsigned int globalPlane = w1.Plane;
+                      float globalTDC = (float)time1;
+                      GetDUNEGlobalWireTDC(w1, time1, globalWire, globalPlane, globalTDC);
+                      center_wire[globalPlane] = globalWire;
+            	  center_tick[globalPlane] = (double)globalTDC;
+                  } else {
+                      std::cout << "Wrong Global Wire Method" << std::endl;
+                      abort();
+                  }
+              } // end of iplane
+          } // end of inTPC
+      } else if ( size_vtx == 6){
+	  for (int ii = 0; ii < 3; ii++){
+		  center_wire[ii] = vtx[ii*2+1];
+		  center_tick[ii] = vtx[ii*2];
+	  }
+      } else{
+	      std::cout << "Wrong reconstructed vertex" << std::endl;
+	      std::cout << "-->" << size_vtx << std::endl;
+      }
 
       RegCNNBoundary bound(fNWire,fNTdc,fTRes,round(center_wire[0]),round(center_wire[1]),round(center_wire[2]),round(center_tick[0]),round(center_tick[1]),round(center_tick[2]));
      return bound;
