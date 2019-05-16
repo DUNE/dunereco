@@ -26,7 +26,7 @@
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h" 
-#include "art/Framework/Services/Optional/TFileService.h" 
+#include "art_root_io/TFileService.h"
 #include "art/Framework/Principal/Event.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "cetlib_except/exception.h"

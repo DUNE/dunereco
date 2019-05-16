@@ -17,7 +17,7 @@
 // Suppress warnings originating in Caffe that we can't do anything about
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-compare"
-#include "caffe/caffe.hpp"
+//#include "caffe/caffe.hpp"
 #pragma GCC diagnostic pop
 
 #include <TH1D.h>
@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
   vector<TH2D*> YVec;
   vector<TH2D*> ZVec;
 
-  caffe::Datum datum;
+  //caffe::Datum datum;
 
   int total(0);
   leveldb::Iterator* itCount = db->NewIterator(leveldb::ReadOptions());
