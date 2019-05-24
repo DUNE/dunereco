@@ -116,7 +116,7 @@ local wcls_output = {
       summary_tags: ['threshold'],  // retagger makes this tag
       //  just one threshold value
       summary_operator: { threshold: 'set' },
-      //nticks: -1,
+      nticks: -1,
 
     },
   }, nin=1, nout=1, uses=[mega_anode]),
