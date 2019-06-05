@@ -7,7 +7,7 @@ art_make( BASENAME_ONLY
 			   larevt_Filters
                            larcorealg_Geometry
                            larcore_Geometry_Geometry_service
-                           lardata_RecoObjects larreco_Deprecated
+                           lardata_RecoObjects
 			   larsim_MCCheater_BackTrackerService_service
            larsim_MCCheater_ParticleInventoryService_service
                            lardata_Utilities
