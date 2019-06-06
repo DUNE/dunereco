@@ -28,7 +28,7 @@ art_make(BASENAME_ONLY
   ${ART_ROOT_IO_TFILESERVICE_SERVICE}
   ${ART_PERSISTENCY_COMMON}
   pthread
-  ${PROTOBUFLIB}
+  ${PROTOBUF}
   canvas
   art_Persistency_Provenance
   ${ART_UTILITIES}
