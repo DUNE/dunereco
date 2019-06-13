@@ -7,9 +7,6 @@ if( DEFINED ENV{TENSORFLOW_DIR} )
   endif ()
 endif ()
 
-cet_find_library( PROTOBUFLIB NAMES protobuf PATHS ENV PROTOBUF_LIB NO_DEFAULT_PATH )
-cet_find_library( TENSORFLOW NAMES tensorflow-core PATHS ENV TENSORFLOW_LIB NO_DEFAULT_PATH )
-
 #art_make(
 #          LIB_LIBRARIES
 #                        ${FHICLCPP}
@@ -31,7 +28,7 @@ art_make(BASENAME_ONLY
   ${ART_ROOT_IO_TFILESERVICE_SERVICE}
   ${ART_PERSISTENCY_COMMON}
   pthread
-  ${PROTOBUFLIB}
+  ${PROTOBUF}
   canvas
   art_Persistency_Provenance
   ${ART_UTILITIES}
@@ -45,7 +42,7 @@ art_make(BASENAME_ONLY
   #lardataobj_RecoBase
   #lardata_Utilities
   nusimdata_SimulationBase
-  #larsim_MCCheater_BackTrackerService_service           
+  #larsim_MCCheater_BackTrackerService_service
   #larsim_MCCheater_ParticleInventoryService_service
   MVAAlg
   )
@@ -58,4 +55,4 @@ install_source()
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 include_directories ( $ENV{TENSORFLOW_INC}/eigen )
 include_directories ( $ENV{TENSORFLOW_INC} )
-#include_directories ( $ENV{PROTOBUF_INC} )
+include_directories ( $ENV{PROTOBUF_INC} )

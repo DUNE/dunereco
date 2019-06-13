@@ -89,8 +89,8 @@ simple_plugin(NueAna   "module"
 
 simple_plugin(MVASelect   "module"
                         MVAAlg
-                        nutools_NuReweight
-                        nutools_NuReweight_art
+                        nugen_NuReweight
+                        nugen_NuReweight_art
 			nusimdata_SimulationBase
                         ${GHEP}
                         ${GEVGCORE}
@@ -212,8 +212,8 @@ simple_plugin(ShSeg   "module"
 
 simple_plugin(EnergyReco   "module"
                         MVAAlg
-                        nutools_NuReweight
-                        nutools_NuReweight_art
+                        nugen_NuReweight
+                        nugen_NuReweight_art
                         nusimdata_SimulationBase
                         larcore_Geometry_Geometry_service
                         larreco_Calorimetry
@@ -280,8 +280,8 @@ simple_plugin(EnergyReco   "module"
 )
 
 simple_plugin(CheckRecoEnergy   "module"
-                        nutools_NuReweight
-                        nutools_NuReweight_art
+                        nugen_NuReweight
+                        nugen_NuReweight_art
                         nusimdata_SimulationBase
                         ${GHEP}
                         ${GEVGCORE}
