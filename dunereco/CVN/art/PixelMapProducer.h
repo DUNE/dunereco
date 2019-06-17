@@ -11,14 +11,17 @@
 #include <array>
 #include <vector>
 
+// Framework includes
 #include "art/Framework/Principal/Handle.h"
 
 #include "dune/CVN/func/PixelMap.h"
+#include "dune/CVN/func/SparsePixelMap.h"
 #include "dune/CVN/func/Boundary.h"
 #include "lardataobj/RecoBase/Hit.h"
 
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 
 namespace cvn
 {
@@ -27,6 +30,7 @@ namespace cvn
   {
   public:
     PixelMapProducer(unsigned int nWire, unsigned int nTdc, double tRes);
+    PixelMapProducer();
 
     void SetUnwrapped(unsigned short unwrap){fUnwrapped = unwrap;};
     void SetProtoDUNE(){fProtoDUNE = true;};
@@ -38,6 +42,8 @@ namespace cvn
     void GetDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const; 
     void GetDUNEGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
                               unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const;
+    void GetDUNE10ktGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
+                                  unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const;
     void GetProtoDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const; 
 
     unsigned int NWire() const {return fNWire;};
@@ -49,10 +55,13 @@ namespace cvn
     PixelMap CreateMapGivenBoundary(std::vector< art::Ptr< recob::Hit > >& cluster,
                                     const Boundary& bound);
 
-   private:
+    /// Create sparse pixel map for SCN applications
+    SparsePixelMap CreateSparseMap(std::vector< art::Ptr< recob::Hit> >& cluster);
+
+  private:
     unsigned int      fNWire;  ///< Number of wires, length for pixel maps
     unsigned int      fNTdc;   ///< Number of tdcs, width of pixel map
-    double            fTRes;
+    double            fTRes;   ///< Timing resolution for pixel map
     unsigned short    fUnwrapped; ///< Use unwrapped pixel maps?
     bool              fProtoDUNE; ///< Do we want to use this for particle extraction from protoDUNE?
 

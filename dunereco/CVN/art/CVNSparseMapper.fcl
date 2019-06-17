@@ -1,0 +1,32 @@
+BEGIN_PROLOG
+
+standard_cvnsparsemapper:
+{
+  module_type:        CVNSparseMapper
+  #==================
+  HitsModuleLabel: "hitfd"
+  ClusterPMLabel: "cvnsparsemap"
+  MinClusterHits: 100
+}
+
+standard_cvnsparseh5:
+{ 
+  module_type:        CVNSparseH5
+  #==================
+  MapModuleLabel: "sparsemap"
+  MapInstanceLabel: "cvnsparsemap"
+  OutputName: "cvnsparse"
+}
+
+standard_cvnsparseroot:
+{ 
+  module_type:        CVNSparseROOT
+  #==================
+  MapModuleLabel: "sparsemap"
+  MapInstanceLabel: "cvnsparsemap"
+  OutputName: "cvnsparse"
+  TreeName: "CVNSparse"
+}
+
+END_PROLOG
+
