@@ -22,7 +22,7 @@
 #include "messagefacility/MessageLogger/MessageLogger.h" 
 #include "art_root_io/TFileService.h"
 
-#include "nutools/NuReweight/art/NuReweight.h"
+#include "nugen/NuReweight/art/NuReweight.h"
 #include "Utils/AppInit.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"

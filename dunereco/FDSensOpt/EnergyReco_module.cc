@@ -22,7 +22,7 @@
 #include "art_root_io/TFileService.h"
 #include "art/Persistency/Common/PtrMaker.h"
 
-#include "nutools/NuReweight/art/NuReweight.h"
+#include "nugen/NuReweight/art/NuReweight.h"
 #include "Utils/AppInit.h"
 #include "nusimdata/SimulationBase/GTruth.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
