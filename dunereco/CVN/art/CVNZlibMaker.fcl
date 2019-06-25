@@ -15,4 +15,14 @@ standard_cvnzlibmaker:
   EnergyNutauLabel: "energynutau"
 }
 
+standard_cvnzlibmaker_protodune_beam:
+{
+  module_type: CVNZlibMakerProtoDUNE
+  OutputDir: "."
+  PixelMapInput: "cvnmap"
+  SetLog: false
+  ReverseViews: [false,true,false]
+  LArG4ModuleLabel: "largeant"
+}
+
 END_PROLOG

@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <limits>
 
 namespace cvn
 {
@@ -310,6 +311,64 @@ namespace cvn
     }
     if (pdgCode == 1) return kTopNCLike;
     throw std::runtime_error("Topology type not recognised!");
+  }
+
+  // Get the pion interaction mode for ProtoDUNE specific code
+  unsigned short AssignLabels::GetProtoDUNEPionInteraction(const simb::MCParticle &particle) const {
+
+    unsigned short baseProcess = std::numeric_limits<unsigned short>::max();
+    // Make sure we have a charged pion
+    if(abs(particle.PdgCode()) != 211) return baseProcess;
+
+    // The first thing we can do is look at the process key
+    std::string processName = particle.EndProcess();
+
+    if(processName.compare("primary") == 0)           baseProcess = 0;
+    else if(processName.compare("hadElastic") == 0)   baseProcess = 1;
+    else if(processName.compare("pi-Inelastic") == 0) baseProcess = 2;
+    else if(processName.compare("pi+Inelastic") == 0) baseProcess = 3;
+
+    std::cout << "What interaction type, then? " << processName << std::endl;
+
+    // In the case that we have an inelastic interaction, maybe we can do more.
+    art::ServiceHandle< cheat::ParticleInventoryService > piService;
+
+    unsigned int nPi0 = 0; // Pi-zeros
+    unsigned int nPiM = 0; // Pi-minuses
+    unsigned int nPiP = 0; // Pi-pluses
+    unsigned int nNeu = 0; // Neutrons
+    unsigned int nPro = 0; // Protons
+    unsigned int nOth = 0; // Everything else
+
+    for(int i = 0; i < particle.NumberDaughters(); ++i){
+      const simb::MCParticle* daughter = piService->TrackIdToParticle_P(particle.Daughter(i));
+      switch(daughter->PdgCode()){
+        case 111  : ++nPi0; break;
+        case -211 : ++nPiM; break;
+        case 211  : ++nPiP; break;
+        case 2112 : ++nNeu; break;
+        case 2212 : ++nPro; break;
+        default   : ++nOth; break;
+      }
+    }
+
+    std::cout << "Base process = " << baseProcess << std::endl;
+    std::cout << "Daughters = " << nPi0 << " pi0s, " << nPiM << " pi-s, "
+                                << nPiP << " pi+s, " << nNeu << " neutrons, " 
+                                << nPro << " protons and " << nOth << " other particles." << std::endl;
+
+    // Outputs
+    // 0 = primary (this shouldn't happen!)   
+    // 1 = elastic
+    // 2 = generic Inelastic
+    // 3 = charge exchange
+    if(baseProcess == 2 || baseProcess == 3){
+      if(nPi0 == 1) return 3;
+      else return 2;
+    }
+    else{
+      return baseProcess;
+    }
   }
 
 }

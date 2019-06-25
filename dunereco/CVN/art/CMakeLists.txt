@@ -53,7 +53,7 @@ art_make(BASENAME_ONLY
   lardata_Utilities
   nusimdata_SimulationBase
 #  larsim_MCCheater_BackTrackerService_service           
-#  larsim_MCCheater_ParticleInventoryService_service
+  larsim_MCCheater_ParticleInventoryService_service
   #${CAFFELIB}
   ${GSLLIB}                  
   #${HDF5LIB}
@@ -68,6 +68,7 @@ art_make(BASENAME_ONLY
   MODULE_LIBRARIES CVNFunc
   CVNTf
   CVNArt
+  ProtoDUNEAnaUtils
   )
 
 

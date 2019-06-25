@@ -13,4 +13,14 @@ standard_gcnzlibmaker:
   EnergyNutauLabel: "energynutau"
 }
 
+standard_gcnzlibmaker_protodune:
+{
+  module_type: GCNZlibMakerProtoDUNE
+  #==================
+  OutputDir: "."
+  GraphLabel: "gcngraph"
+  TopologyHitsCut: 100
+  LArG4ModuleLabel: "largeant"
+}
+
 END_PROLOG

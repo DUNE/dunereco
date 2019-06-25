@@ -38,18 +38,22 @@ namespace cvn
   }
 
 
-  PixelMap PixelMapProducer::CreateMap(std::vector< art::Ptr< recob::Hit > >& cluster)
+  PixelMap PixelMapProducer::CreateMap(const std::vector< art::Ptr< recob::Hit > >& cluster)
   {
-
-    Boundary bound = DefineBoundary(cluster);
-
-    return CreateMapGivenBoundary(cluster, bound);
-
-
-
+    std::vector<const recob::Hit*> newCluster;
+    for(const art::Ptr<recob::Hit> hit : cluster){
+      newCluster.push_back(hit.get());
+    }
+    return CreateMap(newCluster);
   }
 
-  PixelMap PixelMapProducer::CreateMapGivenBoundary(std::vector< art::Ptr< recob::Hit > >& cluster,
+  PixelMap PixelMapProducer::CreateMap(const std::vector<const recob::Hit* >& cluster)
+  {
+    Boundary bound = DefineBoundary(cluster);
+    return CreateMapGivenBoundary(cluster, bound);
+  }
+
+  PixelMap PixelMapProducer::CreateMapGivenBoundary(const std::vector<const recob::Hit*>& cluster,
       const Boundary& bound)
   {
 
@@ -102,7 +106,7 @@ namespace cvn
 
 
 
-  Boundary PixelMapProducer::DefineBoundary(std::vector< art::Ptr< recob::Hit > >& cluster)
+  Boundary PixelMapProducer::DefineBoundary(const std::vector< const recob::Hit*>& cluster)
   {
 
     std::vector<double> time_0;

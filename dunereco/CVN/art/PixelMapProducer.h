@@ -32,7 +32,7 @@ namespace cvn
     void SetProtoDUNE(){fProtoDUNE = true;};
 
     /// Get boundaries for pixel map representation of cluster
-    Boundary DefineBoundary(std::vector< art::Ptr< recob::Hit > >& cluster);
+    Boundary DefineBoundary(const std::vector< const recob::Hit* >& cluster);
 
     /// Function to convert to a global unwrapped wire number
     void GetDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const; 
@@ -44,9 +44,10 @@ namespace cvn
     unsigned int NTdc() const {return fNTdc;};
     double TRes() const {return fTRes;};
 
-    PixelMap CreateMap(std::vector< art::Ptr< recob::Hit > >& slice);
+    PixelMap CreateMap(const std::vector< art::Ptr< recob::Hit > >& slice);
+    PixelMap CreateMap(const std::vector< const recob::Hit* >& slice);
 
-    PixelMap CreateMapGivenBoundary(std::vector< art::Ptr< recob::Hit > >& cluster,
+    PixelMap CreateMapGivenBoundary(const std::vector< const recob::Hit* >& cluster,
                                     const Boundary& bound);
 
    private:

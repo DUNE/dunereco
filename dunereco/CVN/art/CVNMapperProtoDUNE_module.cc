@@ -31,8 +31,8 @@
 #include "dune/CVN/func/PixelMap.h"
 #include "dune/CVN/func/TrainingData.h"
 
-
-
+#include "dune/Protodune/Analysis/ProtoDUNESliceUtils.h"
+#include "dune/Protodune/Analysis/ProtoDUNEPFParticleUtils.h"
 
 namespace cvn {
 
@@ -50,6 +50,9 @@ namespace cvn {
   private:
     /// Module label for input hits
     std::string    fHitsModuleLabel;
+
+    /// Module label for input particles
+    std::string    fParticleModuleLabel;
 
     /// Module label for input tracks
     std::string    fTrackLabel;
@@ -86,6 +89,9 @@ namespace cvn {
     /// Use the whole event instead of each track and shower
     bool fUseWholeEvent;
 
+    /// For protoDUNE vertex finding, we only want the beam slice
+    bool fUseBeamSliceOnly;
+
     /// PixelMapProducer does the work for us
     PixelMapProducer fProducer;
 
@@ -96,6 +102,7 @@ namespace cvn {
   //.......................................................................
   CVNMapperProtoDUNE::CVNMapperProtoDUNE(fhicl::ParameterSet const& pset): EDProducer{pset},
   fHitsModuleLabel  (pset.get<std::string>    ("HitsModuleLabel")),
+  fParticleModuleLabel  (pset.get<std::string>    ("ParticleModuleLabel")),
   fTrackLabel  (pset.get<std::string>    ("TrackLabel")),
   fShowerLabel  (pset.get<std::string>    ("ShowerLabel")),
   fClusterPMLabel(pset.get<std::string>    ("ClusterPMLabel")),
@@ -106,6 +113,7 @@ namespace cvn {
   fUnwrappedPixelMap(pset.get<unsigned short> ("UnwrappedPixelMap")),
   fTrackLengthCut(pset.get<unsigned short> ("TrackLengthCut")),
   fUseWholeEvent(pset.get<bool> ("UseWholeEvent")),
+  fUseBeamSliceOnly(pset.get<bool> ("UseBeamSliceOnly")),
   fProducer      (fWireLength, fTdcWidth, fTimeResolution)
   {
 
@@ -156,6 +164,17 @@ namespace cvn {
         PixelMap pm = fProducer.CreateMap(hitlist);
         pmCol->push_back(pm);
       }
+    }
+    else if(fUseBeamSliceOnly){
+      // We want to make a pixel map for just APA3. We can pad out to 500 pixels in the wire number
+      // The best way to do this is to get the Pandora beam slice
+      protoana::ProtoDUNESliceUtils sliceUtil;
+      protoana::ProtoDUNEPFParticleUtils pfpUtil;
+      const unsigned int beamSlice = pfpUtil.GetBeamSlice(evt,fParticleModuleLabel);
+      const std::vector<const recob::Hit*> sliceHits = sliceUtil.GetRecoSliceHits(beamSlice,evt,fParticleModuleLabel);
+
+      PixelMap pm = fProducer.CreateMap(sliceHits);
+      pmCol->push_back(pm);
     }
     else{
       // Get the list of tracks and showers and their associated hits

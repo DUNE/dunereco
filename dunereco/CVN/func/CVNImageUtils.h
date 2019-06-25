@@ -28,6 +28,11 @@ namespace cvn
     CVNImageUtils(unsigned int nWires, unsigned int nTDCs, unsigned int nViews);
     ~CVNImageUtils();
 
+    /// Disable the selection of the wire region and just use the first 500 wires
+    void DisableRegionSelection();
+    /// Enable the selection of the wire region
+    void EnableRegionSelection();
+
     /// Convert the hit charge into the range 0 to 255 required by the CVN
     unsigned char ConvertChargeToChar(float charge);
 
@@ -109,6 +114,9 @@ namespace cvn
 
     /// Vector of bools to decide if any views need to be reversed
     std::vector<bool> fViewReverse;
+
+    /// Disable the region finding?
+    bool fDisableRegionSelection;
 
     /// Use a log scale for charge?
     bool fUseLogScale;

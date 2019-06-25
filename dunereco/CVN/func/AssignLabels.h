@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////
 // \file    Assignlabels.h
-///\brief   Utility class for ruth labels
+///\brief   Utility class for truth labels
 ///
 // \author  Leigh Whitehead leigh.howard.whitehead@cern.ch
 ////////////////////////////////////////////////////////////////////////
@@ -11,6 +11,7 @@
 
 #include "dune/CVN/func/InteractionType.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
 
 
 namespace cvn
@@ -39,7 +40,10 @@ namespace cvn
     bool IsAntineutrino();
     unsigned short GetTopologyType();
     unsigned short GetTopologyTypeAlt();
-    
+
+    // Get the pion interaction mode for ProtoDUNE specific code
+    unsigned short GetProtoDUNEPionInteraction(const simb::MCParticle &particle) const;
+   
     private:
 
     // unused unsigned int fTopologyHitsCut;

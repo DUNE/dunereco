@@ -11,4 +11,16 @@ standard_gcngraphmaker:
   NeighbourRadius: 3.0 # Distance in cm
 }
 
+standard_gcngraphmaker_protodune:
+{
+  module_type:        GCNGraphMakerProtoDUNE
+  #==================
+  SpacePointLabel:     "pandora"
+  MinClusterHits:      100
+  NeighbourRadius:     3.0 # Distance in cm
+  UseBeamSliceOnly:    true
+  SliceModuleLabel:    "pandora"
+  ParticleModuleLabel: "pandora"
+}
+
 END_PROLOG
