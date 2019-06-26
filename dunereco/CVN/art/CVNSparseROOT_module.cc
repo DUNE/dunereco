@@ -20,11 +20,6 @@
 // CVN includes
 #include "dune/CVN/func/SparsePixelMap.h"
 
-// highfive includes
-#include <dune/CVN/highfive/H5DataSet.hpp>
-#include <dune/CVN/highfive/H5DataSpace.hpp>
-#include <dune/CVN/highfive/H5File.hpp>
-
 // ROOT includes
 #include "TFile.h"
 #include "TTree.h"
