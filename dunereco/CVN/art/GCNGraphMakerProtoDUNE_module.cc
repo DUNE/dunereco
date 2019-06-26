@@ -126,22 +126,20 @@ namespace cvn {
       protoana::ProtoDUNEPFParticleUtils pfpUtil;
       const unsigned short beamSliceIndex = pfpUtil.GetBeamSlice(evt,fParticleLabel);
 
-      if(beamSliceIndex == 999){
-        // Write our empty graph vector to the event and quit
-        evt.put(std::move(graphs));
-        return;
-      }
+      if(beamSliceIndex < 500){
 
-      // Get a map of slice index to all of the PFParticles within it
-      const std::map<unsigned int,std::vector<const recob::PFParticle*>> particleSliceMap = pfpUtil.GetAllPFParticleSliceMap(evt, fParticleLabel);
-      for(const recob::PFParticle* p : particleSliceMap.at(beamSliceIndex)){
+        // Get a map of slice index to all of the PFParticles within it
+        const std::map<unsigned int,std::vector<const recob::PFParticle*>> particleSliceMap = pfpUtil.GetAllPFParticleSliceMap(evt, fParticleLabel);
+        for(const recob::PFParticle* p : particleSliceMap.at(beamSliceIndex)){
           // Get the SpacePoints associated to the PFParticle
           const std::vector<const recob::SpacePoint*> particlePoints = pfpUtil.GetPFParticleSpacePoints(*p, evt, fParticleLabel);
+          std::cout << "Got beam slice particle with " << particlePoints.size() << " space points" << std::endl;
           for(const recob::SpacePoint* s : particlePoints){
             graphSpacePoints.push_back(allSpacePoints.at(s->ID()));
           }
+        }
+        neighbourMap  = graphUtil.GetAllNeighbours(evt,fNeighbourRadius,graphSpacePoints);
       }
-      neighbourMap  = graphUtil.GetAllNeighbours(evt,fNeighbourRadius,graphSpacePoints);
     }
     else{
       if(evt.getByLabel(fSpacePointLabel,spacePointHandle)){
@@ -150,7 +148,7 @@ namespace cvn {
       neighbourMap = graphUtil.GetAllNeighbours(evt,fNeighbourRadius,graphSpacePoints);
     }
 
-    if(graphSpacePoints.size() >= fMinClusterHits){
+    if(graphSpacePoints.size() != 0 && graphSpacePoints.size() >= fMinClusterHits){
       
       chargeMap = graphUtil.GetSpacePointChargeMap(evt,fParticleLabel);
       for(art::Ptr<recob::SpacePoint> sp : graphSpacePoints){

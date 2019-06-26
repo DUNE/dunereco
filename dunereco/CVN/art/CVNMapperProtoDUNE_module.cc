@@ -171,10 +171,12 @@ namespace cvn {
       protoana::ProtoDUNESliceUtils sliceUtil;
       protoana::ProtoDUNEPFParticleUtils pfpUtil;
       const unsigned int beamSlice = pfpUtil.GetBeamSlice(evt,fParticleModuleLabel);
-      const std::vector<const recob::Hit*> sliceHits = sliceUtil.GetRecoSliceHits(beamSlice,evt,fParticleModuleLabel);
+      if(beamSlice < 500){
+        const std::vector<const recob::Hit*> sliceHits = sliceUtil.GetRecoSliceHits(beamSlice,evt,fParticleModuleLabel);
 
-      PixelMap pm = fProducer.CreateMap(sliceHits);
-      pmCol->push_back(pm);
+        PixelMap pm = fProducer.CreateMap(sliceHits);
+        pmCol->push_back(pm);
+      }
     }
     else{
       // Get the list of tracks and showers and their associated hits
