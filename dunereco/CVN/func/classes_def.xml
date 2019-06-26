@@ -25,6 +25,12 @@
    <version ClassVersion="10" checksum="197322882"/>
   </class>
 
+  <class name="cvn::SparsePixelMap" ClassVersion="20">
+   <version ClassVersion="20" checksum="3134631131"/>
+   <version ClassVersion="19" checksum="3037527189"/>
+   <version ClassVersion="18" checksum="4245858273"/>
+  </class>
+
   <class name="cvn::Result" ClassVersion="12" >
    <version ClassVersion="12" checksum="2580228795"/>
    <version ClassVersion="11" checksum="3978040452"/>
@@ -50,14 +56,21 @@
    <version ClassVersion="10" checksum="2217525517"/>
   </class>
 
-  <class name="std::vector<cvn::PixelMap>"          />
-  <class name="art::Ptr<cvn::PixelMap>"             />
-  <class name="std::vector<cvn::HType>"      />
-  <class name="art::Wrapper< std::vector<cvn::PixelMap> >"    />
+  <class name="vector<vector<unsigned long> >"     />
+  <class name="vector<vector<vector<unsigned int> > >" />
 
-  <class name="std::vector<cvn::GCNGraph>"          />
-  <class name="art::Ptr<cvn::GCNGraph>"             />
-  <class name="art::Wrapper< std::vector<cvn::GCNGraph> >"    />
+  <class name="std::vector<cvn::PixelMap>"         />
+  <class name="art::Ptr<cvn::PixelMap>"            />
+  <class name="std::vector<cvn::HType>"            />
+  <class name="art::Wrapper< std::vector<cvn::PixelMap> >" />
+
+  <class name="std::vector<cvn::SparsePixelMap>"   />
+  <class name="art::Ptr<cvn::SparsePixelMap>"      />
+  <class name="art::Wrapper< std::vector<cvn::SparsePixelMap> >" />
+
+  <class name="std::vector<cvn::GCNGraph>"         />
+  <class name="art::Ptr<cvn::GCNGraph>"            />
+  <class name="art::Wrapper< std::vector<cvn::GCNGraph> >" />
 
   <class name="std::vector<cvn::GCNGraphNode>"          />
   <class name="art::Ptr<cvn::GCNGraphNode>"             />
@@ -67,8 +80,8 @@
   <class name="art::Ptr<cvn::Result>"             />
   <class name="art::Wrapper< std::vector<cvn::Result> >"    />
 
-  <class name="std::vector<std::vector<float> >"          />
-  <class name="art::Wrapper< std::vector<std::vector<float> > >"    />
+  <class name="std::vector<std::vector<float> >"   />
+  <class name="art::Wrapper< std::vector<std::vector<float> > >" />
   
 </lcgdict>
 

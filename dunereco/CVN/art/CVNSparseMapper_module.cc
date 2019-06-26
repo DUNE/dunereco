@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////
-// \file    CVNMapper_module.cc
-// \brief   Producer module for creating CVN PixelMap objects
-// \author  Alexander Radovic - a.radovic@gmail.com
+// \file    CVNSparseMapper_module.cc
+// \brief   Producer module for creating CVN SparsePixelMap objects
+// \author  Jeremy Hewes - jhewes15@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 
 // C/C++ includes
@@ -24,18 +24,14 @@
 #include "lardataobj/RecoBase/Hit.h"
 
 #include "dune/CVN/art/PixelMapProducer.h"
-#include "dune/CVN/func/PixelMap.h"
-#include "dune/CVN/func/TrainingData.h"
-
-
-
+#include "dune/CVN/func/SparsePixelMap.h"
 
 namespace cvn {
 
-  class CVNMapper : public art::EDProducer {
+  class CVNSparseMapper : public art::EDProducer {
   public:
-    explicit CVNMapper(fhicl::ParameterSet const& pset);
-    ~CVNMapper();
+    explicit CVNSparseMapper(fhicl::ParameterSet const& pset);
+    ~CVNSparseMapper();
 
     void produce(art::Event& evt);
     void beginJob();
@@ -53,23 +49,6 @@ namespace cvn {
     /// Minimum number of hits for cluster to be converted to pixel map
     unsigned short fMinClusterHits;
 
-    /// Width of pixel map in tdcs
-    unsigned short fTdcWidth;
-
-    /// Length of pixel map in wires
-    unsigned short fWireLength;
-
-    /// Length of pixel map in wires
-    double fTimeResolution;
-
-    /// Maximum gap in wires at front of cluster to prevent pruning of upstream
-    /// hits
-    //unsigned int fMaxWireGap;
-
-    /// Use unwrapped pixel maps?
-    // 0 means no unwrap, 1 means unwrap in wire, 2 means unwrap in wire and time
-    unsigned short fUnwrappedPixelMap;
-
     /// PixelMapProducer does the work for us
     PixelMapProducer fProducer;
 
@@ -78,23 +57,19 @@ namespace cvn {
 
 
   //.......................................................................
-  CVNMapper::CVNMapper(fhicl::ParameterSet const& pset): EDProducer{pset},
-  fHitsModuleLabel  (pset.get<std::string>    ("HitsModuleLabel")),
-  fClusterPMLabel(pset.get<std::string>    ("ClusterPMLabel")),
-  fMinClusterHits(pset.get<unsigned short> ("MinClusterHits")),
-  fTdcWidth     (pset.get<unsigned short> ("TdcWidth")),
-  fWireLength   (pset.get<unsigned short> ("WireLength")),
-  fTimeResolution   (pset.get<unsigned short> ("TimeResolution")),
-  fUnwrappedPixelMap(pset.get<unsigned short> ("UnwrappedPixelMap")),
-  fProducer      (fWireLength, fTdcWidth, fTimeResolution)
+  CVNSparseMapper::CVNSparseMapper(fhicl::ParameterSet const& pset): EDProducer{pset},
+  fHitsModuleLabel(pset.get<std::string>    ("HitsModuleLabel")),
+  fClusterPMLabel(pset.get<std::string>     ("ClusterPMLabel")),
+  fMinClusterHits(pset.get<unsigned short>  ("MinClusterHits")),
+  fProducer()
   {
 
-    produces< std::vector<cvn::PixelMap>   >(fClusterPMLabel);
+    produces< std::vector<cvn::SparsePixelMap> >(fClusterPMLabel);
 
   }
 
   //......................................................................
-  CVNMapper::~CVNMapper()
+  CVNSparseMapper::~CVNSparseMapper()
   {
     //======================================================================
     // Clean up any memory allocated by your module
@@ -102,21 +77,16 @@ namespace cvn {
   }
 
   //......................................................................
-  void CVNMapper::beginJob()
-  {  }
+  void CVNSparseMapper::beginJob()
+  {}
 
   //......................................................................
-  void CVNMapper::endJob()
-  {
-  }
+  void CVNSparseMapper::endJob()
+  {}
 
   //......................................................................
-  void CVNMapper::produce(art::Event& evt)
+  void CVNSparseMapper::produce(art::Event& evt)
   {
-    // Use unwrapped pixel maps if requested
-    // 0 means no unwrap, 1 means unwrap in wire, 2 means unwrap in wire and time
-    fProducer.SetUnwrapped(fUnwrappedPixelMap);
-
     art::Handle< std::vector< recob::Hit > > hitListHandle;
     std::vector< art::Ptr< recob::Hit > > hitlist;
     if (evt.getByLabel(fHitsModuleLabel, hitListHandle))
@@ -124,25 +94,19 @@ namespace cvn {
     unsigned short nhits = hitlist.size();
 
     //Declaring containers for things to be stored in event
-    std::unique_ptr< std::vector<cvn::PixelMap> >
-      pmCol(new std::vector<cvn::PixelMap>);
+    std::unique_ptr< std::vector<cvn::SparsePixelMap> >
+      pmCol(new std::vector<cvn::SparsePixelMap>);
 
     if (nhits > fMinClusterHits) {
-      PixelMap pm = fProducer.CreateMap(hitlist);
-      pmCol->push_back(pm);
+      pmCol->push_back(fProducer.CreateSparseMap(hitlist));
     }
-    //pm.Print();
-    //Boundary bound = pm.Bound();
-    //}
+
     evt.put(std::move(pmCol), fClusterPMLabel);
-    //std::cout<<"Map Complete!"<<std::endl;
   }
 
   //----------------------------------------------------------------------
 
-
-
-DEFINE_ART_MODULE(cvn::CVNMapper)
+DEFINE_ART_MODULE(cvn::CVNSparseMapper)
 } // end namespace cvn
 ////////////////////////////////////////////////////////////////////////
 

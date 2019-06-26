@@ -1,5 +1,6 @@
 #include <vector>
 #include <iostream>
+#include <ctime>
 
 #include "dune/CVN/func/GCNFeatureUtils.h"
 #include "canvas/Persistency/Common/FindManyP.h"
@@ -7,8 +8,10 @@
 #include "art/Framework/Principal/Event.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/PFParticle.h"
+#include "larsim/MCCheater/BackTrackerService.h"
 
-cvn::GCNFeatureUtils::GCNFeatureUtils(){
+cvn::GCNFeatureUtils::GCNFeatureUtils() {
 
 }
 
@@ -74,28 +77,53 @@ const std::map<int,unsigned int> cvn::GCNFeatureUtils::GetAllNeighbours(art::Eve
       }
     }
   }
-
   return neighbourMap;
-
-}
+} // function GetAllNeighbours
 
 // Use the association between space points and hits to return a charge
-const float cvn::GCNFeatureUtils::GetSpacePointCharge(const recob::SpacePoint &sp, art::Event const &evt, const std::string &spLabel) const{
+const std::map<unsigned int, float> cvn::GCNFeatureUtils::GetSpacePointChargeMap(
+  art::Event const &evt, const std::string &spLabel) const {
 
-  float charge = 0.0;
+  std::map<unsigned int, float> ret;
 
   // Get the hits associated to the space points
   auto allSP = evt.getValidHandle<std::vector<recob::SpacePoint>>(spLabel);
-  const art::FindManyP<recob::Hit> findHits(allSP,evt,spLabel);
-  const std::vector<art::Ptr<recob::Hit>> spHits = findHits.at(sp.ID());
+  const art::FindManyP<recob::Hit> sp2Hit(allSP, evt, spLabel);
 
-  for(auto const hit : spHits){
-    charge += hit->Integral();
+  for (auto sp : *allSP) {
+    float charge = 0.0;
+    const std::vector<art::Ptr<recob::Hit>> spHits = sp2Hit.at(sp.ID());
+    for (auto const hit : spHits) {
+      charge += hit->Integral();
+    }
+    ret[sp.ID()] = charge;
   }
+  return ret;
+} // function GetSpacePointChargeMap
 
-  return charge;
+const std::map<unsigned int, unsigned int> cvn::GCNFeatureUtils::GetTrueG4ID(
+  art::Event const& evt, const std::string &spLabel) const {
 
-}
+  art::ServiceHandle<cheat::BackTrackerService> bt;
+  std::map<unsigned int, unsigned int> ret;
 
+  // Get the hits associated to the space points
+  auto allSP = evt.getValidHandle<std::vector<recob::SpacePoint>>(spLabel);
+  const art::FindManyP<recob::Hit> sp2Hit(allSP, evt, spLabel);
 
-
+  for (const recob::SpacePoint &sp : *allSP) {
+    // Use the backtracker to find the G4 IDs associated with these hits
+    std::map<unsigned int, float> trueParticles;
+    for (auto hit : sp2Hit.at(sp.ID())) {
+      auto ides = bt->HitToTrackIDEs(hit);
+      for (auto ide : ides) {
+        unsigned int id = abs(ide.trackID);
+        if (trueParticles.count(id)) trueParticles[id] += ide.energy;
+        else trueParticles[id] = ide.energy;
+      }
+    }
+    ret[sp.ID()] = std::max_element(trueParticles.begin(), trueParticles.end(), [](const std::pair<unsigned int, unsigned int> &lhs,
+      const std::pair<unsigned int, unsigned int> &rhs) { return lhs.second < rhs.second; })->first;
+  }
+  return ret;
+} // function GetTrueG4ID

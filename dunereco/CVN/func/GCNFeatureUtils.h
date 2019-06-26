@@ -32,7 +32,9 @@ namespace cvn
     const std::map<int,unsigned int> GetAllNeighbours(art::Event const &evt, const float rangeCut, const std::string &spLabel) const;
     const std::map<int,unsigned int> GetAllNeighbours(art::Event const &evt, const float rangeCut, const std::vector<art::Ptr<recob::SpacePoint>> &sps) const;
     /// Use the association between space points and hits to return a charge
-    const float GetSpacePointCharge(const recob::SpacePoint &sp, art::Event const &evt, const std::string &spLabel) const;
+    const std::map<unsigned int, float> GetSpacePointChargeMap(art::Event const &evt, const std::string &spLabel) const;
+    /// Get the true G4 ID for each spacepoint
+    const std::map<unsigned int, unsigned int> GetTrueG4ID(art::Event const& evt, const std::string &spLabel) const;
 
   private:
 

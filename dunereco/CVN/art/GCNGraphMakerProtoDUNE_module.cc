@@ -118,6 +118,8 @@ namespace cvn {
     // We can calculate the number of neighbours for each space point with some radius
     // Store the number of neighbours for each spacepoint ID
     std::map<int,unsigned int> neighbourMap;
+    // Get the charge map too
+    std::map<unsigned int,float> chargeMap;
 
     if(fUseBeamSliceOnly){
       // We need to get a vector of space points from the beam slice
@@ -149,6 +151,8 @@ namespace cvn {
     }
 
     if(graphSpacePoints.size() >= fMinClusterHits){
+      
+      chargeMap = graphUtil.GetSpacePointChargeMap(evt,fParticleLabel);
       for(art::Ptr<recob::SpacePoint> sp : graphSpacePoints){
 
         // Get the position
@@ -162,7 +166,7 @@ namespace cvn {
         // The neighbour map gives us our first feature
         features.push_back(neighbourMap.at(sp->ID()));
         // How about charge?
-        features.push_back(graphUtil.GetSpacePointCharge(*sp,evt,fSpacePointLabel));
+        features.push_back(chargeMap.at(sp->ID()));
 
         newGraph.AddNode(position,features);
       }
