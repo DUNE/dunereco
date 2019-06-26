@@ -9,6 +9,16 @@ standard_gcngraphmaker:
   SpacePointLabel:   "pandora"
   MinClusterHits: 100
   NeighbourRadius: 3.0 # Distance in cm
+  CollectionPlaneOnly: false
+  TrueParticleFeature: false
+}
+
+standard_gcnh5:
+{
+  module_type:        GCNH5
+  #==================
+  GraphModuleLabel: "graph"
+  OutputName:       "gcn"
 }
 
 END_PROLOG

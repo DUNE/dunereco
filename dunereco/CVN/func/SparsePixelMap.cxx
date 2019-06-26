@@ -30,24 +30,27 @@ namespace cvn {
   std::vector<unsigned int> SparsePixelMap::GetNPixels() const {
     
     std::vector<unsigned int> ret(fViews);
-    for (size_t it = 0; it < fViews; ++it)
+    for (size_t it = 0; it < fViews; ++it) {
       ret[it] = fValues[it].size();
+    }
     return ret;
   }
 
   std::vector<std::vector<unsigned int>> SparsePixelMap::GetCoordinatesFlat() const {
 
     std::vector<std::vector<unsigned int>> ret;
-    for (auto it : fCoordinates)
+    for (auto it : fCoordinates) {
       ret.insert(ret.end(), it.begin(), it.end());
+    }
     return ret;
   }
 
   std::vector<float> SparsePixelMap::GetValuesFlat() const {
 
     std::vector<float> ret;
-    for (auto it : fValues)
+    for (auto it : fValues) {
       ret.insert(ret.end(), it.begin(), it.end());
+    }
     return ret;
   }
 

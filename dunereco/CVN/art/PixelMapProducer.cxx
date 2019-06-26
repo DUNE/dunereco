@@ -259,7 +259,7 @@ namespace cvn
 
     // Collection plane has more wires
     if(plane == 2){
-      nWiresTPC=480;
+      nWiresTPC = 480;
       wireGap = 5;
       globalPlane = 2;
     }
@@ -276,27 +276,17 @@ namespace cvn
     //
 
     int tpcMod4 = tpc%4;
-    int offset = 0;
     // Induction views depend on the drift direction
-    if(plane < 2){
-      // For TPCs 0 and 3 keep U and V as defined.
-      if(tpcMod4 == 0 || tpcMod4 == 3){
-        globalPlane = plane;
-        // But reverse the TDCs
-      }
-      // For TPCs 1 and 2, swap U and V.
-      else{
-        if(plane == 0) globalPlane = 1;
-        else globalPlane = 0;
-      }
-    }
+    if (plane < 2 and tpc%2 == 1) globalPlane = !plane;
+    else globalPlane = plane;
 
-    if(globalPlane != 1){
-      globalWire += (tpc/4)*nWiresTPC + (tpcMod4>1)*offset + localWire;
-    }
-    else{
-      globalWire += ((23-tpc)/4)*nWiresTPC + (tpcMod4>1)*offset + localWire;
-    }
+    int offset = 752; // Offset between upper and lower modules in induction views, from Robert & Dorota's code
+    // Second induction plane gets offset from the back of the TPC
+    if (globalPlane != 1) globalWire += (tpc/4)*nWiresTPC;
+    else globalWire += ((23-tpc)/4)*nWiresTPC;
+    // Reverse wires and add offset for upper modules in induction views
+    if (tpcMod4 > 1 and globalPlane < 2) globalWire += fGeometry->Nwires(globalPlane, tpc, 0) + offset - localWire;
+    else globalWire += localWire;
 
     if(tpcMod4 == 0 || tpcMod4 == 2){
       globalTDC = drift_size - localTDC;
@@ -318,18 +308,23 @@ namespace cvn
     unsigned int drift_size = (driftLen / driftVel) * 2; // Time in ticks to cross a TPC 
     unsigned int apa_size   = 4*(apaLen / driftVel) * 2; // Width of the whole APA in TDC
 
+    // std::cout << "Drift size is " << drift_size << ", APA size is " << apa_size << std::endl;
+
     globalWire = 0;
     globalPlane = 0;
 
     // Collection plane has more wires
     if(plane == 2){
-      nWiresTPC=480;
+      nWiresTPC = 480;
       wireGap = 5;
       globalPlane = 2;
     }
 
     bool includeZGap = true;
     if(includeZGap) nWiresTPC += wireGap;
+
+    std::cout << "Number of wires is " << fGeometry->Nwires(0, 0, 0) << ", "
+      << fGeometry->Nwires(1, 0, 0) << ", " << fGeometry->Nwires(2, 0, 0) << std::endl;
 
     // 10kt has four real TPCs and two dummies in each slice
     //
@@ -352,22 +347,19 @@ namespace cvn
 
     size_t tpc_x = (tpc%6) - 1;   // x coordinate in 0->4 range
     size_t tpc_xy = (tpc%12) - 1; // xy coordinate as 0->3 & 6->9 (converted from 1->4, 7->10)
-    if (tpc_xy > 4) tpc_xy -= 2;  // now subtract 2 so it's in the 0->7 range
+    if (tpc_xy > 3) tpc_xy -= 2;  // now subtract 2 so it's in the 0->7 range
 
     // Induction views depend on the drift direction
-    if(plane < 2) {
-      // Flip U and V in checkerboard pattern
-      if(tpc_xy == 1 or tpc_xy == 3 or tpc_xy == 4 or tpc_xy == 6) {
-        globalPlane = plane;
-      }
-      else{
-        if(plane == 0) globalPlane = 1;
-        else globalPlane = 0;
-      }
-    }
+    if (plane < 2 and tpc%2 == 1) globalPlane = !plane;
+    else globalPlane = plane;
 
-    if(globalPlane != 1) globalWire += (tpc/12)*nWiresTPC + localWire;
-    else globalWire += ((300-tpc)/12)*nWiresTPC + localWire;
+    int offset = 752; // Offset between upper and lower modules in induction views, from Robert & Dorota's code
+    // Second induction plane gets offset from the back of the TPC
+    if (globalPlane != 1) globalWire += (tpc/12)*nWiresTPC;
+    else globalWire += ((300-tpc)/12)*nWiresTPC;
+    // Reverse wires and add offset for upper modules in induction views
+    if (tpc_xy > 3 and globalPlane < 2) globalWire += fGeometry->Nwires(globalPlane, tpc, 0) + offset - localWire;
+    else globalWire += localWire;
 
     if (tpc_x % 2 == 0) globalTDC = localTDC;
     else globalTDC = (2*drift_size) - localTDC;
@@ -426,8 +418,8 @@ namespace cvn
 
   SparsePixelMap PixelMapProducer::CreateSparseMap(std::vector< art::Ptr< recob::Hit> >& cluster) {
 
-    // Boundary bound = DefineBoundary(cluster);
-    SparsePixelMap map(2, 3);
+    // SparsePixelMap map(2, 3);
+    SparsePixelMap map(6, 3);
 
     for(size_t iHit = 0; iHit < cluster.size(); ++iHit) {
 
@@ -436,15 +428,22 @@ namespace cvn
       unsigned int globalWire  = wireid.Wire;
       unsigned int globalPlane = wireid.Plane;
 
-      if (fGeometry->DetectorName() != "dune10kt_v1")
-        throw art::Exception(art::errors::UnimplementedFeature)
-          << "Sparse pixel map maker only implemented for dune10kt_v1 geometry."
-          << std::endl;
+      if (fGeometry->DetectorName().find("1x2x6") != std::string::npos) {
+        GetDUNEGlobalWireTDC(wireid.Wire, cluster[iHit]->PeakTime(),
+          wireid.Plane, wireid.TPC, globalWire, globalPlane, globalTime);
+      }
+      else if (fGeometry->DetectorName() == "dune10kt_v1") {
+        if (wireid.TPC%6 == 0 or wireid.TPC%6 == 5) continue;
+        GetDUNE10ktGlobalWireTDC(wireid.Wire, cluster[iHit]->PeakTime(),
+          wireid.Plane, wireid.TPC, globalWire, globalPlane, globalTime);
+      }
+      else throw art::Exception(art::errors::UnimplementedFeature)
+        << "Geometry " << fGeometry->DetectorName() << " not implemented "
+        << "for dune10kt_v1 geometry." << std::endl;
 
-      if (wireid.TPC%6 == 0 or wireid.TPC%6 == 5) continue; // Skip dummy TPCs in 10kt module
-      GetDUNE10ktGlobalWireTDC(wireid.Wire, cluster[iHit]->PeakTime(),
-        wireid.Plane, wireid.TPC, globalWire, globalPlane, globalTime);
-      map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime}, cluster[iHit]->Integral());
+      // map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime}, cluster[iHit]->Integral());
+      map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime, wireid.TPC, wireid.Plane,
+        wireid.Wire, (unsigned int)cluster[iHit]->PeakTime()}, cluster[iHit]->Integral());
 
     } // for iHit
 

@@ -22,11 +22,12 @@ namespace cvn
     unsigned int GetDim() const { return fDim; };
     unsigned int GetViews() const { return fViews; }
     std::vector<unsigned int> GetNPixels() const;
+    unsigned int GetNPixels(size_t view) const { return fValues[view].size(); };
     std::vector<std::vector<std::vector<unsigned int>>> GetCoordinates() const { return fCoordinates; };
-    std::vector<std::vector<float>> GetValues() const { return fValues; };
     std::vector<std::vector<unsigned int>> GetCoordinates(size_t view) const { return fCoordinates[view]; };
-    std::vector<float> GetValues(size_t view) const { return fValues[view]; };
     std::vector<std::vector<unsigned int>> GetCoordinatesFlat() const;
+    std::vector<std::vector<float>> GetValues() const { return fValues; };
+    std::vector<float> GetValues(size_t view) const { return fValues[view]; };
     std::vector<float> GetValuesFlat() const;
 
   private:
