@@ -371,6 +371,28 @@ namespace cvn
     }
   }
 
+  // Recursive function to get all hits from daughters of a given neutral particle
+  unsigned int AssignLabels::GetNeutralDaughterHitsRecursive(const simb::MCParticle &particle) const{
+
+    unsigned int nSimIDEs = 0;
+
+    // The backtrack and particle inventory service will be useful here
+    art::ServiceHandle<cheat::BackTrackerService> backTrack;
+    art::ServiceHandle<cheat::ParticleInventoryService> partService;
+
+    for(int d = 0; d < particle.NumberDaughters(); ++d){
+
+      const simb::MCParticle *daughter = partService->TrackIdToParticle_P(particle.Daughter(d));     
+      unsigned int localSimIDEs = backTrack->TrackIdToSimIDEs_Ps(daughter->TrackId()).size();      
+
+      if(localSimIDEs == 0) localSimIDEs = GetNeutralDaughterHitsRecursive(*daughter);
+
+      nSimIDEs += localSimIDEs;
+    }
+
+    return nSimIDEs;
+  }
+
 }
 
 

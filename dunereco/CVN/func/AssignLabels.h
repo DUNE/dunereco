@@ -46,6 +46,9 @@ namespace cvn
    
     private:
 
+    // Recursive function to get all hits from daughters of a neutral particle
+    unsigned int GetNeutralDaughterHitsRecursive(const simb::MCParticle &particle) const;
+
     // unused unsigned int fTopologyHitsCut;
 
     unsigned short nProton;
