@@ -40,6 +40,12 @@ namespace cvn
     return fFeatures.size();
   }
 
+  /// Get the number of features
+  const unsigned int GCNGraphNode::GetNumberOfCoordinates() const
+  {
+    return fPosition.size();
+  }
+  
   /// Get feature
   const float GCNGraphNode::GetFeature(const unsigned int feature) const
   {

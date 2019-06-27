@@ -33,6 +33,9 @@ namespace cvn
     /// Get the number of features
     const unsigned int GetNumberOfFeatures() const;
 
+    /// Get the number of position coordinates
+    const unsigned int GetNumberOfCoordinates() const;
+
     /// Get feature - zero indexed - and returns -999. if feature doesn't exist
     const float GetFeature(const unsigned int feature) const;
 

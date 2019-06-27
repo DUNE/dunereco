@@ -37,20 +37,22 @@ namespace cvn
     /// Access nodes
     const GCNGraphNode GetNode(const unsigned int index) const;
 
-    /// Return minimum and maximum coordinate values ((xmin,xmax),(ymin,ymax),(zmin,zmax))
+    /// Return minimum and maximum position coordinate values 
     const std::vector<std::pair<float,float>> GetMinMaxPositions() const;
-    const std::pair<float,float> GetMinMaxX() const;
-    const std::pair<float,float> GetMinMaxY() const;
-    const std::pair<float,float> GetMinMaxZ() const;
+    const std::pair<float,float> GetCoordinateMinMax(unsigned int index) const;
 
-    /// Get the extent in each dimension (x,y,z)
+    /// Get the extent in each dimension
     const std::vector<float> GetSpacialExtent() const;
-    const float GetSpacialExtentX() const;
-    const float GetSpacialExtentY() const;
-    const float GetSpacialExtentZ() const;
+    const float GetCoordinateSpacialExtent(unsigned int index) const;
 
     /// Function to linearise the graph to a vector for zlib file creation
     const std::vector<float> ConvertGraphToVector() const;
+
+    /// Return the number of coordinates for each node
+    const unsigned int GetNumberOfNodeCoordinates() const;
+
+    /// Return the number of features for each node
+    const unsigned int GetNumberOfNodeFeatures() const;
 
   private:
 
