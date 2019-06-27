@@ -36,7 +36,11 @@ namespace cvn
   // Add a new node
   void GCNGraph::AddNode(std::vector<float> position, std::vector<float> features){
     GCNGraphNode newNode(position,features);
-    fNodes.push_back(newNode);
+    AddNode(newNode);
+  }
+
+  void GCNGraph::AddNode(cvn::GCNGraphNode node){
+    fNodes.push_back(node);
   }
 
   // Get the number of nodes

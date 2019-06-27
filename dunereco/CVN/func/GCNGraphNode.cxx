@@ -34,6 +34,16 @@ namespace cvn
     return fFeatures;
   }
 
+  /// Add a node position coordinate
+  void GCNGraphNode::AddPositionCoordinate(float pos){
+    fPosition.push_back(pos);
+  }
+
+  /// Add a node feature
+  void GCNGraphNode::AddFeature(float feature){
+    fFeatures.push_back(feature);
+  }
+
   /// Get the number of features
   const unsigned int GCNGraphNode::GetNumberOfFeatures() const
   {

@@ -23,6 +23,7 @@ namespace cvn
     GCNGraph();
     /// Constructor with position and feature vectors
     GCNGraph(std::vector<std::vector<float>> positions, std::vector<std::vector<float>> features);
+    /// Construct graph from a vector of GCNGraphNodes
     GCNGraph(std::vector<GCNGraphNode> nodes);
     /// Destructor
     ~GCNGraph(){};

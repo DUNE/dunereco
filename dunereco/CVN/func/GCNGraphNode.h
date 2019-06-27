@@ -30,6 +30,12 @@ namespace cvn
     /// Get the node features
     const std::vector<float> GetFeatures() const;
 
+    /// Add a node position coordinate
+    void AddPositionCoordinate(float pos);
+
+    /// Add a node feature
+    void AddFeature(float feature);
+
     /// Get the number of features
     const unsigned int GetNumberOfFeatures() const;
 
