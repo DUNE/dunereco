@@ -11,6 +11,10 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larsim/MCCheater/BackTrackerService.h"
 
+#include "dune/CVN/func/GCNGraph.h"
+#include "dune/CVN/func/GCNGraphNode.h"
+#include "dune/CVN/func/PixelMap.h"
+
 cvn::GCNFeatureUtils::GCNFeatureUtils() {
 
 }
@@ -127,3 +131,49 @@ const std::map<unsigned int, unsigned int> cvn::GCNFeatureUtils::GetTrueG4ID(
   }
   return ret;
 } // function GetTrueG4ID
+
+// Convert a pixel map into three 2D GCNGraph objects
+std::vector<cvn::GCNGraph> cvn::GCNFeatureUtils::ExtractGraphsFromPixelMap(const cvn::PixelMap &pm) const{
+
+  // Each pixel map has three vectors of length (nWires*nTDCs)
+  // Each value is the hit charge, and we will make GCNGraph for each view
+  std::vector<std::vector<float>> allViews;
+  allViews.push_back(pm.fPEX); 
+  allViews.push_back(pm.fPEY);
+  allViews.push_back(pm.fPEZ);
+
+  const unsigned int nWires = pm.fNWire;
+  const unsigned int nTDCs = pm.fNTdc;
+
+  std::vector<cvn::GCNGraph> outputGraphs;
+
+  for(unsigned int v = 0; v < allViews.size(); ++v){
+
+    cvn::GCNGraph newGraph;
+
+    for(unsigned int w = 0; w < nWires; ++w){
+
+      for(unsigned int t = 0; t < nTDCs; ++t){
+
+        const unsigned int index = w*nTDCs + t;
+        const float charge = allViews[v][index];
+
+        // If the charge is very small then ignore this pixel
+        if(charge < 1e-3) continue;        
+
+        // Put the positons into a vector
+        std::vector<float> pos = {static_cast<float>(w),static_cast<float>(t)};
+        // and the charge
+        std::vector<float> fea = {charge};
+
+        cvn::GCNGraphNode newNode(pos,fea);
+        newGraph.AddNode(newNode);
+      } // loop over TDCs
+    } // loop over wires
+    outputGraphs.push_back(newGraph);
+  } // loop over views
+
+  return outputGraphs;
+}
+
+
