@@ -113,13 +113,13 @@ namespace cvn {
       const std::map<unsigned int, unsigned int> *trueIDMap = nullptr;
       if (fTrueParticleFeature) trueIDMap = new const std::map<unsigned int, unsigned int>(graphUtil.GetTrueG4ID(evt, fSpacePointLabel));
 
-      for (const recob::SpacePoint &sp : *allSP) {
-
+      for (size_t itSP = 0; itSP < allSP->size(); ++itSP) {
+        const recob::SpacePoint& sp = allSP->at(itSP);
         // Do we only want collection plane spacepoints?
         if (fCollectionPlaneOnly) {
           // Are there any associated hits from the collection plane?
           bool collectionHit = false;
-          for (auto hit : sp2Hit.at(sp.ID())) {
+          for (auto hit : sp2Hit.at(itSP)) {
             if (hit->View() == 2) {
               collectionHit = true;
               break;
@@ -146,8 +146,8 @@ namespace cvn {
         newGraph.AddNode(position, features);
       }
 
-      std::cout << "GCNGraphMaker: produced GCNGraph object with " << newGraph.GetNumberOfNodes()
-      << " nodes from " << allSP->size() << " spacepoints." << std::endl;
+      mf::LogInfo("GCNGraphMaker") << "Produced GCNGraph object with "
+        << newGraph.GetNumberOfNodes() << " nodes from " << allSP->size() << " spacepoints.";
 
       // Add out graph to the vector
       graphs->push_back(newGraph);

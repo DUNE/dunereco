@@ -90,15 +90,18 @@ const std::map<unsigned int, float> cvn::GCNFeatureUtils::GetSpacePointChargeMap
   auto allSP = evt.getValidHandle<std::vector<recob::SpacePoint>>(spLabel);
   const art::FindManyP<recob::Hit> sp2Hit(allSP, evt, spLabel);
 
-  for (auto sp : *allSP) {
+  for (size_t itSP = 0; itSP < allSP->size(); ++itSP) {
+    const recob::SpacePoint& sp = allSP->at(itSP);
     float charge = 0.0;
-    const std::vector<art::Ptr<recob::Hit>> spHits = sp2Hit.at(sp.ID());
+    const std::vector<art::Ptr<recob::Hit>> spHits = sp2Hit.at(itSP);
     for (auto const hit : spHits) {
       charge += hit->Integral();
     }
     ret[sp.ID()] = charge;
   }
+
   return ret;
+
 } // function GetSpacePointChargeMap
 
 const std::map<unsigned int, unsigned int> cvn::GCNFeatureUtils::GetTrueG4ID(
@@ -111,10 +114,11 @@ const std::map<unsigned int, unsigned int> cvn::GCNFeatureUtils::GetTrueG4ID(
   auto allSP = evt.getValidHandle<std::vector<recob::SpacePoint>>(spLabel);
   const art::FindManyP<recob::Hit> sp2Hit(allSP, evt, spLabel);
 
-  for (const recob::SpacePoint &sp : *allSP) {
+  for (size_t itSP = 0; itSP < allSP->size(); ++itSP) {
+    const recob::SpacePoint& sp = allSP->at(itSP);
     // Use the backtracker to find the G4 IDs associated with these hits
     std::map<unsigned int, float> trueParticles;
-    for (auto hit : sp2Hit.at(sp.ID())) {
+    for (auto hit : sp2Hit.at(itSP)) {
       auto ides = bt->HitToTrackIDEs(hit);
       for (auto ide : ides) {
         unsigned int id = abs(ide.trackID);
