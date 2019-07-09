@@ -36,7 +36,8 @@ namespace cvn
     const unsigned int GetNumberOfNodes() const;
 
     /// Access nodes
-    const GCNGraphNode GetNode(const unsigned int index) const;
+    const GCNGraphNode& GetNode(const unsigned int index) const;
+    GCNGraphNode& GetNodeEditable(const unsigned int index);
 
     /// Return minimum and maximum position coordinate values 
     const std::vector<std::pair<float,float>> GetMinMaxPositions() const;

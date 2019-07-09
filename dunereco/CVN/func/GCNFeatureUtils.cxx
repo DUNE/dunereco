@@ -176,4 +176,59 @@ std::vector<cvn::GCNGraph> cvn::GCNFeatureUtils::ExtractGraphsFromPixelMap(const
   return outputGraphs;
 }
 
+const std::map<unsigned int,unsigned int> cvn::GCNFeatureUtils::Get2DGraphNeighbourMap(const cvn::GCNGraph &g, const unsigned int npixel) const{
+
+  std::map<unsigned int,unsigned int> neighbourMap;
+
+  // Loop over the nodes and get the wire and tdc
+  for(unsigned int n1 = 0; n1 < g.GetNumberOfNodes(); ++n1){
+
+    neighbourMap[n1] = 0;
+    const cvn::GCNGraphNode &node1 = g.GetNode(n1);
+    unsigned int w1 = node1.GetPosition()[0];
+    unsigned int t1 = node1.GetPosition()[1];
+
+    // Loop over the nodes again to compare w,t coordinates
+    for(unsigned int n2 = 0; n2 < g.GetNumberOfNodes(); ++n2){
+
+      if(n1 == n2) continue;
+
+      const cvn::GCNGraphNode &node2 = g.GetNode(n2);
+      unsigned int w2 = node2.GetPosition()[0];
+      unsigned int t2 = node2.GetPosition()[1];
+
+      // Check if the box around the node for neighbours
+      // In this example npixel = 2.
+      //
+      // |---|---|---|---|---|---|---|            
+      // |   |   |   |   |   |   |   |
+      // |---|---|---|---|---|---|---|            
+      // |   | x | x | x | x | x |   |
+      // |---|---|---|---|---|---|---|            
+      // |   | x | x | x | x | x |   |
+      // |---|---|---|---|---|---|---|            
+      // |   | x | x |n1 | x | x |   | t
+      // |---|---|---|---|---|---|---|            
+      // |   | x | x | x | x | x |   |
+      // |---|---|---|---|---|---|---|            
+      // |   | x | x | x | x | x |   |
+      // |---|---|---|---|---|---|---|            
+      // |   |   |   |   |   |   |   |
+      // |---|---|---|---|---|---|---|            
+      //               w
+
+      if(w2 <= w1 + npixel && w2 >= w1 - npixel){
+        if(t2 <= t1 + npixel && t2 >= t1 - npixel){
+          neighbourMap[n1]++;
+        }
+      }
+     
+    }
+  }
+
+  return neighbourMap;
+
+}
+
+
 

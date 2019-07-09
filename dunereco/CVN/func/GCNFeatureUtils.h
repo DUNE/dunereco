@@ -41,6 +41,8 @@ namespace cvn
 
     /// Convert a pixel map into three 2D GCNGraph objects
     std::vector<cvn::GCNGraph> ExtractGraphsFromPixelMap(const cvn::PixelMap &pm) const;
+    /// Get the neighbours map <graph node, neighbours> for the three 2D graph in 2 box (npixel+1) around the pixel
+    const std::map<unsigned int,unsigned int> Get2DGraphNeighbourMap(const cvn::GCNGraph &g, const unsigned int npixel) const;
 
   private:
 

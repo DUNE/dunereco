@@ -49,8 +49,7 @@ namespace cvn
   }
 
   // Access nodes
-  const GCNGraphNode GCNGraph::GetNode(const unsigned int index) const{
-
+  const GCNGraphNode& GCNGraph::GetNode(const unsigned int index) const{
     if(this->GetNumberOfNodes() == 0){
       std::cerr << "GCNGraph::GetNode(): Can't access node with index " << index << std::endl;
       assert(0);
@@ -59,6 +58,14 @@ namespace cvn
     return fNodes.at(index);
   }
 
+  GCNGraphNode& GCNGraph::GetNodeEditable(const unsigned int index){
+    if(this->GetNumberOfNodes() == 0){
+      std::cerr << "GCNGraph::GetNode(): Can't access node with index " << index << std::endl;
+      assert(0);
+    }
+
+    return fNodes.at(index);
+  }
 
   // Return minimum and maximum coordinate values
   const std::vector<std::pair<float,float>> GCNGraph::GetMinMaxPositions() const{
