@@ -146,22 +146,22 @@ namespace cvn {
 
     // The truth information we need is the interaction vertex and interaction type
     AssignLabels labels;
-    unsigned short pionInteraction;
+    unsigned short beamParticleInteraction;
 
     // We only have one beam particle called "primary", so find it. It should be the
     // first particle, but best not to assume
-    float pionEnergy = 0;
-    TVector3 pionVtx; // This is the interaction vertex
-    int pionPDG = 0;
+    float beamParticleEnergy = 0;
+    TVector3 beamParticleVtx; // This is the interaction vertex
+    int beamParticlePDG = 0;
 
     bool gotPrimary = false;
     for(auto const m : piService->ParticleList()){
       const simb::MCParticle* particle = m.second;
-      if(abs(particle->PdgCode()) == 211 && particle->Process().compare("primary")==0){
-        pionEnergy = particle->E();
-        pionVtx.SetXYZ(particle->EndX(),particle->EndY(),particle->EndZ());
-        pionPDG = particle->PdgCode();
-        pionInteraction = labels.GetProtoDUNEPionInteraction(*particle);
+      if(particle->Process().compare("primary")==0){
+        beamParticleEnergy = particle->E();
+        beamParticleVtx.SetXYZ(particle->EndX(),particle->EndY(),particle->EndZ());
+        beamParticlePDG = particle->PdgCode();
+        beamParticleInteraction = labels.GetProtoDUNEBeamInteractionType(*particle);
         gotPrimary = true;
         break;
       }
@@ -169,7 +169,7 @@ namespace cvn {
 
     if(!gotPrimary) return;
 
-    const PrimaryTrainingInfo beamPrimary(pionVtx,pionInteraction,pionPDG,pionEnergy);
+    const PrimaryTrainingInfo beamPrimary(beamParticleVtx,beamParticleInteraction,beamParticlePDG,beamParticleEnergy);
 
     this->write_files(beamPrimary, pixelmaps.at(0), evt.event());
   }

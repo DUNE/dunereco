@@ -115,22 +115,22 @@ namespace cvn {
     art::ServiceHandle< cheat::ParticleInventoryService > piService;
 
     AssignLabels labels;
-    unsigned short pionInteraction;
+    unsigned short beamParticleInteraction;
 
     // We only have one beam particle->called "primary", so find it. It should be the
     // first particle-> but best not to assume
-    float pionEnergy = 0;
-    TVector3 pionVtx; // This is the interaction vertex
-    int pionPDG = 0;
+    float beamParticleEnergy = 0;
+    TVector3 beamParticleVtx; // This is the interaction vertex
+    int beamParticlePDG = 0;
 
     bool gotPrimary = false;
     for(auto const m: piService->ParticleList()){
       const simb::MCParticle* particle = m.second;
-      if(abs(particle->PdgCode()) == 211 && particle->Process().compare("primary")==0){
-        pionEnergy = particle->E();
-        pionVtx.SetXYZ(particle->EndX(),particle->EndY(),particle->EndZ());
-        pionPDG = particle->PdgCode();
-        pionInteraction = labels.GetProtoDUNEPionInteraction(*particle);
+      if(abs(particle->Process().compare("primary")==0)){
+        beamParticleEnergy = particle->E();
+        beamParticleVtx.SetXYZ(particle->EndX(),particle->EndY(),particle->EndZ());
+        beamParticlePDG = particle->PdgCode();
+        beamParticleInteraction = labels.GetProtoDUNEBeamInteractionType(*particle);
         gotPrimary = true;
         break;
       }
@@ -174,12 +174,12 @@ namespace cvn {
         image_file.close(); // close file
 
         // Write the auxillary information to the text file
-        info_file << pionVtx.X() << std::endl;
-        info_file << pionVtx.Y() << std::endl;
-        info_file << pionVtx.Z() << std::endl;
-        info_file << pionEnergy << std::endl;
-        info_file << pionInteraction << std::endl; // Interaction type first
-        info_file << pionPDG << std::endl;
+        info_file << beamParticleVtx.X() << std::endl;
+        info_file << beamParticleVtx.Y() << std::endl;
+        info_file << beamParticleVtx.Z() << std::endl;
+        info_file << beamParticleEnergy << std::endl;
+        info_file << beamParticleInteraction << std::endl; // Interaction type first
+        info_file << beamParticlePDG << std::endl;
 
         // Number of nodes and node features is needed for unpacking
         info_file << graphs[0]->GetNumberOfNodes() << std::endl;
