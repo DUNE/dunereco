@@ -42,7 +42,7 @@ namespace cvn
     unsigned short GetTopologyTypeAlt();
 
     // Get the pion interaction mode for ProtoDUNE specific code
-    unsigned short GetProtoDUNEPionInteraction(const simb::MCParticle &particle) const;
+    unsigned short GetProtoDUNEBeamInteractionType(const simb::MCParticle &particle) const;
    
     private:
 
