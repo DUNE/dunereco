@@ -137,7 +137,7 @@ const std::map<unsigned int, unsigned int> cvn::GCNFeatureUtils::GetTrueG4ID(
 } // function GetTrueG4ID
 
 // Convert a pixel map into three 2D GCNGraph objects
-std::vector<cvn::GCNGraph> cvn::GCNFeatureUtils::ExtractGraphsFromPixelMap(const cvn::PixelMap &pm) const{
+std::vector<cvn::GCNGraph> cvn::GCNFeatureUtils::ExtractGraphsFromPixelMap(const cvn::PixelMap &pm, const float chargeThreshold) const{
 
   // Each pixel map has three vectors of length (nWires*nTDCs)
   // Each value is the hit charge, and we will make GCNGraph for each view
@@ -163,14 +163,14 @@ std::vector<cvn::GCNGraph> cvn::GCNFeatureUtils::ExtractGraphsFromPixelMap(const
         const float charge = allViews[v][index];
 
         // If the charge is very small then ignore this pixel
-        if(charge < 1e-3) continue;        
+        if(charge < chargeThreshold) continue;        
 
         // Put the positons into a vector
         std::vector<float> pos = {static_cast<float>(w),static_cast<float>(t)};
         // and the charge
-        std::vector<float> fea = {charge};
+        std::vector<float> features = {charge};
 
-        cvn::GCNGraphNode newNode(pos,fea);
+        cvn::GCNGraphNode newNode(pos,features);
         newGraph.AddNode(newNode);
       } // loop over TDCs
     } // loop over wires
@@ -189,8 +189,8 @@ const std::map<unsigned int,unsigned int> cvn::GCNFeatureUtils::Get2DGraphNeighb
 
     neighbourMap[n1] = 0;
     const cvn::GCNGraphNode &node1 = g.GetNode(n1);
-    unsigned int w1 = node1.GetPosition()[0];
-    unsigned int t1 = node1.GetPosition()[1];
+    const unsigned int w1 = static_cast<unsigned int>(node1.GetPosition()[0]);
+    const unsigned int t1 = static_cast<unsigned int>(node1.GetPosition()[1]);
 
     // Loop over the nodes again to compare w,t coordinates
     for(unsigned int n2 = 0; n2 < g.GetNumberOfNodes(); ++n2){
@@ -198,8 +198,8 @@ const std::map<unsigned int,unsigned int> cvn::GCNFeatureUtils::Get2DGraphNeighb
       if(n1 == n2) continue;
 
       const cvn::GCNGraphNode &node2 = g.GetNode(n2);
-      unsigned int w2 = node2.GetPosition()[0];
-      unsigned int t2 = node2.GetPosition()[1];
+      const unsigned int w2 = static_cast<unsigned int>(node2.GetPosition()[0]);
+      const unsigned int t2 = static_cast<unsigned int>(node2.GetPosition()[1]);
 
       // Check if the box around the node for neighbours
       // In this example npixel = 2.
