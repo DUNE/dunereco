@@ -204,10 +204,13 @@ namespace cvn
 
       // Special case for pi-zeros since it is the decay photons and their pair produced electrons that deposit energy
       if(pdg == 111 || pdg == 2112){
+        unsigned int nDummyHits = GetNeutralDaughterHitsRecursive(part);
+        std::cout << "New method of neutral daughters for " << pdg << " = " << nDummyHits << std::endl;
         // Decay photons
         for(int d = 0; d < part.NumberDaughters(); ++d){
-          nSimIDE = backTrack->TrackIdToSimIDEs_Ps(part.Daughter(d)).size();
+          nSimIDE += backTrack->TrackIdToSimIDEs_Ps(part.Daughter(d)).size();
         }
+        std::cout << "Old method of neutral daughters for " << pdg << " = " << nSimIDE << std::endl;
       }
 
       // Do we pass the number of hits cut?
@@ -381,7 +384,7 @@ namespace cvn
 
       const simb::MCParticle *daughter = partService->TrackIdToParticle_P(particle.Daughter(d));     
       unsigned int localSimIDEs = backTrack->TrackIdToSimIDEs_Ps(daughter->TrackId()).size();      
-
+      std::cout << "Got " << localSimIDEs << " hits from " << daughter->PdgCode() << std::endl;
       if(localSimIDEs == 0) localSimIDEs = GetNeutralDaughterHitsRecursive(*daughter);
 
       nSimIDEs += localSimIDEs;
