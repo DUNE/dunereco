@@ -111,11 +111,8 @@ namespace cvn {
       art::fill_ptr_vector(graphs, h_graphs);
 
     // If no graphs, quit
+    std::cout << "Found " << graphs.size() << " graphs" << std::endl;
     if (graphs.size() == 0) return;
-    // If the graph has no nodes then give up
-    if(graphs[0]->GetNumberOfNodes() == 0) return;
-
-    std::cout << "GCNZlibMaker: found graph with " << graphs[0]->GetNumberOfNodes() << " nodes" << std::endl;
 
     InteractionType interaction = kOther;
 
@@ -164,92 +161,107 @@ namespace cvn {
     }
 
     // Get nutau info
-//    if (fEnergyNutauLabel != "") {
-//      art::Handle<dune::EnergyRecoOutput> h_ereco;
-//      evt.getByLabel(fEnergyNutauLabel, h_ereco);
-//      reco_nutau_energy = h_ereco->fNuLorentzVector.E();
-//    }
+    if (fEnergyNutauLabel != "") {
+      art::Handle<dune::EnergyRecoOutput> h_ereco;
+      evt.getByLabel(fEnergyNutauLabel, h_ereco);
+      reco_nutau_energy = h_ereco->fNuLorentzVector.E();
+    }
 
     float event_weight = -1.0; // We currently just set this to -1
 
-    // Now write the zlib file using this information
-    // We need to extract all of the information into a single vector to write
-    // into the compressed file format
-    const std::vector<float> vectorToWrite = graphs[0]->ConvertGraphToVector();
- 
-    ulong src_len = vectorToWrite.size() *sizeof(float);
-    ulong dest_len = compressBound(src_len);     // calculate size of the compressed data               
-    char* ostream = (char *) malloc(dest_len);  // allocate memory for the compressed data
-
-    int res = compress((Bytef *) ostream, &dest_len, (Bytef *) &vectorToWrite[0], src_len);
-
-    // Buffer error
-    if (res == Z_BUF_ERROR)
-      std::cout << "Buffer too small!" << std::endl;
-    // Memory error
-    else if (res ==  Z_MEM_ERROR)
-      std::cout << "Not enough memory for compression!" << std::endl;
-    // Compression ok 
-    else {
-
-      // Create output files 
-      std::stringstream image_file_name; 
-      image_file_name << out_dir << "/event_" << evt.event() << ".gz";
-      std::stringstream info_file_name;
-      info_file_name << out_dir << "/event_" << evt.event() << ".info";
-
-      std::ofstream image_file (image_file_name.str(), std::ofstream::binary);
-      std::ofstream info_file  (info_file_name.str());
-
-      if(image_file.is_open() && info_file.is_open()) {
-
-        // Write the graph to the file and close it
-        image_file.write(ostream, dest_len);
-        image_file.close(); // close file
-
-        // Write the auxillary information to the text file
-        info_file << interaction << std::endl; // Interaction type first
-
-        // True and reconstructed energy variables
-        info_file << nu_energy << std::endl;
-        info_file << lep_energy << std::endl;
-        info_file << reco_nue_energy << std::endl;
-        info_file << reco_numu_energy << std::endl;
-        info_file << reco_nutau_energy << std::endl;
-        info_file << event_weight << std::endl;
-
-        info_file << labels.GetPDG() << std::endl;
-        info_file << labels.GetNProtons() << std::endl;
-        info_file << labels.GetNPions() << std::endl;
-        info_file << labels.GetNPizeros() << std::endl;
-        info_file << labels.GetNNeutrons() << std::endl;
-        info_file << labels.GetTopologyType() << std::endl;
-        info_file << labels.GetTopologyTypeAlt() << std::endl;
-
-        // Number of nodes and node features is needed for unpacking
-        info_file << graphs[0]->GetNumberOfNodes() << std::endl;
-        info_file << graphs[0]->GetNode(0).GetNumberOfFeatures() << std::endl;
-
-        info_file.close(); // close file
-      }
+    // If the graph has no nodes then give up
+    for(unsigned int i = 0; i < graphs.size(); ++i){
+      const art::Ptr<cvn::GCNGraph> g = graphs.at(i);
+      
+      std::cout << "GCNZlibMaker: found graph with " << g->GetNumberOfNodes() << " nodes" << std::endl;
+      if(g->GetNumberOfNodes() == 0) continue;
+  
+      // Now write the zlib file using this information
+      // We need to extract all of the information into a single vector to write
+      // into the compressed file format
+      const std::vector<float> vectorToWrite = g->ConvertGraphToVector();
+   
+      ulong src_len = vectorToWrite.size() *sizeof(float);
+      ulong dest_len = compressBound(src_len);     // calculate size of the compressed data               
+      char* ostream = (char *) malloc(dest_len);  // allocate memory for the compressed data
+  
+      int res = compress((Bytef *) ostream, &dest_len, (Bytef *) &vectorToWrite[0], src_len);
+  
+      // Buffer error
+      if (res == Z_BUF_ERROR)
+        std::cout << "Buffer too small!" << std::endl;
+      // Memory error
+      else if (res ==  Z_MEM_ERROR)
+        std::cout << "Not enough memory for compression!" << std::endl;
+      // Compression ok 
       else {
 
-        if (image_file.is_open())
-          image_file.close();
-        else 
-          throw art::Exception(art::errors::FileOpenError)
-            << "Unable to open file " << image_file_name.str() << "!" << std::endl;
-
-        if (info_file.is_open())
-          info_file.close();
-        else
-          throw art::Exception(art::errors::FileOpenError)
-            << "Unable to open file " << info_file_name.str() << "!" << std::endl;
+        std::stringstream modifier;
+        if(graphs.size() > 1){
+          modifier << "_" << i;
+        }
+  
+        // Create output files 
+        std::stringstream image_file_name; 
+        image_file_name << out_dir << "/event_" << evt.event() << modifier.str() << ".gz";
+        std::stringstream info_file_name;
+        info_file_name << out_dir << "/event_" << evt.event() << modifier.str() << ".info";
+  
+        std::ofstream image_file (image_file_name.str(), std::ofstream::binary);
+        std::ofstream info_file  (info_file_name.str());
+  
+        if(image_file.is_open() && info_file.is_open()) {
+  
+          // Write the graph to the file and close it
+          image_file.write(ostream, dest_len);
+          image_file.close(); // close file
+  
+          // Write the auxillary information to the text file
+          info_file << interaction << std::endl; // Interaction type first
+  
+          // True and reconstructed energy variables
+          info_file << nu_energy << std::endl;
+          info_file << lep_energy << std::endl;
+          info_file << reco_nue_energy << std::endl;
+          info_file << reco_numu_energy << std::endl;
+          info_file << reco_nutau_energy << std::endl;
+          info_file << event_weight << std::endl;
+  
+          info_file << labels.GetPDG() << std::endl;
+          info_file << labels.GetNProtons() << std::endl;
+          info_file << labels.GetNPions() << std::endl;
+          info_file << labels.GetNPizeros() << std::endl;
+          info_file << labels.GetNNeutrons() << std::endl;
+          info_file << labels.GetTopologyType() << std::endl;
+          info_file << labels.GetTopologyTypeAlt() << std::endl;
+  
+          // Number of nodes and node features is needed for unpacking
+          info_file << g->GetNumberOfNodes() << std::endl;
+          info_file << g->GetNumberOfNodeCoordinates() << std::endl;
+          info_file << g->GetNumberOfNodeFeatures() << std::endl;
+  
+          info_file.close(); // close file
+        }
+        else {
+  
+          if (image_file.is_open())
+            image_file.close();
+          else 
+            throw art::Exception(art::errors::FileOpenError)
+              << "Unable to open file " << image_file_name.str() << "!" << std::endl;
+  
+          if (info_file.is_open())
+            info_file.close();
+          else
+            throw art::Exception(art::errors::FileOpenError)
+              << "Unable to open file " << info_file_name.str() << "!" << std::endl;
+        }
       }
+      free(ostream);  // free allocated memory
+      ostream = nullptr;
     }
     
-    free(ostream);  // free allocated memory
-
+    return;
   }
     
 DEFINE_ART_MODULE(cvn::GCNZlibMaker)
