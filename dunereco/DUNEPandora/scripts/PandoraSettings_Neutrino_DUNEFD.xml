@@ -97,7 +97,7 @@
         <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
         <OutputVertexListName>NeutrinoVertices3D</OutputVertexListName>
         <ReplaceCurrentVertexList>true</ReplaceCurrentVertexList>
-        <MvaFileName>PandoraMVAData/PandoraBdt_v03_15_00.xml</MvaFileName>
+        <MvaFileName>PandoraMVAData/PandoraBdt_v03_15_02.xml</MvaFileName>
         <RegionMvaName>DUNEFD_VertexSelectionRegion</RegionMvaName>
         <VertexMvaName>DUNEFD_VertexSelectionVertex</VertexMvaName>
         <FeatureTools>
