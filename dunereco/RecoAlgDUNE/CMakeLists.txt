@@ -5,7 +5,7 @@ art_make(
            larsim_MCCheater_ParticleInventoryService_service
                         lardataobj_RecoBase
                         lardata_ArtDataHelper
-                        larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
+                        larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
                         larevt_Filters
                         larcorealg_Geometry
                         larcore_Geometry_Geometry_service
