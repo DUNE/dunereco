@@ -11,7 +11,7 @@ simple_plugin(SNSlicer "module"
                         lardataobj_RawData
 			lardataobj_RecoBase
 			nusimdata_SimulationBase
-                        nutools_ParticleNavigation
+                        nug4_ParticleNavigation
                         lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
                         ${ART_FRAMEWORK_CORE}
                         ${ART_FRAMEWORK_PRINCIPAL}

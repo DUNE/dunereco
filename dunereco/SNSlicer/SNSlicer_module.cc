@@ -24,7 +24,7 @@
 //#include "larsim/MCCheater/BackTrackerService.h"
 //#include "larsim/MCCheater/ParticleInventoryService.h"
 //#include "larsim/MCCheater/PhotonBackTrackerService.h"
-#include "nutools/ParticleNavigation/EmEveIdCalculator.h"
+#include "nug4/ParticleNavigation/EmEveIdCalculator.h"
 
 #include "nusimdata/SimulationBase/MCTruth.h"
 
