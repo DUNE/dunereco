@@ -78,21 +78,37 @@
     </algorithm>
 
     <!-- VertexAlgorithms -->
+    <algorithm type = "LArCutClusterCharacterisation">
+        <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
+        <MaxShowerLengthCut>500.</MaxShowerLengthCut>
+        <VertexDistanceRatioCut>500.</VertexDistanceRatioCut>
+    </algorithm>
     <algorithm type = "LArCandidateVertexCreation">
         <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
         <OutputVertexListName>CandidateVertices3D</OutputVertexListName>
         <ReplaceCurrentVertexList>true</ReplaceCurrentVertexList>
         <EnableCrossingCandidates>false</EnableCrossingCandidates>
     </algorithm>
-    <algorithm type = "LArEnergyKickVertexSelection">
+    <algorithm type = "LArBdtVertexSelection">
         <InputCaloHitListNames>CaloHitListU CaloHitListV CaloHitListW</InputCaloHitListNames>
         <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
         <OutputVertexListName>NeutrinoVertices3D</OutputVertexListName>
         <ReplaceCurrentVertexList>true</ReplaceCurrentVertexList>
+        <MvaFileName>PandoraMVAData/PandoraBdt_v03_15_02.xml</MvaFileName>
+        <RegionMvaName>ProtoDUNE_VertexSelectionRegion</RegionMvaName>
+        <VertexMvaName>ProtoDUNE_VertexSelectionVertex</VertexMvaName>
+        <TestBeamMode>true</TestBeamMode>
         <FeatureTools>
             <tool type = "LArEnergyKickFeature"/>
             <tool type = "LArLocalAsymmetryFeature"/>
+            <tool type = "LArGlobalAsymmetryFeature"/>
+            <tool type = "LArShowerAsymmetryFeature"/>
+            <tool type = "LArRPhiFeature"/>
         </FeatureTools>
+    </algorithm>
+    <algorithm type = "LArCutClusterCharacterisation">
+        <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
+        <ZeroMode>true</ZeroMode>
     </algorithm>
     <algorithm type = "LArVertexSplitting">
         <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>

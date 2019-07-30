@@ -68,7 +68,7 @@ simple_plugin(NueAna   "module"
 		        larcorealg_Geometry
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
-			larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
+			larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
 			larsim_MCCheater_BackTrackerService_service
            larsim_MCCheater_ParticleInventoryService_service
 			nusimdata_SimulationBase
@@ -89,8 +89,8 @@ simple_plugin(NueAna   "module"
 
 simple_plugin(MVASelect   "module"
                         MVAAlg
-                        nutools_NuReweight
-                        nutools_NuReweight_art
+                        nugen_NuReweight
+                        nugen_NuReweight_art
 			nusimdata_SimulationBase
                         ${GHEP}
                         ${GEVGCORE}
@@ -160,7 +160,7 @@ simple_plugin(IniSegReco "module"
 		      larcorealg_Geometry
 		      larcore_Geometry_Geometry_service
 		      lardata_Utilities
-		      larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
+		      larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
 		      larsim_MCCheater_BackTrackerService_service
            larsim_MCCheater_ParticleInventoryService_service
 		      nusimdata_SimulationBase
@@ -189,7 +189,7 @@ simple_plugin(ShSeg   "module"
 			larcorealg_Geometry
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
-			larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
+			larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
 			
 			
 			larsim_MCCheater_BackTrackerService_service
@@ -212,8 +212,8 @@ simple_plugin(ShSeg   "module"
 
 simple_plugin(EnergyReco   "module"
                         MVAAlg
-                        nutools_NuReweight
-                        nutools_NuReweight_art
+                        nugen_NuReweight
+                        nugen_NuReweight_art
                         nusimdata_SimulationBase
                         larcore_Geometry_Geometry_service
                         larreco_Calorimetry
@@ -280,8 +280,8 @@ simple_plugin(EnergyReco   "module"
 )
 
 simple_plugin(CheckRecoEnergy   "module"
-                        nutools_NuReweight
-                        nutools_NuReweight_art
+                        nugen_NuReweight
+                        nugen_NuReweight_art
                         nusimdata_SimulationBase
                         ${GHEP}
                         ${GEVGCORE}
