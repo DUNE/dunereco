@@ -1,0 +1,12 @@
+BEGIN_PROLOG
+
+
+standard_numberofhitsfilter:
+{
+ module_type:     "NumberOfHitsFilter"
+ LimitPerTPC: true
+ HitModule:   "hitpdune"
+ HitLimit:    "40000"
+}
+
+END_PROLOG
