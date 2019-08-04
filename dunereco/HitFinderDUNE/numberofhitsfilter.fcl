@@ -5,7 +5,7 @@ standard_numberofhitsfilter:
 {
  module_type:     "NumberOfHitsFilter"
  LimitPerTPC: true
- HitModule:   "hitpdune"
+ HitModule:   "gaushit"
  HitLimit:    "40000"
 }
 
