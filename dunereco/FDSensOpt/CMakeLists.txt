@@ -119,7 +119,7 @@ simple_plugin(NueAna   "module"
 		        larcorealg_Geometry
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
-			larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
+			larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
 			larsim_MCCheater_BackTrackerService_service
            larsim_MCCheater_ParticleInventoryService_service
 			nusimdata_SimulationBase
@@ -171,7 +171,7 @@ simple_plugin(IniSegReco "module"
 		      larcorealg_Geometry
 		      larcore_Geometry_Geometry_service
 		      lardata_Utilities
-		      larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
+		      larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
 		      larsim_MCCheater_BackTrackerService_service
            larsim_MCCheater_ParticleInventoryService_service
 		      nusimdata_SimulationBase
@@ -200,7 +200,7 @@ simple_plugin(ShSeg   "module"
 			larcorealg_Geometry
 			larcore_Geometry_Geometry_service
 			lardata_Utilities
-			larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
+			larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
 			
 			
 			larsim_MCCheater_BackTrackerService_service
