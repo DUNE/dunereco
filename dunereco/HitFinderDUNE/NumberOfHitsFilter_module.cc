@@ -10,14 +10,17 @@
 // Framework includes
 #include "art/Framework/Core/EDFilter.h"
 #include "art/Framework/Principal/Event.h"
+#include "art/Framework/Principal/Run.h"
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art_root_io/TFileService.h"
 #include "art/Framework/Core/ModuleMacros.h"
+#include "art/Framework/Services/Registry/ActivityRegistry.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "fhiclcpp/ParameterSet.h"
 
 #include "lardataobj/RecoBase/Hit.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 namespace hit{
   class NumberOfHitsFilter;
@@ -29,15 +32,17 @@ public:
   explicit NumberOfHitsFilter(fhicl::ParameterSet const& pset);
   virtual ~NumberOfHitsFilter();
   
-  void beginJob();
-  bool filter(art::Event& evt);
-  void endJob();
-  
+  void beginJob() override;
+  bool filter(art::Event& evt) override;
+  bool beginRun(art::Run& r) override;
+  void endJob() override;
+
 private:
 
   bool fLimitPerTPC;
   unsigned int fHitLimit;
-  std::string fHitModule;  
+  std::string fHitModule;
+  bool fScaleThresholdForReadoutWindow;
 };
   
 //-----------------------------------------------------------------------
@@ -47,6 +52,7 @@ hit::NumberOfHitsFilter::NumberOfHitsFilter(fhicl::ParameterSet const& pset):
   fLimitPerTPC = pset.get<bool>("LimitPerTPC");
   fHitLimit = pset.get<unsigned int>("HitLimit");
   fHitModule = pset.get<std::string>("HitModule");
+  fScaleThresholdForReadoutWindow = pset.get<bool>("ScaleThresholdForReadoutWindow");
 }
 
 //-----------------------------------------------------------------------
@@ -54,7 +60,16 @@ hit::NumberOfHitsFilter::~NumberOfHitsFilter(){}
 
 //-----------------------------------------------------------------------
 void hit::NumberOfHitsFilter::beginJob() {}
-
+//-----------------------------------------------------------------------
+bool hit::NumberOfHitsFilter::beginRun(art::Run& r){
+  if (fScaleThresholdForReadoutWindow){
+    unsigned int fSize = art::ServiceHandle<detinfo::DetectorPropertiesService const>{}->provider()->ReadOutWindowSize();
+    fHitLimit = (unsigned int)(fHitLimit*fSize/6000.);
+    std::cout<<"Scale HitLimit based on readout window size "<<fSize<<std::endl;
+    std::cout<<"HitLimit = "<<fHitLimit<<std::endl;
+  }
+  return true;
+}
 //-----------------------------------------------------------------------
 bool hit::NumberOfHitsFilter::filter(art::Event& evt){
 
