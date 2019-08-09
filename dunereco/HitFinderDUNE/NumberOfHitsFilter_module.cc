@@ -32,10 +32,10 @@ public:
   explicit NumberOfHitsFilter(fhicl::ParameterSet const& pset);
   virtual ~NumberOfHitsFilter();
   
-  void beginJob();
+  void beginJob() override;
   bool filter(art::Event& evt) override;
   bool beginRun(art::Run& r) override;
-  void endJob();
+  void endJob() override;
 
 private:
 
