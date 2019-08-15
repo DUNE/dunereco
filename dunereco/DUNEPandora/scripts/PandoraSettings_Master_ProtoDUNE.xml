@@ -35,7 +35,7 @@
                 <MinAdaBDTScore>-0.225</MinAdaBDTScore>
             </tool>
         </SliceIdTools>
-        <InputHitListName>Input</InputHitListName>
+        <InputHitListName>CaloHitList2D</InputHitListName>
         <RecreatedPfoListName>RecreatedPfos</RecreatedPfoListName>
         <RecreatedClusterListName>RecreatedClusters</RecreatedClusterListName>
         <RecreatedVertexListName>RecreatedVertices</RecreatedVertexListName>

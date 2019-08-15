@@ -23,7 +23,7 @@
 #include "art/Persistency/Common/PtrMaker.h"
 
 #include "nugen/NuReweight/art/NuReweight.h"
-#include "Utils/AppInit.h"
+#include "Framework/Utils/AppInit.h"
 #include "nusimdata/SimulationBase/GTruth.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCFlux.h"
@@ -51,12 +51,12 @@
 #include "TH2D.h"
 #include "TLorentzVector.h"
 
-#include "PDG/PDGCodes.h"
-#include "PDG/PDGUtils.h"
-#include "PDG/PDGLibrary.h"
+#include "Framework/ParticleData/PDGCodes.h"
+#include "Framework/ParticleData/PDGUtils.h"
+#include "Framework/ParticleData/PDGLibrary.h"
 
-#include "EVGCore/EventRecord.h"
-#include "GHEP/GHepParticle.h"
+#include "Framework/EventGen/EventRecord.h"
+#include "Framework/GHEP/GHepParticle.h"
 
 namespace dune {
 
