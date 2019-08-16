@@ -49,7 +49,7 @@ namespace cnn
 		      center_of_mass[ii] = networkOutput[ii];
 	      }
 	      networkOutput[1] += 7; networkOutput[5] += 7;
-              networkOutput[3] -= 7;
+              networkOutput[3] -= 9;
 
       	      RegPixelMap pm;
               pm = fProducer.CreateMap(hitlist, fmwire, networkOutput);

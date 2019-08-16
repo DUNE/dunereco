@@ -23,6 +23,7 @@ art_make(MODULE_LIBRARIES
   larreco_RecoAlg
   larcorealg_Geometry
   larcore_Geometry_Geometry_service
+  larpandora_LArPandoraInterface
   )
 
 
