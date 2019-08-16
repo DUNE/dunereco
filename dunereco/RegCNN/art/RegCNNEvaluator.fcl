@@ -38,4 +38,16 @@ standard_regcnnevaluator:
   RegCNNVtxHandler: @local::standard_regcnnvtxhandler
 }
 
+standard_regcnnvtxevaluator: @local::standard_regcnnevaluator
+
+standard_regcnnvtxevaluator.PixelMapInput: "regcnnvtxmap"
+standard_regcnnvtxevaluator.Target:        "nuevertex_on_img"
+standard_regcnnvtxevaluator.ResultLabel:   "regcnnvtxresult"
+standard_regcnnvtxevaluator.RegCNNVtxHandler.TFNetHandler1st.NInputs: 3
+standard_regcnnvtxevaluator.RegCNNVtxHandler.TFNetHandler1st.TFProtoBuf: "duneRegCNN/dune_nue_vertices_cascade_1stage_20190423-213724.pb"
+standard_regcnnvtxevaluator.RegCNNVtxHandler.TFNetHandler2nd.NInputs: 4
+standard_regcnnvtxevaluator.RegCNNVtxHandler.TFNetHandler2nd.TFProtoBuf: "duneRegCNN/dune_nue_vertices_cascade_2stage_20190701-171845.pb"
+
+
+
 END_PROLOG
