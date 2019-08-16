@@ -12,6 +12,7 @@
 #include  <list>
 #include  <algorithm>
 
+#include "larcorealg/Geometry/Exceptions.h" // geo::InvalidWireError
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "dune/RegCNN/art/RegPixelMapProducer.h"
 #include  "TVector2.h"
