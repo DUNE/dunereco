@@ -3,7 +3,6 @@
 #include_directories( $ENV{CAFFE_SRC} )
 include_directories( $ENV{GSL_INC}/gsl )
 include_directories( $ENV{HDF5_INC} )
-include_directories( $ENV{H5CPP_INC} )
 #include_directories( $ENV{PROTOBUF_INC} )
 #include_directories( $ENV{LEVELDB_INC} )
 #include_directories( $ENV{GFLAGS_INC} )
@@ -28,11 +27,6 @@ if (DEFINED ENV{TENSORFLOW_DIR})
 else(DEFINED ENV{TENSORFLOW_DIR})
 set (EXCLUDE_TF TFNetHandler.cxx)
 endif (DEFINED ENV{TENSORFLOW_DIR})
-
-# HDF5 stuff
-if   (NOT DEFINED ENV{H5CPP_DIR} OR NOT DEFINED ENV{HDF5_DIR})
-set  (EXCLUDE_HDF5 CVNH5CPP_module.cc)
-endif(NOT DEFINED ENV{H5CPP_DIR} OR NOT DEFINED ENV{HDF5_DIR})
 
 art_make(BASENAME_ONLY
   LIBRARY_NAME      CVNArt
