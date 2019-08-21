@@ -98,7 +98,11 @@ namespace cvn {
       pmCol(new std::vector<cvn::SparsePixelMap>);
 
     if (nhits > fMinClusterHits) {
-      pmCol->push_back(fProducer.CreateSparseMap(hitlist));
+      SparsePixelMap map = fProducer.CreateSparseMap(hitlist);
+      mf::LogInfo("CVNSparseMapper") << "Created sparse pixel map with "
+        << map.GetNPixels(0) << ", " << map.GetNPixels(1) << ", "
+        << map.GetNPixels(2) << " pixels.";
+      pmCol->push_back(map);
     }
 
     evt.put(std::move(pmCol), fClusterPMLabel);

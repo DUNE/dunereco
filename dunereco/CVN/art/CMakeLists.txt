@@ -2,7 +2,8 @@
 #include_directories( $ENV{CAFFE_INC} )
 #include_directories( $ENV{CAFFE_SRC} )
 include_directories( $ENV{GSL_INC}/gsl )
-#include_directories( $ENV{HDF5_INC} )
+include_directories( $ENV{HDF5_INC} )
+include_directories( $ENV{H5CPP_INC} )
 #include_directories( $ENV{PROTOBUF_INC} )
 #include_directories( $ENV{LEVELDB_INC} )
 #include_directories( $ENV{GFLAGS_INC} )
@@ -10,7 +11,7 @@ include_directories( $ENV{GSL_INC}/gsl )
 
 #cet_find_library( CAFFELIB NAMES caffe-d caffe PATHS ENV CAFFE_LIB NO_DEFAULT_PATH )
 cet_find_library( GSLLIB NAMES gsl PATHS ENV GSL_LIB NO_DEFAULT_PATH )
-#cet_find_library( HDF5LIB NAMES hdf5 PATHS ENV HDF5_LIB NO_DEFAULT_PATH )
+cet_find_library( HDF5LIB NAMES hdf5 PATHS ENV HDF5_LIB NO_DEFAULT_PATH )
 #cet_find_library( PROTOBUFLIB NAMES protobuf PATHS ENV PROTOBUF_LIB NO_DEFAULT_PATH )
 #cet_find_library( LEVELDBLIB NAMES leveldb PATHS ENV LEVELDB_LIB NO_DEFAULT_PATH )
 #cet_find_library( GFLAGSLIB NAMES gflags PATHS ENV GFLAGS_LIB NO_DEFAULT_PATH )
@@ -28,9 +29,15 @@ else(DEFINED ENV{TENSORFLOW_DIR})
 set (EXCLUDE_TF TFNetHandler.cxx)
 endif (DEFINED ENV{TENSORFLOW_DIR})
 
+# HDF5 stuff
+if   (NOT DEFINED ENV{H5CPP_DIR} OR NOT DEFINED ENV{HDF5_DIR})
+set  (EXCLUDE_HDF5 CVNH5CPP_module.cc)
+endif(NOT DEFINED ENV{H5CPP_DIR} OR NOT DEFINED ENV{HDF5_DIR})
+
 art_make(BASENAME_ONLY
   LIBRARY_NAME      CVNArt
   EXCLUDE ${EXCLUDE_TF}
+  ${EXCLUDE_HDF5}
   LIB_LIBRARIES CVNFunc
   CVNTf
   ${ART_FRAMEWORK_CORE}
@@ -56,7 +63,7 @@ art_make(BASENAME_ONLY
   larsim_MCCheater_ParticleInventoryService_service
   #${CAFFELIB}
   ${GSLLIB}                  
-  #${HDF5LIB}
+  ${HDF5LIB}
   #${PROTOBUFLIB}
   #${LEVELDBLIB}
   #${GFLAGSLIB}

@@ -332,9 +332,6 @@ namespace cvn
     bool includeZGap = true;
     if(includeZGap) nWiresTPC += wireGap;
 
-    std::cout << "Number of wires is " << fGeometry->Nwires(0, 0, 0) << ", "
-      << fGeometry->Nwires(1, 0, 0) << ", " << fGeometry->Nwires(2, 0, 0) << std::endl;
-
     // 10kt has four real TPCs and two dummies in each slice
     //
     //                 |--|-----|-----|-----|-----|--| /  /
@@ -427,8 +424,7 @@ namespace cvn
 
   SparsePixelMap PixelMapProducer::CreateSparseMap(std::vector< art::Ptr< recob::Hit> >& cluster) {
 
-    // SparsePixelMap map(2, 3);
-    SparsePixelMap map(6, 3);
+    SparsePixelMap map(2, 3);
 
     for(size_t iHit = 0; iHit < cluster.size(); ++iHit) {
 
@@ -450,9 +446,7 @@ namespace cvn
         << "Geometry " << fGeometry->DetectorName() << " not implemented "
         << "for dune10kt_v1 geometry." << std::endl;
 
-      // map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime}, cluster[iHit]->Integral());
-      map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime, wireid.TPC, wireid.Plane,
-        wireid.Wire, (unsigned int)cluster[iHit]->PeakTime()}, cluster[iHit]->Integral());
+      map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime}, cluster[iHit]->Integral());
 
     } // for iHit
 

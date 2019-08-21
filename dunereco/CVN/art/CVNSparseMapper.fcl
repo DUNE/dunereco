@@ -16,6 +16,11 @@ standard_cvnsparseh5:
   MapModuleLabel: "sparsemap"
   MapInstanceLabel: "cvnsparsemap"
   OutputName: "cvnsparse"
+  TopologyHitsCut: 100
+  GenieGenModuleLabel: "generator"
+  EnergyNueLabel: "energynue"
+  EnergyNumuLabel: "energynumu"
+  EnergyNutauLabel: "energynutau"
 }
 
 standard_cvnsparseroot:
