@@ -36,7 +36,11 @@ namespace cvn
   // Add a new node
   void GCNGraph::AddNode(std::vector<float> position, std::vector<float> features){
     GCNGraphNode newNode(position,features);
-    fNodes.push_back(newNode);
+    AddNode(newNode);
+  }
+
+  void GCNGraph::AddNode(cvn::GCNGraphNode node){
+    fNodes.push_back(node);
   }
 
   // Get the number of nodes
@@ -45,8 +49,7 @@ namespace cvn
   }
 
   // Access nodes
-  const GCNGraphNode GCNGraph::GetNode(const unsigned int index) const{
-
+  const GCNGraphNode& GCNGraph::GetNode(const unsigned int index) const{
     if(this->GetNumberOfNodes() == 0){
       std::cerr << "GCNGraph::GetNode(): Can't access node with index " << index << std::endl;
       assert(0);
@@ -55,42 +58,52 @@ namespace cvn
     return fNodes.at(index);
   }
 
+  GCNGraphNode& GCNGraph::GetNodeEditable(const unsigned int index){
+    if(this->GetNumberOfNodes() == 0){
+      std::cerr << "GCNGraph::GetNode(): Can't access node with index " << index << std::endl;
+      assert(0);
+    }
 
-  // Return minimum and maximum coordinate values ((xmin,xmax),(ymin,ymax),(zmin,zmax))
+    return fNodes.at(index);
+  }
+
+  // Return minimum and maximum coordinate values
   const std::vector<std::pair<float,float>> GCNGraph::GetMinMaxPositions() const{
 
     std::pair<float,float> dummyPair = std::make_pair(1.e6,-1.e6);
     std::vector<std::pair<float,float>> minMaxVals;
 
-    for(unsigned int i = 0; i < 3; ++i) minMaxVals.push_back(dummyPair);
+    if(fNodes.size() == 0){
+      std::cerr << "No nodes found in the graph, returning empty vector" << std::endl;
+      return minMaxVals;
+    }
+
+    // Initialise the vector of pairs for the number of coordinates
+    for(unsigned int i = 0; i < GetNumberOfNodeCoordinates(); ++i){
+      minMaxVals.push_back(dummyPair);
+    }
 
     for(GCNGraphNode node : fNodes){
       std::vector<float> nodePos = node.GetPosition();
-      if(nodePos[0] < minMaxVals[0].first) minMaxVals[0].first = nodePos[0];
-      if(nodePos[1] < minMaxVals[1].first) minMaxVals[1].first = nodePos[1];
-      if(nodePos[2] < minMaxVals[2].first) minMaxVals[2].first = nodePos[2];
-      if(nodePos[0] > minMaxVals[0].second) minMaxVals[0].second = nodePos[0];
-      if(nodePos[1] > minMaxVals[1].second) minMaxVals[1].second = nodePos[1];
-      if(nodePos[2] > minMaxVals[2].second) minMaxVals[2].second = nodePos[2];
+      for(unsigned int p = 0; p < nodePos.size(); ++p){
+        if(nodePos[p] < minMaxVals[p].first) minMaxVals[p].first = nodePos[p];
+        if(nodePos[p] > minMaxVals[p].second) minMaxVals[p].second = nodePos[p];
+      }
     }
  
     return minMaxVals;
 
   }
 
-  const std::pair<float,float> GCNGraph::GetMinMaxX() const{
-    return this->GetMinMaxPositions()[0];
+  const std::pair<float,float> GCNGraph::GetCoordinateMinMax(unsigned int coord) const{
+    if(coord > fNodes.size()){
+      std::cerr << "Node index is out of bounds" << std::endl;
+      assert(0);
+    }
+    return this->GetMinMaxPositions()[coord];
   }
 
-  const std::pair<float,float> GCNGraph::GetMinMaxY() const{
-    return this->GetMinMaxPositions()[1];
-  }
-
-  const std::pair<float,float> GCNGraph::GetMinMaxZ() const{
-    return this->GetMinMaxPositions()[2];
-  }
-
-  // Return spacial extent of the graph in (x,y,z)
+  // Return spacial extent of the graph in all coordinates
   const std::vector<float> GCNGraph::GetSpacialExtent() const{
 
     std::vector<std::pair<float,float>> minMaxVals = this->GetMinMaxPositions();
@@ -103,23 +116,18 @@ namespace cvn
     return extent;
   }
 
-  const float GCNGraph::GetSpacialExtentX() const{
-    return this->GetSpacialExtent()[0];
+  const float GCNGraph::GetCoordinateSpacialExtent(unsigned int coord) const{
+    if(coord > fNodes.size()){
+      std::cerr << "Node index is out of bounds" << std::endl;
+      assert(0);
+    }
+    return this->GetSpacialExtent()[coord];
   }
-
-  const float GCNGraph::GetSpacialExtentY() const{
-    return this->GetSpacialExtent()[1];
-  }
-
-  const float GCNGraph::GetSpacialExtentZ() const{
-    return this->GetSpacialExtent()[2];
-  }
-
 
   // This function returns a vector of the format for a graph 
-  // with N nodes and M features per node
-  // (node0_posx, node0_posy, node0_posz, node0_feature0, ... ,node0_featureM,...
-  // (nodeN_posx, nodeN_posy, nodeN_posz, nodeN_feature0, ... ,nodeN_featureM)
+  // with N nodes, P positions and M features per node
+  // (node0_pos0, node0_pos1, ... , node0_posP, node0_feature0, ... ,node0_featureM,...
+  // (nodeN_pos0, nodeN_pos1, ... , nodeN_posP, nodeN_posz, nodeN_feature0, ... ,nodeN_featureM)
   const std::vector<float> GCNGraph::ConvertGraphToVector() const{
 
     std::vector<float> nodeVector;
@@ -138,7 +146,25 @@ namespace cvn
     return nodeVector; 
   }
 
- std::ostream& operator<<(std::ostream& os, const GCNGraph& m)
+  // Return the number of coordinates for each node
+  const unsigned int GCNGraph::GetNumberOfNodeCoordinates() const{
+    if(fNodes.size() == 0){
+      std::cerr << "Graph has no nodes, returning 0" << std::endl;
+      return 0;
+    }
+    else return fNodes[0].GetNumberOfCoordinates();
+  }
+
+  // Return the number of features for each node
+  const unsigned int GCNGraph::GetNumberOfNodeFeatures() const{
+    if(fNodes.size() == 0){
+      std::cerr << "Graph has no nodes, returning 0" << std::endl;
+      return 0;
+    }
+    else return fNodes[0].GetNumberOfFeatures();
+  }
+
+  std::ostream& operator<<(std::ostream& os, const GCNGraph& m)
   {
     os << "GCNGraph with " << m.GetNumberOfNodes() << " nodes, ";
     return os;

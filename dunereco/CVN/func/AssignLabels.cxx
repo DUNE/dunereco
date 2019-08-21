@@ -9,6 +9,8 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 
+#include "dune/Protodune/Analysis/ProtoDUNETruthUtils.h"
+
 #include <iostream>
 #include <iomanip>
 #include <limits>
@@ -202,10 +204,13 @@ namespace cvn
 
       // Special case for pi-zeros since it is the decay photons and their pair produced electrons that deposit energy
       if(pdg == 111 || pdg == 2112){
+//        unsigned int nDummyHits = GetNeutralDaughterHitsRecursive(part);
+//        std::cout << "New method of neutral daughters for " << pdg << " = " << nDummyHits << std::endl;
         // Decay photons
         for(int d = 0; d < part.NumberDaughters(); ++d){
-          nSimIDE = backTrack->TrackIdToSimIDEs_Ps(part.Daughter(d)).size();
+          nSimIDE += backTrack->TrackIdToSimIDEs_Ps(part.Daughter(d)).size();
         }
+//        std::cout << "Old method of neutral daughters for " << pdg << " = " << nSimIDE << std::endl;
       }
 
       // Do we pass the number of hits cut?
@@ -313,20 +318,20 @@ namespace cvn
     throw std::runtime_error("Topology type not recognised!");
   }
 
-  // Get the pion interaction mode for ProtoDUNE specific code
-  unsigned short AssignLabels::GetProtoDUNEPionInteraction(const simb::MCParticle &particle) const {
+  // Get the beam interaction mode for ProtoDUNE specific code
+  unsigned short AssignLabels::GetProtoDUNEBeamInteractionType(const simb::MCParticle &particle) const {
 
     unsigned short baseProcess = std::numeric_limits<unsigned short>::max();
-    // Make sure we have a charged pion
-    if(abs(particle.PdgCode()) != 211) return baseProcess;
 
     // The first thing we can do is look at the process key
     std::string processName = particle.EndProcess();
 
-    if(processName.compare("primary") == 0)           baseProcess = 0;
-    else if(processName.compare("hadElastic") == 0)   baseProcess = 1;
-    else if(processName.compare("pi-Inelastic") == 0) baseProcess = 2;
-    else if(processName.compare("pi+Inelastic") == 0) baseProcess = 3;
+    // Use the protoDUNE truth utility to get the interaction type.
+    protoana::ProtoDUNETruthUtils truthUtil;
+    if(truthUtil.GetProcessKey(processName) > -1){
+      // Base process gives us a value from 0 to 44
+      baseProcess = static_cast<unsigned int>(truthUtil.GetProcessKey(processName));
+    }
 
     std::cout << "What interaction type, then? " << processName << std::endl;
 
@@ -357,14 +362,9 @@ namespace cvn
                                 << nPiP << " pi+s, " << nNeu << " neutrons, " 
                                 << nPro << " protons and " << nOth << " other particles." << std::endl;
 
-    // Outputs
-    // 0 = primary (this shouldn't happen!)   
-    // 1 = elastic
-    // 2 = generic Inelastic
-    // 3 = charge exchange
-    if(baseProcess == 2 || baseProcess == 3){
-      if(nPi0 == 1) return 3;
-      else return 2;
+    // If we have a pion with a pi0 in the final state we can flag it as charge exchange
+    if(abs(particle.PdgCode()) == 211 && nPi0 == 1){
+      return 45; // First free value after those from the truth utility
     }
     else{
       return baseProcess;
@@ -384,7 +384,7 @@ namespace cvn
 
       const simb::MCParticle *daughter = partService->TrackIdToParticle_P(particle.Daughter(d));     
       unsigned int localSimIDEs = backTrack->TrackIdToSimIDEs_Ps(daughter->TrackId()).size();      
-
+      std::cout << "Got " << localSimIDEs << " hits from " << daughter->PdgCode() << std::endl;
       if(localSimIDEs == 0) localSimIDEs = GetNeutralDaughterHitsRecursive(*daughter);
 
       nSimIDEs += localSimIDEs;

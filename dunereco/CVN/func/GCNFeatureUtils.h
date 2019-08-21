@@ -14,6 +14,9 @@
 #include "art/Framework/Principal/Event.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 
+#include "dune/CVN/func/GCNGraph.h"
+#include "dune/CVN/func/PixelMap.h"
+
 namespace cvn
 {
 
@@ -35,6 +38,11 @@ namespace cvn
     const std::map<unsigned int, float> GetSpacePointChargeMap(art::Event const &evt, const std::string &spLabel) const;
     /// Get the true G4 ID for each spacepoint
     const std::map<unsigned int, unsigned int> GetTrueG4ID(art::Event const& evt, const std::string &spLabel) const;
+
+    /// Convert a pixel map into three 2D GCNGraph objects
+    std::vector<cvn::GCNGraph> ExtractGraphsFromPixelMap(const cvn::PixelMap &pm, const float chargeThreshold) const;
+    /// Get the neighbours map <graph node, neighbours> for the three 2D graph in 2 box (npixel+1) around the pixel
+    const std::map<unsigned int,unsigned int> Get2DGraphNeighbourMap(const cvn::GCNGraph &g, const unsigned int npixel) const;
 
   private:
 

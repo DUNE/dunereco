@@ -11,6 +11,10 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larsim/MCCheater/BackTrackerService.h"
 
+#include "dune/CVN/func/GCNGraph.h"
+#include "dune/CVN/func/GCNGraphNode.h"
+#include "dune/CVN/func/PixelMap.h"
+
 cvn::GCNFeatureUtils::GCNFeatureUtils() {
 
 }
@@ -131,3 +135,104 @@ const std::map<unsigned int, unsigned int> cvn::GCNFeatureUtils::GetTrueG4ID(
   }
   return ret;
 } // function GetTrueG4ID
+
+// Convert a pixel map into three 2D GCNGraph objects
+std::vector<cvn::GCNGraph> cvn::GCNFeatureUtils::ExtractGraphsFromPixelMap(const cvn::PixelMap &pm, const float chargeThreshold) const{
+
+  // Each pixel map has three vectors of length (nWires*nTDCs)
+  // Each value is the hit charge, and we will make GCNGraph for each view
+  std::vector<std::vector<float>> allViews;
+  allViews.push_back(pm.fPEX); 
+  allViews.push_back(pm.fPEY);
+  allViews.push_back(pm.fPEZ);
+
+  const unsigned int nWires = pm.fNWire;
+  const unsigned int nTDCs = pm.fNTdc;
+
+  std::vector<cvn::GCNGraph> outputGraphs;
+
+  for(unsigned int v = 0; v < allViews.size(); ++v){
+
+    cvn::GCNGraph newGraph;
+
+    for(unsigned int w = 0; w < nWires; ++w){
+
+      for(unsigned int t = 0; t < nTDCs; ++t){
+
+        const unsigned int index = w*nTDCs + t;
+        const float charge = allViews[v][index];
+
+        // If the charge is very small then ignore this pixel
+        if(charge < chargeThreshold) continue;        
+
+        // Put the positons into a vector
+        std::vector<float> pos = {static_cast<float>(w),static_cast<float>(t)};
+        // and the charge
+        std::vector<float> features = {charge};
+
+        cvn::GCNGraphNode newNode(pos,features);
+        newGraph.AddNode(newNode);
+      } // loop over TDCs
+    } // loop over wires
+    outputGraphs.push_back(newGraph);
+  } // loop over views
+
+  return outputGraphs;
+}
+
+const std::map<unsigned int,unsigned int> cvn::GCNFeatureUtils::Get2DGraphNeighbourMap(const cvn::GCNGraph &g, const unsigned int npixel) const{
+
+  std::map<unsigned int,unsigned int> neighbourMap;
+
+  // Loop over the nodes and get the wire and tdc
+  for(unsigned int n1 = 0; n1 < g.GetNumberOfNodes(); ++n1){
+
+    neighbourMap[n1] = 0;
+    const cvn::GCNGraphNode &node1 = g.GetNode(n1);
+    const unsigned int w1 = static_cast<unsigned int>(node1.GetPosition()[0]);
+    const unsigned int t1 = static_cast<unsigned int>(node1.GetPosition()[1]);
+
+    // Loop over the nodes again to compare w,t coordinates
+    for(unsigned int n2 = 0; n2 < g.GetNumberOfNodes(); ++n2){
+
+      if(n1 == n2) continue;
+
+      const cvn::GCNGraphNode &node2 = g.GetNode(n2);
+      const unsigned int w2 = static_cast<unsigned int>(node2.GetPosition()[0]);
+      const unsigned int t2 = static_cast<unsigned int>(node2.GetPosition()[1]);
+
+      // Check if the box around the node for neighbours
+      // In this example npixel = 2.
+      //
+      // |---|---|---|---|---|---|---|            
+      // |   |   |   |   |   |   |   |
+      // |---|---|---|---|---|---|---|            
+      // |   | x | x | x | x | x |   |
+      // |---|---|---|---|---|---|---|            
+      // |   | x | x | x | x | x |   |
+      // |---|---|---|---|---|---|---|            
+      // |   | x | x |n1 | x | x |   | t
+      // |---|---|---|---|---|---|---|            
+      // |   | x | x | x | x | x |   |
+      // |---|---|---|---|---|---|---|            
+      // |   | x | x | x | x | x |   |
+      // |---|---|---|---|---|---|---|            
+      // |   |   |   |   |   |   |   |
+      // |---|---|---|---|---|---|---|            
+      //               w
+
+      if(w2 <= w1 + npixel && w2 >= w1 - npixel){
+        if(t2 <= t1 + npixel && t2 >= t1 - npixel){
+          neighbourMap[n1]++;
+        }
+      }
+     
+    }
+  }
+
+  return neighbourMap;
+
+}
+
+
+

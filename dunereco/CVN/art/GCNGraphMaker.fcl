@@ -33,4 +33,13 @@ standard_gcngraphmaker_protodune:
   ParticleModuleLabel: "pandora"
 }
 
+standard_gcngraphmaker_2d:
+{
+  module_type: GCNGraphMaker2D
+  #=================
+  PixelMapLabel: "cvnmap"
+  ChargeThreshold: 0.001
+  NeighbourPixels: 3
+}
+
 END_PROLOG
