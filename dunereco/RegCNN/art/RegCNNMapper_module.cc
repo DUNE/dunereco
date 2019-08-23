@@ -90,6 +90,7 @@ namespace cnn {
     /// PixelMapProducer does the work for us
     RegPixelMapProducer fProducer;
 
+
   };
 
 
@@ -149,21 +150,38 @@ namespace cnn {
 
     if(nhits>fMinClusterHits){
       RegPixelMap pm;
-      if (!(fUseRecoVertex)){
+      if (fUseRecoVertex==0){
           // create pixel map based on mean of wire and ticks
           pm = fProducer.CreateMap(hitlist, fmwire);
-      } else{
+      } else if (fUseRecoVertex==1) {
         // create pixel map based on the reconstructed vertex
         // Get RegCNN Results
         art::Handle<std::vector<cnn::RegCNNResult>> cnnresultListHandle;
         evt.getByLabel(fRegCNNModuleLabel, fRegCNNResultLabel, cnnresultListHandle);
-        float vtx[3] = {-99999, -99999, -99999};
+	std::vector<float> vtx(3, -99999);
         if (!cnnresultListHandle.failedToGet())
         {
             if (!cnnresultListHandle->empty())
             {
                 const std::vector<float>& v = (*cnnresultListHandle)[0].fOutput;
                 for (unsigned int ii = 0; ii < 3; ii++){
+                     vtx[ii] = v[ii]; 
+                }
+            }
+        }
+        pm = fProducer.CreateMap(hitlist, fmwire, vtx);
+      } else {
+        // create pixel map based on the reconstructed vertex on wire and tick coordinate
+        // Get RegCNN Results
+        art::Handle<std::vector<cnn::RegCNNResult>> cnnresultListHandle;
+        evt.getByLabel(fRegCNNModuleLabel, fRegCNNResultLabel, cnnresultListHandle);
+	std::vector<float> vtx(6, -99999);
+        if (!cnnresultListHandle.failedToGet())
+        {
+            if (!cnnresultListHandle->empty())
+            {
+                const std::vector<float>& v = (*cnnresultListHandle)[0].fOutput;
+                for (unsigned int ii = 0; ii < 6; ii++){
                      vtx[ii] = v[ii]; 
                 }
             }
