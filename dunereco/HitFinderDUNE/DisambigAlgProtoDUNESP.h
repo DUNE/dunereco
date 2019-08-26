@@ -60,7 +60,7 @@ namespace dune{
     int longTPC(int apa);
 
     // other classes we will use
-    apa::APAGeometryAlg  fAPAGeo;
+    dune::apa::APAGeometryAlg  fAPAGeo;
     double fTimeCut;
     double fDistanceCut;
     double fDcut2;

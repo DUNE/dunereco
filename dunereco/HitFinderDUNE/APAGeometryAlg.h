@@ -23,9 +23,7 @@
 #include "TVectorD.h"
 #include "TVector3.h"
 
-
-
-namespace apa{
+namespace dune::apa {
 
   // each APA has 4 separate views
   typedef enum _apa_plane_proj {
