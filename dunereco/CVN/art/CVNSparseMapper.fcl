@@ -11,17 +11,29 @@ standard_cvnsparsemapper:
 
 standard_cvnsparseh5:
 { 
-  module_type:        CVNSparseH5
+  module_type:         CVNSparseH5
   #==================
-  MapModuleLabel: "sparsemap"
-  MapInstanceLabel: "cvnsparsemap"
-  OutputName: "cvnsparse"
-  TopologyHitsCut: 100
+  MapModuleLabel:      "sparsemap"
+  MapInstanceLabel:    "cvnsparsemap"
+  OutputName:          "cvnsparse"
+
+  # MC truth info
+  IncludeMCTruth:      true
   GenieGenModuleLabel: "generator"
-  EnergyNueLabel: "energynue"
-  EnergyNumuLabel: "energynumu"
-  EnergyNutauLabel: "energynutau"
+
+  IncludeRecoEnergy:   true
+  EnergyNueLabel:      "energynue"
+  EnergyNumuLabel:     "energynumu"
+  EnergyNutauLabel:    "energynutau"
+
+  # Hit cut
+  TopologyHitsCut:     100
 }
+
+pdune_cvnsparseh5:     @local::standard_cvnsparseh5
+pdune_cvnsparseh5.IncludeMCTruth: false
+pdune_cvnsparseh5.IncludeRecoEnergy: false
+  
 
 standard_cvnsparseroot:
 { 

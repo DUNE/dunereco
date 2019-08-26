@@ -50,10 +50,18 @@ namespace cvn {
     std::string fMapModuleLabel;      ///< Name of map producer module
     std::string fMapInstanceLabel;    ///< Name of sparse map instance
     std::string fOutputName;          ///< H5 output filename
+
+    bool fIncludeMCTruth;             ///< Whether to write MC truth information to HDF5
     std::string fGenieGenModuleLabel; ///< MC truth producer module
+    std::vector<int> fPDG, fNProton, fNPion, fNPi0,
+      fNNeutron, fTopType, fTopTypeAlt; ///< True topology information
+    std::vector<float> fNuEnergy, fLepEnergy; ///< True energy information
+
+    bool fIncludeRecoEnergy;          ///< Whether to write reco energy information to HDF5
     std::string fEnergyNueLabel;      ///< Nue hypothesis reco energy
     std::string fEnergyNumuLabel;     ///< Numu hypothesis reco energy
     std::string fEnergyNutauLabel;    ///< Calorimetric reco energy
+    std::vector<float> fNueEnergy, fNumuEnergy, fNutauEnergy; ///< Reconstructed energies
 
     std::vector<std::vector<unsigned int>> fCoordinates; ///< Pixel coordinates
     std::vector<float> fValues;                          ///< Pixel values
@@ -61,11 +69,7 @@ namespace cvn {
     std::vector<std::vector<unsigned int>> fEvents;      ///< Event numbers
     std::vector<unsigned int> fViews;                    ///< View of each pixel map
 
-    unsigned int fTopologyHitsCut;
-    std::vector<int> fPDG, fNProton, fNPion, fNPi0,
-      fNNeutron, fTopType, fTopTypeAlt;
-    std::vector<float> fNuEnergy, fLepEnergy,
-      fNueEnergy, fNumuEnergy, fNutauEnergy;
+    unsigned int fTopologyHitsCut;    ///< Minimum number of hits to create image
 
   };
 
@@ -83,7 +87,10 @@ namespace cvn {
     fMapInstanceLabel = p.get<std::string>("MapInstanceLabel");
     fOutputName =       p.get<std::string>("OutputName");
 
+    fIncludeMCTruth      = p.get<bool>("IncludeMCTruth");
     fGenieGenModuleLabel = p.get<std::string>("GenieGenModuleLabel");
+
+    fIncludeRecoEnergy   = p.get<bool>("IncludeRecoEnergy");
     fEnergyNueLabel      = p.get<std::string>("EnergyNueLabel");
     fEnergyNumuLabel     = p.get<std::string>("EnergyNumuLabel");
     fEnergyNutauLabel    = p.get<std::string>("EnergyNutauLabel");
@@ -106,41 +113,52 @@ namespace cvn {
     art::fill_ptr_vector(maps, hMaps);
 
     // MC information
-    art::Handle<std::vector<simb::MCTruth>> hMCTruth;
-    std::vector<art::Ptr<simb::MCTruth>> MCTruthList;
-    if (e.getByLabel(fGenieGenModuleLabel, hMCTruth))
-      art::fill_ptr_vector(MCTruthList, hMCTruth);
+    int pdg(0), nProton(0), nPion(0), nPi0(0), nNeutron(0),
+      topType(0), topTypeAlt(0);
+    float trueEnergy(0.), lepEnergy(0.);
+    if (fIncludeMCTruth) {
+      art::Handle<std::vector<simb::MCTruth>> hMCTruth;
+      std::vector<art::Ptr<simb::MCTruth>> MCTruthList;
+      if (e.getByLabel(fGenieGenModuleLabel, hMCTruth))
+        art::fill_ptr_vector(MCTruthList, hMCTruth);
+      art::Ptr<simb::MCTruth> MCTruth = MCTruthList[0];
+      simb::MCNeutrino trueNeutrino = MCTruth->GetNeutrino();
+      AssignLabels labels;
+      labels.GetTopology(MCTruth, fTopologyHitsCut);
+      trueEnergy = trueNeutrino.Nu().E();
+      lepEnergy  = trueNeutrino.Lepton().E();
+      pdg        = labels.GetPDG();
+      nProton    = labels.GetNProtons();
+      nPion      = labels.GetNPions();
+      nPi0       = labels.GetNPizeros();
+      nNeutron   = labels.GetNNeutrons();
+      topType    = labels.GetTopologyType();
+      topTypeAlt = labels.GetTopologyTypeAlt();
+    } // if including MC truth
 
-    art::Ptr<simb::MCTruth> MCTruth = MCTruthList[0];
-    simb::MCNeutrino trueNeutrino = MCTruth->GetNeutrino();
+    float recoNueEnergy(0.), recoNumuEnergy(0.), recoNutauEnergy(0.);
+    if (fIncludeRecoEnergy) {
+      // Get nue info
+      if (fEnergyNueLabel != "") {
+        art::Handle<dune::EnergyRecoOutput> hEReco;
+        e.getByLabel(fEnergyNueLabel, hEReco);
+        recoNueEnergy = hEReco->fNuLorentzVector.E();
+      }
 
-    AssignLabels labels;
-    labels.GetTopology(MCTruth, fTopologyHitsCut);
+      // Get numu info
+      if (fEnergyNueLabel != "") {
+        art::Handle<dune::EnergyRecoOutput> hEReco;
+        e.getByLabel(fEnergyNumuLabel, hEReco);
+        recoNumuEnergy = hEReco->fNuLorentzVector.E();
+      }
 
-    float recoNueEnergy = 0;
-    float recoNumuEnergy = 0;
-    float recoNutauEnergy = 0;
-
-    // Get nue info
-    if (fEnergyNueLabel != "") {
-      art::Handle<dune::EnergyRecoOutput> hEReco;
-      e.getByLabel(fEnergyNueLabel, hEReco);
-      recoNueEnergy = hEReco->fNuLorentzVector.E();
-    }
-
-    // Get numu info
-    if (fEnergyNueLabel != "") {
-      art::Handle<dune::EnergyRecoOutput> hEReco;
-      e.getByLabel(fEnergyNumuLabel, hEReco);
-      recoNumuEnergy = hEReco->fNuLorentzVector.E();
-    }
-
-    // Get nutau info
-    if (fEnergyNutauLabel != "") {
-      art::Handle<dune::EnergyRecoOutput> hEReco;
-      e.getByLabel(fEnergyNutauLabel, hEReco);
-      recoNutauEnergy = hEReco->fNuLorentzVector.E();
-    }
+      // Get nutau info
+      if (fEnergyNutauLabel != "") {
+        art::Handle<dune::EnergyRecoOutput> hEReco;
+        e.getByLabel(fEnergyNutauLabel, hEReco);
+        recoNutauEnergy = hEReco->fNuLorentzVector.E();
+      }
+    } // if including reco energy
 
 
     for (auto map : maps) {
@@ -155,23 +173,25 @@ namespace cvn {
         std::vector<float> values = map->GetValues(view);
         fValues.insert(fValues.end(), values.begin(), values.end());
 
-        // True lepton and neutrino energies
-        fNuEnergy.push_back(trueNeutrino.Nu().E());
-        fLepEnergy.push_back(trueNeutrino.Lepton().E());
+        // MC truth information
+        if (fIncludeMCTruth) {
+          fNuEnergy.push_back(trueEnergy);
+          fLepEnergy.push_back(lepEnergy);
+          fPDG.push_back(pdg);
+          fNProton.push_back(nProton);
+          fNPion.push_back(nPion);
+          fNPi0.push_back(nPi0);
+          fNNeutron.push_back(nNeutron);
+          fTopType.push_back(topType);
+          fTopTypeAlt.push_back(topTypeAlt);
+        } // if including MC truth
 
-        // Reco energies
-        fNueEnergy.push_back(recoNueEnergy);
-        fNumuEnergy.push_back(recoNumuEnergy);
-        fNutauEnergy.push_back(recoNutauEnergy);
-
-        // Other truth information
-        fPDG.push_back(labels.GetPDG());
-        fNProton.push_back(labels.GetNProtons());
-        fNPion.push_back(labels.GetNPions());
-        fNPi0.push_back(labels.GetNPizeros());
-        fNNeutron.push_back(labels.GetNNeutrons());
-        fTopType.push_back(labels.GetTopologyType());
-        fTopTypeAlt.push_back(labels.GetTopologyTypeAlt());
+        // Reco energy information
+        if (fIncludeRecoEnergy) {
+          fNueEnergy.push_back(recoNueEnergy);
+          fNumuEnergy.push_back(recoNumuEnergy);
+          fNutauEnergy.push_back(recoNutauEnergy);
+        }
 
       } // for view
     } // for map
@@ -223,20 +243,24 @@ namespace cvn {
       f.createDataSet("coordinates", fCoordinates);
       f.createDataSet("values", fValues);
 
-      // Write topology information
-      f.createDataSet("pdg", fPDG);
-      f.createDataSet("n_protons", fNProton);
-      f.createDataSet("n_pions", fNPion);
-      f.createDataSet("n_pi0s", fNPi0);
-      f.createDataSet("n_neutrons", fNNeutron);
-      f.createDataSet("toptype", fTopType);
-      f.createDataSet("toptypealt", fTopTypeAlt);
+      // MC truth information
+      if (fIncludeMCTruth) {
+        f.createDataSet("nu_energy", fNuEnergy);
+        f.createDataSet("lep_energy", fLepEnergy);
+        f.createDataSet("pdg", fPDG);
+        f.createDataSet("n_protons", fNProton);
+        f.createDataSet("n_pions", fNPion);
+        f.createDataSet("n_pi0s", fNPi0);
+        f.createDataSet("n_neutrons", fNNeutron);
+        f.createDataSet("toptype", fTopType);
+        f.createDataSet("toptypealt", fTopTypeAlt);
+      }
 
-      f.createDataSet("nu_energy", fNuEnergy);
-      f.createDataSet("lep_energy", fLepEnergy);
-      f.createDataSet("nue_energy", fNueEnergy);
-      f.createDataSet("numu_energy", fNumuEnergy);
-      f.createDataSet("nutau_energy", fNutauEnergy);
+      if (fIncludeRecoEnergy) {
+        f.createDataSet("nue_energy", fNueEnergy);
+        f.createDataSet("numu_energy", fNumuEnergy);
+        f.createDataSet("nutau_energy", fNutauEnergy);
+      }
 
     } catch (HighFive::Exception& err) {
       std::cerr << err.what() << std::endl;
