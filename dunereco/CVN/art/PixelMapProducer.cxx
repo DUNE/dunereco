@@ -21,6 +21,8 @@
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "larsim/MCCheater/BackTrackerService.h"
+#include "larsim/MCCheater/ParticleInventoryService.h"
 
 namespace cvn
 {
@@ -422,9 +424,13 @@ namespace cvn
   
   } // function PixelMapProducer::GetProtoDUNEGlobalWire
 
-  SparsePixelMap PixelMapProducer::CreateSparseMap(std::vector< art::Ptr< recob::Hit> >& cluster) {
+  SparsePixelMap PixelMapProducer::CreateSparseMap(std::vector< art::Ptr< recob::Hit> >& cluster,
+    bool usePixelTruth) {
 
-    SparsePixelMap map(2, 3);
+    SparsePixelMap map(2, 3, usePixelTruth);
+
+    art::ServiceHandle<cheat::BackTrackerService> bt;
+    art::ServiceHandle<cheat::ParticleInventoryService> pi;
 
     for(size_t iHit = 0; iHit < cluster.size(); ++iHit) {
 
@@ -446,7 +452,25 @@ namespace cvn
         << "Geometry " << fGeometry->DetectorName() << " not implemented "
         << "for dune10kt_v1 geometry." << std::endl;
 
-      map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime}, cluster[iHit]->Integral());
+      if (usePixelTruth) {
+        // Get true particle and PDG responsible for this hit
+        std::vector<sim::TrackIDE> IDEs = bt->HitToTrackIDEs(cluster[iHit]);
+        int trueID = std::max_element(IDEs.begin(), IDEs.end(),
+          [] (const sim::TrackIDE & it1, const sim::TrackIDE & it2) {
+            return it1.energyFrac < it2.energyFrac;
+          })->trackID;
+        int pdg = pi->TrackIdToParticle(trueID).PdgCode();
+        std::cout << "Track ID and PDG are " << trueID << " and " << pdg
+          << " respectively." << std::endl;
+
+        map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime},
+          cluster[iHit]->Integral(), pdg, trueID);
+      }
+
+      else {
+        map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime},
+          cluster[iHit]->Integral());
+      }
 
     } // for iHit
 

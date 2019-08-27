@@ -40,17 +40,11 @@ namespace cvn {
 
 
   private:
-    /// Module lablel for input clusters
-    std::string    fHitsModuleLabel;
-
-    /// Instance lablel for cluster pixelmaps
-    std::string    fClusterPMLabel;
-
-    /// Minimum number of hits for cluster to be converted to pixel map
-    unsigned short fMinClusterHits;
-
-    /// PixelMapProducer does the work for us
-    PixelMapProducer fProducer;
+    std::string    fHitsModuleLabel; ///< Module label for input clusters
+    std::string    fClusterPMLabel;  ///< Instance label for cluster pixelmaps
+    unsigned short fMinClusterHits;  ///< Minimum number of hits for cluster to be converted to pixel map
+    bool fIncludePixelTruth;         ///< Whether to include per-pixel ground truth for segmentation
+    PixelMapProducer fProducer;      ///< PixelMapProducer does the heavy lifting
 
   };
 
@@ -61,6 +55,7 @@ namespace cvn {
   fHitsModuleLabel(pset.get<std::string>    ("HitsModuleLabel")),
   fClusterPMLabel(pset.get<std::string>     ("ClusterPMLabel")),
   fMinClusterHits(pset.get<unsigned short>  ("MinClusterHits")),
+  fIncludePixelTruth(pset.get<bool>         ("IncludePixelTruth")),
   fProducer()
   {
 
@@ -98,7 +93,7 @@ namespace cvn {
       pmCol(new std::vector<cvn::SparsePixelMap>);
 
     if (nhits > fMinClusterHits) {
-      SparsePixelMap map = fProducer.CreateSparseMap(hitlist);
+      SparsePixelMap map = fProducer.CreateSparseMap(hitlist, fIncludePixelTruth);
       mf::LogInfo("CVNSparseMapper") << "Created sparse pixel map with "
         << map.GetNPixels(0) << ", " << map.GetNPixels(1) << ", "
         << map.GetNPixels(2) << " pixels.";

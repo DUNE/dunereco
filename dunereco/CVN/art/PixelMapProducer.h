@@ -57,7 +57,7 @@ namespace cvn
                                     const Boundary& bound);
 
     /// Create sparse pixel map for SCN applications
-    SparsePixelMap CreateSparseMap(std::vector< art::Ptr< recob::Hit> >& cluster);
+    SparsePixelMap CreateSparseMap(std::vector< art::Ptr< recob::Hit> >& cluster, bool usePixelTruth=false);
 
   private:
     unsigned int      fNWire;  ///< Number of wires, length for pixel maps

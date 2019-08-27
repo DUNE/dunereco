@@ -2,11 +2,12 @@ BEGIN_PROLOG
 
 standard_cvnsparsemapper:
 {
-  module_type:        CVNSparseMapper
+  module_type:         CVNSparseMapper
   #==================
-  HitsModuleLabel: "hitfd"
-  ClusterPMLabel: "cvnsparsemap"
-  MinClusterHits: 100
+  HitsModuleLabel:     "hitfd"
+  ClusterPMLabel:      "cvnsparsemap"
+  MinClusterHits:      100
+  IncludePixelTruth:   false
 }
 
 standard_cvnsparseh5:
@@ -21,19 +22,18 @@ standard_cvnsparseh5:
   IncludeMCTruth:      true
   GenieGenModuleLabel: "generator"
 
+  # Reco info
   IncludeRecoEnergy:   true
   EnergyNueLabel:      "energynue"
   EnergyNumuLabel:     "energynumu"
   EnergyNutauLabel:    "energynutau"
 
+  # Per-pixel ground truth
+  IncludePixelTruth:   false
+
   # Hit cut
   TopologyHitsCut:     100
 }
-
-pdune_cvnsparseh5:     @local::standard_cvnsparseh5
-pdune_cvnsparseh5.IncludeMCTruth: false
-pdune_cvnsparseh5.IncludeRecoEnergy: false
-  
 
 standard_cvnsparseroot:
 { 
@@ -44,6 +44,14 @@ standard_cvnsparseroot:
   OutputName: "cvnsparse"
   TreeName: "CVNSparse"
 }
+
+pdune_cvnsparsemapper: @local::standard_cvnsparsemapper
+pdune_cvnsparsemapper.IncludePixelTruth: true
+
+pdune_cvnsparseh5:     @local::standard_cvnsparseh5
+pdune_cvnsparseh5.IncludeMCTruth: false
+pdune_cvnsparseh5.IncludeRecoEnergy: false
+pdune_cvnsparseh5.IncludePixelTruth: true
 
 END_PROLOG
 

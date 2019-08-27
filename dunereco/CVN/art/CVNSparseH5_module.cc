@@ -63,6 +63,10 @@ namespace cvn {
     std::string fEnergyNutauLabel;    ///< Calorimetric reco energy
     std::vector<float> fNueEnergy, fNumuEnergy, fNutauEnergy; ///< Reconstructed energies
 
+    bool fIncludePixelTruth;          ///< Whether to write per-pixel ground truth to HDF5
+    std::vector<int> fPixelTrackID;   ///< Pixel true track ID
+    std::vector<int> fPixelPDG;       ///< Pixel true particle PDG
+
     std::vector<std::vector<unsigned int>> fCoordinates; ///< Pixel coordinates
     std::vector<float> fValues;                          ///< Pixel values
     std::vector<unsigned int> fNPixels;                  ///< Pixel map boundaries
@@ -94,6 +98,8 @@ namespace cvn {
     fEnergyNueLabel      = p.get<std::string>("EnergyNueLabel");
     fEnergyNumuLabel     = p.get<std::string>("EnergyNumuLabel");
     fEnergyNutauLabel    = p.get<std::string>("EnergyNutauLabel");
+
+    fIncludePixelTruth   = p.get<bool>("IncludePixelTruth");
 
     fTopologyHitsCut = p.get<unsigned int>("TopologyHitsCut");
 
@@ -160,7 +166,6 @@ namespace cvn {
       }
     } // if including reco energy
 
-
     for (auto map : maps) {
       for (size_t view = 0; view < map->GetViews(); ++view) {
 
@@ -172,6 +177,14 @@ namespace cvn {
         fCoordinates.insert(fCoordinates.end(), coords.begin(), coords.end());
         std::vector<float> values = map->GetValues(view);
         fValues.insert(fValues.end(), values.begin(), values.end());
+
+        // Per pixel ground truth
+        if (fIncludePixelTruth) {
+          std::vector<int> trackID = map->GetPixelTrackID(view);
+          fPixelTrackID.insert(fPixelTrackID.end(), trackID.begin(), trackID.end());
+          std::vector<int> pdg = map->GetPixelPDG(view);
+          fPixelPDG.insert(fPixelPDG.end(), pdg.begin(), pdg.end());
+        }
 
         // MC truth information
         if (fIncludeMCTruth) {
@@ -206,6 +219,9 @@ namespace cvn {
     fNPixels.clear();
     fCoordinates.clear();
     fValues.clear();
+
+    fPixelTrackID.clear();
+    fPixelPDG.clear();
 
     fPDG.clear();
     fNProton.clear();
@@ -256,10 +272,17 @@ namespace cvn {
         f.createDataSet("toptypealt", fTopTypeAlt);
       }
 
+      // Reconstructed information
       if (fIncludeRecoEnergy) {
         f.createDataSet("nue_energy", fNueEnergy);
         f.createDataSet("numu_energy", fNumuEnergy);
         f.createDataSet("nutau_energy", fNutauEnergy);
+      }
+
+      // Pixel ground truth
+      if (fIncludePixelTruth) {
+        f.createDataSet("pixel_track_id", fPixelTrackID);
+        f.createDataSet("pixel_pdg", fPixelPDG);
       }
 
     } catch (HighFive::Exception& err) {
