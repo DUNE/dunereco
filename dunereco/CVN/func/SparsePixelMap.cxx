@@ -47,7 +47,7 @@ namespace cvn {
         << " does not match sparse pixel map dimension " << fDim;
     }
 
-    if (fUsePixelTruth) {
+    if (!fUsePixelTruth) {
       throw art::Exception(art::errors::LogicError)
         << "Pixel truth is disabled for this SparsePixelMap, but AddHit call includes "
         << "pixel PDG and track ID.";
