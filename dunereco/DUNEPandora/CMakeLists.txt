@@ -11,7 +11,7 @@ art_make( BASENAME_ONLY
                         lardataobj_RecoBase
                         larcorealg_Geometry
                         larcore_Geometry_Geometry_service
-                        larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
+                        larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
 			${LARPANDORACONTENT}
                         ${PANDORASDK}
                         ${PANDORAMONITORING}

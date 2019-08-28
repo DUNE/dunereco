@@ -19,6 +19,8 @@ namespace cnn
   fNTdc(nTdc),
   fNTRes(nTRes),
   fInPM(0),
+  fTPC(0),
+  fdist(100000),
   fPE(nWire*nTdc),
   fPEX(nWire*nTdc),
   fPEY(nWire*nTdc),
@@ -46,13 +48,14 @@ namespace cnn
   }
 
 
-  void RegPixelMap::Add(const int& wire, const int& tdc, const unsigned int& view, const double& pe)
+  void RegPixelMap::Add(const int& wire, const int& tdc, const unsigned int& view, const double& pe, const unsigned int& tpc)
   {
     // keep these for now although we only use fPE
     const HitType label = kEmptyHit;
     const double purity=0.0;
     if(fBound.IsWithin(wire, tdc, view)){
       fInPM = 1; // any hit within the boundary
+      GetTPC(wire, tdc, view, tpc);
       fPE[GlobalToIndex(wire,tdc, view)] += (float)pe;
       fLab[GlobalToIndex(wire,tdc, view)] = label;
       fPur[GlobalToIndexSingle(wire,tdc, view)] = purity;
@@ -126,6 +129,23 @@ namespace cnn
 
     return index;
   }
+  void  RegPixelMap::GetTPC(const int& wire,
+                             const int& tdc,
+                             const unsigned int& view,
+                             const unsigned int& tpc)
+
+  {
+
+    int meanWire = (fBound.LastWire(view)+fBound.FirstWire(view))/2;
+    int meanTDC  = (fBound.LastTDC(view)+fBound.FirstTDC(view)+(int)fNTRes/2)/2;
+    double dist = pow((wire-meanWire)*0.5,2)+pow((tdc-meanTDC)*0.08,2);
+    dist = sqrt(dist);
+    if (dist < fdist){
+        fdist = dist;
+        fTPC = tpc;
+    }
+  }
+
 
   void RegPixelMap::Print()
   {

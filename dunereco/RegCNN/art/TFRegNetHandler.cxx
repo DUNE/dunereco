@@ -39,7 +39,7 @@ namespace cnn
     }
 
   }
-  std::vector<float> TFRegNetHandler::Predict(const RegPixelMap& pm, const float* cm_list)
+  std::vector<float> TFRegNetHandler::Predict(const RegPixelMap& pm, const std::vector<float> cm_list)
   {
    
     RegCNNImageUtils imageUtils;

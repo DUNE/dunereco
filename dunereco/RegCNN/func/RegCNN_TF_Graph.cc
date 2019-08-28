@@ -41,7 +41,7 @@ tf::RegCNNGraph::RegCNNGraph(const char* graph_file_name, const unsigned int &ni
         fInputNames.push_back(graph_def.node()[ii].name());
         //std::string inname(ss+std::to_string(ii+1));
         //fInputNames.push_back(inname);
-        std::cout<< graph_def.node()[ii].name() << std::endl;
+        //std::cout<< graph_def.node()[ii].name() << std::endl;
     }
 
     // last node as output if no specific name provided
@@ -165,7 +165,7 @@ std::vector< std::vector<float> > tf::RegCNNGraph::run(
 
 std::vector< std::vector<float> > tf::RegCNNGraph::run(
 	const std::vector<  std::vector<  std::vector< std::vector<float> > > > & x,
-        const float *cm, const unsigned int &ninputs,
+        const std::vector<float> cm, const unsigned int &ninputs,
 	long long int samples)
 {
     // this is for the vertex reconstruction
@@ -190,7 +190,7 @@ std::vector< std::vector<float> > tf::RegCNNGraph::run(
         _x.push_back(_xtemp);
     }
     // for center of mass input
-    tensorflow::Tensor _xtemp(tensorflow::DT_FLOAT, tensorflow::TensorShape({ samples, 6 }));
+    tensorflow::Tensor _xtemp(tensorflow::DT_FLOAT, tensorflow::TensorShape({ samples, (unsigned int)cm.size() }));
     _x.push_back(_xtemp);
 
     //auto input_map = _x[0].tensor<float, 4>();
@@ -207,7 +207,7 @@ std::vector< std::vector<float> > tf::RegCNNGraph::run(
                 }
             }
         }
-        for (unsigned int icm = 0; icm < 6; ++icm){
+        for (unsigned int icm = 0; icm < (unsigned int)cm.size(); ++icm){
             _x[depth].tensor<float, 2>()(s, icm) = cm[icm];
         }
     }

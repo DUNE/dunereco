@@ -47,9 +47,9 @@ namespace cnn
 
     /// Add a hit to the map if it is contained within the wire, tdc rcnne
     /// Could be expanded later to add to overflow accordingly.
-    void Add(const int& wire, const int& tdc,  const unsigned int& view, const double& pe);
+    void Add(const int& wire, const int& tdc,  const unsigned int& view, const double& pe, const unsigned int& tpc);
 
-
+    void GetTPC(const int& wire, const int& tdc, const unsigned int& view,  const unsigned int& tpc);
     /// Take global wire, tdc (detector) and return index in fPE vector
     unsigned int GlobalToIndex(const int& wire,
                                const int& tdc,
@@ -78,6 +78,8 @@ namespace cnn
     unsigned int      fNTdc;   ///< Number of tdcs, width of pixel map
     unsigned int      fNTRes;  
     unsigned int      fInPM;   // check Empty Pixel Map
+    unsigned int      fTPC; 
+    double            fdist;
     std::vector<float>   fPE;   ///< Vector of PE measurements for pixels
     std::vector<float>   fPEX;  ///< Vector of X PE measurements for pixels
     std::vector<float>   fPEY;  ///< Vector of Y PE measurements for pixels

@@ -54,7 +54,7 @@ namespace dune{
     private:
 
     // other classes we will use
-    apa::APAGeometryAlg                           fAPAGeo;
+    dune::apa::APAGeometryAlg                           fAPAGeo;
     double fTimeCut;
     double fDistanceCut;
     double fDistanceCutClu;

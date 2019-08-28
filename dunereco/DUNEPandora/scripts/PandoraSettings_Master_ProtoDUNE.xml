@@ -31,11 +31,11 @@
         <SliceIdTools>
             <tool type = "LArBdtBeamParticleId">
                 <BdtName>ProtoDUNESP_BeamParticleId</BdtName>
-                <BdtFileName>PandoraMVAData/PandoraBdt_v03_15_00.xml</BdtFileName>
+                <BdtFileName>PandoraMVAData/PandoraBdt_v03_15_02.xml</BdtFileName>
                 <MinAdaBDTScore>-0.225</MinAdaBDTScore>
             </tool>
         </SliceIdTools>
-        <InputHitListName>Input</InputHitListName>
+        <InputHitListName>CaloHitList2D</InputHitListName>
         <RecreatedPfoListName>RecreatedPfos</RecreatedPfoListName>
         <RecreatedClusterListName>RecreatedClusters</RecreatedClusterListName>
         <RecreatedVertexListName>RecreatedVertices</RecreatedVertexListName>
