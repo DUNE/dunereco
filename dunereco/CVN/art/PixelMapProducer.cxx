@@ -450,7 +450,7 @@ namespace cvn
       }
       else throw art::Exception(art::errors::UnimplementedFeature)
         << "Geometry " << fGeometry->DetectorName() << " not implemented "
-        << "for dune10kt_v1 geometry." << std::endl;
+        << "in CreateSparseMap." << std::endl;
 
       if (usePixelTruth) {
         // Get true particle and PDG responsible for this hit

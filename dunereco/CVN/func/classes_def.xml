@@ -25,7 +25,8 @@
    <version ClassVersion="10" checksum="197322882"/>
   </class>
 
-  <class name="cvn::SparsePixelMap" ClassVersion="20">
+  <class name="cvn::SparsePixelMap" ClassVersion="21">
+   <version ClassVersion="21" checksum="1637078222"/>
    <version ClassVersion="20" checksum="3134631131"/>
    <version ClassVersion="19" checksum="3037527189"/>
    <version ClassVersion="18" checksum="4245858273"/>
