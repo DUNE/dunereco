@@ -34,7 +34,7 @@
 #include <cstdlib>
 
 
-namespace apa{
+namespace dune::apa {
 
   APAGeometryAlg::APAGeometryAlg(fhicl::ParameterSet const& pset) 
   {
