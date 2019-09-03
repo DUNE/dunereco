@@ -431,7 +431,8 @@ namespace cvn
 
     art::ServiceHandle<cheat::BackTrackerService> bt;
     art::ServiceHandle<cheat::ParticleInventoryService> pi;
-
+     
+    //int count =0;
     for(size_t iHit = 0; iHit < cluster.size(); ++iHit) {
 
       geo::WireID wireid       = cluster[iHit]->WireID();
@@ -448,30 +449,41 @@ namespace cvn
         GetDUNE10ktGlobalWireTDC(wireid.Wire, cluster[iHit]->PeakTime(),
           wireid.Plane, wireid.TPC, globalWire, globalPlane, globalTime);
       }
+      else if (fGeometry->DetectorName() == "protodune") {
+        GetProtoDUNEGlobalWire(wireid.Wire, wireid.Plane, 
+          wireid.TPC, globalWire, globalPlane);
+      }
       else throw art::Exception(art::errors::UnimplementedFeature)
         << "Geometry " << fGeometry->DetectorName() << " not implemented "
         << "in CreateSparseMap." << std::endl;
 
+
       if (usePixelTruth) {
         // Get true particle and PDG responsible for this hit
         std::vector<sim::TrackIDE> IDEs = bt->HitToTrackIDEs(cluster[iHit]);
-        int trueID = std::max_element(IDEs.begin(), IDEs.end(),
-          [] (const sim::TrackIDE & it1, const sim::TrackIDE & it2) {
-            return it1.energyFrac < it2.energyFrac;
-          })->trackID;
-        int pdg = pi->TrackIdToParticle(trueID).PdgCode();
-        std::cout << "Track ID and PDG are " << trueID << " and " << pdg
-          << " respectively." << std::endl;
-
-        map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime},
+       if (IDEs.size()==0) { 
+         count++; 
+        // std::cout<< "**Carlos**  IDEs size :"<<IDEs.size() << std::endl;
+        // std::cout << "*Carlos ** there are " <<count << " noise hits" << std::endl;
+          }
+       
+         if (IDEs.size()>0) {
+           int trueID = std::max_element(IDEs.begin(), IDEs.end(),               
+           [] (const sim::TrackIDE & it1, const sim::TrackIDE & it2) {
+             return it1.energyFrac < it2.energyFrac;
+           })->trackID;
+          int pdg = pi->TrackIdToParticle(trueID).PdgCode();
+          //std::cout << "Track ID and PDG are " << trueID << " and " << pdg
+          //<< " respectively." << std::endl;
+          map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime},
           cluster[iHit]->Integral(), pdg, trueID);
+      }// IDEs.size > 0
       }
 
       else {
         map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime},
           cluster[iHit]->Integral());
       }
-
     } // for iHit
 
     return map;
