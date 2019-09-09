@@ -467,8 +467,8 @@ namespace cvn
           wireid.Plane, wireid.TPC, globalWire, globalPlane, globalTime);
       }
       else if (fGeometry->DetectorName() == "protodune") {
-        GetProtoDUNEGlobalWire(wireid.Wire, wireid.Plane, 
-          wireid.TPC, globalWire, globalPlane);
+        GetProtoDUNEGlobalWireTDC(wireid.Wire, cluster[iHit]->PeakTime(),
+          wireid.Plane, wireid.TPC, globalWire, globalTime, globalPlane);
       }
       else throw art::Exception(art::errors::UnimplementedFeature)
         << "Geometry " << fGeometry->DetectorName() << " not implemented "
