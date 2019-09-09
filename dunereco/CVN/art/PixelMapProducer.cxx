@@ -401,7 +401,6 @@ namespace cvn
     
     int tpcMod4 = tpc%4;
     // tpcMod4: 1 for -ve drift, 2 for +ve drift
-    
     // Induction views depend on the drift direction
     if(plane < 2){
       // For drift in negative x direction keep U and V as defined.
@@ -423,6 +422,24 @@ namespace cvn
     }
   
   } // function PixelMapProducer::GetProtoDUNEGlobalWire
+
+  // Special case for ProtoDUNE where we want to extract single particles to mimic CCQE interactions. The output pixel maps should be the same as the workspace
+  // but we need different treatment of the wire numbering
+  void PixelMapProducer::GetProtoDUNEGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
+    unsigned int& globalWire, double globalTDC, unsigned int& globalPlane) const
+  {
+    // We can just use the existing function to get the global wire & plane
+    GetProtoDUNEGlobalWire(localWire, plane, tpc, globalWire, globalPlane);
+
+    // Now do time mirroring here
+    if (tpc%4 == 1) {
+      globalTDC = localTDC;
+    }
+    else {
+      globalTDC = (2*fGeometry->TPC(tpc, 0).DriftDistance()/fDetProp->DriftVelocity()) - localTDC;
+    }
+
+  } // function GetProtoDUNEGlobalWireTDC
 
   SparsePixelMap PixelMapProducer::CreateSparseMap(std::vector< art::Ptr< recob::Hit> >& cluster,
     bool usePixelTruth) {
@@ -461,11 +478,11 @@ namespace cvn
       if (usePixelTruth) {
         // Get true particle and PDG responsible for this hit
         std::vector<sim::TrackIDE> IDEs = bt->HitToTrackIDEs(cluster[iHit]);
-       if (IDEs.size()==0) { 
-         count++; 
+       //if (IDEs.size()==0) { 
+         //count++; 
         // std::cout<< "**Carlos**  IDEs size :"<<IDEs.size() << std::endl;
         // std::cout << "*Carlos ** there are " <<count << " noise hits" << std::endl;
-          }
+          ///}
        
          if (IDEs.size()>0) {
            int trueID = std::max_element(IDEs.begin(), IDEs.end(),               
