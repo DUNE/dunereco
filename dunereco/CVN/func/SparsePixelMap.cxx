@@ -55,10 +55,8 @@ namespace cvn {
         << "pixel PDG and track ID.";
     }
 
-    // Use the existing function to add pixel values and coordinates
-    AddHit(view, coordinates, value);
-
-    // But also add true pixel labels as well
+    fCoordinates[view].push_back(coordinates);
+    fValues[view].push_back(value);
     fPixelPDG[view].push_back(pdg);
     fPixelTrackID[view].push_back(trueID);
 
