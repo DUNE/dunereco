@@ -438,7 +438,7 @@ namespace cvn
   SparsePixelMap PixelMapProducer::CreateSparseMap(std::vector< art::Ptr< recob::Hit> >& cluster,
     bool usePixelTruth) {
 
-    SparsePixelMap map(2, 3, usePixelTruth);
+    SparsePixelMap map(4, 3, usePixelTruth);
 
     art::ServiceHandle<cheat::BackTrackerService> bt;
     art::ServiceHandle<cheat::ParticleInventoryService> pi;
