@@ -20,6 +20,7 @@ namespace cvn {
     }
   }
 
+  /// Default AddHit implementation, which just adds pixel value and coordinates
   void SparsePixelMap::AddHit(unsigned int view, std::vector<unsigned int> coordinates, float value) {
 
     if (coordinates.size() != fDim) {
@@ -38,6 +39,7 @@ namespace cvn {
     fValues[view].push_back(value);
   }
 
+  /// AddHit function that includes per-pixel truth labelling for segmentation
   void SparsePixelMap::AddHit(unsigned int view, std::vector<unsigned int> coordinates,
     float value, int pdg, int trueID) {
 
@@ -53,8 +55,10 @@ namespace cvn {
         << "pixel PDG and track ID.";
     }
 
-    fCoordinates[view].push_back(coordinates);
-    fValues[view].push_back(value);
+    // Use the existing function to add pixel values and coordinates
+    AddHit(view, coordinates, value);
+
+    // But also add true pixel labels as well
     fPixelPDG[view].push_back(pdg);
     fPixelTrackID[view].push_back(trueID);
 

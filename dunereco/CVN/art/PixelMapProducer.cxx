@@ -431,13 +431,7 @@ namespace cvn
     // We can just use the existing function to get the global wire & plane
     GetProtoDUNEGlobalWire(localWire, plane, tpc, globalWire, globalPlane);
 
-    // Now do time mirroring here
-    if (tpc%4 == 1) {
-      globalTDC = localTDC;
-    }
-    else {
-      globalTDC = (2*fGeometry->TPC(tpc, 0).DriftDistance()/fDetProp->DriftVelocity()) - localTDC;
-    }
+    // Implement additional mirroring here?
 
   } // function GetProtoDUNEGlobalWireTDC
 
@@ -492,7 +486,7 @@ namespace cvn
           int pdg = pi->TrackIdToParticle(trueID).PdgCode();
           //std::cout << "Track ID and PDG are " << trueID << " and " << pdg
           //<< " respectively." << std::endl;
-          map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime},
+          map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime, globalPlane, wireid.Plane},
           cluster[iHit]->Integral(), pdg, trueID);
       }// IDEs.size > 0
       }
