@@ -444,6 +444,7 @@ namespace cvn
     art::ServiceHandle<cheat::ParticleInventoryService> pi;
      
     //int count =0;
+    
     for(size_t iHit = 0; iHit < cluster.size(); ++iHit) {
 
       geo::WireID wireid       = cluster[iHit]->WireID();
@@ -472,22 +473,24 @@ namespace cvn
       if (usePixelTruth) {
         // Get true particle and PDG responsible for this hit
         std::vector<sim::TrackIDE> IDEs = bt->HitToTrackIDEs(cluster[iHit]);
-       //if (IDEs.size()==0) { 
-         //count++; 
-        // std::cout<< "**Carlos**  IDEs size :"<<IDEs.size() << std::endl;
-        // std::cout << "*Carlos ** there are " <<count << " noise hits" << std::endl;
-          ///}
-       
+         
          if (IDEs.size()>0) {
-           int trueID = std::max_element(IDEs.begin(), IDEs.end(),               
-           [] (const sim::TrackIDE & it1, const sim::TrackIDE & it2) {
-             return it1.energyFrac < it2.energyFrac;
-           })->trackID;
-          int pdg = pi->TrackIdToParticle(trueID).PdgCode();
-          //std::cout << "Track ID and PDG are " << trueID << " and " << pdg
-          //<< " respectively." << std::endl;
-          map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime, globalPlane, wireid.Plane},
-          cluster[iHit]->Integral(), pdg, trueID);
+           // Get a vector of particles and PDG responsibles for this hit
+          // std::cout<< "** Carlos  IDEs size = " << IDEs.size() << std::endl;
+           std::vector<int> Tracks , pdgs;
+           std::vector<float> Energy; 
+           for (auto k : IDEs){
+              Tracks.push_back(k.trackID);
+              pdgs.push_back(pi->TrackIdToParticle(k.trackID).PdgCode());
+              Energy.push_back(k.energy);
+           } 
+//****************** Print track IDs and PDG codes for checking *********************************// 
+           //for (unsigned int l=0; l<trackids.size(); l++){
+            //  std::cout<< "**Carlos TrackID and PDG respectively: " << trackids.at(l) << "  "<< pdgs.at(l) << std::endl;
+          // }
+          map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime},
+          cluster[iHit]->Integral(), pdgs, Tracks, Energy); 
+         // std::cout << "****Carlos *** trackid size = "<< trackid.size() << std::endl;
       }// IDEs.size > 0
       }
 

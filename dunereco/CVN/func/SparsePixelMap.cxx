@@ -4,8 +4,10 @@
 /// \author  Jeremy Hewes - jhewes15@fnal.gov
 ////////////////////////////////////////////////////////////////////////
 
+#include  <iostream>
 #include "dune/CVN/func/SparsePixelMap.h"
 #include "canvas/Utilities/Exception.h"
+
 
 namespace cvn {
 
@@ -15,8 +17,9 @@ namespace cvn {
     fCoordinates.resize(fViews);
     fValues.resize(fViews);
     if (fUsePixelTruth) {
-      fPixelPDG.resize(fViews);
-      fPixelTrackID.resize(fViews);
+      fPixelPDGs.resize(fViews);
+      fPixelTrackIDs.resize(fViews);
+// *******************************************
     }
   }
 
@@ -41,7 +44,7 @@ namespace cvn {
 
   /// AddHit function that includes per-pixel truth labelling for segmentation
   void SparsePixelMap::AddHit(unsigned int view, std::vector<unsigned int> coordinates,
-    float value, int pdg, int trueID) {
+    float value, std::vector<int> pdgs, std::vector<int> Tracks, std::vector<float> Energy) {
 
     if (coordinates.size() != fDim) {
       throw art::Exception(art::errors::LogicError)
@@ -57,9 +60,19 @@ namespace cvn {
 
     fCoordinates[view].push_back(coordinates);
     fValues[view].push_back(value);
-    fPixelPDG[view].push_back(pdg);
-    fPixelTrackID[view].push_back(trueID);
+    fPixelPDGs[view].push_back(pdgs);
+    fPixelTrackIDs[view].push_back(Tracks);
+    fPixelEnergy[view].push_back(Energy);
+    //std::cout<< "*Carlos*  view " <<  view << "trackIDs size " << TrackIDs.size() << std::endl;
+    //for (auto k : TrackIDs){
+      // fPixelTrackIDs[view].push_back(k);
 
+    //}
+    
+    //std::cout<< "Tracks IDs = " << TrackIDs.at(TrackIDs.size()-1) << std::endl;
+    //std::cout<< "TrueID = " << trueID<< std::endl;
+
+     
   }
 
   std::vector<unsigned int> SparsePixelMap::GetNPixels() const {
@@ -72,23 +85,24 @@ namespace cvn {
   }
 
   // Return flat coordinates vector
-  std::vector<std::vector<unsigned int>> SparsePixelMap::GetCoordinatesFlat() const {
-    return FlattenVector<std::vector<unsigned int>>(fCoordinates);
-  }
+ // std::vector<std::vector<unsigned int>> SparsePixelMap::GetCoordinatesFlat() const {
+ //   return FlattenVector<std::vector<unsigned int>>(fCoordinates);
+ // }
 
   // Return flat pixel values vector
-  std::vector<float> SparsePixelMap::GetValuesFlat() const {
-    return FlattenVector<float>(fValues);
-  }
+  //std::vector<float> SparsePixelMap::GetValuesFlat() const {
+  //  return FlattenVector<float>(fValues);
+ // }
 
-  // Return flat true PDG vector
-  std::vector<int> SparsePixelMap::GetPixelPDGFlat() const {
-    return FlattenVector<int>(fPixelPDG);
-  }
+  // Return flat particle PDG vector
+  //std::vector<std::vector<int>> SparsePixelMap::GetPixelPDGsFlat() const {
+  //  return FlattenVector<std::vector<int>>(fPixelPDGs);
+  //}
 
   // Return flat true G4 track ID vector
-  std::vector<int> SparsePixelMap::GetPixelTrackIDFlat() const {
-    return FlattenVector<int>(fPixelTrackID);
-  }
+  //std::vector<int> SparsePixelMap::GetPixelTrackIDsFlat() const {
+   // return FlattenVector<int>(fPixelTrackID);
+  //}
+
 
 } // namespace cvn

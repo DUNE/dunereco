@@ -64,8 +64,10 @@ namespace cvn {
     std::vector<float> fNueEnergy, fNumuEnergy, fNutauEnergy; ///< Reconstructed energies
 
     bool fIncludePixelTruth;          ///< Whether to write per-pixel ground truth to HDF5
-    std::vector<int> fPixelTrackID;   ///< Pixel true track ID
-    std::vector<int> fPixelPDG;       ///< Pixel true particle PDG
+    std::vector<std::vector<int>> fPixelPDGs;       ///< Pixel  particles PDG
+    std::vector<std::vector<int>> fPixelTracks; ////< Pixel Track IDs
+    std::vector<std::vector<float>> fPixelEnergy; 
+    
 
     std::vector<std::vector<unsigned int>> fCoordinates; ///< Pixel coordinates
     std::vector<float> fValues;                          ///< Pixel values
@@ -180,10 +182,23 @@ namespace cvn {
 
         // Per pixel ground truth
         if (fIncludePixelTruth) {
-          std::vector<int> trackID = map->GetPixelTrackID(view);
-          fPixelTrackID.insert(fPixelTrackID.end(), trackID.begin(), trackID.end());
-          std::vector<int> pdg = map->GetPixelPDG(view);
-          fPixelPDG.insert(fPixelPDG.end(), pdg.begin(), pdg.end());
+          //std::vector<int> trackID = map->GetPixelTrackID();
+          //fPixelTrackID.insert(fPixelTrackID.end(), trackID.begin(), trackID.end());
+
+          std::vector<std::vector<int>> pdgs = map->GetPixelPDGs(view);
+          fPixelPDGs.insert(fPixelPDGs.end(), pdgs.begin(), pdgs.end());
+
+          std::vector<std::vector<int>> tracks = map->GetPixelTrackIDs(view);
+          fPixelTracks.insert(fPixelTracks.end(), tracks.begin(), tracks.end());
+
+          std::vector<std::vector<float>> energy = map->GetPixelEnergy(view);
+          fPixelEnergy.insert(fPixelEnergy.end(), energy.begin(), energy.end());
+
+          for (auto k : fPixelTracks){
+             std::cout<< "size of each track IDs vector = " << k.size() << std::endl;
+            // std::cout<< " size of each PDG vector = " << k.size() << std::endl;
+          }
+
         }
 
         // MC truth information
@@ -220,8 +235,10 @@ namespace cvn {
     fCoordinates.clear();
     fValues.clear();
 
-    fPixelTrackID.clear();
-    fPixelPDG.clear();
+    //fPixelTrackID.clear();
+    fPixelPDGs.clear();
+    fPixelTracks.clear();
+    fPixelEnergy.clear();
 
     fPDG.clear();
     fNProton.clear();
@@ -281,8 +298,11 @@ namespace cvn {
 
       // Pixel ground truth
       if (fIncludePixelTruth) {
-        f.createDataSet("pixel_track_id", fPixelTrackID);
-        f.createDataSet("pixel_pdg", fPixelPDG);
+        //f.createDataSet("pixel_track_id", fPixelTrackID);
+        f.createDataSet("pixel_pdg", fPixelPDGs);
+        f.createDataSet("pixel_track_IDs",fPixelTracks);
+        f.createDataSet("pixel_energy",fPixelEnergy);
+
       }
 
     } catch (HighFive::Exception& err) {
