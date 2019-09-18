@@ -47,14 +47,15 @@ namespace cvn {
     std::string fMapInstanceLabel; ///< Name of sparse map instance
     std::string fOutputName; ///< ROOT output filename
     std::string fTreeName; ///< ROOt tree name
+    bool        fIncludeGroundTruth; ///< Whether to include per-pixel ground truth
 
-    std::vector<std::vector<unsigned int>> fCoordinatesU; ///< Pixel coordinates for U plane
-    std::vector<std::vector<unsigned int>> fCoordinatesV; ///< Pixel coordinates for V plane
-    std::vector<std::vector<unsigned int>> fCoordinatesY; ///< Pixel coordinates for Y plane
-    std::vector<float> fValuesU; ///< Pixel values for U plane
-    std::vector<float> fValuesV; ///< Pixel values for V plane
-    std::vector<float> fValuesY; ///< Pixel values for Y plane
+    std::vector<std::vector<unsigned int>> fCoordinates; ///< Pixel coordinates
+    std::vector<float> fValues; ///< Pixel values
+    std::vector<std::vector<int>> fPixelPDG; ///< Pixel PDG truth
+    std::vector<std::vector<int>> fPixelTrackID; ///< Pixel track ID
+
     std::vector<unsigned int> fEvent; ///< Event numbers
+    unsigned int fView; ///< View numbers
 
     TFile* fFile; ///< Output ROOT file
     TTree* fTree; ///< ROOT tree for writing to file
@@ -73,6 +74,7 @@ namespace cvn {
     fMapInstanceLabel = p.get<std::string>("MapInstanceLabel");
     fOutputName =       p.get<std::string>("OutputName");
     fTreeName =         p.get<std::string>("TreeName");
+    fIncludeGroundTruth = p.get<bool>("IncludeGroundTruth");
 
   } // cvn::CVNSparseROOT::reconfigure
 
@@ -93,14 +95,17 @@ namespace cvn {
       << "There shouldn't be more than one SparsePixelMap per producer per event,"
       << " but here there are " << maps.size() << "." << std::endl;
 
-    if (maps.size() > 0) {
-      fCoordinatesU = maps[0]->GetCoordinates(0);
-      fCoordinatesV = maps[0]->GetCoordinates(1);
-      fCoordinatesY = maps[0]->GetCoordinates(2);
-      fValuesU = maps[0]->GetValues(0);
-      fValuesV = maps[0]->GetValues(1);
-      fValuesY = maps[0]->GetValues(2);
+    if (maps.empty()) return;
+
+    for (unsigned int it = 0; it < maps[0]->GetViews(); ++it) {
+      fCoordinates = maps[0]->GetCoordinates(it);
+      fValues = maps[0]->GetValues(it);
+      if (fIncludeGroundTruth) {
+        fPixelPDG = maps[0]->GetPixelPDGs(it);
+        fPixelTrackID = maps[0]->GetPixelTrackIDs(it);
+      }
       fEvent = std::vector<unsigned int>({e.id().run(), e.id().subRun(), e.id().event()});
+      fView = it;
       fTree->Fill();
     }
 
@@ -115,13 +120,15 @@ namespace cvn {
     fFile = TFile::Open(fileName.str().c_str(), "recreate");
 
     fTree = new TTree(fTreeName.c_str(), fTreeName.c_str());
-    fTree->Branch("CoordinatesU", &fCoordinatesU);
-    fTree->Branch("CoordinatesV", &fCoordinatesV);
-    fTree->Branch("CoordinatesY", &fCoordinatesY);
-    fTree->Branch("ValuesU", &fValuesU);
-    fTree->Branch("ValuesV", &fValuesV);
-    fTree->Branch("ValuesY", &fValuesY);
+    fTree->Branch("Coordinates", &fCoordinates);
+    fTree->Branch("Values", &fValues);
+    if (fIncludeGroundTruth) {
+      fTree->Branch("PixelPDG", &fPixelPDG);
+      fTree->Branch("PixelTrackID", &fPixelTrackID);
+    }
     fTree->Branch("Event", &fEvent);
+    fTree->Branch("View", &fView);
+    std::cout << "Tree cache size is " << fTree->GetCacheSize() << std::endl;
 
   } // function CVNSparseROOT::beginSubRun
 

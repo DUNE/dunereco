@@ -310,7 +310,6 @@ namespace cvn
   void PixelMapProducer::GetDUNE10ktGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc, 
                                                   unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const
   {
-
     unsigned int nWiresTPC = 400;
     unsigned int wireGap = 4;
     double driftLen = fGeometry->TPC(tpc).DriftDistance();
@@ -426,7 +425,7 @@ namespace cvn
   // Special case for ProtoDUNE where we want to extract single particles to mimic CCQE interactions. The output pixel maps should be the same as the workspace
   // but we need different treatment of the wire numbering
   void PixelMapProducer::GetProtoDUNEGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
-    unsigned int& globalWire, double globalTDC, unsigned int& globalPlane) const
+    unsigned int& globalWire, double& globalTDC, unsigned int& globalPlane) const
   {
     // We can just use the existing function to get the global wire & plane
     GetProtoDUNEGlobalWire(localWire, plane, tpc, globalWire, globalPlane);
@@ -438,7 +437,7 @@ namespace cvn
   SparsePixelMap PixelMapProducer::CreateSparseMap(std::vector< art::Ptr< recob::Hit> >& cluster,
     bool usePixelTruth) {
 
-    SparsePixelMap map(4, 3, usePixelTruth);
+    SparsePixelMap map(3, 3, usePixelTruth);
 
     art::ServiceHandle<cheat::BackTrackerService> bt;
     art::ServiceHandle<cheat::ParticleInventoryService> pi;
@@ -474,24 +473,24 @@ namespace cvn
         // Get true particle and PDG responsible for this hit
         std::vector<sim::TrackIDE> IDEs = bt->HitToTrackIDEs(cluster[iHit]);
          
-         if (IDEs.size()>0) {
-           // Get a vector of particles and PDG responsibles for this hit
+        if (IDEs.size()>0) {
+          // Get a vector of particles and PDG responsibles for this hit
           // std::cout<< "** Carlos  IDEs size = " << IDEs.size() << std::endl;
-           std::vector<int> Tracks , pdgs;
-           std::vector<float> Energy; 
-           for (auto k : IDEs){
-              Tracks.push_back(k.trackID);
-              pdgs.push_back(pi->TrackIdToParticle(k.trackID).PdgCode());
-              Energy.push_back(k.energy);
-           } 
+          std::vector<int> Tracks , pdgs;
+          std::vector<float> Energy; 
+          for (auto k : IDEs){
+            Tracks.push_back(k.trackID);
+            pdgs.push_back(pi->TrackIdToParticle(k.trackID).PdgCode());
+            Energy.push_back(k.energy);
+          } 
 //****************** Print track IDs and PDG codes for checking *********************************// 
-           //for (unsigned int l=0; l<trackids.size(); l++){
-            //  std::cout<< "**Carlos TrackID and PDG respectively: " << trackids.at(l) << "  "<< pdgs.at(l) << std::endl;
+          // for (unsigned int l=0; l<trackids.size(); l++){
+          //   std::cout<< "**Carlos TrackID and PDG respectively: " << trackids.at(l) << "  "<< pdgs.at(l) << std::endl;
           // }
-          map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime},
+          map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime, wireid.TPC},
           cluster[iHit]->Integral(), pdgs, Tracks, Energy); 
-         // std::cout << "****Carlos *** trackid size = "<< trackid.size() << std::endl;
-      }// IDEs.size > 0
+          // std::cout << "****Carlos *** trackid size = "<< trackid.size() << std::endl;
+        }// IDEs.size > 0
       }
 
       else {

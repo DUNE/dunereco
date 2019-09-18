@@ -46,7 +46,7 @@ namespace cvn
                                   unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const;
     void GetProtoDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const; 
     void GetProtoDUNEGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
-                                   unsigned int& globalWire, double globalTDC, unsigned int& globalPlane) const;
+                                   unsigned int& globalWire, double& globalTDC, unsigned int& globalPlane) const;
 
     unsigned int NWire() const {return fNWire;};
     unsigned int NTdc() const {return fNTdc;};
