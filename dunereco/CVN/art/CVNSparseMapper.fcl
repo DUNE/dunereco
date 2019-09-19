@@ -43,6 +43,7 @@ standard_cvnsparseroot:
   MapInstanceLabel: "cvnsparsemap"
   OutputName: "cvnsparse"
   TreeName: "CVNSparse"
+  IncludeGroundTruth: false
 }
 
 pdune_cvnsparsemapper: @local::standard_cvnsparsemapper
@@ -52,6 +53,9 @@ pdune_cvnsparseh5:     @local::standard_cvnsparseh5
 pdune_cvnsparseh5.IncludeMCTruth: false
 pdune_cvnsparseh5.IncludeRecoEnergy: false
 pdune_cvnsparseh5.IncludePixelTruth: true
+
+pdune_cvnsparseroot:   @local::standard_cvnsparseroot
+pdune_cvnsparseroot.IncludeGroundTruth: true
 
 END_PROLOG
 
