@@ -53,6 +53,7 @@ namespace cvn {
     std::vector<float> fValues; ///< Pixel values
     std::vector<std::vector<int>> fPixelPDG; ///< Pixel PDG truth
     std::vector<std::vector<int>> fPixelTrackID; ///< Pixel track ID
+    std::vector<std::vector<float>> fPixelEnergy; ///< Pixel energy
 
     std::vector<unsigned int> fEvent; ///< Event numbers
     unsigned int fView; ///< View numbers
@@ -103,6 +104,7 @@ namespace cvn {
       if (fIncludeGroundTruth) {
         fPixelPDG = maps[0]->GetPixelPDGs(it);
         fPixelTrackID = maps[0]->GetPixelTrackIDs(it);
+        fPixelEnergy = maps[0]->GetPixelEnergy(it);
       }
       fEvent = std::vector<unsigned int>({e.id().run(), e.id().subRun(), e.id().event()});
       fView = it;
@@ -125,6 +127,7 @@ namespace cvn {
     if (fIncludeGroundTruth) {
       fTree->Branch("PixelPDG", &fPixelPDG);
       fTree->Branch("PixelTrackID", &fPixelTrackID);
+      fTree->Branch("PixelEnergy", &fPixelEnergy);
     }
     fTree->Branch("Event", &fEvent);
     fTree->Branch("View", &fView);
@@ -143,3 +146,4 @@ namespace cvn {
   DEFINE_ART_MODULE(CVNSparseROOT)
 
 } // namespace cvn
+
