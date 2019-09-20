@@ -437,7 +437,7 @@ namespace cvn
   SparsePixelMap PixelMapProducer::CreateSparseMap(std::vector< art::Ptr< recob::Hit> >& cluster,
     bool usePixelTruth) {
 
-    SparsePixelMap map(3, 3, usePixelTruth);
+    SparsePixelMap map(2, 3, usePixelTruth);
 
     art::ServiceHandle<cheat::BackTrackerService> bt;
     art::ServiceHandle<cheat::ParticleInventoryService> pi;
@@ -472,26 +472,23 @@ namespace cvn
       if (usePixelTruth) {
         // Get true particle and PDG responsible for this hit
         std::vector<sim::TrackIDE> IDEs = bt->HitToTrackIDEs(cluster[iHit]);
-         
-        if (IDEs.size()>0) {
-          // Get a vector of particles and PDG responsibles for this hit
-          // std::cout<< "** Carlos  IDEs size = " << IDEs.size() << std::endl;
-          std::vector<int> Tracks , pdgs;
-          std::vector<float> Energy; 
-          for (auto k : IDEs){
-            Tracks.push_back(k.trackID);
-            pdgs.push_back(pi->TrackIdToParticle(k.trackID).PdgCode());
-            Energy.push_back(k.energy);
-          } 
-//****************** Print track IDs and PDG codes for checking *********************************// 
-          // for (unsigned int l=0; l<trackids.size(); l++){
-          //   std::cout<< "**Carlos TrackID and PDG respectively: " << trackids.at(l) << "  "<< pdgs.at(l) << std::endl;
-          // }
-          map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime, wireid.TPC},
-          cluster[iHit]->Integral(), pdgs, Tracks, Energy); 
-          // std::cout << "****Carlos *** trackid size = "<< trackid.size() << std::endl;
-        }// IDEs.size > 0
-      }
+         if (IDEs.size()>0) {
+           // Get track ids, PDG and energy responsibles for this hit
+           std::vector<int> Tracks , pdgs;
+           std::vector<float> Energy; 
+           for (auto k : IDEs){
+              Tracks.push_back(k.trackID);
+              pdgs.push_back(pi->TrackIdToParticle(k.trackID).PdgCode());
+              Energy.push_back(k.energy);
+           } 
+//****************** Print track IDs, PDG code and energy for checking *********************************// 
+           for (unsigned int l=0; l<Tracks.size(); l++){
+              std::cout<< "**Carlos TrackID, PDG & Energy respectively: " << Tracks.at(l) << "  "<< pdgs.at(l) << "  " << Energy.at(l) << std::endl;
+           }
+           map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime},
+             cluster[iHit]->Integral(), pdgs, Tracks, Energy); 
+         } // IDEs.size > 0
+      } // if PixelTuth 
 
       else {
         map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime},

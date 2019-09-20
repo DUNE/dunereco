@@ -65,7 +65,7 @@ namespace cvn {
 
     bool fIncludePixelTruth;          ///< Whether to write per-pixel ground truth to HDF5
     std::vector<std::vector<int>> fPixelPDGs;       ///< Pixel  particles PDG
-    std::vector<std::vector<int>> fPixelTracks; ////< Pixel Track IDs
+    std::vector<std::vector<int>> fPixelTrackIDs; ////< Pixel Track IDs
     std::vector<std::vector<float>> fPixelEnergy; 
     
 
@@ -189,12 +189,12 @@ namespace cvn {
           fPixelPDGs.insert(fPixelPDGs.end(), pdgs.begin(), pdgs.end());
 
           std::vector<std::vector<int>> tracks = map->GetPixelTrackIDs(view);
-          fPixelTracks.insert(fPixelTracks.end(), tracks.begin(), tracks.end());
+          fPixelTrackIDs.insert(fPixelTrackIDs.end(), tracks.begin(), tracks.end());
 
           std::vector<std::vector<float>> energy = map->GetPixelEnergy(view);
           fPixelEnergy.insert(fPixelEnergy.end(), energy.begin(), energy.end());
 
-          for (auto k : fPixelTracks){
+          for (auto k : fPixelTrackIDs){
              std::cout<< "size of each track IDs vector = " << k.size() << std::endl;
             // std::cout<< " size of each PDG vector = " << k.size() << std::endl;
           }
@@ -237,7 +237,7 @@ namespace cvn {
 
     //fPixelTrackID.clear();
     fPixelPDGs.clear();
-    fPixelTracks.clear();
+    fPixelTrackIDs.clear();
     fPixelEnergy.clear();
 
     fPDG.clear();
@@ -300,7 +300,7 @@ namespace cvn {
       if (fIncludePixelTruth) {
         //f.createDataSet("pixel_track_id", fPixelTrackID);
         f.createDataSet("pixel_pdg", fPixelPDGs);
-        f.createDataSet("pixel_track_IDs",fPixelTracks);
+        f.createDataSet("pixel_track_IDs",fPixelTrackIDs);
         f.createDataSet("pixel_energy",fPixelEnergy);
 
       }

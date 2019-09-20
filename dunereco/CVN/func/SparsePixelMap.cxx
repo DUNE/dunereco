@@ -19,6 +19,7 @@ namespace cvn {
     if (fUsePixelTruth) {
       fPixelPDGs.resize(fViews);
       fPixelTrackIDs.resize(fViews);
+      fPixelEnergy.resize(fViews);
 // *******************************************
     }
   }
@@ -55,7 +56,7 @@ namespace cvn {
     if (!fUsePixelTruth) {
       throw art::Exception(art::errors::LogicError)
         << "Pixel truth is disabled for this SparsePixelMap, but AddHit call includes "
-        << "pixel PDG and track ID.";
+        << "pixel PDG, track ID and Energy";
     }
 
     fCoordinates[view].push_back(coordinates);
