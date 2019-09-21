@@ -482,9 +482,9 @@ namespace cvn
               Energy.push_back(k.energy);
            } 
 //****************** Print track IDs, PDG code and energy for checking *********************************// 
-           for (unsigned int l=0; l<Tracks.size(); l++){
-              std::cout<< "**Carlos TrackID, PDG & Energy respectively: " << Tracks.at(l) << "  "<< pdgs.at(l) << "  " << Energy.at(l) << std::endl;
-           }
+           //for (unsigned int l=0; l<Tracks.size(); l++){
+           //   std::cout<< "**Carlos TrackID, PDG & Energy respectively: " << Tracks.at(l) << "  "<< pdgs.at(l) << "  " << Energy.at(l) << std::endl;
+           //}
            map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime},
              cluster[iHit]->Integral(), pdgs, Tracks, Energy); 
          } // IDEs.size > 0

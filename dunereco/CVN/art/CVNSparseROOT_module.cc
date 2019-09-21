@@ -60,6 +60,7 @@ namespace cvn {
 
     TFile* fFile; ///< Output ROOT file
     TTree* fTree; ///< ROOT tree for writing to file
+    size_t fCacheSize; ///< Size of TTree cache
 
   };
 
@@ -76,6 +77,7 @@ namespace cvn {
     fOutputName =       p.get<std::string>("OutputName");
     fTreeName =         p.get<std::string>("TreeName");
     fIncludeGroundTruth = p.get<bool>("IncludeGroundTruth");
+    fCacheSize =        p.get<size_t>("CacheSize");
 
   } // cvn::CVNSparseROOT::reconfigure
 
@@ -122,6 +124,7 @@ namespace cvn {
     fFile = TFile::Open(fileName.str().c_str(), "recreate");
 
     fTree = new TTree(fTreeName.c_str(), fTreeName.c_str());
+    fTree->SetCacheSize(fCacheSize);
     fTree->Branch("Coordinates", &fCoordinates);
     fTree->Branch("Values", &fValues);
     if (fIncludeGroundTruth) {

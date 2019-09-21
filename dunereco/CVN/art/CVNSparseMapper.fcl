@@ -44,6 +44,7 @@ standard_cvnsparseroot:
   OutputName: "cvnsparse"
   TreeName: "CVNSparse"
   IncludeGroundTruth: false
+  CacheSize: 50000000
 }
 
 pdune_cvnsparsemapper: @local::standard_cvnsparsemapper
