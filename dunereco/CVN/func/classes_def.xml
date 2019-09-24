@@ -67,6 +67,8 @@
 
   <class name="vector<vector<unsigned long> >"     />
   <class name="vector<vector<vector<unsigned int> > >" />
+  <class name="vector<vector<vector<float> > >"    />
+  <class name="vector<vector<vector<int> > >"      />
 
   <class name="std::vector<cvn::PixelMap>"         />
   <class name="art::Ptr<cvn::PixelMap>"            />
