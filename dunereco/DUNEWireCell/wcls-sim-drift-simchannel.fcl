@@ -21,8 +21,8 @@ physics :{
 
             inputers: ["wclsSimDepoSource:"]
             outputers: [
-            //   "wclsSimChannelSink:postdrift",
-            //   "wclsFrameSaver:simdigits"
+               "wclsSimChannelSink:postdrift",
+               "wclsFrameSaver:simdigits"
             //   , "wclsFrameSaver:nfdigits"
             //   , "wclsFrameSaver:spsignals"
             //   , "wclsFrameSaver:spthresholds"
@@ -35,10 +35,10 @@ physics :{
       }
    }
    p1 : [ plopper, tpcrawdecoder ]
-   // outputFiles : [ out ]
+   outputFiles : [ out ]
    
    trigger_paths : [ p1 ]
-   // end_paths: [ outputFiles ]
+   end_paths: [ outputFiles ]
 }
 outputs: {
    out: {

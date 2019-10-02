@@ -146,7 +146,6 @@ local wcls_simchannel_sink = g.pnode({
 local multipass = [
   g.pipeline([
                // wcls_simchannel_sink[n],
-               // bagger[n],
                sn_pipes[n],
                // sinks.orig_pipe[n],
                // nf_pipes[n],
