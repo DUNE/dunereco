@@ -138,26 +138,27 @@ local chndb = [{
 // an empty omnibus noise filter
 // for suppressing bad channels stored in the noise db
 local obnf = [
-g.pnode({
-  type: 'OmnibusNoiseFilter',
-  name: 'nf%d' %n,
-  data: {
+  g.pnode(
+    {
+      type: 'OmnibusNoiseFilter',
+      name: 'nf%d' % n,
+      data: {
 
-    // This is the number of bins in various filters
-    // nsamples: params.nf.nsamples,
+        // This is the number of bins in various filters
+        // nsamples: params.nf.nsamples,
 
-    channel_filters: [],
-    grouped_filters: [],
-    channel_status_filters: [],
-    noisedb: wc.tn(chndb[n]),
-    intraces: 'orig%d' % n,  // frame tag get all traces
-    outtraces: 'raw%d' % n,
-  },
-}, uses=[chndb[n], tools.anodes[n]], nin=1, nout=1
-)
-for n in std.range(0, std.length(tools.anodes) - 1)
+        channel_filters: [],
+        grouped_filters: [],
+        channel_status_filters: [],
+        noisedb: wc.tn(chndb[n]),
+        intraces: 'orig%d' % n,  // frame tag get all traces
+        outtraces: 'raw%d' % n,
+      },
+    }, uses=[chndb[n], tools.anodes[n]], nin=1, nout=1
+  )
+  for n in std.range(0, std.length(tools.anodes) - 1)
 ];
-local nf_pipes = [g.pipeline([obnf[n]], name='nf%d'%n) for n in std.range(0, std.length(tools.anodes) - 1)];
+local nf_pipes = [g.pipeline([obnf[n]], name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
@@ -201,13 +202,13 @@ local chsel_pipes = [
 local nfsp_pipes = [
   g.pipeline([
                chsel_pipes[n],
-               //magnify_pipes[n],
+               // magnify_pipes[n],
                nf_pipes[n],
-               //magnify_pipes2[n],
+               // magnify_pipes2[n],
                sp_pipes[n],
-               //magnify_pipes3[n],
-               //magnify_pipes4[n],
-               //magnify_pipes5[n],
+               magnify_pipes3[n],
+               // magnify_pipes4[n],
+               // magnify_pipes5[n],
              ],
              'nfsp_pipe_%d' % n)
   for n in std.range(0, std.length(tools.anodes) - 1)
