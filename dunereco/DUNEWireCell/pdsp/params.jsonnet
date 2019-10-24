@@ -132,7 +132,7 @@ base {
         // The "absolute" time (ie, in G4 time) that the lower edge of
         // of final readout tick #0 should correspond to.  This is a
         // "fixed" notion.
-        local tick0_time = 0,
+        local tick0_time = -250*wc.us,
 
         // Open the ductor's gate a bit early.
         local response_time_offset = $.det.response_plane / $.lar.drift_speed,
