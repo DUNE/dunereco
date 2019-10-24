@@ -10,31 +10,6 @@ standard_cvnsparsemapper:
   IncludePixelTruth:   false
 }
 
-standard_cvnsparseh5:
-{ 
-  module_type:         CVNSparseH5
-  #==================
-  MapModuleLabel:      "sparsemap"
-  MapInstanceLabel:    "cvnsparsemap"
-  OutputName:          "cvnsparse"
-
-  # MC truth info
-  IncludeMCTruth:      true
-  GenieGenModuleLabel: "generator"
-
-  # Reco info
-  IncludeRecoEnergy:   true
-  EnergyNueLabel:      "energynue"
-  EnergyNumuLabel:     "energynumu"
-  EnergyNutauLabel:    "energynutau"
-
-  # Per-pixel ground truth
-  IncludePixelTruth:   false
-
-  # Hit cut
-  TopologyHitsCut:     100
-}
-
 standard_cvnsparseroot:
 { 
   module_type:        CVNSparseROOT
@@ -49,11 +24,6 @@ standard_cvnsparseroot:
 
 pdune_cvnsparsemapper: @local::standard_cvnsparsemapper
 pdune_cvnsparsemapper.IncludePixelTruth: true
-
-pdune_cvnsparseh5:     @local::standard_cvnsparseh5
-pdune_cvnsparseh5.IncludeMCTruth: false
-pdune_cvnsparseh5.IncludeRecoEnergy: false
-pdune_cvnsparseh5.IncludePixelTruth: true
 
 pdune_cvnsparseroot:   @local::standard_cvnsparseroot
 pdune_cvnsparseroot.IncludeGroundTruth: true

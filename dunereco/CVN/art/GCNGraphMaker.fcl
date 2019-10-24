@@ -13,14 +13,6 @@ standard_gcngraphmaker:
   TrueParticleFeature: false
 }
 
-standard_gcnh5:
-{
-  module_type:        GCNH5
-  #==================
-  GraphModuleLabel: "graph"
-  OutputName:       "gcn"
-}
-
 standard_gcngraphmaker_protodune:
 {
   module_type:        GCNGraphMakerProtoDUNE

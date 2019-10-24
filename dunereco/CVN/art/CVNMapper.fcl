@@ -44,23 +44,6 @@ standard_cvnmapper_protodune_whole: @local::standard_cvnmapper_protodune
 standard_cvnmapper_protodune_whole.UseWholeEvent: true
 standard_cvnmapper_protodune_whole.WireLength: 1440
 
-standard_cvnh5:
-{
-  module_type: CVNH5
-  #==================
-  # OutputDir: "."
-  PixelMapInput: "cvnmap"
-  SetLog: false
-  ReverseViews: [false,true,false]
-  TopologyHitsCut: 100
-  NPixWire: 500
-  NPixTime: 500
-  GenieGenModuleLabel: "generator"
-  EnergyNueLabel: "energynue"
-  EnergyNumuLabel: "energynumu"
-  EnergyNutauLabel: "energynutau"
-}
-
 standard_cvnmapper_10kt:            @local::standard_cvnmapper
 standard_cvnmapper_10kt.TdcWidth:   20000
 standard_cvnmapper_10kt.WireLength: 12500

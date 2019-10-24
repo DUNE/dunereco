@@ -24,6 +24,11 @@
 #include "TFile.h"
 #include "TTree.h"
 
+// Boost includes
+#include <boost/uuid/uuid.hpp>            // uuid class
+#include <boost/uuid/uuid_generators.hpp> // generators
+#include <boost/uuid/uuid_io.hpp>         // streaming
+
 namespace cvn {
 
   class CVNSparseROOT : public art::EDAnalyzer {
@@ -119,8 +124,10 @@ namespace cvn {
   void CVNSparseROOT::beginSubRun(art::SubRun const& sr) {
 
     // Open ROOT file
+    boost::uuids::random_generator generator;
+    boost::uuids::uuid uuid = generator();
     std::ostringstream fileName;
-    fileName << fOutputName << "_" << sr.id().run() << "_" << sr.id().subRun() << ".root";
+    fileName << fOutputName << "_" << uuid << ".root";
     fFile = TFile::Open(fileName.str().c_str(), "recreate");
 
     fTree = new TTree(fTreeName.c_str(), fTreeName.c_str());
@@ -134,7 +141,6 @@ namespace cvn {
     }
     fTree->Branch("Event", &fEvent);
     fTree->Branch("View", &fView);
-    std::cout << "Tree cache size is " << fTree->GetCacheSize() << std::endl;
 
   } // function CVNSparseROOT::beginSubRun
 
