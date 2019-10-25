@@ -472,21 +472,27 @@ namespace cvn
       if (usePixelTruth) {
         // Get true particle and PDG responsible for this hit
         std::vector<sim::TrackIDE> IDEs = bt->HitToTrackIDEs(cluster[iHit]);
-         if (IDEs.size()>0) {
+         if (IDEs.size() > 0) {
            // Get track ids, PDG and energy responsibles for this hit
-           std::vector<int> Tracks , pdgs;
-           std::vector<float> Energy;
+           std::vector<int> tracks, pdgs;
+           std::vector<float> energy;
            for (auto k : IDEs){
-              Tracks.push_back(k.trackID);
-              pdgs.push_back(pi->TrackIdToParticle(k.trackID).PdgCode());
-              Energy.push_back(k.energy);
+              tracks.push_back(k.trackID);
+              simb::MCParticle p = pi->TrackIdToParticle(k.trackID);
+              // Manually check to see if we have a Michel electron here
+              int pdg = p.PdgCode();
+              if (pdg == 11 && p.Mother() != 0) {
+                int pdgParent = pi->TrackIdToParticle(p.Mother()).PdgCode();
+                if (pdgParent == 13 && p.Process() == "muMinusCaptureAtRest") {
+                  // If it's a Michel electron, tag it with an unphysical PDG code
+                  pdg = 99;
+                }
+              } // If non-primary electron
+              pdgs.push_back(pdg);
+              energy.push_back(k.energy);
            } 
-//****************** Print track IDs, PDG code and energy for checking *********************************// 
-           //for (unsigned int l=0; l<Tracks.size(); l++){
-           //   std::cout<< "**Carlos TrackID, PDG & Energy respectively: " << Tracks.at(l) << "  "<< pdgs.at(l) << "  " << Energy.at(l) << std::endl;
-           //}
            map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime, wireid.TPC},
-             cluster[iHit]->Integral(), pdgs, Tracks, Energy); 
+             cluster[iHit]->Integral(), pdgs, tracks, energy); 
          } // IDEs.size > 0
       } // if PixelTuth 
 
