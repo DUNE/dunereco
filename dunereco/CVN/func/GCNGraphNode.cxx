@@ -22,16 +22,31 @@ namespace cvn
 
   }
 
+  GCNGraphNode::GCNGraphNode(std::vector<float> position,std::vector<float> features,
+    std::vector<float> groundTruth):
+  fPosition(position),
+  fFeatures(features),
+  fGroundTruth(groundTruth)
+  {
+
+  }
+
   /// Get the node position
   const std::vector<float> GCNGraphNode::GetPosition() const
   {
     return fPosition;
   }
 
-  // Get the node features
+  /// Get the node features
   const std::vector<float> GCNGraphNode::GetFeatures() const
   {
     return fFeatures;
+  }
+
+  /// Get the node truth
+  const std::vector<float> GCNGraphNode::GetGroundTruth() const
+  {
+    return fGroundTruth;
   }
 
   /// Add a node position coordinate
@@ -42,6 +57,11 @@ namespace cvn
   /// Add a node feature
   void GCNGraphNode::AddFeature(float feature){
     fFeatures.push_back(feature);
+  }
+
+  /// Add ground truth information
+  void GCNGraphNode::AddGroundTruth(float truth) {
+    fGroundTruth.push_back(truth);
   }
 
   /// Get the number of features

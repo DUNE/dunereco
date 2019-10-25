@@ -44,6 +44,10 @@ namespace cvn
     /// Get the neighbours map <graph node, neighbours> for the three 2D graph in 2 box (npixel+1) around the pixel
     const std::map<unsigned int,unsigned int> Get2DGraphNeighbourMap(const cvn::GCNGraph &g, const unsigned int npixel) const;
 
+    /// Get ground truth for spacepoint deghosting graph network
+    const std::vector<bool> GetNodeGroundTruth(art::Event const &evt,
+      const std::string &splabel, float distCut) const;
+
   private:
 
   };

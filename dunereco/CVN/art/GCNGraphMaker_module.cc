@@ -24,6 +24,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 
 #include "dune/CVN/func/GCNGraph.h"
+#include "dune/CVN/func/GCNParticleFlow.h"
 #include "dune/CVN/func/GCNFeatureUtils.h"
 
 namespace cvn {
@@ -46,14 +47,22 @@ namespace cvn {
     /// Minimum number of space points to produce a graph
     unsigned short fMinClusterHits;
 
-    /// Radius for calculating number of neighbours
+    /// Number of neighbours as a graph feature - enable & define radius
+    bool fUseNeighbourRadius;
     float fNeighbourRadius;
 
     /// Do we want collection plane hits only?
     bool fCollectionPlaneOnly;
 
     /// Include true GEANT ID of primary associated particle as graph feature
-    bool fTrueParticleFeature;
+    bool fSaveTrueParticle;
+
+    /// Include ground truth for node - and if so, define proximity
+    bool fUseNodeGroundTruth;
+    float fTruthRadius;
+
+    /// Whether to save particle hierarchy for particle flow ground truth
+    bool fSaveParticleFlow;
 
   };
 
@@ -63,12 +72,17 @@ namespace cvn {
   GCNGraphMaker::GCNGraphMaker(fhicl::ParameterSet const& pset): art::EDProducer(pset),
   fSpacePointLabel (pset.get<std::string>    ("SpacePointLabel")),
   fMinClusterHits  (pset.get<unsigned short> ("MinClusterHits")),
+  fUseNeighbourRadius(pset.get<bool>("UseNeighbourRadius")),
   fNeighbourRadius (pset.get<float>("NeighbourRadius")),
   fCollectionPlaneOnly(pset.get<bool>("CollectionPlaneOnly")),
-  fTrueParticleFeature(pset.get<bool>("TrueParticleFeature"))
+  fSaveTrueParticle(pset.get<bool>("SaveTrueParticle")),
+  fUseNodeGroundTruth(pset.get<bool>("UseNodeGroundTruth")),
+  fTruthRadius(pset.get<float>("TruthRadius")),
+  fSaveParticleFlow(pset.get<bool>("SaveParticleFlow"))
 
   {
     produces< std::vector<cvn::GCNGraph>   >();
+    if (fSaveParticleFlow) produces< std::vector<cvn::GCNParticleFlow> >();
   }
 
   //......................................................................
@@ -96,6 +110,10 @@ namespace cvn {
 
     // Create the Graph vector and fill it if we have enough hits
     std::unique_ptr<std::vector<cvn::GCNGraph>> graphs(new std::vector<cvn::GCNGraph>);
+    std::unique_ptr<std::vector<cvn::GCNParticleFlow>> gpf(nullptr);
+    if (fSaveParticleFlow) {
+      gpf = std::make_unique<std::vector<cvn::GCNParticleFlow> >(1, cvn::GCNParticleFlow());
+    }
 
     if(allSP->size() >= fMinClusterHits){
 
@@ -111,7 +129,9 @@ namespace cvn {
       // Get the charge and true ID for each spacepoint
       auto chargeMap = graphUtil.GetSpacePointChargeMap(evt, fSpacePointLabel);
       const std::map<unsigned int, unsigned int> *trueIDMap = nullptr;
-      if (fTrueParticleFeature) trueIDMap = new const std::map<unsigned int, unsigned int>(graphUtil.GetTrueG4ID(evt, fSpacePointLabel));
+      if (fSaveTrueParticle) {
+        trueIDMap = new const std::map<unsigned int, unsigned int>(graphUtil.GetTrueG4ID(evt, fSpacePointLabel));
+      } 
 
       for (size_t itSP = 0; itSP < allSP->size(); ++itSP) {
         const recob::SpacePoint& sp = allSP->at(itSP);
@@ -136,14 +156,23 @@ namespace cvn {
         for(unsigned int p = 0; p < 3; ++p) position.push_back(pos[p]);
         
         // Calculate some features
-        std::vector<float> features;
+        std::vector<float> features, truth;
         // The neighbour map gives us our first feature
         features.push_back(neighbourMap.at(sp.ID()));
         // Now charge and true ID
         features.push_back(chargeMap.at(sp.ID()));
-        if (fTrueParticleFeature) features.push_back(trueIDMap->at(sp.ID()));
 
-        newGraph.AddNode(position, features);
+        // Now ground truth info
+        if (fSaveTrueParticle) {
+          truth.push_back(trueIDMap->at(sp.ID()));
+        }
+        if (fUseNodeGroundTruth) {
+          // fdsafdsafdsafdsafdsa
+        }
+
+        if (fSaveParticleFlow)
+
+        newGraph.AddNode(position, features, truth);
       }
 
       mf::LogInfo("GCNGraphMaker") << "Produced GCNGraph object with "
@@ -155,6 +184,7 @@ namespace cvn {
 
     // Write our graph to the event
     evt.put(std::move(graphs));
+    if (fSaveParticleFlow) evt.put(std::move(gpf));
   }
 
 

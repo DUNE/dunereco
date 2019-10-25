@@ -39,6 +39,13 @@ namespace cvn
     AddNode(newNode);
   }
 
+  // Add a new node
+  void GCNGraph::AddNode(std::vector<float> position, std::vector<float> features,
+    std::vector<float> groundTruth){
+    GCNGraphNode newNode(position,features,groundTruth);
+    AddNode(newNode);
+  }
+
   void GCNGraph::AddNode(cvn::GCNGraphNode node){
     fNodes.push_back(node);
   }
@@ -140,6 +147,10 @@ namespace cvn
       // Now add the features
       for(const float feat : node.GetFeatures()){
         nodeVector.push_back(feat);
+      }
+      // Now add the ground truth
+      for (const float truth : node.GetGroundTruth()) {
+        nodeVector.push_back(truth);
       }
     }
 

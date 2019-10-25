@@ -30,6 +30,8 @@ namespace cvn
 
     /// Add a new node
     void AddNode(std::vector<float> position, std::vector<float> features);
+    void AddNode(std::vector<float> position, std::vector<float> features,
+      std::vector<float> groundTruth);
     void AddNode(GCNGraphNode node);
     
     /// Get the number of nodes

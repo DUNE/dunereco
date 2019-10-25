@@ -10,6 +10,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "larsim/MCCheater/BackTrackerService.h"
+#include "larsim/MCCheater/ParticleInventoryService.h"
 
 #include "dune/CVN/func/GCNGraph.h"
 #include "dune/CVN/func/GCNGraphNode.h"
@@ -233,6 +234,93 @@ const std::map<unsigned int,unsigned int> cvn::GCNFeatureUtils::Get2DGraphNeighb
   return neighbourMap;
 
 }
+
+const std::vector<bool> cvn::GCNFeatureUtils::GetNodeGroundTruth(art::Event const &evt,
+  const std::string &spLabel, float distCut) const{
+
+  // Fetch cheat services
+  art::ServiceHandle<cheat::BackTrackerService> bt;
+  art::ServiceHandle<cheat::ParticleInventoryService> pi;
+
+  // Get the hits associated to the space points
+  auto allSP = evt.getValidHandle<std::vector<recob::SpacePoint>>(spLabel);
+  const art::FindManyP<recob::Hit> sp2Hit(allSP, evt, spLabel);
+
+  std::vector<bool> ret(allSP->size(), false);
+
+  // Loop over each spacepoint
+  for (size_t itSP = 0; itSP < allSP->size(); ++itSP) {
+    bool done = false;
+    const recob::SpacePoint& sp = allSP->at(itSP);
+
+    // Loop over each hit associated with this spacepoint. At this point we
+    // ask three questions to figure out if this should be considered a "true"
+    // spacepoint:
+    //   1) Do all the hits associated with this spacepoint come from a true
+    //      particle (ie. are not noise)?
+    //   2) If yes to 1), do all the hits associated with this spacepoint
+    //      derive the majority of their energy from the same true particle?
+    //   3) Does the reconstructed position of the spacepoint fall within
+    //      some FHICL-configurable distance to the true particle's
+    //      trajectory?
+    // If yes to all three of these, the spacepoint is true. Otherwise, it's
+    // false.
+
+    int trueParticleID = -1;
+    for (auto hit : sp2Hit.at(itSP)) {
+      auto ides = bt->HitToTrackIDEs(hit);
+      if (ides.empty()) {
+        std::cout << "No true particles for this hit!" << std::endl;
+        done = true;
+        break;
+      }
+      int trueID = -1;
+      float trueEnergy = -1;
+      // Loop over IDEs and find the particle that contributed the most energy
+      for (auto ide : ides) {
+        if (ide.energy > trueEnergy) {
+          trueID = abs(ide.trackID);
+          trueEnergy = ide.energy;
+        }
+      } // for ide
+
+      // Check whether this hit's true particle matches other hits from this spacepoint
+      if (trueParticleID == -1) trueParticleID = trueID;
+      else if (trueParticleID != trueID) {
+        // If true IDs don't match, quit
+        std::cout << "True particles do not match!" << std::endl;
+        done = true;
+        break;
+      }
+
+    } // for hit
+
+    if (done) continue;
+
+    // Now use the particle inventory service to get the true particle by id
+    simb::MCParticle p = pi->TrackIdToParticle(trueParticleID);
+    simb::MCTrajectory traj = p.Trajectory();
+    // Now loop over the trajectory and find the smallest distance!
+    TVector3 pos(sp.XYZ());
+    for (size_t it = 0; it < traj.size(); ++it) {
+      if (it > 0)
+        std::cout << "Space between trajectory points is " << (traj.Position(it).Vect() - traj.Position(it-1).Vect()).Mag() << std::endl;
+      TVector3 diff = traj.Position(it).Vect() - pos;
+      float dist = diff.Mag();
+      if (dist < distCut) {
+        std::cout << "Found a trajectory point with distance " << dist << "!" << std::endl;
+        ret[itSP] = true;
+        break;
+      }
+    } // for trajectory point it
+
+    if (!ret[itSP]) std::cout << "No trajectory point within range." << std::endl;
+
+  } // for itSP
+
+  return ret;
+
+} // function GCNFeatureUtils::GetNodeGroundTruth
 
 
 
