@@ -85,6 +85,98 @@ const std::map<int,unsigned int> cvn::GCNFeatureUtils::GetAllNeighbours(art::Eve
   return neighbourMap;
 } // function GetAllNeighbours
 
+// Sometimes we might want to know the number of neighbours within various radii
+const std::vector<std::map<int,unsigned int>> cvn::GCNFeatureUtils::GetNeighbourForRadii(art::Event const &evt,
+                                          const std::vector<float> rangeCuts, const std::string &spLabel) const{
+
+  std::vector<std::map<int,unsigned int>> result;
+  // Initialise a map for each range cut value
+  for(unsigned int m = 0; m < rangeCuts.size(); ++m){
+    result.push_back(std::map<int,unsigned int>());
+  }
+
+  // Now loop over all of the space points and simultaneously fill our maps
+  // Get the space points from the event and make the map
+  art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
+  std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
+  if(evt.getByLabel(spLabel,spacePointHandle)){
+    art::fill_ptr_vector(allSpacePoints, spacePointHandle);
+  }
+  for(const art::Ptr<recob::SpacePoint> sp0 : allSpacePoints){
+    // We want an entry even if it ends up being zero
+    for(auto &m : result){
+      m[sp0->ID()] = 0;
+    }
+
+    for(const art::Ptr<recob::SpacePoint> sp1 : allSpacePoints){
+
+      if(sp0->ID() == sp1->ID()) continue;
+
+      // For some reason we have to use arrays
+      const double *p0 = sp0->XYZ();
+      const double *p1 = sp1->XYZ();
+
+      // Get the distance between the points
+      const float dx = p1[0] - p0[0];
+      const float dy = p1[1] - p0[1];
+      const float dz = p1[2] - p0[2];
+      const float dist = sqrt(dx*dx + dy*dy + dz*dz);
+
+      // Fill the maps if we satify the criteria
+      for(unsigned int r = 0; r < rangeCuts.size(); ++r){
+        if(dist < rangeCuts[r]){
+          result[r][sp0->ID()] = result[r][sp0->ID()] + 1;
+        }
+      }
+
+    }
+  }
+  return result;
+
+}
+
+const std::map<int,int> cvn::GCNFeatureUtils::GetNearestNeighbours(art::Event const &evt, const std::string &spLabel) const{
+
+  std::map<int,int> closestID;
+  std::map<int,float> closestDistance;
+  // Now loop over all of the space points and simultaneously fill our maps
+  // Get the space points from the event and make the map
+  art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
+  std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
+  if(evt.getByLabel(spLabel,spacePointHandle)){
+    art::fill_ptr_vector(allSpacePoints, spacePointHandle);
+  }
+
+  for(const art::Ptr<recob::SpacePoint> sp0 : allSpacePoints){
+    // We want an entry even if it ends up being zero
+    closestID[sp0->ID()] = 0;
+    closestDistance[sp0->ID()] = 99999;
+
+    for(const art::Ptr<recob::SpacePoint> sp1 : allSpacePoints){
+
+      if(sp0->ID() == sp1->ID()) continue;
+
+      // For some reason we have to use arrays
+      const double *p0 = sp0->XYZ();
+      const double *p1 = sp1->XYZ();
+
+      // Get the distance between the points
+      const float dx = p1[0] - p0[0];
+      const float dy = p1[1] - p0[1];
+      const float dz = p1[2] - p0[2];
+      const float dist = sqrt(dx*dx + dy*dy + dz*dz);
+
+      if(dist < closestDistance[sp0->ID()]){
+        closestDistance[sp0->ID()] = dist;
+        closestID[sp0->ID()] = sp1->ID();
+      }
+
+    }
+  }
+  return closestID;
+
+}
+
 // Use the association between space points and hits to return a charge
 const std::map<unsigned int, float> cvn::GCNFeatureUtils::GetSpacePointChargeMap(
   art::Event const &evt, const std::string &spLabel) const {

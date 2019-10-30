@@ -34,6 +34,13 @@ namespace cvn
     /// than repeated calls to the above function
     const std::map<int,unsigned int> GetAllNeighbours(art::Event const &evt, const float rangeCut, const std::string &spLabel) const;
     const std::map<int,unsigned int> GetAllNeighbours(art::Event const &evt, const float rangeCut, const std::vector<art::Ptr<recob::SpacePoint>> &sps) const;
+
+    /// Gets the number of nearest neigbours for each space point for a vector of cut values. Much more efficient that using the above functions multiple times.
+    const std::vector<std::map<int,unsigned int>> GetNeighbourForRadii(art::Event const &evt, const std::vector<float> rangeCuts, const std::string &spLabel) const;
+
+    /// Get the nearest neighbour map for the spacepoints. Returns a map of <nose_spacepoint_id,nearest_neighbour_spacepoint_id>
+    const std::map<int,int> GetNearestNeighbours(art::Event const &evt, const std::string &spLabel) const;
+
     /// Use the association between space points and hits to return a charge
     const std::map<unsigned int, float> GetSpacePointChargeMap(art::Event const &evt, const std::string &spLabel) const;
     /// Get the true G4 ID for each spacepoint
