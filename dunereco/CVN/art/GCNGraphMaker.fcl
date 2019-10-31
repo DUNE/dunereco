@@ -38,7 +38,7 @@ standard_gcngraphmaker_protodune:
   #==================
   SpacePointLabel:     "pandora"
   MinClusterHits:      100
-  NeighbourRadius:     [3.0,10.,30.] # Distance in cm
+  NeighbourRadii:     [3.0,10.,30.] # Distance in cm
   UseBeamSliceOnly:    false
   SliceModuleLabel:    "pandora"
   ParticleModuleLabel: "pandora"
