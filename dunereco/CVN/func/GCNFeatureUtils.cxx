@@ -16,6 +16,8 @@
 #include "dune/CVN/func/GCNGraphNode.h"
 #include "dune/CVN/func/PixelMap.h"
 
+#include "TVector3.h"
+
 cvn::GCNFeatureUtils::GCNFeatureUtils() {
 
 }
@@ -175,6 +177,76 @@ const std::map<int,int> cvn::GCNFeatureUtils::GetNearestNeighbours(art::Event co
   }
   return closestID;
 
+}
+
+// Get the two nearest neighbours to use for calcuation of angles between them and the node in question
+const std::map<int,std::pair<int,int>> cvn::GCNFeatureUtils::GetTwoNearestNeighbours(art::Event const &evt, const recob::SpacePoint &sp, const std::string &spLabel) const{
+
+  std::map<int,int> closestID;
+  std::map<int,int> secondID;
+  std::map<int,float> closestDistance;
+  std::map<int,float> secondDistance;
+  // Now loop over all of the space points and simultaneously fill our maps
+  // Get the space points from the event and make the map
+  art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
+  std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
+  if(evt.getByLabel(spLabel,spacePointHandle)){
+    art::fill_ptr_vector(allSpacePoints, spacePointHandle);
+  }
+
+  for(const art::Ptr<recob::SpacePoint> sp0 : allSpacePoints){
+    // We want an entry even if it ends up being zero
+    int thisSP = sp0->ID();
+    closestID[thisSP] = 0;
+    closestDistance[thisSP] = 99999;
+
+    for(const art::Ptr<recob::SpacePoint> sp1 : allSpacePoints){
+
+      if(thisSP == sp1->ID()) continue;
+
+      // For some reason we have to use arrays
+      const double *p0 = sp0->XYZ();
+      const double *p1 = sp1->XYZ();
+
+      // Get the distance between the points
+      const float dx = p1[0] - p0[0];
+      const float dy = p1[1] - p0[1];
+      const float dz = p1[2] - p0[2];
+      const float dist = sqrt(dx*dx + dy*dy + dz*dz);
+
+      if(dist < closestDistance[thisSP]){
+        secondDistance[thisSP] = closestDistance[thisSP];
+        closestDistance[thisSP] = dist;
+        secondID[thisSP] = closestID[thisSP];
+        closestID[thisSP] = sp1->ID();
+      }
+
+    }
+  }
+
+  std::map<int,std::pair<int,int>> finalMap;
+  for(unsigned int m = 0; m < closestID.size(); ++m){
+    finalMap[m] = std::make_pair(closestID[m],secondID[m]);
+  }
+
+  return finalMap;
+
+}
+
+// Get the angle and the dot product between the vector from the base node to its neighbours
+void cvn::GCNFeatureUtils::GetAngleAndDotProduct(const recob::SpacePoint &baseNode, const recob::SpacePoint &n1, const recob::SpacePoint &n2, float &dotProduct, float &angle) const{
+
+  TVector3 basePos(baseNode.XYZ());
+  TVector3 neighbour1Pos(n1.XYZ());
+  TVector3 neighbour2Pos(n2.XYZ());
+
+  TVector3 baseToNeighbour1 = neighbour1Pos - basePos;
+  TVector3 baseToNeighbour2 = neighbour2Pos - basePos;
+
+  dotProduct = baseToNeighbour1.Dot(baseToNeighbour2);
+  angle = baseToNeighbour1.Angle(baseToNeighbour2);
+
+  return;
 }
 
 // Use the association between space points and hits to return a charge
