@@ -12,6 +12,8 @@
 #include "tensorflow/core/public/session.h"
 #include "tensorflow/core/platform/env.h"
 
+#include "tensorflow/core/public/session_options.h"
+
 // -------------------------------------------------------------------
 tf::Graph::Graph(const char* graph_file_name, const std::vector<std::string> & outputs, bool & success, int ninputs, int noutputs)
 {
@@ -20,7 +22,14 @@ tf::Graph::Graph(const char* graph_file_name, const std::vector<std::string> & o
     n_inputs = ninputs;
     n_outputs = noutputs;
 
-    auto status = tensorflow::NewSession(tensorflow::SessionOptions(), &fSession);
+    // Force tf to only use a single core so it doesn't eat batch farms
+    tensorflow::SessionOptions options;
+    tensorflow::ConfigProto &config = options.config;
+    config.set_inter_op_parallelism_threads(1);
+    config.set_intra_op_parallelism_threads(1);
+    config.set_use_per_session_threads(false);
+
+    auto status = tensorflow::NewSession(options, &fSession);
     if (!status.ok())
     {
         std::cout << status.ToString() << std::endl;
@@ -130,7 +139,7 @@ std::vector< std::vector< std::vector<float> > > tf::Graph::run(
 
     std::vector< tensorflow::Tensor > _x;
 
-    // Single-output network
+    // Single-input network
     if (n_inputs == 1)
     {
         _x.push_back(tensorflow::Tensor(tensorflow::DT_FLOAT, tensorflow::TensorShape({ samples, rows, cols, depth })));
@@ -148,7 +157,7 @@ std::vector< std::vector< std::vector<float> > > tf::Graph::run(
             }
         }
     }
-    // Multi-output network
+    // Multi-input network
     else
     {
         for(int i=0; i<depth; ++i){
@@ -166,7 +175,7 @@ std::vector< std::vector< std::vector<float> > > tf::Graph::run(
                     for (long long int c = 0; c < cols; ++c) {
                         const auto & col = row[c];
                         long long int d = view;
-                        input_map(s, r, c, d) = col[d];
+                        input_map(s, r, c, 0) = col[d];
                     }
                 }
             }

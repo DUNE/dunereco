@@ -18,5 +18,12 @@ standard_regcnnmapper:
   RegCNNResultLabel: "regcnnresult"
 }
 
+standard_regcnnvtxmapper: @local::standard_regcnnmapper
+standard_regcnnvtxmapper.ClusterPMLabel: "regcnnvtxmap"
+standard_regcnnvtxmapper.GlobalWireMethod: 2
+standard_regcnnvtxmapper.WireLength: 600
+standard_regcnnvtxmapper.TdcWidth:   280
+
+
 
 END_PROLOG

@@ -51,7 +51,7 @@ public:
 	long long int samples = -1);
     std::vector< std::vector<float> > run(
 	const std::vector< std::vector< std::vector< std::vector<float> > > > & x,
-        const float* cm, const unsigned int& ninputs,
+        const std::vector<float> cm, const unsigned int& ninputs,
 	long long int samples = -1);
 
     std::vector< std::vector< float > > run(const tensorflow::Tensor & x);

@@ -41,6 +41,7 @@
 #include "dune/RegCNN/func/RegCNNResult.h"
 #include "dune/RegCNN/func/RegPixelMap.h"
 #include "dune/RegCNN/art/TFRegNetHandler.h"
+#include "dune/RegCNN/art/RegCNNVtxHandler.h"
 
 namespace cnn {
 
@@ -65,11 +66,12 @@ namespace cnn {
     std::string fTarget;
 
     cnn::TFRegNetHandler fTFHandler;
+    cnn::RegCNNVtxHandler fRegCNNVtxHandler;
 
     /// Number of outputs fron neural net
     //unsigned int fNOutput;
 
-    void getCM(const RegPixelMap& pm, float* cm_list);
+    void getCM(const RegPixelMap& pm, std::vector<float> &cm_list);
   };
 
   //.......................................................................
@@ -79,7 +81,8 @@ namespace cnn {
     fResultLabel      (pset.get<std::string>         ("ResultLabel")),
     fCNNType          (pset.get<std::string>         ("CNNType")),
     fTarget           (pset.get<std::string>         ("Target")),
-    fTFHandler       (pset.get<fhicl::ParameterSet> ("TFNetHandler"))
+    fTFHandler        (pset.get<fhicl::ParameterSet> ("TFNetHandler")),
+    fRegCNNVtxHandler (pset.get<fhicl::ParameterSet> ("RegCNNVtxHandler"))
   {
     produces< std::vector<cnn::RegCNNResult>   >(fResultLabel);
 
@@ -102,7 +105,7 @@ namespace cnn {
   }
 
   //......................................................................
-  void RegCNNEvaluator::getCM(const RegPixelMap& pm, float* cm_list)
+  void RegCNNEvaluator::getCM(const RegPixelMap& pm, std::vector<float> &cm_list)
   {
     //std::cout << pm.fBound.fFirstWire[0]+pm.fNWire/2 << std::endl;
     //std::cout << pm.fBound.fFirstTDC[0]+pm.fNTdc*pm.fNTRes/2 << std::endl;
@@ -140,10 +143,13 @@ namespace cnn {
             //std::cout << "-->" << networkOutput[0] << std::endl;
         }
         else if (fTarget == "nuevertex"){
-            float center_of_mass[6] = {0};
+            std::vector<float> center_of_mass(6,0);
             getCM(*pixelmaplist[0], center_of_mass);
+            //std::cout << "cm: " << center_of_mass[0] << " " << center_of_mass[1] << " " << center_of_mass[2] << std::endl;
             networkOutput = fTFHandler.Predict(*pixelmaplist[0], center_of_mass);
             //std::cout << networkOutput[0] << " " << networkOutput[1] << " " << networkOutput[2] << std::endl;
+	} else if (fTarget == "nuevertex_on_img"){
+	    networkOutput = fRegCNNVtxHandler.GetVertex(evt, *pixelmaplist[0]);
         } else {
             std::cout << "Wrong Target" << std::endl;
             abort();

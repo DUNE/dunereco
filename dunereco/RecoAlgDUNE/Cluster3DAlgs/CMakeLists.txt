@@ -3,11 +3,11 @@ art_make(
 	  LIBRARY_NAME  dune_RecoAlgDUNE_Cluster3DAlgs
           LIB_LIBRARIES larreco_VertexFinder_HarrisVertexFinder_module
                         lardataobj_RecoBase
-                        larsim_Simulation nutools_ParticleNavigation lardataobj_Simulation
+                        larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
                         larevt_Filters
                         larcorealg_Geometry
                         larcore_Geometry_Geometry_service
-                        lardata_RecoObjects larreco_Deprecated
+                        lardata_RecoObjects
                         lardataobj_AnalysisBase
                         lardata_Utilities
                         ${ART_FRAMEWORK_CORE}

@@ -42,7 +42,7 @@ namespace cnn
 
     /// Get boundaries for pixel map representation of cluster
     RegCNNBoundary DefineBoundary(std::vector< art::Ptr< recob::Hit > >& cluster);
-    RegCNNBoundary DefineBoundary(std::vector< art::Ptr< recob::Hit > >& cluster, const float *vtx);
+    RegCNNBoundary DefineBoundary(std::vector< art::Ptr< recob::Hit > >& cluster, const std::vector<float> &vtx);
 
     /// Function to convert to a global unwrapped wire number
     double GetGlobalWire(const geo::WireID& wireID);
@@ -58,7 +58,7 @@ namespace cnn
     RegPixelMap CreateMap(std::vector< art::Ptr< recob::Hit > >& cluster, art::FindManyP<recob::Wire> fmwire);
     RegPixelMap CreateMap(std::vector< art::Ptr< recob::Hit > >& cluster, 
                           art::FindManyP<recob::Wire> fmwire,
-                          const float *vtx);
+                          const std::vector<float> &vtx);
 
     RegPixelMap CreateMapGivenBoundary(std::vector< art::Ptr< recob::Hit > >& cluster,
                                     const RegCNNBoundary& bound,
