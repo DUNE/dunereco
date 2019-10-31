@@ -47,8 +47,8 @@ namespace cvn {
       /// Minimum number of space points to produce a graph
       unsigned short fMinClusterHits;
 
-      /// Radius for calculating number of neighbours
-      float fNeighbourRadius;
+      /// Radii for calculating number of neighbours for any number of cut values
+      std::vector<float> fNeighbourRadii;
 
       /// Use only the beam slice as determined by Pandora
       bool fUseBeamSliceOnly;
@@ -66,7 +66,7 @@ namespace cvn {
   GCNGraphMakerProtoDUNE::GCNGraphMakerProtoDUNE(fhicl::ParameterSet const& pset): art::EDProducer(pset),
   fSpacePointLabel (pset.get<std::string>    ("SpacePointLabel")),
   fMinClusterHits  (pset.get<unsigned short> ("MinClusterHits")),
-  fNeighbourRadius (pset.get<float>("NeighbourRadius")),
+  fNeighbourRadii (pset.get<std::vector<float>>("NeighbourRadii")),
   fUseBeamSliceOnly(pset.get<bool>("UseBeamSliceOnly")),
   fSliceLabel      (pset.get<std::string>("SliceModuleLabel")),
   fParticleLabel   (pset.get<std::string>("ParticleModuleLabel"))
@@ -117,7 +117,7 @@ namespace cvn {
 
     // We can calculate the number of neighbours for each space point with some radius
     // Store the number of neighbours for each spacepoint ID
-    std::map<int,unsigned int> neighbourMap;
+    std::vector<std::map<int,unsigned int>> neighbourMap;
     // Get the charge map too
     std::map<unsigned int,float> chargeMap;
 
@@ -138,19 +138,21 @@ namespace cvn {
             graphSpacePoints.push_back(allSpacePoints.at(s->ID()));
           }
         }
-        neighbourMap  = graphUtil.GetAllNeighbours(evt,fNeighbourRadius,graphSpacePoints);
+        neighbourMap  = graphUtil.GetNeighboursForRadii(evt,fNeighbourRadii,graphSpacePoints);
       }
     }
     else{
       if(evt.getByLabel(fSpacePointLabel,spacePointHandle)){
         art::fill_ptr_vector(graphSpacePoints, spacePointHandle);
       }
-      neighbourMap = graphUtil.GetAllNeighbours(evt,fNeighbourRadius,graphSpacePoints);
+      neighbourMap = graphUtil.GetNeighboursForRadii(evt,fNeighbourRadii,graphSpacePoints);
     }
 
     if(graphSpacePoints.size() != 0 && graphSpacePoints.size() >= fMinClusterHits){
       
       chargeMap = graphUtil.GetSpacePointChargeMap(evt,fParticleLabel);
+      std::map<int,std::pair<int,int>> twoNearest = graphUtil.GetTwoNearestNeighbours(evt,fSpacePointLabel);
+
       for(art::Ptr<recob::SpacePoint> sp : graphSpacePoints){
 
         // Get the position
@@ -161,10 +163,25 @@ namespace cvn {
 
         // Calculate some features
         std::vector<float> features;
-        // The neighbour map gives us our first feature
-        features.push_back(neighbourMap.at(sp->ID()));
+
+        // The neighbour map gives us our first feature(s)
+        for(unsigned int m = 0; m < fNeighbourRadii.size(); ++m){
+          features.push_back(neighbourMap[m].at(sp->ID()));
+        }
+
         // How about charge?
         features.push_back(chargeMap.at(sp->ID()));
+
+        // Angle and dot product between node and its two nearest neighbours
+        float angle = -999.;
+        float dotProduct = -999.;
+        int n1ID = twoNearest[sp->ID()].first;
+        int n2ID = twoNearest[sp->ID()].second;
+        const recob::SpacePoint &n1 = *(graphSpacePoints[n1ID].get());
+        const recob::SpacePoint &n2 = *(graphSpacePoints[n2ID].get());
+        graphUtil.GetAngleAndDotProduct(*(sp.get()),n1,n2,dotProduct,angle);
+        features.push_back(dotProduct);
+        features.push_back(angle);
 
         newGraph.AddNode(position,features);
       }
