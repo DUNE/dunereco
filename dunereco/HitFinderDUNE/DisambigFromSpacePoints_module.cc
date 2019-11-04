@@ -136,7 +136,7 @@ namespace dune {
     // let HitCollectionCreator declare that we are going to produce
     // hits and associations with wires and raw digits
     // (with no particular product label)
-    recob::HitCollectionCreator::declare_products(*this);
+    recob::HitCollectionCreator::declare_products(*this, "", true, false);
 
     // will also copy associations of SpacePoints to original hits
     produces<art::Assns<recob::Hit, recob::SpacePoint>>();
@@ -166,14 +166,15 @@ namespace dune {
 
     // also get the associated wires and raw digits;
     // we assume they have been created by the same module as the hits
-    art::FindOneP<raw::RawDigit> channelHitRawDigits(hitsHandle, evt, fHitModuleLabel);
+    //art::FindOneP<raw::RawDigit> channelHitRawDigits(hitsHandle, evt, fHitModuleLabel);
     art::FindOneP<recob::Wire>   channelHitWires    (hitsHandle, evt, fHitModuleLabel);
 
     // this object contains the hit collection
     // and its associations to wires and raw digits:
     recob::HitCollectionCreator hcol(*this, evt,
        channelHitWires.isValid(), // doWireAssns
-       channelHitRawDigits.isValid() // doRawDigitAssns
+     //channelHitRawDigits.isValid() // doRawDigitAssns
+       false // do not save raw digits
       );
 
     // here is the copy of associations to hits, based on original hit assns
@@ -236,7 +237,7 @@ namespace dune {
 
         recob::HitCreator new_hit(*(eventHits[key]), wid);
 
-        hcol.emplace_back(new_hit.move(), channelHitWires.at(key), channelHitRawDigits.at(key));
+        hcol.emplace_back(new_hit.move(), channelHitWires.at(key));//, channelHitRawDigits.at(key));
 
         auto hitPtr = hitPtrMaker(hcol.size() - 1);
         auto sps = spFromHit.at(eventHits[key].key());
@@ -253,7 +254,7 @@ namespace dune {
         {
             recob::HitCreator new_hit(*(eventHits[key]), wid);
 
-            hcol.emplace_back(new_hit.move(), channelHitWires.at(key), channelHitRawDigits.at(key));
+            hcol.emplace_back(new_hit.move(), channelHitWires.at(key));//, channelHitRawDigits.at(key));
 
             auto hitPtr = hitPtrMaker(hcol.size() - 1);
             auto sps = spFromHit.at(eventHits[key].key());
