@@ -31,8 +31,7 @@
 #include "dune/CVN/func/PixelMap.h"
 #include "dune/CVN/func/TrainingData.h"
 
-#include "dune/Protodune/Analysis/ProtoDUNESliceUtils.h"
-#include "dune/Protodune/Analysis/ProtoDUNEPFParticleUtils.h"
+#include "dune/CVN/func/CVNProtoDUNEUtils.h"
 
 namespace cvn {
 
@@ -168,11 +167,10 @@ namespace cvn {
     else if(fUseBeamSliceOnly){
       // We want to make a pixel map for just APA3. We can pad out to 500 pixels in the wire number
       // The best way to do this is to get the Pandora beam slice
-      protoana::ProtoDUNESliceUtils sliceUtil;
-      protoana::ProtoDUNEPFParticleUtils pfpUtil;
+      cvn::CVNProtoDUNEUtils pfpUtil;
       const unsigned int beamSlice = pfpUtil.GetBeamSlice(evt,fParticleModuleLabel);
       if(beamSlice < 500){
-        const std::vector<const recob::Hit*> sliceHits = sliceUtil.GetRecoSliceHits(beamSlice,evt,fParticleModuleLabel);
+        const std::vector<const recob::Hit*> sliceHits = pfpUtil.GetRecoSliceHits(beamSlice,evt,fParticleModuleLabel);
 
         PixelMap pm = fProducer.CreateMap(sliceHits);
         pmCol->push_back(pm);

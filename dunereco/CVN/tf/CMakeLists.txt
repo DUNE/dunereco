@@ -41,13 +41,8 @@ art_make(BASENAME_ONLY
 #  ${ROOT_BASIC_LIB_LIST}
   #lardataobj_RecoBase
   #lardata_Utilities
-<<<<<<< HEAD
 #  nusimdata_SimulationBase
   #larsim_MCCheater_BackTrackerService_service           
-=======
-  nusimdata_SimulationBase
-  #larsim_MCCheater_BackTrackerService_service
->>>>>>> develop
   #larsim_MCCheater_ParticleInventoryService_service
 #  MVAAlg
   )

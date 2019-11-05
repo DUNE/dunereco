@@ -65,7 +65,6 @@ art_make(BASENAME_ONLY
   MODULE_LIBRARIES CVNFunc
   CVNTf
   CVNArt
-  ProtoDUNEAnaUtils
   )
 
 
