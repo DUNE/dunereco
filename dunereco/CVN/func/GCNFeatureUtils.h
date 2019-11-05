@@ -38,18 +38,23 @@ namespace cvn
     /// Gets the number of nearest neigbours for each space point for a vector of cut values. Much more efficient that using the above functions multiple times.
     const std::vector<std::map<int,unsigned int>> GetNeighboursForRadii(art::Event const &evt, const std::vector<float> rangeCuts, const std::string &spLabel) const;
     const std::vector<std::map<int,unsigned int>> GetNeighboursForRadii(art::Event const &evt, const std::vector<float> rangeCuts, const std::vector<art::Ptr<recob::SpacePoint>> &sps) const;
+    const std::vector<std::map<int,unsigned int>> GetNeighboursForRadii(art::Event const &evt, const std::vector<float> rangeCuts, const std::map<unsigned int,art::Ptr<recob::SpacePoint>> &sps) const;
 
     /// Get the nearest neighbour map for the spacepoints. Returns a map of <nose_spacepoint_id,nearest_neighbour_spacepoint_id>
     const std::map<int,int> GetNearestNeighbours(art::Event const &evt, const std::string &spLabel) const;
+    const std::map<int,int> GetNearestNeighbours(art::Event const &evt, const std::vector<art::Ptr<recob::SpacePoint>> &sps) const;
 
     /// Get the two nearest neighbours to use for calcuation of angles between them and the node in question
     const std::map<int,std::pair<int,int>> GetTwoNearestNeighbours(art::Event const &evt, const std::string &spLabel) const;
+    const std::map<int,std::pair<int,int>> GetTwoNearestNeighbours(art::Event const &evt, const std::vector<art::Ptr<recob::SpacePoint>> &sps) const;
+    const std::map<int,std::pair<int,int>> GetTwoNearestNeighbours(art::Event const &evt, const std::map<unsigned int,art::Ptr<recob::SpacePoint>> &sps) const;
 
     /// Get the angle and the dot product between the vector from the base node to its neighbours
     void GetAngleAndDotProduct(const recob::SpacePoint &baseNode, const recob::SpacePoint &n1, const recob::SpacePoint &n2, float &dotProduct, float &angle) const;
 
     /// Use the association between space points and hits to return a charge
     const std::map<unsigned int, float> GetSpacePointChargeMap(art::Event const &evt, const std::string &spLabel) const;
+ 
     /// Get the true G4 ID for each spacepoint
     const std::map<unsigned int, unsigned int> GetTrueG4ID(art::Event const& evt, const std::string &spLabel) const;
 
