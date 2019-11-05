@@ -85,7 +85,7 @@ namespace dune{
     // let HitCollectionCreator declare that we are going to produce
     // hits and associations with wires and raw digits
     // (with no particular product label)
-    recob::HitCollectionCreator::declare_products(*this);
+    recob::HitCollectionCreator::declare_products(*this, "", true, false );
   }
   
   
@@ -123,8 +123,8 @@ namespace dune{
     
     // also get the associated wires and raw digits;
     // we assume they have been created by the same module as the hits
-    art::FindOneP<raw::RawDigit> ChannelHitRawDigits
-      (ChannelHits, evt, fChanHitLabel);
+//    art::FindOneP<raw::RawDigit> ChannelHitRawDigits
+//      (ChannelHits, evt, fChanHitLabel);
     art::FindOneP<recob::Wire> ChannelHitWires
       (ChannelHits, evt, fChanHitLabel);
 
@@ -132,7 +132,7 @@ namespace dune{
     // and its associations to wires and raw digits:
     recob::HitCollectionCreator hcol(*this, evt,
       /* doWireAssns */ ChannelHitWires.isValid(),
-      /* doRawDigitAssns */ ChannelHitRawDigits.isValid()
+      /* doRawDigitAssns */ false
       );
     
     // Make unambiguous collection hits
@@ -142,10 +142,10 @@ namespace dune{
       if( ChHits[h]->View() != geo::kZ ) continue;
       
       art::Ptr<recob::Wire> wire = ChannelHitWires.at(h);
-      art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(h);
+      //art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(h);
     
       // just copy it
-      hcol.emplace_back(*ChHits[h], wire, rawdigits);
+      hcol.emplace_back(*ChHits[h], wire);
       
     } // for
     
@@ -167,9 +167,9 @@ namespace dune{
 	  // and also the index for the query of associated objects
 	  art::Ptr<recob::Hit>::key_type hit_index = hit.key();
 	  art::Ptr<recob::Wire> wire = ChannelHitWires.at(hit_index);
-	  art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(hit_index);
+	  //art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(hit_index);
       
-	  hcol.emplace_back(disambiguous_hit.move(), wire, rawdigits);
+	  hcol.emplace_back(disambiguous_hit.move(), wire);
 	} // for
 
       }
@@ -189,9 +189,9 @@ namespace dune{
 	  // and also the index for the query of associated objects
 	  art::Ptr<recob::Hit>::key_type hit_index = hit.key();
 	  art::Ptr<recob::Wire> wire = ChannelHitWires.at(hit_index);
-	  art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(hit_index);
+	  //art::Ptr<raw::RawDigit> rawdigits = ChannelHitRawDigits.at(hit_index);
       
-	  hcol.emplace_back(disambiguous_hit.move(), wire, rawdigits);
+	  hcol.emplace_back(disambiguous_hit.move(), wire);
 	} // for
 
       }
