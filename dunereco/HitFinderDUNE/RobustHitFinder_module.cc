@@ -281,14 +281,14 @@ dune::RobustHitFinder::RobustHitFinder(fhicl::ParameterSet const & p)
 {
   this->reconfigure(p);
 
-  recob::HitCollectionCreator::declare_products(*this);
+  recob::HitCollectionCreator::declare_products(producesCollector());
 }
 
 void dune::RobustHitFinder::produce(art::Event & e)
 {
   Reset();
 
-  recob::HitCollectionCreator hcol(*this, e);
+  recob::HitCollectionCreator hcol(e);
 
   fFitAlg.SetSeed(fEngine.getSeed());
 

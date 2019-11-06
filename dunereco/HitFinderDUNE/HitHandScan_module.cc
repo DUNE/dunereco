@@ -76,7 +76,7 @@ private:
 HitHandScan::HitHandScan(fhicl::ParameterSet const & p) : EDProducer{p}
 {
   this->reconfigure(p);
-  recob::HitCollectionCreator::declare_products(*this);
+  recob::HitCollectionCreator::declare_products(producesCollector());
 }
 
 void HitHandScan::produce(art::Event & e)
@@ -87,7 +87,7 @@ void HitHandScan::produce(art::Event & e)
   art::FindOneP<recob::Wire> wires(prevHitHandle,e,fPreviousHitModuleLabel);
   art::FindOneP<raw::RawDigit> rawdigits(prevHitHandle,e,fPreviousHitModuleLabel);
 
-  recob::HitCollectionCreator hcol(*this, e, wires.isValid(), rawdigits.isValid());
+  recob::HitCollectionCreator hcol(e, wires.isValid(), rawdigits.isValid());
 
   std::vector<Point> trackBox;
   
