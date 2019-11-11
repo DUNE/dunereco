@@ -138,7 +138,7 @@ namespace cvn {
       // If the graph has no nodes then give up
       if(graph->GetNumberOfNodes() == 0) return;
 
-      std::cout << "GCNZlibMakerProtoDUNE: found graph with " << graph->GetNumberOfNodes() << " nodes" << std::endl;
+//      std::cout << "GCNZlibMakerProtoDUNE: found graph with " << graph->GetNumberOfNodes() << " nodes" << std::endl;
 
 
       // Now write the zlib file using this information

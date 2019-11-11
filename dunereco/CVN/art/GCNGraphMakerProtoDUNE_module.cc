@@ -220,7 +220,7 @@ namespace cvn {
           std::vector<float> truePDG;
           truePDG.push_back(static_cast<float>(trueIDMap.at(sp.second->ID())));
           newGraph.AddNode(position,features,truePDG);
-          if(abs(trueIDMap.at(sp.second->ID())) != 13) std::cout << "Adding node " << sp.second->ID() << " with neighbours " << n1ID << " and " << n2ID << " and PDG = " << truePDG[0] << std::endl;
+//          if(abs(trueIDMap.at(sp.second->ID())) != 13) std::cout << "Adding node " << sp.second->ID() << " with neighbours " << n1ID << " and " << n2ID << " and PDG = " << truePDG[0] << std::endl;
         }
   
         std::cout << "GCNGraphMakerProtoDUNE: produced GCNGraph object with " << newGraph.GetNumberOfNodes() << " nodes" << std::endl;
