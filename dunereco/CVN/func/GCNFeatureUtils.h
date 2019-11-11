@@ -57,6 +57,8 @@ namespace cvn
  
     /// Get the true G4 ID for each spacepoint
     const std::map<unsigned int, unsigned int> GetTrueG4ID(art::Event const& evt, const std::string &spLabel) const;
+    /// Get the true pdg code for each spacepoint
+    const std::map<unsigned int, int> GetTruePDG(art::Event const& evt, const std::string &spLabel) const;
 
     /// Convert a pixel map into three 2D GCNGraph objects
     std::vector<cvn::GCNGraph> ExtractGraphsFromPixelMap(const cvn::PixelMap &pm, const float chargeThreshold) const;

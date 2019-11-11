@@ -343,6 +343,25 @@ const std::map<unsigned int, unsigned int> cvn::GCNFeatureUtils::GetTrueG4ID(
   return ret;
 } // function GetTrueG4ID
 
+const std::map<unsigned int, int> cvn::GCNFeatureUtils::GetTruePDG(
+  art::Event const& evt, const std::string &spLabel) const {
+
+  const std::map<unsigned int,unsigned int> idMap = GetTrueG4ID(evt,spLabel);
+  std::map<unsigned int,int> pdgMap;  
+  
+  art::ServiceHandle<cheat::ParticleInventoryService> pi;
+
+  // Now we need to get the true pdg code for each GEANT track ID in the map
+  for(const std::pair<unsigned int,unsigned int> m : idMap){
+    int pdg = 0;
+    if(m.second == 0) std::cout << "Getting particle with ID " << m.second << " for space point " << m.first << std::endl;
+    else pdg = pi->TrackIdToParticle_P(m.second)->PdgCode();
+    pdgMap.insert(std::make_pair(m.first,pdg));
+  }
+
+  return pdgMap;
+} // function GetTrueG4ID
+
 // Convert a pixel map into three 2D GCNGraph objects
 std::vector<cvn::GCNGraph> cvn::GCNFeatureUtils::ExtractGraphsFromPixelMap(const cvn::PixelMap &pm, const float chargeThreshold) const{
 

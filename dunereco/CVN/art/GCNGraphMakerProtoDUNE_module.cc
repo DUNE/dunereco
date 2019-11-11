@@ -172,7 +172,10 @@ namespace cvn {
     std::cout << "Found all neighbours for " << neighbourMap.size() << " slices, building graphs..." << std::endl;
 
     // Function is linear in number of points so just do it once
-    std::map<unsigned int,float> chargeMap = graphUtil.GetSpacePointChargeMap(evt,fParticleLabel);
+    std::map<unsigned int,float> chargeMap = graphUtil.GetSpacePointChargeMap(evt,fSpacePointLabel);
+
+    // The true particle PDG code is needed for training node classifiers
+    std::map<unsigned int,int> trueIDMap = graphUtil.GetTruePDG(evt, fSpacePointLabel);
 
     // Now we want to produce a graph for each one of the slices
     for(const std::pair<unsigned int,std::map<unsigned int,art::Ptr<recob::SpacePoint>>> &sps : allGraphSpacePoints){
@@ -207,14 +210,17 @@ namespace cvn {
           float dotProduct = -999.;
           int n1ID = twoNearest[sp.second->ID()].first;
           int n2ID = twoNearest[sp.second->ID()].second;
-          std::cout << "Adding node " << sp.second->ID() << " with neighbours " << n1ID << " and " << n2ID << std::endl;
           const recob::SpacePoint n1 = *(sps.second.at(n1ID).get());
           const recob::SpacePoint n2 = *(sps.second.at(n2ID).get());
           graphUtil.GetAngleAndDotProduct(*(sp.second.get()),n1,n2,dotProduct,angle);
           features.push_back(dotProduct);
           features.push_back(angle);
   
-          newGraph.AddNode(position,features);
+          // We set the "ground truth" as the particle PDG code in this case
+          std::vector<float> truePDG;
+          truePDG.push_back(static_cast<float>(trueIDMap.at(sp.second->ID())));
+          newGraph.AddNode(position,features,truePDG);
+          if(abs(trueIDMap.at(sp.second->ID())) != 13) std::cout << "Adding node " << sp.second->ID() << " with neighbours " << n1ID << " and " << n2ID << " and PDG = " << truePDG[0] << std::endl;
         }
   
         std::cout << "GCNGraphMakerProtoDUNE: produced GCNGraph object with " << newGraph.GetNumberOfNodes() << " nodes" << std::endl;
