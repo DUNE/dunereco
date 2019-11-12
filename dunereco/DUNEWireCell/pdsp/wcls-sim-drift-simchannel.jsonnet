@@ -33,7 +33,7 @@ local output = 'wct-sim-ideal-sig.npz';
 local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 local wcls_input = {
-  depos: wcls.input.depos(name='', art_tag='ionization'),
+  depos: wcls.input.depos(name='', art_tag='IonAndScint'),
   // depos: wcls.input.depos(name='electron'),  // default art_tag="blopper"
 };
 
