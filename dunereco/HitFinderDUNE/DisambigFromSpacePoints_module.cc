@@ -136,7 +136,7 @@ namespace dune {
     // let HitCollectionCreator declare that we are going to produce
     // hits and associations with wires and raw digits
     // (with no particular product label)
-    recob::HitCollectionCreator::declare_products(producesCollector());
+    recob::HitCollectionCreator::declare_products(producesCollector(), "", true, false);
 
     // will also copy associations of SpacePoints to original hits
     produces<art::Assns<recob::Hit, recob::SpacePoint>>();
