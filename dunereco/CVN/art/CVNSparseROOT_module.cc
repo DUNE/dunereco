@@ -59,6 +59,10 @@ namespace cvn {
     std::vector<std::vector<int>> fPixelPDG; ///< Pixel PDG truth
     std::vector<std::vector<int>> fPixelTrackID; ///< Pixel track ID
     std::vector<std::vector<float>> fPixelEnergy; ///< Pixel energy
+    std::vector<std::vector<int>> fParentPDG; // particle's Parent
+    std::vector<std::vector<std::string>> fProcess; // Physical process that creates the particle 
+
+
 
     std::vector<unsigned int> fEvent; ///< Event numbers
     unsigned int fView; ///< View numbers
@@ -109,9 +113,11 @@ namespace cvn {
       fCoordinates = maps[0]->GetCoordinates(it);
       fValues = maps[0]->GetValues(it);
       if (fIncludeGroundTruth) {
-        fPixelPDG = maps[0]->GetPixelPDGs(it);
+        fPixelPDG     = maps[0]->GetPixelPDGs(it);
         fPixelTrackID = maps[0]->GetPixelTrackIDs(it);
-        fPixelEnergy = maps[0]->GetPixelEnergy(it);
+        fPixelEnergy  = maps[0]->GetPixelEnergy(it);
+        fParentPDG    = maps[0]->GetParentPDGs(it);
+        fProcess      = maps[0]->GetProcess(it);
       }
       fEvent = std::vector<unsigned int>({e.id().run(), e.id().subRun(), e.id().event()});
       fView = it;
@@ -138,6 +144,8 @@ namespace cvn {
       fTree->Branch("PixelPDG", &fPixelPDG);
       fTree->Branch("PixelTrackID", &fPixelTrackID);
       fTree->Branch("PixelEnergy", &fPixelEnergy);
+      fTree->Branch("ParentsPDGs", &fParentPDG);
+      fTree->Branch("Process", &fProcess);
     }
     fTree->Branch("Event", &fEvent);
     fTree->Branch("View", &fView);

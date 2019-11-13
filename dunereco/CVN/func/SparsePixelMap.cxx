@@ -20,6 +20,8 @@ namespace cvn {
       fPixelPDGs.resize(fViews);
       fPixelTrackIDs.resize(fViews);
       fPixelEnergy.resize(fViews);
+      fParentPDG.resize(fViews);
+      fProcess.resize(fViews);
 // *******************************************
     }
   }
@@ -45,7 +47,8 @@ namespace cvn {
 
   /// AddHit function that includes per-pixel truth labelling for segmentation
   void SparsePixelMap::AddHit(unsigned int view, std::vector<unsigned int> coordinates,
-    float value, std::vector<int> pdgs, std::vector<int> Tracks, std::vector<float> Energy) {
+    float value, std::vector<int> pdgs, std::vector<int> Tracks, std::vector<float> Energy,
+     std::vector<int> pdgParent, std::vector<std::string> process ) {
 
     if (coordinates.size() != fDim) {
       throw art::Exception(art::errors::LogicError)
@@ -64,6 +67,8 @@ namespace cvn {
     fPixelPDGs[view].push_back(pdgs);
     fPixelTrackIDs[view].push_back(Tracks);
     fPixelEnergy[view].push_back(Energy);
+    fParentPDG[view].push_back(pdgParent);
+    fProcess[view].push_back(process);
     //std::cout<< "*Carlos*  view " <<  view << "trackIDs size " << TrackIDs.size() << std::endl;
     //for (auto k : TrackIDs){
       // fPixelTrackIDs[view].push_back(k);

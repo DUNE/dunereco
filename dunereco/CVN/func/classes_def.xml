@@ -25,7 +25,9 @@
    <version ClassVersion="10" checksum="197322882"/>
   </class>
 
-  <class name="cvn::SparsePixelMap" ClassVersion="29">
+  <class name="cvn::SparsePixelMap" ClassVersion="31">
+   <version ClassVersion="31" checksum="1793898137"/>
+   <version ClassVersion="30" checksum="1155058191"/>
    <version ClassVersion="29" checksum="1721160401"/>
    <version ClassVersion="28" checksum="3885854790"/>
    <version ClassVersion="27" checksum="1721160401"/>
@@ -61,7 +63,8 @@
    <version ClassVersion="10" checksum="3305168692"/>
   </class>
 
-  <class name="cvn::GCNGraphNode" ClassVersion="10">
+  <class name="cvn::GCNGraphNode" ClassVersion="11">
+   <version ClassVersion="11" checksum="3544497496"/>
    <version ClassVersion="10" checksum="2217525517"/>
   </class>
 
