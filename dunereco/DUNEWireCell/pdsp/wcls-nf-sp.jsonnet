@@ -42,9 +42,6 @@ local tools = tools_maker(params);
 local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 
-// for dumping numpy array for debugging
-//local io = import "pgrapher/common/fileio.jsonnet";
-
 //local nf_maker = import "pgrapher/experiment/pdsp/nf.jsonnet";
 //local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
 
@@ -60,12 +57,12 @@ local sp_maker = import 'pgrapher/experiment/pdsp/sp.jsonnet';
 // must be the emtpy string.
 local wcls_input = {
   adc_digits: g.pnode({
-    type: 'wclsCookedFrameSource',
+    type: 'wclsRawFrameSource',
     name: '',
     data: {
       art_tag: raw_input_label,
       frame_tags: ['orig'],  // this is a WCT designator
-      nticks: params.daq.nticks,
+      // nticks: params.daq.nticks,
     },
   }, nin=0, nout=1),
 
@@ -90,13 +87,14 @@ local wcls_output = {
     type: 'wclsFrameSaver',
     name: 'nfsaver',
     data: {
-      anode: wc.tn(tools.anode),
+      // anode: wc.tn(tools.anode),
+      anode: wc.tn(mega_anode),
       digitize: true,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['raw'],
-      nticks: params.daq.nticks,
+      // nticks: params.daq.nticks,
       chanmaskmaps: ['bad'],
     },
-  }, nin=1, nout=1, uses=[tools.anode]),
+  }, nin=1, nout=1, uses=[mega_anode]),
 
 
   // The output of signal processing.  Note, there are two signal
@@ -111,8 +109,9 @@ local wcls_output = {
       anode: wc.tn(mega_anode),
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
-      nticks: params.daq.nticks,
+      // nticks: params.daq.nticks,
       chanmaskmaps: [],
+      nticks: -1,
     },
   }, nin=1, nout=1, uses=[mega_anode]),
 };
@@ -130,32 +129,8 @@ local chndb = [{
 local nf_maker = import 'pgrapher/experiment/pdsp/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local sp = sp_maker(params, tools, { sparse: sigoutform == "sparse"} );
-local sp_pipes = [sp.make_sigproc(tools.anodes[n], n) for n in std.range(0, std.length(tools.anodes) - 1)];
-
-local multimagnify = import 'pgrapher/experiment/pdsp/multimagnify.jsonnet';
-local magoutput = 'protodune-data-check.root';
-
-local rootfile_creation_frames = g.pnode({
-  type: 'RootfileCreation_frames',
-  name: 'origmag',
-  data: {
-    output_filename: magoutput,
-    root_file_mode: 'RECREATE',
-  },
-}, nin=1, nout=1);
-
-
-local multi_magnify = multimagnify('orig', tools, magoutput);
-local magnify_pipes = multi_magnify.magnify_pipelines;
-local multi_magnify2 = multimagnify('raw', tools, magoutput);
-local magnify_pipes2 = multi_magnify2.magnify_pipelines;
-local multi_magnify3 = multimagnify('gauss', tools, magoutput);
-local magnify_pipes3 = multi_magnify3.magnify_pipelines;
-local multi_magnify4 = multimagnify('wiener', tools, magoutput);
-local magnify_pipes4 = multi_magnify4.magnify_pipelines;
-local multi_magnify5 = multimagnify('threshold', tools, magoutput);
-local magnify_pipes5 = multi_magnify5.magnifysummaries_pipelines;
+local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
+local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
 local chsel_pipes = [
   g.pnode({
@@ -163,22 +138,29 @@ local chsel_pipes = [
     name: 'chsel%d' % n,
     data: {
       channels: std.range(2560 * n, 2560 * (n + 1) - 1),
+      //channels: if n==0 then std.range(2560*n,2560*(n+1)-1) else [],
       //tags: ['orig%d' % n], // traces tag
     },
   }, nin=1, nout=1)
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
+local magoutput = 'protodune-data-check.root';
+local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
+local sinks = magnify(tools, magoutput);
+
 local nfsp_pipes = [
   g.pipeline([
                chsel_pipes[n],
-               //magnify_pipes[n],
-               //nf_pipes[n],
-               //magnify_pipes2[n],
+               sinks.orig_pipe[n],
+
+               nf_pipes[n],
+               sinks.raw_pipe[n],
+
                sp_pipes[n],
-               //magnify_pipes3[n],
-               //magnify_pipes4[n],
-               //magnify_pipes5[n],
+               sinks.decon_pipe[n],
+               sinks.threshold_pipe[n],
+               // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
              ],
              'nfsp_pipe_%d' % n)
   for n in std.range(0, std.length(tools.anodes) - 1)
@@ -211,38 +193,7 @@ local retagger = g.pnode({
 local sink = g.pnode({ type: 'DumpFrames' }, nin=1, nout=0);
 
 
-//local magnifio1 = g.pnode({
-//  type: 'MagnifySink',
-//  name: 'deconmag1',
-//  data: {
-//    output_filename: magoutput,
-//    root_file_mode: 'UPDATE',
-//    frames: [],
-//    anode: wc.tn(tools.anode),
-//  },
-//}, nin=1, nout=1);
-//local magnifio2 = g.pnode({
-//  type: 'MagnifySink',
-//  name: 'deconmag2',
-//  data: {
-//    output_filename: magoutput,
-//    root_file_mode: 'UPDATE',
-//    frames: [],
-//    anode: wc.tn(tools.anode),
-//  },
-//}, nin=1, nout=1);
-//local magnifio3 = g.pnode({
-//  type: 'MagnifySink',
-//  name: 'deconmag3',
-//  data: {
-//    output_filename: magoutput,
-//    root_file_mode: 'UPDATE',
-//    frames: [],
-//    anode: wc.tn(tools.anode),
-//  },
-//}, nin=1, nout=1);
-
-//local graph = g.pipeline([wcls_input.adc_digits,  rootfile_creation_frames, magnifio1, fanpipe, magnifio2, retagger, magnifio3, wcls_output.sp_signals, sink]);
+// local graph = g.pipeline([wcls_input.adc_digits, rootfile_creation_frames, fanpipe, retagger, wcls_output.sp_signals, sink]);
 local graph = g.pipeline([wcls_input.adc_digits, fanpipe, retagger, wcls_output.sp_signals, sink]);
 
 local app = {

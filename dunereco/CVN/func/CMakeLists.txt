@@ -20,7 +20,6 @@ art_make( BASENAME_ONLY
   art_Utilities canvas
   cetlib cetlib_except
   canvas
-  ProtoDUNEAnaUtils
   ${Boost_FILESYSTEM_LIBRARY}            
   ${Boost_SYSTEM_LIBRARY}
   ${ROOT_BASIC_LIB_LIST}

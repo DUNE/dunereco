@@ -7,9 +7,6 @@ if( DEFINED ENV{TENSORFLOW_DIR} )
   endif ()
 endif ()
 
-cet_find_library( PROTOBUFLIB NAMES protobuf PATHS ENV PROTOBUF_LIB NO_DEFAULT_PATH )
-cet_find_library( TENSORFLOW NAMES tensorflow-core PATHS ENV TENSORFLOW_LIB NO_DEFAULT_PATH )
-
 #art_make(
 #          LIB_LIBRARIES
 #                        ${FHICLCPP}
@@ -58,4 +55,4 @@ install_source()
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 include_directories ( $ENV{TENSORFLOW_INC}/eigen )
 include_directories ( $ENV{TENSORFLOW_INC} )
-#include_directories ( $ENV{PROTOBUF_INC} )
+include_directories ( $ENV{PROTOBUF_INC} )

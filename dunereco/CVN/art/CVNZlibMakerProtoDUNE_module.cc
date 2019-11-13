@@ -25,8 +25,6 @@
 #include "dune/CVN/func/PixelMap.h"
 #include "dune/CVN/func/CVNImageUtils.h"
 
-#include "dune/Protodune/Analysis/ProtoDUNESliceUtils.h"
-
 // Compression
 #include "zlib.h"
 

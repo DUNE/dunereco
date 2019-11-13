@@ -1,6 +1,6 @@
 BEGIN_PROLOG
 
-protodunespdata_nfspl1: 
+protodunespdata_nfsp: 
 {
     module_type : WireCellToolkit
     wcls_main: {
@@ -8,11 +8,11 @@ protodunespdata_nfspl1:
         apps: ["Pgrapher"]
         
         # Libraries in which to look for WCT components
-        plugins: ["WireCellGen", "WireCellSigProc", "WireCellSio", "WireCellPgraph", "WireCellLarsoft"]
+        plugins: ["WireCellGen", "WireCellSigProc", "WireCellSio", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
         
         # The tool marshals the art::Event to these visitors before.
         # See notes below in params.
-        inputers: ["wclsCookedFrameSource"
+        inputers: ["wclsRawFrameSource"
                    # To use wclsMultiChannelNoiseDB you must also put epoch:dynamic below
                    # and you must have geo::Geometry service in your environment.
                    # ,"wclsMultiChannelNoiseDB"  
@@ -31,8 +31,7 @@ protodunespdata_nfspl1:
         # Set the "external variables" required by the Jsonnet.
         params : {
             # This locates the input raw::RawDigit collection in the art::Event 
-            #raw_input_label: "tpcrawdecoder:daq"
-            raw_input_label: "caldata"
+            raw_input_label: "tpcrawdecoder:daq"
 
             # Set "data" vs. "sim".  The epoch below probably should follow suit.
             reality: "data"
@@ -44,6 +43,9 @@ protodunespdata_nfspl1:
             # epoch: "dynamic"
             # epoch: "perfect"
             epoch: "after"
+
+            # Save output signal waveforms (recob::Wire) in "sparse" or "dense" form
+            signal_output_form: "sparse"
         }
     }
 }

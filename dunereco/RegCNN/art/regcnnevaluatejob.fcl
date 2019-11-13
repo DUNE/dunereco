@@ -50,22 +50,18 @@ physics:
   # Declare the modules
   producers:
   { 
-    regcnnmap:  @local::standard_regcnnmapper
-    regcnneval: @local::standard_regcnnevaluator
+    regcnnmap:     @local::standard_regcnnmapper
+    regcnnvtxmap:  @local::standard_regcnnvtxmapper
+    regcnneval:    @local::standard_regcnnevaluator
+    regcnnvtxeval: @local::standard_regcnnvtxevaluator
   }
 
   # Build the paths
-  map: [ regcnnmap, regcnneval ]
+  map: [ regcnnmap, regcnneval, regcnnvtxmap, regcnnvtxeval ]
   
   out: [out1]
 
 
 }
-
-physics.producers.regcnnmap.HitsModuleLabel: "linecluster"
-physics.producers.regcnnmap.TimeResolution: 6
-physics.producers.regcnnmap.WireLength: 400
-physics.producers.regcnnmap.TdcWidth: 280
-
 
 ########################################################################
