@@ -468,47 +468,48 @@ namespace cvn
         << "Geometry " << fGeometry->DetectorName() << " not implemented "
         << "in CreateSparseMap." << std::endl;
 
-
       if (usePixelTruth) {
         // Get true particle and PDG responsible for this hit
         std::vector<sim::TrackIDE> IDEs = bt->HitToTrackIDEs(cluster[iHit]);
-           // Get track ids, PDG and energy responsibles for this hit
+        // Get track ids, PDG and energy responsibles for this hit
         std::vector<int> tracks, pdgs, pdgParent;
         std::vector<float> energy;
         std::vector<std::string> process;
-        for (auto k : IDEs){
-            tracks.push_back(k.trackID);
-            simb::MCParticle p = pi->TrackIdToParticle(k.trackID);
-            process.push_back(p.Process());
-            if ( p.Mother()!=0){
-                  int pdg_parent = pi->TrackIdToParticle(p.Mother()).PdgCode();
-                  //std::cout << " track ID  " << k.trackID << " PDG "<< p.PdgCode() << " Parent "<< pdg_parent <<"process "  << p.Process() << std::endl;
-                  pdgParent.push_back(pdg_parent);
-
-                 // std::cout<< "pdg delta parent: "<< pdgDelta_Parent << std::endl;
-            } 
-          
-            // Manually check to see if we have a Michel electron here
-            int pdg = p.PdgCode();
-            if (pdg == 11 && p.Mother() != 0) {
-               int pdgParent = pi->TrackIdToParticle(p.Mother()).PdgCode();
-             //  std::cout <<" Michel e-  parent "<< pdgParent << std::endl; 
-               if (pdgParent == 13 && p.Process() == "muMinusCaptureAtRest") {
-                 // If it's a Michel electron, tag it with an unphysical PDG code
-                 pdg = 99;
-               }
-             } // If non-primary electron
-             pdgs.push_back(pdg);
-             energy.push_back(k.energy);
-           } 
-           for (auto k : process)
-          {
-              std:: cout << "size " <<  process.size() << " process: " <<  k << std::endl;
-          }
-           map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime, wireid.TPC},
-             cluster[iHit]->Integral(), pdgs, tracks, energy, pdgParent, process) ; 
+        for (auto k : IDEs) {
+          tracks.push_back(k.trackID);
+          simb::MCParticle p = pi->TrackIdToParticle(k.trackID);
+          process.push_back(p.Process());
+          if (p.Mother()!=0) {
+            int pdg_parent = pi->TrackIdToParticle(p.Mother()).PdgCode();
+            // std::cout << " track ID  " << k.trackID << " PDG "<< p.PdgCode() << " Parent "<< pdg_parent <<"process "  << p.Process() << std::endl;
+            pdgParent.push_back(pdg_parent);
+            // std::cout<< "pdg delta parent: "<< pdgDelta_Parent << std::endl;
+          } 
+        
+          // Manually check to see if we have a Michel electron here
+          int pdg = p.PdgCode();
+          if (abs(pdg) == 11 && p.Mother() != 0) {
+            int pdgParent = pi->TrackIdToParticle(p.Mother()).PdgCode();
+            if (abs(pdgParent) == 13 && ((pdg>0)==(pdgParent>0))) {
+              // If it's a Michel electron, tag it with an unphysical PDG code             
+              if (p.Process() == "muMinusCaptureAtRest" || p.Process() == "muPlusCaptureAtRest") {
+                pdg = 99;
+              }
+              // If not, see what it is!
+              else {
+                std::cout << "We have an electron from a muon here that isn't a Michel. Process string is " << p.Process() << std::endl;
+              }
+            } // If electron parent is muon
+          } // If non-primary electron
+          pdgs.push_back(pdg);
+          energy.push_back(k.energy);
+        } 
+        // for (auto k : process) {
+        //   std:: cout << "size " <<  process.size() << " process: " <<  k << std::endl;
+        // }
+        map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime, wireid.TPC},
+          cluster[iHit]->Integral(), pdgs, tracks, energy, pdgParent, process) ; 
       } // if PixelTuth 
-      
 
       else {
         map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime},
