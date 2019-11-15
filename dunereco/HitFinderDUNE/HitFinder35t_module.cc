@@ -85,7 +85,7 @@ namespace dune{
     // let HitCollectionCreator declare that we are going to produce
     // hits and associations with wires and raw digits
     // (with no particular product label)
-    recob::HitCollectionCreator::declare_products(*this, "", true, false );
+    recob::HitCollectionCreator::declare_products(producesCollector(), "", true, false);
   }
   
   
@@ -130,7 +130,7 @@ namespace dune{
 
     // this object contains the hit collection
     // and its associations to wires and raw digits:
-    recob::HitCollectionCreator hcol(*this, evt,
+    recob::HitCollectionCreator hcol(evt,
       /* doWireAssns */ ChannelHitWires.isValid(),
       /* doRawDigitAssns */ false
       );
