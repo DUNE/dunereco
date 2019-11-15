@@ -460,7 +460,7 @@ namespace cvn
         GetDUNE10ktGlobalWireTDC(wireid.Wire, cluster[iHit]->PeakTime(),
           wireid.Plane, wireid.TPC, globalWire, globalPlane, globalTime);
       }
-      else if (fGeometry->DetectorName() == "protodune") {
+      else if (fGeometry->DetectorName().find("protodune") != std::string::npos) {
         GetProtoDUNEGlobalWireTDC(wireid.Wire, cluster[iHit]->PeakTime(),
           wireid.Plane, wireid.TPC, globalWire, globalTime, globalPlane);
       }
