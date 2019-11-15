@@ -68,8 +68,9 @@
    <version ClassVersion="10" checksum="2217525517"/>
   </class>
 
-<!--   <class name="cvn::GCNParticleFlow" ClassVersion="1">
-  </class> -->
+  <class name="cvn::GCNParticleFlow" ClassVersion="10">
+   <version ClassVersion="10" checksum="3138516238"/>
+  </class>
 
   <class name="vector<vector<unsigned long> >"     />
   <class name="vector<vector<vector<unsigned int> > >" />
@@ -101,6 +102,12 @@
   <class name="art::Wrapper< std::vector<std::vector<float> > >" />
 
   <class name="std::map<unsigned int, unsigned int>" />
+
+  <class name="std::vector<cvn::GCNParticleFlow>" />
+  <class name="art::Wrapper<std::vector<cvn::GCNParticleFlow> >" />
+
+  <class name="std::vector<std::vector<std::string>>" />
+  <class name="std::vector<std::vector<std::vector<std::string>>>" />
   
 </lcgdict>
 

@@ -6,30 +6,40 @@ standard_gcngraphmaker:
 {
   module_type:        GCNGraphMaker
   #==================
-  SpacePointLabel:   "pandora"
+  SpacePointModuleLabel:   "pandora"
+  SpacePointInstanceLabel: ""
   MinClusterHits: 100
   UseNeighbourRadius: true
   NeighbourRadius: 3.0 # Distance in cm
+  Include2DFeatures: false
   CollectionPlaneOnly: false
   SaveTrueParticle: false
-  UseNodeGroundTruth: false
-  TruthRadius: 5.0 # Distance in cm
+  UseNodeDeghostingGroundTruth: false
+  TruthRadius: 1.0 # Distance in cm
+  UseNodeDirectionGroundTruth: false
   SaveParticleFlow: false
 }
 
 standard_gcngraphmaker_dune10kt: @local::standard_gcngraphmaker
-standard_gcngraphmaker_dune10kt.SpacePointLabel: "spacepointsolver"
+standard_gcngraphmaker_dune10kt.SpacePointModuleLabel: "reco3d"
 standard_gcngraphmaker_dune10kt.UseNeighbourRadius: false
+standard_gcngraphmaker_dune10kt.Include2DFeatures: true
 standard_gcngraphmaker_dune10kt.SaveTrueParticle: true
-standard_gcngraphmaker_dune10kt.UseNodeGroundTruth: true
+standard_gcngraphmaker_dune10kt.UseNodeDeghostingGroundTruth: true
+standard_gcngraphmaker_dune10kt.UseNodeDirectionGroundTruth: true
 standard_gcngraphmaker_dune10kt.SaveParticleFlow: true
 
-standard_gcnh5:
+standard_gcnroot:
 {
-  module_type:        GCNH5
+  module_type:        GCNGraphROOT
   #==================
-  GraphModuleLabel: "graph"
-  OutputName:       "gcn"
+  GraphModuleLabel:   "graph"
+  GraphInstanceLabel: "graph"
+  TruthLabel:         "generator"
+  OutputName:         "gcn"
+  TreeName:           "GraphTree"
+  SaveEventTruth:     true
+  SaveParticleFlow:   true
 }
 
 standard_gcngraphmaker_protodune:

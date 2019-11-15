@@ -3,6 +3,7 @@
 #include "dune/CVN/func/SparsePixelMap.h"
 #include "dune/CVN/func/GCNGraph.h"
 #include "dune/CVN/func/GCNGraphNode.h"
+#include "dune/CVN/func/GCNParticleFlow.h"
 #include "dune/CVN/func/Result.h"
 #include "lardataobj/RecoBase/Cluster.h"
 
@@ -22,3 +23,6 @@ template class art::Wrapper< std::vector<cvn::GCNGraphNode> >;
 template class std::vector<cvn::Result>;
 template class art::Ptr<cvn::Result>;
 template class std::vector<art::Ptr<cvn::Result> >;
+
+template class std::vector<cvn::GCNParticleFlow>;
+template class art::Wrapper< std::vector<cvn::GCNParticleFlow> >;

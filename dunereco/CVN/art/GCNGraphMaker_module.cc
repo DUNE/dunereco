@@ -42,7 +42,8 @@ namespace cvn {
 
   private:
     /// Module label for input space points
-    std::string fSpacePointLabel;
+    std::string fSpacePointModuleLabel;
+    std::string fSpacePointInstanceLabel;
 
     /// Minimum number of space points to produce a graph
     unsigned short fMinClusterHits;
@@ -51,6 +52,9 @@ namespace cvn {
     bool fUseNeighbourRadius;
     float fNeighbourRadius;
 
+    /// 2D node features
+    bool fInclude2DFeatures;
+
     /// Do we want collection plane hits only?
     bool fCollectionPlaneOnly;
 
@@ -58,8 +62,9 @@ namespace cvn {
     bool fSaveTrueParticle;
 
     /// Include ground truth for node - and if so, define proximity
-    bool fUseNodeGroundTruth;
+    bool fUseNodeDeghostingGroundTruth;
     float fTruthRadius;
+    bool fUseNodeDirectionGroundTruth;
 
     /// Whether to save particle hierarchy for particle flow ground truth
     bool fSaveParticleFlow;
@@ -70,14 +75,17 @@ namespace cvn {
 
   //.......................................................................
   GCNGraphMaker::GCNGraphMaker(fhicl::ParameterSet const& pset): art::EDProducer(pset),
-  fSpacePointLabel (pset.get<std::string>    ("SpacePointLabel")),
+  fSpacePointModuleLabel (pset.get<std::string>    ("SpacePointModuleLabel")),
+  fSpacePointInstanceLabel (pset.get<std::string>  ("SpacePointInstanceLabel", "")),
   fMinClusterHits  (pset.get<unsigned short> ("MinClusterHits")),
   fUseNeighbourRadius(pset.get<bool>("UseNeighbourRadius")),
   fNeighbourRadius (pset.get<float>("NeighbourRadius")),
+  fInclude2DFeatures (pset.get<bool>("Include2DFeatures")),
   fCollectionPlaneOnly(pset.get<bool>("CollectionPlaneOnly")),
   fSaveTrueParticle(pset.get<bool>("SaveTrueParticle")),
-  fUseNodeGroundTruth(pset.get<bool>("UseNodeGroundTruth")),
+  fUseNodeDeghostingGroundTruth(pset.get<bool>("UseNodeDeghostingGroundTruth")),
   fTruthRadius(pset.get<float>("TruthRadius")),
+  fUseNodeDirectionGroundTruth(pset.get<bool>("UseNodeDirectionGroundTruth")),
   fSaveParticleFlow(pset.get<bool>("SaveParticleFlow"))
 
   {
@@ -105,17 +113,31 @@ namespace cvn {
   //......................................................................
   void GCNGraphMaker::produce(art::Event& evt)
   {
-    auto allSP = evt.getValidHandle<std::vector<recob::SpacePoint>>(fSpacePointLabel);
-    const art::FindManyP<recob::Hit> sp2Hit(allSP, evt, fSpacePointLabel);
+    art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
+    std::vector<art::Ptr<recob::SpacePoint>> spacePoints;
+    if (!evt.getByLabel(fSpacePointModuleLabel,
+      fSpacePointInstanceLabel, spacePointHandle)) {
+
+      throw art::Exception(art::errors::LogicError)
+        << "Could not find spacepoints with module label "
+        << fSpacePointModuleLabel << " and instance label "
+        << fSpacePointInstanceLabel << "!";
+    }
+    art::fill_ptr_vector(spacePoints, spacePointHandle);
+    art::FindManyP<recob::Hit> fmp(spacePointHandle, evt, fSpacePointModuleLabel);
+    std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit(spacePoints.size());
+    for (size_t spIdx = 0; spIdx < sp2Hit.size(); ++spIdx) {
+      sp2Hit[spIdx] = fmp.at(spIdx);
+    } // for spacepoint
 
     // Create the Graph vector and fill it if we have enough hits
     std::unique_ptr<std::vector<cvn::GCNGraph>> graphs(new std::vector<cvn::GCNGraph>);
     std::unique_ptr<std::vector<cvn::GCNParticleFlow>> gpf(nullptr);
     if (fSaveParticleFlow) {
-      gpf = std::make_unique<std::vector<cvn::GCNParticleFlow> >(1, cvn::GCNParticleFlow());
+      gpf = std::make_unique<std::vector<cvn::GCNParticleFlow> >();
     }
 
-    if(allSP->size() >= fMinClusterHits){
+    if(spacePoints.size() >= fMinClusterHits) {
 
       cvn::GCNGraph newGraph;
 
@@ -124,22 +146,70 @@ namespace cvn {
 
       // We can calculate the number of neighbours for each space point with some radius
       // Store the number of neighbours for each spacepoint ID
-      const std::map<int, unsigned int> neighbourMap = graphUtil.GetAllNeighbours(evt, fNeighbourRadius, fSpacePointLabel);
+      // const std::map<int, unsigned int> neighbourMap = graphUtil.GetAllNeighbours(evt, fNeighbourRadius, fSpacePointModuleLabel);
 
       // Get the charge and true ID for each spacepoint
-      auto chargeMap = graphUtil.GetSpacePointChargeMap(evt, fSpacePointLabel);
-      const std::map<unsigned int, unsigned int> *trueIDMap = nullptr;
+      auto chargeMap = graphUtil.GetSpacePointChargeMap(spacePoints, sp2Hit);
+      const std::map<unsigned int, int> *trueIDMap = nullptr;
       if (fSaveTrueParticle) {
-        trueIDMap = new const std::map<unsigned int, unsigned int>(graphUtil.GetTrueG4ID(evt, fSpacePointLabel));
+        trueIDMap = new const std::map<unsigned int, int>(graphUtil.GetTrueG4ID(spacePoints, sp2Hit));
       } 
 
-      for (size_t itSP = 0; itSP < allSP->size(); ++itSP) {
-        const recob::SpacePoint& sp = allSP->at(itSP);
+      // Get 2D hit features if requested
+      std::map<unsigned int, std::vector<float>> hitMap;
+      if (fInclude2DFeatures) {
+        hitMap = graphUtil.Get2DFeatures(spacePoints, sp2Hit);
+      }
+
+      // Get ground truth if requested
+      if (fUseNodeDirectionGroundTruth && !fUseNodeDeghostingGroundTruth) {
+        throw art::Exception(art::errors::LogicError)
+          << "You must enable deghosting ground truth if using direction ground truth!";
+      }
+      std::vector<bool> nodeDeghostingGroundTruth;
+      std::vector<std::vector<float>>* nodeDirectionGroundTruth = nullptr;
+      if (fUseNodeDirectionGroundTruth) nodeDirectionGroundTruth = new std::vector<std::vector<float>>();
+      if (fUseNodeDeghostingGroundTruth) {
+        nodeDeghostingGroundTruth = graphUtil.GetNodeGroundTruth(spacePoints,
+          sp2Hit, fTruthRadius, nodeDirectionGroundTruth);
+      }
+
+      // // Figure out if we have duplicate spacepoints here
+      // // Loop over spacepoints
+      // for (size_t iSP = 0; iSP < spacePoints.size(); ++iSP) {
+      //   unsigned int duplicateCount = 0;
+      //   // Figure out if there are any other spacepoints that come from the same set of hits
+      //   for (size_t jSP = 0; jSP < spacePoints.size(); ++jSP) {
+      //     if (iSP == jSP) continue;
+      //     unsigned int matches = 0;
+      //     // bool test = true;
+      //     for (size_t i = 0; i < 3; ++i) {
+      //       bool match = true;
+      //       for (size_t j = 0; j < 3; ++j) {
+      //         unsigned int idx = (i*3) + j;
+      //         match = match && hitMap[iSP][idx] == hitMap[jSP][idx];
+      //       }
+      //       if (match) ++matches;
+      //       // test = ((hitMap[iSP][i] == hitMap[jSP][i]) && test);
+      //       // if (!test) break;
+      //     }
+      //     if (matches > 1) std::cout << matches << " matches for spacepoints " << iSP << " & " << jSP << std::endl;
+      //     // if (test) ++duplicateCount;
+      //   } // for jSP
+      //   if (duplicateCount > 0) std::cout << "For spacepoint " << iSP << " we have "
+      //     << duplicateCount << " duplicate spacepoints." << std::endl;
+      // } // for iSP
+
+
+      std::set<unsigned int> trueParticles;
+      for (size_t spIdx = 0; spIdx < spacePoints.size(); ++spIdx) {
+        const art::Ptr<recob::SpacePoint> sp = spacePoints[spIdx];
         // Do we only want collection plane spacepoints?
+
         if (fCollectionPlaneOnly) {
           // Are there any associated hits from the collection plane?
           bool collectionHit = false;
-          for (auto hit : sp2Hit.at(itSP)) {
+          for (art::Ptr<recob::Hit> hit : sp2Hit[spIdx]) {
             if (hit->View() == 2) {
               collectionHit = true;
               break;
@@ -152,31 +222,46 @@ namespace cvn {
         // Get the position
         std::vector<float> position;
         // Why does this use an array... we want a vector in any case
-        const double *pos = sp.XYZ();
-        for(unsigned int p = 0; p < 3; ++p) position.push_back(pos[p]);
+        const double *pos = sp->XYZ();
+        for (size_t p = 0; p < 3; ++p) position.push_back(pos[p]);
         
         // Calculate some features
         std::vector<float> features, truth;
         // The neighbour map gives us our first feature
-        features.push_back(neighbourMap.at(sp.ID()));
+        // features.push_back(neighbourMap.at(sp->ID()));
         // Now charge and true ID
-        features.push_back(chargeMap.at(sp.ID()));
+        features.push_back(chargeMap.at(sp->ID()));
+
+        if (fInclude2DFeatures) {
+          features.insert(features.end(), hitMap.at(sp->ID()).begin(), hitMap.at(sp->ID()).end());
+        }
 
         // Now ground truth info
         if (fSaveTrueParticle) {
-          truth.push_back(trueIDMap->at(sp.ID()));
-        }
-        if (fUseNodeGroundTruth) {
-          // fdsafdsafdsafdsafdsa
+          truth.push_back(trueIDMap->at(sp->ID()));
+          trueParticles.insert(abs(trueIDMap->at(sp->ID())));
         }
 
-        if (fSaveParticleFlow)
+        // Add deghosting ground truth if requested
+        if (fUseNodeDeghostingGroundTruth) {
+          truth.push_back(nodeDeghostingGroundTruth[spIdx]);
+          // Also add direction ground truth
+          if (fUseNodeDirectionGroundTruth) {
+            truth.insert(truth.end(), nodeDirectionGroundTruth->at(spIdx).begin(),
+              nodeDirectionGroundTruth->at(spIdx).end());
+          }
+        }
 
+        // Add a node with the requested features & ground truth
         newGraph.AddNode(position, features, truth);
       }
 
+      if (fSaveParticleFlow) {
+        gpf->push_back(graphUtil.GetParticleFlowMap(trueParticles));
+      }
+
       mf::LogInfo("GCNGraphMaker") << "Produced GCNGraph object with "
-        << newGraph.GetNumberOfNodes() << " nodes from " << allSP->size() << " spacepoints.";
+        << newGraph.GetNumberOfNodes() << " nodes from " << spacePoints.size() << " spacepoints.";
 
       // Add out graph to the vector
       graphs->push_back(newGraph);
@@ -186,7 +271,6 @@ namespace cvn {
     evt.put(std::move(graphs));
     if (fSaveParticleFlow) evt.put(std::move(gpf));
   }
-
 
 DEFINE_ART_MODULE(cvn::GCNGraphMaker)
 } // end namespace cvn

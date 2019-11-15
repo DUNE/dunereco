@@ -11,7 +11,12 @@
 #include <string>
 #include <map>
 
+#include "TVector3.h"
+
 #include "art/Framework/Principal/Event.h"
+#include "canvas/Persistency/Common/FindManyP.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
+#include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 
 #include "dune/CVN/func/GCNGraph.h"
@@ -26,6 +31,11 @@ namespace cvn
   public:
     GCNFeatureUtils();
     ~GCNFeatureUtils();
+
+    /// Get primary true G4 ID for hit
+    int GetTrackIDFromHit(const recob::Hit) const;
+    /// Get closest trajectory point for true particle given reconstructed spacepoint
+    size_t GetClosestTrajectoryPoint(const recob::SpacePoint sp, const simb::MCParticle p) const;
 
     /// Get the number of neighbours within rangeCut cm of this space point
     const unsigned int GetSpacePointNeighbours(const recob::SpacePoint &sp, art::Event const &evt, const float rangeCut, const std::string &spLabel) const;
@@ -53,12 +63,18 @@ namespace cvn
     void GetAngleAndDotProduct(const recob::SpacePoint &baseNode, const recob::SpacePoint &n1, const recob::SpacePoint &n2, float &dotProduct, float &angle) const;
 
     /// Use the association between space points and hits to return a charge
+    const std::map<unsigned int, float> GetSpacePointChargeMap(std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
+      std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit) const;
     const std::map<unsigned int, float> GetSpacePointChargeMap(art::Event const &evt, const std::string &spLabel) const;
- 
     /// Get the true G4 ID for each spacepoint
-    const std::map<unsigned int, unsigned int> GetTrueG4ID(art::Event const& evt, const std::string &spLabel) const;
+    const std::map<unsigned int, int> GetTrueG4ID(std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
+      std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit) const;
+    const std::map<unsigned int, int> GetTrueG4ID(art::Event const& evt, const std::string &spLabel) const;
     /// Get the true pdg code for each spacepoint
     const std::map<unsigned int, int> GetTruePDG(art::Event const& evt, const std::string &spLabel) const;
+    /// Get 2D hit features for a given spacepoint
+    const std::map<unsigned int, std::vector<float>> Get2DFeatures(std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
+      std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit) const;
 
     /// Convert a pixel map into three 2D GCNGraph objects
     std::vector<cvn::GCNGraph> ExtractGraphsFromPixelMap(const cvn::PixelMap &pm, const float chargeThreshold) const;
@@ -66,8 +82,10 @@ namespace cvn
     const std::map<unsigned int,unsigned int> Get2DGraphNeighbourMap(const cvn::GCNGraph &g, const unsigned int npixel) const;
 
     /// Get ground truth for spacepoint deghosting graph network
-    const std::vector<bool> GetNodeGroundTruth(art::Event const &evt,
-      const std::string &splabel, float distCut) const;
+    const std::vector<bool> GetNodeGroundTruth(std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
+    std::vector<std::vector<art::Ptr<recob::Hit>>> spToHit, float distCut, std::vector<std::vector<float>>* dirTruth=nullptr) const;
+    /// Get hierarchy map from set of particles
+    std::map<unsigned int, unsigned int> GetParticleFlowMap(const std::set<unsigned int> particles) const;
 
   private:
 

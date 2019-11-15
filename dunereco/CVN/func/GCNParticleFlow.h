@@ -19,6 +19,8 @@ namespace cvn
 
     /// Default constructor
     GCNParticleFlow(){};
+    /// Construct from map
+    GCNParticleFlow(std::map<unsigned int, unsigned int> truthMap);
     /// Default destructor
     ~GCNParticleFlow(){};
 
@@ -26,7 +28,7 @@ namespace cvn
     void AddParticle(unsigned int particle, unsigned int parent);
 
     /// Retrieve truth information
-    std::map<unsigned int, unsigned int> GetMap() { return fTruthMap; };
+    std::map<unsigned int, unsigned int> GetMap() const { return fTruthMap; };
     unsigned int GetParent(unsigned int particle);
 
   private:

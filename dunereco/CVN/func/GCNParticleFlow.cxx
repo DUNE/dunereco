@@ -9,6 +9,11 @@
 
 namespace cvn
 {
+  /// Constructor
+  GCNParticleFlow::GCNParticleFlow(std::map<unsigned int, unsigned int> truthMap)
+    : fTruthMap(truthMap)
+  {}
+
   /// Add true particle to map
   void GCNParticleFlow::AddParticle(unsigned int particle,
     unsigned int parent) {
