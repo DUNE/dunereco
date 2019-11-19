@@ -43,33 +43,29 @@ namespace cvn
 
   } // function GCNFeatureUtils::GetTrackIDFromHit
 
-  size_t GCNFeatureUtils::GetClosestTrajectoryPoint(const recob::SpacePoint sp,
+  std::pair<unsigned int, float> GCNFeatureUtils::GetClosestApproach(const recob::SpacePoint sp,
     const simb::MCParticle p) const {
 
     // Spacepoint 3D position
-    float dist = std::numeric_limits<float>::max();
-    TVector3 spPos = TVector3(sp.XYZ());
-    size_t ret = std::numeric_limits<size_t>::max();
+    geoalgo::Point_t spPos(sp.XYZ()[0], sp.XYZ()[1], sp.XYZ()[2]);
 
-    // Use particle inventory service to get the trajectory of MC particle
+    // Loop over trajectory segments and find point of closest approach
+    unsigned int id = std::numeric_limits<unsigned int>::max();
+    float dist = std::numeric_limits<float>::max();
     simb::MCTrajectory traj = p.Trajectory();
-    for (size_t it = 0; it < traj.size(); ++it) {
-      TVector3 trajPos = traj.Position(it).Vect();
-      float distTmp = (spPos - trajPos).Mag();
+    for (size_t it = 1; it < traj.size(); ++it) {
+      geoalgo::Point_t p1(TVector3(traj.Position(it-1).Vect()));
+      geoalgo::Point_t p2(TVector3(traj.Position(it).Vect()));
+      geoalgo::LineSegment_t ls(p1, p2);
+      float distTmp = fGeoAlgo.SqDist(spPos, ls);
       if (distTmp < dist) {
         dist = distTmp;
-        ret = it;
+        id = it-1;
       }
-    } // for trajectory point it
-
-    // Check we actually have a valid ID here
-    if (ret == std::numeric_limits<size_t>::max()) {
-      throw std::runtime_error("No valid trajectory point found!");
     }
+    return std::make_pair(id, dist);
 
-    return ret;
-
-  } // function GCNFeatureUtils::GetClosestTrajectoryPoint
+  } // function GCNFeatureUtils::GetClosestApproach
 
   // Get the number of neighbours within rangeCut cm of this space point
   const unsigned int GCNFeatureUtils::GetSpacePointNeighbours(const recob::SpacePoint &sp, art::Event const &evt, 
@@ -550,11 +546,21 @@ namespace cvn
       dirTruth->clear();
       dirTruth->resize(spacePoints.size());
     }
+    std::vector<std::pair<size_t, float>> dist;
+    std::vector<int> trueIDs(spacePoints.size(), -1);
+    std::vector<int> closestTrajPoint(spacePoints.size(), -1);
+    // std::vector<float> dist(spacePoints.size(), -1);
 
     // Debug counters!
-    size_t nIDEMismatched(0), nMismatched(0), nNoHit(0), nOutOfRange(0), nGood(0);
+    size_t nMismatched(0), nNoHit(0), nOutOfRange(0), nHitUsed(0), nGood(0);
     // Loop over each spacepoint
     for (size_t spIdx = 0; spIdx < spacePoints.size(); ++spIdx) {
+      // Check index and ID agree
+      if (spIdx != (size_t)spacePoints[spIdx]->ID()) {
+        throw art::Exception(art::errors::LogicError) << "Spacepoint index "
+          << spIdx << " mismatched with spacepoint ID "
+          << spacePoints[spIdx]->ID();
+      }
       bool done = false;
       art::Ptr<recob::SpacePoint> sp = spacePoints[spIdx];
 
@@ -568,98 +574,83 @@ namespace cvn
       //   3) Does the reconstructed position of the spacepoint fall within
       //      some FHICL-configurable distance to the true particle's
       //      trajectory?
-      // If yes to all three of these, the spacepoint is true. Otherwise, it's
-      // false.
+      //   4) Is the spacepoint's hit already used by a different spacepoint?
+      // If yes to all of these, the spacepoint is true. Otherwise, it's false.
 
-      // Extra piece of code to try and match IDEs!
+      int trueParticleID = std::numeric_limits<int>::max();
       bool firstHit = true;
-      TVector3 spPos(sp->XYZ());
-      TVector3 pos(0., 0., 0.);
-      int trueID = std::numeric_limits<int>::max();
       for (art::Ptr<recob::Hit> hit : sp2Hit[spIdx]) {
-        float energy = -1;
-        int trueParticleID = std::numeric_limits<int>::max();
-        TVector3 hitPos(0., 0., 0.);
-        for (const sim::IDE* ide : bt->HitToSimIDEs_Ps(hit)) {
-          if (ide->energy > energy) {
-            energy = ide->energy;
-            trueParticleID = ide->trackID;
-            hitPos.SetX(ide->x);
-            hitPos.SetY(ide->y);
-            hitPos.SetZ(ide->z);
-          } // if higher-energy IDE
-        } // for IDE
-        if (firstHit) {
-          firstHit = false;
-          pos = hitPos;
-          trueID = trueParticleID;
+        int trueID = GetTrackIDFromHit(*hit);
+        if (trueID == std::numeric_limits<int>::max()) {
+          ++nNoHit;
+          done = true;
+          break;
         }
-        else {
-          if (trueID != trueParticleID) {
-            ++nMismatched;
-            done = true;
-            break;
-          }
-          float dist = (pos-hitPos).Mag();
-          // Check IDE distance is small
-          if (dist > 0.1) {
-            ++nIDEMismatched;
-            done = true;
-            break;
-          }
-          // else {
-          //   std::cout << "Here we have a distance of " << dist << "between IDEs!" << std::endl;
-          // }
+        // Check whether this hit's true particle matches other hits from this spacepoint
+        if (firstHit) {
+          trueParticleID = trueID;
+          firstHit = false;
+        }
+        else if (trueParticleID != trueID) {
+          // If true IDs don't match, quit
+          ++nMismatched;
+          done = true;
+          break;
         }
       } // for hit
 
-      if (trueID == std::numeric_limits<int>::max()) {
+      if (done) continue; // if this isn't a valid spacepoint then stop here
+      if (trueParticleID == std::numeric_limits<int>::max()) {
         ++nNoHit;
-        done = true;
+        continue;
       }
 
-      if (done) continue; // if it isn't a valid spacepoint then stop here
-
-      // int trueParticleID = std::numeric_limits<int>::max();
-      // firstHit = true;
-      // for (art::Ptr<recob::Hit> hit : sp2Hit[spIdx]) {
-      //   int trueID = GetTrackIDFromHit(*hit);
-      //   if (trueID == std::numeric_limits<int>::max()) {
-      //     ++nNoHit;
-      //     done = true;
-      //     break;
-      //   }
-      //   // Check whether this hit's true particle matches other hits from this spacepoint
-      //   if (firstHit) {
-      //     trueParticleID = trueID;
-      //     firstHit = false;
-      //   }
-      //   else if (trueParticleID != trueID) {
-      //     // If true IDs don't match, quit
-      //     ++nMismatched;
-      //     done = true;
-      //     break;
-      //   }
-      // } // for hit
-
-      // if (done) continue; // if this isn't a valid spacepoint then stop here
-
       // Get the true particle, and find the closest MC trajectory point to spacepoint
-      simb::MCParticle p = pi->TrackIdToParticle(abs(trueID));
-      size_t closestPointIdx = GetClosestTrajectoryPoint(*sp, p);
-      TVector3 closestPoint = p.Trajectory().Position(closestPointIdx).Vect();
-      float dist = (TVector3(sp->XYZ())-closestPoint).Mag();
-      if (dist < distCut) {
-        ++nGood;
+      simb::MCParticle p = pi->TrackIdToParticle(abs(trueParticleID));
+      std::pair<unsigned int, float> closest = GetClosestApproach(*sp, p);
+      dist.push_back(std::make_pair(spIdx, closest.second));
+      trueIDs[spIdx] = abs(trueParticleID);
+      closestTrajPoint[spIdx] = closest.first;
+      if (closest.second < distCut) {
+        // ++nGood;
         ret[spIdx] = true;
       }
       else {
         ++nOutOfRange;
       }
 
+    } // for spIdx
+
+    // Sort spacepoints in ascending order of distance to true trajectory
+    std::sort(std::begin(dist), std::end(dist),
+      [](const auto& a, const auto&b) { return a.second < b.second; });
+    std::set<size_t> usedHits;
+    // Loop over all truth-matched spacepoints
+    for (auto d : dist) {
+      // Check whether any of the hits associated with this spacepoint have already been used
+      for (art::Ptr<recob::Hit> hit : sp2Hit[d.first]) {
+        if (usedHits.count(hit.key())) {
+          ret[d.first] = false; // Remove this spacepoint from the list of good ones
+          ++nHitUsed;
+          break;
+        }
+      }
+      if (!ret[d.first]) continue; // If this spacepoint is bad, move on to the next one
+      // None of the hits have been used, so we'll let this one through but
+      // add its hits to the list so no other spacepoints can use them
+      for (art::Ptr<recob::Hit> hit : sp2Hit[d.first]) {
+        usedHits.insert(hit.key());
+      }
+      ++nGood;
+
+    } // for spacepoint
+
+    // Loop over spacepoints to set directionality
+    for (size_t spIdx = 0; spIdx < spacePoints.size(); ++spIdx) {
       // If this was a true node & we're storing direction, store it!
       if (ret[spIdx] && dirTruth) {
-        TVector3 dir = p.Trajectory().Momentum(closestPointIdx).Vect().Unit();
+        simb::MCParticle p = pi->TrackIdToParticle(trueIDs[spIdx]);
+        TVector3 dir = p.Trajectory().Momentum(closestTrajPoint[spIdx]).Vect().Unit();
         for (size_t it = 0; it < 3; ++it) {
           dirTruth->at(spIdx).push_back(dir[it]);
         }
@@ -667,8 +658,8 @@ namespace cvn
 
     } // for spIdx
 
-    std::cout << "There were " << nGood << " valid spacepoints, " << nIDEMismatched
-      << " spacepoints with IDE mismatch, " << nNoHit
+    std::cout << "There were " << nGood << " valid spacepoints, " << nHitUsed
+      << " spacepoints with a hit already used, " << nNoHit
       << " spacepoints with no associated hits or noise hits, " << nMismatched
       << " spacepoints produced from mismatched hits and " << nOutOfRange
       << " spacepoints reconstructed too far away from the true particle trajectory."

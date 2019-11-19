@@ -6,6 +6,7 @@ art_make( BASENAME_ONLY
   LIBRARY_NAME     CVNFunc
   LIB_LIBRARIES    nusimdata_SimulationBase
   larcorealg_Geometry
+  larcorealg_GeoAlgo
   lardataobj_RecoBase
   larsim_MCCheater_BackTrackerService_service 
   larsim_MCCheater_ParticleInventoryService_service

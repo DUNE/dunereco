@@ -18,6 +18,7 @@
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
+#include "larcorealg/GeoAlgo/GeoAlgo.h"
 
 #include "dune/CVN/func/GCNGraph.h"
 #include "dune/CVN/func/PixelMap.h"
@@ -35,7 +36,7 @@ namespace cvn
     /// Get primary true G4 ID for hit
     int GetTrackIDFromHit(const recob::Hit) const;
     /// Get closest trajectory point for true particle given reconstructed spacepoint
-    size_t GetClosestTrajectoryPoint(const recob::SpacePoint sp, const simb::MCParticle p) const;
+    std::pair<unsigned int, float> GetClosestApproach(const recob::SpacePoint sp, const simb::MCParticle p) const;
 
     /// Get the number of neighbours within rangeCut cm of this space point
     const unsigned int GetSpacePointNeighbours(const recob::SpacePoint &sp, art::Event const &evt, const float rangeCut, const std::string &spLabel) const;
@@ -88,6 +89,8 @@ namespace cvn
     std::map<unsigned int, unsigned int> GetParticleFlowMap(const std::set<unsigned int> particles) const;
 
   private:
+
+    geoalgo::GeoAlgo fGeoAlgo;
 
   };
 

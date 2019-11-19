@@ -38,8 +38,6 @@ namespace cvn {
     void beginJob();
     void endJob();
 
-
-
   private:
     /// Module label for input space points
     std::string fSpacePointModuleLabel;
@@ -70,8 +68,6 @@ namespace cvn {
     bool fSaveParticleFlow;
 
   };
-
-
 
   //.......................................................................
   GCNGraphMaker::GCNGraphMaker(fhicl::ParameterSet const& pset): art::EDProducer(pset),
@@ -173,33 +169,6 @@ namespace cvn {
         nodeDeghostingGroundTruth = graphUtil.GetNodeGroundTruth(spacePoints,
           sp2Hit, fTruthRadius, nodeDirectionGroundTruth);
       }
-
-      // // Figure out if we have duplicate spacepoints here
-      // // Loop over spacepoints
-      // for (size_t iSP = 0; iSP < spacePoints.size(); ++iSP) {
-      //   unsigned int duplicateCount = 0;
-      //   // Figure out if there are any other spacepoints that come from the same set of hits
-      //   for (size_t jSP = 0; jSP < spacePoints.size(); ++jSP) {
-      //     if (iSP == jSP) continue;
-      //     unsigned int matches = 0;
-      //     // bool test = true;
-      //     for (size_t i = 0; i < 3; ++i) {
-      //       bool match = true;
-      //       for (size_t j = 0; j < 3; ++j) {
-      //         unsigned int idx = (i*3) + j;
-      //         match = match && hitMap[iSP][idx] == hitMap[jSP][idx];
-      //       }
-      //       if (match) ++matches;
-      //       // test = ((hitMap[iSP][i] == hitMap[jSP][i]) && test);
-      //       // if (!test) break;
-      //     }
-      //     if (matches > 1) std::cout << matches << " matches for spacepoints " << iSP << " & " << jSP << std::endl;
-      //     // if (test) ++duplicateCount;
-      //   } // for jSP
-      //   if (duplicateCount > 0) std::cout << "For spacepoint " << iSP << " we have "
-      //     << duplicateCount << " duplicate spacepoints." << std::endl;
-      // } // for iSP
-
 
       std::set<unsigned int> trueParticles;
       for (size_t spIdx = 0; spIdx < spacePoints.size(); ++spIdx) {
