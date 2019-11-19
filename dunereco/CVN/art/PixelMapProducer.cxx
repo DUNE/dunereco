@@ -495,10 +495,13 @@ namespace cvn
               if (p.Process() == "muMinusCaptureAtRest" || p.Process() == "muPlusCaptureAtRest") {
                 pdg = 99;
               }
-              // If not, see what it is!
-              else {
-                std::cout << "We have an electron from a muon here that isn't a Michel. Process string is " << p.Process() << std::endl;
+              else if (p.Process() == "Decay") {
+                pdg = 98;
               }
+              // If not, see what it is!
+              // else {
+                // std::cout << "We have an electron from a muon here that isn't a Michel. Process string is " << p.Process() << std::endl;
+              // }
             } // If electron parent is muon
           } // If non-primary electron
           pdgs.push_back(pdg);
