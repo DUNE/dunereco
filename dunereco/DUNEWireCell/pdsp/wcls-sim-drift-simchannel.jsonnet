@@ -135,6 +135,7 @@ local wcls_simchannel_sink = g.pnode({
     u_time_offset: -1.0 * wc.us,
     v_time_offset: -1.0 * wc.us,
     y_time_offset: -1.0 * wc.us,
+    g4_ref_time: -250 * wc.us,
     use_energy: true,
   },
 }, nin=1, nout=1, uses=tools.anodes);
