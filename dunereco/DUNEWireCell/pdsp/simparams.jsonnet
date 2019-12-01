@@ -4,10 +4,16 @@ local base = import 'pgrapher/experiment/pdsp/params.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
 base {
-  //lar: super.lar {
-  //    // be sure you really want to have this. default value: 8 ms
-  //    lifetime: 1000.0*wc.ms,
-  //},
+  lar: super.lar {
+      // Longitudinal diffusion constant
+      DL : 4.0 * wc.cm2/wc.s,
+      // Transverse diffusion constant
+      DT : 8.8 * wc.cm2/wc.s,
+      // Electron lifetime
+      lifetime : 35*wc.ms,
+      // Electron drift speed, assumes a certain applied E-field
+      drift_speed : 1.56461*wc.mm/wc.us,
+  },
   daq: super.daq {
 
     // Number of readout ticks.  See also sim.response.nticks.
