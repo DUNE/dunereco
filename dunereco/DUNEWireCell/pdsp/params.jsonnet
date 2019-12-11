@@ -154,7 +154,7 @@ base {
     },
 
     files: {
-        wires: "protodune-wires-larsoft-v3.json.bz2",
+        wires: "protodune-wires-larsoft-v4.json.bz2",
 
         fields: [
             // "garfield-1d-3planes-21wires-6impacts-dune-v1.json.bz2",
