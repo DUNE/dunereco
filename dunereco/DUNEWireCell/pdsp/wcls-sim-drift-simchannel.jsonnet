@@ -82,14 +82,14 @@ local wcls_output = {
 
 //local deposio = io.numpy.depos(output);
 local drifter = sim.drifter;
-// local bagger = sim.make_bagger();
-local bagger = g.pnode({
-  type: 'DepoBagger',
-  name: 'bagger',
-  data: {
-    gate: [-250 * wc.us, 2750 * wc.us],  // fixed
-  },
-}, nin=1, nout=1);
+local bagger = sim.make_bagger();
+// local bagger = g.pnode({
+//   type: 'DepoBagger',
+//   name: 'bagger',
+//   data: {
+//     gate: [-250 * wc.us, 2750 * wc.us],  // fixed
+//   },
+// }, nin=1, nout=1);
 
 // signal plus noise pipelines
 //local sn_pipes = sim.signal_pipelines;
