@@ -532,7 +532,7 @@ namespace cvn
 
   }
 
-  const std::vector<bool> GCNFeatureUtils::GetNodeGroundTruth(
+  const std::vector<floaat> GCNFeatureUtils::GetNodeGroundTruth(
     std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
     std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit, float distCut,
     std::vector<std::vector<float>>* dirTruth) const{
@@ -541,7 +541,7 @@ namespace cvn
     art::ServiceHandle<cheat::BackTrackerService> bt;
     art::ServiceHandle<cheat::ParticleInventoryService> pi;
 
-    std::vector<bool> ret(spacePoints.size(), false);
+    std::vector<float> ret(spacePoints.size(), -1);
     if (dirTruth) {
       dirTruth->clear();
       dirTruth->resize(spacePoints.size());
@@ -611,37 +611,38 @@ namespace cvn
       dist.push_back(std::make_pair(spIdx, closest.second));
       trueIDs[spIdx] = abs(trueParticleID);
       closestTrajPoint[spIdx] = closest.first;
-      if (closest.second < distCut) {
+      ret[spIdx] = closest.second;
+      //if (closest.second < distCut) {
         // ++nGood;
-        ret[spIdx] = true;
-      }
-      else {
-        ++nOutOfRange;
-      }
+        //ret[spIdx] = -1;
+      //}
+      //else {
+      //  ++nOutOfRange;
+      //}
 
     } // for spIdx
 
     // Sort spacepoints in ascending order of distance to true trajectory
-    std::sort(std::begin(dist), std::end(dist),
-      [](const auto& a, const auto&b) { return a.second < b.second; });
-    std::set<size_t> usedHits;
+    //std::sort(std::begin(dist), std::end(dist),
+    //  [](const auto& a, const auto&b) { return a.second < b.second; });
+    //std::set<size_t> usedHits;
     // Loop over all truth-matched spacepoints
-    for (auto d : dist) {
-      // Check whether any of the hits associated with this spacepoint have already been used
-      for (art::Ptr<recob::Hit> hit : sp2Hit[d.first]) {
-        if (usedHits.count(hit.key())) {
-          ret[d.first] = false; // Remove this spacepoint from the list of good ones
-          ++nHitUsed;
-          break;
-        }
-      }
-      if (!ret[d.first]) continue; // If this spacepoint is bad, move on to the next one
-      // None of the hits have been used, so we'll let this one through but
-      // add its hits to the list so no other spacepoints can use them
-      for (art::Ptr<recob::Hit> hit : sp2Hit[d.first]) {
-        usedHits.insert(hit.key());
-      }
-      ++nGood;
+    //for (auto d : dist) {
+    //  // Check whether any of the hits associated with this spacepoint have already been used
+    //  for (art::Ptr<recob::Hit> hit : sp2Hit[d.first]) {
+    //    if (usedHits.count(hit.key())) {
+    //      ret[d.first] = false; // Remove this spacepoint from the list of good ones
+    //      ++nHitUsed;
+    //      break;
+    //    }
+    //  }
+    //  if (!ret[d.first]) continue; // If this spacepoint is bad, move on to the next one
+    //  // None of the hits have been used, so we'll let this one through but
+    //  // add its hits to the list so no other spacepoints can use them
+    //  for (art::Ptr<recob::Hit> hit : sp2Hit[d.first]) {
+    //    usedHits.insert(hit.key());
+    //  }
+    //  ++nGood;
 
     } // for spacepoint
 
