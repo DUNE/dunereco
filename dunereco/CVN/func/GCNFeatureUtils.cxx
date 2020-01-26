@@ -532,7 +532,7 @@ namespace cvn
 
   }
 
-  const std::vector<floaat> GCNFeatureUtils::GetNodeGroundTruth(
+  const std::vector<float> GCNFeatureUtils::GetNodeGroundTruth(
     std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
     std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit, float distCut,
     std::vector<std::vector<float>>* dirTruth) const{
@@ -552,7 +552,7 @@ namespace cvn
     // std::vector<float> dist(spacePoints.size(), -1);
 
     // Debug counters!
-    size_t nMismatched(0), nNoHit(0), nOutOfRange(0), nHitUsed(0), nGood(0);
+    size_t nMismatched(0), nNoHit(0), nGood(0);//, nOutOfRange(0), nHitUsed(0), nGood(0);
     // Loop over each spacepoint
     for (size_t spIdx = 0; spIdx < spacePoints.size(); ++spIdx) {
       // Check index and ID agree
@@ -612,6 +612,7 @@ namespace cvn
       trueIDs[spIdx] = abs(trueParticleID);
       closestTrajPoint[spIdx] = closest.first;
       ret[spIdx] = closest.second;
+      ++nGood;
       //if (closest.second < distCut) {
         // ++nGood;
         //ret[spIdx] = -1;
@@ -644,7 +645,7 @@ namespace cvn
     //  }
     //  ++nGood;
 
-    } // for spacepoint
+    //} // for spacepoint
 
     // Loop over spacepoints to set directionality
     for (size_t spIdx = 0; spIdx < spacePoints.size(); ++spIdx) {
@@ -659,12 +660,12 @@ namespace cvn
 
     } // for spIdx
 
-    std::cout << "There were " << nGood << " valid spacepoints, " << nHitUsed
-      << " spacepoints with a hit already used, " << nNoHit
-      << " spacepoints with no associated hits or noise hits, " << nMismatched
-      << " spacepoints produced from mismatched hits and " << nOutOfRange
-      << " spacepoints reconstructed too far away from the true particle trajectory."
-      << std::endl;
+    std::cout << "There were " << nGood << " valid spacepoints, " << nNoHit//<< nHitUsed
+//      << " spacepoints with a hit already used, " << nNoHit
+      << " spacepoints with no associated hits or noise hits, and " << nMismatched
+      << " spacepoints produced from mismatched hits." << std::endl;// and " << nOutOfRange
+//      << " spacepoints reconstructed too far away from the true particle trajectory."
+//      << std::endl;
 
     return ret;
 
