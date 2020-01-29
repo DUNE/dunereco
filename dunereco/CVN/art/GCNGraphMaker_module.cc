@@ -161,7 +161,7 @@ namespace cvn {
         throw art::Exception(art::errors::LogicError)
           << "You must enable deghosting ground truth if using direction ground truth!";
       }
-      std::vector<bool> nodeDeghostingGroundTruth;
+      std::vector<float> nodeDeghostingGroundTruth;
       std::vector<std::vector<float>>* nodeDirectionGroundTruth = nullptr;
       if (fUseNodeDirectionGroundTruth) nodeDirectionGroundTruth = new std::vector<std::vector<float>>();
       if (fUseNodeDeghostingGroundTruth) {

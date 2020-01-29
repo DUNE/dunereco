@@ -83,7 +83,7 @@ namespace cvn
     const std::map<unsigned int,unsigned int> Get2DGraphNeighbourMap(const cvn::GCNGraph &g, const unsigned int npixel) const;
 
     /// Get ground truth for spacepoint deghosting graph network
-    const std::vector<bool> GetNodeGroundTruth(std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
+    const std::vector<float> GetNodeGroundTruth(std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
     std::vector<std::vector<art::Ptr<recob::Hit>>> spToHit, float distCut, std::vector<std::vector<float>>* dirTruth=nullptr) const;
     /// Get hierarchy map from set of particles
     std::map<unsigned int, unsigned int> GetParticleFlowMap(const std::set<unsigned int> particles) const;
