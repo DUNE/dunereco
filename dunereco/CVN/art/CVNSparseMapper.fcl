@@ -10,6 +10,15 @@ standard_cvnsparsemapper:
   IncludePixelTruth:   false
 }
 
+standard_cvnsparsemapper3d:
+{
+  module_type:       CVNSparseMapper3D
+  #==================
+  SpacePointModuleLabel:   "reco3d"
+  PixelMapLabel:           "cvnsparsemap"
+  MinSP:                   100
+}
+
 standard_cvnsparseroot:
 { 
   module_type:        CVNSparseROOT

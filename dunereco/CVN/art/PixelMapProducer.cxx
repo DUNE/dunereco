@@ -17,6 +17,7 @@
 #include "TVector2.h"
 #include "TH2D.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
 
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
@@ -434,15 +435,47 @@ namespace cvn
 
   } // function GetProtoDUNEGlobalWireTDC
 
-  SparsePixelMap PixelMapProducer::CreateSparseMap(std::vector< art::Ptr< recob::Hit> >& cluster,
+  void PixelMapProducer::GetHitTruth(art::Ptr<recob::Hit>& hit, std::vector<int>& pdgs,
+    std::vector<int>& tracks, std::vector<float>& energy, std::vector<std::string>& process) {
+
+    // BackTracker and ParticleInventory
+    art::ServiceHandle<cheat::BackTrackerService> bt;
+    art::ServiceHandle<cheat::ParticleInventoryService> pi;
+
+    // Get true particle and PDG responsible for this hit
+    std::vector<sim::TrackIDE> IDEs = bt->HitToTrackIDEs(hit);
+    for (sim::TrackIDE & k : IDEs) {
+      tracks.push_back(k.trackID); // add track ID
+      simb::MCParticle p = pi->TrackIdToParticle(k.trackID);
+      process.push_back(p.Process()); // add G4 process string
+    
+      // Manually check to see if we have a Michel electron here
+      int pdg = p.PdgCode();
+      if (abs(pdg) == 11 && p.Mother() != 0) {
+        int pdgParent = pi->TrackIdToParticle(p.Mother()).PdgCode();
+        if (abs(pdgParent) == 13 && ((pdg>0)==(pdgParent>0))) {
+          // If it's a Michel electron, tag it with an unphysical PDG code             
+          if (p.Process() == "muMinusCaptureAtRest" || p.Process() == "muPlusCaptureAtRest") {
+            pdg = 99;
+          }
+          else if (p.Process() == "Decay") {
+            pdg = 98;
+          }
+        } // If electron parent is muon
+      } // If non-primary electron
+      pdgs.push_back(pdg);
+      energy.push_back(k.energy);
+    }  // for trackIDE
+  } // function PixelMapProducer::GetHitTruth
+
+  SparsePixelMap PixelMapProducer::CreateSparseMap2D(std::vector< art::Ptr< recob::Hit> >& cluster,
     bool usePixelTruth) {
 
+    // 3-dimensional coordinates (wire, time TPC) and 3 views
     SparsePixelMap map(3, 3, usePixelTruth);
 
     art::ServiceHandle<cheat::BackTrackerService> bt;
     art::ServiceHandle<cheat::ParticleInventoryService> pi;
-     
-    //int count =0;
     
     for(size_t iHit = 0; iHit < cluster.size(); ++iHit) {
 
@@ -468,57 +501,53 @@ namespace cvn
         << "Geometry " << fGeometry->DetectorName() << " not implemented "
         << "in CreateSparseMap." << std::endl;
 
+      std::vector<float> coordinates = { (float)globalWire, (float)globalTime, (float)wireid.TPC };
+
       if (usePixelTruth) {
-        // Get true particle and PDG responsible for this hit
-        std::vector<sim::TrackIDE> IDEs = bt->HitToTrackIDEs(cluster[iHit]);
-        // Get track ids, PDG and energy responsibles for this hit
-        std::vector<int> tracks, pdgs, pdgParent;
+        // Get true information for this hit
+        std::vector<int> pdgs, tracks;
         std::vector<float> energy;
         std::vector<std::string> process;
-        for (auto k : IDEs) {
-          tracks.push_back(k.trackID);
-          simb::MCParticle p = pi->TrackIdToParticle(k.trackID);
-          process.push_back(p.Process());
-          if (p.Mother()!=0) {
-            int pdg_parent = pi->TrackIdToParticle(p.Mother()).PdgCode();
-            // std::cout << " track ID  " << k.trackID << " PDG "<< p.PdgCode() << " Parent "<< pdg_parent <<"process "  << p.Process() << std::endl;
-            pdgParent.push_back(pdg_parent);
-            // std::cout<< "pdg delta parent: "<< pdgDelta_Parent << std::endl;
-          } 
-        
-          // Manually check to see if we have a Michel electron here
-          int pdg = p.PdgCode();
-          if (abs(pdg) == 11 && p.Mother() != 0) {
-            int pdgParent = pi->TrackIdToParticle(p.Mother()).PdgCode();
-            if (abs(pdgParent) == 13 && ((pdg>0)==(pdgParent>0))) {
-              // If it's a Michel electron, tag it with an unphysical PDG code             
-              if (p.Process() == "muMinusCaptureAtRest" || p.Process() == "muPlusCaptureAtRest") {
-                pdg = 99;
-              }
-              else if (p.Process() == "Decay") {
-                pdg = 98;
-              }
-              // If not, see what it is!
-              // else {
-                // std::cout << "We have an electron from a muon here that isn't a Michel. Process string is " << p.Process() << std::endl;
-              // }
-            } // If electron parent is muon
-          } // If non-primary electron
-          pdgs.push_back(pdg);
-          energy.push_back(k.energy);
-        } 
-        // for (auto k : process) {
-        //   std:: cout << "size " <<  process.size() << " process: " <<  k << std::endl;
-        // }
-        map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime, wireid.TPC},
-          cluster[iHit]->Integral(), pdgs, tracks, energy, pdgParent, process) ; 
+        GetHitTruth(cluster[iHit], pdgs, tracks, energy, process);
+        map.AddHit(globalPlane, coordinates, {cluster[iHit]->Integral()}, pdgs, tracks, energy, process); 
       } // if PixelTuth 
 
       else {
-        map.AddHit(globalPlane, {globalWire, (unsigned int)globalTime},
-          cluster[iHit]->Integral());
+        map.AddHit(0, coordinates, {cluster[iHit]->Integral()});
       }
     } // for iHit
+
+    return map;
+
+  } // function PixelMapProducer::CreateSparseMap
+
+  SparsePixelMap PixelMapProducer::CreateSparseMap3D(
+    std::vector<art::Ptr<recob::SpacePoint>>& sp,
+    std::vector<std::vector<art::Ptr<recob::Hit>>>& hit) {
+
+    // 3D coordinates (x,y,z) and a single 3D view
+    SparsePixelMap map(3, 1, true);
+
+    art::ServiceHandle<cheat::BackTrackerService> bt;
+    art::ServiceHandle<cheat::ParticleInventoryService> pi;
+
+    for (size_t iSP = 0; iSP < sp.size(); ++iSP) { // Loop over spacepoints
+
+      std::vector<float> features(3, 0.); // charge on each plane
+      std::vector<float> coordinates(3);
+      const double *pos = sp[iSP]->XYZ();
+      for (size_t p = 0; p < 3; ++p) coordinates[p] = pos[p];
+
+      std::vector<int> pdgs, tracks;
+      std::vector<float> energy;
+      std::vector<std::string> process;
+
+      for (size_t iH = 0; iH < hit[iSP].size(); ++iH) { // Loop over this spacepoint's hits
+        features[hit[iSP][iH]->View()] += hit[iSP][iH]->Integral(); // Add hit integral to corresponding view's features
+        GetHitTruth(hit[iSP][iH], pdgs, tracks, energy, process);
+        map.AddHit(0, coordinates, features, pdgs, tracks, energy, process); 
+      } // for hit iH
+    } // for spacepoint iSP
 
     return map;
 

@@ -54,15 +54,12 @@ namespace cvn {
     std::string fTreeName; ///< ROOt tree name
     bool        fIncludeGroundTruth; ///< Whether to include per-pixel ground truth
 
-    std::vector<std::vector<unsigned int>> fCoordinates; ///< Pixel coordinates
-    std::vector<float> fValues; ///< Pixel values
+    std::vector<std::vector<float>> fCoordinates; ///< Pixel coordinates
+    std::vector<std::vector<float>> fFeatures; ///< Pixel features
     std::vector<std::vector<int>> fPixelPDG; ///< Pixel PDG truth
     std::vector<std::vector<int>> fPixelTrackID; ///< Pixel track ID
-    std::vector<std::vector<float>> fPixelEnergy; ///< Pixel energy
-    std::vector<std::vector<int>> fParentPDG; // particle's Parent
-    std::vector<std::vector<std::string>> fProcess; // Physical process that creates the particle 
-
-
+    std::vector<std::vector<float>> fPixelEnergies; ///< Pixel energy
+    std::vector<std::vector<std::string>> fProcesses; // Physical process that creates the particle 
 
     std::vector<unsigned int> fEvent; ///< Event numbers
     unsigned int fView; ///< View numbers
@@ -81,12 +78,12 @@ namespace cvn {
 
   void CVNSparseROOT::reconfigure(fhicl::ParameterSet const& p) {
 
-    fMapModuleLabel =   p.get<std::string>("MapModuleLabel");
-    fMapInstanceLabel = p.get<std::string>("MapInstanceLabel");
-    fOutputName =       p.get<std::string>("OutputName");
-    fTreeName =         p.get<std::string>("TreeName");
+    fMapModuleLabel     = p.get<std::string>("MapModuleLabel");
+    fMapInstanceLabel   = p.get<std::string>("MapInstanceLabel");
+    fOutputName         = p.get<std::string>("OutputName");
+    fTreeName           = p.get<std::string>("TreeName");
     fIncludeGroundTruth = p.get<bool>("IncludeGroundTruth");
-    fCacheSize =        p.get<size_t>("CacheSize");
+    fCacheSize          = p.get<size_t>("CacheSize");
 
   } // cvn::CVNSparseROOT::reconfigure
 
@@ -111,13 +108,12 @@ namespace cvn {
 
     for (unsigned int it = 0; it < maps[0]->GetViews(); ++it) {
       fCoordinates = maps[0]->GetCoordinates(it);
-      fValues = maps[0]->GetValues(it);
+      fFeatures = maps[0]->GetFeatures(it);
       if (fIncludeGroundTruth) {
-        fPixelPDG     = maps[0]->GetPixelPDGs(it);
-        fPixelTrackID = maps[0]->GetPixelTrackIDs(it);
-        fPixelEnergy  = maps[0]->GetPixelEnergy(it);
-        fParentPDG    = maps[0]->GetParentPDGs(it);
-        fProcess      = maps[0]->GetProcess(it);
+        fPixelPDG      = maps[0]->GetPixelPDGs(it);
+        fPixelTrackID  = maps[0]->GetPixelTrackIDs(it);
+        fPixelEnergies = maps[0]->GetPixelEnergies(it);
+        fProcesses     = maps[0]->GetProcesses(it);
       }
       fEvent = std::vector<unsigned int>({e.id().run(), e.id().subRun(), e.id().event()});
       fView = it;
@@ -139,13 +135,12 @@ namespace cvn {
     fTree = new TTree(fTreeName.c_str(), fTreeName.c_str());
     fTree->SetCacheSize(fCacheSize);
     fTree->Branch("Coordinates", &fCoordinates);
-    fTree->Branch("Values", &fValues);
+    fTree->Branch("Features", &fFeatures);
     if (fIncludeGroundTruth) {
       fTree->Branch("PixelPDG", &fPixelPDG);
       fTree->Branch("PixelTrackID", &fPixelTrackID);
-      fTree->Branch("PixelEnergy", &fPixelEnergy);
-      fTree->Branch("ParentsPDGs", &fParentPDG);
-      fTree->Branch("Process", &fProcess);
+      fTree->Branch("PixelEnergy", &fPixelEnergies);
+      fTree->Branch("Process", &fProcesses);
     }
     fTree->Branch("Event", &fEvent);
     fTree->Branch("View", &fView);

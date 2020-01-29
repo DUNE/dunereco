@@ -15,19 +15,19 @@ namespace cvn {
     : fDim(dim), fViews(views), fUsePixelTruth(usePixelTruth)
   {
     fCoordinates.resize(fViews);
-    fValues.resize(fViews);
+    fFeatures.resize(fViews);
     if (fUsePixelTruth) {
       fPixelPDGs.resize(fViews);
       fPixelTrackIDs.resize(fViews);
-      fPixelEnergy.resize(fViews);
-      fParentPDG.resize(fViews);
-      fProcess.resize(fViews);
+      fPixelEnergies.resize(fViews);
+      fProcesses.resize(fViews);
 // *******************************************
     }
   }
 
   /// Default AddHit implementation, which just adds pixel value and coordinates
-  void SparsePixelMap::AddHit(unsigned int view, std::vector<unsigned int> coordinates, float value) {
+  void SparsePixelMap::AddHit(unsigned int view, std::vector<float> coordinates,
+    std::vector<float> features) {
 
     if (coordinates.size() != fDim) {
       throw art::Exception(art::errors::LogicError)
@@ -42,13 +42,13 @@ namespace cvn {
     }
 
     fCoordinates[view].push_back(coordinates);
-    fValues[view].push_back(value);
+    fFeatures[view].push_back(features);
   }
 
   /// AddHit function that includes per-pixel truth labelling for segmentation
-  void SparsePixelMap::AddHit(unsigned int view, std::vector<unsigned int> coordinates,
-    float value, std::vector<int> pdgs, std::vector<int> Tracks, std::vector<float> Energy,
-     std::vector<int> pdgParent, std::vector<std::string> process ) {
+  void SparsePixelMap::AddHit(unsigned int view, std::vector<float> coordinates,
+    std::vector<float> features, std::vector<int> pdgs, std::vector<int> tracks,
+    std::vector<float> energies, std::vector<std::string> processes) {
 
     if (coordinates.size() != fDim) {
       throw art::Exception(art::errors::LogicError)
@@ -63,52 +63,21 @@ namespace cvn {
     }
 
     fCoordinates[view].push_back(coordinates);
-    fValues[view].push_back(value);
+    fFeatures[view].push_back(features);
     fPixelPDGs[view].push_back(pdgs);
-    fPixelTrackIDs[view].push_back(Tracks);
-    fPixelEnergy[view].push_back(Energy);
-    fParentPDG[view].push_back(pdgParent);
-    fProcess[view].push_back(process);
-    //std::cout<< "*Carlos*  view " <<  view << "trackIDs size " << TrackIDs.size() << std::endl;
-    //for (auto k : TrackIDs){
-      // fPixelTrackIDs[view].push_back(k);
+    fPixelTrackIDs[view].push_back(tracks);
+    fPixelEnergies[view].push_back(energies);
+    fProcesses[view].push_back(processes);
 
-    //}
-    
-    //std::cout<< "Tracks IDs = " << TrackIDs.at(TrackIDs.size()-1) << std::endl;
-    //std::cout<< "TrueID = " << trueID<< std::endl;
-
-     
   }
 
   std::vector<unsigned int> SparsePixelMap::GetNPixels() const {
     
     std::vector<unsigned int> ret(fViews);
     for (size_t it = 0; it < fViews; ++it) {
-      ret[it] = fValues[it].size();
+      ret[it] = fFeatures[it].size();
     }
     return ret;
   }
-
-  // Return flat coordinates vector
- // std::vector<std::vector<unsigned int>> SparsePixelMap::GetCoordinatesFlat() const {
- //   return FlattenVector<std::vector<unsigned int>>(fCoordinates);
- // }
-
-  // Return flat pixel values vector
-  //std::vector<float> SparsePixelMap::GetValuesFlat() const {
-  //  return FlattenVector<float>(fValues);
- // }
-
-  // Return flat particle PDG vector
-  //std::vector<std::vector<int>> SparsePixelMap::GetPixelPDGsFlat() const {
-  //  return FlattenVector<std::vector<int>>(fPixelPDGs);
-  //}
-
-  // Return flat true G4 track ID vector
-  //std::vector<int> SparsePixelMap::GetPixelTrackIDsFlat() const {
-   // return FlattenVector<int>(fPixelTrackID);
-  //}
-
 
 } // namespace cvn

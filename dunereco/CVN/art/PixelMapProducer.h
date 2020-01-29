@@ -18,6 +18,7 @@
 #include "dune/CVN/func/SparsePixelMap.h"
 #include "dune/CVN/func/Boundary.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
 
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
@@ -59,7 +60,10 @@ namespace cvn
                                     const Boundary& bound);
 
     /// Create sparse pixel map for SCN applications
-    SparsePixelMap CreateSparseMap(std::vector< art::Ptr< recob::Hit> >& cluster, bool usePixelTruth=false);
+    void GetHitTruth(art::Ptr<recob::Hit>& hit, std::vector<int>& pdgs, std::vector<int>& tracks,
+      std::vector<float>& energies, std::vector<std::string>& processes);
+    SparsePixelMap CreateSparseMap2D(std::vector< art::Ptr< recob::Hit> >& cluster, bool usePixelTruth=false);
+    SparsePixelMap CreateSparseMap3D(std::vector< art::Ptr< recob::SpacePoint> >& sp, std::vector<std::vector<art::Ptr<recob::Hit>>>& hit);
 
   private:
     unsigned int      fNWire;  ///< Number of wires, length for pixel maps
