@@ -154,7 +154,7 @@ namespace dune{
     , fDoHitLineFitAlg     (pset.get<bool>("DoHitLineFitAlg",false))
     , fEngine(art::ServiceHandle<rndm::NuRandomService>{}->createEngine(*this,"HepJamesRandom","Seed"))
   {
-    recob::HitCollectionCreator::declare_products(*this);
+    recob::HitCollectionCreator::declare_products(producesCollector());
   }
   //-------------------------------------------------
   void HitFinderCounter35t::beginJob() {
@@ -244,7 +244,7 @@ namespace dune{
     
     // this object contains the hit collection
     // and its associations to wires and raw digits:
-    recob::HitCollectionCreator hcol(*this, evt,
+    recob::HitCollectionCreator hcol(evt,
     				     /* doWireAssns */ ChannelHitWires.isValid(),
     				     /* doRawDigitAssns */ ChannelHitRawDigits.isValid()
     				     );

@@ -86,8 +86,8 @@ namespace shs {
 
     // Let HitCollectionCreator declare that we are going to produce
     // hits and associations with wires and raw digits
-    recob::HitCollectionCreator::declare_products(*this,"showerhits",true,true);
-    recob::HitCollectionCreator::declare_products(*this,"trackhits",true,true);
+    recob::HitCollectionCreator::declare_products(producesCollector(),"showerhits",true,true);
+    recob::HitCollectionCreator::declare_products(producesCollector(),"trackhits",true,true);
 
     // Define some histograms if we want the plots
     if(fSaveTree){
@@ -159,8 +159,8 @@ namespace shs {
   void ShowerHitSeparator::produce(art::Event& evt) {
 
     // We want to produce two hit collections
-    recob::HitCollectionCreator showerHits(*this,evt,"showerhits",true,true);
-    recob::HitCollectionCreator trackHits(*this,evt,"trackhits",true,true);
+    recob::HitCollectionCreator showerHits(evt,"showerhits",true,true);
+    recob::HitCollectionCreator trackHits(evt,"trackhits",true,true);
 
     // These are the MVA weights
     std::vector<float> mvaWeights;
@@ -259,4 +259,3 @@ namespace shs {
 
 } // end of shs namespace
 #endif 
-

@@ -152,14 +152,14 @@ local sinks = magnify(tools, magoutput);
 local nfsp_pipes = [
   g.pipeline([
                chsel_pipes[n],
-               sinks.orig_pipe[n],
+               // sinks.orig_pipe[n],
 
-               nf_pipes[n],
-               sinks.raw_pipe[n],
+               // nf_pipes[n],
+               // sinks.raw_pipe[n],
 
                sp_pipes[n],
-               sinks.decon_pipe[n],
-               sinks.threshold_pipe[n],
+               // sinks.decon_pipe[n],
+               // sinks.threshold_pipe[n],
                // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
              ],
              'nfsp_pipe_%d' % n)

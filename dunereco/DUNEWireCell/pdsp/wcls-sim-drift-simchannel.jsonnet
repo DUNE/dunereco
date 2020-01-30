@@ -33,7 +33,7 @@ local output = 'wct-sim-ideal-sig.npz';
 local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 local wcls_input = {
-  depos: wcls.input.depos(name='', art_tag='ionization'),
+  depos: wcls.input.depos(name='', art_tag='IonAndScint'),
   // depos: wcls.input.depos(name='electron'),  // default art_tag="blopper"
 };
 
@@ -82,14 +82,14 @@ local wcls_output = {
 
 //local deposio = io.numpy.depos(output);
 local drifter = sim.drifter;
-// local bagger = sim.make_bagger();
-local bagger = g.pnode({
-  type: 'DepoBagger',
-  name: 'bagger',
-  data: {
-    gate: [-250 * wc.us, 2750 * wc.us],  // fixed
-  },
-}, nin=1, nout=1);
+local bagger = sim.make_bagger();
+// local bagger = g.pnode({
+//   type: 'DepoBagger',
+//   name: 'bagger',
+//   data: {
+//     gate: [-250 * wc.us, 2750 * wc.us],  // fixed
+//   },
+// }, nin=1, nout=1);
 
 // signal plus noise pipelines
 //local sn_pipes = sim.signal_pipelines;
@@ -132,9 +132,10 @@ local wcls_simchannel_sink = g.pnode({
     u_to_rp: 100 * wc.mm,  // 90.58 * wc.mm,
     v_to_rp: 100 * wc.mm,  // 95.29 * wc.mm,
     y_to_rp: 100 * wc.mm,
-    u_time_offset: -1.0 * wc.us,
-    v_time_offset: -1.0 * wc.us,
-    y_time_offset: -1.0 * wc.us,
+    u_time_offset: 0.0 * wc.us,
+    v_time_offset: 0.0 * wc.us,
+    y_time_offset: 0.0 * wc.us,
+    g4_ref_time: -250 * wc.us,
     use_energy: true,
   },
 }, nin=1, nout=1, uses=tools.anodes);
