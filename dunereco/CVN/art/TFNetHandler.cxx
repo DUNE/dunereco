@@ -16,9 +16,6 @@
 #include "dune/CVN/art/TFNetHandler.h"
 #include "dune/CVN/func/CVNImageUtils.h"
 
-#include "TH2D.h"
-#include "TCanvas.h"
-
 namespace cvn
 {
 
@@ -115,15 +112,6 @@ namespace cvn
       std::cout << std::endl;
     }
     std::cout << std::endl;
-
-    // Leigh - test the new framework for easier access to multiple output architectures
-//    std::vector<std::vector<std::vector<float>>> newCVNResult = fTFGraph->runMultiOutput(vecForTF);
-//    std::vector<float> newResult = newCVNResult[0][0];
-//    std::cout << "New method classifier summary: ";
-//    for(auto const v : newResult){
-//      std::cout << v << ", ";
-//    }
-//    std::cout << std::endl;
 
     return cvnResults[0];
   }

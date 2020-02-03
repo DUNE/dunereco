@@ -25,18 +25,11 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Core/ModuleMacros.h"
-//#include "art/Framework/Core/FindManyP.h"
 
 // LArSoft includes
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardataobj/RawData/ExternalTrigger.h"
-
-#include "lardata/Utilities/AssociationUtil.h"
 #include "nusimdata/SimulationBase/MCNeutrino.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "larsim/MCCheater/BackTracker.h"
 
 #include "dune/CVN/func/AssignLabels.h"
 #include "dune/CVN/func/TrainingData.h"
@@ -67,6 +60,7 @@ namespace cvn {
     std::string fGenieGenModuleLabel;
     std::string fEnergyNueLabel;
     std::string fEnergyNumuLabel;
+    std::string fEnergyNutauLabel;
     bool        fGetEnergyOutput;
     bool        fGetEventWeight;
     bool        fWriteMapTH2;
@@ -77,8 +71,6 @@ namespace cvn {
 
     TrainingData* fTrain;
     TTree*        fTrainTree;
-
-    //art::ServiceHandle<cheat::BackTracker> fBT;
 
     /// Function to extract TH2 from PixelMap and write to TFile
     void WriteMapTH2(const art::Event& evt, int slice, const PixelMap& pm);
@@ -106,6 +98,7 @@ namespace cvn {
     fApplyFidVol    = pset.get<bool>("ApplyFidVol");
     fEnergyNueLabel = pset.get<std::string> ("EnergyNueLabel");  
     fEnergyNumuLabel = pset.get<std::string> ("EnergyNumuLabel");
+    fEnergyNutauLabel = pset.get<std::string> ("EnergyNutauLabel");
     fGetEnergyOutput = pset.get<bool> ("GetEnergyOutput");
     fGetEventWeight = pset.get<bool> ("GetEventWeight");
     fUseTopology  = pset.get<bool>("UseTopology");
@@ -186,6 +179,7 @@ namespace cvn {
 
     float recoNueEnergy = 0.;
     float recoNumuEnergy = 0.;
+    float recoNutauEnergy = 0.;
     // Should we use the EnergyReco_module reconstructed energies?
     if(fGetEnergyOutput){
       // Get the nue info
@@ -202,6 +196,13 @@ namespace cvn {
 
         recoNumuEnergy = energyRecoNumuHandle->fNuLorentzVector.E();
       }
+      // And the nutau
+      if(fEnergyNutauLabel != ""){
+        art::Handle<dune::EnergyRecoOutput> energyRecoNutauHandle;
+        evt.getByLabel(fEnergyNutauLabel, energyRecoNutauHandle);
+
+        recoNutauEnergy = energyRecoNutauHandle->fNuLorentzVector.E();
+      }
     }
 
     // If we don't want to get the event weight then leave it as 1.0.
@@ -212,7 +213,8 @@ namespace cvn {
     }
 
     // Create the training data and add it to the tree
-    TrainingData train(interaction, nuEnergy, lepEnergy, recoNueEnergy, recoNumuEnergy, eventWeight, *pixelmaplist[0]);
+    TrainingData train(interaction, nuEnergy, lepEnergy, recoNueEnergy,
+      recoNumuEnergy, recoNutauEnergy, eventWeight, *pixelmaplist[0]);
     // Set the topology information
     int topPDG     = labels.GetPDG();
     int nprot      = labels.GetNProtons();

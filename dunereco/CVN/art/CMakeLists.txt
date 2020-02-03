@@ -2,7 +2,6 @@
 #include_directories( $ENV{CAFFE_INC} )
 #include_directories( $ENV{CAFFE_SRC} )
 include_directories( $ENV{GSL_INC}/gsl )
-#include_directories( $ENV{HDF5_INC} )
 #include_directories( $ENV{PROTOBUF_INC} )
 #include_directories( $ENV{LEVELDB_INC} )
 #include_directories( $ENV{GFLAGS_INC} )
@@ -10,7 +9,6 @@ include_directories( $ENV{GSL_INC}/gsl )
 
 #cet_find_library( CAFFELIB NAMES caffe-d caffe PATHS ENV CAFFE_LIB NO_DEFAULT_PATH )
 cet_find_library( GSLLIB NAMES gsl PATHS ENV GSL_LIB NO_DEFAULT_PATH )
-#cet_find_library( HDF5LIB NAMES hdf5 PATHS ENV HDF5_LIB NO_DEFAULT_PATH )
 #cet_find_library( PROTOBUFLIB NAMES protobuf PATHS ENV PROTOBUF_LIB NO_DEFAULT_PATH )
 #cet_find_library( LEVELDBLIB NAMES leveldb PATHS ENV LEVELDB_LIB NO_DEFAULT_PATH )
 #cet_find_library( GFLAGSLIB NAMES gflags PATHS ENV GFLAGS_LIB NO_DEFAULT_PATH )
@@ -37,6 +35,7 @@ art_make(BASENAME_ONLY
   ${ART_FRAMEWORK_PRINCIPAL}
   ${ART_FRAMEWORK_SERVICES_REGISTRY}
   ${ART_FRAMEWORK_SERVICES_BASIC}
+  ${ART_FRAMEWORK_SERVICES_OPTIONAL}
   ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
   ${ART_ROOT_IO_TFILESERVICE_SERVICE}
   ${ART_PERSISTENCY_COMMON}
@@ -44,25 +43,25 @@ art_make(BASENAME_ONLY
   art_Persistency_Provenance
   ${ART_UTILITIES}
   ${MF_MESSAGELOGGER}
-  
+  z
   ${FHICLCPP}
   cetlib cetlib_except
   ${ROOT_BASIC_LIB_LIST}
   lardataobj_RecoBase
   lardata_Utilities
   nusimdata_SimulationBase
-  larsim_MCCheater_BackTrackerService_service           
+#  larsim_MCCheater_BackTrackerService_service           
   larsim_MCCheater_ParticleInventoryService_service
   #${CAFFELIB}
   ${GSLLIB}                  
-  #${HDF5LIB}
   #${PROTOBUFLIB}
   #${LEVELDBLIB}
   #${GFLAGSLIB}
   #${GLOGLIB}                             
   MVAAlg
   #larreco_RecoAlg
-  ${LARRECO_RECOALG_IMAGEPATTERNALGS_TF}
+#  ${LARRECO_RECOALG_IMAGEPATTERNALGS_TF}
+  stdc++fs
   MODULE_LIBRARIES CVNFunc
   CVNTf
   CVNArt

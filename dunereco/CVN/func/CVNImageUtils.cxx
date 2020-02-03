@@ -11,6 +11,7 @@ cvn::CVNImageUtils::CVNImageUtils(){
   fViewReverse = {false,true,false};
 
   fUseLogScale = false;
+  fDisableRegionSelection = false;
 }
 
 cvn::CVNImageUtils::CVNImageUtils(unsigned int nWires, unsigned int nTDCs, unsigned int nViews){
@@ -21,6 +22,14 @@ cvn::CVNImageUtils::CVNImageUtils(unsigned int nWires, unsigned int nTDCs, unsig
 
 cvn::CVNImageUtils::~CVNImageUtils(){
 
+}
+
+void cvn::CVNImageUtils::DisableRegionSelection(){
+  fDisableRegionSelection = true;
+}
+
+void cvn::CVNImageUtils::EnableRegionSelection(){
+  fDisableRegionSelection = false;
 }
 
 unsigned char cvn::CVNImageUtils::ConvertChargeToChar(float charge){
@@ -234,12 +243,25 @@ void cvn::CVNImageUtils::ConvertChargeVectorsToViewVectors(std::vector<float> &v
   std::vector<unsigned int> imageStartTDC(3,0);
   std::vector<unsigned int> imageEndTDC(3,0);
 
-  for(unsigned int view = 0; view < wireCharges.size(); ++view){
-    GetMinMaxWires(wireCharges[view],imageStartWire[view],imageEndWire[view]);
-    GetMinMaxTDCs(tdcCharges[view],imageStartTDC[view],imageEndTDC[view]);
+  if(!fDisableRegionSelection){
+    // Do a rough vertex-based selection of the region for each view
+    for(unsigned int view = 0; view < wireCharges.size(); ++view){
+      GetMinMaxWires(wireCharges[view],imageStartWire[view],imageEndWire[view]);
+      GetMinMaxTDCs(tdcCharges[view],imageStartTDC[view],imageEndTDC[view]);
 
 //    std::cout << " Wires: " << imageStartWire[view] << ", " << imageEndWire[view] << " :: TDCs: "
 //                            << imageStartTDC[view]  << ", " << imageEndTDC[view]  << std::endl;
+    }
+  }
+  else{
+    // Just use the number of wires and TDCs as the maximum values if we want to
+    // use a fixed range of wires and TDC for protoDUNE's APA 3
+    for(unsigned int i = 0; i < imageStartWire.size(); ++i){
+      imageStartWire[i] = 0;
+      imageEndWire[i] = fNWires;
+      imageStartTDC[i] = 0;
+      imageEndTDC[i] = fNTDCs;
+    }
   }
 
   // Write the values to the three vectors
@@ -482,5 +504,4 @@ cvn::ImageVectorF cvn::CVNImageUtils::BuildImageVectorF(cvn::ViewVectorF v0, cvn
 
   return image;
 }
-
 

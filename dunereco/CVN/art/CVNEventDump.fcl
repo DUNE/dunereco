@@ -24,6 +24,7 @@ standard_cvneventdump_fhc:
   # Use the following to add the reco energy to the output tree
   EnergyNueLabel: "energynue"
   EnergyNumuLabel: "energynumu"
+  EnergyNutauLabel: "energynutau"
   GetEnergyOutput: true
   GetEventWeight: true
   MVAAlg: @local::standard_mvaselect_fhc
