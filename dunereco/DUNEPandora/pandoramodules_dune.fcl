@@ -39,6 +39,17 @@ protodune_pandora.ShouldRunNeutrinoRecoOption:                      true
 protodune_pandora.ShouldRunCosmicRecoOption:                        true
 protodune_pandora.ShouldPerformSliceId:                             true
 
+protodune_dp_pandora:                                               @local::dune_pandora
+protodune_dp_pandora.ConfigFile:                                    "PandoraSettings_Master_ProtoDUNE_DP.xml"
+protodune_dp_pandora.ShouldRunAllHitsCosmicReco:                    true
+protodune_dp_pandora.ShouldRunStitching:			    false
+protodune_dp_pandora.ShouldRunCosmicHitRemoval:                     true
+protodune_dp_pandora.ShouldRunSlicing:                              true
+protodune_dp_pandora.ShouldRunNeutrinoRecoOption:                   true
+protodune_dp_pandora.ShouldRunCosmicRecoOption:                     true
+protodune_dp_pandora.ShouldPerformSliceId:                          true
+
+
 dune_pandorawriter:                                                 @local::dune_pandora
 dune_pandorawriter.ConfigFile:                                      "PandoraSettings_Write.xml"
 dune_pandorawriter.EnableMCParticles:                               true

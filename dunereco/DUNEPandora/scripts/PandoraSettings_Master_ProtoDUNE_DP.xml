@@ -1,0 +1,49 @@
+<pandora>
+    <!-- GLOBAL SETTINGS -->
+    <IsMonitoringEnabled>false</IsMonitoringEnabled>
+    <ShouldDisplayAlgorithmInfo>false</ShouldDisplayAlgorithmInfo>
+    <SingleHitTypeClusteringMode>true</SingleHitTypeClusteringMode>
+
+    <!-- ALGORITHM SETTINGS -->
+    <algorithm type = "LArPreProcessing">
+        <OutputCaloHitListNameU>CaloHitListU</OutputCaloHitListNameU>
+        <OutputCaloHitListNameV>CaloHitListV</OutputCaloHitListNameV>
+        <OutputCaloHitListNameW>CaloHitListW</OutputCaloHitListNameW>
+        <FilteredCaloHitListName>CaloHitList2D</FilteredCaloHitListName>
+        <CurrentCaloHitListReplacement>CaloHitList2D</CurrentCaloHitListReplacement>
+    </algorithm>
+    <algorithm type = "LArVisualMonitoring">
+        <CaloHitListNames>CaloHitListU CaloHitListV CaloHitListW</CaloHitListNames>
+        <ShowDetector>true</ShowDetector>
+    </algorithm>
+
+    <algorithm type = "LArMaster">
+        <CRSettingsFile>PandoraSettings_Cosmic_ProtoDUNE_DP.xml</CRSettingsFile>
+        <NuSettingsFile>PandoraSettings_TestBeam_ProtoDUNE.xml</NuSettingsFile>
+        <SlicingSettingsFile>PandoraSettings_Slicing_ProtoDUNE.xml</SlicingSettingsFile>
+        <StitchingTools>
+            <tool type = "LArStitchingCosmicRayMerging"><ThreeDStitchingMode>true</ThreeDStitchingMode></tool>
+            <tool type = "LArStitchingCosmicRayMerging"><ThreeDStitchingMode>false</ThreeDStitchingMode></tool>
+        </StitchingTools>
+        <CosmicRayTaggingTools>
+            <tool type = "LArCosmicRayTagging"/>
+        </CosmicRayTaggingTools>
+        <SliceIdTools>
+            <tool type = "LArBdtBeamParticleId">
+                <BdtName>ProtoDUNESP_BeamParticleId</BdtName>
+                <BdtFileName>PandoraMVAData/PandoraBdt_v03_15_02.xml</BdtFileName>
+                <MinAdaBDTScore>-0.225</MinAdaBDTScore>
+            </tool>
+        </SliceIdTools>
+        <InputHitListName>CaloHitList2D</InputHitListName>
+        <RecreatedPfoListName>RecreatedPfos</RecreatedPfoListName>
+        <RecreatedClusterListName>RecreatedClusters</RecreatedClusterListName>
+        <RecreatedVertexListName>RecreatedVertices</RecreatedVertexListName>
+        <VisualizeOverallRecoStatus>false</VisualizeOverallRecoStatus>
+    </algorithm>
+
+    <algorithm type = "LArVisualMonitoring">
+        <ShowCurrentPfos>true</ShowCurrentPfos>
+        <ShowDetector>true</ShowDetector>
+    </algorithm>
+</pandora>
