@@ -53,6 +53,8 @@ standard_gcngraphmaker_protodune:
   UseAllSlices:        true
   SliceModuleLabel:    "pandora"
   ParticleModuleLabel: "pandora"
+  UseEM:               true
+  UseHitsForTruthMatching: true
 }
 
 standard_gcngraphmaker_protodune_beam: @local::standard_gcngraphmaker_protodune

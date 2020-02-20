@@ -58,6 +58,12 @@ namespace cvn {
 
       /// PFParticle module (typically Pandora)
       std::string fParticleLabel;
+
+      // Consider EM activity as different to the parent
+      bool fUseEM;
+
+      // Use hits not energy for truth matching
+      bool fUseHitsForTruthMatching;
   };
 
 
@@ -70,7 +76,9 @@ namespace cvn {
   fUseBeamSliceOnly(pset.get<bool>("UseBeamSliceOnly")),
   fUseAllSlices(pset.get<bool>("UseAllSlices")),
   fSliceLabel      (pset.get<std::string>("SliceModuleLabel")),
-  fParticleLabel   (pset.get<std::string>("ParticleModuleLabel"))
+  fParticleLabel   (pset.get<std::string>("ParticleModuleLabel")),
+  fUseEM           (pset.get<bool>("UseEM",true)),
+  fUseHitsForTruthMatching (pset.get<bool>("UseHitsForTruthMatching",true))
   {
 
     produces< std::vector<cvn::GCNGraph> >();
@@ -174,8 +182,11 @@ namespace cvn {
     // Function is linear in number of points so just do it once
     std::map<unsigned int,float> chargeMap = graphUtil.GetSpacePointChargeMap(evt,fSpacePointLabel);
 
+    // Mean hit RMS for each spacepoint
+    std::map<unsigned int, float> hitRMSMap = graphUtil.GetSpacePointMeanHitRMSMap(evt,fSpacePointLabel);
+
     // The true particle PDG code is needed for training node classifiers
-    std::map<unsigned int,int> trueIDMap = graphUtil.GetTruePDG(evt, fSpacePointLabel);
+    std::map<unsigned int,int> trueIDMap = graphUtil.GetTruePDG(evt, fSpacePointLabel, !fUseEM, fUseHitsForTruthMatching);
 
     // Now we want to produce a graph for each one of the slices
     for(const std::pair<unsigned int,std::map<unsigned int,art::Ptr<recob::SpacePoint>>> &sps : allGraphSpacePoints){
@@ -205,6 +216,9 @@ namespace cvn {
           // How about charge?
           features.push_back(chargeMap.at(sp.second->ID()));
   
+          // Now the hit width
+          features.push_back(hitRMSMap.at(sp.second->ID()));
+
           // Angle and dot product between node and its two nearest neighbours
           float angle = -999.;
           float dotProduct = -999.;
