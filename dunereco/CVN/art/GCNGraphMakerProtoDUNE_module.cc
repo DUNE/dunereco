@@ -217,7 +217,7 @@ namespace cvn {
           features.push_back(chargeMap.at(sp.second->ID()));
   
           // Now the hit width
-          features.push_back(hitRMSMap.at(sp.second->ID()));
+//          features.push_back(hitRMSMap.at(sp.second->ID()));
 
           // Angle and dot product between node and its two nearest neighbours
           float angle = -999.;
