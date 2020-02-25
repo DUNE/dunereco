@@ -65,8 +65,19 @@ namespace dune::apa {
 
     // find the number of channels per APA
     uint32_t channel = 0;
-    while( fGeom->ChannelToWire(channel+1)[0].TPC < 2 ) channel++;
-    fChannelsPerAPA = channel + 1;
+    // old logic -- segfaults if there is just one APA
+    //while( fGeom->ChannelToWire(channel+1)[0].TPC < 2 ) channel++;
+    //fChannelsPerAPA = channel + 1;
+
+    fChannelsPerAPA = fGeom->Nchannels();
+    for (channel=0; channel < fGeom->Nchannels(); ++channel)
+      {
+	if ( fGeom->ChannelToWire(channel)[0].TPC > 1 )
+	  {
+	    fChannelsPerAPA = channel;
+	    break;
+	  }
+      }
 
     // Step through channel c and find the view boundaries, until 
     // outside of first APA - these help optimize ChannelToAPAView
@@ -91,6 +102,7 @@ namespace dune::apa {
 
       lastwid = wid;
       c++;
+      if (c >=  fGeom->Nchannels()) break;
       wid = (fGeom->ChannelToWire(c))[0]; // for the while condition
 
     }
