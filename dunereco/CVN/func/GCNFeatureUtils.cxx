@@ -336,6 +336,30 @@ namespace cvn
 
   } // function GetSpacePointChargeMap
 
+  const std::map<unsigned int, float> GCNFeatureUtils::GetSpacePointMeanHitRMSMap(
+    art::Event const &evt, const std::string &spLabel) const {
+  
+    std::map<unsigned int, float> ret;
+  
+    // Get the hits associated to the space points
+    auto allSP = evt.getValidHandle<std::vector<recob::SpacePoint>>(spLabel);
+    const art::FindManyP<recob::Hit> sp2Hit(allSP, evt, spLabel);
+  
+    for (size_t itSP = 0; itSP < allSP->size(); ++itSP) {
+      const recob::SpacePoint& sp = allSP->at(itSP);
+      float chargeRMS = 0.0;
+      const std::vector<art::Ptr<recob::Hit>> spHits = sp2Hit.at(itSP);
+      unsigned int nHits = spHits.size();
+      for (auto const hit : spHits) {
+        chargeRMS += hit->RMS();
+      }
+      ret[sp.ID()] = chargeRMS / static_cast<float>(nHits);
+    }
+  
+    return ret;
+  
+  } // function GetSpacePointMeanHitRMSMap
+
   const std::map<unsigned int, int> GCNFeatureUtils::GetTrueG4ID(
     std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
     std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit) const {
@@ -382,10 +406,59 @@ namespace cvn
 
   } // function GetTrueG4ID
 
-  const std::map<unsigned int, int> cvn::GCNFeatureUtils::GetTruePDG(
-    art::Event const& evt, const std::string &spLabel) const {
+  const std::map<unsigned int, int> GCNFeatureUtils::GetTrueG4IDFromHits(
+    std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
+    std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit) const {
+
+    art::ServiceHandle<cheat::BackTrackerService> bt;
+    std::map<unsigned int, int> ret;
+
+    for (size_t spIdx = 0; spIdx < spacePoints.size(); ++spIdx) {
+      // Use the backtracker to find the G4 IDs associated with these hits
+      std::map<unsigned int, unsigned int> trueParticleHits;
+      for (art::Ptr<recob::Hit> hit : sp2Hit[spIdx]) {
+        auto ides = bt->HitToTrackIDEs(hit);
+        for (auto ide : ides) {
+          int id = ide.trackID;
+          if (trueParticleHits.count(id)) trueParticleHits[id] += 1;
+          else trueParticleHits[id] = 1;
+        }
+      }
+      ret[spacePoints[spIdx]->ID()] = std::max_element(trueParticleHits.begin(), trueParticleHits.end(), [](const std::pair<unsigned int, unsigned> &lhs,
+        const std::pair<unsigned int, unsigned int> &rhs) { return lhs.second < rhs.second; })->first;
+    }
+    return ret;
+
+  } // function GetTrueG4IDFromHits
+
+  const std::map<unsigned int, int> GCNFeatureUtils::GetTrueG4IDFromHits(
+    art::Event const &evt, const std::string &spLabel) const {
+
+    art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
+    std::vector<art::Ptr<recob::SpacePoint>> spacePoints;
+    if (!evt.getByLabel(spLabel, spacePointHandle)) {
+
+      throw art::Exception(art::errors::LogicError)
+        << "Could not find spacepoints with module label "
+        << spLabel << "!";
+    }
+    art::fill_ptr_vector(spacePoints, spacePointHandle);
+    art::FindManyP<recob::Hit> fmp(spacePointHandle, evt, spLabel);
+    std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit(spacePoints.size());
+    for (size_t spIdx = 0; spIdx < sp2Hit.size(); ++spIdx) {
+      sp2Hit[spIdx] = fmp.at(spIdx);
+    } // for spacepoint
+    return GetTrueG4IDFromHits(spacePoints, sp2Hit);
+
+  } // function GetTrueG4IDFromHits
+
+  const std::map<unsigned int, int> GCNFeatureUtils::GetTruePDG(
+    art::Event const& evt, const std::string &spLabel, bool useAbsoluteTrackID, bool useHits) const {
   
-    const std::map<unsigned int, int> idMap = GetTrueG4ID(evt,spLabel);
+    std::map<unsigned int, int> idMap;
+    if(useHits) idMap  = GetTrueG4IDFromHits(evt,spLabel);
+    else idMap = GetTrueG4ID(evt,spLabel);
+
     std::map<unsigned int,int> pdgMap;  
     
     art::ServiceHandle<cheat::ParticleInventoryService> pi;
@@ -394,7 +467,14 @@ namespace cvn
     for(const std::pair<unsigned int, int> m : idMap){
       int pdg = 0;
       if(m.second == 0) std::cout << "Getting particle with ID " << m.second << " for space point " << m.first << std::endl;
-      else pdg = pi->TrackIdToParticle_P(abs(m.second))->PdgCode();
+      else{
+        int trackID = m.second;
+        if(useAbsoluteTrackID || trackID >= 0){
+          trackID = abs(trackID);
+          pdg = pi->TrackIdToParticle_P(trackID)->PdgCode();
+        }
+        else pdg = 11; // Dummy value to flag EM activity
+      }
       pdgMap.insert(std::make_pair(m.first,pdg));
     }
   

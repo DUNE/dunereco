@@ -67,12 +67,21 @@ namespace cvn
     const std::map<unsigned int, float> GetSpacePointChargeMap(std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
       std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit) const;
     const std::map<unsigned int, float> GetSpacePointChargeMap(art::Event const &evt, const std::string &spLabel) const;
-    /// Get the true G4 ID for each spacepoint
+
+    // Mean RMS of the hits making up a spacepoint
+    const std::map<unsigned int, float> GetSpacePointMeanHitRMSMap(art::Event const &evt, const std::string &spLabel) const;
+
+    /// Get the true G4 ID for each spacepoint using energy matching
     const std::map<unsigned int, int> GetTrueG4ID(std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
       std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit) const;
     const std::map<unsigned int, int> GetTrueG4ID(art::Event const& evt, const std::string &spLabel) const;
+    /// Get the true G4 ID for each spacepoint using energy matching
+    const std::map<unsigned int, int> GetTrueG4IDFromHits(std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
+      std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit) const;
+    const std::map<unsigned int, int> GetTrueG4IDFromHits(art::Event const& evt, const std::string &spLabel) const;
+
     /// Get the true pdg code for each spacepoint
-    const std::map<unsigned int, int> GetTruePDG(art::Event const& evt, const std::string &spLabel) const;
+    const std::map<unsigned int, int> GetTruePDG(art::Event const& evt, const std::string &spLabel, bool useAbsoluteTrackID, bool useHits) const;
     /// Get 2D hit features for a given spacepoint
     const std::map<unsigned int, std::vector<float>> Get2DFeatures(std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
       std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit) const;
