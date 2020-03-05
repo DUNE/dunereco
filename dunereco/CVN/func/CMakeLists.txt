@@ -3,7 +3,7 @@
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 art_make( BASENAME_ONLY
-  LIBRARY_NAME     CVNFunc
+#  LIBRARY_NAME     CVNFunc
   LIB_LIBRARIES    nusimdata_SimulationBase
   larcorealg_Geometry
   larcorealg_GeoAlgo
@@ -25,7 +25,7 @@ art_make( BASENAME_ONLY
   ${Boost_SYSTEM_LIBRARY}
   ${ROOT_BASIC_LIB_LIST}
   DICT_LIBRARIES   lardataobj_RecoBase
-  CVNFunc
+  dune_CVN_func
   )
 
 install_headers()
