@@ -200,7 +200,7 @@ protodunespmc_gaushitfinder.MaxMultiHit: 4
 protodunespmc_gaushitfinder.Chi2NDF: 50
 protodunespmc_gaushitfinder.LongMaxHits: [ 25, 25, 25 ]
 protodunespmc_gaushitfinder.LongPulseWidth: [ 10, 10, 10 ]
-
+#protodunespmc_gaushitfinder.PeakFitter:	@local::peakfitter_mrqdt
 
 dune35t_rmshitfinderalg:
 {
