@@ -38,6 +38,10 @@ standard_regcnnevaluator:
   RegCNNVtxHandler: @local::standard_regcnnvtxhandler
 }
 
+
+standard_regcnnnumuevaluator: @local::standard_regcnnevaluator
+standard_regcnnnumuevaluator.Target: "numuenergy"
+
 standard_regcnnvtxevaluator: @local::standard_regcnnevaluator
 
 standard_regcnnvtxevaluator.PixelMapInput: "regcnnvtxmap"
