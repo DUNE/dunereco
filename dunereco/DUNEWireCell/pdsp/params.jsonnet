@@ -132,7 +132,7 @@ base {
         // The "absolute" time (ie, in G4 time) that the lower edge of
         // of final readout tick #0 should correspond to.  This is a
         // "fixed" notion.
-        local tick0_time = 0,
+        local tick0_time = -250*wc.us,
 
         // Open the ductor's gate a bit early.
         local response_time_offset = $.det.response_plane / $.lar.drift_speed,
@@ -154,11 +154,12 @@ base {
     },
 
     files: {
-        wires: "protodune-wires-larsoft-v3.json.bz2",
+        wires: "protodune-wires-larsoft-v4.json.bz2",
 
         fields: [
             // "garfield-1d-3planes-21wires-6impacts-dune-v1.json.bz2",
-            "garfield-1d-boundary-path-rev-dune.json.bz2",
+            // "garfield-1d-boundary-path-rev-dune.json.bz2",
+            "dune-garfield-1d565.json.bz2",
         ],
 
         // fixme: this is for microboone and probably bogus for

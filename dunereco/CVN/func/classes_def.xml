@@ -1,5 +1,6 @@
 <lcgdict>
-  <class name="cvn::TrainingData" ClassVersion="19" >
+  <class name="cvn::TrainingData" ClassVersion="20" >
+   <version ClassVersion="20" checksum="4175091702"/>
    <version ClassVersion="19" checksum="1702019780"/>
    <version ClassVersion="18" checksum="3823694423"/>
    <version ClassVersion="17" checksum="1317152102"/>
@@ -24,6 +25,24 @@
    <version ClassVersion="10" checksum="197322882"/>
   </class>
 
+  <class name="cvn::SparsePixelMap" ClassVersion="32">
+   <version ClassVersion="32" checksum="3481151042"/>
+   <version ClassVersion="31" checksum="1793898137"/>
+   <version ClassVersion="30" checksum="1155058191"/>
+   <version ClassVersion="29" checksum="1721160401"/>
+   <version ClassVersion="28" checksum="3885854790"/>
+   <version ClassVersion="27" checksum="1721160401"/>
+   <version ClassVersion="26" checksum="3885854790"/>
+   <version ClassVersion="25" checksum="155981382"/>
+   <version ClassVersion="24" checksum="1615555346"/>
+   <version ClassVersion="23" checksum="1443150736"/>
+   <version ClassVersion="22" checksum="2971996033"/>
+   <version ClassVersion="21" checksum="1637078222"/>
+   <version ClassVersion="20" checksum="3134631131"/>
+   <version ClassVersion="19" checksum="3037527189"/>
+   <version ClassVersion="18" checksum="4245858273"/>
+  </class>
+
   <class name="cvn::Result" ClassVersion="12" >
    <version ClassVersion="12" checksum="2580228795"/>
    <version ClassVersion="11" checksum="3978040452"/>
@@ -40,18 +59,56 @@
    <version ClassVersion="10" checksum="2066960320"/>
   </class>
 
+  <class name="cvn::GCNGraph" ClassVersion="11">
+   <version ClassVersion="11" checksum="1251091300"/>
+   <version ClassVersion="10" checksum="3305168692"/>
+  </class>
 
-  <class name="std::vector<cvn::PixelMap>"          />
-  <class name="art::Ptr<cvn::PixelMap>"             />
-  <class name="std::vector<cvn::HType>"      />
-  <class name="art::Wrapper< std::vector<cvn::PixelMap> >"    />
+  <class name="cvn::GCNGraphNode" ClassVersion="11">
+   <version ClassVersion="11" checksum="3544497496"/>
+   <version ClassVersion="10" checksum="2217525517"/>
+  </class>
+
+  <class name="cvn::GCNParticleFlow" ClassVersion="10">
+   <version ClassVersion="10" checksum="3138516238"/>
+  </class>
+
+  <class name="vector<vector<unsigned long> >"     />
+  <class name="vector<vector<vector<unsigned int> > >" />
+  <class name="vector<vector<vector<float> > >"    />
+  <class name="vector<vector<vector<int> > >"      />
+
+  <class name="std::vector<cvn::PixelMap>"         />
+  <class name="art::Ptr<cvn::PixelMap>"            />
+  <class name="std::vector<cvn::HType>"            />
+  <class name="art::Wrapper< std::vector<cvn::PixelMap> >" />
+
+  <class name="std::vector<cvn::SparsePixelMap>"   />
+  <class name="art::Ptr<cvn::SparsePixelMap>"      />
+  <class name="art::Wrapper< std::vector<cvn::SparsePixelMap> >" />
+
+  <class name="std::vector<cvn::GCNGraph>"         />
+  <class name="art::Ptr<cvn::GCNGraph>"            />
+  <class name="art::Wrapper< std::vector<cvn::GCNGraph> >" />
+
+  <class name="std::vector<cvn::GCNGraphNode>"          />
+  <class name="art::Ptr<cvn::GCNGraphNode>"             />
+  <class name="art::Wrapper< std::vector<cvn::GCNGraphNode> >"    />
 
   <class name="std::vector<cvn::Result>"          />
   <class name="art::Ptr<cvn::Result>"             />
   <class name="art::Wrapper< std::vector<cvn::Result> >"    />
 
-  <class name="std::vector<std::vector<float> >"          />
-  <class name="art::Wrapper< std::vector<std::vector<float> > >"    />
+  <class name="std::vector<std::vector<float> >"   />
+  <class name="art::Wrapper< std::vector<std::vector<float> > >" />
+
+  <class name="std::map<unsigned int, unsigned int>" />
+
+  <class name="std::vector<cvn::GCNParticleFlow>" />
+  <class name="art::Wrapper<std::vector<cvn::GCNParticleFlow> >" />
+
+  <class name="std::vector<std::vector<std::string>>" />
+  <class name="std::vector<std::vector<std::vector<std::string>>>" />
   
 </lcgdict>
 

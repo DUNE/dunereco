@@ -1,0 +1,72 @@
+BEGIN_PROLOG
+
+#   This file defines the configuration for the GCNGraphMaker module
+
+standard_gcngraphmaker:
+{
+  module_type:        GCNGraphMaker
+  #==================
+  SpacePointModuleLabel:   "pandora"
+  SpacePointInstanceLabel: ""
+  MinClusterHits: 100
+  UseNeighbourRadius: true
+  NeighbourRadius: 3.0 # Distance in cm
+  Include2DFeatures: false
+  CollectionPlaneOnly: false
+  SaveTrueParticle: false
+  UseNodeDeghostingGroundTruth: false
+  TruthRadius: 1.0 # Distance in cm
+  UseNodeDirectionGroundTruth: false
+  SaveParticleFlow: false
+}
+
+standard_gcngraphmaker_dune10kt: @local::standard_gcngraphmaker
+standard_gcngraphmaker_dune10kt.SpacePointModuleLabel: "reco3d"
+standard_gcngraphmaker_dune10kt.UseNeighbourRadius: false
+standard_gcngraphmaker_dune10kt.Include2DFeatures: true
+standard_gcngraphmaker_dune10kt.SaveTrueParticle: true
+standard_gcngraphmaker_dune10kt.UseNodeDeghostingGroundTruth: true
+standard_gcngraphmaker_dune10kt.UseNodeDirectionGroundTruth: true
+standard_gcngraphmaker_dune10kt.SaveParticleFlow: true
+
+standard_gcnroot:
+{
+  module_type:        GCNGraphROOT
+  #==================
+  GraphModuleLabel:   "graph"
+  GraphInstanceLabel: "graph"
+  TruthLabel:         "generator"
+  OutputName:         "gcn"
+  TreeName:           "GraphTree"
+  SaveEventTruth:     true
+  SaveParticleFlow:   true
+}
+
+standard_gcngraphmaker_protodune:
+{
+  module_type:        GCNGraphMakerProtoDUNE
+  #==================
+  SpacePointLabel:     "pandora"
+  MinClusterHits:      100
+  NeighbourRadii:     [3.0,10.,30.] # Distance in cm
+  UseBeamSliceOnly:    false
+  UseAllSlices:        true
+  SliceModuleLabel:    "pandora"
+  ParticleModuleLabel: "pandora"
+  UseEM:               true
+  UseHitsForTruthMatching: true
+}
+
+standard_gcngraphmaker_protodune_beam: @local::standard_gcngraphmaker_protodune
+standard_gcngraphmaker_protodune_beam.UseBeamSliceOnly: true
+
+standard_gcngraphmaker_2d:
+{
+  module_type: GCNGraphMaker2D
+  #=================
+  PixelMapLabel: "cvnmap"
+  ChargeThreshold: 0.001
+  NeighbourPixels: 3
+}
+
+END_PROLOG

@@ -9,13 +9,6 @@
 #include <iostream>
 #include <sstream>
 
-// ROOT includes
-#include "TFile.h"
-#include "TH2F.h"
-#include "TMatrixD.h"
-#include "TTree.h"
-#include "TVectorD.h"
-
 // Framework includes
 #include "art/Framework/Core/EDProducer.h"
 #include "art/Framework/Principal/Event.h"
@@ -27,17 +20,6 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "canvas/Persistency/Common/Assns.h"
-
-// NOvASoft includes
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardataobj/RawData/ExternalTrigger.h"
-
-
-#include "lardata/Utilities/AssociationUtil.h"
-#include "nusimdata/SimulationBase/MCNeutrino.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
 
 #include "dune/CVN/func/Result.h"
 #include "dune/CVN/func/PixelMap.h"

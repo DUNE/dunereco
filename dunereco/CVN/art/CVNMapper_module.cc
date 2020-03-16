@@ -8,10 +8,6 @@
 #include <iostream>
 #include <sstream>
 
-// ROOT includes
-#include "TTree.h"
-#include "TH2F.h"
-
 // Framework includes
 #include "art/Framework/Core/EDProducer.h"
 #include "art/Framework/Principal/Event.h"
@@ -21,19 +17,11 @@
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
-//#include "art/Framework/Core/FindManyP.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "canvas/Persistency/Common/Assns.h"
 
 // LArSoft includes
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardataobj/RawData/ExternalTrigger.h"
-
-#include "lardata/Utilities/AssociationUtil.h"
-#include "nusimdata/SimulationBase/MCNeutrino.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
 
 #include "dune/CVN/art/PixelMapProducer.h"
 #include "dune/CVN/func/PixelMap.h"
@@ -139,7 +127,7 @@ namespace cvn {
     std::unique_ptr< std::vector<cvn::PixelMap> >
       pmCol(new std::vector<cvn::PixelMap>);
 
-    if(nhits>fMinClusterHits){
+    if (nhits > fMinClusterHits) {
       PixelMap pm = fProducer.CreateMap(hitlist);
       pmCol->push_back(pm);
     }

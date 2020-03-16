@@ -4,7 +4,7 @@
 // Authors:     R.Sulej (Robert.Sulej@cern.ch), from DUNE, FNAL/NCBJ, Sept. 2017
 //              P.Plonski,                      from DUNE, WUT, Sept. 2017
 //
-// Iterface to run Tensorflow graph saved to a file. First attempts, quite functional.
+// Interface to run Tensorflow graph saved to a file. First attempts, quite functional.
 // modified from tf_graph.cc
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -35,6 +35,18 @@ tf::RegCNNGraph::RegCNNGraph(const char* graph_file_name, const unsigned int &ni
     }
 
     size_t ng = graph_def.node().size();
+
+    // uncomment following to print debug info
+    //std::cout<<"debug info :"<<graph_file_name<<" has "<<ng<<" nodes"<<std::endl;
+    //for (size_t i= 0; i< ng; ++i) {
+    //  auto node = graph_def.node()[i];
+    //  std::cout<<i<<" "<<node.name();
+    //  for (auto iter=node.attr().cbegin(); iter!=node.attr().cend(); ++iter) {
+    //    std::cout<<" "<<iter->first;
+    //  }
+    //  std::cout<<std::endl;
+    //}
+
     // set input names
     std::string ss("input_");
     for (unsigned int ii = 0; ii < ninputs; ++ii){

@@ -25,18 +25,6 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Core/ModuleMacros.h"
 
-// LArSoft includes
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardataobj/RawData/ExternalTrigger.h"
-
-#include "lardata/Utilities/AssociationUtil.h"
-#include "nusimdata/SimulationBase/MCNeutrino.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
-#include "larsim/MCCheater/BackTracker.h"
-
-#include "dune/CVN/func/AssignLabels.h"
 #include "dune/CVN/func/TrainingData.h"
 #include "dune/CVN/func/InteractionType.h"
 #include "dune/CVN/func/PixelMap.h"
@@ -123,7 +111,7 @@ namespace cvn {
       InteractionType interaction = kOther;
 
       // Create the training data and add it to the tree
-      TrainingData train(interaction, 0.0, 0.0, 0.0, 0.0, 1.0, *pixelmaplist[p]);
+      TrainingData train(interaction, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, *pixelmaplist[p]);
       fTrain = &train;
       fTrainTree->Fill();
 

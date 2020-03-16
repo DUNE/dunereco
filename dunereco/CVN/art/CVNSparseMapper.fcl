@@ -1,0 +1,41 @@
+BEGIN_PROLOG
+
+standard_cvnsparsemapper:
+{
+  module_type:         CVNSparseMapper
+  #==================
+  HitsModuleLabel:     "hitfd"
+  ClusterPMLabel:      "cvnsparsemap"
+  MinClusterHits:      100
+  IncludePixelTruth:   false
+}
+
+standard_cvnsparsemapper3d:
+{
+  module_type:       CVNSparseMapper3D
+  #==================
+  SpacePointModuleLabel:   "reco3d"
+  PixelMapLabel:           "cvnsparsemap"
+  MinSP:                   100
+}
+
+standard_cvnsparseroot:
+{ 
+  module_type:        CVNSparseROOT
+  #==================
+  MapModuleLabel: "sparsemap"
+  MapInstanceLabel: "cvnsparsemap"
+  OutputName: "cvnsparse"
+  TreeName: "CVNSparse"
+  IncludeGroundTruth: false
+  CacheSize: 50000000
+}
+
+pdune_cvnsparsemapper: @local::standard_cvnsparsemapper
+pdune_cvnsparsemapper.IncludePixelTruth: true
+
+pdune_cvnsparseroot:   @local::standard_cvnsparseroot
+pdune_cvnsparseroot.IncludeGroundTruth: true
+
+END_PROLOG
+

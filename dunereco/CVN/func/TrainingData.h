@@ -25,7 +25,7 @@ namespace cvn
     TrainingData(const InteractionType& interaction,
                  float nuEnergy, float lepEnergy,
                  float nueEnergy, float numuEnergy,
-                 float weight,
+                 float nutauEnergy, float weight,
                  const PixelMap& pMap);
 
     unsigned int NOutput() const {return (unsigned int)kNIntType;};
@@ -38,12 +38,13 @@ namespace cvn
                                 int npizero, int nneutron, int toptype,
                                 int toptypealt);
 
-    InteractionType  fInt;    ///< Class of the event
-    float    fNuEnergy;       ///< True energy of neutrino event
-    float    fLepEnergy;      ///< True energy of outgoing lepton
-    float    fRecoNueEnergy;  ///< Reconstructed energy under nue hypothesis
-    float    fRecoNumuEnergy; ///< Reconstructed energy under nue hypothesis
-    float    fEventWeight;    ///< The event weight (norm * oscProb)
+    InteractionType  fInt;     ///< Class of the event
+    float    fNuEnergy;        ///< True energy of neutrino event
+    float    fLepEnergy;       ///< True energy of outgoing lepton
+    float    fRecoNueEnergy;   ///< Reconstructed energy under nue hypothesis
+    float    fRecoNumuEnergy;  ///< Reconstructed energy under numu hypothesis
+    float    fRecoNutauEnergy; ///< Reconstructed energy under nutau hypothesis
+    float    fEventWeight;     ///< The event weight (norm * oscProb)
  
     // If we are using topology information, store it here
     bool fUseTopology;

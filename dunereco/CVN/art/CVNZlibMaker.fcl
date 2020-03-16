@@ -1,0 +1,28 @@
+BEGIN_PROLOG
+ 
+standard_cvnzlibmaker:
+{
+  module_type: CVNZlibMaker
+  #==================
+  # OutputDir: "."
+  PixelMapInput: "cvnmap"
+  SetLog: false
+  ReverseViews: [false,true,false]
+  TopologyHitsCut: 100
+  GenieGenModuleLabel: "generator"
+  EnergyNueLabel: "energynue"
+  EnergyNumuLabel: "energynumu"
+  EnergyNutauLabel: "energynutau"
+}
+
+standard_cvnzlibmaker_protodune_beam:
+{
+  module_type: CVNZlibMakerProtoDUNE
+  OutputDir: "."
+  PixelMapInput: "cvnmap"
+  SetLog: false
+  ReverseViews: [false,true,false]
+  LArG4ModuleLabel: "largeant"
+}
+
+END_PROLOG

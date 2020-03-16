@@ -12,6 +12,8 @@
 #include "tensorflow/core/public/session.h"
 #include "tensorflow/core/platform/env.h"
 
+#include "tensorflow/core/public/session_options.h"
+
 // -------------------------------------------------------------------
 tf::Graph::Graph(const char* graph_file_name, const std::vector<std::string> & outputs, bool & success, int ninputs, int noutputs)
 {
@@ -20,7 +22,14 @@ tf::Graph::Graph(const char* graph_file_name, const std::vector<std::string> & o
     n_inputs = ninputs;
     n_outputs = noutputs;
 
-    auto status = tensorflow::NewSession(tensorflow::SessionOptions(), &fSession);
+    // Force tf to only use a single core so it doesn't eat batch farms
+    tensorflow::SessionOptions options;
+    tensorflow::ConfigProto &config = options.config;
+    config.set_inter_op_parallelism_threads(1);
+    config.set_intra_op_parallelism_threads(1);
+    config.set_use_per_session_threads(false);
+
+    auto status = tensorflow::NewSession(options, &fSession);
     if (!status.ok())
     {
         std::cout << status.ToString() << std::endl;
