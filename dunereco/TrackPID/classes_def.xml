@@ -1,0 +1,11 @@
+<lcgdict>
+  <class name="ctp::CTPResult" ClassVersion="10" >
+   <version ClassVersion="10" checksum="2745723104"/>
+  </class>
+
+  <class name="std::vector<ctp::CTPResult>"          />
+  <class name="art::Ptr<ctp::CTPResult>"             />
+  <class name="art::Wrapper< std::vector<ctp::CTPResult> >"    />
+</lcgdict>
+
+
