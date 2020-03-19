@@ -37,5 +37,9 @@ namespace ctp
 
   }
 
+  bool CTPResult::IsValid() const{
+    return (fMuonScore > 1e-5) && (fPionScore > 1e-5) && (fProtonScore > 1e-5);
+  }
+
 }
 

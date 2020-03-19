@@ -1,0 +1,16 @@
+BEGIN_PROLOG
+
+standard_ctphelper:
+{
+  NetworkPath : "DUMMY_PATH"
+  NetworkName : "convolutional_track_pid_March2020.pb"
+  ParticleLabel   : "pandora"
+  TrackLabel      : "pandoraTrack"
+  CalorimetryLabel: "pandoracalo"
+  MinHits      : 50
+  DedxLength   : 100
+  MaxCharge    : 1000
+  MaxChargeJump: 500
+}
+
+END_PROLOG

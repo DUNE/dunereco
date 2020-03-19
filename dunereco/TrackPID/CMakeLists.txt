@@ -28,6 +28,7 @@ art_make(
     ${ROOT_BASIC_LIB_LIST}
     dune_AnaUtils
     dune_TrackPID_tf
+    MODULE_LIBRARIES dune_TrackPID
 )
 
 install_headers()

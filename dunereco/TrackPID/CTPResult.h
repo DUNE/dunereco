@@ -22,6 +22,8 @@ namespace ctp
 
     // Function to calculate the PID for a given track
     std::vector<float> GetResults() const;
+
+    bool IsValid() const;
     
     // Individual scores
     float GetMuonScore() const {return fMuonScore;};

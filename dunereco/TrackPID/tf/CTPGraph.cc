@@ -145,6 +145,8 @@ std::vector< std::vector< std::vector<float> > > tf::CTPGraph::run(
   inputTensors.push_back(dEdxTensor);
   inputTensors.push_back(varsTensor);
 
+  std::cout << "Input tensors arranged inside the interface" << std::endl;
+
   return run(inputTensors);
 }
 
@@ -161,6 +163,8 @@ std::vector< std::vector< std::vector< float > > > tf::CTPGraph::run(const std::
     // The output from TF has dimensions nOutputs, nSamples, nNodes
     std::vector<tensorflow::Tensor> outputs;
     auto status = fSession->Run(inputs, fOutputNames, {}, &outputs);
+
+    std::cout << "Sorting out the outputs inside the interface" << std::endl;
 
     // Dimensions we want to return are  nSamples, nOutputs, nNodes
     std::vector< std::vector< std::vector<float> > > result;
