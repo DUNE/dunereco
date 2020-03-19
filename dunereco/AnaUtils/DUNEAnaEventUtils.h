@@ -21,6 +21,8 @@
 #include "lardataobj/RecoBase/Slice.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 
+#include "nusimdata/SimulationBase/MCParticle.h"
+
 #include <string>
 #include <vector>
 
@@ -93,6 +95,16 @@ public:
     * @return vector of art::Ptrs to slices
     */
     static std::vector<art::Ptr<recob::Slice>> GetSlices(const art::Event &evt, const std::string &label);
+
+    /**
+    * @brief Get the MC particles from the event
+    *
+    * @param evt is the underlying art event
+    * @param label is the label for the MC particle producer
+    *
+    * @return vector of art::Ptrs to slices
+    */
+    static std::vector<art::Ptr<simb::MCParticle>> GetMCParticles(const art::Event &evt, const std::string &label);
 
     /**
     * @brief Get the clear cosmic ray primaries from the event

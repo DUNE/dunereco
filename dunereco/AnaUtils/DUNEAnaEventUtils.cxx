@@ -72,6 +72,13 @@ std::vector<art::Ptr<recob::Slice>> DUNEAnaEventUtils::GetSlices(const art::Even
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
 
+std::vector<art::Ptr<recob::Slice>> DUNEAnaEventUtils::GetMCParticles(const art::Event &evt, const std::string &label)
+{
+    return DUNEAnaEventUtils::GetProductVector<simb::MCParticle>(evt,label);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
 std::vector<art::Ptr<recob::PFParticle>> DUNEAnaEventUtils::GetClearCosmics(const art::Event &evt, const std::string &label)
 {
     std::vector<art::Ptr<recob::PFParticle>> theseParticles = DUNEAnaEventUtils::GetProductVector<recob::PFParticle>(evt,label);
