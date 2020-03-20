@@ -11,7 +11,6 @@ art_make( BASENAME_ONLY
 			   larsim_MCCheater_BackTrackerService_service
            larsim_MCCheater_ParticleInventoryService_service
                            lardata_Utilities
-			   lbne_daqinput35t
 			   nusimdata_SimulationBase
                            ${ART_FRAMEWORK_CORE}
    			   ${ART_FRAMEWORK_PRINCIPAL}
