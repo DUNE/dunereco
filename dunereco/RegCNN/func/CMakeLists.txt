@@ -11,6 +11,7 @@ endif ()
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 include_directories( $ENV{TENSORFLOW_INC}/eigen )
+include_directories( $ENV{TENSORFLOW_INC}/absl )
 
 art_make( BASENAME_ONLY
   LIBRARY_NAME     RegCNNFunc
