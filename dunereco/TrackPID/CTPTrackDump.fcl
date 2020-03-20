@@ -1,0 +1,15 @@
+#include "ctphelper.fcl"
+
+BEGIN_PROLOG
+
+# Configuration for the Utility Example module
+
+standard_convTrackDumper:
+{
+  module_type: CTPTrackDump
+  #==================
+  ctpHelper: @local::standard_ctphelper
+  particleLabel: "pandora"
+}
+
+END_PROLOG

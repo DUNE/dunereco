@@ -12,7 +12,7 @@
 
 #include "art/Framework/Principal/Event.h"
 #include "canvas/Persistency/Common/FindManyP.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
+#include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
@@ -20,6 +20,11 @@
 #include "dune/TrackPID/CTPHelper.h"
 #include "dune/TrackPID/CTPResult.h"
 #include "dune/TrackPID/tf/CTPGraph.h"
+
+#include "nusimdata/SimulationBase/MCParticle.h"
+#include "lardataobj/Simulation/SimChannel.h"
+#include "larsim/MCCheater/BackTrackerService.h"
+#include "larsim/MCCheater/ParticleInventoryService.h"
 
 #include "dune/AnaUtils/DUNEAnaPFParticleUtils.h"
 #include "dune/AnaUtils/DUNEAnaTrackUtils.h"
@@ -35,11 +40,13 @@ namespace ctp
     fNetName = fNetDir + "/" + pset.get<std::string>("NetworkName");
     fParticleLabel = pset.get<std::string>("ParticleLabel");
     fTrackLabel = pset.get<std::string>("TrackLabel");
+    fShowerLabel = pset.get<std::string>("ShowerLabel");
     fCalorimetryLabel = pset.get<std::string>("CalorimetryLabel");
     fMinTrackPoints = pset.get<unsigned int>("MinHits",50);
     fDedxLength = pset.get<unsigned int>("DedxLength",100);
     fQMax = pset.get<float>("MaxCharge",1000);
     fQJump = pset.get<float>("MaxChargeJump",500);
+    fNormalise = pset.get<bool>("NormaliseInputs",true);
   }
 
   CTPHelper::~CTPHelper(){
@@ -56,13 +63,13 @@ namespace ctp
 
     finalInputs.push_back(twoVecs);
 
-    std::cout << "We have sensible inputs... building TF object" << std::endl;
+//    std::cout << "We have sensible inputs... building TF object" << std::endl;
     // Load the network and run it    
     std::unique_ptr<tf::CTPGraph> convNet = tf::CTPGraph::create(fNetName.c_str(),std::vector<std::string>(),2,1);
-    std::cout << "Calling TF interface" << std::endl;
+//    std::cout << "Calling TF interface" << std::endl;
     std::vector< std::vector< std::vector<float> > > convNetOutput = convNet->run(finalInputs);
 
-    std::cout << "Got result from TF" << std::endl;
+//    std::cout << "Got result from TF" << std::endl;
     ctp::CTPResult result(convNetOutput.at(0).at(0));
 
     return result;
@@ -74,7 +81,7 @@ namespace ctp
     std::vector<std::vector<float>> netInputs;
 
     if(!dune_ana::DUNEAnaPFParticleUtils::IsTrack(part,evt,fParticleLabel,fTrackLabel)){
-      std::cout << "CTPHelper: this PFParticle is not track-like... returning empty vector." << std::endl;
+//      std::cout << "CTPHelper: this PFParticle is not track-like... returning empty vector." << std::endl;
       return netInputs;
     }
 
@@ -83,7 +90,7 @@ namespace ctp
     art::Ptr<anab::Calorimetry> thisCalo = dune_ana::DUNEAnaTrackUtils::GetCalorimetry(thisTrack,evt,fTrackLabel,fCalorimetryLabel);
 
     if(thisCalo->dEdx().size() < fMinTrackPoints){
-      std::cout << "CTPHelper: this track has too few points for PID... returning empty vector." << std::endl;
+//      std::cout << "CTPHelper: this track has too few points for PID (" << thisCalo->dEdx().size() << ")... returning empty vector." << std::endl;
       return netInputs;
     }
 
@@ -127,6 +134,8 @@ namespace ctp
     netInputs.push_back(finalInputDedx);
     netInputs.push_back(finalInputVariables);
 
+    if(fNormalise) this->NormaliseInputs(netInputs);
+
     return netInputs;
   }
 
@@ -136,6 +145,38 @@ namespace ctp
 
   const std::vector<float> CTPHelper::GetVariableVector(const art::Ptr<recob::PFParticle> part, const art::Event &evt) const{
     return GetNetworkInputs(part,evt).at(1);
+  }
+
+  const int CTPHelper::GetTruePDGCode(const art::Ptr<recob::PFParticle> part, const art::Event &evt) const{
+
+    // Get hits
+    const std::vector<art::Ptr<recob::Hit>> collectionHits  = dune_ana::DUNEAnaPFParticleUtils::GetHits(part,evt,fParticleLabel);
+
+    // Function to find a weighted and sorted vector of the true particles matched to a
+    using weightedMCPair = std::pair<const simb::MCParticle*, double>;
+    std::vector<weightedMCPair> outVecHits;
+
+    // Loop over all hits in the input vector and record the contributing MCParticles.
+    art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+    art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
+    std::unordered_map<const simb::MCParticle*, double> mcHitMap;
+    double hitTotal = 0;
+    for(const art::Ptr<recob::Hit> &hit : collectionHits) {
+      for(const sim::TrackIDE& ide : bt_serv->HitToTrackIDEs(hit)) {
+        const simb::MCParticle* curr_part = pi_serv->TrackIdToParticle_P(ide.trackID);
+        mcHitMap[curr_part] += 1.;
+        ++hitTotal;
+      }
+    }
+
+    for (weightedMCPair const &p : mcHitMap) outVecHits.push_back(p);
+    // Can't continue without a truth match
+    if(outVecHits.size() == 0) return -999;
+
+    std::sort(outVecHits.begin(),outVecHits.end(),[](weightedMCPair a, weightedMCPair b){ return a.second > b.second;});
+    for(weightedMCPair &p : outVecHits) p.second /= hitTotal;
+
+    return outVecHits.at(0).first->PdgCode();
   }
  
   void CTPHelper::SmoothDedxVector(std::vector<float> &dedx) const{
@@ -220,9 +261,48 @@ namespace ctp
 
     for(const art::Ptr<recob::PFParticle> child : children){
       nTrack += dune_ana::DUNEAnaPFParticleUtils::IsTrack(part,evt,fParticleLabel,fTrackLabel);
-      nShower += dune_ana::DUNEAnaPFParticleUtils::IsShower(part,evt,fParticleLabel,fTrackLabel);
+      nShower += dune_ana::DUNEAnaPFParticleUtils::IsShower(part,evt,fParticleLabel,fShowerLabel);
       nGrand += child->NumDaughters();
     }
+
+  }
+
+  void CTPHelper::NormaliseInputs(std::vector<std::vector<float>> &inputs) const{
+
+    // Firstly, we need to normalise the dE/dx values
+    for(float &dedx : inputs.at(0)){
+      float newVal = std::log(2*dedx) + 1;
+      if(newVal > 5.) newVal = 5.;
+      dedx = (newVal / 2.5) - 1;
+    }
+
+    // For the three child values
+    for(unsigned int v = 0; v < 3; ++v){
+      float &val = inputs.at(1).at(v);
+      if(val > 5) val = 5;
+      val = (val / 2.5) - 1.0;
+    }
+
+    // The charge mean
+    float val = inputs.at(1).at(3);
+    val = std::log(2*val) + 1;
+    if(val > 5.) val = 5.;
+    inputs.at(1).at(3) = (val / 2.5) - 1;
+    
+    // The charge sigma
+    val = inputs.at(1).at(4);
+    if(val > 2) val = 2.;
+    inputs.at(1).at(4) = val - 1; 
+
+    // The angle mean
+    val = inputs.at(1).at(5);
+    if(val > 0.05) val = 0.5;
+    inputs.at(1).at(5) = (val / 0.025) - 1.0;
+
+    // The angle sigma
+    val = inputs.at(1).at(6);
+    if(val > 0.3) val = 0.3;
+    inputs.at(1).at(6) = (val / 0.15) - 1.0;
 
   }
 

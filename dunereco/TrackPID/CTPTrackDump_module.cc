@@ -1,5 +1,5 @@
 /**
- *  @file   larpandora/DUNEAnaAnalysis/CTPEvaluator_module.cc
+ *  @file   larpandora/DUNEAnaAnalysis/CTPTrackDump_module.cc
  *
  *  @brief  This module uses the analysis utilities to demonstrate 
  *          some of their usage. This can be used as a basis for 
@@ -35,9 +35,9 @@ namespace ctp
 {
 
 /**
- *  @brief  CTPEvaluator class
+ *  @brief  CTPTrackDump class
  */
-class CTPEvaluator : public art::EDAnalyzer
+class CTPTrackDump : public art::EDAnalyzer
 {
 public:
     /**
@@ -45,12 +45,12 @@ public:
      *
      *  @param  pset
      */
-     CTPEvaluator(fhicl::ParameterSet const &pset);
+     CTPTrackDump(fhicl::ParameterSet const &pset);
 
     /**
      *  @brief  Destructor
      */
-     virtual ~CTPEvaluator();
+     virtual ~CTPTrackDump();
 
      void beginJob();
      void endJob();
@@ -58,11 +58,13 @@ public:
 
 private:
 
+  void WriteTextFile(const art::Event &evt,const std::vector<std::vector<float>> &inputs, const int &pdg, const unsigned int &trackNumber) const;
+
   CTPHelper fConvTrackPID;
   std::string fParticleLabel;
 };
 
-DEFINE_ART_MODULE(CTPEvaluator)
+DEFINE_ART_MODULE(CTPTrackDump)
 
 } // namespace ctp
 
@@ -94,7 +96,7 @@ DEFINE_ART_MODULE(CTPEvaluator)
 namespace ctp
 {
 
-CTPEvaluator::CTPEvaluator(fhicl::ParameterSet const &pset) : art::EDAnalyzer(pset),
+CTPTrackDump::CTPTrackDump(fhicl::ParameterSet const &pset) : art::EDAnalyzer(pset),
 fConvTrackPID(pset.get<fhicl::ParameterSet>("ctpHelper")),
 fParticleLabel(pset.get<std::string>("particleLabel"))
 {
@@ -103,41 +105,68 @@ fParticleLabel(pset.get<std::string>("particleLabel"))
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-CTPEvaluator::~CTPEvaluator()
+CTPTrackDump::~CTPTrackDump()
 {
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-void CTPEvaluator::beginJob()
+void CTPTrackDump::beginJob()
 {
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-void CTPEvaluator::endJob()
+void CTPTrackDump::endJob()
 {
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-void CTPEvaluator::analyze(const art::Event &evt)
+void CTPTrackDump::analyze(const art::Event &evt)
 {
 
     // Get all of the PFParticles
     const std::vector<art::Ptr<recob::PFParticle>> particles = dune_ana::DUNEAnaEventUtils::GetPFParticles(evt,fParticleLabel);
 
+    unsigned int nTracks = 0;
     for (const art::Ptr<recob::PFParticle> &particle : particles)
     {
         // Returns a dummy value if not a track or not suitable
-        CTPResult thisPID = fConvTrackPID.RunConvolutionalTrackPID(particle,evt);
+        std::vector<std::vector<float>> netInputs = fConvTrackPID.GetNetworkInputs(particle,evt);
         const int pdg = fConvTrackPID.GetTruePDGCode(particle,evt);
 
-        if(!thisPID.IsValid()) continue;
+        if(netInputs.empty()) continue;
 
-        std::cout << "Got a track PID for particle of type " << pdg << ": " << thisPID.GetMuonScore() << ", " << thisPID.GetPionScore() << ", " << thisPID.GetProtonScore() << std::endl;       
-
+        this->WriteTextFile(evt,netInputs,pdg,nTracks);
+        ++nTracks;   
     }
+
+}
+
+void CTPTrackDump::WriteTextFile(const art::Event &evt, const std::vector<std::vector<float>> &inputs, const int &pdg, const unsigned int &trackNumber) const{
+
+       // Open our output file stream
+        std::stringstream filename;
+        filename << "tracks_" << evt.id().run() << "_" << evt.id().subRun() << "_" <<  evt.id().event() << "_" << trackNumber << "_" << std::floor(inputs.at(1).at(3)*1000) << ".dat";
+        std::ofstream output_file(filename.str());
+
+        for(const float dedx : inputs.at(0))
+//        for(const float val : chargeVector)
+        {
+            output_file << dedx << "\n";
+        }
+        output_file << "End of dE/dx\n";
+
+        for(const float var : inputs.at(1)){
+          output_file << var << "\n";
+        }
+
+        output_file << pdg << "\n";
+        output_file << 1 << "\n";
+        output_file << 1 << "\n";
+        output_file << 1 << "\n";
+        output_file.close();
 
 }
 

@@ -17,6 +17,8 @@
 // -------------------------------------------------------------------
 tf::CTPGraph::CTPGraph(const char* graph_file_name, const std::vector<std::string> & outputs, bool & success, int ninputs, int noutputs)
 {
+
+//    std::cout << "Starting to build the graph" << std::endl;
     success = false; // until all is done correctly
 
     n_inputs = ninputs;
@@ -29,6 +31,7 @@ tf::CTPGraph::CTPGraph(const char* graph_file_name, const std::vector<std::strin
     config.set_intra_op_parallelism_threads(1);
     config.set_use_per_session_threads(false);
 
+//    std::cout << "Starting tf session" << std::endl;
     auto status = tensorflow::NewSession(options, &fSession);
     if (!status.ok())
     {
@@ -36,6 +39,7 @@ tf::CTPGraph::CTPGraph(const char* graph_file_name, const std::vector<std::strin
         return;
     }
 
+//    std::cout << "Session started... reading network architecture" << std::endl;
     tensorflow::GraphDef graph_def;
     status = tensorflow::ReadBinaryProto(tensorflow::Env::Default(), graph_file_name, &graph_def);
     if (!status.ok())
@@ -44,6 +48,7 @@ tf::CTPGraph::CTPGraph(const char* graph_file_name, const std::vector<std::strin
         return;
     }
 
+//    std::cout << "Extracting input names" << std::endl;
     size_t ng = graph_def.node().size();
 
     // fill input names (TODO: generic)
@@ -52,6 +57,7 @@ tf::CTPGraph::CTPGraph(const char* graph_file_name, const std::vector<std::strin
         fInputNames.push_back(graph_def.node()[i].name());
     }
 
+//    std::cout << "Extracting output names" << std::endl;
     // last node as output if no specific name provided
     if (outputs.empty()) 
     {
@@ -94,6 +100,8 @@ tf::CTPGraph::CTPGraph(const char* graph_file_name, const std::vector<std::strin
         return;
     }
 
+//    std::cout << "About to create graph" << std::endl;
+
     status = fSession->Create(graph_def);
     if (!status.ok())
     {
@@ -102,6 +110,8 @@ tf::CTPGraph::CTPGraph(const char* graph_file_name, const std::vector<std::strin
     }
 
     success = true; // ok, graph loaded from the file
+
+//    std::cout << "Graph success? " << success << std::endl;
 }
 
 tf::CTPGraph::~CTPGraph()
@@ -125,19 +135,24 @@ std::vector< std::vector< std::vector<float> > > tf::CTPGraph::run(
 
   // 2) The 7 additional classification variables
   const unsigned int nVars = input.front().at(1).size();
-  tensorflow::Tensor varsTensor(tensorflow::DT_FLOAT,tensorflow::TensorShape({nSamples,nVars,1}));
+  // NB: this input doesn't need a defined depth as it doesn't use convolutions
+  tensorflow::Tensor varsTensor(tensorflow::DT_FLOAT,tensorflow::TensorShape({nSamples,nVars}));
+
+//  std::cout << "Input shapes: " << input.size() << ", " << input.front().size() << ", " << input.front().at(0).size() << ", " << input.front().at(1).size() << std::endl;
 
   // Fill the tensors
   auto dedxInputMap = dEdxTensor.tensor<float,3>();
-  auto varsInputMap = varsTensor.tensor<float,3>();
+  auto varsInputMap = varsTensor.tensor<float,2>();
   for(unsigned int s = 0; s < nSamples; ++s){
     // dEdx first
     for(unsigned int e = 0; e < nEls; ++e){
+//      std::cout << "Adding element " << e << " with value " << input.at(s).at(0).at(e) << std::endl;
       dedxInputMap(s,e,0) = input.at(s).at(0).at(e);
     }
     // And the other variables
     for(unsigned int v = 0; v < nVars; ++v){
-      varsInputMap(s,v,0) = input.at(s).at(1).at(v);
+//      std::cout << "Adding variable " << v << " with value " << input.at(s).at(1).at(v) << std::endl;
+      varsInputMap(s,v) = input.at(s).at(1).at(v);
     }
   }
 
@@ -145,7 +160,7 @@ std::vector< std::vector< std::vector<float> > > tf::CTPGraph::run(
   inputTensors.push_back(dEdxTensor);
   inputTensors.push_back(varsTensor);
 
-  std::cout << "Input tensors arranged inside the interface" << std::endl;
+//  std::cout << "Input tensors arranged inside the interface" << std::endl;
 
   return run(inputTensors);
 }
@@ -157,6 +172,7 @@ std::vector< std::vector< std::vector< float > > > tf::CTPGraph::run(const std::
     // Pair up the inputs with their names in the network
     std::vector< std::pair<std::string, tensorflow::Tensor> > inputs;
     for(int i=0; i<n_inputs; ++i){
+//        std::cout << "Pairing up input with name " << fInputNames[i] << " with input number " << i << std::endl;
         inputs.push_back({fInputNames[i], x[i]});
     }
 
@@ -164,7 +180,7 @@ std::vector< std::vector< std::vector< float > > > tf::CTPGraph::run(const std::
     std::vector<tensorflow::Tensor> outputs;
     auto status = fSession->Run(inputs, fOutputNames, {}, &outputs);
 
-    std::cout << "Sorting out the outputs inside the interface" << std::endl;
+//    std::cout << "Sorting out the outputs inside the interface" << std::endl;
 
     // Dimensions we want to return are  nSamples, nOutputs, nNodes
     std::vector< std::vector< std::vector<float> > > result;
@@ -198,6 +214,7 @@ std::vector< std::vector< std::vector< float > > > tf::CTPGraph::run(const std::
     }
     else{
       std::cout << "Processing error in Tensorflow. Returning empty output." << std::endl;
+      std::cout << "Error = " << status.ToString() << std::endl;
     }
 
     return result;

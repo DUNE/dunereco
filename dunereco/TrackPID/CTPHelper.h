@@ -41,6 +41,10 @@ namespace ctp
     const std::vector<float> GetDeDxVector(const art::Ptr<recob::PFParticle>, const art::Event &evt) const;
     const std::vector<float> GetVariableVector(const art::Ptr<recob::PFParticle>, const art::Event &evt) const;
 
+    // Get true PDG code for training
+    const int GetTruePDGCode (const art::Ptr<recob::PFParticle>, const art::Event &evt) const;
+
+
   private:
 
     void SmoothDedxVector(std::vector<float> &dedx) const;
@@ -50,6 +54,8 @@ namespace ctp
 
     void GetChildParticles(const art::Ptr<recob::PFParticle> part, const art::Event &evt, unsigned int &nTrack, unsigned int &nShower, unsigned int &nGrand) const;
 
+    void NormaliseInputs(std::vector<std::vector<float>> &netInputs) const;
+
     // Variables for accessing the network architecture
     std::string fNetDir;
     std::string fNetName;
@@ -57,6 +63,7 @@ namespace ctp
     // Module names
     std::string fParticleLabel; 
     std::string fTrackLabel;
+    std::string fShowerLabel;
     std::string fCalorimetryLabel;
 
     // Parameters for variable extraction
@@ -64,6 +71,8 @@ namespace ctp
     unsigned int fDedxLength;
     float fQMax; // Maximum allowed charge
     float fQJump; // Maximum difference between consequetive dEdx values
+
+    bool fNormalise; // Normalise the inputs for the network
   };
 
 }

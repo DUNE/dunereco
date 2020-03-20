@@ -6,11 +6,13 @@ standard_ctphelper:
   NetworkName : "convolutional_track_pid_March2020.pb"
   ParticleLabel   : "pandora"
   TrackLabel      : "pandoraTrack"
+  ShowerLabel      : "pandoraShower"
   CalorimetryLabel: "pandoracalo"
   MinHits      : 50
   DedxLength   : 100
   MaxCharge    : 1000
   MaxChargeJump: 500
+  NormaliseInputs: true
 }
 
 END_PROLOG
