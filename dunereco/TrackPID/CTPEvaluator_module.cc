@@ -1,9 +1,8 @@
 /**
- *  @file   larpandora/DUNEAnaAnalysis/CTPEvaluator_module.cc
+ *  @file   dune/trackPID/CTPEvaluator_module.cc
  *
- *  @brief  This module uses the analysis utilities to demonstrate 
- *          some of their usage. This can be used as a basis for 
- *          writing analysis code using these tools
+ *  @brief  This module performs track PID using the convolutionsl 
+ *          track PID network
  */
 
 #include "art/Framework/Core/ModuleMacros.h"
@@ -60,6 +59,13 @@ private:
 
   CTPHelper fConvTrackPID;
   std::string fParticleLabel;
+
+  std::vector<float> fMuonScoreVector;
+  std::vector<float> fPionScoreVector;
+  std::vector<float> fProtonScoreVector;
+  std::vector<int>   fPDGVector;
+
+  TTree *fPIDTree;
 };
 
 DEFINE_ART_MODULE(CTPEvaluator)
@@ -111,6 +117,14 @@ CTPEvaluator::~CTPEvaluator()
 
 void CTPEvaluator::beginJob()
 {
+
+  art::ServiceHandle<art::TFileService const> tfs;
+
+  fPIDTree = tfs->make<TTree>("pidTree","pidTree");
+  fPIDTree->Branch("muonScores",&fMuonScoreVector);
+  fPIDTree->Branch("pionScores",&fPionScoreVector);
+  fPIDTree->Branch("protonScores",&fProtonScoreVector);
+  fPIDTree->Branch("pdgCodes",&fPDGVector);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -123,6 +137,10 @@ void CTPEvaluator::endJob()
 
 void CTPEvaluator::analyze(const art::Event &evt)
 {
+  fMuonScoreVector.clear();
+  fPionScoreVector.clear();
+  fProtonScoreVector.clear();
+  fPDGVector.clear();
 
     // Get all of the PFParticles
     const std::vector<art::Ptr<recob::PFParticle>> particles = dune_ana::DUNEAnaEventUtils::GetPFParticles(evt,fParticleLabel);
@@ -137,7 +155,12 @@ void CTPEvaluator::analyze(const art::Event &evt)
 
         std::cout << "Got a track PID for particle of type " << pdg << ": " << thisPID.GetMuonScore() << ", " << thisPID.GetPionScore() << ", " << thisPID.GetProtonScore() << std::endl;       
 
+        fMuonScoreVector.push_back(thisPID.GetMuonScore());
+        fPionScoreVector.push_back(thisPID.GetPionScore());
+        fProtonScoreVector.push_back(thisPID.GetProtonScore());
+        fPDGVector.push_back(pdg);
     }
+    fPIDTree->Fill();
 
 }
 
