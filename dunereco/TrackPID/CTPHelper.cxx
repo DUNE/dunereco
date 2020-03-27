@@ -71,7 +71,7 @@ namespace ctp
 
 //    std::cout << "Got result from TF" << std::endl;
     ctp::CTPResult result(convNetOutput.at(0).at(0));
-
+    std::cout << "Returning CTPResult" << std::endl;
     return result;
   }
 
@@ -82,7 +82,7 @@ namespace ctp
 
     if(!dune_ana::DUNEAnaPFParticleUtils::IsTrack(part,evt,fParticleLabel,fTrackLabel)){
 //      std::cout << "CTPHelper: this PFParticle is not track-like... returning empty vector." << std::endl;
-      return netInputs;
+      return std::vector<std::vector<float>>();
     }
 
     // Use the analysis utilities to simplify finding products and associations
@@ -91,7 +91,7 @@ namespace ctp
 
     if(thisCalo->dEdx().size() < fMinTrackPoints){
 //      std::cout << "CTPHelper: this track has too few points for PID (" << thisCalo->dEdx().size() << ")... returning empty vector." << std::endl;
-      return netInputs;
+      return std::vector<std::vector<float>>();
     }
 
     std::vector<float> dedxVector = thisCalo->dEdx();
@@ -147,20 +147,19 @@ namespace ctp
     return GetNetworkInputs(part,evt).at(1);
   }
 
-  const int CTPHelper::GetTruePDGCode(const art::Ptr<recob::PFParticle> part, const art::Event &evt) const{
-
+  const std::pair<const simb::MCParticle*,float> CTPHelper::GetTrueParticle(const art::Ptr<recob::PFParticle> part, const art::Event &evt) const{
     // Get hits
     const std::vector<art::Ptr<recob::Hit>> collectionHits  = dune_ana::DUNEAnaPFParticleUtils::GetHits(part,evt,fParticleLabel);
 
-    // Function to find a weighted and sorted vector of the true particles matched to a
-    using weightedMCPair = std::pair<const simb::MCParticle*, double>;
+    // Function to find a weighted and sorted vector of the true particles matched to a particle
+    using weightedMCPair = std::pair<const simb::MCParticle*, float>;
     std::vector<weightedMCPair> outVecHits;
 
     // Loop over all hits in the input vector and record the contributing MCParticles.
     art::ServiceHandle<cheat::BackTrackerService> bt_serv;
     art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
-    std::unordered_map<const simb::MCParticle*, double> mcHitMap;
-    double hitTotal = 0;
+    std::unordered_map<const simb::MCParticle*, float> mcHitMap;
+    float hitTotal = 0;
     for(const art::Ptr<recob::Hit> &hit : collectionHits) {
       for(const sim::TrackIDE& ide : bt_serv->HitToTrackIDEs(hit)) {
         const simb::MCParticle* curr_part = pi_serv->TrackIdToParticle_P(ide.trackID);
@@ -171,12 +170,17 @@ namespace ctp
 
     for (weightedMCPair const &p : mcHitMap) outVecHits.push_back(p);
     // Can't continue without a truth match
-    if(outVecHits.size() == 0) return -999;
+    if(outVecHits.size() == 0) assert(0);
 
     std::sort(outVecHits.begin(),outVecHits.end(),[](weightedMCPair a, weightedMCPair b){ return a.second > b.second;});
     for(weightedMCPair &p : outVecHits) p.second /= hitTotal;
 
-    return outVecHits.at(0).first->PdgCode();
+    std::cout << "Returning truth match..." << std::endl;
+    return outVecHits.at(0);
+  }
+
+  const int CTPHelper::GetTruePDGCode(const art::Ptr<recob::PFParticle> part, const art::Event &evt) const{
+    return this->GetTrueParticle(part,evt).first->PdgCode();
   }
  
   void CTPHelper::SmoothDedxVector(std::vector<float> &dedx) const{
@@ -278,9 +282,9 @@ namespace ctp
 
     // For the three child values
     for(unsigned int v = 0; v < 3; ++v){
-      float &val = inputs.at(1).at(v);
+      float val = inputs.at(1).at(v);
       if(val > 5) val = 5;
-      val = (val / 2.5) - 1.0;
+      inputs.at(1).at(v) = (val / 2.5) - 1.0;
     }
 
     // The charge mean

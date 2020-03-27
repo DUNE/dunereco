@@ -42,8 +42,8 @@ namespace ctp
     const std::vector<float> GetVariableVector(const art::Ptr<recob::PFParticle>, const art::Event &evt) const;
 
     // Get true PDG code for training
+    const std::pair<const simb::MCParticle*,float> GetTrueParticle(const art::Ptr<recob::PFParticle>, const art::Event &evt) const;
     const int GetTruePDGCode (const art::Ptr<recob::PFParticle>, const art::Event &evt) const;
-
 
   private:
 

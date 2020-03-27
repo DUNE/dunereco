@@ -58,7 +58,8 @@ public:
 
 private:
 
-  void WriteTextFile(const art::Event &evt,const std::vector<std::vector<float>> &inputs, const int &pdg, const unsigned int &trackNumber) const;
+  void WriteTextFile(const art::Event &evt,const std::vector<std::vector<float>> &inputs, const std::pair<const simb::MCParticle*,float> &trueParticle,
+                     const unsigned int &trackNumber, const unsigned int &nHits) const;
 
   CTPHelper fConvTrackPID;
   std::string fParticleLabel;
@@ -134,17 +135,20 @@ void CTPTrackDump::analyze(const art::Event &evt)
     {
         // Returns a dummy value if not a track or not suitable
         std::vector<std::vector<float>> netInputs = fConvTrackPID.GetNetworkInputs(particle,evt);
-        const int pdg = fConvTrackPID.GetTruePDGCode(particle,evt);
 
         if(netInputs.empty()) continue;
 
-        this->WriteTextFile(evt,netInputs,pdg,nTracks);
+        const std::pair<const simb::MCParticle*,float> trueParticle = fConvTrackPID.GetTrueParticle(particle,evt);
+        const unsigned int nHits = dune_ana::DUNEAnaPFParticleUtils::GetSpacePoints(particle,evt,fParticleLabel).size();
+
+        this->WriteTextFile(evt,netInputs,trueParticle,nTracks,nHits);
         ++nTracks;   
     }
 
 }
 
-void CTPTrackDump::WriteTextFile(const art::Event &evt, const std::vector<std::vector<float>> &inputs, const int &pdg, const unsigned int &trackNumber) const{
+void CTPTrackDump::WriteTextFile(const art::Event &evt, const std::vector<std::vector<float>> &inputs, const std::pair<const simb::MCParticle*,float> &trueParticle,
+                                 const unsigned int &trackNumber, const unsigned int &nHits) const{
 
        // Open our output file stream
         std::stringstream filename;
@@ -162,10 +166,10 @@ void CTPTrackDump::WriteTextFile(const art::Event &evt, const std::vector<std::v
           output_file << var << "\n";
         }
 
-        output_file << pdg << "\n";
-        output_file << 1 << "\n";
-        output_file << 1 << "\n";
-        output_file << 1 << "\n";
+        output_file << trueParticle.first->PdgCode() << "\n";
+        output_file << nHits << "\n";
+        output_file << trueParticle.first->P() << "\n";
+        output_file << trueParticle.second << "\n";
         output_file.close();
 
 }

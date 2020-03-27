@@ -137,10 +137,10 @@ void CTPEvaluator::endJob()
 
 void CTPEvaluator::analyze(const art::Event &evt)
 {
-  fMuonScoreVector.clear();
-  fPionScoreVector.clear();
-  fProtonScoreVector.clear();
-  fPDGVector.clear();
+    fMuonScoreVector.clear();
+    fPionScoreVector.clear();
+    fProtonScoreVector.clear();
+    fPDGVector.clear();
 
     // Get all of the PFParticles
     const std::vector<art::Ptr<recob::PFParticle>> particles = dune_ana::DUNEAnaEventUtils::GetPFParticles(evt,fParticleLabel);
@@ -149,9 +149,9 @@ void CTPEvaluator::analyze(const art::Event &evt)
     {
         // Returns a dummy value if not a track or not suitable
         CTPResult thisPID = fConvTrackPID.RunConvolutionalTrackPID(particle,evt);
-        const int pdg = fConvTrackPID.GetTruePDGCode(particle,evt);
-
         if(!thisPID.IsValid()) continue;
+
+        const int pdg = fConvTrackPID.GetTruePDGCode(particle,evt);
 
         std::cout << "Got a track PID for particle of type " << pdg << ": " << thisPID.GetMuonScore() << ", " << thisPID.GetPionScore() << ", " << thisPID.GetProtonScore() << std::endl;       
 
