@@ -57,13 +57,17 @@ public:
 
 private:
 
+  fhicl::ParameterSet fHelperPars;
   CTPHelper fConvTrackPID;
   std::string fParticleLabel;
+  bool fWriteTree;
 
   std::vector<float> fMuonScoreVector;
   std::vector<float> fPionScoreVector;
   std::vector<float> fProtonScoreVector;
   std::vector<int>   fPDGVector;
+  std::vector<unsigned int> fCaloPoints;
+
 
   TTree *fPIDTree;
 };
@@ -101,10 +105,11 @@ namespace ctp
 {
 
 CTPEvaluator::CTPEvaluator(fhicl::ParameterSet const &pset) : art::EDAnalyzer(pset),
-fConvTrackPID(pset.get<fhicl::ParameterSet>("ctpHelper")),
-fParticleLabel(pset.get<std::string>("particleLabel"))
+fHelperPars(pset.get<fhicl::ParameterSet>("ctpHelper")),
+fConvTrackPID(fHelperPars),
+fParticleLabel(pset.get<std::string>("particleLabel")),
+fWriteTree(pset.get<bool>("writeTree"))
 {
-
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -117,14 +122,16 @@ CTPEvaluator::~CTPEvaluator()
 
 void CTPEvaluator::beginJob()
 {
-
-  art::ServiceHandle<art::TFileService const> tfs;
-
-  fPIDTree = tfs->make<TTree>("pidTree","pidTree");
-  fPIDTree->Branch("muonScores",&fMuonScoreVector);
-  fPIDTree->Branch("pionScores",&fPionScoreVector);
-  fPIDTree->Branch("protonScores",&fProtonScoreVector);
-  fPIDTree->Branch("pdgCodes",&fPDGVector);
+    if (!fWriteTree) return;
+  
+    art::ServiceHandle<art::TFileService const> tfs;
+  
+    fPIDTree = tfs->make<TTree>("pidTree","pidTree");
+    fPIDTree->Branch("muonScores",&fMuonScoreVector);
+    fPIDTree->Branch("pionScores",&fPionScoreVector);
+    fPIDTree->Branch("protonScores",&fProtonScoreVector);
+    fPIDTree->Branch("pdgCodes",&fPDGVector);
+    fPIDTree->Branch("caloPoints",&fCaloPoints);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -137,31 +144,51 @@ void CTPEvaluator::endJob()
 
 void CTPEvaluator::analyze(const art::Event &evt)
 {
-    fMuonScoreVector.clear();
-    fPionScoreVector.clear();
-    fProtonScoreVector.clear();
-    fPDGVector.clear();
+    if (fWriteTree)
+    {
+        fMuonScoreVector.clear();
+        fPionScoreVector.clear();
+        fProtonScoreVector.clear();
+        fPDGVector.clear();
+        fCaloPoints.clear();
+    }
 
     // Get all of the PFParticles
     const std::vector<art::Ptr<recob::PFParticle>> particles = dune_ana::DUNEAnaEventUtils::GetPFParticles(evt,fParticleLabel);
 
     for (const art::Ptr<recob::PFParticle> &particle : particles)
     {
+        // Get the track if this particle is track-like
+        unsigned int nCaloPoints = 0;
+        const std::string trkLabel = fHelperPars.get<std::string>("TrackLabel");
+        if (dune_ana::DUNEAnaPFParticleUtils::IsTrack(particle,evt,fParticleLabel,trkLabel))
+        {
+            const art::Ptr<recob::Track> trk = dune_ana::DUNEAnaPFParticleUtils::GetTrack(particle,evt,fParticleLabel,trkLabel);
+            const std::string caloLabel = fHelperPars.get<std::string>("CalorimetryLabel");
+            const art::Ptr<anab::Calorimetry> calo = dune_ana::DUNEAnaTrackUtils::GetCalorimetry(trk,evt,trkLabel,caloLabel);
+
+            nCaloPoints = calo->dEdx().size();
+        }
+        else continue;
+
         // Returns a dummy value if not a track or not suitable
         CTPResult thisPID = fConvTrackPID.RunConvolutionalTrackPID(particle,evt);
-        if(!thisPID.IsValid()) continue;
+        if (!thisPID.IsValid()) continue;
 
         const int pdg = fConvTrackPID.GetTruePDGCode(particle,evt);
 
         std::cout << "Got a track PID for particle of type " << pdg << ": " << thisPID.GetMuonScore() << ", " << thisPID.GetPionScore() << ", " << thisPID.GetProtonScore() << std::endl;       
 
-        fMuonScoreVector.push_back(thisPID.GetMuonScore());
-        fPionScoreVector.push_back(thisPID.GetPionScore());
-        fProtonScoreVector.push_back(thisPID.GetProtonScore());
-        fPDGVector.push_back(pdg);
+        if (fWriteTree)
+        {
+            fMuonScoreVector.push_back(thisPID.GetMuonScore());
+            fPionScoreVector.push_back(thisPID.GetPionScore());
+            fProtonScoreVector.push_back(thisPID.GetProtonScore());
+            fPDGVector.push_back(pdg);
+            fCaloPoints.push_back(nCaloPoints);
+        }
     }
-    fPIDTree->Fill();
-
+    if (fWriteTree) fPIDTree->Fill();
 }
 
 } //namespace ctp
