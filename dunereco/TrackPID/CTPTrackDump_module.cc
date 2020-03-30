@@ -59,7 +59,7 @@ public:
 private:
 
   void WriteTextFile(const art::Event &evt,const std::vector<std::vector<float>> &inputs, const std::pair<const simb::MCParticle*,float> &trueParticle,
-                     const unsigned int &trackNumber, const unsigned int &nHits) const;
+                     const unsigned int &trackNumber, const unsigned int &nHits, const CTPResult &thisPID) const;
 
   CTPHelper fConvTrackPID;
   std::string fParticleLabel;
@@ -141,14 +141,21 @@ void CTPTrackDump::analyze(const art::Event &evt)
         const std::pair<const simb::MCParticle*,float> trueParticle = fConvTrackPID.GetTrueParticle(particle,evt);
         const unsigned int nHits = dune_ana::DUNEAnaPFParticleUtils::GetSpacePoints(particle,evt,fParticleLabel).size();
 
-        this->WriteTextFile(evt,netInputs,trueParticle,nTracks,nHits);
+        // DELETE THIS BEFORE COMMITTING!!!
+        CTPResult thisPID = fConvTrackPID.RunConvolutionalTrackPID(particle,evt);
+        thisPID.Print();
+        if(!thisPID.IsValid()) continue;
+
+//        std::cout << "Got valid output from the network, writing output..." << std::endl;
+
+        this->WriteTextFile(evt,netInputs,trueParticle,nTracks,nHits,thisPID);
         ++nTracks;   
     }
 
 }
 
 void CTPTrackDump::WriteTextFile(const art::Event &evt, const std::vector<std::vector<float>> &inputs, const std::pair<const simb::MCParticle*,float> &trueParticle,
-                                 const unsigned int &trackNumber, const unsigned int &nHits) const{
+                                 const unsigned int &trackNumber, const unsigned int &nHits, const CTPResult &thisPID) const{
 
        // Open our output file stream
         std::stringstream filename;
@@ -170,6 +177,9 @@ void CTPTrackDump::WriteTextFile(const art::Event &evt, const std::vector<std::v
         output_file << nHits << "\n";
         output_file << trueParticle.first->P() << "\n";
         output_file << trueParticle.second << "\n";
+        output_file << thisPID.GetMuonScore() << "\n";
+        output_file << thisPID.GetPionScore() << "\n";
+        output_file << thisPID.GetProtonScore() << "\n";
         output_file.close();
 
 }

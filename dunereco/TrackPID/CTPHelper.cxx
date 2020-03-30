@@ -71,7 +71,7 @@ namespace ctp
 
 //    std::cout << "Got result from TF" << std::endl;
     ctp::CTPResult result(convNetOutput.at(0).at(0));
-    std::cout << "Returning CTPResult" << std::endl;
+//    std::cout << "Returning CTPResult" << std::endl;
     return result;
   }
 
@@ -108,7 +108,7 @@ namespace ctp
     this->GetDedxMeanAndSigma(dedxTrunc,dedxMean,dedxSigma);
 
     // If our dedx vector is between fMinTrackPoints and fDedxLength in size then we need to pad it
-    if(dedxVector.size() < fMinTrackPoints){
+    if(dedxVector.size() < fDedxLength){
       this->PadDedxVector(dedxVector,dedxMean,dedxSigma);
     }
     
@@ -175,7 +175,7 @@ namespace ctp
     std::sort(outVecHits.begin(),outVecHits.end(),[](weightedMCPair a, weightedMCPair b){ return a.second > b.second;});
     for(weightedMCPair &p : outVecHits) p.second /= hitTotal;
 
-    std::cout << "Returning truth match..." << std::endl;
+//    std::cout << "Returning truth match..." << std::endl;
     return outVecHits.at(0);
   }
 
@@ -186,9 +186,17 @@ namespace ctp
   void CTPHelper::SmoothDedxVector(std::vector<float> &dedx) const{
 
     // Firstly, get rid of all very high values > fQMax
-    for(float val : dedx){
-      if(val > fQMax) val = fQMax;
-      if(val < 0.) val = 0.;
+    for(float &val : dedx){
+//      std::cout << "Checking de/dx = " << val;
+      if(val > fQMax){
+        std::cout << "CTPHelper: large value " << val << " set to " << fQMax << std::endl; 
+        val = fQMax;
+      }
+      if(val < 1e-3){
+        std::cout << "CTPHelper: small value " << val << " set to 1.0e-3 " << std::endl;
+        val = 1e-3;
+      }
+//      std::cout << " value becomes " << val << std::endl;
     }
 
     // Now try to smooth over jumps
@@ -212,6 +220,7 @@ namespace ctp
     std::normal_distribution<float> gaussDist(mean,sigma);
 
     unsigned int originalSize = dedx.size();
+
     for (unsigned int h = 0; h + originalSize < fDedxLength; ++h)
     {
       // Pick a random Gaussian value but ensure we don't go negative

@@ -40,5 +40,9 @@ namespace ctp
     return (fMuonScore > 0.) && (fPionScore > 0.) && (fProtonScore > 0.);
   }
 
+  void CTPResult::Print() const{
+    std::cout << "==CTPResult: " << fMuonScore << ", " << fPionScore << ", " << fProtonScore << std::endl;
+  }
+
 }
 

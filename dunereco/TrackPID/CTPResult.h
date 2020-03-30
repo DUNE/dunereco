@@ -30,6 +30,8 @@ namespace ctp
     float GetPionScore() const {return fPionScore;};
     float GetProtonScore() const {return fProtonScore;};
 
+    void Print() const;
+
   private:
 
     float fMuonScore;
