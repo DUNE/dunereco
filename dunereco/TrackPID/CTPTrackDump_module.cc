@@ -61,6 +61,7 @@ private:
   void WriteTextFile(const art::Event &evt,const std::vector<std::vector<float>> &inputs, const std::pair<const simb::MCParticle*,float> &trueParticle,
                      const unsigned int &trackNumber, const unsigned int &nHits, const CTPResult &thisPID) const;
 
+  fhicl::ParameterSet fHelperPars;
   CTPHelper fConvTrackPID;
   std::string fParticleLabel;
 };
@@ -98,7 +99,8 @@ namespace ctp
 {
 
 CTPTrackDump::CTPTrackDump(fhicl::ParameterSet const &pset) : art::EDAnalyzer(pset),
-fConvTrackPID(pset.get<fhicl::ParameterSet>("ctpHelper")),
+fHelperPars(pset.get<fhicl::ParameterSet>("ctpHelper")),
+fConvTrackPID(fHelperPars),
 fParticleLabel(pset.get<std::string>("particleLabel"))
 {
 
@@ -133,13 +135,25 @@ void CTPTrackDump::analyze(const art::Event &evt)
     unsigned int nTracks = 0;
     for (const art::Ptr<recob::PFParticle> &particle : particles)
     {
+        // Get the track if this particle is track-like
+        unsigned int nCaloPoints = 0;
+        const std::string trkLabel = fHelperPars.get<std::string>("TrackLabel");
+        if (dune_ana::DUNEAnaPFParticleUtils::IsTrack(particle,evt,fParticleLabel,trkLabel))
+        {
+            const art::Ptr<recob::Track> trk = dune_ana::DUNEAnaPFParticleUtils::GetTrack(particle,evt,fParticleLabel,trkLabel);
+            const std::string caloLabel = fHelperPars.get<std::string>("CalorimetryLabel");
+            const art::Ptr<anab::Calorimetry> calo = dune_ana::DUNEAnaTrackUtils::GetCalorimetry(trk,evt,trkLabel,caloLabel);
+
+            nCaloPoints = calo->dEdx().size();
+        }
+        else continue;
+
         // Returns a dummy value if not a track or not suitable
         std::vector<std::vector<float>> netInputs = fConvTrackPID.GetNetworkInputs(particle,evt);
 
         if(netInputs.empty()) continue;
 
         const std::pair<const simb::MCParticle*,float> trueParticle = fConvTrackPID.GetTrueParticle(particle,evt);
-        const unsigned int nHits = dune_ana::DUNEAnaPFParticleUtils::GetSpacePoints(particle,evt,fParticleLabel).size();
 
         // DELETE THIS BEFORE COMMITTING!!!
         CTPResult thisPID = fConvTrackPID.RunConvolutionalTrackPID(particle,evt);
@@ -148,7 +162,7 @@ void CTPTrackDump::analyze(const art::Event &evt)
 
 //        std::cout << "Got valid output from the network, writing output..." << std::endl;
 
-        this->WriteTextFile(evt,netInputs,trueParticle,nTracks,nHits,thisPID);
+        this->WriteTextFile(evt,netInputs,trueParticle,nTracks,nCaloPoints,thisPID);
         ++nTracks;   
     }
 
