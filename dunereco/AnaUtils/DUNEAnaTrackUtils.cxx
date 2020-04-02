@@ -42,7 +42,17 @@ art::Ptr<recob::PFParticle> DUNEAnaTrackUtils::GetPFParticle(const art::Ptr<reco
 
 art::Ptr<anab::Calorimetry> DUNEAnaTrackUtils::GetCalorimetry(const art::Ptr<recob::Track> &pTrack, const art::Event &evt, const std::string &trackLabel, const std::string &caloLabel)
 {
-    return DUNEAnaTrackUtils::GetAssocProduct<anab::Calorimetry>(pTrack,evt,trackLabel,caloLabel);
+    std::vector<art::Ptr<anab::Calorimetry>> calos = DUNEAnaTrackUtils::GetAssocProductVector<anab::Calorimetry>(pTrack,evt,trackLabel,caloLabel);
+
+    for (const art::Ptr<anab::Calorimetry> &caloObject : calos)
+    {
+        if (caloObject->PlaneID().Plane == geo::kW) return caloObject;
+    }
+    
+    // If we don't have the collection plane then give up
+    mf::LogError("DUNEAna") << "DUNEAnaTrackUtils::GetCalorimetry - no collection view calorimetry found. Returning first alternate view." << std::endl;
+
+    return calos.at(0);
 }
 
 } // namespace dune_ana
