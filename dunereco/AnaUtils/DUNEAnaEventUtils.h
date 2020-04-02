@@ -102,7 +102,7 @@ public:
     * @param evt is the underlying art event
     * @param label is the label for the MC particle producer
     *
-    * @return vector of art::Ptrs to slices
+    * @return vector of art::Ptrs to MC particles
     */
     static std::vector<art::Ptr<simb::MCParticle>> GetMCParticles(const art::Event &evt, const std::string &label);
 
