@@ -117,7 +117,7 @@ namespace ctp
 
     std::vector<float> finalInputVariables;
     // Get the number of child particles
-    unsigned int nTrack, nShower, nGrand;
+    float nTrack, nShower, nGrand;
     this->GetChildParticles(part,evt,nTrack,nShower,nGrand);
     finalInputVariables.push_back(nTrack);
     finalInputVariables.push_back(nShower);
@@ -133,7 +133,7 @@ namespace ctp
   
     netInputs.push_back(finalInputDedx);
     netInputs.push_back(finalInputVariables);
-
+   
     if(fNormalise) this->NormaliseInputs(netInputs);
 
     return netInputs;
@@ -189,11 +189,11 @@ namespace ctp
     for(float &val : dedx){
 //      std::cout << "Checking de/dx = " << val;
       if(val > fQMax){
-        std::cout << "CTPHelper: large value " << val << " set to " << fQMax << std::endl; 
+//        std::cout << "CTPHelper: large value " << val << " set to " << fQMax << std::endl; 
         val = fQMax;
       }
       if(val < 1e-3){
-        std::cout << "CTPHelper: small value " << val << " set to 1.0e-3 " << std::endl;
+//        std::cout << "CTPHelper: small value " << val << " set to 1.0e-3 " << std::endl;
         val = 1e-3;
       }
 //      std::cout << " value becomes " << val << std::endl;
@@ -253,6 +253,8 @@ namespace ctp
       TVector3 thisDir = track->Trajectory().DirectionAtPoint<TVector3>(p);
       TVector3 prevDir = track->Trajectory().DirectionAtPoint<TVector3>(p-1);
       trajAngle.push_back(thisDir.Angle(prevDir));
+
+//      if(p < 11 || p > track->Trajectory().NPoints() - 11) std::cout << "Deflection at point " << p << " = " << trajAngle.at(p-1) << std::endl;
     }
 
     // Average and sigma of the angular deflection between trajectory points (wobble)
@@ -260,24 +262,24 @@ namespace ctp
     float standardDevAngle = 0;
     for(const float &a : trajAngle) averageAngle += a;
     mean = averageAngle / static_cast<float>(trajAngle.size());
-    for(const float &a : trajAngle) standardDevAngle += (mean - a)*(mean - a);
+    for(const float &a : trajAngle) standardDevAngle += (a - mean)*(a - mean);
     sigma = sqrt(standardDevAngle / static_cast<float>(trajAngle.size()));
   }
 
-  void CTPHelper::GetChildParticles(const art::Ptr<recob::PFParticle> part, const art::Event &evt, unsigned int &nTrack, unsigned int &nShower, unsigned int &nGrand) const{
+  void CTPHelper::GetChildParticles(const art::Ptr<recob::PFParticle> part, const art::Event &evt, float &nTrack, float &nShower, float &nGrand) const{
 
-    nTrack = 0;
-    nShower = 0;
-    nGrand = 0;
+    nTrack = 0.;
+    nShower = 0.;
+    nGrand = 0.;
 
     std::vector<art::Ptr<recob::PFParticle>> children = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(part,evt,fParticleLabel);
 
     for(const art::Ptr<recob::PFParticle> child : children){
-      nTrack += dune_ana::DUNEAnaPFParticleUtils::IsTrack(part,evt,fParticleLabel,fTrackLabel);
-      nShower += dune_ana::DUNEAnaPFParticleUtils::IsShower(part,evt,fParticleLabel,fShowerLabel);
+      nTrack += dune_ana::DUNEAnaPFParticleUtils::IsTrack(child,evt,fParticleLabel,fTrackLabel);
+      nShower += dune_ana::DUNEAnaPFParticleUtils::IsShower(child,evt,fParticleLabel,fShowerLabel);
       nGrand += child->NumDaughters();
     }
-
+//    std::cout << "Children = " << children.size() << "( " << nTrack << ", " << nShower << ") and grand children = " << nGrand << std::endl;
   }
 
   void CTPHelper::NormaliseInputs(std::vector<std::vector<float>> &inputs) const{

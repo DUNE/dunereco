@@ -52,7 +52,7 @@ namespace ctp
     void GetDedxMeanAndSigma(const std::vector<float> &dedx, float &mean, float &sigma) const;
     void GetDeflectionMeanAndSigma(const art::Ptr<recob::Track> track, float &mean, float &sigma) const;
 
-    void GetChildParticles(const art::Ptr<recob::PFParticle> part, const art::Event &evt, unsigned int &nTrack, unsigned int &nShower, unsigned int &nGrand) const;
+    void GetChildParticles(const art::Ptr<recob::PFParticle> part, const art::Event &evt, float &nTrack, float &nShower, float &nGrand) const;
 
     void NormaliseInputs(std::vector<std::vector<float>> &netInputs) const;
 
