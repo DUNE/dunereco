@@ -311,7 +311,7 @@ namespace ctp
 
     // The angle mean
     val = inputs.at(1).at(5);
-    if(val > 0.05) val = 0.5;
+    if(val > 0.05) val = 0.05;
     inputs.at(1).at(5) = (val / 0.025) - 1.0;
 
     // The angle sigma
