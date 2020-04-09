@@ -36,8 +36,8 @@ namespace ctp
 
   // Constructor
   CTPHelper::CTPHelper(const fhicl::ParameterSet& pset){
-    fNetDir  = cet::getenv(pset.get<std::string>("NetworkPath"));
-    fNetName = fNetDir + "/" + pset.get<std::string>("NetworkName");
+    fNetDir  = pset.get<std::string>("NetworkPath");
+    fNetName = pset.get<std::string>("NetworkName");
     fParticleLabel = pset.get<std::string>("ParticleLabel");
     fTrackLabel = pset.get<std::string>("TrackLabel");
     fShowerLabel = pset.get<std::string>("ShowerLabel");
@@ -64,8 +64,9 @@ namespace ctp
     finalInputs.push_back(twoVecs);
 
 //    std::cout << "We have sensible inputs... building TF object" << std::endl;
-    // Load the network and run it    
-    std::unique_ptr<tf::CTPGraph> convNet = tf::CTPGraph::create(fNetName.c_str(),std::vector<std::string>(),2,1);
+    // Load the network and run it
+    const std::string fullPath = cet::getenv(fNetDir) + "/" + fNetName;
+    std::unique_ptr<tf::CTPGraph> convNet = tf::CTPGraph::create(fullPath.c_str(),std::vector<std::string>(),2,1);
 //    std::cout << "Calling TF interface" << std::endl;
     std::vector< std::vector< std::vector<float> > > convNetOutput = convNet->run(finalInputs);
 
