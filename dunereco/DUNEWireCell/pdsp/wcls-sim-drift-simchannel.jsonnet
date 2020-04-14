@@ -12,7 +12,20 @@ local wc = import 'wirecell.jsonnet';
 
 local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
-local params = import 'pgrapher/experiment/pdsp/simparams.jsonnet';
+local base = import 'pgrapher/experiment/pdsp/simparams.jsonnet';
+local params = base {
+  lar: super.lar {
+    // Longitudinal diffusion constant
+    DL: std.extVar('DL') * wc.cm2 / wc.s,
+    // Transverse diffusion constant
+    DT: std.extVar('DT') * wc.cm2 / wc.s,
+    // Electron lifetime
+    lifetime: std.extVar('lifetime') * wc.ms,
+    // Electron drift speed, assumes a certain applied E-field
+    drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
+  },
+};
+
 
 local tools = tools_maker(params);
 

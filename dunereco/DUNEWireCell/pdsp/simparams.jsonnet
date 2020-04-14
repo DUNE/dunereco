@@ -4,16 +4,16 @@ local base = import 'pgrapher/experiment/pdsp/params.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
 base {
-  lar: super.lar {
-      // Longitudinal diffusion constant
-      DL : 4.0 * wc.cm2/wc.s,
-      // Transverse diffusion constant
-      DT : 8.8 * wc.cm2/wc.s,
-      // Electron lifetime
-      lifetime : 35*wc.ms,
-      // Electron drift speed, assumes a certain applied E-field
-      drift_speed : 1.565*wc.mm/wc.us,
-  },
+  // lar: super.lar {
+  //     // Longitudinal diffusion constant
+  //     DL : 4.0 * wc.cm2/wc.s,
+  //     // Transverse diffusion constant
+  //     DT : 8.8 * wc.cm2/wc.s,
+  //     // Electron lifetime
+  //     lifetime : 35*wc.ms,
+  //     // Electron drift speed, assumes a certain applied E-field
+  //     drift_speed : 1.565*wc.mm/wc.us,
+  // },
 
   // redefine the detector volumes with the cryostat side included
   det : {
