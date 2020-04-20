@@ -194,7 +194,7 @@ namespace ctp
         val = fQMax;
       }
       if(val < 1e-3){
-//        std::cout << "CTPHelper: small value " << val << " set to 1.0e-3 " << std::endl;
+        std::cout << "CTPHelper: small value " << val << " set to 1.0e-3 " << std::endl;
         val = 1e-3;
       }
 //      std::cout << " value becomes " << val << std::endl;
@@ -202,16 +202,20 @@ namespace ctp
 
     // Now try to smooth over jumps
     unsigned int nQ = dedx.size();
-    // First and last points are special cases
-    if((dedx[0] - dedx[1]) > fQJump) dedx[0] = dedx[1] + (dedx[1] - dedx[2]);
-    if((dedx[nQ-1] - dedx[nQ-2]) > fQJump) dedx[nQ-1] = dedx[nQ-2] + (dedx[nQ-2] - dedx[nQ-3]);
     // Now do the rest of the points
     for(unsigned int q = 1; q < nQ - 1; ++q){
       if((dedx[q] - dedx[q-1]) > fQJump)
       {
+//        std::cout << "Updating dedx point " << q << " from " << dedx[q] << " to " << 0.5 * (dedx[q-1]+dedx[q+1]) << std::endl;
         dedx[q] = 0.5 * (dedx[q-1]+dedx[q+1]);
       }
     }
+    // First and last points are special cases
+//    std::cout << "Initial first and last points: " << dedx[0] << ", " << dedx[nQ-1] << std::endl;
+//    if((dedx[0] - dedx[1]) > fQJump) dedx[0] = dedx[1] + (dedx[1] - dedx[2]);
+//    if((dedx[nQ-1] - dedx[nQ-2]) > fQJump) dedx[nQ-1] = dedx[nQ-2] + (dedx[nQ-2] - dedx[nQ-3]);
+//    std::cout << "Final first and last points: " << dedx[0] << ", " << dedx[nQ-1] << std::endl;
+//    std::cout << "Using... " << dedx[1] << ", " << dedx[nQ-3] << ", " << dedx[nQ-2] << std::endl;
 
   }
 
@@ -287,6 +291,11 @@ namespace ctp
 
     // Firstly, we need to normalise the dE/dx values
     for(float &dedx : inputs.at(0)){
+      // Protect against negative values
+      if(dedx < 1.e-3){
+//        std::cout << "Very low dedx value = " << dedx << std::endl;
+        dedx = 1.e-3;
+      }
       float newVal = std::log(2*dedx) + 1;
       if(newVal > 5.) newVal = 5.;
       dedx = (newVal / 2.5) - 1;
@@ -307,8 +316,8 @@ namespace ctp
     
     // The charge sigma
     val = inputs.at(1).at(4);
-    if(val > 2) val = 2.;
-    inputs.at(1).at(4) = val - 1; 
+    if(val > 3) val = 3.;
+    inputs.at(1).at(4) = (val/1.5) - 1; 
 
     // The angle mean
     val = inputs.at(1).at(5);
