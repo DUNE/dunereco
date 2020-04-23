@@ -50,7 +50,7 @@
 #include "lardataobj/RecoBase/Wire.h"
 
 
-#include "dunetpc/dune/SNSlicer/SNSlice.h"
+#include "dune/SNSlicer/SNSlice.h"
 
 namespace
 {

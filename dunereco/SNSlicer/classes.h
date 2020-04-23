@@ -1,4 +1,4 @@
-#include "dunetpc/dune/SNSlicer/SNSlice.h"
+#include "dune/SNSlicer/SNSlice.h"
 
 #include "canvas/Persistency/Common/Wrapper.h"
 
