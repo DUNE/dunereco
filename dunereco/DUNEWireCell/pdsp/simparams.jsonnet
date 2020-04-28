@@ -32,11 +32,14 @@ base {
       // to help with defining these parameters.
 
       // from DocDB 203 and assuming wires are symmetric across x=0
+      // however, DocDB 203 is obsolete, use most recent value from LArSoft
+      // Also see: lar -c dump_protodunesp_geometry.fcl
 
       // between center lines
       // local apa_cpa = 3.637*wc.m, // DocDB 203
       local apa_cpa = 3.63075*wc.m, // LArSoft
-      local cpa_thick = 50.8*wc.mm,
+      // local cpa_thick = 50.8*wc.mm, // DocDB 203
+      local cpa_thick = 3.175*wc.mm, // 1/8", from Bo Yu (BNL) and confirmed with LArSoft
       local apa_w2w = 85.725*wc.mm, // DocDB 203 calls "W" as "X"
       local plane_gap = 4.76*wc.mm,
       local apa_g2g = 114.3*wc.mm, // note that grid plane must have
