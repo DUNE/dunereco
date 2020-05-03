@@ -5,6 +5,7 @@ local wc = import "wirecell.jsonnet";
 local base = import "pgrapher/common/params.jsonnet";
 
 base {
+    // This section will be overwritten in simparams.jsonnet
     det : {
 
         // define the 6 APAs.  This must use the coordinate system
