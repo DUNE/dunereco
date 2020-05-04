@@ -1,3 +1,5 @@
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
+
 if( DEFINED ENV{TENSORFLOW_DIR} )
   add_subdirectory(tf)
 endif ()

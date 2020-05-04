@@ -18,7 +18,6 @@
 #include "dune/AnaUtils/DUNEAnaShowerUtils.h"
 
 #include "dune/TrackPID/CTPHelper.h"
-#include "dune/TrackPID/CTPResult.h"
 
 #include "larsim/MCCheater/BackTrackerService.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"

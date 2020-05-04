@@ -10,7 +10,7 @@ standard_convTrackPID:
   #==================
   ctpHelper: @local::standard_ctphelper
   particleLabel: "pandora"
-  writeTree: true
+  writeTree: false
 }
 
 END_PROLOG

@@ -6,7 +6,7 @@
  */
 
 #include "art/Framework/Core/ModuleMacros.h"
-#include "art/Framework/Core/EDAnalyzer.h"
+#include "art/Framework/Core/EDProducer.h"
 
 #include "TTree.h"
 #include "TVector3.h"
@@ -36,7 +36,7 @@ namespace ctp
 /**
  *  @brief  CTPEvaluator class
  */
-class CTPEvaluator : public art::EDAnalyzer
+class CTPEvaluator : public art::EDProducer
 {
 public:
     /**
@@ -53,7 +53,7 @@ public:
 
      void beginJob();
      void endJob();
-     void analyze(const art::Event &evt);
+     void produce(art::Event &evt);
 
 private:
 
@@ -96,6 +96,8 @@ DEFINE_ART_MODULE(CTPEvaluator)
 #include "lardataobj/AnalysisBase/T0.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 
+#include "lardata/Utilities/AssociationUtil.h"
+
 #include "TRandom3.h"
 
 #include <iostream>
@@ -104,12 +106,14 @@ DEFINE_ART_MODULE(CTPEvaluator)
 namespace ctp
 {
 
-CTPEvaluator::CTPEvaluator(fhicl::ParameterSet const &pset) : art::EDAnalyzer(pset),
+CTPEvaluator::CTPEvaluator(fhicl::ParameterSet const &pset) : art::EDProducer(pset),
 fHelperPars(pset.get<fhicl::ParameterSet>("ctpHelper")),
 fConvTrackPID(fHelperPars),
 fParticleLabel(pset.get<std::string>("particleLabel")),
 fWriteTree(pset.get<bool>("writeTree"))
 {
+    produces<std::vector<ctp::CTPResult>>();
+    produces<art::Assns<recob::Track,ctp::CTPResult>>();
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -142,8 +146,12 @@ void CTPEvaluator::endJob()
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-void CTPEvaluator::analyze(const art::Event &evt)
+void CTPEvaluator::produce(art::Event &evt)
 {
+    // Define containers for the things we're going to produce
+    std::unique_ptr< std::vector<ctp::CTPResult> > resultCol(new std::vector<ctp::CTPResult>);
+    std::unique_ptr< art::Assns<recob::Track,ctp::CTPResult> > trackResultAssn(new art::Assns<recob::Track,ctp::CTPResult>);
+
     if (fWriteTree)
     {
         fMuonScoreVector.clear();
@@ -156,8 +164,13 @@ void CTPEvaluator::analyze(const art::Event &evt)
     // Get all of the PFParticles
     const std::vector<art::Ptr<recob::PFParticle>> particles = dune_ana::DUNEAnaEventUtils::GetPFParticles(evt,fParticleLabel);
 
+    // Get the tracks too
+    const std::vector<art::Ptr<recob::Track>> tracks = dune_ana::DUNEAnaEventUtils::GetTracks(evt,"pandoraTrack");
+
     for (const art::Ptr<recob::PFParticle> &particle : particles)
     {
+        int thisTrackID = -999;
+      
         // Get the track if this particle is track-like
         unsigned int nCaloPoints = 0;
         const std::string trkLabel = fHelperPars.get<std::string>("TrackLabel");
@@ -167,20 +180,31 @@ void CTPEvaluator::analyze(const art::Event &evt)
             const std::string caloLabel = fHelperPars.get<std::string>("CalorimetryLabel");
             const art::Ptr<anab::Calorimetry> calo = dune_ana::DUNEAnaTrackUtils::GetCalorimetry(trk,evt,trkLabel,caloLabel);
 
+            thisTrackID = trk.key();
             nCaloPoints = calo->dEdx().size();
         }
         else continue;
 
         // Returns a dummy value if not a track or not suitable
         CTPResult thisPID = fConvTrackPID.RunConvolutionalTrackPID(particle,evt);
-        if (!thisPID.IsValid()) continue;
+        resultCol->push_back(thisPID);
+        auto const ptrMaker = art::PtrMaker<ctp::CTPResult>(evt);
+        art::Ptr<ctp::CTPResult> ptrResult = ptrMaker(resultCol->size()-1);
+        art::Ptr<recob::Track> thisTrack = tracks.at(thisTrackID);
 
-        const int pdg = fConvTrackPID.GetTruePDGCode(particle,evt);
+//        std::cout << "Making association between track " << thisTrack.key() << " and PID result " << ptrResult.key() << std::endl;
 
-        std::cout << "Got a track PID for particle of type " << pdg << ": " << thisPID.GetMuonScore() << ", " << thisPID.GetPionScore() << ", " << thisPID.GetProtonScore() << std::endl;       
+        // Now to make the association
+        util::CreateAssn(evt,ptrResult,thisTrack,*trackResultAssn);
 
         if (fWriteTree)
         {
+            if (!thisPID.IsValid()) continue;
+            int pdg = 0;
+            if(!evt.isRealData()){
+                pdg = fConvTrackPID.GetTruePDGCode(particle,evt);
+            }
+            std::cout << "Got a track PID for particle of type " << pdg << ": " << thisPID.GetMuonScore() << ", " << thisPID.GetPionScore() << ", " << thisPID.GetProtonScore() << std::endl;       
             fMuonScoreVector.push_back(thisPID.GetMuonScore());
             fPionScoreVector.push_back(thisPID.GetPionScore());
             fProtonScoreVector.push_back(thisPID.GetProtonScore());
@@ -189,6 +213,9 @@ void CTPEvaluator::analyze(const art::Event &evt)
         }
     }
     if (fWriteTree) fPIDTree->Fill();
+
+    evt.put(std::move(resultCol));
+    evt.put(std::move(trackResultAssn));
 }
 
 } //namespace ctp
