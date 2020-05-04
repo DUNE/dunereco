@@ -16,7 +16,7 @@
 #ifndef EVENTIMAGEDATA_HH
 #define EVENTIMAGEDATA_HH
 
-#include "larreco/RecoAlg/ImagePatternAlgs/Tensorflow/PointIdAlg/PointIdAlg.h"
+#include "larrecodnn/ImagePatternAlgs/Tensorflow/PointIdAlg/PointIdAlg.h"
 #include "larreco/RecoAlg/PMAlg/Utilities.h"
 
 // C++ Includes

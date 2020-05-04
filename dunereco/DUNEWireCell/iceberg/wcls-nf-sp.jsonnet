@@ -42,10 +42,7 @@ local tools = tools_maker(params);
 local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 
-//local nf_maker = import "pgrapher/experiment/pdsp/nf.jsonnet";
-//local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
-
-local sp_maker = import 'pgrapher/experiment/pdsp/sp.jsonnet';
+local sp_maker = import 'pgrapher/experiment/iceberg/sp.jsonnet';
 
 //local chndbm = chndb_maker(params, tools);
 //local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
@@ -127,7 +124,7 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field],  // pnode extension
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local nf_maker = import 'pgrapher/experiment/pdsp/nf.jsonnet';
+local nf_maker = import 'pgrapher/experiment/iceberg/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
@@ -138,7 +135,7 @@ local chsel_pipes = [
     type: 'ChannelSelector',
     name: 'chsel%d' % n,
     data: {
-      channels: std.range(2560 * n, 2560 * (n + 1) - 1),
+      channels: std.range(0,1279), // std.range(2560 * n, 2560 * (n + 1) - 1),
       //channels: if n==0 then std.range(2560*n,2560*(n+1)-1) else [],
       //tags: ['orig%d' % n], // traces tag
     },
@@ -146,8 +143,8 @@ local chsel_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-local magoutput = 'protodune-data-check.root';
-local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
+local magoutput = 'iceberg-data-check.root';
+local magnify = import 'pgrapher/experiment/iceberg/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
 local nfsp_pipes = [
@@ -168,7 +165,7 @@ local nfsp_pipes = [
 ];
 
 //local f = import 'pgrapher/common/funcs.jsonnet';
-local f = import 'pgrapher/experiment/pdsp/funcs.jsonnet';
+local f = import 'pgrapher/experiment/iceberg/funcs.jsonnet';
 //local outtags = ['gauss%d' % n for n in std.range(0, std.length(tools.anodes) - 1)];
 //local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf', outtags);
 local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf');
