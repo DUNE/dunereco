@@ -12,6 +12,10 @@ function(params, tools, override = {}) {
 
   local pc = tools.perchanresp_nameuses,
 
+  local resolution = params.adc.resolution,
+  local fullscale = params.adc.fullscale[1] - params.adc.fullscale[0],
+  local ADC_mV_ratio = ((1 << resolution) - 1 ) / fullscale,
+
   // pDSP needs a per-anode sigproc
   make_sigproc(anode, name=null):: g.pnode({
     type: 'OmnibusSigProc',
@@ -48,8 +52,8 @@ function(params, tools, override = {}) {
       ctoffset: 1.0*wc.microsecond, // default -8.0
       per_chan_resp: pc.name,
       fft_flag: 0,  // 1 is faster but higher memory, 0 is slightly slower but lower memory
-      postgain: 1,  // default 1.2
-      ADC_mV: 4096 / (1400.0 * wc.mV),  // default 4096/2000
+      postgain: params.elec.postgain,  // default 1.2
+      ADC_mV: ADC_mV_ratio, // 4096 / (1400.0 * wc.mV), 
       troi_col_th_factor: 5.0,  // default 5
       troi_ind_th_factor: 3.0,  // default 3
       lroi_rebin: 6, // default 6

@@ -111,19 +111,26 @@ base {
 
     adc: super.adc {
         // per tdr, chapter 2
-        baselines: [1003*wc.millivolt,1003*wc.millivolt,508*wc.millivolt],
+        baselines: [1000*wc.millivolt,1000*wc.millivolt,500*wc.millivolt],
 
         // check this.  The tdr says, "The ADC ASIC has an input
         // buffer with offset compensation to match the output of the
         // FE ASIC.  The input buffer first samples the input signal
         // (with a range of 0.2 V to 1.6 V)..."
         fullscale: [0.2*wc.volt, 1.6*wc.volt],
+
     },
 
+    // This sets a relative gain at the input to the ADC.  Note, if
+    // you are looking to fix SimDepoSource, you are in the wrong
+    // place.  See the "scale" parameter of wcls.input.depos() defined
+    // in pgrapher/common/ui/wcls/nodes.jsonnet.
+    // also, see later overwriting in simparams.jsonnet
     elec: super.elec {
-
+      postgain: 1.166, // pulser calibration: 42.735 ADC*tick/1ke
+                       // theoretical elec resp (14mV/fC): 36.6475 ADC*tick/1ke
+      shaping: 2.2 * wc.us,
     },
-
 
     sim: super.sim {
 
