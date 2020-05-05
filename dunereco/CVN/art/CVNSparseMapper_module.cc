@@ -93,7 +93,9 @@ namespace cvn {
       pmCol(new std::vector<cvn::SparsePixelMap>);
 
     if (nhits > fMinClusterHits) {
-      SparsePixelMap map = fProducer.CreateSparseMap2D(hitlist, fIncludePixelTruth);
+      auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
+      auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
+      SparsePixelMap map = fProducer.CreateSparseMap2D(clockData, detProp, hitlist, fIncludePixelTruth);
       mf::LogInfo("CVNSparseMapper") << "Created sparse pixel map with "
         << map.GetNPixels(0) << ", " << map.GetNPixels(1) << ", "
         << map.GetNPixels(2) << " pixels.";
@@ -108,10 +110,3 @@ namespace cvn {
 DEFINE_ART_MODULE(cvn::CVNSparseMapper)
 } // end namespace cvn
 ////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-

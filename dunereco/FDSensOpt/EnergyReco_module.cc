@@ -288,7 +288,6 @@ namespace dune {
   //------------------------------------------------------------------------------
   void EnergyReco::PrepareEvent(const art::Event& evt){
 
-    auto const *detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
     run = evt.run();
     subrun = evt.subRun();
@@ -296,10 +295,12 @@ namespace dune {
     art::Timestamp ts = evt.time();
     TTimeStamp tts(ts.timeHigh(), ts.timeLow());
     evttime = tts.AsDouble();
-    taulife = detprop->ElectronLifetime();
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
+    taulife = detProp.ElectronLifetime();
     isdata = evt.isRealData();
 
-    double t0 = detprop->TriggerOffset();
+    double t0 = trigger_offset(clockData);
 
     // Wires
     art::Handle< std::vector<recob::Wire>> wireListHandle;
@@ -351,7 +352,7 @@ namespace dune {
 
     for (recob::Hit const& hit: hitlist) {
       if (hit.WireID().Plane == 2){
-        fTotalEventCharge += hit.Integral() * fCaloAlg.LifetimeCorrection(hit.PeakTime(), t0);
+        fTotalEventCharge += hit.Integral() * fCaloAlg.LifetimeCorrection(clockData, detProp, hit.PeakTime(), t0);
       }
     }
 
@@ -377,7 +378,7 @@ namespace dune {
 	std::vector< art::Ptr<recob::Hit> > vhit = fmth.at(iLongestTrack);
 	for (size_t h = 0; h < vhit.size(); ++h){
           if (vhit[h]->WireID().Plane == 2){
-            fLongestTrackCharge += vhit[h]->Integral() * fCaloAlg.LifetimeCorrection(vhit[h]->PeakTime(), t0);
+            fLongestTrackCharge += vhit[h]->Integral() * fCaloAlg.LifetimeCorrection(clockData, detProp, vhit[h]->PeakTime(), t0);
             std::vector<art::Ptr<recob::SpacePoint> > spts = fmhs.at(vhit[h].key());
             if (spts.size()){
               if (!insideContVol(spts[0]->XYZ()[0], spts[0]->XYZ()[1], spts[0]->XYZ()[2]))
@@ -400,7 +401,7 @@ namespace dune {
 	  std::vector< art::Ptr<recob::Hit> > vhit = fmsh.at(i);
 	  for (size_t h = 0; h < vhit.size(); ++h){
             if (vhit[h]->WireID().Plane == 2)
-              showerCharge += vhit[h]->Integral() * fCaloAlg.LifetimeCorrection(vhit[h]->PeakTime(), t0);
+              showerCharge += vhit[h]->Integral() * fCaloAlg.LifetimeCorrection(clockData, detProp, vhit[h]->PeakTime(), t0);
           }
 	}
 	if(showerCharge > fMaxShowerCharge){

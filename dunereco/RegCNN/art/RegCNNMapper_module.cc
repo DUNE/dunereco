@@ -148,11 +148,13 @@ namespace cnn {
     std::unique_ptr< std::vector<cnn::RegPixelMap> >
       pmCol(new std::vector<cnn::RegPixelMap>);
 
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
     if(nhits>fMinClusterHits){
       RegPixelMap pm;
       if (fUseRecoVertex==0){
           // create pixel map based on mean of wire and ticks
-          pm = fProducer.CreateMap(hitlist, fmwire);
+          pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire);
       } else if (fUseRecoVertex==1) {
         // create pixel map based on the reconstructed vertex
         // Get RegCNN Results
@@ -169,7 +171,7 @@ namespace cnn {
                 }
             }
         }
-        pm = fProducer.CreateMap(hitlist, fmwire, vtx);
+        pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, vtx);
       } else {
         // create pixel map based on the reconstructed vertex on wire and tick coordinate
         // Get RegCNN Results
@@ -186,7 +188,7 @@ namespace cnn {
                 }
             }
         }
-        pm = fProducer.CreateMap(hitlist, fmwire, vtx);
+        pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, vtx);
       }
       // skip if PixelMap is empty
       if (pm.fInPM) pmCol->push_back(pm);
@@ -205,10 +207,3 @@ namespace cnn {
 DEFINE_ART_MODULE(cnn::RegCNNMapper)
 } // end namespace cnn
 ////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-

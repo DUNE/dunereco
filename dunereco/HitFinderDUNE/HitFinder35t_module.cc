@@ -30,6 +30,7 @@
 #include "lardataobj/RawData/RawDigit.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardata/ArtDataHelper/HitCreator.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "DisambigAlg35t.h"
 #include "TimeBasedDisambig.h"
@@ -150,10 +151,11 @@ namespace dune{
     } // for
     
     // Run alg on all APAs
-
     if (fAlg == "TripletMatch")
       {
-        fDisambigAlg.RunDisambig(ChHits);
+        auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
+        auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
+        fDisambigAlg.RunDisambig(clockData, detProp, ChHits);
 
 	for( size_t t=0; t < fDisambigAlg.fDisambigHits.size(); t++ ){
 	  art::Ptr<recob::Hit>  hit = fDisambigAlg.fDisambigHits[t].first;

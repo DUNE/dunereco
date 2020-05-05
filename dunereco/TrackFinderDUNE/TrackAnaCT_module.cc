@@ -127,14 +127,14 @@ namespace {
 
   // Length of MC particle.
   //----------------------------------------------------------------------------
-  double length(const simb::MCParticle& part, double dx,
+  double length(detinfo::DetectorPropertiesData const& detProp,
+                const simb::MCParticle& part, double dx,
 		TVector3& start, TVector3& end, TVector3& startmom, TVector3& endmom,
 		unsigned int /*tpc*/ = 0, unsigned int /*cstat*/ = 0)
   {
     // Get services.
 
     art::ServiceHandle<geo::Geometry> geom;
-    auto const *detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();;
 
     double result = 0.;
     TVector3 disp;
@@ -156,8 +156,8 @@ namespace {
       pos[0] += dx;
       
       double ticks=0;
-      ticks = detprop->ConvertXToTicks(pos[0], 0, tpcid.TPC, tpcid.Cryostat);
-      if(ticks >= 0. && ticks < detprop->ReadOutWindowSize()) {
+      ticks = detProp.ConvertXToTicks(pos[0], 0, tpcid.TPC, tpcid.Cryostat);
+      if(ticks >= 0. && ticks < detProp.ReadOutWindowSize()) {
 	if(first) {
 	  start = pos;
 	  startmom = part.Momentum(i).Vect();
@@ -384,7 +384,9 @@ namespace trkf {
     // Overrides.
 
     void analyze(const art::Event& evt);
-    void anaStitch(const art::Event& evt);
+    void anaStitch(detinfo::DetectorClocksData const& clockData,
+                   detinfo::DetectorPropertiesData const& detProp,
+                   const art::Event& evt);
     void endJob();
 
   private:
@@ -744,7 +746,6 @@ namespace trkf {
   // Arguments: event - Art event.
   //
   {
-    auto const *detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
     art::ServiceHandle<geo::Geometry> geom;
 
 
@@ -763,6 +764,9 @@ namespace trkf {
     bool mc = !evt.isRealData();
 
     // Get mc particles.
+
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
 
     std::vector<const simb::MCParticle*> plist2;
     if(mc) {
@@ -807,7 +811,7 @@ namespace trkf {
 	    // Calculate the x offset due to nonzero mc particle time.
 
 	    double mctime = part->T();                                // nsec
-	    double mcdx = mctime * 1.e-3 * detprop->DriftVelocity();  // cm
+	    double mcdx = mctime * 1.e-3 * detProp.DriftVelocity();  // cm
 
 	    // Calculate the length of this mc particle inside the fiducial volume.
 
@@ -815,7 +819,7 @@ namespace trkf {
 	    TVector3 mcend;
 	    TVector3 mcstartmom;
 	    TVector3 mcendmom;
-	    double plen = length(*part, mcdx, mcstart, mcend, mcstartmom, mcendmom);
+            double plen = length(detProp, *part, mcdx, mcstart, mcend, mcstartmom, mcendmom);
 
 	    // Apply minimum fiducial length cut.  Always reject particles that have
 	    // zero length in the tpc regardless of the configured cut.
@@ -923,7 +927,7 @@ namespace trkf {
 	mf::LogDebug("TrackAnaCT") 
 	  << "TrackAnaCT read "  << trackvh->size()
 	  << "  vectors of Stitched PtrVectorsof tracks.";
-	anaStitch(evt);
+        anaStitch(clockData, detProp, evt);
       }
 
     if(trackh.isValid()) {
@@ -974,9 +978,9 @@ namespace trkf {
 
 	// Calculate the x offset due to nonzero reconstructed time.
 
-	//double recotime = track.Time() * detprop->SamplingRate();       // nsec
+	//double recotime = track.Time() * sampling_rate(clockData);       // nsec
 	double recotime = 0.;
-	double trackdx = recotime * 1.e-3 * detprop->DriftVelocity();  // cm
+	double trackdx = recotime * 1.e-3 * detProp.DriftVelocity();  // cm
 
 	// Fill histograms involving reco tracks only.
 	
@@ -1081,7 +1085,7 @@ namespace trkf {
 	      // Calculate the x offset due to nonzero mc particle time.
 
 	      double mctime = part->T();                                 // nsec
-	      double mcdx = mctime * 1.e-3 * detprop->DriftVelocity();   // cm
+	      double mcdx = mctime * 1.e-3 * detProp.DriftVelocity();   // cm
 
 	      // Calculate the points where this mc particle enters and leaves the
 	      // fiducial volume, and the length in the fiducial volume.
@@ -1090,7 +1094,7 @@ namespace trkf {
 	      TVector3 mcend;
 	      TVector3 mcstartmom;
 	      TVector3 mcendmom;
-	      double plen = length(*part, mcdx, mcstart, mcend, mcstartmom, mcendmom);
+              double plen = length(detProp, *part, mcdx, mcstart, mcend, mcstartmom, mcendmom);
 
 	      // Get the displacement of this mc particle in the global coordinate system.
 
@@ -1252,13 +1256,14 @@ namespace trkf {
 
   }
 
-  void TrackAnaCT::anaStitch(const art::Event& evt)
+  void TrackAnaCT::anaStitch(detinfo::DetectorClocksData const& clockData,
+                             detinfo::DetectorPropertiesData const& detProp,
+                             const art::Event& evt)
   {
 
     art::ServiceHandle<cheat::BackTrackerService> bt_serv;
     art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
     art::ServiceHandle<geo::Geometry> geom;
-    auto const *detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
     std::map<int, std::map<int, art::PtrVector<recob::Hit>> > hitmap; // trkID, otrk, hitvec
     std::map<int, int > KEmap; // length traveled in det [cm]?, trkID want to sort by KE
@@ -1337,7 +1342,7 @@ namespace trkf {
 		rhistsStitched.fHHitWidth->Fill(hit->RMS() * 2.);
 		if (mc)
 		  {
-		    std::vector<sim::TrackIDE> tids = bt_serv->HitToTrackIDEs(hit);
+		    std::vector<sim::TrackIDE> tids = bt_serv->HitToTrackIDEs(clockData, hit);
 		    // more here.
 		    // Loop over track ids.
 		    bool justOne(true); // Only take first trk that contributed to this hit
@@ -1358,9 +1363,9 @@ namespace trkf {
 		      TVector3 mcstartmom;
 		      TVector3 mcendmom;
 		      double mctime = part->T();                                 // nsec
-		      double mcdx = mctime * 1.e-3 * detprop->DriftVelocity();   // cm
+		      double mcdx = mctime * 1.e-3 * detProp.DriftVelocity();   // cm
 
-		      double plen = length(*part, mcdx, mcstart, mcend, mcstartmom, mcendmom);
+                      double plen = length(detProp, *part, mcdx, mcstart, mcend, mcstartmom, mcendmom);
 
 		      KEmap[(int)(1e6*plen)] = trackID; // multiple assignment but always the same, so fine.
 		      //		      std::cout  << "\t\t  TrkAna: TrkId  trackID, KE [MeV] ******* " << trackID << ", " << (int)(1e3*(part->E()-part->Mass()))  <<std::endl;

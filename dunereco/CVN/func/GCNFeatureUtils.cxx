@@ -24,12 +24,13 @@ namespace cvn
 
   GCNFeatureUtils::~GCNFeatureUtils() {}
 
-  int GCNFeatureUtils::GetTrackIDFromHit(const recob::Hit hit) const {
+  int GCNFeatureUtils::GetTrackIDFromHit(detinfo::DetectorClocksData const& clockData,
+                                         const recob::Hit& hit) const {
 
     // Get the backtracker, then find the TrackIDE with the largest energy
     // deposit and return it
     art::ServiceHandle<cheat::BackTrackerService> bt;
-    auto ides = bt->HitToTrackIDEs(hit);
+    auto ides = bt->HitToTrackIDEs(clockData, hit);
     if (ides.empty()) return std::numeric_limits<int>::max(); // Return invalid number if no true tracks
     int id = 0;
     float energy = -1;
@@ -68,7 +69,7 @@ namespace cvn
   } // function GCNFeatureUtils::GetClosestApproach
 
   // Get the number of neighbours within rangeCut cm of this space point
-  const unsigned int GCNFeatureUtils::GetSpacePointNeighbours(const recob::SpacePoint &sp, art::Event const &evt, 
+  unsigned int GCNFeatureUtils::GetSpacePointNeighbours(const recob::SpacePoint &sp, art::Event const &evt,
                                                                    const float rangeCut, const std::string &spLabel) const{
 
     return GetAllNeighbours(evt,rangeCut,spLabel).at(sp.ID());
@@ -76,7 +77,7 @@ namespace cvn
   }
 
   // Get the number of neighbours within rangeCut cm of this space point
-  const unsigned int GCNFeatureUtils::GetSpacePointNeighbours(const recob::SpacePoint &sp, art::Event const &evt, 
+  unsigned int GCNFeatureUtils::GetSpacePointNeighbours(const recob::SpacePoint &sp, art::Event const &evt,
                                                                    const float rangeCut, const std::vector<art::Ptr<recob::SpacePoint>> &sps) const{
 
     return GetAllNeighbours(evt,rangeCut,sps).at(sp.ID());
@@ -85,7 +86,7 @@ namespace cvn
 
   // Get a map of the number of neighbours for each space point ID. Using this function is much less wasteful
   // than repeated calls to the above function
-  const std::map<int,unsigned int> GCNFeatureUtils::GetAllNeighbours(art::Event const &evt, const float rangeCut, const std::string &spLabel) const{
+  std::map<int,unsigned int> GCNFeatureUtils::GetAllNeighbours(art::Event const &evt, const float rangeCut, const std::string &spLabel) const{
 
     // Get the space points from the event and make the map
     art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
@@ -96,7 +97,7 @@ namespace cvn
     return GetAllNeighbours(evt, rangeCut, spacePoints);
   }
 
-  const std::map<int,unsigned int> GCNFeatureUtils::GetAllNeighbours(art::Event const &evt, const float rangeCut, const std::vector<art::Ptr<recob::SpacePoint>> &sps) const{
+  std::map<int,unsigned int> GCNFeatureUtils::GetAllNeighbours(art::Event const &evt, const float rangeCut, const std::vector<art::Ptr<recob::SpacePoint>> &sps) const{
 
     std::map<int,unsigned int> neighbourMap;
 
@@ -127,7 +128,7 @@ namespace cvn
   } // function GetAllNeighbours
 
   // Sometimes we might want to know the number of neighbours within various radii
-  const std::vector<std::map<int,unsigned int>> GCNFeatureUtils::GetNeighboursForRadii(art::Event const &evt, const std::vector<float> rangeCuts, const std::string &spLabel) const{
+  std::vector<std::map<int,unsigned int>> GCNFeatureUtils::GetNeighboursForRadii(art::Event const &evt, const std::vector<float>& rangeCuts, const std::string &spLabel) const{
     // Get the space points from the event and make the map
     art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
     std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
@@ -137,8 +138,8 @@ namespace cvn
     return GetNeighboursForRadii(evt,rangeCuts,allSpacePoints);
   }
 
-  const std::vector<std::map<int,unsigned int>> GCNFeatureUtils::GetNeighboursForRadii(art::Event const &evt,
-    const std::vector<float> rangeCuts, const std::map<unsigned int,art::Ptr<recob::SpacePoint>> &sps) const{
+  std::vector<std::map<int,unsigned int>> GCNFeatureUtils::GetNeighboursForRadii(art::Event const &evt,
+    const std::vector<float>& rangeCuts, const std::map<unsigned int,art::Ptr<recob::SpacePoint>> &sps) const{
     std::vector<art::Ptr<recob::SpacePoint>> vec;
     for(auto m : sps){
       vec.push_back(m.second);
@@ -146,8 +147,8 @@ namespace cvn
     return GetNeighboursForRadii(evt,rangeCuts,vec);
   }
 
-  const std::vector<std::map<int,unsigned int>> GCNFeatureUtils::GetNeighboursForRadii(art::Event const &evt,
-    const std::vector<float> rangeCuts, const std::vector<art::Ptr<recob::SpacePoint>> &sps) const{
+  std::vector<std::map<int,unsigned int>> GCNFeatureUtils::GetNeighboursForRadii(art::Event const &evt,
+    const std::vector<float>& rangeCuts, const std::vector<art::Ptr<recob::SpacePoint>> &sps) const{
     std::vector<std::map<int,unsigned int>> result;
     // Initialise a map for each range cut value
     for(unsigned int m = 0; m < rangeCuts.size(); ++m){
@@ -179,7 +180,7 @@ namespace cvn
     return result;
   }
 
-  const std::map<int,int> GCNFeatureUtils::GetNearestNeighbours(art::Event const &evt,
+  std::map<int,int> GCNFeatureUtils::GetNearestNeighbours(art::Event const &evt,
     const std::string &spLabel) const{
     art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
     std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
@@ -189,7 +190,7 @@ namespace cvn
     return GetNearestNeighbours(evt,allSpacePoints);
   }
 
-  const std::map<int,int> GCNFeatureUtils::GetNearestNeighbours(art::Event const &evt,
+  std::map<int,int> GCNFeatureUtils::GetNearestNeighbours(art::Event const &evt,
     const std::vector<art::Ptr<recob::SpacePoint>> &sps) const{
     std::map<int,int> closestID;
     std::map<int,float> closestDistance;
@@ -219,7 +220,7 @@ namespace cvn
   }
 
   // Get the two nearest neighbours to use for calcuation of angles between them and the node in question
-  const std::map<int,std::pair<int,int>> GCNFeatureUtils::GetTwoNearestNeighbours(art::Event const &evt,
+  std::map<int,std::pair<int,int>> GCNFeatureUtils::GetTwoNearestNeighbours(art::Event const &evt,
     const std::string &spLabel) const{
     art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
     std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
@@ -229,7 +230,7 @@ namespace cvn
     return GetTwoNearestNeighbours(evt,allSpacePoints);
   }
 
-  const std::map<int,std::pair<int,int>> GCNFeatureUtils::GetTwoNearestNeighbours(art::Event const &evt,
+  std::map<int,std::pair<int,int>> GCNFeatureUtils::GetTwoNearestNeighbours(art::Event const &evt,
     const std::map<unsigned int, art::Ptr<recob::SpacePoint>> &sps) const{
 
     std::vector<art::Ptr<recob::SpacePoint>> vec;
@@ -239,7 +240,7 @@ namespace cvn
     return GetTwoNearestNeighbours(evt,vec);
   }
 
-  const std::map<int,std::pair<int,int>> GCNFeatureUtils::GetTwoNearestNeighbours(art::Event const &evt,
+  std::map<int,std::pair<int,int>> GCNFeatureUtils::GetTwoNearestNeighbours(art::Event const &evt,
     const std::vector<art::Ptr<recob::SpacePoint>> &sps) const{
     std::map<int,int> closestID;
     std::map<int,int> secondID;
@@ -297,9 +298,9 @@ namespace cvn
   }
 
   // Use the association between space points and hits to return a charge
-  const std::map<unsigned int, float> GCNFeatureUtils::GetSpacePointChargeMap(
-    std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
-    std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit) const {
+  std::map<unsigned int, float> GCNFeatureUtils::GetSpacePointChargeMap(
+    std::vector<art::Ptr<recob::SpacePoint>> const& spacePoints,
+    std::vector<std::vector<art::Ptr<recob::Hit>>> const& sp2Hit) const {
 
     std::map<unsigned int, float> ret;
 
@@ -315,7 +316,7 @@ namespace cvn
 
   } // function GetSpacePointChargeMap
 
-  const std::map<unsigned int, float> GCNFeatureUtils::GetSpacePointChargeMap(
+  std::map<unsigned int, float> GCNFeatureUtils::GetSpacePointChargeMap(
     art::Event const &evt, const std::string &spLabel) const {
 
     art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
@@ -336,7 +337,7 @@ namespace cvn
 
   } // function GetSpacePointChargeMap
 
-  const std::map<unsigned int, float> GCNFeatureUtils::GetSpacePointMeanHitRMSMap(
+  std::map<unsigned int, float> GCNFeatureUtils::GetSpacePointMeanHitRMSMap(
     art::Event const &evt, const std::string &spLabel) const {
   
     std::map<unsigned int, float> ret;
@@ -360,9 +361,10 @@ namespace cvn
   
   } // function GetSpacePointMeanHitRMSMap
 
-  const std::map<unsigned int, int> GCNFeatureUtils::GetTrueG4ID(
-    std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
-    std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit) const {
+  std::map<unsigned int, int> GCNFeatureUtils::GetTrueG4ID(
+    detinfo::DetectorClocksData const& clockData,
+    std::vector<art::Ptr<recob::SpacePoint>> const& spacePoints,
+    std::vector<std::vector<art::Ptr<recob::Hit>>> const& sp2Hit) const {
 
     art::ServiceHandle<cheat::BackTrackerService> bt;
     std::map<unsigned int, int> ret;
@@ -371,7 +373,7 @@ namespace cvn
       // Use the backtracker to find the G4 IDs associated with these hits
       std::map<unsigned int, float> trueParticles;
       for (art::Ptr<recob::Hit> hit : sp2Hit[spIdx]) {
-        auto ides = bt->HitToTrackIDEs(hit);
+        auto ides = bt->HitToTrackIDEs(clockData, hit);
         for (auto ide : ides) {
           int id = ide.trackID;
           if (trueParticles.count(id)) trueParticles[id] += ide.energy;
@@ -385,7 +387,8 @@ namespace cvn
 
   } // function GetTrueG4ID
 
-  const std::map<unsigned int, int> GCNFeatureUtils::GetTrueG4ID(
+  std::map<unsigned int, int> GCNFeatureUtils::GetTrueG4ID(
+    detinfo::DetectorClocksData const& clockData,
     art::Event const &evt, const std::string &spLabel) const {
 
     art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
@@ -402,13 +405,14 @@ namespace cvn
     for (size_t spIdx = 0; spIdx < sp2Hit.size(); ++spIdx) {
       sp2Hit[spIdx] = fmp.at(spIdx);
     } // for spacepoint
-    return GetTrueG4ID(spacePoints, sp2Hit);
+    return GetTrueG4ID(clockData, spacePoints, sp2Hit);
 
   } // function GetTrueG4ID
 
-  const std::map<unsigned int, int> GCNFeatureUtils::GetTrueG4IDFromHits(
-    std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
-    std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit) const {
+  std::map<unsigned int, int> GCNFeatureUtils::GetTrueG4IDFromHits(
+    detinfo::DetectorClocksData const& clockData,
+    std::vector<art::Ptr<recob::SpacePoint>> const& spacePoints,
+    std::vector<std::vector<art::Ptr<recob::Hit>>> const& sp2Hit) const {
 
     art::ServiceHandle<cheat::BackTrackerService> bt;
     std::map<unsigned int, int> ret;
@@ -417,7 +421,7 @@ namespace cvn
       // Use the backtracker to find the G4 IDs associated with these hits
       std::map<unsigned int, unsigned int> trueParticleHits;
       for (art::Ptr<recob::Hit> hit : sp2Hit[spIdx]) {
-        auto ides = bt->HitToTrackIDEs(hit);
+        auto ides = bt->HitToTrackIDEs(clockData, hit);
         for (auto ide : ides) {
           int id = ide.trackID;
           if (trueParticleHits.count(id)) trueParticleHits[id] += 1;
@@ -431,7 +435,8 @@ namespace cvn
 
   } // function GetTrueG4IDFromHits
 
-  const std::map<unsigned int, int> GCNFeatureUtils::GetTrueG4IDFromHits(
+  std::map<unsigned int, int> GCNFeatureUtils::GetTrueG4IDFromHits(
+    detinfo::DetectorClocksData const& clockData,
     art::Event const &evt, const std::string &spLabel) const {
 
     art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
@@ -448,16 +453,17 @@ namespace cvn
     for (size_t spIdx = 0; spIdx < sp2Hit.size(); ++spIdx) {
       sp2Hit[spIdx] = fmp.at(spIdx);
     } // for spacepoint
-    return GetTrueG4IDFromHits(spacePoints, sp2Hit);
+    return GetTrueG4IDFromHits(clockData, spacePoints, sp2Hit);
 
   } // function GetTrueG4IDFromHits
 
-  const std::map<unsigned int, int> GCNFeatureUtils::GetTruePDG(
+  std::map<unsigned int, int> GCNFeatureUtils::GetTruePDG(
+    detinfo::DetectorClocksData const& clockData,
     art::Event const& evt, const std::string &spLabel, bool useAbsoluteTrackID, bool useHits) const {
   
     std::map<unsigned int, int> idMap;
-    if(useHits) idMap  = GetTrueG4IDFromHits(evt,spLabel);
-    else idMap = GetTrueG4ID(evt,spLabel);
+    if(useHits) idMap  = GetTrueG4IDFromHits(clockData, evt,spLabel);
+    else idMap = GetTrueG4ID(clockData, evt,spLabel);
 
     std::map<unsigned int,int> pdgMap;  
     
@@ -481,9 +487,9 @@ namespace cvn
     return pdgMap;
   } // function GetTrueG4ID
 
-  const std::map<unsigned int, std::vector<float>> GCNFeatureUtils::Get2DFeatures(
-    std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
-    std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit) const {
+  std::map<unsigned int, std::vector<float>> GCNFeatureUtils::Get2DFeatures(
+    std::vector<art::Ptr<recob::SpacePoint>> const& spacePoints,
+    std::vector<std::vector<art::Ptr<recob::Hit>>> const& sp2Hit) const {
 
     // For each spacepoint, we want a size-nine float vector containing wire,
     // time and charge for each of the associated hits. These features assume
@@ -558,7 +564,7 @@ namespace cvn
     return outputGraphs;
   }
 
-  const std::map<unsigned int,unsigned int> GCNFeatureUtils::Get2DGraphNeighbourMap(const GCNGraph &g, const unsigned int npixel) const{
+  std::map<unsigned int,unsigned int> GCNFeatureUtils::Get2DGraphNeighbourMap(const GCNGraph &g, const unsigned int npixel) const{
 
     std::map<unsigned int,unsigned int> neighbourMap;
 
@@ -612,9 +618,10 @@ namespace cvn
 
   }
 
-  const std::vector<float> GCNFeatureUtils::GetNodeGroundTruth(
-    std::vector<art::Ptr<recob::SpacePoint>> spacePoints,
-    std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit, float distCut,
+  std::vector<float> GCNFeatureUtils::GetNodeGroundTruth(
+    detinfo::DetectorClocksData const& clockData,
+    std::vector<art::Ptr<recob::SpacePoint>> const& spacePoints,
+    std::vector<std::vector<art::Ptr<recob::Hit>>> const& sp2Hit, float distCut,
     std::vector<std::vector<float>>* dirTruth) const{
 
     // Fetch cheat services
@@ -660,7 +667,7 @@ namespace cvn
       int trueParticleID = std::numeric_limits<int>::max();
       bool firstHit = true;
       for (art::Ptr<recob::Hit> hit : sp2Hit[spIdx]) {
-        int trueID = GetTrackIDFromHit(*hit);
+        int trueID = GetTrackIDFromHit(clockData, *hit);
         if (trueID == std::numeric_limits<int>::max()) {
           ++nNoHit;
           done = true;
@@ -752,7 +759,7 @@ namespace cvn
   } // function GCNFeatureUtils::GetNodeGroundTruth
 
   std::map<unsigned int, unsigned int> GCNFeatureUtils::GetParticleFlowMap(
-    const std::set<unsigned int> particles) const {
+    const std::set<unsigned int>& particles) const {
 
     art::ServiceHandle<cheat::ParticleInventoryService> pi;
     std::map<unsigned int, unsigned int> ret;
@@ -765,4 +772,3 @@ namespace cvn
   } // function GCNFeatureUtils::GetParticleFlowMap
 
 } // namespace cvn
-

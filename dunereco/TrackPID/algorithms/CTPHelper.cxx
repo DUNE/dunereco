@@ -22,6 +22,7 @@
 #include "dune/TrackPID/tf/CTPGraph.h"
 
 #include "nusimdata/SimulationBase/MCParticle.h"
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardataobj/Simulation/SimChannel.h"
 #include "larsim/MCCheater/BackTrackerService.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
@@ -151,6 +152,7 @@ namespace ctp
   const std::pair<const simb::MCParticle*,float> CTPHelper::GetTrueParticle(const art::Ptr<recob::PFParticle> part, const art::Event &evt) const{
     // Get hits
     const std::vector<art::Ptr<recob::Hit>> collectionHits  = dune_ana::DUNEAnaPFParticleUtils::GetHits(part,evt,fParticleLabel);
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
 
     // Function to find a weighted and sorted vector of the true particles matched to a particle
     using weightedMCPair = std::pair<const simb::MCParticle*, float>;
@@ -162,7 +164,7 @@ namespace ctp
     std::unordered_map<const simb::MCParticle*, float> mcHitMap;
     float hitTotal = 0;
     for(const art::Ptr<recob::Hit> &hit : collectionHits) {
-      for(const sim::TrackIDE& ide : bt_serv->HitToTrackIDEs(hit)) {
+      for(const sim::TrackIDE& ide : bt_serv->HitToTrackIDEs(clockData, hit)) {
         const simb::MCParticle* curr_part = pi_serv->TrackIdToParticle_P(ide.trackID);
         mcHitMap[curr_part] += 1.;
         ++hitTotal;
@@ -332,4 +334,3 @@ namespace ctp
   }
 
 }
-

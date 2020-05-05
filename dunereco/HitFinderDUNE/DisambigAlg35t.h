@@ -27,6 +27,10 @@
 #include "lardataobj/RecoBase/Cluster.h"
 #include "APAGeometryAlg.h"
 #include "larreco/RecoAlg/DBScanAlg.h"
+namespace detinfo {
+  class DetectorClocksData;
+  class DetectorPropertiesData;
+}
 
 #include "TMatrixD.h"
 #include "TVectorD.h"
@@ -42,9 +46,9 @@ namespace dune{
     
     DisambigAlg35t(fhicl::ParameterSet const& pset);
     
-    void               reconfigure(fhicl::ParameterSet const& p);
-
-    void               RunDisambig( const std::vector< art::Ptr<recob::Hit> > &OrigHits );
+    void               RunDisambig(detinfo::DetectorClocksData const& clockData,
+                                   detinfo::DetectorPropertiesData const& detProp,
+                                   const std::vector< art::Ptr<recob::Hit> > &OrigHits );
                                                                   ///< Run disambiguation as currently configured
 
 

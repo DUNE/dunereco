@@ -153,7 +153,9 @@ namespace cnn {
           networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
         } 
         else if (fTarget == "nuevertex_on_img"){
-	    networkOutput = fRegCNNVtxHandler.GetVertex(evt, *pixelmaplist[0]);
+            auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
+            auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
+            networkOutput = fRegCNNVtxHandler.GetVertex(clockData, detProp, evt, *pixelmaplist[0]);
         } else {
             std::cout << "Wrong Target" << std::endl;
             abort();
@@ -177,10 +179,3 @@ namespace cnn {
   DEFINE_ART_MODULE(cnn::RegCNNEvaluator)
 } // end namespace cnn
 ////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
