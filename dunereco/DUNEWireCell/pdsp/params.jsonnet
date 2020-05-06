@@ -111,7 +111,8 @@ base {
 
     adc: super.adc {
         // per tdr, chapter 2
-        baselines: [1000*wc.millivolt,1000*wc.millivolt,500*wc.millivolt],
+        // induction plane: 2350 ADC, collection plane: 900 ADC
+        baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
 
         // check this.  The tdr says, "The ADC ASIC has an input
         // buffer with offset compensation to match the output of the
