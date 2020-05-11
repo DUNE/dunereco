@@ -2,8 +2,8 @@ BEGIN_PROLOG
 
 standard_ctphelper:
 {
-  NetworkPath : "DUMMY_PATH"
-  NetworkName : "convolutional_track_pid_March2020.pb"
+  NetworkPath : "DUNE_PARDATA_DIR"
+  NetworkName : "CnnModels/trackPID_model_May2020_tf_1_12_0c.pb"
   ParticleLabel   : "pandora"
   TrackLabel      : "pandoraTrack"
   ShowerLabel     : "pandoraShower"
