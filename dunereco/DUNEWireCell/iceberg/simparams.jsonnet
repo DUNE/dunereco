@@ -150,10 +150,10 @@ base {
   // you are looking to fix SimDepoSource, you are in the wrong
   // place.  See the "scale" parameter of wcls.input.depos() defined
   // in pgrapher/common/ui/wcls/nodes.jsonnet.
-  elec: super.elec {
-    postgain: 1.0,
-    shaping: 2.2 * wc.us,
-  },
+  // elec: super.elec {
+  //   postgain: 1.0,
+  //   shaping: 2.2 * wc.us,
+  // },
 
   sys_status: false,
   sys_resp: {
