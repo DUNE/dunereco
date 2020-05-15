@@ -1,0 +1,40 @@
+#include "services_dune.fcl"
+#include "CTPTrackDump.fcl"
+
+process_name: CTPTrackDump
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "cvn_event_dump_r%r_s%s_hist.root"
+                  closeFileFast: false }
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+                        @table::dunefd_simulation_services
+  #@table::standard_services
+}
+
+# Input source is a ROOT file 
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1        # Number of events to create
+
+}
+
+# Define and configure some modules to do work on each event.
+# First modules are defined; they are scheduled later.
+# Modules are grouped by type.
+physics:
+{
+  # Declare the modules
+  analyzers:
+  { 
+    ctpeval:     @local::standard_convTrackDumper
+  }
+
+  # Build the paths
+  map: [ctpeval]
+}
+
+########################################################################
+

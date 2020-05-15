@@ -4,7 +4,7 @@ if( DEFINED ENV{TENSORFLOW_DIR} )
 art_make_library( 
   LIBRARY_NAME     GlobImage
   SOURCE EventImageData.h EventImageData.cxx
-  LIBRARIES    CVNFunc
+  LIBRARIES    dune_CVN_func
   LIBRARY_NAME_VAR GLOBIMAGE
   ${ART_ROOT_IO_TFILESERVICE_SERVICE}
   )

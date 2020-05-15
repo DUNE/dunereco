@@ -1,0 +1,16 @@
+#include "ctphelper.fcl"
+
+BEGIN_PROLOG
+
+# Configuration for the Utility Example module
+
+standard_convTrackPID:
+{
+  module_type: CTPEvaluator
+  #==================
+  ctpHelper: @local::standard_ctphelper
+  particleLabel: "pandora"
+  writeTree: false
+}
+
+END_PROLOG
