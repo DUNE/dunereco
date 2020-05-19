@@ -6,7 +6,7 @@
 
 #include <vector>
 #include <iostream>
-#include "dune/TrackPID/CTPResult.h"
+#include "dune/TrackPID/products/CTPResult.h"
 
 namespace ctp
 {

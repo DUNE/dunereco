@@ -1,3 +1,5 @@
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
+
 art_make( 
     LIB_LIBRARIES larcorealg_Geometry
     larcore_Geometry_Geometry_service
@@ -7,6 +9,8 @@ art_make(
     lardataobj_AnalysisBase
     lardata_Utilities
     nusimdata_SimulationBase
+    larsim_MCCheater_BackTrackerService_service           
+    larsim_MCCheater_ParticleInventoryService_service
     ${ART_FRAMEWORK_CORE}
     ${ART_FRAMEWORK_PRINCIPAL}
     ${ART_FRAMEWORK_SERVICES_REGISTRY}
@@ -22,7 +26,8 @@ art_make(
     cetlib cetlib_except
     ${Boost_SYSTEM_LIBRARY}
     ${ROOT_BASIC_LIB_LIST}
-    dune_CVN_func
+    dune_AnaUtils
+    dune_TrackPID_tf
     dune_TrackPID_products
 )
 

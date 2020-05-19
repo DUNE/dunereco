@@ -11,8 +11,9 @@
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-
 #include "lardataobj/AnalysisBase/Calorimetry.h"
+
+#include "dune/TrackPID/products/CTPResult.h"
 
 namespace dune_ana
 {
@@ -53,6 +54,13 @@ art::Ptr<anab::Calorimetry> DUNEAnaTrackUtils::GetCalorimetry(const art::Ptr<rec
     mf::LogError("DUNEAna") << "DUNEAnaTrackUtils::GetCalorimetry - no collection view calorimetry found. Returning first alternate view." << std::endl;
 
     return calos.at(0);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
+art::Ptr<ctp::CTPResult> DUNEAnaTrackUtils::GetSquIDResult(const art::Ptr<recob::Track> &pTrack, const art::Event &evt, const std::string &trackLabel, const std::string &squidLabel)
+{
+    return DUNEAnaTrackUtils::GetAssocProduct<ctp::CTPResult>(pTrack,evt,trackLabel,squidLabel);
 }
 
 } // namespace dune_ana

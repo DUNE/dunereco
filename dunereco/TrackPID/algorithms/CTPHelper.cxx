@@ -17,8 +17,8 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 
-#include "dune/TrackPID/CTPHelper.h"
-#include "dune/TrackPID/CTPResult.h"
+#include "dune/TrackPID/algorithms/CTPHelper.h"
+#include "dune/TrackPID/products/CTPResult.h"
 #include "dune/TrackPID/tf/CTPGraph.h"
 
 #include "nusimdata/SimulationBase/MCParticle.h"

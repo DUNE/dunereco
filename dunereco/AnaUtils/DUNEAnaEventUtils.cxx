@@ -19,6 +19,9 @@
 #include "lardataobj/RecoBase/Slice.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 
+#include "dune/CVN/func/Result.h"
+#include "dune/TrackPID/products/CTPResult.h"
+
 namespace dune_ana
 {
 
@@ -143,6 +146,20 @@ bool DUNEAnaEventUtils::HasNeutrino(const art::Event &evt, const std::string &la
         }
     }
     return hasNeutrino;
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
+std::vector<art::Ptr<cvn::Result>> DUNEAnaEventUtils::GetCVNResults(const art::Event &evt, const std::string &label)
+{
+    return DUNEAnaEventUtils::GetProductVector<cvn::Result>(evt,label);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
+std::vector<art::Ptr<ctp::CTPResult>> DUNEAnaEventUtils::GetSquIDResults(const art::Event &evt, const std::string &label)
+{
+    return DUNEAnaEventUtils::GetProductVector<ctp::CTPResult>(evt,label);
 }
 
 } // namespace dune_ana
