@@ -22,6 +22,8 @@
 #include "lardataobj/AnalysisBase/T0.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 
+#include "dune/TrackPID/products/CTPResult.h"
+
 namespace anab
 {
 class Calorimetry;
@@ -78,9 +80,21 @@ public:
     * @param trackLabel is the label for the track producer
     * @param caloLabel is the label for the calorimetry producer
     *
-    * @return art::Ptr to the particle
+    * @return art::Ptr to the calorimetry object
     */
     static art::Ptr<anab::Calorimetry> GetCalorimetry(const art::Ptr<recob::Track> &pTrack, const art::Event &evt, const std::string &trackLabel, const std::string &caloLabel);
+
+    /**
+    * @brief Get the SquID track PID associated with the track.
+    *
+    * @param track is the track for which we want the particle
+    * @param evt is the underlying art event
+    * @param trackLabel is the label for the track producer
+    * @param caloLabel is the label for the SquiID track PID producer
+    *
+    * @return art::Ptr to the SquID PID result
+    */
+    static art::Ptr<ctp::CTPResult> GetSquIDResult(const art::Ptr<recob::Track> &pTrack, const art::Event &evt, const std::string &trackLabel, const std::string &squidLabel);
 };
 
 } // namespace dune_ana

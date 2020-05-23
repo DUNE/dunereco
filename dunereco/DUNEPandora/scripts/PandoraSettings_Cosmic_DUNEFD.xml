@@ -139,7 +139,7 @@
         <InputClusterListNameW>ClustersW</InputClusterListNameW>
         <OutputPfoListName>MuonParticles3D</OutputPfoListName>
     </algorithm>
-    <algorithm type = "LArCosmicRayTrackRecovery"> 
+    <algorithm type = "LArCosmicRayTrackRecovery">
         <InputClusterListNameU>ClustersU</InputClusterListNameU>
         <InputClusterListNameV>ClustersV</InputClusterListNameV>
         <InputClusterListNameW>ClustersW</InputClusterListNameW>
@@ -289,7 +289,7 @@
             </tool>
             <tool type = "LArTwoViewShowerHits">
                 <ChiSquaredCut>5.</ChiSquaredCut>
-                <XTolerance>2.</XTolerance> 
+                <XTolerance>2.</XTolerance>
             </tool>
         </HitCreationTools>
     </algorithm>
@@ -308,7 +308,6 @@
     <algorithm type = "LArCosmicRayVertexBuilding">
         <InputPfoListName>MuonParticles3D</InputPfoListName>
         <OutputVertexListName>CRVertices3D</OutputVertexListName>
-        <IsDualPhase>true</IsDualPhase>
     </algorithm>
 
     <!-- Track and shower building -->

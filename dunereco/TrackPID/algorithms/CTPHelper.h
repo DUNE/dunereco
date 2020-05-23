@@ -21,7 +21,7 @@
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "larcorealg/GeoAlgo/GeoAlgo.h"
 
-#include "dune/TrackPID/CTPResult.h"
+#include "dune/TrackPID/products/CTPResult.h"
 
 namespace ctp
 {

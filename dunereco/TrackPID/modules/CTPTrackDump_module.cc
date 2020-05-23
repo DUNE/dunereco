@@ -1,5 +1,5 @@
 /**
- *  @file   larpandora/DUNEAnaAnalysis/CTPTrackDump_module.cc
+ *  @file   dune/TrackPID/modules/CTPTrackDump_module.cc
  *
  *  @brief  This module uses the analysis utilities to demonstrate 
  *          some of their usage. This can be used as a basis for 
@@ -17,7 +17,7 @@
 #include "dune/AnaUtils/DUNEAnaTrackUtils.h"
 #include "dune/AnaUtils/DUNEAnaShowerUtils.h"
 
-#include "dune/TrackPID/CTPHelper.h"
+#include "dune/TrackPID/algorithms/CTPHelper.h"
 
 #include "larsim/MCCheater/BackTrackerService.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"

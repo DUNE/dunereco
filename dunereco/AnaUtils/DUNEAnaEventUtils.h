@@ -11,6 +11,8 @@
 #include "art/Framework/Principal/Event.h"
 
 #include "dune/AnaUtils/DUNEAnaUtilsBase.h"
+#include "dune/CVN/func/Result.h"
+#include "dune/TrackPID/products/CTPResult.h"
 
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
@@ -135,6 +137,28 @@ public:
     * @return true if the event has a reconstructed neutrino
     */
     static bool HasNeutrino(const art::Event &evt, const std::string &label);    
+
+    /**
+    * @brief Get the CVN result objects from the event
+    *
+    * @param evt is the underlying art event
+    * @param label is the label for the cvn evaluator
+    *
+    * @return vector of art::Ptrs to CVN result objects
+    */
+    static std::vector<art::Ptr<cvn::Result>> GetCVNResults(const art::Event &evt, const std::string &label);
+
+    /**
+    * @brief Get the SquID track PID result objects from the event
+    *
+    * @param evt is the underlying art event
+    * @param label is the label for the SquID evaluator
+    *
+    * @return vector of art::Ptrs to SquID result objects
+    */
+    static std::vector<art::Ptr<ctp::CTPResult>> GetSquIDResults(const art::Event &evt, const std::string &label);
+
+
 };
 
 } // namespace dune_ana
