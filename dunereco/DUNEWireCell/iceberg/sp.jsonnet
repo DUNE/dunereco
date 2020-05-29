@@ -44,6 +44,7 @@ function(params, tools, override = {}) {
        */
       anode: wc.tn(anode),
       field_response: wc.tn(tools.field),
+      elecresponse: wc.tn(tools.elec_resp),
       ftoffset: 0.0, // default 0.0
       ctoffset: 1.0*wc.microsecond, // default -8.0
       per_chan_resp: pc.name,
@@ -72,6 +73,6 @@ function(params, tools, override = {}) {
       wiener_threshold_tag: 'threshold%d' % anode.data.ident,
       gauss_tag: 'gauss%d' % anode.data.ident,
     } + override,
-  }, nin=1, nout=1, uses=[anode, tools.field] + pc.uses + spfilt),
+  }, nin=1, nout=1, uses=[anode, tools.field, tools.elec_resp] + pc.uses + spfilt),
 
 }
