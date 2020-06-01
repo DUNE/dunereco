@@ -11,6 +11,7 @@ art_make_library(
 
 simple_plugin(SPMultiTpcDump "module"
 			larcore_Geometry_Geometry_service
+                        lardataalg_DetectorInfo
 			larcorealg_Geometry
 			lardataobj_RecoBase
 			larreco_Calorimetry

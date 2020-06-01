@@ -110,6 +110,7 @@ include_directories ( $ENV{GENIE_INC}/GENIE )
 
 
 simple_plugin(NueAna   "module"
+                        lardataalg_DetectorInfo
 		        lardataobj_RawData
 		        lardataobj_RecoBase
 		        lardata_ArtDataHelper
@@ -163,6 +164,7 @@ simple_plugin(MVASelect   "module"
 )
 
 simple_plugin(IniSegReco "module"
+                      lardataalg_DetectorInfo
 		      lardataobj_RawData
 		      lardataobj_RecoBase
 		      larreco_RecoAlg
@@ -191,6 +193,7 @@ simple_plugin(IniSegReco "module"
 )
 
 simple_plugin(ShSeg   "module"
+                        lardataalg_DetectorInfo
 			lardataobj_RawData
 			lardataobj_RecoBase
 			larreco_RecoAlg
@@ -229,6 +232,7 @@ simple_plugin(EnergyReco   "module"
                         larcore_Geometry_Geometry_service
                         larreco_Calorimetry
                         larreco_RecoAlg
+                        lardataalg_DetectorInfo
                         lardataobj_RecoBase
                         larsim_MCCheater_BackTrackerService_service
                         ${GHEP}

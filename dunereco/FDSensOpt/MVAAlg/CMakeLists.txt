@@ -5,6 +5,7 @@ art_make( BASENAME_ONLY
   LIB_LIBRARIES larcorealg_Geometry
   larcore_Geometry_Geometry_service
   larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
+  lardataalg_DetectorInfo
   lardataobj_RawData
   lardataobj_RecoBase
   lardata_ArtDataHelper
