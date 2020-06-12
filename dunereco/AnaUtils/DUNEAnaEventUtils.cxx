@@ -61,6 +61,13 @@ std::vector<art::Ptr<recob::Vertex>> DUNEAnaEventUtils::GetVertices(const art::E
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
 
+std::vector<art::Ptr<recob::Hit>> DUNEAnaEventUtils::GetHits(const art::Event &evt, const std::string &label)
+{
+    return DUNEAnaEventUtils::GetProductVector<recob::Hit>(evt,label);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
 std::vector<art::Ptr<recob::SpacePoint>> DUNEAnaEventUtils::GetSpacePoints(const art::Event &evt, const std::string &label)
 {
     return DUNEAnaEventUtils::GetProductVector<recob::SpacePoint>(evt,label);
