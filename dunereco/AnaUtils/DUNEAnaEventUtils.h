@@ -79,6 +79,16 @@ public:
     static std::vector<art::Ptr<recob::Vertex>> GetVertices(const art::Event &evt, const std::string &label);
 
     /**
+    * @brief Get the hits from the event
+    *
+    * @param evt is the underlying art event
+    * @param label is the label for the hit producer
+    *
+    * @return vector of art::Ptrs to spacepoints
+    */
+    static std::vector<art::Ptr<recob::Hit>> GetHits(const art::Event &evt, const std::string &label);
+
+    /**
     * @brief Get the spacepoints from the event
     *
     * @param evt is the underlying art event
