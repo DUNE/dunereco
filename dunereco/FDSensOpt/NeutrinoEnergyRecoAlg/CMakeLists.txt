@@ -2,7 +2,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 art_make( BASENAME_ONLY
   LIBRARY_NAME  NeutrinoEnergyRecoAlg
-  LIB_LIBRARIES larcorealg_Geometry
+  LIB_LIBRARIES 
+  larcorealg_Geometry
+  dune_AnaUtils
   larcore_Geometry_Geometry_service
   larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
   lardataobj_RawData
