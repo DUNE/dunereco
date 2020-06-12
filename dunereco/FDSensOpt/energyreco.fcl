@@ -1,5 +1,6 @@
 #include "calorimetry_dune10kt.fcl"
 #include "trackfinderalgorithms.fcl"
+#include "neutrinoenergyrecoalg_dune.fcl"
 
 BEGIN_PROLOG
 
@@ -18,6 +19,7 @@ dunefd_nuenergyreco:
     TrackModuleLabel:        "pmtrack"
     ShowerModuleLabel:       "emshower"
     CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
+    NeutrinoEnergyRecoAlg:   @local::dune10kt_neutrinoenergyrecoalg
 
     # If a track has one or more hits within a distance ContVolCut cm of edge of detector, it is exiting; otherwise it is contained
     ContVolCut:              20.0

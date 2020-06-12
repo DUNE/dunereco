@@ -44,6 +44,8 @@
 #include "larreco/RecoAlg/TrackMomentumCalculator.h"
 
 #include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
+#include "dune/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.h"
+
 
 #include "TTimeStamp.h"
 #include "TTree.h"
@@ -119,12 +121,15 @@ namespace dune {
       double fGradNuEHadEn; 
       double fIntNuEHadEn;
       double fRecombFactor;
+
+      NeutrinoEnergyRecoAlg fNeutrinoEnergyRecoAlg;
   }; // class EnergyReco
 
 
   //------------------------------------------------------------------------------
   EnergyReco::EnergyReco(fhicl::ParameterSet const& pset)
-    : EDProducer(pset), fCaloAlg (pset.get<fhicl::ParameterSet>("CalorimetryAlg"))
+    : EDProducer(pset), fCaloAlg (pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
+    fNeutrinoEnergyRecoAlg(pset.get<fhicl::ParameterSet>("NeutrinoEnergyRecoAlg"))
   {
     produces<dune::EnergyRecoOutput>();
     produces<art::Assns<dune::EnergyRecoOutput, recob::Track>>();

@@ -5,8 +5,7 @@
 //DUNE
 #include "dune/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.h"
 
-NeutrinoEnergyRecoAlg::NeutrinoEnergyRecoAlg(fhicl::ParameterSet const& pset)
-    fGradTrkMomRange(pset.get<double>("GradTrkMomRange")),
+NeutrinoEnergyRecoAlg::NeutrinoEnergyRecoAlg(fhicl::ParameterSet const& pset) :
     fGradTrkMomRange(pset.get<double>("GradTrkMomRange")),
     fIntTrkMomRange(pset.get<double>("IntTrkMomRange")),
     fGradTrkMomMCS(pset.get<double>("GradTrkMomMCS")),
