@@ -16,6 +16,8 @@ dunefd_nuenergyreco:
 
     WireModuleLabel:         "caldata"
     HitsModuleLabel:         "linecluster"
+    SpacePointModuleLabel:   "pmtrack"
+
     TrackModuleLabel:        "pmtrack"
     ShowerModuleLabel:       "emshower"
     CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
