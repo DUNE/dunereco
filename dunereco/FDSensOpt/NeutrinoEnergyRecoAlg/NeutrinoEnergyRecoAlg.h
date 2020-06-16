@@ -10,12 +10,21 @@
 
 //DUNE
 
+namespace dune
+{
 class NeutrinoEnergyRecoAlg 
 {
     public:
         NeutrinoEnergyRecoAlg(const fhicl::ParameterSet &pset);
 
-        double GetLifetimeCorrectedTotalHitCharge(const art::Event &event, const std::string &hitLabel);
+        double CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event, 
+            const std::string &hitLabel, const std::string &TrackToHitLabel, const std::string &hitToSpacePointLabel);
+
+        
+        double CalculateMuonMomentumByRange(const art::Ptr<recob::Track> pMuonTrack);
+
+        double CalculateMuonMomentumByMCS(const art::Ptr<recob::Track> pMuonTrack);
+
 
     private:
         calo::CalorimetryAlg fCalorimetryAlg;
@@ -34,3 +43,4 @@ class NeutrinoEnergyRecoAlg
         double fIntNuEHadEn;
         double fRecombFactor;
 };
+}

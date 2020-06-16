@@ -4,12 +4,16 @@
 //LArSoft
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "larreco/RecoAlg/TrackMomentumCalculator.h"
 //DUNE
 #include "dune/AnaUtils/DUNEAnaEventUtils.h"
 #include "dune/AnaUtils/DUNEAnaHitUtils.h"
+#include "dune/AnaUtils/DUNEAnaTrackUtils.h"
 
 #include "dune/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.h"
 
+namespace dune
+{
 NeutrinoEnergyRecoAlg::NeutrinoEnergyRecoAlg(fhicl::ParameterSet const& pset) :
     fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
     fGradTrkMomRange(pset.get<double>("GradTrkMomRange")),
@@ -29,24 +33,30 @@ NeutrinoEnergyRecoAlg::NeutrinoEnergyRecoAlg(fhicl::ParameterSet const& pset) :
     std::cout<<"This thing runs"<<std::endl;
 }
 
-double NeutrinoEnergyRecoAlg::GetLifetimeCorrectedTotalHitCharge(const art::Event &event, const std::string &hitLabel)
+double NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event, 
+    const std::string &hitLabel, const std::string &trackToHitLabel, const std::string &hitToSpacePointLabel)
 {
-    const detinfo::DetectorProperties *detprop(lar::providerFrom<detinfo::DetectorPropertiesService>());
-    const double t0(detprop->TriggerOffset());
+    const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, trackToHitLabel));
+    const double muonHitCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(muonHits));
 
+    const std::vector<art::Ptr<recob::Hit> > eventHits(dune_ana::DUNEAnaEventUtils::GetHits(event, hitLabel));
+    const double totalHitCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(eventHits));
 
-    std::vector<art::Ptr<recob::Hit> > hits(dune_ana::DUNEAnaEventUtils::GetHits(event, hitLabel));
-    double lifetimeCorreectedEventCharge(0.);
+    const double hadronicCharge(totalHitCharge-muonHitCharge);
 
-    for (unsigned int i_hit = 0; i_hit < hits.size(); ++i_hit)
-    {
-        art::Ptr<recob::Hit> pHit(hits[i_hit]);
+    return hadronicCharge;
+}
 
-        if (2 == pHit->WireID().Plane)
-            lifetimeCorreectedEventCharge += pHit->Integral() * fCalorimetryAlg.LifetimeCorrection(pHit->PeakTime(), t0);
-        std::cout<<"Corrections: " << fCalorimetryAlg.LifetimeCorrection(pHit->PeakTime(), t0) << "  " << dune_ana::DUNEAnaHitUtils::GetLifetimeCorrection(pHit) << std::endl; 
-    }
+double NeutrinoEnergyRecoAlg::CalculateMuonMomentumByRange(const art::Ptr<recob::Track> pMuonTrack)
+{
+    return pMuonTrack->Length() - fIntTrkMomRange / fGradTrkMomRange;
+}
 
-    return lifetimeCorreectedEventCharge;
+double NeutrinoEnergyRecoAlg::CalculateMuonMomentumByMCS(const art::Ptr<recob::Track> pMuonTrack)
+{
+    trkf::TrackMomentumCalculator TrackMomCalc;
+    return TrackMomCalc.GetMomentumMultiScatterChi2(pMuonTrack) - fIntTrkMomMCS / fGradTrkMomMCS;
+}
 
 }
+
