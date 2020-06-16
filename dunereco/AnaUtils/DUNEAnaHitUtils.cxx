@@ -18,13 +18,13 @@
 namespace dune_ana
 {
 
-double DUNEAnaHitUtils::GetLifetimeCorrection(const art::Ptr<recob::Hit> &pHit)
+double DUNEAnaHitUtils::LifetimeCorrection(const art::Ptr<recob::Hit> &pHit)
 {
     auto clocks(art::ServiceHandle<detinfo::DetectorClocksService const>()->provider());
-    return DUNEAnaHitUtils::GetLifetimeCorrection(pHit->PeakTime(), clocks->TriggerTime());
+    return DUNEAnaHitUtils::LifetimeCorrection(pHit->PeakTime(), clocks->TriggerTime());
 }
 
-double DUNEAnaHitUtils::GetLifetimeCorrection(const double timeInTicks, const double t0InMicroS)
+double DUNEAnaHitUtils::LifetimeCorrection(const double timeInTicks, const double t0InMicroS)
 {
     auto clocks(art::ServiceHandle<detinfo::DetectorClocksService const>()->provider());
     auto detProp(art::ServiceHandle<detinfo::DetectorPropertiesService const>()->provider());

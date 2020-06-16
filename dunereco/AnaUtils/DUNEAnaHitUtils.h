@@ -37,7 +37,7 @@ public:
     * 
     * @return the charge normalisation correction
     */
-    static double GetLifetimeCorrection(const art::Ptr<recob::Hit> &pHit);
+    static double LifetimeCorrection(const art::Ptr<recob::Hit> &pHit);
 
     /**
     * @brief  get the lifetime correction for a particular time
@@ -47,7 +47,7 @@ public:
     * 
     * @return the charge normalisation correction
     */
-    static double GetLifetimeCorrection(const double timeInTicks, const double t0InMicroS);
+    static double LifetimeCorrection(const double timeInTicks, const double t0InMicroS);
 };
 
 } // namespace dune_ana
