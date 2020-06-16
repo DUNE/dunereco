@@ -6,6 +6,8 @@
 #include "lardataobj/RecoBase/Hit.h"
 //DUNE
 #include "dune/AnaUtils/DUNEAnaEventUtils.h"
+#include "dune/AnaUtils/DUNEAnaHitUtils.h"
+
 #include "dune/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.h"
 
 NeutrinoEnergyRecoAlg::NeutrinoEnergyRecoAlg(fhicl::ParameterSet const& pset) :
@@ -42,6 +44,7 @@ double NeutrinoEnergyRecoAlg::GetLifetimeCorrectedTotalHitCharge(const art::Even
 
         if (2 == pHit->WireID().Plane)
             lifetimeCorreectedEventCharge += pHit->Integral() * fCalorimetryAlg.LifetimeCorrection(pHit->PeakTime(), t0);
+        std::cout<<"Corrections: " << fCalorimetryAlg.LifetimeCorrection(pHit->PeakTime(), t0) << "  " << dune_ana::DUNEAnaHitUtils::GetLifetimeCorrection(pHit) << std::endl; 
     }
 
     return lifetimeCorreectedEventCharge;

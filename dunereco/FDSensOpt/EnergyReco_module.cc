@@ -179,6 +179,7 @@ namespace dune {
   //------------------------------------------------------------------------------
   void EnergyReco::produce(art::Event& evt)
   {
+      fNeutrinoEnergyRecoAlg.GetLifetimeCorrectedTotalHitCharge(evt, "linecluster");
     auto erecoout = std::make_unique<dune::EnergyRecoOutput>();
     auto assnstrk = std::make_unique<art::Assns<dune::EnergyRecoOutput, recob::Track>>();
     auto assnsshw = std::make_unique<art::Assns<dune::EnergyRecoOutput, recob::Shower>>();
