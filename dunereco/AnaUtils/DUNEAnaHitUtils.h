@@ -37,7 +37,7 @@ public:
     * 
     * @return the charge normalisation correction
     */
-    static double GetLifetimeCorrection(const art::Ptr<recob::Hit> &pHit);
+    static double LifetimeCorrection(const art::Ptr<recob::Hit> &pHit);
 
     /**
     * @brief  get the lifetime correction for a particular time
@@ -47,7 +47,16 @@ public:
     * 
     * @return the charge normalisation correction
     */
-    static double GetLifetimeCorrection(const double timeInTicks, const double t0InMicroS);
+    static double LifetimeCorrection(const double timeInTicks, const double t0InMicroS);
+
+    /**
+    * @brief  get the total hit charge, corrected for lifetime
+    *
+    * @param  hits the vector of hits to be summed over
+    * 
+    * @return the lifetime corrected total hit charge
+    */
+    static double LifetimeCorrectedTotalHitCharge(const std::vector<art::Ptr<recob::Hit> > &hits);
 };
 
 } // namespace dune_ana
