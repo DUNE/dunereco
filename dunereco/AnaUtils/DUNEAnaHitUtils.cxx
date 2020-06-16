@@ -5,22 +5,22 @@
 * @brief Utility containing helpful functions for end users to access information about hits
 */
 
-#include "dune/AnaUtils/DUNEAnaHitUtils.h"
+//STL
+//ROOT
+//ART
 #include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "lardataalg/DetectorInfo/DetectorProperties.h"
+//LARSOFT
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardataalg/DetectorInfo/DetectorClocks.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
+//DUNE
+#include "dune/AnaUtils/DUNEAnaHitUtils.h"
 
-#include <iostream>
 namespace dune_ana
 {
 
 double DUNEAnaHitUtils::GetLifetimeCorrection(const art::Ptr<recob::Hit> &pHit)
 {
     auto clocks(art::ServiceHandle<detinfo::DetectorClocksService const>()->provider());
-    std::cout<<"trig time: " << clocks->TriggerTime() << "   beam time: " << clocks->BeamGateTime() << std::endl;
-
     return DUNEAnaHitUtils::GetLifetimeCorrection(pHit->PeakTime(), clocks->TriggerTime());
 }
 
@@ -33,7 +33,6 @@ double DUNEAnaHitUtils::GetLifetimeCorrection(const double timeInTicks, const do
     const double tpcTriggerOffsetInTicks(detProp->TriggerOffset());
 
     const double timeCorrectedForT0((timeInTicks - tpcTriggerOffsetInTicks)*tpcSamplingRateInMicroS - t0InMicroS);
-
     const double tauLifetime(detProp->ElectronLifetime());
 
     return std::exp(timeCorrectedForT0/tauLifetime);

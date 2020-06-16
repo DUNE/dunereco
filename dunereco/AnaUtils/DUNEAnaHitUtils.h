@@ -8,16 +8,17 @@
 #ifndef DUNE_ANA_HIT_UTILS_H
 #define DUNE_ANA_HIT_UTILS_H
 
-#include "art/Framework/Principal/Event.h"
-
-#include "dune/AnaUtils/DUNEAnaUtilsBase.h"
-
+//STL
 #include <cmath>
 #include <string>
 #include <vector>
-
+//ROOT
+//ART
+#include "art/Framework/Principal/Event.h"
+//LARSOFT
 #include "lardataobj/RecoBase/Hit.h"
-
+//DUNE
+#include "dune/AnaUtils/DUNEAnaUtilsBase.h"
 
 namespace dune_ana
 {
@@ -47,7 +48,6 @@ public:
     * @return the charge normalisation correction
     */
     static double GetLifetimeCorrection(const double timeInTicks, const double t0InMicroS);
-
 };
 
 } // namespace dune_ana
