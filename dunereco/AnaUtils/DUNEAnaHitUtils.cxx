@@ -38,6 +38,14 @@ double DUNEAnaHitUtils::LifetimeCorrection(const double timeInTicks, const doubl
     return std::exp(timeCorrectedForT0/tauLifetime);
 }
 
+double DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(const std::vector<art::Ptr<recob::Hit> > &hits)
+{
+    double totalHitCharge(0);
+    for (unsigned int iHit = 0; iHit < hits.size(); iHit++)
+        totalHitCharge += hits[iHit]->Integral() * DUNEAnaHitUtils::LifetimeCorrection(hits[iHit]);
+
+    return totalHitCharge;
+}
 
 } // namespace dune_ana
 
