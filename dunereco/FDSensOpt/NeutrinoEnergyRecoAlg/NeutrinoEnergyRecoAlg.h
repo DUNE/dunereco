@@ -19,6 +19,10 @@ class NeutrinoEnergyRecoAlg
             const std::string &hitLabel, const std::string &trackToHitLabel, const std::string &hitToSpacePointLabel);
 
         double CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event);
+
+        double CalculateAndPickMuonMomentum(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event);
+
+        double CalculateMuonTotalEnergyFromMomentum(const double muonMomentum);
         
         double CalculateMuonMomentumByRange(const art::Ptr<recob::Track> pMuonTrack);
 
@@ -26,8 +30,9 @@ class NeutrinoEnergyRecoAlg
 
         bool IsContained(const art::Ptr<recob::Track> pMuonTrack, const art::Event &event);
 
-
     private:
+        bool IsPointContained(const double x, const double y, const double z);
+
         calo::CalorimetryAlg fCalorimetryAlg;
 
         double fGradTrkMomRange;
@@ -42,6 +47,7 @@ class NeutrinoEnergyRecoAlg
         double fIntShwEnergy;
         double fGradNuEHadEn; 
         double fIntNuEHadEn;
+        double fDistanceToWallThreshold;
         double fRecombFactor;
 
         std::string fTrackLabel;
