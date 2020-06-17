@@ -15,15 +15,16 @@ namespace dune
 class NeutrinoEnergyRecoAlg 
 {
     public:
-        NeutrinoEnergyRecoAlg(const fhicl::ParameterSet &pset);
+        NeutrinoEnergyRecoAlg(const fhicl::ParameterSet &pset, const std::string &trackLabel, 
+            const std::string &hitLabel, const std::string &trackToHitLabel, const std::string &hitToSpacePointLabel);
 
-        double CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event, 
-            const std::string &hitLabel, const std::string &TrackToHitLabel, const std::string &hitToSpacePointLabel);
-
+        double CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event);
         
         double CalculateMuonMomentumByRange(const art::Ptr<recob::Track> pMuonTrack);
 
         double CalculateMuonMomentumByMCS(const art::Ptr<recob::Track> pMuonTrack);
+
+        bool IsContained(const art::Ptr<recob::Track> pMuonTrack, const art::Event &event);
 
 
     private:
@@ -42,5 +43,10 @@ class NeutrinoEnergyRecoAlg
         double fGradNuEHadEn; 
         double fIntNuEHadEn;
         double fRecombFactor;
+
+        std::string fTrackLabel;
+        std::string fHitLabel;
+        std::string fTrackToHitLabel;
+        std::string fHitToSpacePointLabel;
 };
 }

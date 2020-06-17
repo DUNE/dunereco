@@ -129,7 +129,7 @@ namespace dune {
   //------------------------------------------------------------------------------
   EnergyReco::EnergyReco(fhicl::ParameterSet const& pset)
     : EDProducer(pset), fCaloAlg (pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
-    fNeutrinoEnergyRecoAlg(pset.get<fhicl::ParameterSet>("NeutrinoEnergyRecoAlg"))
+    fNeutrinoEnergyRecoAlg(pset.get<fhicl::ParameterSet>("NeutrinoEnergyRecoAlg"),"pmtrack","linecluster","pmtrack","pmtrack")
   {
     produces<dune::EnergyRecoOutput>();
     produces<art::Assns<dune::EnergyRecoOutput, recob::Track>>();
