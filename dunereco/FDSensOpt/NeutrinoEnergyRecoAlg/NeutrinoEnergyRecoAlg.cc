@@ -64,6 +64,11 @@ double NeutrinoEnergyRecoAlg::CalculateMuonMomentumByMCS(const art::Ptr<recob::T
 
 bool NeutrinoEnergyRecoAlg::IsContained(const art::Ptr<recob::Track> pMuonTrack, const art::Event &event)
 {
+    const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel));
+    for (unsigned int iHit = 0; iHit < muonHits.size(); iHit++)
+    {
+
+    }
     return 0;
 }
 
