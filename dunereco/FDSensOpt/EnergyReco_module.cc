@@ -364,6 +364,7 @@ namespace dune {
     int iLongestTrack = -1;
 
     for (int i = 0; i < ntracks; ++i){
+        fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(tracklist[i],evt);
       if(tracklist[i]->Length() > fMaxTrackLength){
 	fMaxTrackLength = tracklist[i]->Length();
 	iLongestTrack = i;

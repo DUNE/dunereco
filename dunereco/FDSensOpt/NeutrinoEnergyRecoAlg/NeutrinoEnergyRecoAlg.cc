@@ -48,6 +48,9 @@ double NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Ptr<recob::Trac
 
     const double hadronicCharge(totalHitCharge-muonHitCharge);
 
+    bool isContained(IsContained(pMuonTrack, event));
+    isContained=0;
+
     return hadronicCharge;
 }
 
@@ -67,7 +70,9 @@ bool NeutrinoEnergyRecoAlg::IsContained(const art::Ptr<recob::Track> pMuonTrack,
     const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel));
     for (unsigned int iHit = 0; iHit < muonHits.size(); iHit++)
     {
-
+        const std::vector<art::Ptr<recob::SpacePoint> > muonSpacePoints(dune_ana::DUNEAnaHitUtils(muonHits[iHit], 
+            event, fHitToSpacePointLabel));
+        std::cout<<"NSP: " << muonSpacePoints.size() << std::endl;
     }
     return 0;
 }
