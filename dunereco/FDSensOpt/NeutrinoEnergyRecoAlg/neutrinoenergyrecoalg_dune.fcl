@@ -18,6 +18,7 @@ dune_neutrinoenergyrecoalg:
     IntShwEnergy:            -0.02
     GradNuEHadEn:            0.62
     IntNuEHadEn:             0.02
+    DistanceToWallThreshold: 20.0 
     RecombFactor:            0.63
 }
 
