@@ -20,9 +20,11 @@
 namespace dune_ana
 {
 
-std::vector<art::Ptr<recob::SpacePoint>> DUNEAnaHitUtils::GetSpacePoints(const art::Ptr<recob::Hit> &pHit, const art::Event &evt, const std::string &label)
+std::vector<art::Ptr<recob::SpacePoint>> DUNEAnaHitUtils::GetSpacePoints(const art::Ptr<recob::Hit> &pHit,
+    const art::Event &evt, const std::string &hitLabel, const std::string &hitToSpacePointLabel)
+
 {
-    return DUNEAnaHitUtils::GetAssocProductVector<recob::SpacePoint>(pHit,evt,label,label);
+    return DUNEAnaHitUtils::GetAssocProductVector<recob::SpacePoint>(pHit,evt,hitLabel,hitToSpacePointLabel);
 }
 
 double DUNEAnaHitUtils::LifetimeCorrection(const art::Ptr<recob::Hit> &pHit)

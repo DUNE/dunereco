@@ -31,15 +31,17 @@ class DUNEAnaHitUtils:DUNEAnaUtilsBase
 {
 public:
     /**
-    * @brief Get the space points associated with the hit.
+    * @brief  Get the space points associated with the hit.
     *
-    * @param pHit is the spacepoint for which we want the hits
-    * @param evt is the underlying art event
-    * @param label is the label for the spacepoint producer
+    * @param  pHit is the spacepoint for which we want the hits
+    * @param  evt is the underlying art event
+    * @param  hitLabel is the label for the hit producer
+    * @param  hitToSpacePointLabel is the label for the association between hit and space point
     * 
     * @return vector of art::Ptrs to the hits 
     */
-    static std::vector<art::Ptr<recob::SpacePoint>> GetSpacePoints(const art::Ptr<recob::Hit> &pHit, const art::Event &evt, const std::string &label);
+    static std::vector<art::Ptr<recob::SpacePoint>> GetSpacePoints(const art::Ptr<recob::Hit> &pHit, 
+        const art::Event &evt, const std::string &hitLabel, const std::string &hitToSpacePointLabel);
 
     /**
     * @brief  get the lifetime correction for a hit, assumes the detector properties GetTriggerOffset is T0
