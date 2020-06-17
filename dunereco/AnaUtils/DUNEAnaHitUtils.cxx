@@ -12,11 +12,18 @@
 //LARSOFT
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
 //DUNE
 #include "dune/AnaUtils/DUNEAnaHitUtils.h"
 
 namespace dune_ana
 {
+
+std::vector<art::Ptr<recob::SpacePoint>> DUNEAnaHitUtils::GetSpacePoints(const art::Ptr<recob::Hit> &pHit, const art::Event &evt, const std::string &label)
+{
+    return DUNEAnaHitUtils::GetAssocProductVector<recob::SpacePoint>(pHit,evt,label,label);
+}
 
 double DUNEAnaHitUtils::LifetimeCorrection(const art::Ptr<recob::Hit> &pHit)
 {
