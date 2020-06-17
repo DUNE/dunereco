@@ -31,6 +31,7 @@ art_make( BASENAME_ONLY
   ${FHICLCPP}
   ${MF_MESSAGELOGGER}
   
+  ${ROOT_EG}
   cetlib cetlib_except
   ${ROOT_BASIC_LIB_LIST}
   ${Boost_SYSTEM_LIBRARY}
