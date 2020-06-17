@@ -39,7 +39,20 @@ standard_gcnroot:
   OutputName:         "gcn"
   TreeName:           "GraphTree"
   SaveEventTruth:     true
-  SaveParticleFlow:   true
+  SaveParticleTree:   true
+}
+
+standard_gcnh5:
+{
+  module_type:        GCNH5
+  #==================
+  GraphModuleLabel:   "graph"
+  GraphInstanceLabel: "graph"
+  TruthLabel:         "generator"
+  OutputName:         "gcn"
+  TreeName:           "GraphTree"
+  SaveEventTruth:     true
+  SaveParticleTruth:  true
 }
 
 standard_gcngraphmaker_protodune:
@@ -67,6 +80,12 @@ standard_gcngraphmaker_2d:
   PixelMapLabel: "cvnmap"
   ChargeThreshold: 0.001
   NeighbourPixels: 3
+}
+
+standard_hitgraphmaker:
+{
+  module_type: GCNHitGraphMaker
+  HitModuleLabel: "hitfd"
 }
 
 END_PROLOG
