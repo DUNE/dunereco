@@ -240,6 +240,9 @@ namespace dune {
                 double Emu = std::sqrt(longestTrackMom*longestTrackMom+0.1056583745*0.1056583745);
                 erecoout->fLepLorentzVector.SetE(Emu);
 
+                std::cout<<"in the module lepton charge: " << fLongestTrackCharge << std::endl;
+                std::cout<<"in the module event charge: " << fTotalEventCharge << std::endl;
+                std::cout<<"in module, the uncorrected energy is: " << (fCaloAlg.ElectronsFromADCArea(fTotalEventCharge - fLongestTrackCharge, 2) * (1.0 / fRecombFactor) / util::kGeVToElectrons) << std::endl;
                 erecoout->fHadLorentzVector.SetE(corrHadEnergy);
                 erecoout->fNuLorentzVector.SetE(Emu + corrHadEnergy);
             }
@@ -278,6 +281,33 @@ namespace dune {
             erecoout->recoMethodUsed = 3;
             erecoout->fNuLorentzVector.SetE(fCaloAlg.ElectronsFromADCArea(fWirecharge, 2)/fRecombFactor / util::kGeVToElectrons);
         }
+
+        std::cout<<"Starting!"<<std::endl;
+        if (fBestTrack.isAvailable())
+        {
+            dune::EnergyRecoOutput testOutput(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(fBestTrack,evt));
+            std::cout<<"Mom X: " << erecoout->fLepLorentzVector.X() << "   " << testOutput.fLepLorentzVector.X() << std::endl;
+            std::cout<<"Mom Y: " << erecoout->fLepLorentzVector.Y() << "   " << testOutput.fLepLorentzVector.Y() << std::endl;
+            std::cout<<"Mom Z: " << erecoout->fLepLorentzVector.Z() << "   " << testOutput.fLepLorentzVector.Z() << std::endl;
+            std::cout<<"Mom T: " << erecoout->fLepLorentzVector.T() << "   " << testOutput.fLepLorentzVector.T() << std::endl;
+            std::cout<<"ontained: " << erecoout->longestTrackContained << "   " << testOutput.longestTrackContained << std::endl;
+            std::cout<<"trackmethod: " << erecoout->trackMomMethod << "   " << testOutput.trackMomMethod << std::endl;
+            std::cout<<"recomethod: " << erecoout->recoMethodUsed << "   " << testOutput.recoMethodUsed << std::endl;
+            std::cout<<"Had Mom X: " << erecoout->fHadLorentzVector.X() << "   " << testOutput.fHadLorentzVector.X() << std::endl;
+            std::cout<<"Had Mom Y: " << erecoout->fHadLorentzVector.Y() << "   " << testOutput.fHadLorentzVector.Y() << std::endl;
+            std::cout<<"Had Mom Z: " << erecoout->fHadLorentzVector.Z() << "   " << testOutput.fHadLorentzVector.Z() << std::endl;
+            std::cout<<"Had Mom T: " << erecoout->fHadLorentzVector.T() << "   " << testOutput.fHadLorentzVector.T() << std::endl;
+ 
+            std::cout<<"Nu Mom X: " << erecoout->fNuLorentzVector.X() << "   " << testOutput.fNuLorentzVector.X() << std::endl;
+            std::cout<<"Nu Mom Y: " << erecoout->fNuLorentzVector.Y() << "   " << testOutput.fNuLorentzVector.Y() << std::endl;
+            std::cout<<"Nu Mom Z: " << erecoout->fNuLorentzVector.Z() << "   " << testOutput.fNuLorentzVector.Z() << std::endl;
+            std::cout<<"Nu Mom T: " << erecoout->fNuLorentzVector.T() << "   " << testOutput.fNuLorentzVector.T() << std::endl;
+ 
+            std::cout<<"Pos X: " << erecoout->fRecoVertex.X() << "   " << testOutput.fRecoVertex.X() << std::endl;
+            std::cout<<"Pos Y: " << erecoout->fRecoVertex.Y() << "   " << testOutput.fRecoVertex.Y() << std::endl;
+            std::cout<<"Pos Z: " << erecoout->fRecoVertex.Z() << "   " << testOutput.fRecoVertex.Z() << std::endl;
+        }
+        std::cout<<"finished"<<std::endl;
 
         art::ProductID const prodId = evt.getProductID<dune::EnergyRecoOutput>();
         art::EDProductGetter const* prodGetter = evt.productGetter(prodId);
@@ -364,7 +394,6 @@ namespace dune {
         int iLongestTrack = -1;
 
         for (int i = 0; i < ntracks; ++i){
-            fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(tracklist[i],evt);
             if(tracklist[i]->Length() > fMaxTrackLength){
                 fMaxTrackLength = tracklist[i]->Length();
                 iLongestTrack = i;

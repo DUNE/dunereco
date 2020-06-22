@@ -183,6 +183,9 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const std:
 
     const double hadronicObservedCharge(eventObservedCharge-leptonObservedCharge);
     const double uncorrectedHadronicEnergy(this->CalculateEnergyFromCharge(hadronicObservedCharge));
+    std::cout<<"In the alg: lepton charge: " << leptonObservedCharge << std::endl;
+    std::cout<<"In the alg: event charge: " << eventObservedCharge << std::endl;
+    std::cout<<"In the alg, the uncorrected enewrgy is " << uncorrectedHadronicEnergy << std::endl;
     const double correctedHadronicEnergy(
         this->CalculateCorrectedEnergy(uncorrectedHadronicEnergy,energyRecoInputHolder.fHadronicCorrectionGradient,
         energyRecoInputHolder.fHadronicCorrectionIntercept));
