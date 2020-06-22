@@ -24,6 +24,8 @@ class NeutrinoEnergyRecoAlg
 
         dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Ptr<recob::Shower> &pElectronShower, const art::Event &event);
 
+        dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Event &event);
+
         double CalculateMuonMomentumByRange(const art::Ptr<recob::Track> pMuonTrack);
 
         double CalculateMuonMomentumByMCS(const art::Ptr<recob::Track> pMuonTrack);

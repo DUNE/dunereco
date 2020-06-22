@@ -102,6 +102,21 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
     return CalculateNeutrinoEnergy(electronHits, event, energyRecoInputHolder);
 }
 
+dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Event &event)
+{
+
+    dune::EnergyRecoOutput output;
+    output.recoMethodUsed = static_cast<int>(energyRecoInputHolder.fEnergyRecoMethod);
+    output.fRecoVertex = energyRecoInputHolder.fVertex;
+    output.fNuLorentzVector.SetE(neutrinoEnergy);
+    output.fLepLorentzVector = energyRecoInputHolder.fLeptonMomentum;
+    output.fHadLorentzVector.SetE(correctedHadronicEnergy);
+    output.longestTrackContained = static_cast<int>(energyRecoInputHolder.fMuonContainmentStatus);
+    output.trackMomMethod = static_cast<int>(energyRecoInputHolder.fMuonTrackMethod);
+    return output;
+}
+
+
 NeutrinoEnergyRecoAlg::Momentum4_t NeutrinoEnergyRecoAlg::CalculateParticle4Momentum(const int pdg, const double momentum, 
     const double directionX, const double directionY, const double directionZ)
 {
