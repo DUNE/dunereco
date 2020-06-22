@@ -44,6 +44,17 @@ public:
         const art::Event &evt, const std::string &hitLabel, const std::string &hitToSpacePointLabel);
 
     /**
+    * @brief  Get all hits on a specific plane
+    *
+    * @param  hits the hit vector to be searched for hits on a specific plane
+    * @param  planeNumber the requested plane number
+    * 
+    * @return the hit vector containing hits on a specific plane
+    */
+    static std::vector<art::Ptr<recob::Hit>> GetHitsOnPlane(const std::vector<art::Ptr<recob::Hit>> &hits, 
+        const geo::PlaneID::PlaneID_t planeID);
+
+    /**
     * @brief  get the lifetime correction for a hit, assumes the detector properties GetTriggerOffset is T0
     *
     * @param  phit is the hit 
