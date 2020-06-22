@@ -52,7 +52,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
 {
     Point_t vertex(pMuonTrack->Start().X(), pMuonTrack->Start().Y(), pMuonTrack->Start().Z());
 
-    const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel));
+    const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel),2));
     bool isContained(IsContained(muonHits, event));
     const double muonMomentumMCS(CalculateMuonMomentumByMCS(pMuonTrack));
     if (!isContained)
@@ -91,7 +91,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
 {
     Point_t vertex(pElectronShower->ShowerStart().X(), pElectronShower->ShowerStart().Y(), pElectronShower->ShowerStart().Z());
 
-    const std::vector<art::Ptr<recob::Hit> > electronHits(dune_ana::DUNEAnaShowerUtils::GetHits(pElectronShower, event, fTrackToHitLabel));
+    const std::vector<art::Ptr<recob::Hit> > electronHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(pElectronShower, event, fTrackToHitLabel),2));
     const double electronEnergy(this->CalculateElectronEnergy(pElectronShower, event));
     const Momentum4_t electron4Momentum(this->CalculateParticle4Momentum(11, electronEnergy, 
         pElectronShower->Direction().X(), pElectronShower->Direction().Y(), pElectronShower->Direction().Z()));
@@ -132,7 +132,7 @@ double NeutrinoEnergyRecoAlg::CalculateMuonMomentumByMCS(const art::Ptr<recob::T
 
 double NeutrinoEnergyRecoAlg::CalculateElectronEnergy(const art::Ptr<recob::Shower> &pElectronShower, const art::Event &event)
 {
-    const std::vector<art::Ptr<recob::Hit> > electronHits(dune_ana::DUNEAnaShowerUtils::GetHits(pElectronShower, event, fShowerToHitLabel));
+    const std::vector<art::Ptr<recob::Hit> > electronHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(pElectronShower, event, fShowerToHitLabel),2));
     const double electronObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(electronHits));
     const double uncorrectedElectronEnergy(this->CalculateEnergyFromCharge(electronObservedCharge));
 
@@ -146,7 +146,7 @@ double NeutrinoEnergyRecoAlg::CalculateEnergyFromCharge(const double charge)
 
 bool NeutrinoEnergyRecoAlg::IsContained(const art::Ptr<recob::Track> pMuonTrack, const art::Event &event)
 {
-    const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel));
+    const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel),2));
     return this->IsContained(muonHits, event);
 }
 
@@ -178,7 +178,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const std:
 {
     const double leptonObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(leptonHits));
 
-    const std::vector<art::Ptr<recob::Hit> > eventHits(dune_ana::DUNEAnaEventUtils::GetHits(event, fHitLabel));
+    const std::vector<art::Ptr<recob::Hit> > eventHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaEventUtils::GetHits(event, fHitLabel),2));
     const double eventObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(eventHits));
 
     const double hadronicObservedCharge(eventObservedCharge-leptonObservedCharge);
