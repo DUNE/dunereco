@@ -76,7 +76,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
         else
         {
             EnergyRecoInputHolder energyRecoInputHolder(vertex, 
-                this->CalculateParticle4Momentum(13, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
+                this->CalculateParticle4Momentum(13, muonMomentumRange, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
                 kMuonAndHadronic, kContained, kIsContained, fGradNuMuHadEnCont, fIntNuMuHadEnCont);
 
             return CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
