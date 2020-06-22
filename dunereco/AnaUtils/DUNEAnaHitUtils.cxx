@@ -33,7 +33,7 @@ std::vector<art::Ptr<recob::Hit>> DUNEAnaHitUtils::GetHitsOnPlane(const std::vec
 {
     std::vector<art::Ptr<recob::Hit>> hitsOnPlane;
     std::vector<art::Ptr<recob::Hit>>::const_iterator hitIt = hits.begin();
-    while (std::find_if(hitIt, hits.end(), [](const art::Ptr<recob::Hit> &hit){return hit->WireID().Plane==2; }) != hits.end())
+    while (std::find_if(hitIt, hits.end(), [planeID](const art::Ptr<recob::Hit> &hit){return hit->WireID().Plane==planeID; }) != hits.end())
         hitsOnPlane.emplace_back(*(hitIt++));
     return hitsOnPlane;
 

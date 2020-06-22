@@ -47,7 +47,7 @@ public:
     * @brief  Get all hits on a specific plane
     *
     * @param  hits the hit vector to be searched for hits on a specific plane
-    * @param  planeNumber the requested plane number
+    * @param  planeID the requested plane number
     * 
     * @return the hit vector containing hits on a specific plane
     */
