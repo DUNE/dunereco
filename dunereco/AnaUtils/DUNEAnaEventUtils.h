@@ -22,6 +22,7 @@
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/Slice.h"
 #include "lardataobj/RecoBase/PFParticle.h"
+#include "lardataobj/RecoBase/Wire.h"
 
 #include "nusimdata/SimulationBase/MCParticle.h"
 
@@ -87,6 +88,16 @@ public:
     * @return vector of art::Ptrs to spacepoints
     */
     static std::vector<art::Ptr<recob::Hit>> GetHits(const art::Event &evt, const std::string &label);
+
+    /**
+    * @brief Get the wires from the event
+    *
+    * @param evt is the underlying art event
+    * @param label is the label for the wire producer
+    *
+    * @return vector of art::Ptrs to wires
+    */
+    static std::vector<art::Ptr<recob::Wire>> GetWires(const art::Event &evt, const std::string &label);
 
     /**
     * @brief Get the spacepoints from the event
