@@ -26,6 +26,10 @@ class NeutrinoEnergyRecoAlg
 
         dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Event &event);
 
+        dune::EnergyRecoOutput CalculateNeutrinoEnergyViaMuonRanging(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event);
+
+        dune::EnergyRecoOutput CalculateNeutrinoEnergyViaMuonMCS(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event);
+
         double CalculateMuonMomentumByRange(const art::Ptr<recob::Track> pMuonTrack);
 
         double CalculateMuonMomentumByMCS(const art::Ptr<recob::Track> pMuonTrack);
