@@ -212,6 +212,7 @@ namespace dune {
                     erecoout->longestTrackContained = 1;
                     //Some contained tracks can have reconstructed lengths that are too short for their momentum
                     //Use MCS momentum if ratio of range / MCS is < 0.7 (even though track is contained)
+                    std::cout<<"the ratio in mod: " << ((fMaxTrackLength - fIntTrkMomRange) / fGradTrkMomRange) / ((fLongestTrackMCSMom - fIntTrkMomMCS) / fGradTrkMomMCS) << std::endl;
                     if(fLongestTrackMCSMom >= 0 
                             && ((fMaxTrackLength - fIntTrkMomRange) / fGradTrkMomRange) / ((fLongestTrackMCSMom - fIntTrkMomMCS) / fGradTrkMomMCS) < 0.7)           
                     {
@@ -283,9 +284,9 @@ namespace dune {
         }
 
         std::cout<<"Starting!"<<std::endl;
-        if (fBestTrack.isAvailable())
+        if (fBestShower.isAvailable() && erecoout->recoMethodUsed==2)
         {
-            dune::EnergyRecoOutput testOutput(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(fBestTrack,evt));
+            dune::EnergyRecoOutput testOutput(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(fBestShower,evt));
             std::cout<<"Mom X: " << erecoout->fLepLorentzVector.X() << "   " << testOutput.fLepLorentzVector.X() << std::endl;
             std::cout<<"Mom Y: " << erecoout->fLepLorentzVector.Y() << "   " << testOutput.fLepLorentzVector.Y() << std::endl;
             std::cout<<"Mom Z: " << erecoout->fLepLorentzVector.Z() << "   " << testOutput.fLepLorentzVector.Z() << std::endl;
