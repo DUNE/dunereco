@@ -8,7 +8,9 @@
 //LArSoft
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Wire.h"
 #include "larreco/RecoAlg/TrackMomentumCalculator.h"
 //DUNE
 #include "dune/AnaUtils/DUNEAnaEventUtils.h"
@@ -21,8 +23,8 @@
 namespace dune
 {
 NeutrinoEnergyRecoAlg::NeutrinoEnergyRecoAlg(fhicl::ParameterSet const& pset, const std::string &trackLabel, 
-    const std::string &showerLabel, const std::string &hitLabel, const std::string &trackToHitLabel, const std::string &showerToHitLabel, 
-    const std::string &hitToSpacePointLabel) :
+    const std::string &showerLabel, const std::string &hitLabel, const std::string wireLabel, 
+    const std::string &trackToHitLabel, const std::string &showerToHitLabel, const std::string &hitToSpacePointLabel) :
     fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
     fGradTrkMomRange(pset.get<double>("GradTrkMomRange")),
     fIntTrkMomRange(pset.get<double>("IntTrkMomRange")),
@@ -41,6 +43,7 @@ NeutrinoEnergyRecoAlg::NeutrinoEnergyRecoAlg(fhicl::ParameterSet const& pset, co
     fTrackLabel(trackLabel),
     fShowerLabel(showerLabel),
     fHitLabel(hitLabel),
+    fWireLabel(wireLabel),
     fTrackToHitLabel(trackToHitLabel),
     fShowerToHitLabel(showerToHitLabel),
     fHitToSpacePointLabel(hitToSpacePointLabel)
@@ -104,15 +107,37 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
 
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Event &event)
 {
+    art::ServiceHandle<geo::Geometry> fGeometry;
+    auto clocks(art::ServiceHandle<detinfo::DetectorClocksService const>()->provider());
+    const double triggerTme(clocks->TriggerTime());
+
+    const std::vector<art::Ptr<recob::Wire> > wires(dune_ana::DUNEAnaEventUtils::GetWires(event, fWireLabel));
+    double wireCharge(0);
+
+    for (unsigned int iWire = 0; iWire < wires.size(); ++iWire)
+    {
+        if (fGeometry->SignalType(wires[iWire]->Channel()) != geo::kCollection)
+            continue;
+
+        const recob::Wire::RegionsOfInterest_t& signalROI(wires[iWire]->SignalROI());
+        for (const lar::sparse_vector<float>::datarange_t& range : signalROI.get_ranges())
+        {
+            const std::vector<float>& signal(range.data());
+            const raw::TDCtick_t binFirstTickROI(range.begin_index());
+            for (unsigned int iSignal = 0; iSignal < signal.size(); ++iSignal)
+                wireCharge += signal[iSignal]*dune_ana::DUNEAnaHitUtils::LifetimeCorrection(iSignal+binFirstTickROI, triggerTme);
+        }
+    }
+    const double totalEnergy(this->CalculateEnergyFromCharge(wireCharge));
 
     dune::EnergyRecoOutput output;
-    output.recoMethodUsed = static_cast<int>(energyRecoInputHolder.fEnergyRecoMethod);
-    output.fRecoVertex = energyRecoInputHolder.fVertex;
-    output.fNuLorentzVector.SetE(neutrinoEnergy);
-    output.fLepLorentzVector = energyRecoInputHolder.fLeptonMomentum;
-    output.fHadLorentzVector.SetE(correctedHadronicEnergy);
-    output.longestTrackContained = static_cast<int>(energyRecoInputHolder.fMuonContainmentStatus);
-    output.trackMomMethod = static_cast<int>(energyRecoInputHolder.fMuonTrackMethod);
+    output.recoMethodUsed = static_cast<int>(kAllCharges);
+    output.fRecoVertex.SetXYZ(0.,0.,0.);
+    output.fNuLorentzVector.SetXYZT(0.,0.,0.,totalEnergy);
+    output.fLepLorentzVector.SetXYZT(0.,0.,0.,0.);
+    output.fHadLorentzVector.SetXYZT(0.,0.,0.,0.);
+    output.longestTrackContained = static_cast<int>(kContainmentNotSet);
+    output.trackMomMethod = static_cast<int>(kTrackMethodNotSet);
     return output;
 }
 

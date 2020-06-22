@@ -17,8 +17,8 @@ class NeutrinoEnergyRecoAlg
 {
     public:
         NeutrinoEnergyRecoAlg(const fhicl::ParameterSet &pset, const std::string &trackLabel, const std::string &fShowerLabel, 
-            const std::string &hitLabel, const std::string &trackToHitLabel, const std::string &showerToHitLabel, 
-            const std::string &hitToSpacePointLabel);
+            const std::string &hitLabel, const std::string wireLabel, const std::string &trackToHitLabel, 
+            const std::string &showerToHitLabel, const std::string &hitToSpacePointLabel);
 
         dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event);
 
@@ -119,6 +119,7 @@ class NeutrinoEnergyRecoAlg
         std::string fTrackLabel;
         std::string fShowerLabel;
         std::string fHitLabel;
+        std::string fWireLabel;
         std::string fTrackToHitLabel;
         std::string fShowerToHitLabel;
         std::string fHitToSpacePointLabel;
