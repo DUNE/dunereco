@@ -6,6 +6,7 @@
 */
 
 //STL
+#include <algorithm>
 //ROOT
 //ART
 #include "art/Framework/Services/Registry/ServiceHandle.h"
@@ -25,6 +26,17 @@ std::vector<art::Ptr<recob::SpacePoint>> DUNEAnaHitUtils::GetSpacePoints(const a
 
 {
     return DUNEAnaHitUtils::GetAssocProductVector<recob::SpacePoint>(pHit,evt,hitLabel,hitToSpacePointLabel);
+}
+
+std::vector<art::Ptr<recob::Hit>> DUNEAnaHitUtils::GetHitsOnPlane(const std::vector<art::Ptr<recob::Hit>> &hits, 
+    const geo::PlaneID::PlaneID_t planeID)
+{
+    std::vector<art::Ptr<recob::Hit>> hitsOnPlane;
+    std::vector<art::Ptr<recob::Hit>>::const_iterator hitIt = hits.begin();
+    while (std::find_if(hitIt, hits.end(), [](const art::Ptr<recob::Hit> &hit){return hit->WireID().Plane==2; }) != hits.end())
+        hitsOnPlane.emplace_back(*(hitIt++));
+    return hitsOnPlane;
+
 }
 
 double DUNEAnaHitUtils::LifetimeCorrection(const art::Ptr<recob::Hit> &pHit)
