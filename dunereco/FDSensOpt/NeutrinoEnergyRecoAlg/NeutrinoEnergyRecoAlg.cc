@@ -45,7 +45,6 @@ NeutrinoEnergyRecoAlg::NeutrinoEnergyRecoAlg(fhicl::ParameterSet const& pset, co
     fShowerToHitLabel(showerToHitLabel),
     fHitToSpacePointLabel(hitToSpacePointLabel)
 {
-    std::cout<<"This thing runs"<<std::endl;
 }
 
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event)
@@ -54,7 +53,8 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
 
     const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel),2));
     bool isContained(IsContained(muonHits, event));
-    const double muonMomentumMCS(CalculateMuonMomentumByMCS(pMuonTrack));
+    const double uncorrectedMuonMomentumMCS(this->CalculateUncorrectedMuonMomentumByMCS(pMuonTrack));
+    const double muonMomentumMCS(this->CalculateLinearlyCorrectedValue(uncorrectedMuonMomentumMCS, fGradTrkMomMCS, fIntTrkMomMCS));
     if (!isContained)
     {
         EnergyRecoInputHolder energyRecoInputHolder(vertex, 
@@ -65,7 +65,8 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
     else
     {
         const double muonMomentumRange(CalculateMuonMomentumByRange(pMuonTrack));
-        if (muonMomentumRange/muonMomentumMCS - 0.7 < -1.*std::numeric_limits<double>::epsilon())
+        if (uncorrectedMuonMomentumMCS > std::numeric_limits<double>::epsilon() 
+            && muonMomentumRange/muonMomentumMCS - 0.7 < -1.*std::numeric_limits<double>::epsilon())
         {
             EnergyRecoInputHolder energyRecoInputHolder(vertex, 
                 this->CalculateParticle4Momentum(13, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
@@ -121,13 +122,13 @@ NeutrinoEnergyRecoAlg::Momentum4_t NeutrinoEnergyRecoAlg::CalculateParticle4Mome
 
 double NeutrinoEnergyRecoAlg::CalculateMuonMomentumByRange(const art::Ptr<recob::Track> pMuonTrack)
 {
-    return (pMuonTrack->Length() - fIntTrkMomRange) / fGradTrkMomRange;
+    return this->CalculateLinearlyCorrectedValue(pMuonTrack->Length(), fGradTrkMomRange, fIntTrkMomRange);
 }
 
 double NeutrinoEnergyRecoAlg::CalculateMuonMomentumByMCS(const art::Ptr<recob::Track> pMuonTrack)
 {
-    trkf::TrackMomentumCalculator TrackMomCalc;
-    return (TrackMomCalc.GetMomentumMultiScatterChi2(pMuonTrack) - fIntTrkMomMCS) / fGradTrkMomMCS;
+    const double uncorrectedMomentum(this->CalculateUncorrectedMuonMomentumByMCS(pMuonTrack));
+    return this->CalculateLinearlyCorrectedValue(uncorrectedMomentum, fGradTrkMomMCS, fIntTrkMomMCS);
 }
 
 double NeutrinoEnergyRecoAlg::CalculateElectronEnergy(const art::Ptr<recob::Shower> &pElectronShower, const art::Event &event)
@@ -136,7 +137,7 @@ double NeutrinoEnergyRecoAlg::CalculateElectronEnergy(const art::Ptr<recob::Show
     const double electronObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(electronHits));
     const double uncorrectedElectronEnergy(this->CalculateEnergyFromCharge(electronObservedCharge));
 
-    return this->CalculateCorrectedEnergy(uncorrectedElectronEnergy, fGradShwEnergy, fIntShwEnergy);
+    return this->CalculateLinearlyCorrectedValue(uncorrectedElectronEnergy, fGradShwEnergy, fIntShwEnergy);
 }
 
 double NeutrinoEnergyRecoAlg::CalculateEnergyFromCharge(const double charge)
@@ -167,11 +168,23 @@ bool NeutrinoEnergyRecoAlg::IsContained(const std::vector<art::Ptr<recob::Hit> >
     return true;
 }
 
-double NeutrinoEnergyRecoAlg::CalculateCorrectedEnergy(const double uncorrectedEnergy, const double correctionGradient,
+double NeutrinoEnergyRecoAlg::CalculateLinearlyCorrectedValue(const double value, const double correctionGradient,
     const double correctionIntercept)
 {
-    return (uncorrectedEnergy - correctionIntercept) / correctionGradient;
+    return (value - correctionIntercept) / correctionGradient;
 }
+
+double NeutrinoEnergyRecoAlg::CalculateUncorrectedMuonMomentumByMCS(const art::Ptr<recob::Track> &pMuonTrack)
+{
+    trkf::TrackMomentumCalculator TrackMomCalc;
+    return (TrackMomCalc.GetMomentumMultiScatterChi2(pMuonTrack));
+}
+
+//double NeutrinoEnergyRecoAlg::CalculateCorrectedEnergy(const double uncorrectedEnergy, const double correctionGradient,
+//    const double correctionIntercept)
+//{
+//    return (uncorrectedEnergy - correctionIntercept) / correctionGradient;
+//}
 
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const std::vector<art::Ptr<recob::Hit> > &leptonHits, 
     const art::Event &event, const EnergyRecoInputHolder &energyRecoInputHolder)
@@ -183,11 +196,8 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const std:
 
     const double hadronicObservedCharge(eventObservedCharge-leptonObservedCharge);
     const double uncorrectedHadronicEnergy(this->CalculateEnergyFromCharge(hadronicObservedCharge));
-    std::cout<<"In the alg: lepton charge: " << leptonObservedCharge << std::endl;
-    std::cout<<"In the alg: event charge: " << eventObservedCharge << std::endl;
-    std::cout<<"In the alg, the uncorrected enewrgy is " << uncorrectedHadronicEnergy << std::endl;
     const double correctedHadronicEnergy(
-        this->CalculateCorrectedEnergy(uncorrectedHadronicEnergy,energyRecoInputHolder.fHadronicCorrectionGradient,
+        this->CalculateLinearlyCorrectedValue(uncorrectedHadronicEnergy,energyRecoInputHolder.fHadronicCorrectionGradient,
         energyRecoInputHolder.fHadronicCorrectionIntercept));
 
     const double neutrinoEnergy(energyRecoInputHolder.fLeptonMomentum.E()+correctedHadronicEnergy);

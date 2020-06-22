@@ -86,8 +86,13 @@ class NeutrinoEnergyRecoAlg
         Momentum4_t CalculateParticle4Momentum(const int pdg, const double momentum, 
             const double directionX, const double directionY, const double directionZ);
 
-        double CalculateCorrectedEnergy(const double uncorrectedEnergy, const double correctionGradient,
+        double CalculateLinearlyCorrectedValue(const double value, const double correctionGradient,
             const double correctionIntercept);
+
+        double CalculateUncorrectedMuonMomentumByMCS(const art::Ptr<recob::Track> &pMuonTrack);
+
+        //double CalculateCorrectedEnergy(const double uncorrectedEnergy, const double correctionGradient,
+        //    const double correctionIntercept);
 
         dune::EnergyRecoOutput CalculateNeutrinoEnergy(const std::vector<art::Ptr<recob::Hit> > &leptonHits, const art::Event &event, 
             const EnergyRecoInputHolder &energyRecoInputHolder);
