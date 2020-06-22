@@ -91,9 +91,6 @@ class NeutrinoEnergyRecoAlg
 
         double CalculateUncorrectedMuonMomentumByMCS(const art::Ptr<recob::Track> &pMuonTrack);
 
-        //double CalculateCorrectedEnergy(const double uncorrectedEnergy, const double correctionGradient,
-        //    const double correctionIntercept);
-
         dune::EnergyRecoOutput CalculateNeutrinoEnergy(const std::vector<art::Ptr<recob::Hit> > &leptonHits, const art::Event &event, 
             const EnergyRecoInputHolder &energyRecoInputHolder);
 

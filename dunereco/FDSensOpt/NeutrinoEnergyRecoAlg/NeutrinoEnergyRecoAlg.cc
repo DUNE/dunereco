@@ -82,7 +82,6 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
 
             return CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
         }
-
     }
 
     throw art::Exception(art::errors::LogicError) << "Unable to determine how to calculate neutrino energy using muon track! \n";
@@ -153,7 +152,6 @@ bool NeutrinoEnergyRecoAlg::IsContained(const art::Ptr<recob::Track> pMuonTrack,
 
 bool NeutrinoEnergyRecoAlg::IsContained(const std::vector<art::Ptr<recob::Hit> > &hits, const art::Event &event)
 {
-    //const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel));
     for (unsigned int iHit = 0; iHit < hits.size(); ++iHit)
     {
         const std::vector<art::Ptr<recob::SpacePoint> > spacePoints(dune_ana::DUNEAnaHitUtils::GetSpacePoints(hits[iHit], 
@@ -179,12 +177,6 @@ double NeutrinoEnergyRecoAlg::CalculateUncorrectedMuonMomentumByMCS(const art::P
     trkf::TrackMomentumCalculator TrackMomCalc;
     return (TrackMomCalc.GetMomentumMultiScatterChi2(pMuonTrack));
 }
-
-//double NeutrinoEnergyRecoAlg::CalculateCorrectedEnergy(const double uncorrectedEnergy, const double correctionGradient,
-//    const double correctionIntercept)
-//{
-//    return (uncorrectedEnergy - correctionIntercept) / correctionGradient;
-//}
 
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const std::vector<art::Ptr<recob::Hit> > &leptonHits, 
     const art::Event &event, const EnergyRecoInputHolder &energyRecoInputHolder)
