@@ -52,6 +52,9 @@ NeutrinoEnergyRecoAlg::NeutrinoEnergyRecoAlg(fhicl::ParameterSet const& pset, co
 
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event)
 {
+    if (!pMuonTrack.isAvailable())
+        return this->CalculateNeutrinoEnergy(event);
+
     Point_t vertex(pMuonTrack->Start().X(), pMuonTrack->Start().Y(), pMuonTrack->Start().Z());
 
     const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel),2));
@@ -102,10 +105,15 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
 
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Ptr<recob::Shower> &pElectronShower, const art::Event &event)
 {
+    if (!pElectronShower.isAvailable())
+        return this->CalculateNeutrinoEnergy(event);
+
     Point_t vertex(pElectronShower->ShowerStart().X(), pElectronShower->ShowerStart().Y(), pElectronShower->ShowerStart().Z());
 
     const std::vector<art::Ptr<recob::Hit> > electronHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(pElectronShower, event, fShowerToHitLabel),2));
     const double electronEnergy(this->CalculateElectronEnergy(pElectronShower, event));
+    //ATTN yep this line is bugged.  It's deliberately bugged to maintain how the original code functioned
+    //Because of the small electron mass vs total energy deposition, this bug will have a very very small effect on the 4vector
     const Momentum4_t electron4Momentum(this->CalculateParticle4Momentum(11, electronEnergy, 
         pElectronShower->Direction().X(), pElectronShower->Direction().Y(), pElectronShower->Direction().Z()));
 
@@ -223,12 +231,6 @@ double NeutrinoEnergyRecoAlg::CalculateElectronEnergy(const art::Ptr<recob::Show
 double NeutrinoEnergyRecoAlg::CalculateEnergyFromCharge(const double charge)
 {
     return fCalorimetryAlg.ElectronsFromADCArea(charge,2)*1./fRecombFactor/util::kGeVToElectrons;
-}
-
-bool NeutrinoEnergyRecoAlg::IsContained(const art::Ptr<recob::Track> pMuonTrack, const art::Event &event)
-{
-    const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel),2));
-    return this->IsContained(muonHits, event);
 }
 
 bool NeutrinoEnergyRecoAlg::IsContained(const std::vector<art::Ptr<recob::Hit> > &hits, const art::Event &event)

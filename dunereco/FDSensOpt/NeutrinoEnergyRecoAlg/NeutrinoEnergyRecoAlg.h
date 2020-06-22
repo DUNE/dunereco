@@ -30,18 +30,6 @@ class NeutrinoEnergyRecoAlg
 
         dune::EnergyRecoOutput CalculateNeutrinoEnergyViaMuonMCS(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event);
 
-        double CalculateMuonMomentumByRange(const art::Ptr<recob::Track> pMuonTrack);
-
-        double CalculateMuonMomentumByMCS(const art::Ptr<recob::Track> pMuonTrack);
-
-        double CalculateElectronEnergy(const art::Ptr<recob::Shower> &pElectronShower, const art::Event &event);
-
-        double CalculateEnergyFromCharge(const double charge);
-
-        bool IsContained(const art::Ptr<recob::Track> pMuonTrack, const art::Event &event);
-
-        bool IsContained(const std::vector<art::Ptr<recob::Hit> > &hits, const art::Event &event);
-       
     private:
 
         typedef Position4_t Momentum4_t;
@@ -88,6 +76,15 @@ class NeutrinoEnergyRecoAlg
             const double fHadronicCorrectionIntercept;
         };
 
+        double CalculateMuonMomentumByRange(const art::Ptr<recob::Track> pMuonTrack);
+
+        double CalculateMuonMomentumByMCS(const art::Ptr<recob::Track> pMuonTrack);
+
+        double CalculateElectronEnergy(const art::Ptr<recob::Shower> &pElectronShower, const art::Event &event);
+
+        double CalculateEnergyFromCharge(const double charge);
+
+        bool IsContained(const std::vector<art::Ptr<recob::Hit> > &hits, const art::Event &event);
 
         Momentum4_t CalculateParticle4Momentum(const int pdg, const double momentum, 
             const double directionX, const double directionY, const double directionZ);
@@ -99,7 +96,6 @@ class NeutrinoEnergyRecoAlg
 
         dune::EnergyRecoOutput CalculateNeutrinoEnergy(const std::vector<art::Ptr<recob::Hit> > &leptonHits, const art::Event &event, 
             const EnergyRecoInputHolder &energyRecoInputHolder);
-
 
         bool IsPointContained(const double x, const double y, const double z);
 
