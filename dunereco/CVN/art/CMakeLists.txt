@@ -26,12 +26,24 @@ else(DEFINED ENV{TENSORFLOW_DIR})
 set (EXCLUDE_TF TFNetHandler.cxx)
 endif (DEFINED ENV{TENSORFLOW_DIR})
 
+# HEP HPC stuff
+if (DEFINED ENV{HEP_HPC_DIR} AND DEFINED ENV{HDF5_DIR})
+include_directories( $ENV{HEP_HPC_INC} )
+include_directories( $ENV{HDF5_INC} )
+cet_find_library( HEPHPCLIB NAMES hep_hpc_hdf5 PATHS ENV HEP_HPC_LIB NO_DEFAULT_PATH )
+cet_find_library( HDF5LIB NAMES hdf5 PATHS ENV HDF5_LIB NO_DEFAULT_PATH )
+else (DEFINED ENV{HEP_HPC_DIR} AND DEFINED ENV{HDF5_DIR})
+set (EXCLUDE_HEPHPC GCNH5_module.cc)
+endif (DEFINED ENV{HEP_HPC_DIR} AND DEFINED ENV{HDF5_DIR})
+
+
+
 art_make(BASENAME_ONLY
 #  LIBRARY_NAME      CVNArt
   EXCLUDE ${EXCLUDE_TF}
+  EXCLUDE ${EXCLUDE_HEPHPC}
   LIB_LIBRARIES dune_CVN_func
   dune_CVN_tf
-#CVNTf
   ${ART_FRAMEWORK_CORE}
   ${ART_FRAMEWORK_PRINCIPAL}
   ${ART_FRAMEWORK_SERVICES_REGISTRY}
@@ -54,7 +66,9 @@ art_make(BASENAME_ONLY
 #  larsim_MCCheater_BackTrackerService_service           
   larsim_MCCheater_ParticleInventoryService_service
   #${CAFFELIB}
-  ${GSLLIB}                  
+  ${GSLLIB}
+  ${HEPHPCLIB}
+  ${HDF5LIB}
   #${PROTOBUFLIB}
   #${LEVELDBLIB}
   #${GFLAGSLIB}
