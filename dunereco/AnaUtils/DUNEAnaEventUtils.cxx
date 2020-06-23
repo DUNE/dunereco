@@ -89,6 +89,13 @@ std::vector<art::Ptr<recob::Slice>> DUNEAnaEventUtils::GetSlices(const art::Even
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
 
+std::vector<art::Ptr<simb::MCTruth>> DUNEAnaEventUtils::GetMCTruths(const art::Event &evt, const std::string &label)
+{
+    return DUNEAnaEventUtils::GetProductVector<simb::MCTruth>(evt,label);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
 std::vector<art::Ptr<simb::MCParticle>> DUNEAnaEventUtils::GetMCParticles(const art::Event &evt, const std::string &label)
 {
     return DUNEAnaEventUtils::GetProductVector<simb::MCParticle>(evt,label);

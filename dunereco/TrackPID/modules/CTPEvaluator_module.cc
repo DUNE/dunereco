@@ -165,7 +165,8 @@ void CTPEvaluator::produce(art::Event &evt)
     const std::vector<art::Ptr<recob::PFParticle>> particles = dune_ana::DUNEAnaEventUtils::GetPFParticles(evt,fParticleLabel);
 
     // Get the tracks too
-    const std::vector<art::Ptr<recob::Track>> tracks = dune_ana::DUNEAnaEventUtils::GetTracks(evt,"pandoraTrack");
+    const std::string trkLabel = fHelperPars.get<std::string>("TrackLabel");
+    const std::vector<art::Ptr<recob::Track>> tracks = dune_ana::DUNEAnaEventUtils::GetTracks(evt,trkLabel);
 
     for (const art::Ptr<recob::PFParticle> &particle : particles)
     {
@@ -173,7 +174,6 @@ void CTPEvaluator::produce(art::Event &evt)
       
         // Get the track if this particle is track-like
         unsigned int nCaloPoints = 0;
-        const std::string trkLabel = fHelperPars.get<std::string>("TrackLabel");
         if (dune_ana::DUNEAnaPFParticleUtils::IsTrack(particle,evt,fParticleLabel,trkLabel))
         {
             const art::Ptr<recob::Track> trk = dune_ana::DUNEAnaPFParticleUtils::GetTrack(particle,evt,fParticleLabel,trkLabel);

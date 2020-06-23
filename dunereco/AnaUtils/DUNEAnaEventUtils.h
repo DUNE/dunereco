@@ -24,6 +24,7 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Wire.h"
 
+#include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 
 #include <string>
@@ -118,6 +119,16 @@ public:
     * @return vector of art::Ptrs to slices
     */
     static std::vector<art::Ptr<recob::Slice>> GetSlices(const art::Event &evt, const std::string &label);
+
+    /**
+    * @brief Get the MC truths from the event
+    *
+    * @param evt is the underlying art event
+    * @param label is the label for the MC truth producer
+    *
+    * @return vector of art::Ptrs to MC truths
+    */
+    static std::vector<art::Ptr<simb::MCTruth>> GetMCTruths(const art::Event &evt, const std::string &label);
 
     /**
     * @brief Get the MC particles from the event
