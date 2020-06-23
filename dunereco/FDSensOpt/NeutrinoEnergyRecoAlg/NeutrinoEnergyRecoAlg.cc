@@ -1,3 +1,11 @@
+/**
+*  @file   dune/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.cc
+
+*  @brief  Implementation file for the neutrino energy reconstruction algorithm.  A heavily refactored version of Nick Grant's module
+*
+*  $Log: $
+*/
+
 //STL
 #include <limits>
 #include <algorithm>
@@ -48,6 +56,8 @@ NeutrinoEnergyRecoAlg::NeutrinoEnergyRecoAlg(fhicl::ParameterSet const& pset, co
     fHitToSpacePointLabel(hitToSpacePointLabel)
 {
 }
+
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event)
 {
@@ -103,8 +113,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
     throw art::Exception(art::errors::LogicError) << "Unable to determine how to calculate neutrino energy using muon track! \n";
 }
 
-
-
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Ptr<recob::Shower> &pElectronShower, 
     const art::Event &event)
@@ -132,6 +141,8 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
 
     return this->CalculateNeutrinoEnergy(electronHits, event, energyRecoInputHolder);
 }
+
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Event &event)
 {
@@ -169,6 +180,8 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
     return output;
 }
 
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergyViaMuonRanging(const art::Ptr<recob::Track> &pMuonTrack,
     const art::Event &event)
 {
@@ -184,6 +197,8 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergyViaMuonRang
 
     return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
 }
+
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergyViaMuonMCS(const art::Ptr<recob::Track> &pMuonTrack,
     const art::Event &event)
@@ -201,6 +216,8 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergyViaMuonMCS(
     return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
 }
 
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 NeutrinoEnergyRecoAlg::Momentum4_t NeutrinoEnergyRecoAlg::CalculateParticle4Momentum(const double mass, const double momentum, 
     const double directionX, const double directionY, const double directionZ)
 {
@@ -211,16 +228,22 @@ NeutrinoEnergyRecoAlg::Momentum4_t NeutrinoEnergyRecoAlg::CalculateParticle4Mome
     return Momentum4_t(pX, pY, pZ, E);
 }
 
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 double NeutrinoEnergyRecoAlg::CalculateMuonMomentumByRange(const art::Ptr<recob::Track> pMuonTrack)
 {
     return this->CalculateLinearlyCorrectedValue(pMuonTrack->Length(), fGradTrkMomRange, fIntTrkMomRange);
 }
+
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 double NeutrinoEnergyRecoAlg::CalculateMuonMomentumByMCS(const art::Ptr<recob::Track> pMuonTrack)
 {
     const double uncorrectedMomentum(this->CalculateUncorrectedMuonMomentumByMCS(pMuonTrack));
     return this->CalculateLinearlyCorrectedValue(uncorrectedMomentum, fGradTrkMomMCS, fIntTrkMomMCS);
 }
+
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 double NeutrinoEnergyRecoAlg::CalculateElectronEnergy(const art::Ptr<recob::Shower> &pElectronShower, const art::Event &event)
 {
@@ -231,10 +254,14 @@ double NeutrinoEnergyRecoAlg::CalculateElectronEnergy(const art::Ptr<recob::Show
     return this->CalculateLinearlyCorrectedValue(uncorrectedElectronEnergy, fGradShwEnergy, fIntShwEnergy);
 }
 
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 double NeutrinoEnergyRecoAlg::CalculateEnergyFromCharge(const double charge)
 {
     return fCalorimetryAlg.ElectronsFromADCArea(charge,2)*1./fRecombFactor/util::kGeVToElectrons;
 }
+
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 bool NeutrinoEnergyRecoAlg::IsContained(const std::vector<art::Ptr<recob::Hit> > &hits, const art::Event &event)
 {
@@ -252,17 +279,23 @@ bool NeutrinoEnergyRecoAlg::IsContained(const std::vector<art::Ptr<recob::Hit> >
     return true;
 }
 
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 double NeutrinoEnergyRecoAlg::CalculateLinearlyCorrectedValue(const double value, const double correctionGradient,
     const double correctionIntercept)
 {
     return (value - correctionIntercept) / correctionGradient;
 }
 
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 double NeutrinoEnergyRecoAlg::CalculateUncorrectedMuonMomentumByMCS(const art::Ptr<recob::Track> &pMuonTrack)
 {
     trkf::TrackMomentumCalculator TrackMomCalc;
     return (TrackMomCalc.GetMomentumMultiScatterChi2(pMuonTrack));
 }
+
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const std::vector<art::Ptr<recob::Hit> > &leptonHits, 
     const art::Event &event, const EnergyRecoInputHolder &energyRecoInputHolder)
@@ -291,10 +324,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const std:
     return output;
 }
 
-//Initalise (mode) (contained)
-//Lepton momentum
-//
-
+//------------------------------------------------------------------------------------------------------------------------------------------
 
 bool NeutrinoEnergyRecoAlg::IsPointContained(const double x, const double y, const double z)
 {
@@ -346,5 +376,4 @@ bool NeutrinoEnergyRecoAlg::IsPointContained(const double x, const double y, con
     return true;
 }
 
-}
-
+} //dune
