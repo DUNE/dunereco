@@ -20,6 +20,10 @@ dunefd_nuenergyreco:
 
     TrackModuleLabel:        "pmtrack"
     ShowerModuleLabel:       "emshower"
+
+    ShowerToHitLabel:        "emshower"
+
+
     CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
     NeutrinoEnergyRecoAlg:   @local::dune10kt_neutrinoenergyrecoalg
 

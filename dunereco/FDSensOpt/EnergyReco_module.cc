@@ -11,6 +11,10 @@
 
 // Generic C++ includes
 #include <iostream>
+#include <limits>
+
+//ROOT
+#include "TTree.h"
 
 // Framework includes
 #include "art/Framework/Core/ModuleMacros.h"
@@ -45,6 +49,10 @@
 
 #include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 #include "dune/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.h"
+#include "dune/AnaUtils/DUNEAnaEventUtils.h"
+#include "dune/AnaUtils/DUNEAnaHitUtils.h"
+#include "dune/AnaUtils/DUNEAnaShowerUtils.h"
+
 
 
 #include "TTimeStamp.h"
@@ -76,6 +84,8 @@ namespace dune {
 
         private:
 
+            art::Ptr<recob::Track> GetLongestTrack(const art::Event& event);
+            art::Ptr<recob::Shower> GetHighestChargeShower(const art::Event& event);
             void  PrepareEvent(const art::Event& event);
             bool insideContVol(const double posX, const double posY, const double posZ);
 
@@ -91,6 +101,8 @@ namespace dune {
             std::string fHitsModuleLabel;
             std::string fTrackModuleLabel;
             std::string fShowerModuleLabel;
+
+            std::string fShowerToHitLabel;
 
             art::ServiceHandle<geo::Geometry> fGeom;
 
@@ -123,18 +135,38 @@ namespace dune {
             double fRecombFactor;
 
             NeutrinoEnergyRecoAlg fNeutrinoEnergyRecoAlg;
+
+            TTree *fTree;
+            int fEvent;
+            int fRun;
+            int fSubrun;
+            double fENuOld;
+            int fMethodOld;
+            double fENuNew;
+            int fMethodNew;
     }; // class EnergyReco
 
 
     //------------------------------------------------------------------------------
     EnergyReco::EnergyReco(fhicl::ParameterSet const& pset)
         : EDProducer(pset), fCaloAlg (pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
-        fNeutrinoEnergyRecoAlg(pset.get<fhicl::ParameterSet>("NeutrinoEnergyRecoAlg"),"pmtrack","emshower","linecluster","pmtrack","emshower","pmtrack")
+        fNeutrinoEnergyRecoAlg(pset.get<fhicl::ParameterSet>("NeutrinoEnergyRecoAlg"),"pmtrack","emshower","linecluster","caldata","pmtrack","emshower","pmtrack")
     {
         produces<dune::EnergyRecoOutput>();
         produces<art::Assns<dune::EnergyRecoOutput, recob::Track>>();
         produces<art::Assns<dune::EnergyRecoOutput, recob::Shower>>();
         this->reconfigure(pset);
+
+        art::ServiceHandle<art::TFileService> tfs;
+        fTree = tfs->make<TTree>("erectree","ereco tree");
+        fTree->Branch("event",&fEvent);
+        fTree->Branch("run",&fRun);
+        fTree->Branch("subrun",&fSubrun);
+        fTree->Branch("method",&fRecoMethod);
+        fTree->Branch("enuold",&fENuOld);
+        fTree->Branch("methodold",&fMethodOld);
+        fTree->Branch("enunew",&fENuNew);
+        fTree->Branch("methodnew",&fMethodNew);
     }
 
     dune::EnergyReco::~EnergyReco(){}
@@ -148,6 +180,8 @@ namespace dune {
         fHitsModuleLabel = pset.get< std::string >("HitsModuleLabel");
         fTrackModuleLabel = pset.get< std::string >("TrackModuleLabel");
         fShowerModuleLabel = pset.get< std::string >("ShowerModuleLabel");
+
+        fShowerToHitLabel = pset.get<std::string>("ShowerToHitLabel");
 
         fGradTrkMomRange = pset.get<double>("GradTrkMomRange");
         fIntTrkMomRange = pset.get<double>("IntTrkMomRange");
@@ -182,6 +216,32 @@ namespace dune {
         auto erecoout = std::make_unique<dune::EnergyRecoOutput>();
         auto assnstrk = std::make_unique<art::Assns<dune::EnergyRecoOutput, recob::Track>>();
         auto assnsshw = std::make_unique<art::Assns<dune::EnergyRecoOutput, recob::Shower>>();
+
+        fRun = evt.run();
+        fSubrun = evt.subRun();
+        fEvent = evt.id().event();
+        fENuOld = -9999.;
+        fMethodOld = -9999;
+        fENuNew = fENuOld;
+        fMethodNew = fMethodOld;
+
+        std::unique_ptr<dune::EnergyRecoOutput> energyRecoOutput;
+        if (fRecoMethod == 1)
+        {
+            art::Ptr<recob::Track> longestTrack(this->GetLongestTrack(evt));
+            energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(longestTrack, evt));
+        }
+        else if (fRecoMethod == 2)
+        {
+            art::Ptr<recob::Shower> highestChargeShower(this->GetHighestChargeShower(evt));
+            energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(highestChargeShower, evt));
+        }
+        else if (fRecoMethod == 3)
+            energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(evt));
+
+        fENuNew = energyRecoOutput->fNuLorentzVector.E();
+        fMethodNew = energyRecoOutput->recoMethodUsed;
+
         //art::PtrMaker<dune::EnergyRecoOutput> makeEnergyRecoOutputPtr(evt, *this);
         this->PrepareEvent(evt);
 
@@ -212,7 +272,6 @@ namespace dune {
                     erecoout->longestTrackContained = 1;
                     //Some contained tracks can have reconstructed lengths that are too short for their momentum
                     //Use MCS momentum if ratio of range / MCS is < 0.7 (even though track is contained)
-                    std::cout<<"the ratio in mod: " << ((fMaxTrackLength - fIntTrkMomRange) / fGradTrkMomRange) / ((fLongestTrackMCSMom - fIntTrkMomMCS) / fGradTrkMomMCS) << std::endl;
                     if(fLongestTrackMCSMom >= 0 
                             && ((fMaxTrackLength - fIntTrkMomRange) / fGradTrkMomRange) / ((fLongestTrackMCSMom - fIntTrkMomMCS) / fGradTrkMomMCS) < 0.7)           
                     {
@@ -241,9 +300,6 @@ namespace dune {
                 double Emu = std::sqrt(longestTrackMom*longestTrackMom+0.1056583745*0.1056583745);
                 erecoout->fLepLorentzVector.SetE(Emu);
 
-                std::cout<<"in the module lepton charge: " << fLongestTrackCharge << std::endl;
-                std::cout<<"in the module event charge: " << fTotalEventCharge << std::endl;
-                std::cout<<"in module, the uncorrected energy is: " << (fCaloAlg.ElectronsFromADCArea(fTotalEventCharge - fLongestTrackCharge, 2) * (1.0 / fRecombFactor) / util::kGeVToElectrons) << std::endl;
                 erecoout->fHadLorentzVector.SetE(corrHadEnergy);
                 erecoout->fNuLorentzVector.SetE(Emu + corrHadEnergy);
             }
@@ -283,32 +339,37 @@ namespace dune {
             erecoout->fNuLorentzVector.SetE(fCaloAlg.ElectronsFromADCArea(fWirecharge, 2)/fRecombFactor / util::kGeVToElectrons);
         }
 
+        fENuOld = erecoout->fNuLorentzVector.E();
+        fMethodOld = erecoout->recoMethodUsed;
+        fTree->Fill();
+
+        /*
         std::cout<<"Starting!"<<std::endl;
-        if (fBestShower.isAvailable() && erecoout->recoMethodUsed==2)
+        //if (fBestTrack.isAvailable() && erecoout->recoMethodUsed==1 && fRecoMethod==1)
         {
-            dune::EnergyRecoOutput testOutput(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(fBestShower,evt));
-            std::cout<<"Mom X: " << erecoout->fLepLorentzVector.X() << "   " << testOutput.fLepLorentzVector.X() << std::endl;
-            std::cout<<"Mom Y: " << erecoout->fLepLorentzVector.Y() << "   " << testOutput.fLepLorentzVector.Y() << std::endl;
-            std::cout<<"Mom Z: " << erecoout->fLepLorentzVector.Z() << "   " << testOutput.fLepLorentzVector.Z() << std::endl;
-            std::cout<<"Mom T: " << erecoout->fLepLorentzVector.T() << "   " << testOutput.fLepLorentzVector.T() << std::endl;
-            std::cout<<"ontained: " << erecoout->longestTrackContained << "   " << testOutput.longestTrackContained << std::endl;
-            std::cout<<"trackmethod: " << erecoout->trackMomMethod << "   " << testOutput.trackMomMethod << std::endl;
-            std::cout<<"recomethod: " << erecoout->recoMethodUsed << "   " << testOutput.recoMethodUsed << std::endl;
-            std::cout<<"Had Mom X: " << erecoout->fHadLorentzVector.X() << "   " << testOutput.fHadLorentzVector.X() << std::endl;
-            std::cout<<"Had Mom Y: " << erecoout->fHadLorentzVector.Y() << "   " << testOutput.fHadLorentzVector.Y() << std::endl;
-            std::cout<<"Had Mom Z: " << erecoout->fHadLorentzVector.Z() << "   " << testOutput.fHadLorentzVector.Z() << std::endl;
-            std::cout<<"Had Mom T: " << erecoout->fHadLorentzVector.T() << "   " << testOutput.fHadLorentzVector.T() << std::endl;
+            std::cout<<"Mom X: " << erecoout->fLepLorentzVector.X() << "   " << energyRecoOutput->fLepLorentzVector.X() << std::endl;
+            std::cout<<"Mom Y: " << erecoout->fLepLorentzVector.Y() << "   " << energyRecoOutput->fLepLorentzVector.Y() << std::endl;
+            std::cout<<"Mom Z: " << erecoout->fLepLorentzVector.Z() << "   " << energyRecoOutput->fLepLorentzVector.Z() << std::endl;
+            std::cout<<"Mom T: " << erecoout->fLepLorentzVector.T() << "   " << energyRecoOutput->fLepLorentzVector.T() << std::endl;
+            std::cout<<"ontained: " << erecoout->longestTrackContained << "   " << energyRecoOutput->longestTrackContained << std::endl;
+            std::cout<<"trackmethod: " << erecoout->trackMomMethod << "   " << energyRecoOutput->trackMomMethod << std::endl;
+            std::cout<<"recomethod: " << erecoout->recoMethodUsed << "   " << energyRecoOutput->recoMethodUsed << std::endl;
+            std::cout<<"Had Mom X: " << erecoout->fHadLorentzVector.X() << "   " << energyRecoOutput->fHadLorentzVector.X() << std::endl;
+            std::cout<<"Had Mom Y: " << erecoout->fHadLorentzVector.Y() << "   " << energyRecoOutput->fHadLorentzVector.Y() << std::endl;
+            std::cout<<"Had Mom Z: " << erecoout->fHadLorentzVector.Z() << "   " << energyRecoOutput->fHadLorentzVector.Z() << std::endl;
+            std::cout<<"Had Mom T: " << erecoout->fHadLorentzVector.T() << "   " << energyRecoOutput->fHadLorentzVector.T() << std::endl;
  
-            std::cout<<"Nu Mom X: " << erecoout->fNuLorentzVector.X() << "   " << testOutput.fNuLorentzVector.X() << std::endl;
-            std::cout<<"Nu Mom Y: " << erecoout->fNuLorentzVector.Y() << "   " << testOutput.fNuLorentzVector.Y() << std::endl;
-            std::cout<<"Nu Mom Z: " << erecoout->fNuLorentzVector.Z() << "   " << testOutput.fNuLorentzVector.Z() << std::endl;
-            std::cout<<"Nu Mom T: " << erecoout->fNuLorentzVector.T() << "   " << testOutput.fNuLorentzVector.T() << std::endl;
+            std::cout<<"Nu Mom X: " << erecoout->fNuLorentzVector.X() << "   " << energyRecoOutput->fNuLorentzVector.X() << std::endl;
+            std::cout<<"Nu Mom Y: " << erecoout->fNuLorentzVector.Y() << "   " << energyRecoOutput->fNuLorentzVector.Y() << std::endl;
+            std::cout<<"Nu Mom Z: " << erecoout->fNuLorentzVector.Z() << "   " << energyRecoOutput->fNuLorentzVector.Z() << std::endl;
+            std::cout<<"Nu Mom T: " << erecoout->fNuLorentzVector.T() << "   " << energyRecoOutput->fNuLorentzVector.T() << std::endl;
  
-            std::cout<<"Pos X: " << erecoout->fRecoVertex.X() << "   " << testOutput.fRecoVertex.X() << std::endl;
-            std::cout<<"Pos Y: " << erecoout->fRecoVertex.Y() << "   " << testOutput.fRecoVertex.Y() << std::endl;
-            std::cout<<"Pos Z: " << erecoout->fRecoVertex.Z() << "   " << testOutput.fRecoVertex.Z() << std::endl;
+            std::cout<<"Pos X: " << erecoout->fRecoVertex.X() << "   " << energyRecoOutput->fRecoVertex.X() << std::endl;
+            std::cout<<"Pos Y: " << erecoout->fRecoVertex.Y() << "   " << energyRecoOutput->fRecoVertex.Y() << std::endl;
+            std::cout<<"Pos Z: " << erecoout->fRecoVertex.Z() << "   " << energyRecoOutput->fRecoVertex.Z() << std::endl;
         }
         std::cout<<"finished"<<std::endl;
+        */
 
         art::ProductID const prodId = evt.getProductID<dune::EnergyRecoOutput>();
         art::EDProductGetter const* prodGetter = evt.productGetter(prodId);
@@ -321,8 +382,52 @@ namespace dune {
         evt.put(std::move(assnsshw));
     }
 
+    art::Ptr<recob::Track> EnergyReco::GetLongestTrack(const art::Event &event)
+    {
+        art::Ptr<recob::Track> pTrack(art::Ptr<recob::Track>(art::ProductID("nullTrack")));
+        const std::vector<art::Ptr<recob::Track> > tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackModuleLabel));
+        if (0 == tracks.size())
+            return pTrack;
+
+        double longestLength(std::numeric_limits<double>::min());
+        for (unsigned int iTrack = 0; iTrack < tracks.size(); ++iTrack)
+        {
+            const double length(tracks[iTrack]->Length());
+            if (length-longestLength > std::numeric_limits<double>::epsilon())
+            {
+                longestLength = length;
+                pTrack = tracks[iTrack];
+            }
+        }
+        return pTrack;
+    }
+
+    art::Ptr<recob::Shower> EnergyReco::GetHighestChargeShower(const art::Event &event)
+    {
+        art::Ptr<recob::Shower> pShower(art::Ptr<recob::Shower>(art::ProductID("nullShower")));
+        const std::vector<art::Ptr<recob::Shower> > showers(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerModuleLabel));
+        if (0 == showers.size())
+            return pShower;
+
+        double maxCharge(std::numeric_limits<double>::min());
+        for (unsigned int iShower = 0; iShower < showers.size(); ++iShower)
+        {
+            const std::vector<art::Ptr<recob::Hit> > showerHits(dune_ana::DUNEAnaShowerUtils::GetHits(showers[iShower],
+                event,fShowerToHitLabel));
+            const double showerCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(showerHits));
+            if (showerCharge-maxCharge > std::numeric_limits<double>::epsilon())
+            {
+                maxCharge = showerCharge;
+                pShower = showers[iShower];
+            }
+        }
+        return pShower;
+    }
+
     //------------------------------------------------------------------------------
     void EnergyReco::PrepareEvent(const art::Event& evt){
+        fBestTrack = art::Ptr<recob::Track>(art::ProductID("nullifyTrack"));
+        fBestShower = art::Ptr<recob::Shower>(art::ProductID("nullifyShower"));
 
         auto const *detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
