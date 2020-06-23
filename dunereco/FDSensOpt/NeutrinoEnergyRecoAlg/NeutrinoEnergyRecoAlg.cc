@@ -306,11 +306,11 @@ bool NeutrinoEnergyRecoAlg::IsPointContained(const double x, const double y, con
         return false;
 
     double minX(std::numeric_limits<double>::max());
-    double maxX(std::numeric_limits<double>::min());
+    double maxX(std::numeric_limits<double>::lowest());
     double minY(std::numeric_limits<double>::max());
-    double maxY(std::numeric_limits<double>::min());
+    double maxY(std::numeric_limits<double>::lowest());
     double minZ(std::numeric_limits<double>::max());
-    double maxZ(std::numeric_limits<double>::min());
+    double maxZ(std::numeric_limits<double>::lowest());
     for (unsigned int iCryostat = 0; iCryostat < fGeometry->Ncryostats(); ++iCryostat)
     {
         const geo::CryostatGeo& cryostat(fGeometry->Cryostat(iCryostat));

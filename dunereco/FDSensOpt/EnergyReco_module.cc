@@ -244,7 +244,6 @@ namespace dune {
 
         //art::PtrMaker<dune::EnergyRecoOutput> makeEnergyRecoOutputPtr(evt, *this);
         this->PrepareEvent(evt);
-        std::cout<<"old shower max charge: " << fMaxShowerCharge << std::endl;
 
         double longestTrackMom = 0.0;
         double maxShowerEnergy = 0.0;
@@ -260,7 +259,6 @@ namespace dune {
 
         if (fRecoMethod == 1){//split event into longest reco track and hadronic part
             erecoout->recoMethodUsed = 1;
-            std::cout<<"The module uncorrected MCS is " << fLongestTrackMCSMom << std::endl;
             //at least one reco track, longest reco track is either contained or is exiting with a defined value of MCS track momentum
             if (fMaxTrackLength >= 0.0 && 
                     (fLongestTrackContained || (!fLongestTrackContained && fLongestTrackMCSMom >= 0.0))){
@@ -300,7 +298,6 @@ namespace dune {
                 erecoout->fLepLorentzVector.SetPy(longestTrackMom*fBestTrack->VertexDirection().Y());
                 erecoout->fLepLorentzVector.SetPz(longestTrackMom*fBestTrack->VertexDirection().Z());
                 double Emu = std::sqrt(longestTrackMom*longestTrackMom+0.1056583745*0.1056583745);
-                std::cout<<"muon mass in module: " << 0.1056583745 << std::endl;
                 erecoout->fLepLorentzVector.SetE(Emu);
 
                 erecoout->fHadLorentzVector.SetE(corrHadEnergy);
@@ -391,7 +388,7 @@ namespace dune {
         if (0 == tracks.size())
             return pTrack;
 
-        double longestLength(std::numeric_limits<double>::min());
+        double longestLength(std::numeric_limits<double>::lowest());
         for (unsigned int iTrack = 0; iTrack < tracks.size(); ++iTrack)
         {
             const double length(tracks[iTrack]->Length());
@@ -411,7 +408,7 @@ namespace dune {
         if (0 == showers.size())
             return pShower;
 
-        double maxCharge(std::numeric_limits<double>::min());
+        double maxCharge(std::numeric_limits<double>::lowest());
         for (unsigned int iShower = 0; iShower < showers.size(); ++iShower)
         {
             const std::vector<art::Ptr<recob::Hit> > showerHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(showers[iShower],
@@ -423,7 +420,6 @@ namespace dune {
                 pShower = showers[iShower];
             }
         }
-        std::cout<<"New shower max charge: " << maxCharge << std::endl;
         return pShower;
     }
 
