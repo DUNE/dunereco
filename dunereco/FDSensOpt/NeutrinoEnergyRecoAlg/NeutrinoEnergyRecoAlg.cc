@@ -2,7 +2,6 @@
 #include <limits>
 #include <algorithm>
 //ROOT
-#include "TDatabasePDG.h"
 //ART
 #include "canvas/Utilities/Exception.h"
 //LArSoft
@@ -70,7 +69,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
         if (uncorrectedMuonMomentumMCS > std::numeric_limits<double>::epsilon())
         {
             EnergyRecoInputHolder energyRecoInputHolder(vertex, 
-                this->CalculateParticle4Momentum(13, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
+                this->CalculateParticle4Momentum(kMuonMass, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
                 kMuonAndHadronic, kMCS, kIsExiting, fGradNuMuHadEnExit, fIntNuMuHadEnExit);
             return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
         }
@@ -86,7 +85,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
             && muonMomentumRange/muonMomentumMCS - 0.7 < -1.*std::numeric_limits<double>::epsilon())
         {
             EnergyRecoInputHolder energyRecoInputHolder(vertex, 
-                this->CalculateParticle4Momentum(13, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
+                this->CalculateParticle4Momentum(kMuonMass, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
                 kMuonAndHadronic, kMCS, kIsContained, fGradNuMuHadEnExit, fIntNuMuHadEnExit);
 
             return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
@@ -94,7 +93,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
         else
         {
             EnergyRecoInputHolder energyRecoInputHolder(vertex, 
-                this->CalculateParticle4Momentum(13, muonMomentumRange, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
+                this->CalculateParticle4Momentum(kMuonMass, muonMomentumRange, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
                 kMuonAndHadronic, kContained, kIsContained, fGradNuMuHadEnCont, fIntNuMuHadEnCont);
 
             return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
@@ -125,7 +124,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
     const double electronEnergy(this->CalculateElectronEnergy(pElectronShower, event));
     //ATTN yep this line is bugged.  It's deliberately bugged to maintain how the original code functioned
     //Because of the small electron mass vs total energy deposition, this bug will have a very very small effect on the 4vector
-    const Momentum4_t electron4Momentum(this->CalculateParticle4Momentum(11, electronEnergy, 
+    const Momentum4_t electron4Momentum(this->CalculateParticle4Momentum(kElectronMass, electronEnergy, 
         pElectronShower->Direction().X(), pElectronShower->Direction().Y(), pElectronShower->Direction().Z()));
 
     EnergyRecoInputHolder energyRecoInputHolder(vertex, electron4Momentum, 
@@ -180,7 +179,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergyViaMuonRang
     const double muonMomentumRange(this->CalculateMuonMomentumByRange(pMuonTrack));
 
     EnergyRecoInputHolder energyRecoInputHolder(vertex, 
-        this->CalculateParticle4Momentum(13, muonMomentumRange, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
+        this->CalculateParticle4Momentum(kMuonMass, muonMomentumRange, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
         kMuonAndHadronic, kContained, static_cast<MuonContainmentStatus>(isContained), fGradNuMuHadEnCont, fIntNuMuHadEnCont);
 
     return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
@@ -196,27 +195,20 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergyViaMuonMCS(
     const double muonMomentumMCS(this->CalculateMuonMomentumByMCS(pMuonTrack));
 
     EnergyRecoInputHolder energyRecoInputHolder(vertex, 
-        this->CalculateParticle4Momentum(13, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
+        this->CalculateParticle4Momentum(kMuonMass, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
         kMuonAndHadronic, kMCS, static_cast<MuonContainmentStatus>(isContained), fGradNuMuHadEnExit, fIntNuMuHadEnExit);
 
     return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
 }
 
-NeutrinoEnergyRecoAlg::Momentum4_t NeutrinoEnergyRecoAlg::CalculateParticle4Momentum(const int pdg, const double momentum, 
+NeutrinoEnergyRecoAlg::Momentum4_t NeutrinoEnergyRecoAlg::CalculateParticle4Momentum(const double mass, const double momentum, 
     const double directionX, const double directionY, const double directionZ)
 {
-    static TDatabasePDG databasePDG;
-    TParticlePDG* particlePDG(databasePDG.GetParticle(pdg));
-    if (particlePDG) 
-    {
-        const double E(std::sqrt(momentum*momentum + particlePDG->Mass()*particlePDG->Mass()));
-        const double pX(directionX * momentum);
-        const double pY(directionY * momentum);
-        const double pZ(directionZ * momentum);
-        return Momentum4_t(pX, pY, pZ, E);
-    }
-
-    throw art::Exception(art::errors::NotFound) << "Unable to retrieve TParticlePDG for paticle with pdg " << pdg << "\n";
+    const double E(std::sqrt(momentum*momentum + mass*mass));
+    const double pX(directionX * momentum);
+    const double pY(directionY * momentum);
+    const double pZ(directionZ * momentum);
+    return Momentum4_t(pX, pY, pZ, E);
 }
 
 double NeutrinoEnergyRecoAlg::CalculateMuonMomentumByRange(const art::Ptr<recob::Track> pMuonTrack)

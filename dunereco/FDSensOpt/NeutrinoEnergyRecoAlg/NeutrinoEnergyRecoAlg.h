@@ -34,6 +34,9 @@ class NeutrinoEnergyRecoAlg
 
         typedef Position4_t Momentum4_t;
 
+        double kMuonMass = 0.1056583745;
+        double kElectronMass = 0.0005109989461; 
+
         enum EnergyRecoMethod
         {
             kRecoMethodNotSet = -1,
@@ -86,7 +89,7 @@ class NeutrinoEnergyRecoAlg
 
         bool IsContained(const std::vector<art::Ptr<recob::Hit> > &hits, const art::Event &event);
 
-        Momentum4_t CalculateParticle4Momentum(const int pdg, const double momentum, 
+        Momentum4_t CalculateParticle4Momentum(const double mass, const double momentum, 
             const double directionX, const double directionY, const double directionZ);
 
         double CalculateLinearlyCorrectedValue(const double value, const double correctionGradient,
@@ -123,5 +126,7 @@ class NeutrinoEnergyRecoAlg
         std::string fTrackToHitLabel;
         std::string fShowerToHitLabel;
         std::string fHitToSpacePointLabel;
+
+
 };
 }
