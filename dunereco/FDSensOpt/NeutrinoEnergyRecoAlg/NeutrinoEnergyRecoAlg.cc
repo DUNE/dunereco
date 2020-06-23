@@ -46,6 +46,7 @@ NeutrinoEnergyRecoAlg::NeutrinoEnergyRecoAlg(fhicl::ParameterSet const& pset, co
     fGradNuEHadEn(pset.get<double>("GradNuEHadEn")),
     fIntNuEHadEn(pset.get<double>("IntNuEHadEn")),
     fDistanceToWallThreshold(pset.get<double>("DistanceToWallThreshold")),
+    fMuonRangeToMCSThreshold(pset.get<double>("MuonRangeToMCSThreshold")),
     fRecombFactor(pset.get<double>("RecombFactor")),
     fTrackLabel(trackLabel),
     fShowerLabel(showerLabel),
@@ -92,7 +93,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
     {
         const double muonMomentumRange(CalculateMuonMomentumByRange(pMuonTrack));
         if (uncorrectedMuonMomentumMCS > std::numeric_limits<double>::epsilon() 
-            && muonMomentumRange/muonMomentumMCS - 0.7 < -1.*std::numeric_limits<double>::epsilon())
+            && muonMomentumRange/muonMomentumMCS - fMuonRangeToMCSThreshold < -1.*std::numeric_limits<double>::epsilon())
         {
             EnergyRecoInputHolder energyRecoInputHolder(vertex, 
                 this->CalculateParticle4Momentum(kMuonMass, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 

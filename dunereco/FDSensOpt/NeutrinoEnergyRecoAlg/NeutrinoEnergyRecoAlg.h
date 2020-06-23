@@ -283,6 +283,7 @@ class NeutrinoEnergyRecoAlg
         double fGradNuEHadEn;                                    ///< the hadronic energy correction gradient for nue
         double fIntNuEHadEn;                                     ///< the hadronic energy correction intercept for nue
         double fDistanceToWallThreshold;                         ///< the min distance from a detector wall to be considered contained
+        double fMuonRangeToMCSThreshold;                         ///< the ratio threshold at which MCS is used for contained muons
         double fRecombFactor;                                    ///< the average reccombination factor
 
         std::string fTrackLabel;                                 ///< the track label

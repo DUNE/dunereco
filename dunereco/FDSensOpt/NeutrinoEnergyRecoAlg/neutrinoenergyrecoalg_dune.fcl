@@ -19,6 +19,7 @@ dune_neutrinoenergyrecoalg:
     GradNuEHadEn:            0.62
     IntNuEHadEn:             0.02
     DistanceToWallThreshold: 20.0 
+    MuonRangeToMCSThreshold: 0.7
     RecombFactor:            0.63
 }
 
