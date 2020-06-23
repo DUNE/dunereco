@@ -244,6 +244,7 @@ namespace dune {
 
         //art::PtrMaker<dune::EnergyRecoOutput> makeEnergyRecoOutputPtr(evt, *this);
         this->PrepareEvent(evt);
+        std::cout<<"old shower max charge: " << fMaxShowerCharge << std::endl;
 
         double longestTrackMom = 0.0;
         double maxShowerEnergy = 0.0;
@@ -259,6 +260,7 @@ namespace dune {
 
         if (fRecoMethod == 1){//split event into longest reco track and hadronic part
             erecoout->recoMethodUsed = 1;
+            std::cout<<"The module uncorrected MCS is " << fLongestTrackMCSMom << std::endl;
             //at least one reco track, longest reco track is either contained or is exiting with a defined value of MCS track momentum
             if (fMaxTrackLength >= 0.0 && 
                     (fLongestTrackContained || (!fLongestTrackContained && fLongestTrackMCSMom >= 0.0))){
@@ -298,6 +300,7 @@ namespace dune {
                 erecoout->fLepLorentzVector.SetPy(longestTrackMom*fBestTrack->VertexDirection().Y());
                 erecoout->fLepLorentzVector.SetPz(longestTrackMom*fBestTrack->VertexDirection().Z());
                 double Emu = std::sqrt(longestTrackMom*longestTrackMom+0.1056583745*0.1056583745);
+                std::cout<<"muon mass in module: " << 0.1056583745 << std::endl;
                 erecoout->fLepLorentzVector.SetE(Emu);
 
                 erecoout->fHadLorentzVector.SetE(corrHadEnergy);
@@ -343,10 +346,10 @@ namespace dune {
         fMethodOld = erecoout->recoMethodUsed;
         fTree->Fill();
 
-        /*
         std::cout<<"Starting!"<<std::endl;
         //if (fBestTrack.isAvailable() && erecoout->recoMethodUsed==1 && fRecoMethod==1)
         {
+            std::cout<<std::setprecision(10);
             std::cout<<"Mom X: " << erecoout->fLepLorentzVector.X() << "   " << energyRecoOutput->fLepLorentzVector.X() << std::endl;
             std::cout<<"Mom Y: " << erecoout->fLepLorentzVector.Y() << "   " << energyRecoOutput->fLepLorentzVector.Y() << std::endl;
             std::cout<<"Mom Z: " << erecoout->fLepLorentzVector.Z() << "   " << energyRecoOutput->fLepLorentzVector.Z() << std::endl;
@@ -369,7 +372,6 @@ namespace dune {
             std::cout<<"Pos Z: " << erecoout->fRecoVertex.Z() << "   " << energyRecoOutput->fRecoVertex.Z() << std::endl;
         }
         std::cout<<"finished"<<std::endl;
-        */
 
         art::ProductID const prodId = evt.getProductID<dune::EnergyRecoOutput>();
         art::EDProductGetter const* prodGetter = evt.productGetter(prodId);
@@ -412,8 +414,8 @@ namespace dune {
         double maxCharge(std::numeric_limits<double>::min());
         for (unsigned int iShower = 0; iShower < showers.size(); ++iShower)
         {
-            const std::vector<art::Ptr<recob::Hit> > showerHits(dune_ana::DUNEAnaShowerUtils::GetHits(showers[iShower],
-                event,fShowerToHitLabel));
+            const std::vector<art::Ptr<recob::Hit> > showerHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(showers[iShower],
+                event,fShowerToHitLabel),2));
             const double showerCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(showerHits));
             if (showerCharge-maxCharge > std::numeric_limits<double>::epsilon())
             {
@@ -421,6 +423,7 @@ namespace dune {
                 pShower = showers[iShower];
             }
         }
+        std::cout<<"New shower max charge: " << maxCharge << std::endl;
         return pShower;
     }
 
