@@ -20,8 +20,9 @@
 namespace cnn
 {
 
-  RegPixelMapProducer::RegPixelMapProducer(unsigned int nWire, unsigned int nTdc, double tRes, int Global):
+  RegPixelMapProducer::RegPixelMapProducer(unsigned int nWire, unsigned int wRes, unsigned int nTdc, double tRes, int Global):
   fNWire(nWire),
+  fWRes(wRes),
   fNTdc(nTdc),
   fTRes(tRes),
   fGlobalWireMethod(Global),
@@ -65,7 +66,7 @@ namespace cnn
                                                     art::FindManyP<recob::Wire> fmwire)
   {
 
-    RegPixelMap pm(fNWire, fNTdc, fTRes, bound);
+    RegPixelMap pm(fNWire, fWRes, fNTdc, fTRes, bound);
 
     if (!fmwire.isValid()) return pm;
 
@@ -116,6 +117,11 @@ namespace cnn
             float globaltick = 0;
             GetDUNEGlobalWireTDC(wireid, (float)tt, globalWire, globalplane, globaltick);
             tdc = (int)round(globaltick);
+            // FIXIT
+            //if (globalplane==0 && correctedadc) {
+            //  std::cout<<tt<<", "<<globalplane<<" | ";
+            //  std::cout<<globalWire<<", "<<globaltick<<", "<<tdc<<", "<<correctedadc<<std::endl;
+            //}
           }
 	  pm.Add((int)globalWire, tdc, globalplane, correctedadc, wireid.TPC);
     
@@ -248,7 +254,8 @@ namespace cnn
     //int minwire_1 = *minwireelement_1-1;
     //int minwire_2 = *minwireelement_2-1;
 
-    RegCNNBoundary bound(fNWire,fNTdc,fTRes,round(wiremean_0),round(wiremean_1),round(wiremean_2),round(tmean_0),round(tmean_1),round(tmean_2));
+    RegCNNBoundary bound(fNWire,fNTdc,fWRes,fTRes,round(wiremean_0),round(wiremean_1),round(wiremean_2),round(tmean_0),round(tmean_1),round(tmean_2));
+    std::cout<<bound<<std::endl;
 
     return bound;
   }
@@ -294,7 +301,7 @@ namespace cnn
                   }
                   catch (geo::InvalidWireError const& e){
                       if (!e.hasSuggestedWire()) throw;
-            	  w1 = planegeo_temp.ClosestWireID(e.suggestedWireID());
+            	    w1 = planegeo_temp.ClosestWireID(e.suggestedWireID());
                   }
                   double time1 = detprop->ConvertXToTicks(regvtx_loc[0], iplane, rawtpc, rawcrys);
                   if (fGlobalWireMethod == 1){
@@ -306,7 +313,8 @@ namespace cnn
                       float globalTDC = (float)time1;
                       GetDUNEGlobalWireTDC(w1, time1, globalWire, globalPlane, globalTDC);
                       center_wire[globalPlane] = globalWire;
-            	  center_tick[globalPlane] = (double)globalTDC;
+            	      //center_tick[globalPlane] = (double)globalTDC;
+            	      center_tick[globalPlane] = (int)globalTDC;
                   } else {
                       std::cout << "Wrong Global Wire Method" << std::endl;
                       abort();
@@ -314,16 +322,21 @@ namespace cnn
               } // end of iplane
           } // end of inTPC
       } else if ( size_vtx == 6){
-	  for (int ii = 0; ii < 3; ii++){
-		  center_wire[ii] = vtx[ii*2+1];
-		  center_tick[ii] = vtx[ii*2];
-	  }
+	    for (int ii = 0; ii < 3; ii++){
+	        center_wire[ii] = vtx[ii*2+1];
+	        center_tick[ii] = vtx[ii*2];
+	    }
       } else{
 	      std::cout << "Wrong reconstructed vertex" << std::endl;
 	      std::cout << "-->" << size_vtx << std::endl;
       }
 
-      RegCNNBoundary bound(fNWire,fNTdc,fTRes,round(center_wire[0]),round(center_wire[1]),round(center_wire[2]),round(center_tick[0]),round(center_tick[1]),round(center_tick[2]));
+      int shift = 56*fWRes;
+      center_wire[0] += fNWire*fWRes/2 - shift;
+      center_wire[1] -= fNWire*fWRes/2 - shift;
+      center_wire[2] += fNWire*fWRes/2 - shift;
+
+      RegCNNBoundary bound(fNWire,fNTdc,fWRes,fTRes,round(center_wire[0]),round(center_wire[1]),round(center_wire[2]),round(center_tick[0]),round(center_tick[1]),round(center_tick[2]));
      return bound;
   }
 
@@ -466,10 +479,12 @@ namespace cnn
     }
     
     if(tpcMod4 == 0 || tpcMod4 == 2){
-        globalTDC = (float)( drift_size - (double)localTDC );
+        //globalTDC = (float)( drift_size - (double)localTDC );
+        globalTDC =  drift_size - localTDC;
     }
     else {
-        globalTDC = (float)( (double)localTDC + drift_size + apa_size );
+        //globalTDC = (float)( (double)localTDC + drift_size + apa_size );
+        globalTDC = localTDC + drift_size + apa_size;
     }
 
 

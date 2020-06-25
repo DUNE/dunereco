@@ -147,6 +147,7 @@ std::vector< std::vector<float> > tf::RegCNNGraph::run(
               cols = x.front().front().size(),
               depth = x.front().front().front().size();
 
+    // FIXIT
     //std::cout << "====>" << rows << " " << cols << " " << depth << std::endl;
 
     std::vector< tensorflow::Tensor > _x;

@@ -13,7 +13,11 @@ standard_regcnnmapper:
   TdcWidth:      280 # time width of pixel map
   WireLength:    400 # wire width of pixel map
   TimeResolution: 6 
+  WireResolution: 1 
   UseRecoVertex: 0
+  VertexModuleLabel: "pandora"
+  PFParticleModuleLabel: "pandora"
+  PandoraNuVertexModuleLabel: "pandora"
   RegCNNModuleLabel: "regcnneval"
   RegCNNResultLabel: "regcnnresult"
 }
@@ -24,6 +28,14 @@ standard_regcnnvtxmapper.GlobalWireMethod: 2
 standard_regcnnvtxmapper.WireLength: 600
 standard_regcnnvtxmapper.TdcWidth:   280
 
-
+standard_regcnnnumumapper: @local::standard_regcnnmapper
+standard_regcnnnumumapper.ClusterPMLabel:   "regcnnnumumap"
+standard_regcnnnumumapper.HitsModuleLabel:  "linecluster"
+standard_regcnnnumumapper.TdcWidth:         280
+standard_regcnnnumumapper.WireLength:       400
+standard_regcnnnumumapper.TimeResolution:   24 
+standard_regcnnnumumapper.WireResolution:   7
+standard_regcnnnumumapper.GlobalWireMethod: 2
+standard_regcnnnumumapper.UseRecoVertex:    2
 
 END_PROLOG

@@ -1,7 +1,10 @@
 ////////////////////////////////////////////////////////////////////////
 // \file    RegCNNEvaluator_module.cc
-// \brief   Producer module creating RegCNN neural net results modified from CVNEvaluator_module.cc
+// \brief   Producer module creating RegCNN results modified from CVNEvaluator_module.cc
 // \author  Ilsoo Seong - iseong@uci.edu
+//
+// Modifications to interface for numu energy estimation
+//  - Wenjie Wu - wenjieww@uci.edu
 ////////////////////////////////////////////////////////////////////////
 
 // C/C++ includes
@@ -27,66 +30,84 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "canvas/Persistency/Common/Assns.h"
 
-// NOvASoft includes
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardataobj/RawData/ExternalTrigger.h"
-
-
-#include "lardata/Utilities/AssociationUtil.h"
 #include "nusimdata/SimulationBase/MCNeutrino.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
+
+// LArSoft includes
+#include "larcore/Geometry/Geometry.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RawData/ExternalTrigger.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
+
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/Utilities/AssociationUtil.h"
 
 #include "dune/RegCNN/func/RegCNNResult.h"
 #include "dune/RegCNN/func/RegPixelMap.h"
 #include "dune/RegCNN/art/TFRegNetHandler.h"
 #include "dune/RegCNN/art/RegCNNVtxHandler.h"
+#include "dune/RegCNN/art/RegCNNNumuHandler.h"
 
 namespace cnn {
 
   class RegCNNEvaluator : public art::EDProducer {
-  public:
-    explicit RegCNNEvaluator(fhicl::ParameterSet const& pset);
-    ~RegCNNEvaluator();
 
-    void produce(art::Event& evt);
-    void beginJob();
-    void endJob();
+    public:
 
+      explicit RegCNNEvaluator(fhicl::ParameterSet const& pset);
+      ~RegCNNEvaluator();
 
+      void produce(art::Event& evt);
+      void beginJob();
+      void endJob();
 
-  private:
+    private:
 
-    /// Module label for input pixel maps
-    std::string fPixelMapInput;
-    std::string fResultLabel;
+      void PrepareEvent(const art::Event& event);
+      bool insideContVol(const double posX, const double posY, const double posZ);
 
-    std::string fCNNType;
-    std::string fTarget;
+      art::ServiceHandle<geo::Geometry> fGeom;
 
-    cnn::TFRegNetHandler fTFHandler;
-    cnn::RegCNNVtxHandler fRegCNNVtxHandler;
+      // Module label for input pixel maps
+      std::string fPixelMapInput;
+      std::string fResultLabel;
+      std::string fCNNType;
+      std::string fTarget;
 
-    /// Number of outputs fron neural net
-    //unsigned int fNOutput;
+      cnn::TFRegNetHandler fTFHandler;
+      cnn::RegCNNVtxHandler fRegCNNVtxHandler;
+      cnn::RegCNNNumuHandler fRegCNNNumuHandler;
 
-    void getCM(const RegPixelMap& pm, std::vector<float> &cm_list);
-  };
+      std::string fHitsModuleLabel;
+      std::string fTrackModuleLabel;
+
+      double fContVolCut;
+
+      // for checking track status 
+      bool fLongestTrackContained;
+
+      void getCM(const RegPixelMap& pm, std::vector<float> &cm_list);
+  }; // class RegCNNEvaluator
 
   //.......................................................................
   RegCNNEvaluator::RegCNNEvaluator(fhicl::ParameterSet const& pset):
     EDProducer(pset),
-    fPixelMapInput    (pset.get<std::string>         ("PixelMapInput")),
-    fResultLabel      (pset.get<std::string>         ("ResultLabel")),
-    fCNNType          (pset.get<std::string>         ("CNNType")),
-    fTarget           (pset.get<std::string>         ("Target")),
-    fTFHandler        (pset.get<fhicl::ParameterSet> ("TFNetHandler")),
-    fRegCNNVtxHandler (pset.get<fhicl::ParameterSet> ("RegCNNVtxHandler"))
+    fPixelMapInput     (pset.get<std::string>         ("PixelMapInput")),
+    fResultLabel       (pset.get<std::string>         ("ResultLabel")),
+    fCNNType           (pset.get<std::string>         ("CNNType")),
+    fTarget            (pset.get<std::string>         ("Target")),
+    fTFHandler         (pset.get<fhicl::ParameterSet> ("TFNetHandler")),
+    fRegCNNVtxHandler  (pset.get<fhicl::ParameterSet> ("RegCNNVtxHandler")),
+    fRegCNNNumuHandler (pset.get<fhicl::ParameterSet> ("RegCNNNumuHandler")),
+    fHitsModuleLabel   (pset.get<std::string>         ("HitsModuleLabel")),
+    fTrackModuleLabel  (pset.get<std::string>         ("TrackModuleLabel")),
+    fContVolCut        (pset.get<double>              ("ContVolCut"))
   {
-    produces< std::vector<cnn::RegCNNResult>   >(fResultLabel);
-
+    produces< std::vector<cnn::RegCNNResult> >(fResultLabel);
   }
+
   //......................................................................
   RegCNNEvaluator::~RegCNNEvaluator()
   {
@@ -110,7 +131,7 @@ namespace cnn {
     //std::cout << pm.fBound.fFirstWire[0]+pm.fNWire/2 << std::endl;
     //std::cout << pm.fBound.fFirstTDC[0]+pm.fNTdc*pm.fNTRes/2 << std::endl;
     for (int ii = 0; ii < 3; ii++){
-        float mean_wire = pm.fBound.fFirstWire[ii]+pm.fNWire/2;
+        float mean_wire = pm.fBound.fFirstWire[ii]+pm.fNWire*pm.fNWRes/2;
         float mean_tdc  = pm.fBound.fFirstTDC[ii]+pm.fNTdc*pm.fNTRes/2;
         cm_list[2*ii] = mean_tdc;
         cm_list[2*ii+1] = mean_wire;
@@ -120,6 +141,8 @@ namespace cnn {
   //......................................................................
   void RegCNNEvaluator::produce(art::Event& evt)
   {
+
+    this->PrepareEvent(evt);
 
     /// Define containers for the things we're going to produce
     std::unique_ptr< std::vector<RegCNNResult> >
@@ -139,48 +162,131 @@ namespace cnn {
       if(pixelmaplist.size() > 0){
         std::vector<float> networkOutput;
         if (fTarget == "nueenergy"){
-            networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
-            //std::cout << "-->" << networkOutput[0] << std::endl;
+          networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
+          //std::cout << "-->" << networkOutput[0] << std::endl;
         }
         else if (fTarget == "nuevertex"){
-            std::vector<float> center_of_mass(6,0);
-            getCM(*pixelmaplist[0], center_of_mass);
-            //std::cout << "cm: " << center_of_mass[0] << " " << center_of_mass[1] << " " << center_of_mass[2] << std::endl;
-            networkOutput = fTFHandler.Predict(*pixelmaplist[0], center_of_mass);
-            //std::cout << networkOutput[0] << " " << networkOutput[1] << " " << networkOutput[2] << std::endl;
+          std::vector<float> center_of_mass(6,0);
+          getCM(*pixelmaplist[0], center_of_mass);
+          std::cout << "cm: " << center_of_mass[0] << " " << center_of_mass[1] << " " << center_of_mass[2] << std::endl;
+          networkOutput = fTFHandler.Predict(*pixelmaplist[0], center_of_mass);
+          std::cout << "cnn nuevertex : "<<networkOutput[0] << " " << networkOutput[1] << " " << networkOutput[2] << std::endl;
 	    }
         else if (fTarget == "numuenergy") {
-          networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
+          networkOutput = fRegCNNNumuHandler.Predict(*pixelmaplist[0], fLongestTrackContained);
         } 
         else if (fTarget == "nuevertex_on_img"){
-	    networkOutput = fRegCNNVtxHandler.GetVertex(evt, *pixelmaplist[0]);
-        } else {
-            std::cout << "Wrong Target" << std::endl;
-            abort();
+	      networkOutput = fRegCNNVtxHandler.GetVertex(evt, *pixelmaplist[0]);
+        } 
+        else {
+          std::cout << "Wrong Target" << std::endl;
+          abort();
         }
 
         // cnn::Result can now take a vector of floats and works out the number of outputs
         resultCol->emplace_back(networkOutput);
       }
-    }
+    } // end fCNNType
     else{
       mf::LogError("RegCNNEvaluator::produce") << "CNN Type not in the allowed list: Tensorflow" << std::endl;
       mf::LogError("RegCNNEvaluator::produce") << "Exiting without processing events" << std::endl;
       return;
     }
 
-
     evt.put(std::move(resultCol), fResultLabel);
+  }
 
+  void RegCNNEvaluator::PrepareEvent(const art::Event& evt) {
+    // Hits
+    auto hitListHandle = evt.getValidHandle<std::vector<recob::Hit>>(fHitsModuleLabel);
+
+    // Tracks
+    art::Handle< std::vector<recob::Track> > trackListHandle;
+    std::vector<art::Ptr<recob::Track> > tracklist;
+    if (evt.getByLabel(fTrackModuleLabel,trackListHandle))
+      art::fill_ptr_vector(tracklist, trackListHandle);
+
+    // Associations
+    art::FindManyP<recob::Hit> fmth(trackListHandle, evt, fTrackModuleLabel);
+    art::FindManyP<recob::SpacePoint> fmhs(hitListHandle, evt, fTrackModuleLabel);
+
+    int ntracks = tracklist.size();
+
+    double fMaxTrackLength = -1.0;
+    int iLongestTrack = -1;
+    // loop over tracks to find the longest track
+    for (int i = 0; i < ntracks; ++i){
+      if(tracklist[i]->Length() > fMaxTrackLength){
+	    fMaxTrackLength = tracklist[i]->Length();
+	    iLongestTrack = i;
+      }
+    }
+
+    fLongestTrackContained = true;
+    if (iLongestTrack >= 0 && iLongestTrack <= ntracks-1) {
+      if (fmth.isValid()) {
+        std::vector< art::Ptr<recob::Hit> > vhit = fmth.at(iLongestTrack);
+        for (size_t h = 0; h < vhit.size(); ++h) {
+          if (vhit[h]->WireID().Plane == 2) {
+            std::vector< art::Ptr<recob::SpacePoint> > spts = fmhs.at(vhit[h].key());
+            if (spts.size()) {
+              if (!insideContVol(spts[0]->XYZ()[0], spts[0]->XYZ()[1], spts[0]->XYZ()[2]))
+                fLongestTrackContained = false;
+            }
+          }
+        }
+      }
+    } // End of search longestTrack
+  }
+
+  bool RegCNNEvaluator::insideContVol(const double posX, const double posY, const double posZ) {
+    double vtx[3] = {posX, posY, posZ};
+    bool inside = false;
+
+    geo::TPCID idtpc = fGeom->FindTPCAtPosition(vtx);
+
+    if (fGeom->HasTPC(idtpc)) {
+	  const geo::TPCGeo& tpcgeo = fGeom->GetElement(idtpc);
+	  double minx = tpcgeo.MinX(); double maxx = tpcgeo.MaxX();
+	  double miny = tpcgeo.MinY(); double maxy = tpcgeo.MaxY();
+	  double minz = tpcgeo.MinZ(); double maxz = tpcgeo.MaxZ();
+
+	  for (size_t c = 0; c < fGeom->Ncryostats(); c++) {
+	    const geo::CryostatGeo& cryostat = fGeom->Cryostat(c);
+	    for (size_t t = 0; t < cryostat.NTPC(); t++) {
+	  	  const geo::TPCGeo& tpcg = cryostat.TPC(t);
+	  	  if (tpcg.MinX() < minx) minx = tpcg.MinX();
+	  	  if (tpcg.MaxX() > maxx) maxx = tpcg.MaxX();
+	  	  if (tpcg.MinY() < miny) miny = tpcg.MinY();
+	  	  if (tpcg.MaxY() > maxy) maxy = tpcg.MaxY();
+	  	  if (tpcg.MinZ() < minz) minz = tpcg.MinZ();
+	  	  if (tpcg.MaxZ() > maxz) maxz = tpcg.MaxZ(); 
+        } 
+      }
+
+	  //x
+	  double dista = fabs(minx - posX);
+	  double distb = fabs(posX - maxx);
+	  if ((posX > minx) && (posX < maxx) &&
+	      (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
+	  //y
+	  dista = fabs(maxy - posY);
+	  distb = fabs(posY - miny);
+	  if (inside && (posY > miny) && (posY < maxy) &&
+	      (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
+	  else inside = false;
+	  //z
+	  dista = fabs(maxz - posZ);
+	  distb = fabs(posZ - minz);
+	  if (inside && (posZ > minz) && (posZ < maxz) &&
+	      (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
+	  else inside = false;
+    }
+
+    return inside;
   }
 
   DEFINE_ART_MODULE(cnn::RegCNNEvaluator)
 } // end namespace cnn
+
 ////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-

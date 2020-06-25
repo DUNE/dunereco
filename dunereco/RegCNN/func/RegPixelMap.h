@@ -22,11 +22,14 @@ namespace cnn
   class RegPixelMap
   {
   public:
-    RegPixelMap(unsigned int nWire, unsigned int nTdc, unsigned int nTRes, const RegCNNBoundary& bound);
+    RegPixelMap(unsigned int nWire, unsigned int nWRes, unsigned int nTdc, unsigned int nTRes, const RegCNNBoundary& bound);
     RegPixelMap(){};
 
     /// Length in wires
     unsigned int NWire() const {return fNWire;};
+
+    /// Number of Merged wires
+    unsigned int NWRes() const {return fNWRes;};
 
     /// Width in tdcs
     unsigned int NTdc() const {return fNTdc;};
@@ -75,6 +78,7 @@ namespace cnn
     TH2F* SingleViewToTH2(const unsigned int& view) const;
 
     unsigned int      fNWire;  ///< Number of wires, length of pixel map
+    unsigned int      fNWRes;  
     unsigned int      fNTdc;   ///< Number of tdcs, width of pixel map
     unsigned int      fNTRes;  
     unsigned int      fInPM;   // check Empty Pixel Map
