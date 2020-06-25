@@ -128,6 +128,8 @@ namespace cnn {
 
     art::Ptr<simb::MCTruth> truth = mclist[0];
     simb::MCNeutrino truthN=truth->GetNeutrino();
+    std::cout<<"nuPDG :  "<<truthN.Nu().PdgCode()<<", ";
+    std::cout<<"lepPDG : "<<truthN.Lepton().PdgCode()<<std::endl;
     //truth = mclist[0];
 
     //float nuEnergy = 0;

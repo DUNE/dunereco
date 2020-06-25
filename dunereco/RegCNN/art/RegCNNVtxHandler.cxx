@@ -25,8 +25,9 @@ namespace cnn
     fTdcWidth         (pset.get<unsigned short>     ("TdcWidth")),
     fWireLength       (pset.get<unsigned short>     ("WireLength")),
     fTimeResolution   (pset.get<unsigned short>     ("TimeResolution")),
+    fWireResolution   (pset.get<unsigned short>     ("WireResolution")),
     fGlobalWireMethod (pset.get<int>                ("GlobalWireMethod")),
-    fProducer      (fWireLength, fTdcWidth, fTimeResolution, fGlobalWireMethod)
+    fProducer      (fWireLength, fWireResolution, fTdcWidth, fTimeResolution, fGlobalWireMethod)
   {
   }
   std::vector<float> RegCNNVtxHandler::GetVertex(art::Event &evt, const RegPixelMap &pixelmap){
