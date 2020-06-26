@@ -68,6 +68,13 @@ std::vector<art::Ptr<recob::Hit>> DUNEAnaEventUtils::GetHits(const art::Event &e
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
 
+std::vector<art::Ptr<recob::Wire>> DUNEAnaEventUtils::GetWires(const art::Event &evt, const std::string &label)
+{
+    return DUNEAnaEventUtils::GetProductVector<recob::Wire>(evt,label);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
 std::vector<art::Ptr<recob::SpacePoint>> DUNEAnaEventUtils::GetSpacePoints(const art::Event &evt, const std::string &label)
 {
     return DUNEAnaEventUtils::GetProductVector<recob::SpacePoint>(evt,label);
@@ -78,6 +85,13 @@ std::vector<art::Ptr<recob::SpacePoint>> DUNEAnaEventUtils::GetSpacePoints(const
 std::vector<art::Ptr<recob::Slice>> DUNEAnaEventUtils::GetSlices(const art::Event &evt, const std::string &label)
 {
     return DUNEAnaEventUtils::GetProductVector<recob::Slice>(evt,label);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
+std::vector<art::Ptr<simb::MCTruth>> DUNEAnaEventUtils::GetMCTruths(const art::Event &evt, const std::string &label)
+{
+    return DUNEAnaEventUtils::GetProductVector<simb::MCTruth>(evt,label);
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------

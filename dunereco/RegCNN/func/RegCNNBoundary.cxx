@@ -17,19 +17,26 @@ namespace cnn
 
   RegCNNBoundary::RegCNNBoundary(const int& nWire, // # of wires of pixel map
                      const int& nTDC, // # of TDC of pixel map
-		     const int& tRes, // # of TDC merging
+                     const int& wRes, // # of Wire merging
+		             const int& tRes, // # of TDC merging
                      const int& WireMeanX,
                      const int& WireMeanY,
                      const int& WireMeanZ,
                      const int& TDCMeanX,
                      const int& TDCMeanY,
                      const int& TDCMeanZ):
-    fFirstWire{WireMeanX-nWire/2,
-      WireMeanY-nWire/2,
-      WireMeanZ-nWire/2},
-    fLastWire{WireMeanX+nWire/2-1,
-      WireMeanY+nWire/2-1,
-      WireMeanZ+nWire/2-1},
+    //fFirstWire{WireMeanX-nWire/2,
+    //  WireMeanY-nWire/2,
+    //  WireMeanZ-nWire/2},
+    //fLastWire{WireMeanX+nWire/2-1,
+    //  WireMeanY+nWire/2-1,
+    //  WireMeanZ+nWire/2-1},
+    fFirstWire{WireMeanX-(nWire*wRes)/2,
+      WireMeanY-(nWire*wRes)/2,
+      WireMeanZ-(nWire*wRes)/2},
+    fLastWire{WireMeanX+(nWire*wRes)/2-wRes/2,
+      WireMeanY+(nWire*wRes)/2-wRes/2,
+      WireMeanZ+(nWire*wRes)/2-wRes/2},
     fFirstTDC{TDCMeanX - (nTDC*tRes)/2,
         TDCMeanY  - (nTDC*tRes)/2,
         TDCMeanZ  - (nTDC*tRes)/2},  
@@ -38,9 +45,14 @@ namespace cnn
         TDCMeanZ + (nTDC*tRes)/2-tRes/2}
   
   {
-    assert(fLastWire[0] - fFirstWire[0] == nWire - 1);
-    assert(fLastWire[1] - fFirstWire[1] == nWire - 1);
-    assert(fLastWire[2] - fFirstWire[2] == nWire - 1);
+      //FIXIT
+      //std::cout<<"RegCNNBoundary "<<WireMeanX<<","<<nWire<<","<<wRes<<std::endl;
+      //std::cout<<", "<<TDCMeanX<<","<<nTDC<<","<<tRes<<std::endl;
+      //std::cout<<fLastWire[0]<<", "<<fFirstWire[0]<<std::endl;
+      //std::cout<<fLastTDC[0]<<", "<<fFirstTDC[0]<<std::endl;
+      assert(fLastWire[0] - fFirstWire[0] == nWire*wRes - 1);
+      assert(fLastWire[1] - fFirstWire[1] == nWire*wRes - 1);
+      assert(fLastWire[2] - fFirstWire[2] == nWire*wRes - 1);
   }
 
   bool RegCNNBoundary::IsWithin(const int& wire, const int& tdc, const unsigned int& view)

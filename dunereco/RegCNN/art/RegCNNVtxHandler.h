@@ -37,6 +37,7 @@ namespace cnn
     unsigned int fTdcWidth;        
     unsigned int fWireLength;     
     unsigned int fTimeResolution;  
+    unsigned int fWireResolution;  
     unsigned int fGlobalWireMethod;
     RegPixelMapProducer fProducer;
 

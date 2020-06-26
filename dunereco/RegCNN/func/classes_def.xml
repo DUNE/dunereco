@@ -7,7 +7,8 @@
   </class>
 
 
-  <class name="cnn::RegPixelMap" ClassVersion="13" >
+  <class name="cnn::RegPixelMap" ClassVersion="14" >
+   <version ClassVersion="14" checksum="39635021"/>
    <version ClassVersion="13" checksum="2082878446"/>
    <version ClassVersion="12" checksum="991971656"/>
    <version ClassVersion="11" checksum="2817099520"/>

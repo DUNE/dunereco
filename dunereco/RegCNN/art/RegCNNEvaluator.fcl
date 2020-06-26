@@ -1,49 +1,58 @@
 BEGIN_PROLOG
 
-#   This file defines the configuration for the RegCNNEventDump module
+# This file defines the configuration for the RegCNNEvaluator module
 
-
-# Configuration for the RegCNN TF interface
+# Configuration for TFRegNetHandler
 standard_tfregnethandler:
 {
-  LibPath: "DUNE_PARDATA_DIR"
-  TFProtoBuf: "duneRegCNN/dune_model_weighted_20180922-102010.pb"
-  NInputs : 3
+  LibPath:      "DUNE_PARDATA_DIR"
+  TFProtoBuf:   "duneRegCNN/dune_model_weighted_20180922-102010.pb"
+  NInputs :     3
+  OutputName:   []
   ReverseViews: [false,false,false]
-  OutputName: []
 }
 
-
+# Configuration for RegCNNVtxHandler
 standard_regcnnvtxhandler:
 {
   HitsModuleLabel:   "linecluster"
-  TFNetHandler1st: @local::standard_tfregnethandler
-  TFNetHandler2nd: @local::standard_tfregnethandler
-  GlobalWireMethod: 2
-  MinClusterHits: 1
-  TdcWidth:      24 # time width of pixel map
-  WireLength:    42 # wire width of pixel map
-  TimeResolution: 6
+  TFNetHandler1st:   @local::standard_tfregnethandler
+  TFNetHandler2nd:   @local::standard_tfregnethandler
+  GlobalWireMethod:  2
+  MinClusterHits:    1
+  TdcWidth:          24 # time width of pixel map
+  WireLength:        42 # wire width of pixel map
+  TimeResolution:    6
+  WireResolution:    1
 }
 
+# Configuration for RegCNNNumuHandler
+standard_regcnnnumuhandler:
+{
+  TFNetHandlerContained: @local::standard_tfregnethandler
+  TFNetHandlerExiting:   @local::standard_tfregnethandler
+}
+
+# Evaluator for nue energy
 standard_regcnnevaluator:
 {
-  module_type:        RegCNNEvaluator
+  module_type:         RegCNNEvaluator
   #==================
-  PixelMapInput: "regcnnmap"
-  ResultLabel: "regcnnresult"
-  TFNetHandler:     @local::standard_tfregnethandler
-  CNNType: "Tensorflow"
-  Target: "nueenergy"
-  RegCNNVtxHandler: @local::standard_regcnnvtxhandler
+  PixelMapInput:       "regcnnmap"
+  ResultLabel:         "regcnnresult"
+  CNNType:             "Tensorflow"
+  Target:              "nueenergy"
+  TFNetHandler:        @local::standard_tfregnethandler
+  RegCNNVtxHandler:    @local::standard_regcnnvtxhandler
+  RegCNNNumuHandler:   @local::standard_regcnnnumuhandler
+  HitsModuleLabel:     "linecluster"
+  TrackModuleLabel:    "pmtrack"
+  # If a track has one or more hits within a distance ContVolCut cm of edge of detector, it is exiting; otherwise it is contained
+  ContVolCut:          20.0
 }
 
-
-standard_regcnnnumuevaluator: @local::standard_regcnnevaluator
-standard_regcnnnumuevaluator.Target: "numuenergy"
-
+# Evaluator for nue vertex
 standard_regcnnvtxevaluator: @local::standard_regcnnevaluator
-
 standard_regcnnvtxevaluator.PixelMapInput: "regcnnvtxmap"
 standard_regcnnvtxevaluator.Target:        "nuevertex_on_img"
 standard_regcnnvtxevaluator.ResultLabel:   "regcnnvtxresult"
@@ -52,6 +61,12 @@ standard_regcnnvtxevaluator.RegCNNVtxHandler.TFNetHandler1st.TFProtoBuf: "duneRe
 standard_regcnnvtxevaluator.RegCNNVtxHandler.TFNetHandler2nd.NInputs: 4
 standard_regcnnvtxevaluator.RegCNNVtxHandler.TFNetHandler2nd.TFProtoBuf: "duneRegCNN/dune_nue_vertices_cascade_2stage_20190701-171845.pb"
 
-
+# Evaluator for numu energy
+standard_regcnnnumuevaluator: @local::standard_regcnnevaluator
+standard_regcnnnumuevaluator.PixelMapInput: "regcnnnumumap"
+standard_regcnnnumuevaluator.ResultLabel:   "regcnnnumuresult"
+standard_regcnnnumuevaluator.Target:        "numuenergy"
+standard_regcnnnumuevaluator.RegCNNNumuHandler.TFNetHandlerContained.TFProtoBuf: "duneRegCNN/jordan_numucc_eng_trackCont_1_trueDetin_1_20200529.pb"
+standard_regcnnnumuevaluator.RegCNNNumuHandler.TFNetHandlerExiting.TFProtoBuf:   "duneRegCNN/jordan_numucc_eng_trackCont_0_trueDetin_1_20200617.pb"
 
 END_PROLOG

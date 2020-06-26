@@ -47,6 +47,7 @@ class myana::RegCNNAna : public art::EDAnalyzer
     
     int    InDet;
     int    FidCut;
+    int    mutrk_contain;
     int    nhits;
     int    nu_truth_N;
     int    nupdg_truth[kMax];
@@ -56,18 +57,18 @@ class myana::RegCNNAna : public art::EDAnalyzer
     double nuvtxx_truth[kMax];
     double nuvtxy_truth[kMax];
     double nuvtxz_truth[kMax];
+    int    lepPDG_truth[kMax];
+    double lepEng_truth[kMax];
 
-
-
-    double ErecoNue;
-    double RecoLepEnNue; 
-    double RecoHadEnNue; 
-    int    RecoMethodNue; 
+    double ErecoNu;
+    double RecoLepEnNu; 
+    double RecoHadEnNu; 
+    int    RecoMethodNu; 
 
     std::string fMCGenModuleLabel;   
     std::string fRegCNNModuleLabel;   
     std::string fHitsModuleLabel;
-    std::string fEnergyRecoNueLabel;
+    std::string fEnergyRecoNuLabel;
     std::string fRegCNNResultLabel;   
 
     art::ServiceHandle<art::TFileService> tfs;
@@ -81,6 +82,7 @@ myana::RegCNNAna::RegCNNAna(fhicl::ParameterSet const& pset) : EDAnalyzer(pset)
   fTree->Branch("ievent",            &ievt,          "ievent/I");
   fTree->Branch("InDet",             &InDet,         "InDet/I");
   fTree->Branch("FidCut",            &FidCut,         "FidCut/I");
+  fTree->Branch("MuTrackCont",       &mutrk_contain,  "MuTrackCont/I");
   fTree->Branch("TrueEnergy",        &trueEnergy,    "TrueEnergy/D");
   fTree->Branch("CNNEnergy",         &regcnn_energy, "CNNEnergy/F");
   fTree->Branch("CNNVertex",         regcnn_vertex, "CNNVertex[3]/F");
@@ -91,16 +93,19 @@ myana::RegCNNAna::RegCNNAna(fhicl::ParameterSet const& pset) : EDAnalyzer(pset)
   fTree->Branch("NuModeTruth",       numode_truth,   "NuModeTruth[NuTruthN]/I"); 
   fTree->Branch("NuCCNCTruth",       nuccnc_truth,   "NuCCNCTruth[NuTruthN]/I");   
 
-  fTree->Branch("NuVtxXTruth",       nuvtxx_truth,   "NuVtxXTruth[NuTruthN]/I"); 
-  fTree->Branch("NuVtxYTruth",       nuvtxy_truth,   "NuVtxYTruth[NuTruthN]/I"); 
-  fTree->Branch("NuVtxZTruth",       nuvtxz_truth,   "NuVtxZTruth[NuTruthN]/I"); 
+  fTree->Branch("LepPDGTruth",       lepPDG_truth,   "LepPDGTruth[NuTruthN]/I");
+  fTree->Branch("LepEngTruth",       lepEng_truth,   "LepEngTruth[NuTruthN]/D");
+
+  fTree->Branch("NuVtxXTruth",       nuvtxx_truth,   "NuVtxXTruth[NuTruthN]/D"); 
+  fTree->Branch("NuVtxYTruth",       nuvtxy_truth,   "NuVtxYTruth[NuTruthN]/D"); 
+  fTree->Branch("NuVtxZTruth",       nuvtxz_truth,   "NuVtxZTruth[NuTruthN]/D"); 
 
   fTree->Branch("NHits",             &nhits,         "NHits/I");
 
-  fTree->Branch("ErecoNue",          &ErecoNue,      "ErecoNue/D");
-  fTree->Branch("RecoLepEnNue",      &RecoLepEnNue,  "RecoLepEnNue/D");
-  fTree->Branch("RecoHadEnNue",      &RecoHadEnNue,  "RecoHadEnNue/D");
-  fTree->Branch("RecoMethodNue",     &RecoMethodNue, "RecoMethodNue/I");
+  fTree->Branch("ErecoNu",          &ErecoNu,      "ErecoNu/D");
+  fTree->Branch("RecoLepEnNu",      &RecoLepEnNu,  "RecoLepEnNu/D");
+  fTree->Branch("RecoHadEnNu",      &RecoHadEnNu,  "RecoHadEnNu/D");
+  fTree->Branch("RecoMethodNu",     &RecoMethodNu, "RecoMethodNu/I");
 
 
 }
@@ -110,7 +115,7 @@ void myana::RegCNNAna::reconfigure(fhicl::ParameterSet const& pset)
   fMCGenModuleLabel  = pset.get<std::string>("MCGenModuleLabel");
   fRegCNNModuleLabel = pset.get<std::string>("RegCNNModuleLabel");
   fHitsModuleLabel   = pset.get<std::string>("HitsModuleLabel");
-  fEnergyRecoNueLabel = pset.get<std::string>("EnergyRecoNueLabel");
+  fEnergyRecoNuLabel = pset.get<std::string>("EnergyRecoNuLabel");
   fRegCNNResultLabel = pset.get<std::string>("RegCNNResultLabel");
 }
 
@@ -136,7 +141,7 @@ void myana::RegCNNAna::analyze(art::Event const& evt)
 
   // Get DUNE energy Reco
   art::Handle<dune::EnergyRecoOutput> engrecoHandle;
-  evt.getByLabel(fEnergyRecoNueLabel,engrecoHandle);
+  evt.getByLabel(fEnergyRecoNuLabel,engrecoHandle);
 
 
   // Get RegCNN Results
@@ -159,6 +164,9 @@ void myana::RegCNNAna::analyze(art::Event const& evt)
             nupdg_truth[neutrino_i]  = mclist[iList]->GetNeutrino().Nu().PdgCode(); 
             nuccnc_truth[neutrino_i] = mclist[iList]->GetNeutrino().CCNC(); 
             numode_truth[neutrino_i] = mclist[iList]->GetNeutrino().Mode();
+
+            lepEng_truth[neutrino_i] = mclist[iList]->GetNeutrino().Lepton().E();
+            lepPDG_truth[neutrino_i] = mclist[iList]->GetNeutrino().Lepton().PdgCode();
 
             nuvtxx_truth[neutrino_i] = mclist[iList]->GetNeutrino().Nu().Vx();
             nuvtxy_truth[neutrino_i] = mclist[iList]->GetNeutrino().Nu().Vy();
@@ -199,17 +207,22 @@ void myana::RegCNNAna::analyze(art::Event const& evt)
   if (nu_truth_N>0){
     //if(nuccnc_truth[0] == 0 && fabs(nuvtxx_truth[0]) < 310. && fabs(nuvtxy_truth[0]) < 550. && fabs(nuvtxz_truth[0]) > 50. && fabs(nuvtxz_truth[0]) < 1250.) nutrue_fid = 1; 
     if(fabs(nuvtxx_truth[0]) < 310. && fabs(nuvtxy_truth[0]) < 550. && nuvtxz_truth[0] > 50. && nuvtxz_truth[0] < 1250.) FidCut = 1;
+    if (fabs(nupdg_truth[0])==14) {
+        // 1 logest reco track contained
+        // 0 logest reco track exiting
+        mutrk_contain = engrecoHandle->longestTrackContained;
+    }
   }
 
 
   // Get RecoE from DUNE
   if (!engrecoHandle.failedToGet())
   {
-      ErecoNue          = engrecoHandle->fNuLorentzVector.E();
-      RecoLepEnNue      = engrecoHandle->fLepLorentzVector.E();
-      RecoHadEnNue      = engrecoHandle->fHadLorentzVector.E();
-      RecoMethodNue     = engrecoHandle->recoMethodUsed;
-      std::cout<< ErecoNue << std::endl;
+      ErecoNu          = engrecoHandle->fNuLorentzVector.E();
+      RecoLepEnNu      = engrecoHandle->fLepLorentzVector.E();
+      RecoHadEnNu      = engrecoHandle->fHadLorentzVector.E();
+      RecoMethodNu     = engrecoHandle->recoMethodUsed;
+      std::cout<< ErecoNu << std::endl;
   }
 
   // Get RegCNN Results
@@ -232,12 +245,13 @@ void myana::RegCNNAna::analyze(art::Event const& evt)
 void myana::RegCNNAna::reset()
 {
     ievt = -9999;
+    mutrk_contain = -999;
     trueEnergy = -99999;
     regcnn_energy = -99999;
-    ErecoNue = -99999;
-    RecoLepEnNue = -99999;
-    RecoHadEnNue = -99999;
-    RecoMethodNue = -99999;
+    ErecoNu = -99999;
+    RecoLepEnNu = -99999;
+    RecoHadEnNu = -99999;
+    RecoMethodNu = -99999;
    
     for (int ii = 0; ii < 3; ii++){ 
         regcnn_vertex[ii] = -99999;
@@ -249,6 +263,8 @@ void myana::RegCNNAna::reset()
         numode_truth[ii] = -99999;
         nuccnc_truth[ii] = -99999;
         nueng_truth[ii] = -99999;
+        lepPDG_truth[ii] = -99999;
+        lepEng_truth[ii] = -99999;
 
         nuvtxx_truth[ii] = -99999;
         nuvtxy_truth[ii] = -99999;

@@ -13,9 +13,10 @@
 namespace cnn
 {
 
-  RegPixelMap::RegPixelMap(unsigned int nWire, unsigned int nTdc, unsigned int nTRes,
-                     const RegCNNBoundary& bound):
+  RegPixelMap::RegPixelMap(unsigned int nWire, unsigned int nWRes,
+          unsigned int nTdc, unsigned int nTRes, const RegCNNBoundary& bound):
   fNWire(nWire),
+  fNWRes(nWRes),
   fNTdc(nTdc),
   fNTRes(nTRes),
   fInPM(0),
@@ -34,7 +35,9 @@ namespace cnn
   fLabY(nWire*nTdc),
   fLabZ(nWire*nTdc),
   fBound(bound)
-  {}
+  {
+      std::cout<<"here :"<<fNWire<<", "<<fNTdc<<", "<<fNWRes<<", "<<fNTRes<<std::endl;
+  }
 
   void RegPixelMap::FillInputVector(float* input) const
   {
@@ -58,23 +61,27 @@ namespace cnn
       GetTPC(wire, tdc, view, tpc);
       fPE[GlobalToIndex(wire,tdc, view)] += (float)pe;
       fLab[GlobalToIndex(wire,tdc, view)] = label;
-      fPur[GlobalToIndexSingle(wire,tdc, view)] = purity;
+      fPur[GlobalToIndex(wire,tdc, view)] = purity;
       if(view==0){
-	fPEX[GlobalToIndexSingle(wire,tdc, view)] += (float)pe;
-	fLabX[GlobalToIndexSingle(wire,tdc, view)] = label;
-	fPurX[GlobalToIndexSingle(wire,tdc, view)] = purity;
+	    fPEX[GlobalToIndexSingle(wire,tdc, view)] += (float)pe;
+	    fLabX[GlobalToIndexSingle(wire,tdc, view)] = label;
+	    fPurX[GlobalToIndexSingle(wire,tdc, view)] = purity;
+        // FIXIT
+        //if (pe!=0) {
+        //    std::cout<<view<<" | ";
+        //    std::cout<<wire<<", "<<tdc<<", "<<GlobalToIndexSingle(wire,tdc,view)<<", "<<pe<<std::endl;
+        //}
       }
       if(view==1){
-	fPEY[GlobalToIndexSingle(wire,tdc, view)] += (float)pe;
-	fLabY[GlobalToIndexSingle(wire,tdc, view)] = label;
-	fPurY[GlobalToIndexSingle(wire,tdc, view)] = purity;
-
+	    fPEY[GlobalToIndexSingle(wire,tdc, view)] += (float)pe;
+	    fLabY[GlobalToIndexSingle(wire,tdc, view)] = label;
+	    fPurY[GlobalToIndexSingle(wire,tdc, view)] = purity;
       }
      if(view==2){
-	fPEZ[GlobalToIndexSingle(wire,tdc, view)] += (float)pe;
-	fLabZ[GlobalToIndexSingle(wire,tdc, view)] = label;
-	fPurZ[GlobalToIndexSingle(wire,tdc, view)] = purity;
-      //std::cout << "Q = " << pe << " " << fPEZ[GlobalToIndexSingle(wire,tdc, view)] << std::endl;
+	    fPEZ[GlobalToIndexSingle(wire,tdc, view)] += (float)pe;
+	    fLabZ[GlobalToIndexSingle(wire,tdc, view)] = label;
+	    fPurZ[GlobalToIndexSingle(wire,tdc, view)] = purity;
+        //std::cout << "Q = " << pe << " " << fPEZ[GlobalToIndexSingle(wire,tdc, view)] << std::endl;
       }
    }
   }
@@ -84,10 +91,12 @@ namespace cnn
                                         const unsigned int& view)
   {
 
-    int meanWire = (fBound.LastWire(view)+fBound.FirstWire(view))/2;
+    //int meanWire = (fBound.LastWire(view)+fBound.FirstWire(view))/2;
+    int meanWire = (fBound.LastWire(view)+fBound.FirstWire(view)+(int)fNWRes)/2;
     int meanTDC  = (fBound.LastTDC(view)+fBound.FirstTDC(view)+(int)fNTRes/2)/2;
 
-    unsigned int internalWire = (unsigned int)( (wire-meanWire) + fNWire/2 );
+    //unsigned int internalWire = (unsigned int)( (wire-meanWire) + fNWire/2 );
+    unsigned int internalWire = (unsigned int)(round((float)((unsigned int)(wire-meanWire)+fNWire*fNWRes/2)/(float)fNWRes) );
     //unsigned int internalTdc  = (unsigned int)( round((float)(tdc-meanTDC)/(float)fNTRes + fNTdc/2) );
     unsigned int internalTdc  = (unsigned int)( round((float)((unsigned int)(tdc-meanTDC)+fNTdc*fNTRes/2)/(float)fNTRes) );
 
@@ -116,10 +125,13 @@ namespace cnn
 
   {
 
-    int meanWire = (fBound.LastWire(view)+fBound.FirstWire(view))/2;
+    //int meanWire = (fBound.LastWire(view)+fBound.FirstWire(view))/2;
+    int meanWire = (fBound.LastWire(view)+fBound.FirstWire(view)+(int)fNWRes/2)/2;
     int meanTDC  = (fBound.LastTDC(view)+fBound.FirstTDC(view)+(int)fNTRes/2)/2;
 
-    unsigned int internalWire = (unsigned int)( (wire-meanWire) + fNWire/2 );
+    //unsigned int internalWire = (unsigned int)( (wire-meanWire) + fNWire/2 );
+    unsigned int internalWire = (unsigned int)( round((float)((unsigned int)(wire-meanWire)+fNWire*fNWRes/2)/(float)fNWRes) );
+
     //unsigned int internalTdc  = (unsigned int)( round( (float)(tdc-meanTDC)/(float)fNTRes + fNTdc/2) );
     unsigned int internalTdc  = (unsigned int)( round((float)((unsigned int)(tdc-meanTDC)+fNTdc*fNTRes/2)/(float)fNTRes) );
 
@@ -136,7 +148,8 @@ namespace cnn
 
   {
 
-    int meanWire = (fBound.LastWire(view)+fBound.FirstWire(view))/2;
+    //int meanWire = (fBound.LastWire(view)+fBound.FirstWire(view))/2;
+    int meanWire = (fBound.LastWire(view)+fBound.FirstWire(view)+(int)fNWRes)/2;
     int meanTDC  = (fBound.LastTDC(view)+fBound.FirstTDC(view)+(int)fNTRes/2)/2;
     double dist = pow((wire-meanWire)*0.5,2)+pow((tdc-meanTDC)*0.08,2);
     dist = sqrt(dist);
@@ -244,6 +257,10 @@ namespace cnn
 	if(view==0){
         hist->SetBinContent(iWire+1, iTdc + 1,
                             fPEX[LocalToIndex(iWire, iTdc)]);
+        // FIXIT
+        //if(fPEX[LocalToIndex(iWire, iTdc)]!=0) {
+        //    std::cout<<iWire<<", "<<iTdc<<", "<<fPEX[LocalToIndex(iWire, iTdc)]/500<<std::endl;
+        //}
 	}
         if(view==1){
         hist->SetBinContent(iWire+1, iTdc + 1,
