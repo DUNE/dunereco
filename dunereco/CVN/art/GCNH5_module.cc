@@ -31,6 +31,8 @@ using std::string;
 using std::round;
 using std::abs;
 using std::endl;
+using std::setfill;
+using std::setw;
 
 using hep_hpc::hdf5::Column;
 using hep_hpc::hdf5::make_scalar_column;
@@ -49,8 +51,8 @@ namespace cvn {
 
     void reconfigure(fhicl::ParameterSet const& p);
 
-    void beginJob() override;
-    void endJob() override;
+    void beginSubRun(art::SubRun const& sr) override;
+    void endSubRun(art::SubRun const& sr) override;
     void analyze(art::Event const& e) override;
 
   private:
@@ -60,9 +62,9 @@ namespace cvn {
     string fTruthLabel;         ///< Name of truth producer module
     string fOutputName;         ///< Output filename
     bool fSaveEventTruth;       ///< Whether to save event-level truth information
-    bool fSaveParticleTruth;     ///< Whether to include particle truth information
+    bool fSaveParticleTruth;    ///< Whether to include particle truth information
 
-    hep_hpc::hdf5::File fFile;     ///< Output HDF5 file
+    hep_hpc::hdf5::File fFile;  ///< Output HDF5 file
     hep_hpc::hdf5::Ntuple<Column<int, 1>,
                           Column<int, 1>,
                           Column<int, 1>,
@@ -181,7 +183,7 @@ namespace cvn {
 
     // // Particle tree
     if (fSaveParticleTruth) {
-      vector<ptruth> ptree = GCNFeatureUtils::GetParticleTree(graphVector[0].get());
+      std::vector<ptruth> ptree = GCNFeatureUtils::GetParticleTree(graphVector[0].get());
       for (auto p : ptree) {
         fParticleNtuple->insert(run, subrun, event,
           std::get<0>(p), std::get<1>(p), std::get<2>(p),
@@ -193,13 +195,15 @@ namespace cvn {
 
   } // cvn::GCNH5::analyze
 
-  void GCNH5::beginJob() {
+  void GCNH5::beginSubRun(art::SubRun const& sr) {
 
     // Open HDF5 output
     boost::uuids::random_generator generator;
     boost::uuids::uuid uuid = generator();
     std::ostringstream fileName;
-    fileName << fOutputName << "_" << uuid << ".h5";
+    fileName << fOutputName << "_r" << setfill('0') << setw(5) << sr.run()
+      << "_r" << setfill('0') << setw(5) << sr.subRun() << "_" << uuid
+      << ".h5";
 
     fFile = hep_hpc::hdf5::File(fileName.str(), H5F_ACC_TRUNC);
 
@@ -254,7 +258,7 @@ namespace cvn {
     }
   }
 
-  void GCNH5::endJob() {
+  void GCNH5::endSubRun(art::SubRun const& sr) {
     delete fGraphNtuple;
     if (fSaveEventTruth) delete fEventNtuple;
     if (fSaveParticleTruth) delete fParticleNtuple;
