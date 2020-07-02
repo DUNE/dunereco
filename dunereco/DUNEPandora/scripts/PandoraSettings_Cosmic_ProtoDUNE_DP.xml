@@ -92,6 +92,7 @@
     <algorithm type = "LArTrackConsolidation">
         <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
     </algorithm>
+
     <algorithm type = "LArHitWidthClusterMerging"/>
 
     <!-- TwoViewTrackAlgorithms -->
@@ -100,11 +101,6 @@
       <InputClusterListName2>ClustersV</InputClusterListName2>
       <OutputPfoListName>TrackParticles3D</OutputPfoListName>
       <TrackTools>
-        <tool type = "LArTransverseMatrixVisualization">                                                     
-          <MinClusterConnections>0</MinClusterConnections>                                                 
-          <IgnoreUnavailableClusters>true</IgnoreUnavailableClusters>                                      
-          <ShowEachIndividualElement>true</ShowEachIndividualElement>                                      
-        </tool>                                                                                              
         <tool type = "LArTwoViewClearTracks"/>
       </TrackTools>
     </algorithm>

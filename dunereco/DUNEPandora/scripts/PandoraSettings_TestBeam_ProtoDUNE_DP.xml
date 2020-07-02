@@ -35,7 +35,7 @@
         <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
     </algorithm>
 
-    <algorithm type = "LArHitWidthClusterMerging">
+    <algorithm type = "LArHitWidthClusterMerging"/>
 
     <algorithm type = "LArClusteringParent">
         <algorithm type = "LArTrackClusterCreation" description = "ClusterFormation"/>
@@ -58,7 +58,7 @@
         <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
     </algorithm>
 
-    <algorithm type = "LArHitWidthClusterMerging">
+    <algorithm type = "LArHitWidthClusterMerging"/>
 
     <algorithm type = "LArClusteringParent">
         <algorithm type = "LArTrackClusterCreation" description = "ClusterFormation"/>
@@ -120,17 +120,12 @@
 
     <!-- TwoViewTrackAlgorithms -->
     <algorithm type = "LArTwoViewTransverseTracks">
-        <InputClusterListName1>ClustersU</InputClusterListName1>
-        <InputClusterListName2>ClustersV</InputClusterListName2>
-        <OutputPfoListName>TrackParticles3D</OutputPfoListName>
-        <TrackTools>
-          <tool type = "LArTransverseMatrixVisualization">                                                     
-            <MinClusterConnections>0</MinClusterConnections>                                                 
-            <IgnoreUnavailableClusters>true</IgnoreUnavailableClusters>                                      
-            <ShowEachIndividualElement>true</ShowEachIndividualElement>                                      
-          </tool>                                                                                              
-          <tool type = "LArTwoViewClearTracks"/>
-        </TrackTools>
+      <InputClusterListName1>ClustersU</InputClusterListName1>
+      <InputClusterListName2>ClustersV</InputClusterListName2>
+      <OutputPfoListName>TrackParticles3D</OutputPfoListName>
+      <TrackTools>
+        <tool type = "LArTwoViewClearTracks"/>
+      </TrackTools>
     </algorithm>
 
     <!-- ThreeDTrackAlgorithms -->
