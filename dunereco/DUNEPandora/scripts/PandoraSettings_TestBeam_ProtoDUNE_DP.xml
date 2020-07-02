@@ -124,9 +124,14 @@
         <InputClusterListName2>ClustersV</InputClusterListName2>
         <OutputPfoListName>TrackParticles3D</OutputPfoListName>
         <TrackTools>
-            <tool type = "LArTwoViewClearTracks"/>
-          </TrackTools>
-        </algorithm>
+          <tool type = "LArTransverseMatrixVisualization">                                                     
+            <MinClusterConnections>0</MinClusterConnections>                                                 
+            <IgnoreUnavailableClusters>true</IgnoreUnavailableClusters>                                      
+            <ShowEachIndividualElement>true</ShowEachIndividualElement>                                      
+          </tool>                                                                                              
+          <tool type = "LArTwoViewClearTracks"/>
+        </TrackTools>
+    </algorithm>
 
     <!-- ThreeDTrackAlgorithms -->
     <algorithm type = "LArThreeDTransverseTracks">
