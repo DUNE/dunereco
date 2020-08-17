@@ -20,6 +20,7 @@ art_make(BASENAME_ONLY
   ${ROOT_BASIC_LIB_LIST}
   lardataobj_RecoBase
   lardata_Utilities
+  larpandora_LArPandoraInterface
   nusimdata_SimulationBase
   larsim_MCCheater_BackTrackerService_service           
   larsim_MCCheater_ParticleInventoryService_service

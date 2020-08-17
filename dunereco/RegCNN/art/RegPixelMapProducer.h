@@ -42,7 +42,7 @@ namespace cnn
   class RegPixelMapProducer
   {
   public:
-    RegPixelMapProducer(unsigned int nWire, unsigned int nTdc, double tRes, int Global);
+    RegPixelMapProducer(unsigned int nWire, unsigned int wRes, unsigned int nTdc, double tRes, int Global);
 
     /// Get boundaries for pixel map representation of cluster
     RegCNNBoundary DefineBoundary(detinfo::DetectorPropertiesData const& detProp,
@@ -62,6 +62,7 @@ namespace cnn
     unsigned int NWire() const {return fNWire;};
     unsigned int NTdc() const {return fNTdc;};
     double TRes() const {return fTRes;};
+    double WRes() const {return fWRes;};
 
     RegPixelMap CreateMap(detinfo::DetectorClocksData const& clockData,
                           detinfo::DetectorPropertiesData const& detProp,
@@ -84,6 +85,7 @@ namespace cnn
    private:
 
     unsigned int      fNWire;  ///< Number of wires, length for pixel maps
+    unsigned int      fWRes;
     unsigned int      fNTdc;   ///< Number of tdcs, width of pixel map
     unsigned int      fTRes;
     int               fGlobalWireMethod;

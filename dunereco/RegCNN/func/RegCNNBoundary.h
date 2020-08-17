@@ -23,7 +23,8 @@ namespace cnn
   public:
     /// Create new RegCNNBoundary object based on number of wires, number of tdcs,
     /// minumum wire and mean tdc in odd and even view.
-    RegCNNBoundary(const int& nWire, const int& nTDC, const int& tRes,
+    RegCNNBoundary(const int& nWire, const int& nTDC, 
+            const int& wRes, const int& tRes,
              const int& WireMeanX,
              const int& WireMeanY,
              const int& WireMeanZ,
