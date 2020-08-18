@@ -76,7 +76,6 @@ void cnn::RegCNNImageUtils::ConvertChargeVectorsToViewVectors(std::vector<float>
   if(fViewReverse[1]) ReverseView(v1pe);
   if(fViewReverse[2]) ReverseView(v2pe);
 
-
   // Write the values to the three vectors
   for (unsigned int view = 0; view < fNViews; ++view){
     cnn::ViewVectorF viewChargeVec;
@@ -84,21 +83,22 @@ void cnn::RegCNNImageUtils::ConvertChargeVectorsToViewVectors(std::vector<float>
     for (unsigned int wire = 0; wire < fPixelMapWires+1; ++wire){
       std::vector<float> wireTDCVec;
       //for (unsigned int time = 0; time < fPixelMapTDCs; ++time){
-      for (unsigned int time = 0; time < fPixelMapTDCs+1; ++time){
+      for (unsigned int time = 0; time < fPixelMapTDCs+1; ++time) {
 
         // Get the index for the pixel map
         unsigned int element = time + fPixelMapTDCs * wire;
-	// FIXME: needs to add additional dimensions because of TF model
-	if (time < fPixelMapTDCs && wire < fPixelMapWires){
-	        // Scale Charges
-	        float val = 0;
-	        if(view == 0){ val = ConvertToScaledCharge(v0pe[element]); }
-	        if(view == 1){ val = ConvertToScaledCharge(v1pe[element]); }
-	        if(view == 2){ val = ConvertToScaledCharge(v2pe[element]); }
-	        wireTDCVec.push_back(val);
-	} else wireTDCVec.push_back(0.);
+	    // FIXME: needs to add additional dimensions because of TF model
+	    if (time < fPixelMapTDCs && wire < fPixelMapWires){
+	            // Scale Charges
+	            float val = 0;
+	            if(view == 0){ val = ConvertToScaledCharge(v0pe[element]); }
+	            if(view == 1){ val = ConvertToScaledCharge(v1pe[element]); }
+	            if(view == 2){ val = ConvertToScaledCharge(v2pe[element]); }
+	            wireTDCVec.push_back(val);
+	    } else {
+            wireTDCVec.push_back(0.);
+        }
       }
-      //wireTDCVec.push_back(0); // this is to increase 1 dim 280 -> 281
       viewChargeVec.push_back(wireTDCVec);
     }
     if(view == 0) view0 = viewChargeVec;

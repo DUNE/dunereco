@@ -32,6 +32,7 @@ namespace cnn
     // Construct the TF Graph object. The empty vector {} is used since the protobuf
     // file gives the names of the output layer nodes
     mf::LogInfo("TFRegNetHandler") << "Loading network: " << fTFProtoBuf << std::endl;
+    std::cout<<"Loading network: "<<fTFProtoBuf<<std::endl;
     //fTFGraph = tf::RegCNNGraph::create(fTFProtoBuf.c_str(),fInputs,{});
     fTFGraph = tf::RegCNNGraph::create(fTFProtoBuf.c_str(),fInputs,fOutputName);
     if(!fTFGraph){

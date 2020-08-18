@@ -39,6 +39,7 @@
         <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
     </algorithm>
     <algorithm type = "LArHitWidthClusterMerging"/>
+    <algorithm type = "LArTrackInEMShower"/>
 
     <algorithm type = "LArClusteringParent">
         <algorithm type = "LArTrackClusterCreation" description = "ClusterFormation"/>
@@ -65,6 +66,7 @@
         <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
     </algorithm>
     <algorithm type = "LArHitWidthClusterMerging"/>
+    <algorithm type = "LArTrackInEMShower"/>
 
     <algorithm type = "LArClusteringParent">
         <algorithm type = "LArTrackClusterCreation" description = "ClusterFormation"/>
@@ -91,6 +93,7 @@
         <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
     </algorithm>
     <algorithm type = "LArHitWidthClusterMerging"/>
+    <algorithm type = "LArTrackInEMShower"/>
 
     <!-- ThreeDTrackAlgorithms -->
     <algorithm type = "LArThreeDTransverseTracks">

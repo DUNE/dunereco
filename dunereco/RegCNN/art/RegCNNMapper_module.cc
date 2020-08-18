@@ -29,9 +29,12 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RawData/ExternalTrigger.h"
+#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/RecoBase/Wire.h"
+#include "lardataobj/RecoBase/Vertex.h"
+#include "lardataobj/RecoBase/PFParticle.h"
 #include "nusimdata/SimulationBase/MCNeutrino.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
@@ -40,6 +43,7 @@
 #include "dune/RegCNN/func/RegPixelMap.h"
 #include "dune/RegCNN/func/RegCNNResult.h"
 
+namespace lar_pandora{class LArPandoraHelper;}
 
 namespace cnn {
 
@@ -70,8 +74,10 @@ namespace cnn {
     /// Length of pixel map in wires
     unsigned short fWireLength;
 
-    /// Length of pixel map in wires
+    // resolution of ticks
     double fTimeResolution;
+    // resolution of wires
+    double fWireResolution;
 
     /// Maximum gap in wires at front of cluster to prevent pruning of upstream
     /// hits
@@ -84,6 +90,11 @@ namespace cnn {
     int fGlobalWireMethod;
     /// select how to choose center of pixel map
     int fUseRecoVertex;
+
+    std::string fVertexModuleLabel;
+    std::string fPFParticleModuleLabel;
+    std::string fPandoraNuVertexModuleLabel;
+
     std::string fRegCNNResultLabel;
     std::string fRegCNNModuleLabel;
 
@@ -104,11 +115,15 @@ namespace cnn {
   fTdcWidth         (pset.get<unsigned short>     ("TdcWidth")),
   fWireLength       (pset.get<unsigned short>     ("WireLength")),
   fTimeResolution   (pset.get<unsigned short>     ("TimeResolution")),
+  fWireResolution   (pset.get<unsigned short>     ("WireResolution")),
   fGlobalWireMethod (pset.get<int>                ("GlobalWireMethod")),
   fUseRecoVertex    (pset.get<int>                ("UseRecoVertex")),
+  fVertexModuleLabel(pset.get<std::string>        ("VertexModuleLabel")),
+  fPFParticleModuleLabel(pset.get<std::string>     ("PFParticleModuleLabel")),
+  fPandoraNuVertexModuleLabel(pset.get<std::string>("PandoraNuVertexModuleLabel")),
   fRegCNNResultLabel (pset.get<std::string>       ("RegCNNResultLabel")),
   fRegCNNModuleLabel (pset.get<std::string>       ("RegCNNModuleLabel")),
-  fProducer      (fWireLength, fTdcWidth, fTimeResolution, fGlobalWireMethod)
+  fProducer      (fWireLength, fWireResolution, fTdcWidth, fTimeResolution, fGlobalWireMethod)
   {
 
     produces< std::vector<cnn::RegPixelMap>   >(fClusterPMLabel);
@@ -142,6 +157,13 @@ namespace cnn {
       art::fill_ptr_vector(hitlist, hitListHandle);
     art::FindManyP<recob::Wire> fmwire(hitListHandle, evt, fHitsModuleLabel);
 
+    // Get the vertex out of the event record
+    art::Handle<std::vector<recob::Vertex> > vertexHandle;
+    std::vector<art::Ptr<recob::Vertex> > vertex_list;
+    if (evt.getByLabel(fVertexModuleLabel,vertexHandle))
+        art::fill_ptr_vector(vertex_list, vertexHandle);
+    art::FindMany<recob::PFParticle> fmPFParticle(vertexHandle, evt, fPFParticleModuleLabel);
+
     unsigned short nhits = hitlist.size();
 
     //Declaring containers for things to be stored in event
@@ -160,31 +182,68 @@ namespace cnn {
         // Get RegCNN Results
         art::Handle<std::vector<cnn::RegCNNResult>> cnnresultListHandle;
         evt.getByLabel(fRegCNNModuleLabel, fRegCNNResultLabel, cnnresultListHandle);
-	std::vector<float> vtx(3, -99999);
+            std::vector<float> vtx(3, -99999);
         if (!cnnresultListHandle.failedToGet())
         {
             if (!cnnresultListHandle->empty())
             {
                 const std::vector<float>& v = (*cnnresultListHandle)[0].fOutput;
                 for (unsigned int ii = 0; ii < 3; ii++){
-                     vtx[ii] = v[ii]; 
+                     vtx[ii] = v[ii];
+                     std::cout<<"vertex "<<ii<<" : "<<vtx[ii]<<std::endl;
                 }
             }
         }
         pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, vtx);
-      } else {
+      }
+      else if (fUseRecoVertex==2) {
+          // create pixel map based on pandora vertex
+          lar_pandora::PFParticleVector particleVector;
+          lar_pandora::LArPandoraHelper::CollectPFParticles(evt, fPandoraNuVertexModuleLabel, particleVector);
+          lar_pandora::VertexVector vertexVector;
+          lar_pandora::PFParticlesToVertices particlesToVertices;
+          lar_pandora::LArPandoraHelper::CollectVertices(evt, fPandoraNuVertexModuleLabel, vertexVector, particlesToVertices);
+
+          int n_prims = 0;
+          int n_pand_particles = particleVector.size();
+          //std::cout<<"n_pand_particles "<<n_pand_particles<<std::endl;
+          double xyz_temp[3] = {0.0, 0.0, 0.0};
+          std::vector<float> vtx(3, -99999);
+          for (int ipfp = 0; ipfp< n_pand_particles; ipfp++) {
+              const art::Ptr<recob::PFParticle> particle = particleVector.at(ipfp);
+              if (!particle->IsPrimary()) continue;
+              n_prims++;
+              // Particles <-> Vertices
+              lar_pandora::PFParticlesToVertices::const_iterator vIter = particlesToVertices.find(particle);
+              if (particlesToVertices.end() != vIter) {
+                  const lar_pandora::VertexVector& vertexVector = vIter->second;
+                  if (!vertexVector.empty()) {
+                      if (vertexVector.size()!=1)
+                          std::cout<<" Warning: Found particle with more than one associated vertex "<<std::endl;
+                      const art::Ptr<recob::Vertex> vertex_pfp = *(vertexVector.begin());
+                      vertex_pfp->XYZ(xyz_temp);
+                      for (unsigned int ii=0; ii<3; ++ii) {
+                          vtx[ii] = xyz_temp[ii];
+                      }
+                      //std::cout<<"Pandora vertex "<<vtx[0]<<", "<<vtx[1]<<", "<<vtx[2]<<std::endl;
+                  }
+              }
+          }
+          pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, vtx);
+      }
+      else {
         // create pixel map based on the reconstructed vertex on wire and tick coordinate
         // Get RegCNN Results
         art::Handle<std::vector<cnn::RegCNNResult>> cnnresultListHandle;
         evt.getByLabel(fRegCNNModuleLabel, fRegCNNResultLabel, cnnresultListHandle);
-	std::vector<float> vtx(6, -99999);
+            std::vector<float> vtx(6, -99999);
         if (!cnnresultListHandle.failedToGet())
         {
             if (!cnnresultListHandle->empty())
             {
                 const std::vector<float>& v = (*cnnresultListHandle)[0].fOutput;
                 for (unsigned int ii = 0; ii < 6; ii++){
-                     vtx[ii] = v[ii]; 
+                     vtx[ii] = v[ii];
                 }
             }
         }
@@ -197,7 +256,7 @@ namespace cnn {
     //Boundary bound = pm.Bound();
     //}
     evt.put(std::move(pmCol), fClusterPMLabel);
-    //std::cout<<"Map Complete!"<<std::endl;
+    std::cout<<"Map Complete!"<<std::endl;
   }
 
   //----------------------------------------------------------------------

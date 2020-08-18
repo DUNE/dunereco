@@ -1,6 +1,7 @@
 add_subdirectory(IniSegAlg)
 add_subdirectory(MVAAlg)
 add_subdirectory(FDSensOptData)
+add_subdirectory(NeutrinoEnergyRecoAlg)
 
 include_directories ( $ENV{GENIE_INC}/GENIE )
 
@@ -226,6 +227,7 @@ simple_plugin(ShSeg   "module"
 
 simple_plugin(EnergyReco   "module"
                         MVAAlg
+                        NeutrinoEnergyRecoAlg
                         nugen_NuReweight
                         nugen_NuReweight_art
                         nusimdata_SimulationBase

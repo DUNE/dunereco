@@ -8,6 +8,7 @@
 #define GCN_FEATURE_UTILS_H
 
 #include <vector>
+#include <tuple>
 #include <string>
 #include <map>
 
@@ -28,6 +29,8 @@ namespace detinfo {
 
 namespace cvn
 {
+  typedef std::tuple<int, int, int, float, float, float, float, float, float,
+    float, std::string, std::string> ptruth;
 
   /// Class containing some utility functions for all things CVN
   class GCNFeatureUtils
@@ -111,6 +114,8 @@ namespace cvn
                                           std::vector<std::vector<float>>* dirTruth=nullptr) const;
     /// Get hierarchy map from set of particles
     std::map<unsigned int, unsigned int> GetParticleFlowMap(const std::set<unsigned int>& particles) const;
+
+    static std::vector<ptruth> GetParticleTree(const cvn::GCNGraph* g);
 
   private:
 
