@@ -73,7 +73,6 @@ namespace sn
                         double& flashPhots)
   {
     const geo::GeometryCore& geom(*lar::providerFrom<geo::Geometry>());
-    const detinfo::DetectorProperties& dp(*lar::providerFrom<detinfo::DetectorPropertiesService>());
 
     const double driftLen = geom.Cryostat(0).TPC(0).DriftDistance();
     const double driftT = driftLen / dp.DriftVelocity();

@@ -37,6 +37,7 @@ extern "C" {
 #include "larcorealg/Geometry/PlaneGeo.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "DisambigAlg35t.h"
 #include "larsim/MCCheater/BackTrackerService.h"
@@ -175,6 +176,7 @@ namespace disambigcheck{
     int missinghits = 0;
     // Map of MCParticle Track IDs, Vector 1 ( matched, incorrect, missed ),  Pair 1 ( Pair 2 (Theta, Phi) , Vector 2 direction cosines ( x, y, z ) ) 
     std::map< int, std::pair< TVector3, std::pair < std::pair< double,double >, TVector3 > > > ParticleMap;     
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
     if (ChannelHitsDisambig.isValid()) {
       for( size_t h = 0; h < ChHitsCheater.size(); h++ ){
 	if(ChHitsCheater[h]->View() == geo::kZ ) continue;
@@ -183,7 +185,7 @@ namespace disambigcheck{
 	uint32_t cheatwire = ChHitsCheater[h]->WireID().Wire;
 
 	std::vector<sim::IDE> ides;
-	std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(ChHitsCheater[h]);
+	std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(clockData, ChHitsCheater[h]);
 	double MaxE = 0;
 	int TrackID;
 	for(size_t e = 0; e < TrackIDs.size(); ++e){

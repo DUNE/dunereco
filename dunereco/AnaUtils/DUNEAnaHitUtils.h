@@ -61,7 +61,9 @@ public:
     * 
     * @return the charge normalisation correction
     */
-    static double LifetimeCorrection(const art::Ptr<recob::Hit> &pHit);
+    static double LifetimeCorrection(detinfo::DetectorClocksData const& clockData,
+                                     detinfo::DetectorPropertiesData const& detProp,
+                                     const art::Ptr<recob::Hit> &pHit);
 
     /**
     * @brief  get the lifetime correction for a particular time
@@ -71,7 +73,9 @@ public:
     * 
     * @return the charge normalisation correction
     */
-    static double LifetimeCorrection(const double timeInTicks, const double t0InMicroS);
+    static double LifetimeCorrection(detinfo::DetectorClocksData const& clockData,
+                                     detinfo::DetectorPropertiesData const& detProp,
+                                     const double timeInTicks, const double t0InMicroS);
 
     /**
     * @brief  get the total hit charge, corrected for lifetime
@@ -80,11 +84,12 @@ public:
     * 
     * @return the lifetime corrected total hit charge
     */
-    static double LifetimeCorrectedTotalHitCharge(const std::vector<art::Ptr<recob::Hit> > &hits);
+    static double LifetimeCorrectedTotalHitCharge(detinfo::DetectorClocksData const& clockData,
+                                                  detinfo::DetectorPropertiesData const& detProp,
+                                                  const std::vector<art::Ptr<recob::Hit> > &hits);
 };
 
 } // namespace dune_ana
 
 
 #endif // DUNE_ANA_HIT_UTILS_H
-

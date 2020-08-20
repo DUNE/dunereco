@@ -63,7 +63,7 @@ void hit::NumberOfHitsFilter::beginJob() {}
 //-----------------------------------------------------------------------
 bool hit::NumberOfHitsFilter::beginRun(art::Run& r){
   if (fScaleThresholdForReadoutWindow){
-    unsigned int fSize = art::ServiceHandle<detinfo::DetectorPropertiesService const>{}->provider()->ReadOutWindowSize();
+    unsigned int fSize = art::ServiceHandle<detinfo::DetectorPropertiesService const>{}->DataForJob().ReadOutWindowSize();
     fHitLimit = (unsigned int)(fHitLimit*fSize/6000.);
     std::cout<<"Scale HitLimit based on readout window size "<<fSize<<std::endl;
     std::cout<<"HitLimit = "<<fHitLimit<<std::endl;

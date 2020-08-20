@@ -128,7 +128,8 @@ namespace cvn {
       pmCol(new std::vector<cvn::PixelMap>);
 
     if (nhits > fMinClusterHits) {
-      PixelMap pm = fProducer.CreateMap(hitlist);
+      auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
+      PixelMap pm = fProducer.CreateMap(detProp, hitlist);
       pmCol->push_back(pm);
     }
     //pm.Print();
@@ -145,10 +146,3 @@ namespace cvn {
 DEFINE_ART_MODULE(cvn::CVNMapper)
 } // end namespace cvn
 ////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-

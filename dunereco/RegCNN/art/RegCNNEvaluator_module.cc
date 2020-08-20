@@ -85,7 +85,7 @@ namespace cnn {
 
       double fContVolCut;
 
-      // for checking track status 
+      // for checking track status
       bool fLongestTrackContained;
 
       void getCM(const RegPixelMap& pm, std::vector<float> &cm_list);
@@ -171,16 +171,17 @@ namespace cnn {
           std::cout << "cm: " << center_of_mass[0] << " " << center_of_mass[1] << " " << center_of_mass[2] << std::endl;
           networkOutput = fTFHandler.Predict(*pixelmaplist[0], center_of_mass);
           std::cout << "cnn nuevertex : "<<networkOutput[0] << " " << networkOutput[1] << " " << networkOutput[2] << std::endl;
-	    }
+            }
         else if (fTarget == "numuenergy") {
           networkOutput = fRegCNNNumuHandler.Predict(*pixelmaplist[0], fLongestTrackContained);
-        } 
+        }
         else if (fTarget == "nuevertex_on_img"){
-	      networkOutput = fRegCNNVtxHandler.GetVertex(evt, *pixelmaplist[0]);
-        } 
-        else {
-          std::cout << "Wrong Target" << std::endl;
-          abort();
+            auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
+            auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
+            networkOutput = fRegCNNVtxHandler.GetVertex(clockData, detProp, evt, *pixelmaplist[0]);
+        } else {
+            std::cout << "Wrong Target" << std::endl;
+            abort();
         }
 
         // cnn::Result can now take a vector of floats and works out the number of outputs
@@ -217,8 +218,8 @@ namespace cnn {
     // loop over tracks to find the longest track
     for (int i = 0; i < ntracks; ++i){
       if(tracklist[i]->Length() > fMaxTrackLength){
-	    fMaxTrackLength = tracklist[i]->Length();
-	    iLongestTrack = i;
+            fMaxTrackLength = tracklist[i]->Length();
+            iLongestTrack = i;
       }
     }
 
@@ -246,41 +247,41 @@ namespace cnn {
     geo::TPCID idtpc = fGeom->FindTPCAtPosition(vtx);
 
     if (fGeom->HasTPC(idtpc)) {
-	  const geo::TPCGeo& tpcgeo = fGeom->GetElement(idtpc);
-	  double minx = tpcgeo.MinX(); double maxx = tpcgeo.MaxX();
-	  double miny = tpcgeo.MinY(); double maxy = tpcgeo.MaxY();
-	  double minz = tpcgeo.MinZ(); double maxz = tpcgeo.MaxZ();
+          const geo::TPCGeo& tpcgeo = fGeom->GetElement(idtpc);
+          double minx = tpcgeo.MinX(); double maxx = tpcgeo.MaxX();
+          double miny = tpcgeo.MinY(); double maxy = tpcgeo.MaxY();
+          double minz = tpcgeo.MinZ(); double maxz = tpcgeo.MaxZ();
 
-	  for (size_t c = 0; c < fGeom->Ncryostats(); c++) {
-	    const geo::CryostatGeo& cryostat = fGeom->Cryostat(c);
-	    for (size_t t = 0; t < cryostat.NTPC(); t++) {
-	  	  const geo::TPCGeo& tpcg = cryostat.TPC(t);
-	  	  if (tpcg.MinX() < minx) minx = tpcg.MinX();
-	  	  if (tpcg.MaxX() > maxx) maxx = tpcg.MaxX();
-	  	  if (tpcg.MinY() < miny) miny = tpcg.MinY();
-	  	  if (tpcg.MaxY() > maxy) maxy = tpcg.MaxY();
-	  	  if (tpcg.MinZ() < minz) minz = tpcg.MinZ();
-	  	  if (tpcg.MaxZ() > maxz) maxz = tpcg.MaxZ(); 
-        } 
+          for (size_t c = 0; c < fGeom->Ncryostats(); c++) {
+            const geo::CryostatGeo& cryostat = fGeom->Cryostat(c);
+            for (size_t t = 0; t < cryostat.NTPC(); t++) {
+                  const geo::TPCGeo& tpcg = cryostat.TPC(t);
+                  if (tpcg.MinX() < minx) minx = tpcg.MinX();
+                  if (tpcg.MaxX() > maxx) maxx = tpcg.MaxX();
+                  if (tpcg.MinY() < miny) miny = tpcg.MinY();
+                  if (tpcg.MaxY() > maxy) maxy = tpcg.MaxY();
+                  if (tpcg.MinZ() < minz) minz = tpcg.MinZ();
+                  if (tpcg.MaxZ() > maxz) maxz = tpcg.MaxZ();
+        }
       }
 
-	  //x
-	  double dista = fabs(minx - posX);
-	  double distb = fabs(posX - maxx);
-	  if ((posX > minx) && (posX < maxx) &&
-	      (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
-	  //y
-	  dista = fabs(maxy - posY);
-	  distb = fabs(posY - miny);
-	  if (inside && (posY > miny) && (posY < maxy) &&
-	      (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
-	  else inside = false;
-	  //z
-	  dista = fabs(maxz - posZ);
-	  distb = fabs(posZ - minz);
-	  if (inside && (posZ > minz) && (posZ < maxz) &&
-	      (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
-	  else inside = false;
+          //x
+          double dista = fabs(minx - posX);
+          double distb = fabs(posX - maxx);
+          if ((posX > minx) && (posX < maxx) &&
+              (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
+          //y
+          dista = fabs(maxy - posY);
+          distb = fabs(posY - miny);
+          if (inside && (posY > miny) && (posY < maxy) &&
+              (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
+          else inside = false;
+          //z
+          dista = fabs(maxz - posZ);
+          distb = fabs(posZ - minz);
+          if (inside && (posZ > minz) && (posZ < maxz) &&
+              (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
+          else inside = false;
     }
 
     return inside;
@@ -288,5 +289,3 @@ namespace cnn {
 
   DEFINE_ART_MODULE(cnn::RegCNNEvaluator)
 } // end namespace cnn
-
-////////////////////////////////////////////////////////////////////////

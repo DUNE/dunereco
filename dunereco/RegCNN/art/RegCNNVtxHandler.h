@@ -25,7 +25,9 @@ namespace cnn
   public:
     RegCNNVtxHandler(const fhicl::ParameterSet& pset);
 
-    std::vector<float> GetVertex(art::Event& evt, const RegPixelMap &pixelmap);
+    std::vector<float> GetVertex(detinfo::DetectorClocksData const& clockData,
+                                 detinfo::DetectorPropertiesData const& detProp,
+                                 art::Event& evt, const RegPixelMap &pixelmap);
 
   private:
     void FindGlobalVertices(const RegPixelMap &pm, std::vector<float> &outputs);

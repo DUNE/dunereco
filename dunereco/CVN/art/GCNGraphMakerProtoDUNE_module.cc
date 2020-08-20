@@ -20,7 +20,7 @@
 
 // LArSoft includes
 #include "lardataobj/RecoBase/SpacePoint.h"
-
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "dune/CVN/func/GCNGraph.h"
 #include "dune/CVN/func/GCNFeatureUtils.h"
 
@@ -130,7 +130,7 @@ namespace cvn {
     // element
     std::map<unsigned int,std::vector<std::map<int,unsigned int>>> neighbourMap;
 
-
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
     if(fUseAllSlices || fUseBeamSliceOnly){
       // We need to get a vector of space points from the beam slice
       cvn::CVNProtoDUNEUtils pfpUtil;
@@ -186,7 +186,7 @@ namespace cvn {
     std::map<unsigned int, float> hitRMSMap = graphUtil.GetSpacePointMeanHitRMSMap(evt,fSpacePointLabel);
 
     // The true particle PDG code is needed for training node classifiers
-    std::map<unsigned int,int> trueIDMap = graphUtil.GetTruePDG(evt, fSpacePointLabel, !fUseEM, fUseHitsForTruthMatching);
+    std::map<unsigned int,int> trueIDMap = graphUtil.GetTruePDG(clockData, evt, fSpacePointLabel, !fUseEM, fUseHitsForTruthMatching);
 
     // Now we want to produce a graph for each one of the slices
     for(const std::pair<unsigned int,std::map<unsigned int,art::Ptr<recob::SpacePoint>>> &sps : allGraphSpacePoints){
@@ -251,10 +251,3 @@ namespace cvn {
   DEFINE_ART_MODULE(cvn::GCNGraphMakerProtoDUNE)
 } // end namespace cvn
 ////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-

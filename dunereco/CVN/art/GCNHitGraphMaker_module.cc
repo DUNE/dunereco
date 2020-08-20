@@ -78,6 +78,9 @@ namespace cvn {
     cvn::PixelMapProducer pixelUtil;
     art::ServiceHandle<cheat::BackTrackerService> bt;
 
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(e);
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e, clockData);
+
     // Loop over hits
     for (art::Ptr<recob::Hit> hit : hits) {
 
@@ -86,14 +89,14 @@ namespace cvn {
       if (wireid.TPC%6 == 0 or wireid.TPC%6 == 5) continue; // skip dummy TPCs
       unsigned int wire, plane;
       double time;
-      pixelUtil.GetDUNE10ktGlobalWireTDC(wireid.Wire, hit->PeakTime(),
+      pixelUtil.GetDUNE10ktGlobalWireTDC(detProp, wireid.Wire, hit->PeakTime(),
         wireid.Plane, wireid.TPC, wire, plane, time);
       std::vector<float> pos = {(float)plane, (float)wire, (float)time};
       std::vector<float> feats = {hit->Integral(), hit->RMS(), (float)wireid.Wire,
         hit->PeakTime(), (float)wireid.Plane, (float)wireid.TPC};
 
       // Get true particle
-      std::vector<sim::TrackIDE> ides = bt->HitToTrackIDEs(hit);
+      std::vector<sim::TrackIDE> ides = bt->HitToTrackIDEs(clockData, hit);
       if (ides.size() == 0) continue; // skip hits with no truth
       float trueID = abs(std::max_element(ides.begin(), ides.end(), [](const sim::TrackIDE &lhs,
         const sim::TrackIDE &rhs) { return lhs.energy < rhs.energy; })->trackID);

@@ -41,35 +41,36 @@ std::vector<art::Ptr<recob::Hit>> DUNEAnaHitUtils::GetHitsOnPlane(const std::vec
 
 }
 
-double DUNEAnaHitUtils::LifetimeCorrection(const art::Ptr<recob::Hit> &pHit)
+double DUNEAnaHitUtils::LifetimeCorrection(detinfo::DetectorClocksData const& clockData,
+                                           detinfo::DetectorPropertiesData const& detProp,
+                                           const art::Ptr<recob::Hit> &pHit)
 {
-    auto clocks(art::ServiceHandle<detinfo::DetectorClocksService const>()->provider());
-    return DUNEAnaHitUtils::LifetimeCorrection(pHit->PeakTime(), clocks->TriggerTime());
+    return DUNEAnaHitUtils::LifetimeCorrection(clockData, detProp,
+                                               pHit->PeakTime(), clockData.TriggerTime());
 }
 
-double DUNEAnaHitUtils::LifetimeCorrection(const double timeInTicks, const double t0InMicroS)
+double DUNEAnaHitUtils::LifetimeCorrection(detinfo::DetectorClocksData const& clockData,
+                                           detinfo::DetectorPropertiesData const& detProp,
+                                           const double timeInTicks, const double t0InMicroS)
 {
-    auto clocks(art::ServiceHandle<detinfo::DetectorClocksService const>()->provider());
-    auto detProp(art::ServiceHandle<detinfo::DetectorPropertiesService const>()->provider());
-
-    const double tpcSamplingRateInMicroS(clocks->TPCClock().TickPeriod());
-    const double tpcTriggerOffsetInTicks(detProp->TriggerOffset());
+    const double tpcSamplingRateInMicroS(clockData.TPCClock().TickPeriod());
+    const double tpcTriggerOffsetInTicks(trigger_offset(clockData));
 
     const double timeCorrectedForT0((timeInTicks - tpcTriggerOffsetInTicks)*tpcSamplingRateInMicroS - t0InMicroS);
-    const double tauLifetime(detProp->ElectronLifetime());
+    const double tauLifetime(detProp.ElectronLifetime());
 
     return std::exp(timeCorrectedForT0/tauLifetime);
 }
 
-double DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(const std::vector<art::Ptr<recob::Hit> > &hits)
+double DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(detinfo::DetectorClocksData const& clockData,
+                                                        detinfo::DetectorPropertiesData const& detProp,
+                                                        const std::vector<art::Ptr<recob::Hit> > &hits)
 {
     double totalHitCharge(0);
     for (unsigned int iHit = 0; iHit < hits.size(); iHit++)
-        totalHitCharge += hits[iHit]->Integral() * DUNEAnaHitUtils::LifetimeCorrection(hits[iHit]);
+        totalHitCharge += hits[iHit]->Integral() * DUNEAnaHitUtils::LifetimeCorrection(clockData, detProp, hits[iHit]);
 
     return totalHitCharge;
 }
 
 } // namespace dune_ana
-
-

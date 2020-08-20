@@ -36,6 +36,7 @@
 #include "larcorealg/Geometry/TPCGeo.h"
 #include "larcorealg/Geometry/PlaneGeo.h"
 #include "larcorealg/Geometry/WireGeo.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardata/Utilities/AssociationUtil.h"
@@ -69,6 +70,7 @@ private:
 	const art::FindManyP< recob::Hit >& fbp);
 
   void removeUnmatchedHitsCloseToTracks(
+        detinfo::DetectorPropertiesData const& detProp,
 	std::vector< art::Ptr<recob::Hit> >& hitlist,
 	const std::vector<recob::Track>& tracks,
 	const art::FindManyP< recob::Hit >& fbp);
@@ -138,8 +140,7 @@ bool EmLikeHits::isCloseToTrack(TVector2 p, const recob::Track& trk,
 	art::ServiceHandle<geo::Geometry> geom;
 	double wirePitch = geom->TPC(tpc, cryo).Plane(view).WirePitch();
 
-	//lar::providerFrom<detinfo::DetectorPropertiesService> detprop;
-	//double driftPitch = detprop->GetXTicksCoefficient(tpc, cryo);
+	//double driftPitch = detProp.GetXTicksCoefficient(tpc, cryo);
 
 	double max_d2_d = 0.3 * 0.3;
 	double max_d2_w = (wirePitch + 0.1) * (wirePitch + 0.1);
@@ -164,6 +165,7 @@ bool EmLikeHits::isCloseToTrack(TVector2 p, const recob::Track& trk,
 // ------------------------------------------------------
 
 void EmLikeHits::removeUnmatchedHitsCloseToTracks(
+        detinfo::DetectorPropertiesData const& detProp,
 	std::vector< art::Ptr<recob::Hit> >& hitlist,
 	const std::vector<recob::Track>& tracks,
 	const art::FindManyP< recob::Hit >& fbp)
@@ -188,7 +190,7 @@ void EmLikeHits::removeUnmatchedHitsCloseToTracks(
 			unsigned int tpc = hitlist[ih]->WireID().TPC;
 			unsigned int cryo = hitlist[ih]->WireID().Cryostat;
 
-			TVector2 hcm = pma::WireDriftToCm(
+                        TVector2 hcm = pma::WireDriftToCm(detProp,
 				hitlist[ih]->WireID().Wire, hitlist[ih]->PeakTime(), plane, tpc, cryo);
 
 			for (size_t t = 0; t < tracks.size(); t++)
@@ -222,7 +224,9 @@ void EmLikeHits::produce(art::Event& evt)
 		mf::LogVerbatim("EmLikeHits") << "all hits: " << hitlist.size() << std::endl;
 
 		removeHitsAssignedToTracks(hitlist, *trkListHandle, fbp);
-		removeUnmatchedHitsCloseToTracks(hitlist, *trkListHandle, fbp);
+                auto const detProp =
+                  art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
+                removeUnmatchedHitsCloseToTracks(detProp, hitlist, *trkListHandle, fbp);
 
 		for (auto const& hit : hitlist) not_track_hits->push_back(recob::Hit(*hit));
 		mf::LogVerbatim("EmLikeHits") << "remaining not track-like hits: " << not_track_hits->size() << std::endl;
@@ -279,4 +283,3 @@ double EmLikeHits::getDist2(const TVector2& psrc, const TVector2& p0, const TVec
 DEFINE_ART_MODULE(EmLikeHits)
 
 } // namespace dune
-

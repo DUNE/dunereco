@@ -69,7 +69,9 @@ private:
 
 	bool insideFidVol(TLorentzVector const & pvtx) const;
 	
-	float t0Corr(art::Event const & evt, TLorentzVector const & pvtx);
+        float t0Corr(art::Event const & evt,
+                     detinfo::DetectorPropertiesData const& detProp,
+                     TLorentzVector const & pvtx);
 
 	TVector2 getMCvtx2d(TVector3 const & mcvtx3d, 
 											const size_t cryo, const size_t tpc, const size_t plane) const;
@@ -79,17 +81,23 @@ private:
 	std::vector< TVector3 > findPhDir() const;
 	std::vector< TVector3 > findDirs(art::Ptr<simb::MCTruth> const mctruth, int pdg) const;
  
-	void collectCls(art::Event const & evt, art::Ptr<simb::MCTruth> const mctruth);
+        void collectCls(art::Event const & evt,
+                        detinfo::DetectorPropertiesData const& detProp,
+                        art::Ptr<simb::MCTruth> const mctruth);
 	std::vector< dunefd::Hit2D > reselectCls(std::map<size_t, std::vector< dunefd::Hit2D > > const & cls, 
 																					art::Ptr<simb::MCTruth> const mctruth,
 																					const size_t cryo, const size_t tpc, const size_t plane) const;
-	void make3dseg(art::Event const & evt, std::vector< std::vector<Hit2D> > const & src, TVector3 const & primary);
+        void make3dseg(art::Event const & evt,
+                       detinfo::DetectorPropertiesData const& detProp,
+                       std::vector< std::vector<Hit2D> > const & src, TVector3 const & primary);
 
 	recob::Track convertFrom(pma::Track3D const & src);
 
-	void UseClusters(art::Event const & evt);
+        void UseClusters(art::Event const & evt,
+                         detinfo::DetectorPropertiesData const& detProp);
 
-	void UseTracks(art::Event const & evt);
+        void UseTracks(art::Event const & evt,
+                       detinfo::DetectorPropertiesData const& detProp);
 
 	std::vector< pma::Track3D* > pmatracks;
 
@@ -299,7 +307,8 @@ void dunefd::IniSegReco::produce(art::Event& evt)
 
 	if (isinside)
 	{
-		UseTracks(evt);
+                auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
+                UseTracks(evt, detProp);
 		fTree->Fill(); 
 	}
 
@@ -312,7 +321,8 @@ void dunefd::IniSegReco::produce(art::Event& evt)
 
 /***********************************************************************/
 
-void dunefd::IniSegReco::UseClusters(art::Event const & evt)
+void dunefd::IniSegReco::UseClusters(art::Event const & evt,
+                                     detinfo::DetectorPropertiesData const& detProp)
 {
 	if (!isdata)
 	{
@@ -325,14 +335,15 @@ void dunefd::IniSegReco::UseClusters(art::Event const & evt)
     		if (mclist.size())
 		{
       		art::Ptr<simb::MCTruth> mctruth = mclist[0];
-			collectCls(evt, mctruth);
+                        collectCls(evt, detProp, mctruth);
 		}
 	}
 }
 
 /***********************************************************************/
 
-void dunefd::IniSegReco::UseTracks(art::Event const & evt)
+void dunefd::IniSegReco::UseTracks(art::Event const & evt,
+                                   detinfo::DetectorPropertiesData const& detProp)
 {
 	if (!isdata)
 	{
@@ -375,8 +386,8 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 				double xyz[3] = {0.0, 0.0, 0.0};
 				vtxlist[0]->XYZ(xyz);
 				float vxreco = xyz[0];
-				if (vxreco > 0) vxreco -= t0Corr(evt, pvtx);
-				else vxreco += t0Corr(evt, pvtx);
+                                if (vxreco > 0) vxreco -= t0Corr(evt, detProp, pvtx);
+                                else vxreco += t0Corr(evt, detProp, pvtx);
 				xyz[0] = vxreco;
 
 				TVector3 vtxreco(xyz);
@@ -389,8 +400,8 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 				{
 	      			vtxlist[v]->XYZ(xyz);
 					float temp = xyz[0];
-					if (temp > 0) temp -= t0Corr(evt, pvtx);
-					else temp += t0Corr(evt, pvtx);
+                                        if (temp > 0) temp -= t0Corr(evt, detProp, pvtx);
+                                        else temp += t0Corr(evt, detProp, pvtx);
 					xyz[0] = temp;
 
 	      			vtxreco.SetXYZ(xyz[0], xyz[1], xyz[2]);
@@ -409,8 +420,8 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 				{
 					vtxlist[v]->XYZ(minz_xyz);
 					float temp = minz_xyz[0];
-					if (temp > 0) temp -= t0Corr(evt, pvtx);
-					else temp += t0Corr(evt, pvtx);
+                                        if (temp > 0) temp -= t0Corr(evt, detProp, pvtx);
+                                        else temp += t0Corr(evt, detProp, pvtx);
 					minz_xyz[0] = temp;
 
 					if (minz_xyz[2] < minz)
@@ -427,8 +438,8 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 					TVector3 pos_p = tracklist[t]->LocationAtPoint<TVector3>(0);
 
 					float temp = pos_p.X();
-					if (temp > 0) temp -= t0Corr(evt, pvtx);
-					else temp += t0Corr(evt, pvtx);
+                                        if (temp > 0) temp -= t0Corr(evt, detProp, pvtx);
+                                        else temp += t0Corr(evt, detProp, pvtx);
 					pos_p.SetX(temp);
 
 					float dist2 = pma::Dist2(primary, pos_p);
@@ -445,8 +456,8 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 		
 					TVector3 pos_end = tracklist[t]->LocationAtPoint<TVector3>(tracklist[t]->NumberTrajectoryPoints()-1);
 					temp = pos_end.X();
-					if (temp > 0) temp -= t0Corr(evt, pvtx);
-					else temp += t0Corr(evt, pvtx);
+                                        if (temp > 0) temp -= t0Corr(evt, detProp, pvtx);
+                                        else temp += t0Corr(evt, detProp, pvtx);
 					pos_end.SetX(temp);
 
 					dist2 = pma::Dist2(primary, pos_end);
@@ -500,8 +511,8 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 
 						TVector3 pos_p = recotrack->LocationAtPoint<TVector3>(0); 
 						float px = pos_p.X();
-						if (px > 0) px -= t0Corr(evt, pvtx);
-						else px += t0Corr(evt, pvtx);
+                                                if (px > 0) px -= t0Corr(evt, detProp, pvtx);
+                                                else px += t0Corr(evt, detProp, pvtx);
 						pos_p.SetX(px);
 
 						float ldist = std::sqrt(pma::Dist2(primary, pos_p));
@@ -584,8 +595,8 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 
 					TVector3 pos_p = recotrack->LocationAtPoint<TVector3>(0);
 					float px = pos_p.X();
-					if (px > 0) px -= t0Corr(evt, pvtx);
-					else px += t0Corr(evt, pvtx);
+                                        if (px > 0) px -= t0Corr(evt,detProp,  pvtx);
+                                        else px += t0Corr(evt, detProp, pvtx);
 					pos_p.SetX(px);
 
 					lep_dist = std::sqrt(pma::Dist2(primary, pos_p));
@@ -643,7 +654,9 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt)
 
 /***********************************************************************/
 
-void dunefd::IniSegReco::collectCls(art::Event const & evt, art::Ptr<simb::MCTruth> const mctruth)
+void dunefd::IniSegReco::collectCls(art::Event const & evt,
+                                    detinfo::DetectorPropertiesData const& detProp,
+                                    art::Ptr<simb::MCTruth> const mctruth)
 {
 	art::ServiceHandle<geo::Geometry> geom;
 	
@@ -683,7 +696,7 @@ void dunefd::IniSegReco::collectCls(art::Event const & evt, art::Ptr<simb::MCTru
 							if ((plane == p) && (tpc == t) && (cryo == c))
 							{
 								found = true;
-								TVector2 point = pma::WireDriftToCm(wire, hitscl[h]->PeakTime(), plane, tpc, cryo);
+                                                                TVector2 point = pma::WireDriftToCm(detProp, wire, hitscl[h]->PeakTime(), plane, tpc, cryo);
 								Hit2D hit2d(point, hitscl[h].key());
 								hits2dcl.push_back(hit2d);
 							}
@@ -700,7 +713,7 @@ void dunefd::IniSegReco::collectCls(art::Event const & evt, art::Ptr<simb::MCTru
 				{
 					const TLorentzVector& pvtx = mctruth->GetNeutrino().Nu().Position();
 					TVector3 primary(pvtx.X(), pvtx.Y(), pvtx.Z());
-					make3dseg(evt, clinput, primary);
+                                        make3dseg(evt, detProp, clinput, primary);
 				}
 			}
 		}
@@ -737,7 +750,9 @@ std::vector< dunefd::Hit2D > dunefd::IniSegReco::reselectCls(std::map<size_t, st
 
 /***********************************************************************/
 
-void dunefd::IniSegReco::make3dseg(art::Event const & evt, 
+void dunefd::IniSegReco::make3dseg(
+                art::Event const & evt,
+                detinfo::DetectorPropertiesData const& detProp,
 		std::vector< std::vector< dunefd::Hit2D > > const & src, 
 		TVector3 const & primary)
 {	
@@ -757,7 +772,7 @@ void dunefd::IniSegReco::make3dseg(art::Event const & evt,
 
 	if (hitsel.size() > 5)
 	{
-		pma::Track3D* trk = fProjectionMatchingAlg.buildSegment(hitsel);
+                pma::Track3D* trk = fProjectionMatchingAlg.buildSegment(detProp, hitsel);
 		pmatracks.push_back(trk);
 	}
 }
@@ -933,12 +948,13 @@ std::vector< TVector3 > dunefd::IniSegReco::findDirs(art::Ptr<simb::MCTruth> con
 
 /***********************************************************************/
 
-float dunefd::IniSegReco::t0Corr(art::Event const & evt, TLorentzVector const & pvtx) 
+float dunefd::IniSegReco::t0Corr(art::Event const & evt,
+                                 detinfo::DetectorPropertiesData const& detProp,
+                                 TLorentzVector const & pvtx)
 {
 	float corrt0x = 0.0F;
 
 	art::ServiceHandle<geo::Geometry> geom;
-	auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
 	// * MC truth information
 	art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
@@ -958,7 +974,7 @@ float dunefd::IniSegReco::t0Corr(art::Event const & evt, TLorentzVector const & 
 			{
 				simb::MCParticle particle = mctruth->GetParticle(0);
 				t0 = particle.T(); // ns
-				corrt0x = t0 * 1.e-3 * detprop->DriftVelocity();
+				corrt0x = t0 * 1.e-3 * detProp.DriftVelocity();
      	 	}
 		}
 	

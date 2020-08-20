@@ -28,6 +28,10 @@
 #include "dune/RegCNN/func/RegCNNBoundary.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
+namespace detinfo {
+  class DetectorClocksData;
+  class DetectorPropertiesData;
+}
 
 //#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "larcore/Geometry/Geometry.h"
@@ -41,12 +45,16 @@ namespace cnn
     RegPixelMapProducer(unsigned int nWire, unsigned int wRes, unsigned int nTdc, double tRes, int Global);
 
     /// Get boundaries for pixel map representation of cluster
-    RegCNNBoundary DefineBoundary(std::vector< art::Ptr< recob::Hit > >& cluster);
-    RegCNNBoundary DefineBoundary(std::vector< art::Ptr< recob::Hit > >& cluster, const std::vector<float> &vtx);
+    RegCNNBoundary DefineBoundary(detinfo::DetectorPropertiesData const& detProp,
+                                  std::vector< art::Ptr< recob::Hit > > const& cluster);
+    RegCNNBoundary DefineBoundary(detinfo::DetectorPropertiesData const& detProp,
+                                  std::vector< art::Ptr< recob::Hit > > const& cluster,
+                                  const std::vector<float> &vtx);
 
     /// Function to convert to a global unwrapped wire number
     double GetGlobalWire(const geo::WireID& wireID);
-    void GetDUNEGlobalWireTDC(const geo::WireID& wireID, float localTDC,
+    void GetDUNEGlobalWireTDC(detinfo::DetectorPropertiesData const& detProp,
+                              const geo::WireID& wireID, float localTDC,
                               double& globalWire, unsigned int& globalPlane, 
                               float& globalTDC);
 
@@ -56,16 +64,23 @@ namespace cnn
     double TRes() const {return fTRes;};
     double WRes() const {return fWRes;};
 
-    RegPixelMap CreateMap(std::vector< art::Ptr< recob::Hit > >& cluster, art::FindManyP<recob::Wire> fmwire);
-    RegPixelMap CreateMap(std::vector< art::Ptr< recob::Hit > >& cluster, 
-                          art::FindManyP<recob::Wire> fmwire,
+    RegPixelMap CreateMap(detinfo::DetectorClocksData const& clockData,
+                          detinfo::DetectorPropertiesData const& detProp,
+                          std::vector< art::Ptr< recob::Hit > > const& cluster,
+                          art::FindManyP<recob::Wire> const& fmwire);
+    RegPixelMap CreateMap(detinfo::DetectorClocksData const& clockData,
+                          detinfo::DetectorPropertiesData const& detProp,
+                          std::vector< art::Ptr< recob::Hit > > const& cluster,
+                          art::FindManyP<recob::Wire> const& fmwire,
                           const std::vector<float> &vtx);
 
-    RegPixelMap CreateMapGivenBoundary(std::vector< art::Ptr< recob::Hit > >& cluster,
+    RegPixelMap CreateMapGivenBoundary(detinfo::DetectorClocksData const& clockData,
+                                       detinfo::DetectorPropertiesData const& detProp,
+                                       std::vector< art::Ptr< recob::Hit > > const& cluster,
                                     const RegCNNBoundary& bound,
-                                    art::FindManyP<recob::Wire> fmwire);
+                                       art::FindManyP<recob::Wire> const& fmwire);
 
-    void ShiftGlobalWire(std::vector< art::Ptr< recob::Hit > >& cluster);
+    void ShiftGlobalWire(std::vector< art::Ptr< recob::Hit > > const& cluster);
 
    private:
 
@@ -80,7 +95,6 @@ namespace cnn
     std::vector<int> tmax_each_wire;
     std::vector<float> trms_max_each_wire;
 
-    detinfo::DetectorProperties const* detprop;
     art::ServiceHandle<geo::Geometry> geom;
   };
 

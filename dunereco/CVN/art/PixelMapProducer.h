@@ -37,13 +37,16 @@ namespace cvn
     void SetProtoDUNE(){fProtoDUNE = true;};
 
     /// Get boundaries for pixel map representation of cluster
-    Boundary DefineBoundary(const std::vector< const recob::Hit* >& cluster);
+    Boundary DefineBoundary(detinfo::DetectorPropertiesData const& detProp,
+                            const std::vector< const recob::Hit* >& cluster);
 
     /// Function to convert to a global unwrapped wire number
     void GetDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const; 
-    void GetDUNEGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
+    void GetDUNEGlobalWireTDC(detinfo::DetectorPropertiesData const& detProp,
+                              unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
                               unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const;
-    void GetDUNE10ktGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
+    void GetDUNE10ktGlobalWireTDC(detinfo::DetectorPropertiesData const& detProp,
+                                  unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
                                   unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const;
     void GetProtoDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const; 
     void GetProtoDUNEGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
@@ -53,17 +56,24 @@ namespace cvn
     unsigned int NTdc() const {return fNTdc;};
     double TRes() const {return fTRes;};
 
-    PixelMap CreateMap(const std::vector< art::Ptr< recob::Hit > >& slice);
-    PixelMap CreateMap(const std::vector< const recob::Hit* >& slice);
+    PixelMap CreateMap(detinfo::DetectorPropertiesData const& detProp,
+                       const std::vector< art::Ptr< recob::Hit > >& slice);
+    PixelMap CreateMap(detinfo::DetectorPropertiesData const& detProp,
+                       const std::vector< const recob::Hit* >& slice);
 
-    PixelMap CreateMapGivenBoundary(const std::vector< const recob::Hit* >& cluster,
+    PixelMap CreateMapGivenBoundary(detinfo::DetectorPropertiesData const& detProp,
+                                    const std::vector< const recob::Hit* >& cluster,
                                     const Boundary& bound);
 
     /// Create sparse pixel map for SCN applications
-    void GetHitTruth(art::Ptr<recob::Hit>& hit, std::vector<int>& pdgs, std::vector<int>& tracks,
+    void GetHitTruth(detinfo::DetectorClocksData const& clockData,
+                     art::Ptr<recob::Hit>& hit, std::vector<int>& pdgs, std::vector<int>& tracks,
       std::vector<float>& energies, std::vector<std::string>& processes);
-    SparsePixelMap CreateSparseMap2D(std::vector< art::Ptr< recob::Hit> >& cluster, bool usePixelTruth=false);
-    SparsePixelMap CreateSparseMap3D(std::vector< art::Ptr< recob::SpacePoint> >& sp, std::vector<std::vector<art::Ptr<recob::Hit>>>& hit);
+    SparsePixelMap CreateSparseMap2D(detinfo::DetectorClocksData const& clockData,
+                                     detinfo::DetectorPropertiesData const& detProp,
+                                     std::vector< art::Ptr< recob::Hit> >& cluster, bool usePixelTruth=false);
+    SparsePixelMap CreateSparseMap3D(detinfo::DetectorClocksData const& clockData,
+                                     std::vector< art::Ptr< recob::SpacePoint> >& sp, std::vector<std::vector<art::Ptr<recob::Hit>>>& hit);
 
   private:
     unsigned int      fNWire;  ///< Number of wires, length for pixel maps
@@ -73,7 +83,6 @@ namespace cvn
     bool              fProtoDUNE; ///< Do we want to use this for particle extraction from protoDUNE?
 
     geo::GeometryCore const* fGeometry;
-    detinfo::DetectorProperties const* fDetProp;
   };
 
 }

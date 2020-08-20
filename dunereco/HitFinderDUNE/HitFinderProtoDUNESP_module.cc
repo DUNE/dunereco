@@ -30,6 +30,7 @@
 #include "lardataobj/RawData/RawDigit.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardata/ArtDataHelper/HitCreator.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "DisambigAlgProtoDUNESP.h"
 
@@ -149,8 +150,8 @@ namespace dune{
     } // for
     
     // Run alg on all APAs -- check fAlg if we have more than one algorithm defined (future expansion)
-
-    fDisambigAlg.RunDisambig(ChHits);
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
+    fDisambigAlg.RunDisambig(detProp, ChHits);
 
     for( size_t t=0; t < fDisambigAlg.fDisambigHits.size(); t++ ){
       art::Ptr<recob::Hit>  hit = fDisambigAlg.fDisambigHits[t].first;
