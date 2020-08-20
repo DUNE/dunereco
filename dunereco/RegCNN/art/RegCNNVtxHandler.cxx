@@ -30,7 +30,9 @@ namespace cnn
     fProducer      (fWireLength, fWireResolution, fTdcWidth, fTimeResolution, fGlobalWireMethod)
   {
   }
-  std::vector<float> RegCNNVtxHandler::GetVertex(art::Event &evt, const RegPixelMap &pixelmap){
+  std::vector<float> RegCNNVtxHandler::GetVertex(detinfo::DetectorClocksData const& clockData,
+                                                 detinfo::DetectorPropertiesData const& detProp,
+                                                 art::Event &evt, const RegPixelMap &pixelmap){
 
       art::Handle< std::vector< recob::Hit > > hitListHandle;
       std::vector< art::Ptr< recob::Hit > > hitlist;
@@ -53,7 +55,7 @@ namespace cnn
               networkOutput[3] -= 9;
 
       	      RegPixelMap pm;
-              pm = fProducer.CreateMap(hitlist, fmwire, networkOutput);
+              pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, networkOutput);
       	      if (pm.fInPM){
 		      center_of_mass[6] = (float)(pm.fTPC%4); // add TPC info
               	      Result = fTFHandler2nd.Predict(pm, center_of_mass);

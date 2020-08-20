@@ -8,6 +8,8 @@
 #include "larcorealg/Geometry/TPCGeo.h"
 #include "lardataalg/DetectorInfo/DetectorProperties.h"
 #include "lardata/ArtDataHelper/TrackUtils.h" // lar::utils::TrackPitchInView() 
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "TPrincipal.h"
 #include "TVectorD.h"
@@ -1124,7 +1126,6 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
 
   //std::cout << " ~~~~~~~~~~~~~~~ MVA: Getting Event Reco ~~~~~~~~~~~~~~ " << std::endl;
 
-  auto const *detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
   art::ServiceHandle<cheat::BackTrackerService> bt_serv;
   art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
   const sim::ParticleList& plist = pi_serv->ParticleList();
@@ -1135,7 +1136,9 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
   art::Timestamp ts = evt.time();
   TTimeStamp tts(ts.timeHigh(), ts.timeLow());
   evttime = tts.AsDouble();
-  taulife = detprop->ElectronLifetime();
+  auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
+  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
+  taulife = detProp.ElectronLifetime();
   isdata = evt.isRealData();
 
   // * Raw Digits
@@ -1261,8 +1264,8 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
         if (vhit[h].key()<kMaxHits){
           hit_trkkey[vhit[h].key()] = tracklist[i].key();
           if (vmeta[h]->Dx()){
-            hit_dQds[vhit[h].key()] = vhit[h]->Integral()*fCalorimetryAlg.LifetimeCorrection(vhit[h]->PeakTime())/vmeta[h]->Dx();
-            hit_dEds[vhit[h].key()] = fCalorimetryAlg.dEdx_AREA(vhit[h], vmeta[h]->Dx());
+            hit_dQds[vhit[h].key()] = vhit[h]->Integral()*fCalorimetryAlg.LifetimeCorrection(clockData, detProp, vhit[h]->PeakTime())/vmeta[h]->Dx();
+            hit_dEds[vhit[h].key()] = fCalorimetryAlg.dEdx_AREA(clockData, detProp, *vhit[h], vmeta[h]->Dx());
           }
           hit_resrange[vhit[h].key()] = tracklist[i]->Length(vmeta[h]->Index());
         }
@@ -1307,7 +1310,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
       std::map<int,double> trkide;
       for(size_t h = 0; h < allHits.size(); ++h){
         art::Ptr<recob::Hit> hit = allHits[h];
-        std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(hit);
+        std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(clockData, hit);
         for(size_t e = 0; e < TrackIDs.size(); ++e){
           trkide[TrackIDs[e].trackID] += TrackIDs[e].energy;
         }	    
@@ -1363,7 +1366,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
               if (sqrt(pow(spts[0]->XYZ()[0]-x,2)+
                     pow(spts[0]->XYZ()[1]-y,2)+
                     pow(spts[0]->XYZ()[2]-z,2))<3){
-                std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(hit);
+                std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(clockData, hit);
                 float toten = 0;
                 for(size_t e = 0; e < TrackIDs.size(); ++e){
                   //sum_energy += TrackIDs[e].energy;
@@ -1455,7 +1458,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
         std::map<int,double> trkide;
         for(size_t h = 0; h < allHits.size(); ++h){
           art::Ptr<recob::Hit> hit = allHits[h];
-          std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(hit);
+          std::vector<sim::TrackIDE> TrackIDs = bt_serv->HitToTrackIDEs(clockData, hit);
           for(size_t e = 0; e < TrackIDs.size(); ++e){
             trkide[TrackIDs[e].trackID] += TrackIDs[e].energy;
           }	    

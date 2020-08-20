@@ -54,7 +54,6 @@ void PrincipalComponentsAlg::reconfigure(fhicl::ParameterSet const &pset)
     
     m_parallel = pset.get<double>("ParallelLines", 0.00001);
     m_geometry = &*geometry;
-    m_detector = lar::providerFrom<detinfo::DetectorPropertiesService>();
 }
     
 void PrincipalComponentsAlg::getHit2DPocaToAxis(const TVector3&            axisPos,

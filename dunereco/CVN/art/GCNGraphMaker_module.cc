@@ -22,6 +22,7 @@
 // LArSoft includes
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
 #include "dune/CVN/func/GCNGraph.h"
 #include "dune/CVN/func/GCNParticleFlow.h"
@@ -132,6 +133,7 @@ namespace cvn {
       gpf = std::make_unique<std::vector<cvn::GCNParticleFlow> >();
     }
 
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
     if(spacePoints.size() >= fMinClusterHits) {
 
       cvn::GCNGraph newGraph;
@@ -145,9 +147,9 @@ namespace cvn {
 
       // Get the charge and true ID for each spacepoint
       auto chargeMap = graphUtil.GetSpacePointChargeMap(spacePoints, sp2Hit);
-      const std::map<unsigned int, int> *trueIDMap = nullptr;
+      std::unique_ptr<std::map<unsigned int, int> const> trueIDMap{nullptr};
       if (fSaveTrueParticle) {
-        trueIDMap = new const std::map<unsigned int, int>(graphUtil.GetTrueG4ID(spacePoints, sp2Hit));
+        trueIDMap = std::make_unique<std::map<unsigned int, int>>(graphUtil.GetTrueG4ID(clockData, spacePoints, sp2Hit));
       } 
 
       // Get 2D hit features if requested
@@ -165,7 +167,7 @@ namespace cvn {
       std::vector<std::vector<float>>* nodeDirectionGroundTruth = nullptr;
       if (fUseNodeDirectionGroundTruth) nodeDirectionGroundTruth = new std::vector<std::vector<float>>();
       if (fUseNodeDeghostingGroundTruth) {
-        nodeDeghostingGroundTruth = graphUtil.GetNodeGroundTruth(spacePoints,
+        nodeDeghostingGroundTruth = graphUtil.GetNodeGroundTruth(clockData, spacePoints,
           sp2Hit, fTruthRadius, nodeDirectionGroundTruth);
       }
 
@@ -243,10 +245,3 @@ namespace cvn {
 DEFINE_ART_MODULE(cvn::GCNGraphMaker)
 } // end namespace cvn
 ////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-

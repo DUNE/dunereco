@@ -54,10 +54,8 @@ void DBScanAlg_DUNE35t::reconfigure(fhicl::ParameterSet const &pset)
     m_EpsMaxDist             = pset.get<double>("EpsilonDistanceDBScan", 5.);
     
     art::ServiceHandle<geo::Geometry>            geometry;
-    //    auto const* detectorProperties = lar::providerFrom<detinfo::DetectorPropertiesService>();
     
     m_geometry = &*geometry;
-    //    m_detector = lar::providerFrom<detinfo::DetectorPropertiesService>();
     
     m_timeVector.resize(NUMTIMEVALUES, 0.);
 

@@ -63,11 +63,11 @@ namespace dune{
 
   //----------------------------------------------------------
   //----------------------------------------------------------
-  void DisambigAlgProtoDUNESP::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &OrigHits   )
+  void DisambigAlgProtoDUNESP::RunDisambig(detinfo::DetectorPropertiesData const& detProp,
+                                           const std::vector< art::Ptr<recob::Hit> > &OrigHits   )
   {
     fDisambigHits.clear();
 
-    auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
     art::ServiceHandle<geo::Geometry> geo;
 
     size_t napas = geo->NTPC()/2;
@@ -106,7 +106,7 @@ namespace dune{
 		    hitsUV[0].push_back(OrigHits[i]);
 		    //      if (OrigHits[i]->WireID().TPC==1) 
 		    //	histu->Fill(OrigHits[i]->PeakTime()
-		    //		    - detprop->GetXTicksOffset(0,
+		    //		    - detProp.GetXTicksOffset(0,
 		    //					       tpc,
 		    //					       cryostat)
 		    //		    ,OrigHits[i]->Charge());
@@ -116,7 +116,7 @@ namespace dune{
 		    hitsUV[1].push_back(OrigHits[i]);
 		    //      if (OrigHits[i]->WireID().TPC==1) 
 		    //	histv->Fill(OrigHits[i]->PeakTime()
-		    //		    - detprop->GetXTicksOffset(1,
+		    //		    - detProp.GetXTicksOffset(1,
 		    //					       tpc,
 		    //					       cryostat)
 		    //		    ,OrigHits[i]->Charge());
@@ -125,7 +125,7 @@ namespace dune{
 		    hitsZ.push_back(OrigHits[i]);
 		    //      if (OrigHits[i]->WireID().TPC==1) 
 		    //	histz->Fill(OrigHits[i]->PeakTime()
-		    //		    - detprop->GetXTicksOffset(2,
+		    //		    - detProp.GetXTicksOffset(2,
 		    //					       tpc,
 		    //					       cryostat)
 		    //		    ,OrigHits[i]->Charge());
@@ -156,19 +156,19 @@ namespace dune{
 	      {
 		//std::cout << "Attempting to Disambiguate hit: " << *hitsUV[uv][iuv] << std::endl;
 		//std::cout << "Getting time offset: " << hitsUV[uv][iuv]->WireID().Plane << " " << tpc << " " << cryostat << std::endl;
-		//std::cout << "time offset: " << detprop->GetXTicksOffset(hitsUV[uv][iuv]->WireID().Plane,tpc,cryostat) << std::endl;
+		//std::cout << "time offset: " << detProp.GetXTicksOffset(hitsUV[uv][iuv]->WireID().Plane,tpc,cryostat) << std::endl;
 
 		double tuv = hitsUV[uv][iuv]->PeakTime()
-		  - detprop->GetXTicksOffset(hitsUV[uv][iuv]->WireID().Plane,tpc,cryostat);
+		  - detProp.GetXTicksOffset(hitsUV[uv][iuv]->WireID().Plane,tpc,cryostat);
 
 		std::vector<size_t> zmatches;  // list of indices of time-matched hits
 		std::vector<size_t> othermatches;
 		for (size_t z = 0; z < zsize; z++)
 		  {
 		    double tz = hitsZ[z]->PeakTime()
-		      - detprop->GetXTicksOffset(hitsZ[z]->WireID().Plane,tpc,cryostat);
+		      - detProp.GetXTicksOffset(hitsZ[z]->WireID().Plane,tpc,cryostat);
 		    //std::cout << "Looking for a Z match: " << tuv << " " << tz << " Offset: " <<
-                    // detprop->GetXTicksOffset(hitsZ[z]->WireID().Plane,tpc,cryostat)
+                    // detProp.GetXTicksOffset(hitsZ[z]->WireID().Plane,tpc,cryostat)
 		    //      << " plane: " << hitsZ[z]->WireID().Plane << " TPC: " << tpc << " Cryo: " << cryostat
 		    //	      << std::endl;
 
@@ -180,7 +180,7 @@ namespace dune{
 		for (size_t iother = 0; iother < othersize; iother++)
 		  {
 		    double tother = hitsUV[other][iother]->PeakTime()
-		      - detprop->GetXTicksOffset(hitsUV[other][iother]->WireID().Plane,tpc,cryostat);
+		      - detProp.GetXTicksOffset(hitsUV[other][iother]->WireID().Plane,tpc,cryostat);
 		    if (std::abs(tuv-tother)<fTimeCut)
 		      {
 			othermatches.push_back(iother);

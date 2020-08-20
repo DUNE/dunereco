@@ -88,12 +88,15 @@ namespace nnet
   private:
   	void ResetVars();
   
-  	bool prepareEv(const art::Event& event);
+    bool prepareEv(const art::Event& event,
+                   detinfo::DetectorPropertiesData const& detProp);
   	bool InsideFidVol(TVector3 const & pvtx) const;
-  	void CorrOffset(TVector3& vec, const simb::MCParticle& particle);
+    void CorrOffset(detinfo::DetectorPropertiesData const& detProp,
+                    TVector3& vec, const simb::MCParticle& particle);
 
 
-	TVector2 GetProjVtx(TVector3 const & vtx3d, const size_t cryo, const size_t tpc, const size_t plane) const;
+    TVector2 GetProjVtx(detinfo::DetectorPropertiesData const& detProp,
+                        TVector3 const & vtx3d, const size_t cryo, const size_t tpc, const size_t plane) const;
 
     nnet::TrainingDataAlg fTrainingDataAlg;
     art::InputTag fGenieGenLabel;
@@ -115,7 +118,6 @@ namespace nnet
 	float fPosX, fPosY;
 
 	geo::GeometryCore const* fGeometry;
-	detinfo::DetectorProperties const* fDetProp;
   };
 
   //-----------------------------------------------------------------------
@@ -127,7 +129,6 @@ namespace nnet
 	fFidVolCut(config().FidVolCut())
   {
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());
-    fDetProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
   }
   
   //-----------------------------------------------------------------------
@@ -154,7 +155,8 @@ namespace nnet
   }
   
   //-----------------------------------------------------------------------
-  bool SPMultiTpcDump::prepareEv(const art::Event& event)
+  bool SPMultiTpcDump::prepareEv(const art::Event& event,
+                                 detinfo::DetectorPropertiesData const& detProp)
   {
 	art::Handle< std::vector<simb::MCTruth> > mctruthHandle;
 	if (!event.getByLabel(fGenieGenLabel, mctruthHandle)) { return false; }
@@ -166,7 +168,7 @@ namespace nnet
 			const TLorentzVector& pvtx = mc.GetNeutrino().Nu().Position();
 			TVector3 vtx(pvtx.X(), pvtx.Y(), pvtx.Z());
 
-			CorrOffset(vtx, mc.GetNeutrino().Nu());
+            CorrOffset(detProp, vtx, mc.GetNeutrino().Nu());
 
 			fPointid.nupdg = mc.GetNeutrino().Nu().PdgCode();
 			fPointid.interaction = mc.GetNeutrino().CCNC();
@@ -181,7 +183,7 @@ namespace nnet
 				for (size_t i = 0; i < 3; ++i)
 				{
 					if (fGeometry->TPC(tpc, cryo).HasPlane(i))
-					{ fPointid.position[i] = GetProjVtx(vtx, cryo, tpc, i); }
+                      { fPointid.position[i] = GetProjVtx(detProp, vtx, cryo, tpc, i); }
 					else
 					{ fPointid.position[i] = TVector2(0, 0); }
 				}
@@ -214,7 +216,9 @@ namespace nnet
     fSubRun = event.subRun();
     ResetVars();
     
-    prepareEv(event);
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
+    prepareEv(event, detProp);
 
 	std::ostringstream os;
 	os << "event_" << fEvent << "_run_" << fRun << "_subrun_" << fSubRun;
@@ -239,7 +243,7 @@ namespace nnet
     unsigned int gd0 = 0, gd1 = 0;
 	for (int p = 2; p >= 0; --p) // loop over planes and make global images
 	{
-	    size_t drift_size = fDetProp->NumberTimeSamples() / fTrainingDataAlg.DriftWindow(); // tpc size in drift direction
+	    size_t drift_size = detProp.NumberTimeSamples() / fTrainingDataAlg.DriftWindow(); // tpc size in drift direction
 	    size_t wire_size = fGeometry->Nwires(p, 0, cryo);                                   // tpc size in wire direction
 	    size_t max_offset = (p < 2) ? 752 : 0;                                              // top-bottom projection max offset
 
@@ -295,7 +299,7 @@ namespace nnet
             size_t gw = tpc_z * weff[p] + tpc_y * offset;                          // global wire
             size_t gd = tpc_x * drift_size + apa_gap * (1 + tpc_x) / 2 + p_align;  // global drift
 
-		    fTrainingDataAlg.setEventData(event, eff_p, t, cryo); // prepare ADC and truth projections for 1 plane in 1 tpc
+            fTrainingDataAlg.setEventData(event, clockData, detProp, eff_p, t, cryo); // prepare ADC and truth projections for 1 plane in 1 tpc
 		    std::cout << "   TPC: " << t << " wires: " << fTrainingDataAlg.NWires() << std::endl;
 		    a = fTrainingDataAlg.getAdcArea();
 		    if (a > 150)
@@ -303,7 +307,7 @@ namespace nnet
 		        fullimg.addTpc(fTrainingDataAlg, gw, flip_w, gd, flip_d);
 		        if (a > maxArea)
 		        {
-                    TVector2 vtxProj = GetProjVtx(fPointid.vtx3d, cryo, t, p);
+                    TVector2 vtxProj = GetProjVtx(detProp, fPointid.vtx3d, cryo, t, p);
                     fullimg.setProjXY(fTrainingDataAlg, vtxProj.X(), vtxProj.Y(), gw, flip_w, gd, flip_d);
 		            a = maxArea;
 		        }
@@ -395,14 +399,15 @@ namespace nnet
   }
   
   //-----------------------------------------------------------------------
-  void SPMultiTpcDump::CorrOffset(TVector3& vec, const simb::MCParticle& particle)
+  void SPMultiTpcDump::CorrOffset(detinfo::DetectorPropertiesData const& detProp,
+                                  TVector3& vec, const simb::MCParticle& particle)
   {
   	double vtx[3] = {vec.X(), vec.Y(), vec.Z()};
   	geo::TPCID tpcid = fGeometry->FindTPCAtPosition(vtx);
 
 	if (tpcid.isValid)
 	  {
-	  	float corrt0x = particle.T() * 1.e-3 * fDetProp->DriftVelocity();
+	  	float corrt0x = particle.T() * 1.e-3 * detProp.DriftVelocity();
 	  	if (fGeometry->TPC(tpcid).DetectDriftDirection() == 1) { corrt0x = corrt0x*(-1); }
 	  	
 	  	vtx[0] = vec.X() + corrt0x;
@@ -458,11 +463,12 @@ namespace nnet
   }
   
   //-----------------------------------------------------------------------
-  TVector2 SPMultiTpcDump::GetProjVtx(TVector3 const & vtx3d, const size_t cryo, const size_t tpc, const size_t plane) const
+  TVector2 SPMultiTpcDump::GetProjVtx(detinfo::DetectorPropertiesData const& detProp,
+                                      TVector3 const & vtx3d, const size_t cryo, const size_t tpc, const size_t plane) const
   {
 
 		TVector2 vtx2d = pma::GetProjectionToPlane(vtx3d, plane, tpc, cryo);
-		TVector2 vtxwd = pma::CmToWireDrift(vtx2d.X(), vtx2d.Y(), plane, tpc, cryo);
+    TVector2 vtxwd = pma::CmToWireDrift(detProp, vtx2d.X(), vtx2d.Y(), plane, tpc, cryo);
 	
 		return vtxwd;
   }
@@ -485,4 +491,3 @@ DEFINE_ART_MODULE(SPMultiTpcDump)
 }
 
 #endif // SPMultiTpcDump_Module
-

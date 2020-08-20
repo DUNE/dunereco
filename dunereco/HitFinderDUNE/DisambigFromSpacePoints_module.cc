@@ -77,6 +77,7 @@ namespace dune {
             );
 
     int resolveUnassigned(
+            detinfo::DetectorPropertiesData const& detProp,
             std::unordered_map< size_t, geo::WireID > & assignments,
             const std::vector< art::Ptr<recob::Hit> > & eventHits,
             cryo_tpc_plane_keymap & indHits,
@@ -98,7 +99,6 @@ namespace dune {
 
 
     geo::GeometryCore const* fGeom;
-    detinfo::DetectorProperties const* fDetProp;
 
     int fRun, fEvent;
     int fNHits[3];                // n all hits in each plane
@@ -142,7 +142,6 @@ namespace dune {
     produces<art::Assns<recob::Hit, recob::SpacePoint>>();
 
     fGeom = &*(art::ServiceHandle<geo::Geometry>());
-    fDetProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
     if (fMonitoringPlots)
     {
@@ -187,6 +186,7 @@ namespace dune {
     art::FindManyP< recob::SpacePoint > spFromHit(hitsHandle, evt, fSpModuleLabel);
     art::FindManyP< recob::Hit > hitsFromSp(spHandle, evt, fSpModuleLabel);
 
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
     // map induction spacepoints to TPC by collection hits
     std::unordered_map< size_t, size_t > spToTPC;
     for (size_t i = 0; i < spHandle->size(); ++i)
@@ -220,7 +220,7 @@ namespace dune {
 
     if (fUseNeighbors)
     {
-        n = resolveUnassigned(hitToWire, eventHits, indHits, unassignedHits, fNumNeighbors);
+        n = resolveUnassigned(detProp, hitToWire, eventHits, indHits, unassignedHits, fNumNeighbors);
         mf::LogInfo("DisambigFromSpacePoints") << n << " hits undisambiguated by neighborhood.";
     }
 
@@ -360,6 +360,7 @@ namespace dune {
   }
 
   int DisambigFromSpacePoints::resolveUnassigned(
+    detinfo::DetectorPropertiesData const& detProp,
     std::unordered_map< size_t, geo::WireID > & assignments,
     const std::vector< art::Ptr<recob::Hit> > & eventHits,
     cryo_tpc_plane_keymap & allIndHits,
@@ -383,7 +384,7 @@ namespace dune {
         if (cwids.empty()) { mf::LogWarning("DisambigFromSpacePoints") << "No wires for this channel???"; continue; }
 
         const float dwMax = fMaxDistance / fGeom->TPC(0, 0).Plane(plane).WirePitch(); // max distance in wires to look for neighbors
-        const float ddMax = dwMax * fGeom->TPC(0, 0).Plane(plane).WirePitch() / std::fabs(fDetProp->GetXTicksCoefficient(0, 0));
+        const float ddMax = dwMax * fGeom->TPC(0, 0).Plane(plane).WirePitch() / std::fabs(detProp.GetXTicksCoefficient(0, 0));
 
         float bestScore = 0;
         geo::WireID bestId;
@@ -397,7 +398,7 @@ namespace dune {
             if (!allowed) { continue; }
 
             const float wirePitch = fGeom->TPC(tpc, cryo).Plane(plane).WirePitch();
-            const float driftPitch = std::fabs(fDetProp->GetXTicksCoefficient(tpc, cryo));
+            const float driftPitch = std::fabs(detProp.GetXTicksCoefficient(tpc, cryo));
 
             float maxDValue = fMaxDistance*fMaxDistance;
             std::vector<float> distBuff(nNeighbors, maxDValue); // distance to n closest hits

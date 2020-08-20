@@ -150,6 +150,7 @@ namespace cvn {
     fProducer.SetProtoDUNE();
 
     // Use the whole event just like we would for the FD
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
     if(fUseWholeEvent){
       art::Handle< std::vector< recob::Hit > > hitListHandle;
       std::vector< art::Ptr< recob::Hit > > hitlist;
@@ -160,7 +161,7 @@ namespace cvn {
       std::cout << "nhits: " << nhits << std::endl; // REMOVE 
  
       if(nhits>fMinClusterHits){
-        PixelMap pm = fProducer.CreateMap(hitlist);
+        PixelMap pm = fProducer.CreateMap(detProp, hitlist);
         pmCol->push_back(pm);
       }
     }
@@ -172,7 +173,7 @@ namespace cvn {
       if(beamSlice < 500){
         const std::vector<const recob::Hit*> sliceHits = pfpUtil.GetRecoSliceHits(beamSlice,evt,fParticleModuleLabel);
 
-        PixelMap pm = fProducer.CreateMap(sliceHits);
+        PixelMap pm = fProducer.CreateMap(detProp, sliceHits);
         pmCol->push_back(pm);
       }
     }
@@ -193,7 +194,7 @@ namespace cvn {
         if(trackHits.size()>fMinClusterHits && (*allTracks)[t].Length() > fTrackLengthCut){
   //        std::cout << "Making PixelMap number " << pmCol->size() + 1 << " with " << trackHits.size() << " hits" << std::endl; 
   
-          PixelMap pm = fProducer.CreateMap(trackHits);
+          PixelMap pm = fProducer.CreateMap(detProp, trackHits);
           pmCol->push_back(pm);
         }
   
@@ -203,7 +204,7 @@ namespace cvn {
   
         std::vector<art::Ptr<recob::Hit> > showerHits = findShowerHits.at(s);
         if(showerHits.size()>fMinClusterHits){
-          PixelMap pm = fProducer.CreateMap(showerHits);
+          PixelMap pm = fProducer.CreateMap(detProp, showerHits);
           pmCol->push_back(pm);
         }
       }
@@ -222,10 +223,3 @@ namespace cvn {
 DEFINE_ART_MODULE(cvn::CVNMapperProtoDUNE)
 } // end namespace cvn
 ////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
