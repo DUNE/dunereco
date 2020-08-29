@@ -98,7 +98,8 @@ namespace cvn {
       pmCol(new std::vector<cvn::SparsePixelMap>);
 
     if (nsp > fMinSP) {
-      SparsePixelMap map = fProducer.CreateSparseMap3D(splist, sp2Hit);
+      auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
+      SparsePixelMap map = fProducer.CreateSparseMap3D(clockData, splist, sp2Hit);
       pmCol->push_back(map);
       mf::LogInfo("CVNSparseMapper3D") << "Created sparse pixel map from "
         << nsp << " spacepoints and " << map.GetNPixels(0) << " hits.";
@@ -112,10 +113,3 @@ namespace cvn {
 DEFINE_ART_MODULE(cvn::CVNSparseMapper3D)
 } // end namespace cvn
 ////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-

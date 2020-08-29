@@ -148,8 +148,9 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Event &event)
 {
     art::ServiceHandle<geo::Geometry> fGeometry;
-    auto clocks(art::ServiceHandle<detinfo::DetectorClocksService const>()->provider());
-    const double triggerTme(clocks->TriggerTime());
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
+    const double triggerTme(clockData.TriggerTime());
 
     const std::vector<art::Ptr<recob::Wire> > wires(dune_ana::DUNEAnaEventUtils::GetWires(event, fWireLabel));
     double wireCharge(0);
@@ -165,7 +166,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
             const std::vector<float>& signal(range.data());
             const raw::TDCtick_t binFirstTickROI(range.begin_index());
             for (unsigned int iSignal = 0; iSignal < signal.size(); ++iSignal)
-                wireCharge += signal[iSignal]*dune_ana::DUNEAnaHitUtils::LifetimeCorrection(iSignal+binFirstTickROI, triggerTme);
+                wireCharge += signal[iSignal]*dune_ana::DUNEAnaHitUtils::LifetimeCorrection(clockData, detProp, iSignal+binFirstTickROI, triggerTme);
         }
     }
     const double totalEnergy(this->CalculateEnergyFromCharge(wireCharge));
@@ -249,7 +250,9 @@ double NeutrinoEnergyRecoAlg::CalculateMuonMomentumByMCS(const art::Ptr<recob::T
 double NeutrinoEnergyRecoAlg::CalculateElectronEnergy(const art::Ptr<recob::Shower> &pElectronShower, const art::Event &event)
 {
     const std::vector<art::Ptr<recob::Hit> > electronHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(pElectronShower, event, fShowerToHitLabel),2));
-    const double electronObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(electronHits));
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
+    const double electronObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, electronHits));
     const double uncorrectedElectronEnergy(this->CalculateEnergyFromCharge(electronObservedCharge));
 
     return this->CalculateLinearlyCorrectedValue(uncorrectedElectronEnergy, fGradShwEnergy, fIntShwEnergy);
@@ -301,10 +304,12 @@ double NeutrinoEnergyRecoAlg::CalculateUncorrectedMuonMomentumByMCS(const art::P
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const std::vector<art::Ptr<recob::Hit> > &leptonHits, 
     const art::Event &event, const EnergyRecoInputHolder &energyRecoInputHolder)
 {
-    const double leptonObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(leptonHits));
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
+    const double leptonObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, leptonHits));
 
     const std::vector<art::Ptr<recob::Hit> > eventHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaEventUtils::GetHits(event, fHitLabel),2));
-    const double eventObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(eventHits));
+    const double eventObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, eventHits));
 
     const double hadronicObservedCharge(eventObservedCharge-leptonObservedCharge);
     const double uncorrectedHadronicEnergy(this->CalculateEnergyFromCharge(hadronicObservedCharge));

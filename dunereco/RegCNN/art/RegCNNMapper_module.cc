@@ -159,7 +159,7 @@ namespace cnn {
 
     // Get the vertex out of the event record
     art::Handle<std::vector<recob::Vertex> > vertexHandle;
-    std::vector<art::Ptr<recob::Vertex> > vertex_list; 
+    std::vector<art::Ptr<recob::Vertex> > vertex_list;
     if (evt.getByLabel(fVertexModuleLabel,vertexHandle))
         art::fill_ptr_vector(vertex_list, vertexHandle);
     art::FindMany<recob::PFParticle> fmPFParticle(vertexHandle, evt, fPFParticleModuleLabel);
@@ -170,30 +170,32 @@ namespace cnn {
     std::unique_ptr< std::vector<cnn::RegPixelMap> >
       pmCol(new std::vector<cnn::RegPixelMap>);
 
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
     if(nhits>fMinClusterHits){
       RegPixelMap pm;
       if (fUseRecoVertex==0){
           // create pixel map based on mean of wire and ticks
-          pm = fProducer.CreateMap(hitlist, fmwire);
+          pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire);
       } else if (fUseRecoVertex==1) {
         // create pixel map based on the reconstructed vertex
         // Get RegCNN Results
         art::Handle<std::vector<cnn::RegCNNResult>> cnnresultListHandle;
         evt.getByLabel(fRegCNNModuleLabel, fRegCNNResultLabel, cnnresultListHandle);
-	    std::vector<float> vtx(3, -99999);
+            std::vector<float> vtx(3, -99999);
         if (!cnnresultListHandle.failedToGet())
         {
             if (!cnnresultListHandle->empty())
             {
                 const std::vector<float>& v = (*cnnresultListHandle)[0].fOutput;
                 for (unsigned int ii = 0; ii < 3; ii++){
-                     vtx[ii] = v[ii]; 
+                     vtx[ii] = v[ii];
                      std::cout<<"vertex "<<ii<<" : "<<vtx[ii]<<std::endl;
                 }
             }
         }
-        pm = fProducer.CreateMap(hitlist, fmwire, vtx);
-      } 
+        pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, vtx);
+      }
       else if (fUseRecoVertex==2) {
           // create pixel map based on pandora vertex
           lar_pandora::PFParticleVector particleVector;
@@ -227,25 +229,25 @@ namespace cnn {
                   }
               }
           }
-          pm = fProducer.CreateMap(hitlist, fmwire, vtx);
-      } 
+          pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, vtx);
+      }
       else {
         // create pixel map based on the reconstructed vertex on wire and tick coordinate
         // Get RegCNN Results
         art::Handle<std::vector<cnn::RegCNNResult>> cnnresultListHandle;
         evt.getByLabel(fRegCNNModuleLabel, fRegCNNResultLabel, cnnresultListHandle);
-	    std::vector<float> vtx(6, -99999);
+            std::vector<float> vtx(6, -99999);
         if (!cnnresultListHandle.failedToGet())
         {
             if (!cnnresultListHandle->empty())
             {
                 const std::vector<float>& v = (*cnnresultListHandle)[0].fOutput;
                 for (unsigned int ii = 0; ii < 6; ii++){
-                     vtx[ii] = v[ii]; 
+                     vtx[ii] = v[ii];
                 }
             }
         }
-        pm = fProducer.CreateMap(hitlist, fmwire, vtx);
+        pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, vtx);
       }
       // skip if PixelMap is empty
       if (pm.fInPM) pmCol->push_back(pm);
@@ -264,10 +266,3 @@ namespace cnn {
 DEFINE_ART_MODULE(cnn::RegCNNMapper)
 } // end namespace cnn
 ////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-

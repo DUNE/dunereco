@@ -113,7 +113,6 @@ namespace {
   SNSlicer::SNSlicer(const fhicl::ParameterSet& pset)
     : EDProducer(),//pset),
       geom(*lar::providerFrom<geo::Geometry>()),
-      dp(*lar::providerFrom<detinfo::DetectorPropertiesService>())
   {
     produces<std::vector<sn::SNSlice>>();
 

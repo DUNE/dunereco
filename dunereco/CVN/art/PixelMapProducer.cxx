@@ -37,31 +37,32 @@ namespace cvn
   {
 
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());  
-    fDetProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
   }
 
   PixelMapProducer::PixelMapProducer()
   {
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());  
-    fDetProp = lar::providerFrom<detinfo::DetectorPropertiesService>(); 
   }
 
-  PixelMap PixelMapProducer::CreateMap(const std::vector< art::Ptr< recob::Hit > >& cluster)
+  PixelMap PixelMapProducer::CreateMap(detinfo::DetectorPropertiesData const& detProp,
+                                       const std::vector< art::Ptr< recob::Hit > >& cluster)
   {
     std::vector<const recob::Hit*> newCluster;
     for(const art::Ptr<recob::Hit> hit : cluster){
       newCluster.push_back(hit.get());
     }
-    return CreateMap(newCluster);
+    return CreateMap(detProp, newCluster);
   }
 
-  PixelMap PixelMapProducer::CreateMap(const std::vector<const recob::Hit* >& cluster)
+  PixelMap PixelMapProducer::CreateMap(detinfo::DetectorPropertiesData const& detProp,
+                                       const std::vector<const recob::Hit* >& cluster)
   {
-    Boundary bound = DefineBoundary(cluster);
-    return CreateMapGivenBoundary(cluster, bound);
+    Boundary bound = DefineBoundary(detProp, cluster);
+    return CreateMapGivenBoundary(detProp, cluster, bound);
   }
 
-  PixelMap PixelMapProducer::CreateMapGivenBoundary(const std::vector<const recob::Hit*>& cluster,
+  PixelMap PixelMapProducer::CreateMapGivenBoundary(detinfo::DetectorPropertiesData const& detProp,
+                                                    const std::vector<const recob::Hit*>& cluster,
       const Boundary& bound)
   {
 
@@ -80,12 +81,12 @@ namespace cvn
           // Jeremy: Autodetect geometry for DUNE 10kt module. Is this a bad idea??
           if (fGeometry->DetectorName() == "dune10kt_v1") {
             if (wireid.TPC%6 == 0 or wireid.TPC%6 == 5) continue; // Skip dummy TPCs in 10kt module
-            GetDUNE10ktGlobalWireTDC(wireid.Wire,cluster[iHit]->PeakTime(),
+            GetDUNE10ktGlobalWireTDC(detProp, wireid.Wire,cluster[iHit]->PeakTime(),
               wireid.Plane,wireid.TPC,tempWire,tempPlane,temptdc);
           }
           // Default to 1x2x6. Should probably specifically name this function as such
           else {
-            GetDUNEGlobalWireTDC(wireid.Wire,cluster[iHit]->PeakTime(),
+            GetDUNEGlobalWireTDC(detProp, wireid.Wire,cluster[iHit]->PeakTime(),
               wireid.Plane,wireid.TPC,tempWire,tempPlane,temptdc);
           }
         }
@@ -116,7 +117,8 @@ namespace cvn
 
 
 
-  Boundary PixelMapProducer::DefineBoundary(const std::vector< const recob::Hit*>& cluster)
+  Boundary PixelMapProducer::DefineBoundary(detinfo::DetectorPropertiesData const& detProp,
+                                            const std::vector< const recob::Hit*>& cluster)
   {
 
     std::vector<double> time_0;
@@ -139,10 +141,10 @@ namespace cvn
         if(fUnwrapped == 1) {
           if (fGeometry->DetectorName() == "dune10kt_v1") {
             if (wireid.TPC%6 == 0 or wireid.TPC%6 == 5) continue; // Skip dummy TPCs in 10kt module
-            GetDUNE10ktGlobalWireTDC(wireid.Wire,cluster[iHit]->PeakTime(),wireid.Plane,wireid.TPC,globalWire,globalPlane,globalTime);
+            GetDUNE10ktGlobalWireTDC(detProp, wireid.Wire,cluster[iHit]->PeakTime(),wireid.Plane,wireid.TPC,globalWire,globalPlane,globalTime);
           }
           else {
-            GetDUNEGlobalWireTDC(wireid.Wire,cluster[iHit]->PeakTime(),wireid.Plane,wireid.TPC,globalWire,globalPlane,globalTime);
+            GetDUNEGlobalWireTDC(detProp, wireid.Wire,cluster[iHit]->PeakTime(),wireid.Plane,wireid.TPC,globalWire,globalPlane,globalTime);
           }
         }
         else if(fUnwrapped == 2){
@@ -251,7 +253,8 @@ namespace cvn
   }
 
   // Based on Robert's code in adcutils
-  void PixelMapProducer::GetDUNEGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc, 
+  void PixelMapProducer::GetDUNEGlobalWireTDC(detinfo::DetectorPropertiesData const& detProp,
+                                              unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
                                              unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const
   {
 
@@ -259,7 +262,7 @@ namespace cvn
     unsigned int wireGap = 4;
     double driftLen = fGeometry->TPC(tpc,0).DriftDistance();
     double apaLen = fGeometry->TPC(tpc,0).Width() - fGeometry->TPC(tpc,0).ActiveWidth();
-    double driftVel = fDetProp->DriftVelocity();
+    double driftVel = detProp.DriftVelocity();
     unsigned int drift_size = (driftLen / driftVel) * 2; // Time in ticks to cross a TPC 
     unsigned int apa_size   = 4*(apaLen / driftVel) * 2; // Width of the whole APA in TDC
 
@@ -308,14 +311,15 @@ namespace cvn
     }
   }
 
-  void PixelMapProducer::GetDUNE10ktGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc, 
+  void PixelMapProducer::GetDUNE10ktGlobalWireTDC(detinfo::DetectorPropertiesData const& detProp,
+                                                  unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
                                                   unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const
   {
     unsigned int nWiresTPC = 400;
     unsigned int wireGap = 4;
     double driftLen = fGeometry->TPC(tpc).DriftDistance();
     double apaLen = fGeometry->TPC(tpc).Width() - fGeometry->TPC(tpc).ActiveWidth();
-    double driftVel = fDetProp->DriftVelocity();
+    double driftVel = detProp.DriftVelocity();
     unsigned int drift_size = (driftLen / driftVel) * 2; // Time in ticks to cross a TPC 
     unsigned int apa_size   = 4*(apaLen / driftVel) * 2; // Width of the whole APA in TDC
 
@@ -435,7 +439,8 @@ namespace cvn
 
   } // function GetProtoDUNEGlobalWireTDC
 
-  void PixelMapProducer::GetHitTruth(art::Ptr<recob::Hit>& hit, std::vector<int>& pdgs,
+  void PixelMapProducer::GetHitTruth(detinfo::DetectorClocksData const& clockData,
+                                     art::Ptr<recob::Hit>& hit, std::vector<int>& pdgs,
     std::vector<int>& tracks, std::vector<float>& energy, std::vector<std::string>& process) {
 
     // BackTracker and ParticleInventory
@@ -443,7 +448,7 @@ namespace cvn
     art::ServiceHandle<cheat::ParticleInventoryService> pi;
 
     // Get true particle and PDG responsible for this hit
-    std::vector<sim::TrackIDE> IDEs = bt->HitToTrackIDEs(hit);
+    std::vector<sim::TrackIDE> IDEs = bt->HitToTrackIDEs(clockData, hit);
     for (sim::TrackIDE & k : IDEs) {
       tracks.push_back(k.trackID); // add track ID
       simb::MCParticle p = pi->TrackIdToParticle(k.trackID);
@@ -468,7 +473,10 @@ namespace cvn
     }  // for trackIDE
   } // function PixelMapProducer::GetHitTruth
 
-  SparsePixelMap PixelMapProducer::CreateSparseMap2D(std::vector< art::Ptr< recob::Hit> >& cluster,
+  SparsePixelMap PixelMapProducer::CreateSparseMap2D(
+    detinfo::DetectorClocksData const& clockData,
+    detinfo::DetectorPropertiesData const& detProp,
+    std::vector< art::Ptr< recob::Hit> >& cluster,
     bool usePixelTruth) {
 
     // 3-dimensional coordinates (wire, time TPC) and 3 views
@@ -485,12 +493,12 @@ namespace cvn
       unsigned int globalPlane = wireid.Plane;
 
       if (fGeometry->DetectorName().find("1x2x6") != std::string::npos) {
-        GetDUNEGlobalWireTDC(wireid.Wire, cluster[iHit]->PeakTime(),
+        GetDUNEGlobalWireTDC(detProp, wireid.Wire, cluster[iHit]->PeakTime(),
           wireid.Plane, wireid.TPC, globalWire, globalPlane, globalTime);
       }
       else if (fGeometry->DetectorName() == "dune10kt_v1") {
         if (wireid.TPC%6 == 0 or wireid.TPC%6 == 5) continue;
-        GetDUNE10ktGlobalWireTDC(wireid.Wire, cluster[iHit]->PeakTime(),
+        GetDUNE10ktGlobalWireTDC(detProp, wireid.Wire, cluster[iHit]->PeakTime(),
           wireid.Plane, wireid.TPC, globalWire, globalPlane, globalTime);
       }
       else if (fGeometry->DetectorName().find("protodune") != std::string::npos) {
@@ -508,7 +516,7 @@ namespace cvn
         std::vector<int> pdgs, tracks;
         std::vector<float> energy;
         std::vector<std::string> process;
-        GetHitTruth(cluster[iHit], pdgs, tracks, energy, process);
+        GetHitTruth(clockData, cluster[iHit], pdgs, tracks, energy, process);
         map.AddHit(globalPlane, coordinates, {cluster[iHit]->Integral()}, pdgs, tracks, energy, process); 
       } // if PixelTuth 
 
@@ -522,6 +530,7 @@ namespace cvn
   } // function PixelMapProducer::CreateSparseMap
 
   SparsePixelMap PixelMapProducer::CreateSparseMap3D(
+    detinfo::DetectorClocksData const& clockData,
     std::vector<art::Ptr<recob::SpacePoint>>& sp,
     std::vector<std::vector<art::Ptr<recob::Hit>>>& hit) {
 
@@ -544,7 +553,7 @@ namespace cvn
 
       for (size_t iH = 0; iH < hit[iSP].size(); ++iH) { // Loop over this spacepoint's hits
         features[hit[iSP][iH]->View()] += hit[iSP][iH]->Integral(); // Add hit integral to corresponding view's features
-        GetHitTruth(hit[iSP][iH], pdgs, tracks, energy, process);
+        GetHitTruth(clockData, hit[iSP][iH], pdgs, tracks, energy, process);
         map.AddHit(0, coordinates, features, pdgs, tracks, energy, process); 
       } // for hit iH
     } // for spacepoint iSP

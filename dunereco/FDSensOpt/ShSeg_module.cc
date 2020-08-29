@@ -37,6 +37,7 @@
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
@@ -79,11 +80,13 @@ private:
 	bool InsideFidVol(TLorentzVector const & pvtx) const;
 	
 	void FilterOutSmallParts(
+                detinfo::DetectorPropertiesData const& detProp,
 		double r2d, 
 		const std::vector< art::Ptr<recob::Hit> >& hits_in,
 					std::vector< art::Ptr<recob::Hit> >& hits_out);
 
 	bool GetCloseHits(
+                detinfo::DetectorPropertiesData const& detProp,
 		double r2d, 
 		const std::vector< art::Ptr<recob::Hit> >& hits_in, 
 		std::vector<size_t>& used,
@@ -91,7 +94,8 @@ private:
 
 	bool Has(const std::vector<size_t>& v, size_t idx);
 
-	void CorrOffset(TVector3& vec, const simb::MCParticle& particle);
+        void CorrOffset(detinfo::DetectorPropertiesData const& detProp,
+                        TVector3& vec, const simb::MCParticle& particle);
 
 	recob::Track ConvertFrom(pma::Track3D const & src);
 
@@ -321,9 +325,11 @@ bool dunefd::ShSeg::BuildSegMC(art::Event & e)
 	TVector3 secondpoint = firstpoint + dir;
 
 	// offset corrections
-	CorrOffset(primaryvtx, *firstel);
-	CorrOffset(firstpoint, *firstel);
-	CorrOffset(secondpoint, *firstel);
+        auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(e);
+        auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e, clockData);
+        CorrOffset(detProp, primaryvtx, *firstel);
+        CorrOffset(detProp, firstpoint, *firstel);
+        CorrOffset(detProp, secondpoint, *firstel);
 
 	double startvtx[3] = {firstpoint.X(), firstpoint.Y(), firstpoint.Z()};
 	
@@ -335,12 +341,12 @@ bool dunefd::ShSeg::BuildSegMC(art::Event & e)
 	size_t tpc = tpcid.TPC;
 	size_t cryo = geom->FindCryostatAtPosition(startvtx);	
 	pma::Track3D* iniseg = new pma::Track3D();
-	iniseg->AddNode(firstpoint, tpc, cryo);
-	iniseg->AddNode(secondpoint, tpc, cryo);
+        iniseg->AddNode(detProp, firstpoint, tpc, cryo);
+        iniseg->AddNode(detProp, secondpoint, tpc, cryo);
 
 	for (size_t h = 0; h < hitlist.size(); h++)
 		if (hitlist[h]->WireID().TPC == tpc)
-			iniseg->push_back(hitlist[h]);
+                        iniseg->push_back(detProp, hitlist[h]);
 		
 	iniseg->MakeProjection();
 	iniseg->SortHits();
@@ -385,7 +391,7 @@ bool dunefd::ShSeg::BuildSegMC(art::Event & e)
 	fPmatracks.push_back(iniseg);
 	/************************************/
 	
-	iniseg->CompleteMissingWires(bestview);	
+        iniseg->CompleteMissingWires(detProp, bestview);
 	std::map< size_t, std::vector< double > > dedx;
 	iniseg->GetRawdEdxSequence(dedx, bestview);
 	double sumdx = 0.0; fDedxavg = 0.0;
@@ -399,7 +405,7 @@ bool dunefd::ShSeg::BuildSegMC(art::Event & e)
 	for (auto & v: dedx)
 		if (((v.second[7] + fR1) > fR0) && (v.second[7] < 15))
 		{
-			double dE = fCalorimetryAlg.dEdx_AREA(v.second[5], v.second[1], bestview);
+                        double dE = fCalorimetryAlg.dEdx_AREA(clockData, detProp, v.second[5], v.second[1], bestview);
 			double range = v.second[7] + (fR0 - fR1);
 
 			v.second[5] = dE;				
@@ -426,10 +432,10 @@ bool dunefd::ShSeg::BuildSegMC(art::Event & e)
 
 /******************************************************************************/
 
-void dunefd::ShSeg::CorrOffset(TVector3& vec, const simb::MCParticle& particle)
+void dunefd::ShSeg::CorrOffset(detinfo::DetectorPropertiesData const& detProp,
+                               TVector3& vec, const simb::MCParticle& particle)
 {
-	auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
-	float corrt0x = particle.T() * 1.e-3 * detprop->DriftVelocity();
+	float corrt0x = particle.T() * 1.e-3 * detProp.DriftVelocity();
 
 	float px = vec.X();
 	if (px > 0) px -= corrt0x;
@@ -518,6 +524,7 @@ bool dunefd::ShSeg::Has(const std::vector<size_t>& v, size_t idx)
 /***********************************************************************/
 
 void dunefd::ShSeg::FilterOutSmallParts(
+                detinfo::DetectorPropertiesData const& detProp,
 		double r2d,
 		const std::vector< art::Ptr<recob::Hit> >& hits_in,
 		std::vector< art::Ptr<recob::Hit> >& hits_out)
@@ -528,7 +535,7 @@ void dunefd::ShSeg::FilterOutSmallParts(
 	std::vector<size_t> used;
 	std::vector< art::Ptr<recob::Hit> > close_hits;
 	
-	while (GetCloseHits(r2d, hits_in, used, close_hits))
+        while (GetCloseHits(detProp, r2d, hits_in, used, close_hits))
 	{
 		if (close_hits.size() > min_size)
 			for (auto h : close_hits) hits_out.push_back(h);
@@ -538,6 +545,7 @@ void dunefd::ShSeg::FilterOutSmallParts(
 /***********************************************************************/
 
 bool dunefd::ShSeg::GetCloseHits(
+                detinfo::DetectorPropertiesData const& detProp,
 		double r2d, 
 		const std::vector< art::Ptr<recob::Hit> >& hits_in, 
 		std::vector<size_t>& used,
@@ -568,7 +576,7 @@ bool dunefd::ShSeg::GetCloseHits(
 				if (!Has(used, i))
 				{
 					art::Ptr<recob::Hit> hi = hits_in[i];
-					TVector2 hi_cm = pma::WireDriftToCm(hi->WireID().Wire, hi->PeakTime(), hi->WireID().Plane, hi->WireID().TPC, hi->WireID().Cryostat);
+                                        TVector2 hi_cm = pma::WireDriftToCm(detProp, hi->WireID().Wire, hi->PeakTime(), hi->WireID().Plane, hi->WireID().TPC, hi->WireID().Cryostat);
 
 					bool accept = false;
 					//for (auto const& ho : hits_out)
@@ -577,7 +585,7 @@ bool dunefd::ShSeg::GetCloseHits(
 						art::Ptr<recob::Hit> ho = hits_out[idx_o];
 
 						double d2 = pma::Dist2(
-							hi_cm, pma::WireDriftToCm(ho->WireID().Wire, ho->PeakTime(), ho->WireID().Plane, ho->WireID().TPC, ho->WireID().Cryostat));
+                                                                       hi_cm, pma::WireDriftToCm(detProp, ho->WireID().Wire, ho->PeakTime(), ho->WireID().Plane, ho->WireID().TPC, ho->WireID().Cryostat));
 						
 						if (hi->WireID().TPC == ho->WireID().TPC)
 						{

@@ -2,6 +2,7 @@
 art_make( BASENAME_ONLY
           LIBRARY_NAME     HitFinderDUNE
           LIB_LIBRARIES    lardataobj_RecoBase
+                           lardataalg_DetectorInfo
 	  		   larreco_RecoAlg
 			   larreco_RecoAlg_PMAlg
 			   larevt_Filters

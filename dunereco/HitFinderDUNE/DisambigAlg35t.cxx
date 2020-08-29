@@ -21,6 +21,7 @@
 #include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/RecoBase/Hit.h"
@@ -46,30 +47,23 @@ namespace dune{
   DisambigAlg35t::DisambigAlg35t(fhicl::ParameterSet const& pset)
     : fDBScan(pset.get< fhicl::ParameterSet >("DBScanAlg"))
   {
-    this->reconfigure(pset); 
-  }
-
-  //----------------------------------------------------------
-  void DisambigAlg35t::reconfigure(fhicl::ParameterSet const& p)
-  {
-
-    fTimeCut = p.get<double>("TimeCut");
-    fDistanceCut = p.get<double>("DistanceCut");
-    fDistanceCutClu = p.get<double>("DistanceCutClu");
-    fTimeWiggle     = p.get<double>("TimeWiggle");
-    fColChanWiggle  = p.get<int>("ColChannelWiggle");
-    fDoCleanUpHits  = p.get<bool>("DoCleanUpHits", true);
-    fDBScan.reconfigure(p.get< fhicl::ParameterSet >("DBScanAlg"));
+    fTimeCut = pset.get<double>("TimeCut");
+    fDistanceCut = pset.get<double>("DistanceCut");
+    fDistanceCutClu = pset.get<double>("DistanceCutClu");
+    fTimeWiggle     = pset.get<double>("TimeWiggle");
+    fColChanWiggle  = pset.get<int>("ColChannelWiggle");
+    fDoCleanUpHits  = pset.get<bool>("DoCleanUpHits", true);
   }
 
 
   //----------------------------------------------------------
   //----------------------------------------------------------
-  void DisambigAlg35t::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &OrigHits   )
+  void DisambigAlg35t::RunDisambig(detinfo::DetectorClocksData const& clockData,
+                                   detinfo::DetectorPropertiesData const& detProp,
+                                   const std::vector< art::Ptr<recob::Hit> > &OrigHits   )
   {
     fDisambigHits.clear();
 
-    auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
     art::ServiceHandle<geo::Geometry> geo;
 
     std::vector<std::vector<art::Ptr<recob::Hit> > > hitsUV(2);
@@ -85,7 +79,7 @@ namespace dune{
         hitsUV[0].push_back(OrigHits[i]);
         //      if (OrigHits[i]->WireID().TPC==1) 
         //	histu->Fill(OrigHits[i]->PeakTime()
-        //		    - detprop->GetXTicksOffset(0,
+        //		    - detProp.GetXTicksOffset(0,
         //					       OrigHits[i]->WireID().TPC,
         //					       OrigHits[i]->WireID().Cryostat)
         //		    ,OrigHits[i]->Charge());
@@ -94,7 +88,7 @@ namespace dune{
         hitsUV[1].push_back(OrigHits[i]);
         //      if (OrigHits[i]->WireID().TPC==1) 
         //	histv->Fill(OrigHits[i]->PeakTime()
-        //		    - detprop->GetXTicksOffset(1,
+        //		    - detProp.GetXTicksOffset(1,
         //					       OrigHits[i]->WireID().TPC,
         //					       OrigHits[i]->WireID().Cryostat)
         //		    ,OrigHits[i]->Charge());
@@ -103,7 +97,7 @@ namespace dune{
         hitsZ.push_back(OrigHits[i]);
         //      if (OrigHits[i]->WireID().TPC==1) 
         //	histz->Fill(OrigHits[i]->PeakTime()
-        //		    - detprop->GetXTicksOffset(2,
+        //		    - detProp.GetXTicksOffset(2,
         //					       OrigHits[i]->WireID().TPC,
         //					       OrigHits[i]->WireID().Cryostat)
         //		    ,OrigHits[i]->Charge());
@@ -140,7 +134,7 @@ namespace dune{
       fAPAGeo.ChannelToAPA(hitsZ[z]->Channel(), apaz, cryoz);
 
       double tz = hitsZ[z]->PeakTime()
-        - detprop->GetXTicksOffset(hitsZ[z]->WireID().Plane,
+        - detProp.GetXTicksOffset(hitsZ[z]->WireID().Plane,
                                    hitsZ[z]->WireID().TPC,
                                    hitsZ[z]->WireID().Cryostat);
       //loop over u hits
@@ -151,7 +145,7 @@ namespace dune{
         fAPAGeo.ChannelToAPA(hitsUV[0][u]->Channel(), apau, cryou);
         if (apau!=apaz) continue;
         double tu = hitsUV[0][u]->PeakTime()
-          - detprop->GetXTicksOffset(0,
+          - detProp.GetXTicksOffset(0,
                                      hitsZ[z]->WireID().TPC,
                                      hitsZ[z]->WireID().Cryostat);
        
@@ -163,7 +157,7 @@ namespace dune{
             fAPAGeo.ChannelToAPA(hitsUV[1][v]->Channel(), apav, cryov);
             if (apav!=apaz) continue;
             double tv = hitsUV[1][v]->PeakTime()
-              - detprop->GetXTicksOffset(1,
+              - detProp.GetXTicksOffset(1,
                                          hitsZ[z]->WireID().TPC,
                                          hitsZ[z]->WireID().Cryostat);
     
@@ -235,7 +229,7 @@ namespace dune{
         if (!allhitsu[i].size()) continue;
 
         //initialize dbscan with all hits in u view
-        fDBScan.InitScan(allhitsu[i], chanFilt.SetOfBadChannels(), wireidsu[i]);
+        fDBScan.InitScan(clockData, detProp, allhitsu[i], chanFilt.SetOfBadChannels(), wireidsu[i]);
         //run dbscan
         fDBScan.run_cluster();
         //fpointId_to_clusterId maps a hit index to a cluster index (which can be negative if the hit is not associated with any clusters)
@@ -254,7 +248,7 @@ namespace dune{
           if (fDBScan.fpointId_to_clusterId[j]<fDBScan.fclusters.size()) {
             ++dbcluhits[fDBScan.fpointId_to_clusterId[j]];
 
-            CorrectedHitTime = allhitsu[i][j]->PeakTime() - detprop->GetXTicksOffset(allhitsu[i][j]->WireID().Plane, allhitsu[i][j]->WireID().TPC, allhitsu[i][j]->WireID().Cryostat);
+            CorrectedHitTime = allhitsu[i][j]->PeakTime() - detProp.GetXTicksOffset(allhitsu[i][j]->WireID().Plane, allhitsu[i][j]->WireID().TPC, allhitsu[i][j]->WireID().Cryostat);
             if (ClusterStartEndTime[fDBScan.fpointId_to_clusterId[j]].first==0 || ClusterStartEndTime[fDBScan.fpointId_to_clusterId[j]].first > CorrectedHitTime) 
               ClusterStartEndTime[fDBScan.fpointId_to_clusterId[j]].first = CorrectedHitTime;
             if (ClusterStartEndTime[fDBScan.fpointId_to_clusterId[j]].second==0 || ClusterStartEndTime[fDBScan.fpointId_to_clusterId[j]].second < CorrectedHitTime) 
@@ -314,7 +308,7 @@ namespace dune{
         }
 
         //Now to do the same for v hits
-        fDBScan.InitScan(allhitsv[i], chanFilt.SetOfBadChannels(), wireidsv[i]);
+        fDBScan.InitScan(clockData, detProp, allhitsv[i], chanFilt.SetOfBadChannels(), wireidsv[i]);
         fDBScan.run_cluster();
         if (allhitsv[i].size()!=fDBScan.fpointId_to_clusterId.size())
           throw cet::exception("DisambigAlg35t") <<"DBScan hits do not match input hits"<<allhitsv[i].size()<<" "<<fDBScan.fpointId_to_clusterId.size()<<"\n";
@@ -332,7 +326,7 @@ namespace dune{
           if (fDBScan.fpointId_to_clusterId[j]<fDBScan.fclusters.size()) {
             ++dbcluhits[fDBScan.fpointId_to_clusterId[j]];
 
-            CorrectedHitTime = allhitsv[i][j]->PeakTime() - detprop->GetXTicksOffset(allhitsv[i][j]->WireID().Plane, allhitsv[i][j]->WireID().TPC, allhitsv[i][j]->WireID().Cryostat);
+            CorrectedHitTime = allhitsv[i][j]->PeakTime() - detProp.GetXTicksOffset(allhitsv[i][j]->WireID().Plane, allhitsv[i][j]->WireID().TPC, allhitsv[i][j]->WireID().Cryostat);
             if (ClusterStartEndTime[fDBScan.fpointId_to_clusterId[j]].first==0 || ClusterStartEndTime[fDBScan.fpointId_to_clusterId[j]].first > CorrectedHitTime) 
               ClusterStartEndTime[fDBScan.fpointId_to_clusterId[j]].first = CorrectedHitTime;
             if (ClusterStartEndTime[fDBScan.fpointId_to_clusterId[j]].second==0 || ClusterStartEndTime[fDBScan.fpointId_to_clusterId[j]].second < CorrectedHitTime) 
@@ -455,7 +449,7 @@ namespace dune{
           for (size_t w = 0; w<wires.size(); ++w){
             if (wires[w].TPC!= hitwire.TPC) continue;
             if (nearbyhits[w]<0) nearbyhits[w] = 0;
-            double distance = sqrt(pow((double(hitwire.Wire)-double(wires[w].Wire))*wire_pitch,2)+pow(detprop->ConvertTicksToX(hitsUV[i][u2.first]->PeakTime(),hitwire.Plane,hitwire.TPC,hitwire.Cryostat)-detprop->ConvertTicksToX(hitsUV[i][hit]->PeakTime(),hitwire.Plane,hitwire.TPC,hitwire.Cryostat),2));
+            double distance = sqrt(pow((double(hitwire.Wire)-double(wires[w].Wire))*wire_pitch,2)+pow(detProp.ConvertTicksToX(hitsUV[i][u2.first]->PeakTime(),hitwire.Plane,hitwire.TPC,hitwire.Cryostat)-detProp.ConvertTicksToX(hitsUV[i][hit]->PeakTime(),hitwire.Plane,hitwire.TPC,hitwire.Cryostat),2));
             if (distance<fDistanceCutClu) ++nearbyhits[w];
           }
         }

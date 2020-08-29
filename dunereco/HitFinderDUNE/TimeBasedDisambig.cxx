@@ -66,7 +66,6 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 //void TimeBasedDisambig::RunDisambig()
 {
   //fDisambigHits.clear();
-  //lar::providerFrom<detinfo::DetectorPropertiesService> detprop;
 
   //create geometry and backtracker servicehandle object
   art::ServiceHandle<geo::Geometry> geo;

@@ -64,7 +64,6 @@ ClusterHitTime::ClusterHitTime(fhicl::ParameterSet const& p)
 
 void ClusterHitTime::analyze(art::Event const& e)
 {
-  auto const* detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
   art::Handle< std::vector<recob::Cluster> > clusterListHandle;
   std::vector<art::Ptr<recob::Cluster> > clusterlist;
@@ -73,6 +72,7 @@ void ClusterHitTime::analyze(art::Event const& e)
 
   art::FindManyP<recob::Hit> fmhc(clusterListHandle, e, fClusterModuleLabel);
 
+  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e);
   for (const auto & cluster : clusterlist){
     bool match = false;
     for (const auto & id : fClusterIDs){
@@ -84,8 +84,8 @@ void ClusterHitTime::analyze(art::Event const& e)
     if (!match) continue;
     auto &hits = fmhc.at(cluster.key());
     for (const auto & hit : hits){
-      std::cout<<hit->WireID().Plane<<" "<<hit->PeakTime()<<" "<<detprop->GetXTicksOffset(hit->WireID())<<" "<<hit->Integral()<<std::endl;
-      clutime[hit->WireID().Plane]->Fill(hit->PeakTime()-detprop->GetXTicksOffset(hit->WireID())+5000, hit->Integral());
+      std::cout<<hit->WireID().Plane<<" "<<hit->PeakTime()<<" "<<detProp.GetXTicksOffset(hit->WireID())<<" "<<hit->Integral()<<std::endl;
+      clutime[hit->WireID().Plane]->Fill(hit->PeakTime()-detProp.GetXTicksOffset(hit->WireID())+5000, hit->Integral());
     }
   }
 

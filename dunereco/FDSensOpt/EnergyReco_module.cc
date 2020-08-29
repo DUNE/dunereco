@@ -15,10 +15,10 @@
 //ROOT
 //ART
 #include "art/Framework/Core/ModuleMacros.h"
-#include "art/Framework/Core/EDProducer.h" 
-#include "art/Framework/Principal/Event.h" 
-#include "fhiclcpp/ParameterSet.h" 
-#include "messagefacility/MessageLogger/MessageLogger.h" 
+#include "art/Framework/Core/EDProducer.h"
+#include "art/Framework/Principal/Event.h"
+#include "fhiclcpp/ParameterSet.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Persistency/Common/PtrMaker.h"
 //LArSoft
 #include "larcore/Geometry/Geometry.h"
@@ -26,8 +26,9 @@
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Shower.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 //DUNE
 #include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 #include "dune/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.h"
@@ -46,7 +47,9 @@ namespace dune {
 
         private:
             art::Ptr<recob::Track> GetLongestTrack(const art::Event& event);
-            art::Ptr<recob::Shower> GetHighestChargeShower(const art::Event& event);
+            art::Ptr<recob::Shower> GetHighestChargeShower(detinfo::DetectorClocksData const& clockData,
+                                                           detinfo::DetectorPropertiesData const& detProp,
+                                                           const art::Event& event);
 
             std::string fWireLabel;
             std::string fHitLabel;
@@ -65,7 +68,7 @@ namespace dune {
 //-----------------------------------------------------------------------------------------------------------------------------------------
 
 EnergyReco::EnergyReco(fhicl::ParameterSet const& pset) :
-    EDProducer(pset), 
+    EDProducer(pset),
     fWireLabel(pset.get<std::string>("WireLabel")),
     fHitLabel(pset.get<std::string>("HitLabel")),
     fTrackLabel(pset.get<std::string>("TrackLabel")),
@@ -90,8 +93,10 @@ void EnergyReco::produce(art::Event& evt)
     auto assnstrk = std::make_unique<art::Assns<dune::EnergyRecoOutput, recob::Track>>();
     auto assnsshw = std::make_unique<art::Assns<dune::EnergyRecoOutput, recob::Shower>>();
 
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(evt, clockData);
     art::Ptr<recob::Track> longestTrack(this->GetLongestTrack(evt));
-    art::Ptr<recob::Shower> highestChargeShower(this->GetHighestChargeShower(evt));
+    art::Ptr<recob::Shower> highestChargeShower(this->GetHighestChargeShower(clockData, detProp, evt));
 
     if (fRecoMethod == 1)
         energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(longestTrack, evt));
@@ -108,7 +113,7 @@ void EnergyReco::produce(art::Event& evt)
     evt.put(std::move(energyRecoOutput));
     evt.put(std::move(assnstrk));
     evt.put(std::move(assnsshw));
-}
+  }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -134,7 +139,9 @@ art::Ptr<recob::Track> EnergyReco::GetLongestTrack(const art::Event &event)
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
 
-art::Ptr<recob::Shower> EnergyReco::GetHighestChargeShower(const art::Event &event)
+art::Ptr<recob::Shower> EnergyReco::GetHighestChargeShower(detinfo::DetectorClocksData const& clockData,
+                                                           detinfo::DetectorPropertiesData const& detProp,
+                                                           const art::Event &event)
 {
     art::Ptr<recob::Shower> pShower(art::Ptr<recob::Shower>(art::ProductID("nullShower")));
     const std::vector<art::Ptr<recob::Shower> > showers(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerLabel));
@@ -146,7 +153,7 @@ art::Ptr<recob::Shower> EnergyReco::GetHighestChargeShower(const art::Event &eve
     {
         const std::vector<art::Ptr<recob::Hit> > showerHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(showers[iShower],
             event,fShowerToHitLabel),2));
-        const double showerCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(showerHits));
+        const double showerCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, showerHits));
         if (showerCharge-maxCharge > std::numeric_limits<double>::epsilon())
         {
             maxCharge = showerCharge;
