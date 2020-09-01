@@ -2,6 +2,7 @@
 /// \file    RegCNNBoundary.cxx
 /// \brief   RegCNNBoundary for RegCNN PixelMap modified from CVNBoundary.cxx
 /// \author  Ilsoo Seong - iseong@uci.edu
+//           Wenjie Wu   - wenjieww@uci.edu
 ////////////////////////////////////////////////////////////////////////
 
 #include  <iostream>
@@ -16,21 +17,15 @@ namespace cnn
 {
 
   RegCNNBoundary::RegCNNBoundary(const int& nWire, // # of wires of pixel map
-                     const int& nTDC, // # of TDC of pixel map
-                     const int& wRes, // # of Wire merging
-		             const int& tRes, // # of TDC merging
+                     const int& nTDC,              // # of TDC of pixel map
+                     const int& wRes,              // # of Wire merging
+		             const int& tRes,              // # of TDC merging
                      const int& WireMeanX,
                      const int& WireMeanY,
                      const int& WireMeanZ,
                      const int& TDCMeanX,
                      const int& TDCMeanY,
                      const int& TDCMeanZ):
-    //fFirstWire{WireMeanX-nWire/2,
-    //  WireMeanY-nWire/2,
-    //  WireMeanZ-nWire/2},
-    //fLastWire{WireMeanX+nWire/2-1,
-    //  WireMeanY+nWire/2-1,
-    //  WireMeanZ+nWire/2-1},
     fFirstWire{WireMeanX-(nWire*wRes)/2,
       WireMeanY-(nWire*wRes)/2,
       WireMeanZ-(nWire*wRes)/2},
