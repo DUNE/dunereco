@@ -53,7 +53,7 @@ function(params, tools, override = {}) {
       ctoffset: 1.0*wc.microsecond, // default -8.0
       per_chan_resp: pc.name,
       fft_flag: 0,  // 1 is faster but higher memory, 0 is slightly slower but lower memory
-      postgain: 1.0, // params.elec.postgain,  // default 1.2
+      postgain: 1.0,  // default 1.2
       ADC_mV: ADC_mV_ratio, // 4096 / (1400.0 * wc.mV), 
       troi_col_th_factor: 5.0,  // default 5
       troi_ind_th_factor: 3.0,  // default 3
@@ -75,7 +75,25 @@ function(params, tools, override = {}) {
       // frame tags
       wiener_tag: 'wiener%d' % anode.data.ident,
       wiener_threshold_tag: 'threshold%d' % anode.data.ident,
+      decon_charge_tag: 'decon_charge%d' % anode.data.ident,
       gauss_tag: 'gauss%d' % anode.data.ident,
+
+      use_roi_debug_mode: false,
+      tight_lf_tag: 'tight_lf%d' % anode.data.ident,
+      loose_lf_tag: 'loose_lf%d' % anode.data.ident,
+      cleanup_roi_tag: 'cleanup_roi%d' % anode.data.ident,
+      break_roi_loop1_tag: 'break_roi_1st%d' % anode.data.ident,
+      break_roi_loop2_tag: 'break_roi_2nd%d' % anode.data.ident,
+      shrink_roi_tag: 'shrink_roi%d' % anode.data.ident,
+      extend_roi_tag: 'extend_roi%d' % anode.data.ident,
+
+      use_multi_plane_protection: false,
+      mp3_roi_tag: 'mp3_roi%d' % anode.data.ident,
+      mp2_roi_tag: 'mp2_roi%d' % anode.data.ident,
+      
+      isWrapped: false,
+      // process_planes: [0, 2],
+
     } + override,
   }, nin=1, nout=1, uses=[anode, tools.field, tools.elec_resp] + pc.uses + spfilt),
 

@@ -14,21 +14,21 @@ function(params, tools) {
     local ductors = sim.make_detector_ductors("nominal", tools.anodes, tools.pirs[0]),
 
 
-    local zippers = [sim.make_depozipper("depozipper%d"%n, tools.anodes[n], tools.pirs[0])
+    local zippers = [sim.make_depozipper("depozipper-"+tools.anodes[n].name, tools.anodes[n], tools.pirs[0])
                      for n in std.range(0, nanodes-1)],
-    local transforms = [sim.make_depotransform("depotransform%d"%n, tools.anodes[n], tools.pirs[0])
+    local transforms = [sim.make_depotransform("depotransform-"+tools.anodes[n].name, tools.anodes[n], tools.pirs[0])
                         for n in std.range(0, nanodes-1)],
     local depos2traces = transforms,
     //local depos2traces = zippers,
 
     local digitizers = [
-        sim.digitizer(tools.anodes[n], name="digitizer%d"%n, tag="orig%d"%n)
+        sim.digitizer(tools.anodes[n], name="digitizer-" + tools.anodes[n].name, tag="orig%d"%n)
         for n in std.range(0,nanodes-1)],
 
     local reframers = [
         g.pnode({
             type: 'Reframer',
-            name: 'reframer%d'%n,
+            name: 'reframer-'+tools.anodes[n].name,
             data: {
                 anode: wc.tn(tools.anodes[n]),
                 tags: [],           // ?? what do?
@@ -43,7 +43,7 @@ function(params, tools) {
     // fixme: see https://github.com/WireCell/wire-cell-gen/issues/29
     local make_noise_model = function(anode, csdb=null) {
         type: "EmpiricalNoiseModel",
-        name: "empericalnoise%s"% anode.name,
+        name: "empericalnoise-" + anode.name,
         data: {
             anode: wc.tn(anode),
             chanstat: if std.type(csdb) == "null" then "" else wc.tn(csdb),
@@ -59,7 +59,7 @@ function(params, tools) {
 
     local add_noise = function(model) g.pnode({
         type: "AddNoise",
-        name: "addnoise%s"%[model.name],
+        name: "addnoise-" + model.name,
         data: {
             rng: wc.tn(tools.random),
             model: wc.tn(model),
@@ -74,10 +74,10 @@ function(params, tools) {
     ret : {
 
         signal_pipelines: [g.pipeline([depos2traces[n], reframers[n],  digitizers[n]],
-                                      name="simsigpipe%d"%n) for n in std.range(0, nanodes-1)],
+                                      name="simsigpipe-" + tools.anodes[n].name) for n in std.range(0, nanodes-1)],
 
         splusn_pipelines:  [g.pipeline([depos2traces[n], reframers[n], noises[n], digitizers[n]],
-                                       name="simsignoipipe%d"%n) for n in std.range(0, nanodes-1)],
+                                       name="simsignoipipe-" + tools.anodes[n].name) for n in std.range(0, nanodes-1)],
     
         signal: f.fanpipe('DepoSetFanout', self.signal_pipelines, 'FrameFanin', "simsignalgraph", outtags),
         splusn: f.fanpipe('DepoSetFanout', self.splusn_pipelines, 'FrameFanin', "simsplusngraph", outtags),

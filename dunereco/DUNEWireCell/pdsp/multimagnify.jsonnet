@@ -34,6 +34,7 @@ function(tag, tools, outputfile) {
         root_file_mode: 'UPDATE',
         frames: ['%s%d' % [tag, n]],
         trace_has_tag: if tag == 'orig' then false else true,
+        cmmtree: if tag == 'raw' then [["noisy", "T_noisy%d"%n], ["sticky", "T_stky%d"%n], ["ledge", "T_ldg%d"%n], ["harmonic", "T_hm%d"%n] ] else [], // maskmap in nf.jsonnet 
         anode: wc.tn(tools.anodes[n]),
       },
     }, nin=1, nout=1)

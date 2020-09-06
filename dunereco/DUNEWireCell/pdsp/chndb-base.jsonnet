@@ -13,8 +13,8 @@ function(params, anode, field, n, rms_cuts=[])
     tick: params.daq.tick,
 
     // This sets the number of frequency-domain bins used in the noise
-    // filtering.  It is expected that time-domain waveforms have the
-    // same number of samples.
+    // filtering.  It is not necessarily true that the time-domain
+    // waveforms have the same number of ticks.  This must be non-zero.
     nsamples: params.nf.nsamples,
 
     // For MicroBooNE, channel groups is a 2D list.  Each element is
@@ -202,6 +202,7 @@ function(params, anode, field, n, rms_cuts=[])
         decon_limit: 0.02,
         decon_limit1: 0.09,
         adc_limit: 15,
+        roi_min_max_ratio: 0.8, // default 0.8
         min_rms_cut: 1.0,  // units???
         max_rms_cut: 30.0,  // units???
 
@@ -232,10 +233,11 @@ function(params, anode, field, n, rms_cuts=[])
         // response: { wpid: wc.WirePlaneId(wc.Ulayer) },
         /// this uses hard-coded waveform.
         response: { waveform: handmade.u_resp, waveformid: wc.Ulayer },
-        response_offset: 149,
+        response_offset: 120, // offset of the negative peak
         pad_window_front: 20,
         decon_limit: 0.02,
-        decon_limit1: 0.09,
+        decon_limit1: 0.07,
+        roi_min_max_ratio: 3.0,
       },
 
       {
@@ -250,37 +252,26 @@ function(params, anode, field, n, rms_cuts=[])
         // response: { wpid: wc.WirePlaneId(wc.Vlayer) },
         /// this uses hard-coded waveform.
         response: { waveform: handmade.v_resp, waveformid: wc.Vlayer },
-        response_offset: 155,
+        response_offset: 124,
         decon_limit: 0.01,
         decon_limit1: 0.08,
+        roi_min_max_ratio: 1.5,
       },
 
+      // local freqbinner = wc.freqbinner(params.daq.tick, params.nf.nsamples);
+      // local harmonic_freqs = [f*wc.kilohertz for f in
+      //   // [51.5, 102.8, 154.2, 205.5, 256.8, 308.2, 359.2, 410.5, 461.8, 513.2, 564.5, 615.8]
+      //   [51.5, 77.2, 102.8, 128.5, 154.2, 180.0, 205.5, 231.5, 256.8, 282.8, 308.2, 334.0, 359.2, 385.5, 410.5, 461.8, 513.2, 564.5, 615.8, 625.0]
+      // ];
+      
       {
         //channels: { wpid: wc.WirePlaneId(wc.Wlayer) },
 	channels: std.range(n * 2560 + 1600, n * 2560 + 2560- 1),
         nominal_baseline: 400.0,
         decon_limit: 0.05,
         decon_limit1: 0.08,
+        // freqmasks: freqbinner.freqmasks(harmonic_freqs, 5.0*wc.kilohertz),
       },
 
-      // {                       // special channel
-      //     channels: 2240,
-      //     freqmasks: [
-      //         { value: 1.0, lobin: 0, hibin: $.nsamples-1 },
-      //         { value: 0.0, lobin: 169, hibin: 173 },
-      //         { value: 0.0, lobin: 513, hibin: 516 },
-      //         { value: 0.0, lobin:  17, hibin:  19 },
-      //     ],
-      // },
-
-      // {                       // these are before hardware fix
-      //     channels: params.nf.misconfigured.channels,
-      //     reconfig: {
-      //         from: {gain:  params.nf.misconfigured.gain,
-      //                shaping: params.nf.misconfigured.shaping},
-      //         to:   {gain: params.elec.gain,
-      //                shaping: params.elec.shaping},
-      //     }
-      // },
     ] + rms_cuts,
   }
