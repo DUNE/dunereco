@@ -191,9 +191,9 @@ dunefd_hitfinderfd.DisambigAlg.DoCleanUpHits:  false
 dunefd_hitfinderfd.DisambigAlg.DistanceCutClu: 100
 
 protodunespmc_gaushitfinder: @local::gaus_hitfinder
-protodunespmc_gaushitfinder.HitFinderToolVec.CandidateHitsPlane0.RoiThreshold: 3.0
-protodunespmc_gaushitfinder.HitFinderToolVec.CandidateHitsPlane1.RoiThreshold: 3.0
-protodunespmc_gaushitfinder.HitFinderToolVec.CandidateHitsPlane2.RoiThreshold: 3.0
+protodunespmc_gaushitfinder.HitFinderToolVec.CandidateHitsPlane0.RoiThreshold: 0.6
+protodunespmc_gaushitfinder.HitFinderToolVec.CandidateHitsPlane1.RoiThreshold: 0.6
+protodunespmc_gaushitfinder.HitFinderToolVec.CandidateHitsPlane2.RoiThreshold: 0.6
 protodunespmc_gaushitfinder.InitWidth: [6.0, 6.0, 6.0]
 protodunespmc_gaushitfinder.AreaNorms: [13.25, 13.25, 13.25]
 protodunespmc_gaushitfinder.MaxMultiHit: 4

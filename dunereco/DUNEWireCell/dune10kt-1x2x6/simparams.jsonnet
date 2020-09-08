@@ -1,13 +1,19 @@
 // Here we override params.jsonnet to provide simulation-specific params.
 
-local base = import 'pgrapher/experiment/pdsp/params.jsonnet';
+local base = import 'pgrapher/experiment/dune10kt-1x2x6/params.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
 base {
-  lar: super.lar {
-      // be sure you really want to have this. default value: 8 ms
-      // lifetime: 35.0*wc.ms,
-  },
+  // lar: super.lar {
+  //     // Longitudinal diffusion constant
+  //     DL : 4.0 * wc.cm2/wc.s,
+  //     // Transverse diffusion constant
+  //     DT : 8.8 * wc.cm2/wc.s,
+  //     // Electron lifetime
+  //     lifetime : 35*wc.ms,
+  //     // Electron drift speed, assumes a certain applied E-field
+  //     drift_speed : 1.565*wc.mm/wc.us,
+  // },
 
   // redefine the detector volumes with the cryostat side included
   det : {
@@ -109,7 +115,7 @@ base {
                   }
 
               ],
-          } for n in std.range(0,5)],
+          } for n in std.range(0,11)],
 
       // This describes some rough, overall bounding box.  It's not
       // directly needed but can be useful on the Jsonnet side, for
@@ -259,7 +265,7 @@ base {
   // place.  See the "scale" parameter of wcls.input.depos() defined
   // in pgrapher/common/ui/wcls/nodes.jsonnet.
   // elec: super.elec {
-  //   postgain: 1.0,
+  //   postgain: 0.858,
   //   shaping: 2.2 * wc.us,
   // },
 

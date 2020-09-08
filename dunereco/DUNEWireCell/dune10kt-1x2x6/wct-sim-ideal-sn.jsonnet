@@ -1,30 +1,25 @@
-// This is a main entry point to configure WCT via wire-cell CLI to
-// run simulation, (an essentially empty) noise filtering and signal
-// processing.
-// 
-// Simulation is signal and noise with Ar39 and some ideal line MIP
-// tracks as initial kinematics.
-
+// This is a main entry point for configuring a wire-cell CLI job to
+// simulate protoDUNE-SP.  It is simplest signal-only simulation with
+// one set of nominal field response function.  It excludes noise.
+// The kinematics are a mixture of Ar39 "blips" and some ideal,
+// straight-line MIP tracks.
+//
 // Output is a Python numpy .npz file.
 
 local wc = import "wirecell.jsonnet";
 local g = import "pgraph.jsonnet";
 local f = import "pgrapher/common/funcs.jsonnet";
 
-local io = import "pgrapher/common/fileio.jsonnet";
-local params = import "pgrapher/experiment/pdsp/simparams.jsonnet";
-local tools_maker = import "pgrapher/common/tools.jsonnet";
-local sim_maker = import "pgrapher/experiment/pdsp/sim.jsonnet";
+local cli = import "pgrapher/ui/cli/nodes.jsonnet";
 
-local sp_maker = import "pgrapher/experiment/pdsp/sp.jsonnet";
+local io = import "pgrapher/common/fileio.jsonnet";
+local params = import "pgrapher/experiment/dune10kt-1x2x6/params.jsonnet";
+local tools_maker = import "pgrapher/common/tools.jsonnet";
 
 local tools = tools_maker(params);
 
+local sim_maker = import "pgrapher/experiment/dune10kt-1x2x6/sim.jsonnet";
 local sim = sim_maker(params, tools);
-
-local sp = sp_maker(params, tools);
-
-
 
 local stubby = {
     tail: wc.point(1000.0, 3.0, 100.0, wc.mm),
@@ -55,8 +50,8 @@ local tracklist = [
    //     ray: params.det.bounds,
    // },
 ];
+local output = "wct-dune10kt-1x2x6-sim-ideal-sn.npz";
 
-local output = "wct-pdsp-sim-ideal-sn-nf-sp.npz";
     
 //local depos = g.join_sources(g.pnode({type:"DepoMerger", name:"BlipTrackJoiner"}, nin=2, nout=1),
 //                             [sim.ar39(), sim.tracks(tracklist)]);
@@ -66,20 +61,14 @@ local depos = sim.tracks(tracklist);
 local deposio = io.numpy.depos(output);
 local drifter = sim.drifter;
 local bagger = sim.make_bagger();
-
-// signal plus noise pipelines
 local sn_pipes = sim.splusn_pipelines;
-local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
-local sn_sp = [g.pipeline([sn_pipes[n], sp_pipes[n]], "sn_sp_pipe_%d" % n)
-               for n in std.range(0, std.length(tools.anodes)-1)];
+local sn_graph = f.fanpipe('DepoSetFanout', sn_pipes, 'FrameFanin', "sn");
 
-local snsp_graph = f.fanpipe('DepoSetFanout', sn_sp, 'FrameFanin', "snsp");
 
 local frameio = io.numpy.frames(output);
 local sink = sim.frame_sink;
 
-
-local graph = g.pipeline([depos, deposio, drifter, bagger, snsp_graph, frameio, sink]);
+local graph = g.pipeline([depos, deposio, drifter, bagger, sn_graph, frameio, sink]);
 
 local app = {
     type: "Pgrapher",
@@ -90,13 +79,5 @@ local app = {
 
 // Finally, the configuration sequence which is emitted.
 
-local cmdline = {
-    type: "wire-cell",
-    data: {
-        plugins: ["WireCellGen", "WireCellPgraph", "WireCellSio", "WireCellSigProc"],
-        apps: ["Pgrapher"]
-    }
-};
-
-[cmdline] + g.uses(graph) + [app]
+[cli.cmdline] + g.uses(graph) + [app]
 

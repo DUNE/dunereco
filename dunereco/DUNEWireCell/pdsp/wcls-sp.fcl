@@ -17,7 +17,7 @@ physics :{
             apps: ["Pgrapher"]
 
             // Libraries in which to look for WCT components
-            plugins: ["WireCellGen", "WireCellSigProc", "WireCellSio", "WireCellPgraph", "WireCellLarsoft"]
+            plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
 
             // The tool marshals the art::Event to these visitors before.
             // See notes below in params.

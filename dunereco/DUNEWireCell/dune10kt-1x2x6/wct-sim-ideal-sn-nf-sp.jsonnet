@@ -11,11 +11,15 @@ local wc = import "wirecell.jsonnet";
 local g = import "pgraph.jsonnet";
 local f = import "pgrapher/common/funcs.jsonnet";
 
+local cli = import "pgrapher/ui/cli/nodes.jsonnet";
+
 local io = import "pgrapher/common/fileio.jsonnet";
-local params = import "pgrapher/experiment/pdsp/simparams.jsonnet";
+local params = import "pgrapher/experiment/pdsp/params.jsonnet";
 local tools_maker = import "pgrapher/common/tools.jsonnet";
 local sim_maker = import "pgrapher/experiment/pdsp/sim.jsonnet";
-
+// Fixme: currently, no noise filter.  Need to at least add a "null" NF to produce thresholds.
+// Or, maybe better, move that into OSP.  W/out it, behavior is undefined.
+// local nf = ...
 local sp_maker = import "pgrapher/experiment/pdsp/sp.jsonnet";
 
 local tools = tools_maker(params);
@@ -23,7 +27,6 @@ local tools = tools_maker(params);
 local sim = sim_maker(params, tools);
 
 local sp = sp_maker(params, tools);
-
 
 
 local stubby = {
@@ -72,7 +75,6 @@ local sn_pipes = sim.splusn_pipelines;
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 local sn_sp = [g.pipeline([sn_pipes[n], sp_pipes[n]], "sn_sp_pipe_%d" % n)
                for n in std.range(0, std.length(tools.anodes)-1)];
-
 local snsp_graph = f.fanpipe('DepoSetFanout', sn_sp, 'FrameFanin', "snsp");
 
 local frameio = io.numpy.frames(output);
@@ -90,13 +92,6 @@ local app = {
 
 // Finally, the configuration sequence which is emitted.
 
-local cmdline = {
-    type: "wire-cell",
-    data: {
-        plugins: ["WireCellGen", "WireCellPgraph", "WireCellSio", "WireCellSigProc"],
-        apps: ["Pgrapher"]
-    }
-};
 
-[cmdline] + g.uses(graph) + [app]
+[cli.cmdline] + g.uses(graph) + [app]
 
