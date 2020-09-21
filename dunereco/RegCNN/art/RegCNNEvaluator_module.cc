@@ -198,63 +198,63 @@ namespace cnn {
   }
 
   void RegCNNEvaluator::PrepareEvent(const art::Event& evt) {
-    // Hits
-    auto hitListHandle = evt.getValidHandle<std::vector<recob::Hit>>(fHitsModuleLabel);
+      // Hits
+      auto hitListHandle = evt.getValidHandle<std::vector<recob::Hit>>(fHitsModuleLabel);
 
-    // Tracks
-    art::Handle< std::vector<recob::Track> > trackListHandle;
-    std::vector<art::Ptr<recob::Track> > tracklist;
-    if (evt.getByLabel(fTrackModuleLabel,trackListHandle))
-      art::fill_ptr_vector(tracklist, trackListHandle);
+      // Tracks
+      art::Handle< std::vector<recob::Track> > trackListHandle;
+      std::vector<art::Ptr<recob::Track> > tracklist;
+      if (evt.getByLabel(fTrackModuleLabel,trackListHandle))
+          art::fill_ptr_vector(tracklist, trackListHandle);
 
-    // Associations
-    art::FindManyP<recob::Hit> fmth(trackListHandle, evt, fTrackModuleLabel);
-    art::FindManyP<recob::SpacePoint> fmhs(hitListHandle, evt, fTrackModuleLabel);
+      // Associations
+      art::FindManyP<recob::Hit> fmth(trackListHandle, evt, fTrackModuleLabel);
+      art::FindManyP<recob::SpacePoint> fmhs(hitListHandle, evt, fTrackModuleLabel);
 
-    int ntracks = tracklist.size();
+      int ntracks = tracklist.size();
 
-    double fMaxTrackLength = -1.0;
-    int iLongestTrack = -1;
-    // loop over tracks to find the longest track
-    for (int i = 0; i < ntracks; ++i){
-      if(tracklist[i]->Length() > fMaxTrackLength){
-            fMaxTrackLength = tracklist[i]->Length();
-            iLongestTrack = i;
-      }
-    }
-
-    fLongestTrackContained = true;
-    if (iLongestTrack >= 0 && iLongestTrack <= ntracks-1) {
-      if (fmth.isValid()) {
-        std::vector< art::Ptr<recob::Hit> > vhit = fmth.at(iLongestTrack);
-        for (size_t h = 0; h < vhit.size(); ++h) {
-          if (vhit[h]->WireID().Plane == 2) {
-            std::vector< art::Ptr<recob::SpacePoint> > spts = fmhs.at(vhit[h].key());
-            if (spts.size()) {
-              if (!insideContVol(spts[0]->XYZ()[0], spts[0]->XYZ()[1], spts[0]->XYZ()[2]))
-                fLongestTrackContained = false;
-            }
+      double fMaxTrackLength = -1.0;
+      int iLongestTrack = -1;
+      // loop over tracks to find the longest track
+      for (int i = 0; i < ntracks; ++i){
+          if(tracklist[i]->Length() > fMaxTrackLength){
+              fMaxTrackLength = tracklist[i]->Length();
+              iLongestTrack = i;
           }
-        }
       }
-    } // End of search longestTrack
+
+      fLongestTrackContained = true;
+      if (iLongestTrack >= 0 && iLongestTrack <= ntracks-1) {
+          if (fmth.isValid()) {
+              std::vector< art::Ptr<recob::Hit> > vhit = fmth.at(iLongestTrack);
+              for (size_t h = 0; h < vhit.size(); ++h) {
+                  if (vhit[h]->WireID().Plane == 2) {
+                      std::vector< art::Ptr<recob::SpacePoint> > spts = fmhs.at(vhit[h].key());
+                      if (spts.size()) {
+                          if (!insideContVol(spts[0]->XYZ()[0], spts[0]->XYZ()[1], spts[0]->XYZ()[2]))
+                              fLongestTrackContained = false;
+                      }
+                  }
+              }
+          }
+      } // End of search longestTrack
   }
 
   bool RegCNNEvaluator::insideContVol(const double posX, const double posY, const double posZ) {
-    double vtx[3] = {posX, posY, posZ};
-    bool inside = false;
+      double vtx[3] = {posX, posY, posZ};
+      bool inside = false;
 
-    geo::TPCID idtpc = fGeom->FindTPCAtPosition(vtx);
+      geo::TPCID idtpc = fGeom->FindTPCAtPosition(vtx);
 
-    if (fGeom->HasTPC(idtpc)) {
+      if (fGeom->HasTPC(idtpc)) {
           const geo::TPCGeo& tpcgeo = fGeom->GetElement(idtpc);
           double minx = tpcgeo.MinX(); double maxx = tpcgeo.MaxX();
           double miny = tpcgeo.MinY(); double maxy = tpcgeo.MaxY();
           double minz = tpcgeo.MinZ(); double maxz = tpcgeo.MaxZ();
 
           for (size_t c = 0; c < fGeom->Ncryostats(); c++) {
-            const geo::CryostatGeo& cryostat = fGeom->Cryostat(c);
-            for (size_t t = 0; t < cryostat.NTPC(); t++) {
+              const geo::CryostatGeo& cryostat = fGeom->Cryostat(c);
+              for (size_t t = 0; t < cryostat.NTPC(); t++) {
                   const geo::TPCGeo& tpcg = cryostat.TPC(t);
                   if (tpcg.MinX() < minx) minx = tpcg.MinX();
                   if (tpcg.MaxX() > maxx) maxx = tpcg.MaxX();
@@ -262,29 +262,29 @@ namespace cnn {
                   if (tpcg.MaxY() > maxy) maxy = tpcg.MaxY();
                   if (tpcg.MinZ() < minz) minz = tpcg.MinZ();
                   if (tpcg.MaxZ() > maxz) maxz = tpcg.MaxZ();
-        }
-      }
+              }
+          }
 
           //x
           double dista = fabs(minx - posX);
           double distb = fabs(posX - maxx);
           if ((posX > minx) && (posX < maxx) &&
-              (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
+                  (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
           //y
           dista = fabs(maxy - posY);
           distb = fabs(posY - miny);
           if (inside && (posY > miny) && (posY < maxy) &&
-              (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
+                  (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
           else inside = false;
           //z
           dista = fabs(maxz - posZ);
           distb = fabs(posZ - minz);
           if (inside && (posZ > minz) && (posZ < maxz) &&
-              (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
+                  (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
           else inside = false;
-    }
+      }
 
-    return inside;
+      return inside;
   }
 
   DEFINE_ART_MODULE(cnn::RegCNNEvaluator)

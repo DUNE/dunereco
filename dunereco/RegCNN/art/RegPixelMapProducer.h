@@ -28,6 +28,7 @@
 #include "dune/RegCNN/func/RegCNNBoundary.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
+
 namespace detinfo {
   class DetectorClocksData;
   class DetectorPropertiesData;
@@ -77,7 +78,13 @@ namespace cnn
     RegPixelMap CreateMapGivenBoundary(detinfo::DetectorClocksData const& clockData,
                                        detinfo::DetectorPropertiesData const& detProp,
                                        std::vector< art::Ptr< recob::Hit > > const& cluster,
-                                    const RegCNNBoundary& bound,
+                                       const RegCNNBoundary& bound,
+                                       art::FindManyP<recob::Wire> const& fmwire);
+
+    RegPixelMap CreateMapGivenBoundaryByHit(detinfo::DetectorClocksData const& clockData,
+                                       detinfo::DetectorPropertiesData const& detProp,
+                                       std::vector< art::Ptr< recob::Hit > > const& cluster,
+                                       const RegCNNBoundary& bound,
                                        art::FindManyP<recob::Wire> const& fmwire);
 
     void ShiftGlobalWire(std::vector< art::Ptr< recob::Hit > > const& cluster);

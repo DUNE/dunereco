@@ -32,7 +32,8 @@ namespace cnn
 
   RegPixelMap RegPixelMapProducer::CreateMap(detinfo::DetectorClocksData const& clockData,
                                              detinfo::DetectorPropertiesData const& detProp,
-                                             std::vector< art::Ptr< recob::Hit > > const& cluster, art::FindManyP<recob::Wire> const& fmwire)
+                                             std::vector< art::Ptr< recob::Hit > > const& cluster, 
+                                             art::FindManyP<recob::Wire> const& fmwire)
   {
 
     hitwireidx.clear();
@@ -43,7 +44,7 @@ namespace cnn
 
     RegCNNBoundary bound = DefineBoundary(detProp, cluster);
 
-    return CreateMapGivenBoundary(clockData, detProp, cluster, bound, fmwire);
+    return CreateMapGivenBoundaryByHit(clockData, detProp, cluster, bound, fmwire);
 
   }
 
@@ -53,17 +54,16 @@ namespace cnn
                                              art::FindManyP<recob::Wire> const& fmwire,
                                              const std::vector<float> &vtx)
   {
-    hitwireidx.clear();
-    tmin_each_wire.clear();
-    tmax_each_wire.clear();
-    trms_max_each_wire.clear();
-    fOffset[0] = 0; fOffset[1] = 0;
+      // Create pixel maps around the vertex
+      hitwireidx.clear();
+      tmin_each_wire.clear();
+      tmax_each_wire.clear();
+      trms_max_each_wire.clear();
+      fOffset[0] = 0; fOffset[1] = 0;
 
-    RegCNNBoundary bound = DefineBoundary(detProp, cluster, vtx);
+      RegCNNBoundary bound = DefineBoundary(detProp, cluster, vtx);
 
-    return CreateMapGivenBoundary(clockData, detProp, cluster, bound, fmwire);
-
-
+      return CreateMapGivenBoundaryByHit(clockData, detProp, cluster, bound, fmwire);
   }
 
   RegPixelMap RegPixelMapProducer::CreateMapGivenBoundary(detinfo::DetectorClocksData const& clockData,
@@ -140,6 +140,53 @@ namespace cnn
 
   }
 
+  RegPixelMap RegPixelMapProducer::CreateMapGivenBoundaryByHit(detinfo::DetectorClocksData const& clockData,
+                                                          detinfo::DetectorPropertiesData const& detProp,
+                                                          std::vector< art::Ptr< recob::Hit > > const& cluster,
+                                                          const RegCNNBoundary& bound,
+                                                          art::FindManyP<recob::Wire> const& fmwire)
+  {
+
+      RegPixelMap pm(fNWire, fWRes, fNTdc, fTRes, bound);
+
+      if (!fmwire.isValid()) return pm;
+
+      // Loop over hits
+      unsigned int nhits = cluster.size();
+      for (unsigned int ihit= 0; ihit< nhits; ++ihit) {
+          art::Ptr<recob::Hit> hit = cluster.at(ihit);
+          geo::WireID wireid = hit->WireID();
+
+          unsigned int planeid = wireid.Plane;
+
+          float peaktime = hit->PeakTime() ;
+          if (wireid.TPC%2 == 0) peaktime = -peaktime;
+
+          double globalWire = 0;
+          unsigned int globalplane = planeid;
+          if (fGlobalWireMethod == 1) {
+              globalWire = GetGlobalWire(wireid);
+              if (wireid.TPC%2 == 1) {
+                  if (wireid.Plane == 0) globalWire += fOffset[0];
+                  if (wireid.Plane == 1) globalWire += fOffset[1];
+              }
+          } else if (fGlobalWireMethod == 2) {
+              globalWire = wireid.Wire;
+              GetDUNEGlobalWireTDC(detProp, wireid, cluster[ihit]->PeakTime(), globalWire, globalplane, peaktime);
+          } else {
+              std::cout<<"Wrong GlobalWireMethod"<<std::endl;
+              abort();
+          }
+
+          double correctedHitCharge = (hit->Integral()*TMath::Exp((sampling_rate(clockData)*hit->PeakTime()) / (detProp.ElectronLifetime()*1.e3) ) );
+
+          pm.Add((int)globalWire, (int)round(peaktime), globalplane, correctedHitCharge, wireid.TPC);
+      }
+
+
+      return pm;
+
+  }
 
 
   std::ostream& operator<<(std::ostream& os, const RegPixelMapProducer& p)
