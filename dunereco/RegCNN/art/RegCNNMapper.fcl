@@ -6,15 +6,16 @@ standard_regcnnmapper:
 {
   module_type:        RegCNNMapper
   #==================
-  HitsModuleLabel:   "linecluster"
+  HitsModuleLabel: "linecluster"
   ClusterPMLabel: "regcnnmap"
-  GlobalWireMethod: 1
+  GlobalWireMethod: 1 # 1 = nue energy, 2 for others
   MinClusterHits: 1
-  TdcWidth:      280 # time width of pixel map
-  WireLength:    400 # wire width of pixel map
+  TdcWidth:       280 # time width of pixel map
+  WireLength:     400 # wire width of pixel map
   TimeResolution: 6 
   WireResolution: 1 
-  UseRecoVertex: 0
+  UseRecoVertex:  0   # 0 = not use vertex, 1 = use regcnn vertex, 2 = use pandora vertex
+  UseThreeDMap:   0   # 0 = 3-view 2D pixel map (default), 1 = 3D pixel map (for direction reco.)
   VertexModuleLabel: "pandora"
   PFParticleModuleLabel: "pandora"
   PandoraNuVertexModuleLabel: "pandora"
@@ -37,5 +38,11 @@ standard_regcnnnumumapper.TimeResolution:   24
 standard_regcnnnumumapper.WireResolution:   7
 standard_regcnnnumumapper.GlobalWireMethod: 2
 standard_regcnnnumumapper.UseRecoVertex:    2
+
+standard_regcnnnumudirmapper: @local::standard_regcnnmapper
+standard_regcnnnumudirmapper.ClusterPMLabel:   "regcnnnumudirmap"
+standard_regcnnnumudirmapper.UseRecoVertex:    2
+standard_regcnnnumudirmapper.UseThreeDMap:     1
+standard_regcnnnumudirmapper.GlobalWireMethod: 2
 
 END_PROLOG

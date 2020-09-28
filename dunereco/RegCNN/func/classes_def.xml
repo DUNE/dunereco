@@ -21,10 +21,21 @@
    <version ClassVersion="10" checksum="206696030"/>
   </class>
 
+  <class name="cnn::RegPixelMap3D" ClassVersion="10" >
+   <version ClassVersion="10" checksum="251975117"/>
+  </class>
+
+  <class name="cnn::RegCNNBoundary3D" ClassVersion="10" >
+   <version ClassVersion="10" checksum="2598904171"/>
+  </class>
 
   <class name="std::vector<cnn::RegPixelMap>"          />
   <class name="art::Ptr<cnn::RegPixelMap>"             />
   <class name="art::Wrapper< std::vector<cnn::RegPixelMap> >"    />
+
+  <class name="std::vector<cnn::RegPixelMap3D>"          />
+  <class name="art::Ptr<cnn::RegPixelMap3D>"             />
+  <class name="art::Wrapper< std::vector<cnn::RegPixelMap3D> >"    />
 
   <class name="std::vector<cnn::RegCNNResult>"          />
   <class name="art::Ptr<cnn::RegCNNResult>"             />

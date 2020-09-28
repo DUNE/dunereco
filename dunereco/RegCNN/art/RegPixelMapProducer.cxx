@@ -29,7 +29,6 @@ namespace cnn
   fOffset{0,0}
   {}
 
-
   RegPixelMap RegPixelMapProducer::CreateMap(detinfo::DetectorClocksData const& clockData,
                                              detinfo::DetectorPropertiesData const& detProp,
                                              std::vector< art::Ptr< recob::Hit > > const& cluster, 
@@ -65,6 +64,7 @@ namespace cnn
 
       return CreateMapGivenBoundaryByHit(clockData, detProp, cluster, bound, fmwire);
   }
+
 
   RegPixelMap RegPixelMapProducer::CreateMapGivenBoundary(detinfo::DetectorClocksData const& clockData,
                                                           detinfo::DetectorPropertiesData const& detProp,
@@ -326,17 +326,17 @@ namespace cnn
       for(size_t iHit = 0; iHit < cluster.size(); ++iHit)
       {
           geo::WireID wireid = cluster[iHit]->WireID();
-	  if (temp_wire != wireid.Wire ){ // lost last hit info
-	  	temp_wire = wireid.Wire;
-	  	hitwireidx.push_back(iHit-1);
-	  	tmin_each_wire.push_back(temp_time_min);
-	  	tmax_each_wire.push_back(temp_time_max);
-	  	trms_max_each_wire.push_back(temp_trms_max);
-	  	temp_time_min = 99999; temp_time_max = -99999, temp_trms_max = -99999;
-	  }
-	  if (temp_time_min > cluster[iHit]->PeakTime()) temp_time_min = cluster[iHit]->PeakTime();
-	  if (temp_time_max < cluster[iHit]->PeakTime()) temp_time_max = cluster[iHit]->PeakTime();
-	  if (temp_trms_max < cluster[iHit]->RMS()) temp_trms_max = (float)cluster[iHit]->RMS();
+          if (temp_wire != wireid.Wire ){ // lost last hit info
+              temp_wire = wireid.Wire;
+              hitwireidx.push_back(iHit-1);
+              tmin_each_wire.push_back(temp_time_min);
+              tmax_each_wire.push_back(temp_time_max);
+              trms_max_each_wire.push_back(temp_trms_max);
+              temp_time_min = 99999; temp_time_max = -99999, temp_trms_max = -99999;
+          }
+          if (temp_time_min > cluster[iHit]->PeakTime()) temp_time_min = cluster[iHit]->PeakTime();
+          if (temp_time_max < cluster[iHit]->PeakTime()) temp_time_max = cluster[iHit]->PeakTime();
+          if (temp_trms_max < cluster[iHit]->RMS()) temp_trms_max = (float)cluster[iHit]->RMS();
       }
 
       double center_wire[3] = {-99999, -99999, -99999};
@@ -357,7 +357,7 @@ namespace cnn
                   }
                   catch (geo::InvalidWireError const& e){
                       if (!e.hasSuggestedWire()) throw;
-            	    w1 = planegeo_temp.ClosestWireID(e.suggestedWireID());
+                      w1 = planegeo_temp.ClosestWireID(e.suggestedWireID());
                   }
                   double time1 = detProp.ConvertXToTicks(regvtx_loc[0], iplane, rawtpc, rawcrys);
                   if (fGlobalWireMethod == 1){
@@ -369,8 +369,8 @@ namespace cnn
                       float globalTDC = (float)time1;
                       GetDUNEGlobalWireTDC(detProp, w1, time1, globalWire, globalPlane, globalTDC);
                       center_wire[globalPlane] = globalWire;
-            	      //center_tick[globalPlane] = (double)globalTDC;
-            	      center_tick[globalPlane] = (int)globalTDC;
+                      //center_tick[globalPlane] = (double)globalTDC;
+                      center_tick[globalPlane] = (int)globalTDC;
                   } else {
                       std::cout << "Wrong Global Wire Method" << std::endl;
                       abort();
@@ -393,8 +393,9 @@ namespace cnn
       center_wire[2] += fNWire*fWRes/2 - shift;
 
       RegCNNBoundary bound(fNWire,fNTdc,fWRes,fTRes,round(center_wire[0]),round(center_wire[1]),round(center_wire[2]),round(center_tick[0]),round(center_tick[1]),round(center_tick[2]));
-     return bound;
+      return bound;
   }
+
 
   double RegPixelMapProducer::GetGlobalWire(const geo::WireID& wireID){
     // Get Global Wire Coordinate for RegCNN

@@ -69,4 +69,12 @@ standard_regcnnnumuevaluator.Target:        "numuenergy"
 standard_regcnnnumuevaluator.RegCNNNumuHandler.TFNetHandlerContained.TFProtoBuf: "duneRegCNN/jordan_numucc_eng_trackCont_1_trueDetin_1_20200529.pb"
 standard_regcnnnumuevaluator.RegCNNNumuHandler.TFNetHandlerExiting.TFProtoBuf:   "duneRegCNN/jordan_numucc_eng_trackCont_0_trueDetin_1_20200617.pb"
 
+# Evaluator for muon direction
+standard_regcnnnumudirevaluator: @local::standard_regcnnevaluator
+standard_regcnnnumudirevaluator.PixelMapInput: "regcnnnumudirmap"
+standard_regcnnnumudirevaluator.ResultLabel:   "regcnnnumudirresult"
+standard_regcnnnumudirevaluator.Target:        "muondir"
+standard_regcnnnumudirevaluator.TFNetHandler.TFProtoBuf: "duneRegCNN/junze_direction_CroppedFullEvent.pb"
+standard_regcnnnumudirevaluator.TFNetHandler.NInputs:    1
+
 END_PROLOG

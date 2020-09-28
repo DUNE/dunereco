@@ -1,3 +1,6 @@
+#find_ups_product(libtorch)
+#find_package(Torch REQUIRED)
+#include_directories(PRIVATE ${TORCH_INCLUDE_DIR})
 
 art_make(BASENAME_ONLY
   LIBRARY_NAME      RegCNNArt
@@ -31,6 +34,10 @@ art_make(BASENAME_ONLY
   ${LARRECO_RECOALG_IMAGEPATTERNALGS_TF}
   MODULE_LIBRARIES  RegCNNFunc
   RegCNNArt
+
+  #  ${TORCH_INSTALL_PREFIX}/lib/libtorch.so
+  #  ${TORCH_INSTALL_PREFIX}/lib/libtorch_cpu.so
+  #  ${TORCH_INSTALL_PREFIX}/lib/libc10.so
   )
 
 

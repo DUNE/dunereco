@@ -28,6 +28,7 @@
 #include "dune/RegCNN/func/RegCNNBoundary.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
 
 namespace detinfo {
   class DetectorClocksData;

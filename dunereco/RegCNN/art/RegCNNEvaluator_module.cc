@@ -4,6 +4,7 @@
 // \author  Ilsoo Seong - iseong@uci.edu
 //
 // Modifications to interface for numu energy estimation
+// Modifications to interface for direction reconstruction (electron and muon)
 //  - Wenjie Wu - wenjieww@uci.edu
 ////////////////////////////////////////////////////////////////////////
 
@@ -151,47 +152,66 @@ namespace cnn {
     /// Load in the pixel maps
     art::Handle< std::vector< cnn::RegPixelMap > > pixelmapListHandle;
     std::vector< art::Ptr< cnn::RegPixelMap > > pixelmaplist;
-    //if (evt.getByLabel(fPixelMapInput, "regcnnmap", pixelmapListHandle))
     if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmapListHandle)){
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
     }
 
+    /// load in the 3D pixel map for muon direction reco.
+    art::Handle< std::vector< cnn::RegPixelMap3D > > pixelmap3DListHandle;
+    std::vector< art::Ptr< cnn::RegPixelMap3D > > pixelmap3Dlist;
+    if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmap3DListHandle)) {
+        art::fill_ptr_vector(pixelmap3Dlist, pixelmap3DListHandle);
+    }
+
     /// Make sure we have a valid name for the CNN type
     if(fCNNType == "TF" || fCNNType == "Tensorflow" || fCNNType == "TensorFlow"){
-      // If we have a pixel map then use the TF interface to give us a prediction
-      if(pixelmaplist.size() > 0){
-        std::vector<float> networkOutput;
-        if (fTarget == "nueenergy"){
-          networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
-          //std::cout << "-->" << networkOutput[0] << std::endl;
-        }
-        else if (fTarget == "nuevertex"){
-          std::vector<float> center_of_mass(6,0);
-          getCM(*pixelmaplist[0], center_of_mass);
-          std::cout << "cm: " << center_of_mass[0] << " " << center_of_mass[1] << " " << center_of_mass[2] << std::endl;
-          networkOutput = fTFHandler.Predict(*pixelmaplist[0], center_of_mass);
-          std::cout << "cnn nuevertex : "<<networkOutput[0] << " " << networkOutput[1] << " " << networkOutput[2] << std::endl;
+        // If we have a pixel map then use the TF interface to give us a prediction
+        if(pixelmaplist.size() > 0){
+            std::vector<float> networkOutput;
+            if (fTarget == "nueenergy"){
+                networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
+                //std::cout << "-->" << networkOutput[0] << std::endl;
             }
-        else if (fTarget == "numuenergy") {
-          networkOutput = fRegCNNNumuHandler.Predict(*pixelmaplist[0], fLongestTrackContained);
-        }
-        else if (fTarget == "nuevertex_on_img"){
-            auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
-            auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
-            networkOutput = fRegCNNVtxHandler.GetVertex(clockData, detProp, evt, *pixelmaplist[0]);
-        } else {
-            std::cout << "Wrong Target" << std::endl;
-            abort();
-        }
+            else if (fTarget == "nuevertex"){
+                std::vector<float> center_of_mass(6,0);
+                getCM(*pixelmaplist[0], center_of_mass);
+                std::cout << "cm: " << center_of_mass[0] << " " << center_of_mass[1] << " " << center_of_mass[2] << std::endl;
+                networkOutput = fTFHandler.Predict(*pixelmaplist[0], center_of_mass);
+                std::cout << "cnn nuevertex : "<<networkOutput[0] << " " << networkOutput[1] << " " << networkOutput[2] << std::endl;
+            }
+            else if (fTarget == "nuevertex_on_img"){
+                auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
+                auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
+                networkOutput = fRegCNNVtxHandler.GetVertex(clockData, detProp, evt, *pixelmaplist[0]);
+            } 
+            else if (fTarget == "numuenergy") {
+                networkOutput = fRegCNNNumuHandler.Predict(*pixelmaplist[0], fLongestTrackContained);
+            }
+            else {
+                std::cout << "Wrong Target with 2D 3-view pixel maps" << std::endl;
+                abort();
+            }
 
-        // cnn::Result can now take a vector of floats and works out the number of outputs
-        resultCol->emplace_back(networkOutput);
-      }
+            // cnn::Result can now take a vector of floats and works out the number of outputs
+            resultCol->emplace_back(networkOutput);
+        }
+        if (pixelmap3Dlist.size() > 0) {
+            std::vector<float> networkOutput;
+            if (fTarget == "muondir") {
+                networkOutput = fTFHandler.Predict(*pixelmap3Dlist[0]);
+            }
+            else {
+                std::cout<<"Wrong Target with 3D pixel maps"<<std::endl;
+                abort();
+            }
+            // cnn::Result can now take a vector of floats and works out the number of outputs
+            resultCol->emplace_back(networkOutput);
+        }
     } // end fCNNType
     else{
-      mf::LogError("RegCNNEvaluator::produce") << "CNN Type not in the allowed list: Tensorflow" << std::endl;
-      mf::LogError("RegCNNEvaluator::produce") << "Exiting without processing events" << std::endl;
-      return;
+        mf::LogError("RegCNNEvaluator::produce") << "CNN Type not in the allowed list: Tensorflow" << std::endl;
+        mf::LogError("RegCNNEvaluator::produce") << "Exiting without processing events" << std::endl;
+        return;
     }
 
     evt.put(std::move(resultCol), fResultLabel);
