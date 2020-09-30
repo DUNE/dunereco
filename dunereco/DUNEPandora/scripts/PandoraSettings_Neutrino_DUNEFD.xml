@@ -100,7 +100,7 @@
         <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
         <OutputVertexListName>NeutrinoVertices3D</OutputVertexListName>
         <ReplaceCurrentVertexList>true</ReplaceCurrentVertexList>
-        <MvaFileName>PandoraMVAData/PandoraBdt_v03_15_02.xml</MvaFileName>
+        <MvaFileName>PandoraMVAData/PandoraBdt_v03_20_00.xml</MvaFileName>
         <RegionMvaName>DUNEFD_VertexSelectionRegion</RegionMvaName>
         <VertexMvaName>DUNEFD_VertexSelectionVertex</VertexMvaName>
         <FeatureTools>
@@ -338,6 +338,43 @@
         <NeutrinoPfoListName>NeutrinoParticles3D</NeutrinoPfoListName>
         <OutputVertexListName>DaughterVertices3D</OutputVertexListName>
     </algorithm>
+
+    <algorithm type = "LArBdtPfoCharacterisation">
+        <TrackPfoListName>TrackParticles3D</TrackPfoListName>
+        <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
+        <MCParticleListName>Input</MCParticleListName>
+        <CaloHitListName>CaloHitList2D</CaloHitListName>
+        <UseThreeDInformation>true</UseThreeDInformation>
+        <MvaFileName>PandoraMVAData/PandoraBdt_v03_20_00.xml</MvaFileName>
+        <MvaName>PfoCharacterisation</MvaName>
+        <MvaFileNameNoChargeInfo>PandoraMVAData/PandoraBdt_v03_20_00.xml</MvaFileNameNoChargeInfo>
+        <MvaNameNoChargeInfo>PfoCharacterisationNoChargeInfo</MvaNameNoChargeInfo>
+        <TrainingSetMode>false</TrainingSetMode>
+        <TrainingOutputFileName>training_output</TrainingOutputFileName>
+        <FeatureTools>
+            <tool type = "LArThreeDLinearFitFeatureTool"/>
+            <tool type = "LArThreeDVertexDistanceFeatureTool"/>
+            <tool type = "LArThreeDPCAFeatureTool"/>
+            <tool type = "LArPfoHierarchyFeatureTool"/>
+            <tool type = "LArThreeDOpeningAngleFeatureTool">
+                <HitFraction>0.2</HitFraction>
+            </tool>
+            <tool type = "LArThreeDChargeFeatureTool"/>
+        </FeatureTools>
+        <FeatureToolsNoChargeInfo>
+            <tool type = "LArThreeDLinearFitFeatureTool"/>
+            <tool type = "LArThreeDVertexDistanceFeatureTool"/>
+            <tool type = "LArThreeDPCAFeatureTool"/>
+            <tool type = "LArPfoHierarchyFeatureTool"/>
+            <tool type = "LArThreeDOpeningAngleFeatureTool">
+                <HitFraction>0.2</HitFraction>
+            </tool>
+        </FeatureToolsNoChargeInfo>
+        <WriteToTree>false</WriteToTree>
+        <OutputTree>tree</OutputTree>
+        <OutputFile>tree.root</OutputFile>
+    </algorithm>
+
     <algorithm type = "LArNeutrinoProperties">
         <NeutrinoPfoListName>NeutrinoParticles3D</NeutrinoPfoListName>
     </algorithm>
