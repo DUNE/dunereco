@@ -25,6 +25,7 @@
 #include "art/Framework/Core/EDAnalyzer.h"
 //LArSoft
 #include "larcore/Geometry/Geometry.h"
+#include "larsim/MCCheater/BackTrackerService.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RecoBase/Track.h"
@@ -75,12 +76,14 @@ class myana::RegCNNAna : public art::EDAnalyzer
          * @return the reconstructed deposited energy
          */
         double CalculateEnergyFromCharge(const double charge);
+        std::vector<std::pair<const simb::MCParticle*, double> >  get_sortedMCParticle(
+                std::unordered_map<const simb::MCParticle*, double> mcEMap);
 
         TTree* fTree; 
         int ievt;
-        double trueEnergy;
         float  regcnn_energy;
         float  regcnn_vertex[3];
+        float  regcnn_dir[3];
 
         int    InDet;
         int    FidCut;
@@ -103,6 +106,15 @@ class myana::RegCNNAna : public art::EDAnalyzer
         int    RecoMethodNu; 
         int    RecoTrackMomMethod;
 
+	    int n_track_pad;
+        int track_id[kMax];
+	    double all_track_px[kMax];
+	    double all_track_py[kMax];
+	    double all_track_pz[kMax];
+	    double all_track_true_px[kMax];
+	    double all_track_true_py[kMax];
+	    double all_track_true_pz[kMax];
+
         //uncorrected hadronic energy
         double fUncorrectedHadEn;
         double RecoMuTrackLength;
@@ -111,17 +123,22 @@ class myana::RegCNNAna : public art::EDAnalyzer
         calo::CalorimetryAlg fCalorimetryAlg;         ///< the calorimetry algorithm
         std::string fMCGenModuleLabel;   
         std::string fRegCNNModuleLabel;   
+        std::string fRegCNNResultLabel;   
+        std::string fRegCNNDirModuleLabel;   
+        std::string fRegCNNDirResultLabel;
         std::string fHitsModuleLabel;
         std::string fEnergyRecoNuLabel;
-        std::string fRegCNNResultLabel;   
         std::string fTrackToHitLabel;
         std::string fShowerToHitLabel;
         std::string fParticleLabel;
         std::string fTrackLabel;
+        std::string fTrackLabelDir;
         std::string fShowerLabel;
         double fRecombFactor;                          ///< the average reccombination factor
 
         art::ServiceHandle<art::TFileService> tfs;
+        art::ServiceHandle<cheat::BackTrackerService> backtracker;
+        art::ServiceHandle<cheat::ParticleInventoryService> particleinventory;
 
 };
 
@@ -136,50 +153,63 @@ myana::RegCNNAna::RegCNNAna(fhicl::ParameterSet const& pset) :
     fTree->Branch("InDet",               &InDet,          "InDet/I");
     fTree->Branch("FidCut",              &FidCut,         "FidCut/I");
     fTree->Branch("MuTrackCont",         &mutrk_contain,  "MuTrackCont/I");
-    fTree->Branch("TrueEnergy",          &trueEnergy,     "TrueEnergy/D");
     fTree->Branch("CNNEnergy",           &regcnn_energy,  "CNNEnergy/F");
     fTree->Branch("CNNVertex",           regcnn_vertex,   "CNNVertex[3]/F");
+    fTree->Branch("CNNDir",              regcnn_dir,      "CNNDir[3]/F");
 
+    // MC truth
     fTree->Branch("NuTruthN",            &nu_truth_N,     "NuTruthN/I");  
     fTree->Branch("NuEngTruth",          nueng_truth,     "NuEngTruth[NuTruthN]/D");   
     fTree->Branch("NuPDGTruth",          nupdg_truth,     "NuPDGTruth[NuTruthN]/I");   
     fTree->Branch("NuModeTruth",         numode_truth,    "NuModeTruth[NuTruthN]/I"); 
     fTree->Branch("NuCCNCTruth",         nuccnc_truth,    "NuCCNCTruth[NuTruthN]/I");   
-
-    fTree->Branch("LepPDGTruth",         lepPDG_truth,    "LepPDGTruth[NuTruthN]/I");
-    fTree->Branch("LepEngTruth",         lepEng_truth,    "LepEngTruth[NuTruthN]/D");
-
     fTree->Branch("NuVtxXTruth",         nuvtxx_truth,    "NuVtxXTruth[NuTruthN]/D"); 
     fTree->Branch("NuVtxYTruth",         nuvtxy_truth,    "NuVtxYTruth[NuTruthN]/D"); 
     fTree->Branch("NuVtxZTruth",         nuvtxz_truth,    "NuVtxZTruth[NuTruthN]/D"); 
 
-    fTree->Branch("NHits",               &nhits,          "NHits/I");
+    // lepton truth
+    fTree->Branch("LepPDGTruth",         lepPDG_truth,    "LepPDGTruth[NuTruthN]/I");
+    fTree->Branch("LepEngTruth",         lepEng_truth,    "LepEngTruth[NuTruthN]/D");
 
+    // Reco. from DUNE, energy
+    fTree->Branch("NHits",               &nhits,          "NHits/I");
     fTree->Branch("ErecoNu",             &ErecoNu,        "ErecoNu/D");
     fTree->Branch("RecoLepEnNu",         &RecoLepEnNu,    "RecoLepEnNu/D");
     fTree->Branch("RecoHadEnNu",         &RecoHadEnNu,    "RecoHadEnNu/D");
     fTree->Branch("RecoMethodNu",        &RecoMethodNu,   "RecoMethodNu/I");
     fTree->Branch("RecoTrackMomMethod",  &RecoTrackMomMethod, "RecoTrackMomMethod/I");
     fTree->Branch("RecoMuTrackLength",   &RecoMuTrackLength,  "RecoMuTrackLength/D");
-
     fTree->Branch("UncorrectedHadEn",    &fUncorrectedHadEn,    "UncorrectedHadEn/D");
     fTree->Branch("UncorrectedMuMomMCS", &fUncorrectedMuMomMCS, "UncorrectedMuMomMCS/D");
+    
+    // direction
+    fTree->Branch("n_track_pad", &n_track_pad, "n_track_pad/I");
+    fTree->Branch("track_id", track_id, "track_id[n_track_pad]/I");
+    fTree->Branch("all_track_px", all_track_px, "all_track_px[n_track_pad]/D");
+    fTree->Branch("all_track_py", all_track_py, "all_track_py[n_track_pad]/D");
+    fTree->Branch("all_track_pz", all_track_pz, "all_track_pz[n_track_pad]/D");
+    fTree->Branch("all_track_true_px", all_track_true_px, "all_track_true_px[n_track_pad]/D");
+    fTree->Branch("all_track_true_py", all_track_true_py, "all_track_true_py[n_track_pad]/D");
+    fTree->Branch("all_track_true_pz", all_track_true_pz, "all_track_true_pz[n_track_pad]/D");
 }
 
 void myana::RegCNNAna::reconfigure(fhicl::ParameterSet const& pset)
 {
     //fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg"));
-    fMCGenModuleLabel  = pset.get<std::string>("MCGenModuleLabel");
-    fRegCNNModuleLabel = pset.get<std::string>("RegCNNModuleLabel");
-    fHitsModuleLabel   = pset.get<std::string>("HitsModuleLabel");
-    fEnergyRecoNuLabel = pset.get<std::string>("EnergyRecoNuLabel");
-    fRegCNNResultLabel = pset.get<std::string>("RegCNNResultLabel");
-    fTrackToHitLabel   = pset.get<std::string>("TrackToHitLabel");
-    fShowerToHitLabel  = pset.get<std::string>("ShowerToHitLabel");
-    fParticleLabel     = pset.get<std::string>("ParticleLabel");
-    fTrackLabel        = pset.get<std::string>("TrackLabel");
-    fShowerLabel       = pset.get<std::string>("ShowerLabel");
-    fRecombFactor      = pset.get<double>("RecombFactor");
+    fMCGenModuleLabel     = pset.get<std::string>("MCGenModuleLabel");
+    fRegCNNModuleLabel    = pset.get<std::string>("RegCNNModuleLabel");
+    fRegCNNResultLabel    = pset.get<std::string>("RegCNNResultLabel");
+    fRegCNNDirModuleLabel = pset.get<std::string>("RegCNNDirModuleLabel");
+    fRegCNNDirResultLabel = pset.get<std::string>("RegCNNDirResultLabel");
+    fHitsModuleLabel      = pset.get<std::string>("HitsModuleLabel");
+    fEnergyRecoNuLabel    = pset.get<std::string>("EnergyRecoNuLabel");
+    fTrackToHitLabel      = pset.get<std::string>("TrackToHitLabel");
+    fShowerToHitLabel     = pset.get<std::string>("ShowerToHitLabel");
+    fParticleLabel        = pset.get<std::string>("ParticleLabel");
+    fTrackLabel           = pset.get<std::string>("TrackLabel");
+    fTrackLabelDir        = pset.get<std::string>("TrackLabelDir");
+    fShowerLabel          = pset.get<std::string>("ShowerLabel");
+    fRecombFactor         = pset.get<double>("RecombFactor");
 }
 
 void myana::RegCNNAna::analyze(art::Event const& evt)
@@ -227,6 +257,42 @@ void myana::RegCNNAna::analyze(art::Event const& evt)
     if (evt.getByLabel(fHitsModuleLabel,hitHandle))
         art::fill_ptr_vector(hits, hitHandle);
 
+    // Get the pandoratrack out of the event record
+    art::Handle<std::vector<recob::Track> > trackHandleDir;
+    std::vector<art::Ptr<recob::Track> > trackDir;
+    if (evt.getByLabel(fTrackLabelDir, trackHandleDir))
+        art::fill_ptr_vector(trackDir, trackHandleDir);
+    art::FindManyP<recob::Hit> fmtrkDir(trackHandleDir, evt, fTrackLabelDir);
+
+    if (trackHandleDir.isValid()) {
+        n_track_pad = trackDir.size();
+        for (int itrack= 0; itrack< n_track_pad; ++itrack) {
+            art::Ptr<recob::Track> ptrack = trackDir.at(itrack);
+            track_id[itrack] = ptrack->ID();
+            all_track_px[itrack] = ptrack->VertexDirection().X();
+            all_track_py[itrack] = ptrack->VertexDirection().Y();
+            all_track_pz[itrack] = ptrack->VertexDirection().Z();
+
+            if (fmtrkDir.isValid()) {
+                std::vector<art::Ptr<recob::Hit> > vhit = fmtrkDir.at(itrack);
+                std::unordered_map<const simb::MCParticle*, double> mcEMap;
+                for (size_t ihit= 0; ihit< vhit.size(); ++ihit) {
+                    std::vector<sim::TrackIDE> trackIDs = backtracker->HitToTrackIDEs(clockData, vhit[ihit]);
+                    for (size_t e= 0; e< trackIDs.size(); ++e) {
+                        mcEMap[particleinventory->TrackIdToParticle_P(trackIDs[e].trackID)] += trackIDs[e].energy;
+                    }
+                }
+                std::vector<std::pair<const simb::MCParticle*, double> > trkTrue = get_sortedMCParticle(mcEMap);
+                if (trkTrue.size()> 0) {
+                    TVector3 v3_true(trkTrue[0].first->Momentum().Vect());
+                    all_track_true_px[itrack] = v3_true.X();
+                    all_track_true_py[itrack] = v3_true.Y();
+                    all_track_true_pz[itrack] = v3_true.Z();
+                }
+            }
+        }
+    }
+
     // Get DUNE energy Reco
     art::Handle<dune::EnergyRecoOutput> engrecoHandle;
     evt.getByLabel(fEnergyRecoNuLabel,engrecoHandle);
@@ -234,6 +300,10 @@ void myana::RegCNNAna::analyze(art::Event const& evt)
     // Get RegCNN Results
     art::Handle<std::vector<cnn::RegCNNResult>> cnnresultListHandle;
     evt.getByLabel(fRegCNNModuleLabel, fRegCNNResultLabel, cnnresultListHandle);
+
+    art::Handle<std::vector<cnn::RegCNNResult> > RegCnnDirResultListHandle;
+    evt.getByLabel(fRegCNNDirModuleLabel, fRegCNNDirResultLabel, RegCnnDirResultListHandle);
+
     //std::vector<art::Ptr<cnn::Result> > cnnlist;
     //if (evt.getByLabel(fRegCNNModuleLabel, cnnresultListHandle))
     //  art::fill_ptr_vector(cnnlist, cnnresultListHandle);
@@ -316,12 +386,21 @@ void myana::RegCNNAna::analyze(art::Event const& evt)
         {
             const std::vector<float>& v = (*cnnresultListHandle)[0].fOutput;
             regcnn_energy = v[0];
-            std::cout << "RegCNN: "<<regcnn_energy << std::endl;
             for (unsigned int ii = 0; ii < 3; ii++){
                 regcnn_vertex[ii] = v[ii];
             }
         }
     }
+
+    if (!RegCnnDirResultListHandle.failedToGet()) {
+        if (!RegCnnDirResultListHandle->empty()) {
+            const std::vector<float>& v = (*RegCnnDirResultListHandle)[0].fOutput;
+            for (unsigned int i= 0; i< v.size(); ++i) {
+                regcnn_dir[i] = v[i];
+            }
+        }
+    }
+
     // fill entry
     fTree->Fill();
 }
@@ -331,7 +410,6 @@ void myana::RegCNNAna::reset()
     // set default to nonsense value
     ievt               = -9999;
     mutrk_contain      = -999;
-    trueEnergy         = -99999;
     regcnn_energy      = -99999;
     ErecoNu            = -99999;
     RecoLepEnNu        = -99999;
@@ -345,8 +423,11 @@ void myana::RegCNNAna::reset()
 
     for (int ii = 0; ii < 3; ii++){ 
         regcnn_vertex[ii] = -99999;
+        regcnn_dir[ii] = -99999;
     }
+
     nu_truth_N = 0;
+    n_track_pad = 0;
     for (int ii = 0; ii < kMax; ++ii)
     {
         nupdg_truth[ii]  = -99999;
@@ -359,6 +440,14 @@ void myana::RegCNNAna::reset()
         nuvtxx_truth[ii] = -99999;
         nuvtxy_truth[ii] = -99999;
         nuvtxz_truth[ii] = -99999;
+
+        track_id[ii] = -99999;
+	    all_track_px[ii] = -99999;
+	    all_track_py[ii] = -99999;
+	    all_track_pz[ii] = -99999;
+	    all_track_true_px[ii] = -99999;
+	    all_track_true_py[ii] = -99999;
+	    all_track_true_pz[ii] = -99999;
     }
 }
 
@@ -462,6 +551,23 @@ art::Ptr<recob::Shower> myana::RegCNNAna::GetHighestChargeShower(detinfo::Detect
 double myana::RegCNNAna::CalculateEnergyFromCharge(const double charge)
 {
     return fCalorimetryAlg.ElectronsFromADCArea(charge,2)*1./fRecombFactor/util::kGeVToElectrons;
+}
+
+std::vector<std::pair<const simb::MCParticle*, double> >  
+myana::RegCNNAna::get_sortedMCParticle(std::unordered_map<const simb::MCParticle*, double> mcEMap) {
+    std::vector<std::pair<const simb::MCParticle*, double> > outVec;
+    double total_E = 0;
+    for (std::pair<const simb::MCParticle*, double> const& p: mcEMap) {
+        outVec.push_back(p);
+        total_E += p.second;
+    }
+    std::sort(outVec.begin(), outVec.end(), [](std::pair<const simb::MCParticle*, double> a, std::pair<const simb::MCParticle*, double> b){return a.second > b.second;});
+    if (abs(total_E) < 1e-6) {total_E = 1;} // protect agains zero division
+    for (std::pair<const simb::MCParticle*, double> & p: outVec) {
+        p.second /= total_E;
+    }
+
+    return outVec;
 }
 
 DEFINE_ART_MODULE(myana::RegCNNAna)
