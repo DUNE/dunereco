@@ -25,9 +25,13 @@ dune35t_pandora.ConfigFile:                                         "PandoraSett
 dune35t_pandora.ShouldRunAllHitsCosmicReco:                         true
 dune35t_pandora.ShouldRunStitching:                                 true
 
-dunefd_pandora:                                                     @local::dune_pandora
-dunefd_pandora.ConfigFile:                                          "PandoraSettings_Master_DUNEFD.xml"
-dunefd_pandora.ShouldRunNeutrinoRecoOption:                         true
+dunefd_pandora_neutrino:                                            @local::dune_pandora
+dunefd_pandora_neutrino.ConfigFile:                                 "PandoraSettings_Master_DUNEFD.xml"
+dunefd_pandora_neutrino.ShouldRunNeutrinoRecoOption:                true
+
+dunefd_pandora_cosmic:                                              @local::dune_pandora
+dunefd_pandora_cosmic.ConfigFile:                                   "PandoraSettings_Master_DUNEFD.xml"
+dunefd_pandora_cosmic.ShouldRunCosmicRecoOption:                    true
 
 protodune_pandora:                                                  @local::dune_pandora
 protodune_pandora.ConfigFile:                                       "PandoraSettings_Master_ProtoDUNE.xml"
@@ -49,7 +53,6 @@ protodune_dp_pandora.ShouldRunNeutrinoRecoOption:                   true
 protodune_dp_pandora.ShouldRunCosmicRecoOption:                     true
 protodune_dp_pandora.ShouldPerformSliceId:                          true
 
-
 dune_pandorawriter:                                                 @local::dune_pandora
 dune_pandorawriter.ConfigFile:                                      "PandoraSettings_Write.xml"
 dune_pandorawriter.EnableMCParticles:                               true
@@ -64,5 +67,7 @@ dune_pandoraShowerCreation:
 {
     module_type:                                                    "LArPandoraShowerCreation"
 }
+
+dunefd_pandora:                                                      @local::dunefd_pandora_neutrino
 
 END_PROLOG
