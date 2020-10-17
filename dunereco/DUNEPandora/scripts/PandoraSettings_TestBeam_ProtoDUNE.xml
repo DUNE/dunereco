@@ -343,6 +343,42 @@
         <KeepStartVertex>true</KeepStartVertex>
     </algorithm>
 
+    <algorithm type = "LArBdtPfoCharacterisation">
+        <TrackPfoListName>TrackParticles3D</TrackPfoListName>
+        <ShowerPfoListName>ShowerParticles3D</ShowerPfoListName>
+        <MCParticleListName>Input</MCParticleListName>
+        <CaloHitListName>CaloHitList2D</CaloHitListName>
+        <UseThreeDInformation>true</UseThreeDInformation>
+        <MvaFileName>PandoraMVAData/PandoraBdt_ProtoDUNE_v03_20_00.xml</MvaFileName>
+        <MvaName>PfoCharacterisation</MvaName>
+        <MvaFileNameNoChargeInfo>PandoraMVAData/PandoraBdt_ProtoDUNE_v03_20_00.xml</MvaFileNameNoChargeInfo>
+        <MvaNameNoChargeInfo>PfoCharacterisationNoChargeInfo</MvaNameNoChargeInfo>
+        <TrainingSetMode>false</TrainingSetMode>
+        <TrainingOutputFileName>training_output</TrainingOutputFileName>
+        <FeatureTools>
+            <tool type = "LArThreeDLinearFitFeatureTool"/>
+            <tool type = "LArThreeDVertexDistanceFeatureTool"/>
+            <tool type = "LArThreeDPCAFeatureTool"/>
+            <tool type = "LArPfoHierarchyFeatureTool"/>
+            <tool type = "LArThreeDOpeningAngleFeatureTool">
+                <HitFraction>0.2</HitFraction>
+            </tool>
+            <tool type = "LArThreeDChargeFeatureTool"/>
+        </FeatureTools>
+        <FeatureToolsNoChargeInfo>
+            <tool type = "LArThreeDLinearFitFeatureTool"/>
+            <tool type = "LArThreeDVertexDistanceFeatureTool"/>
+            <tool type = "LArThreeDPCAFeatureTool"/>
+            <tool type = "LArPfoHierarchyFeatureTool"/>
+            <tool type = "LArThreeDOpeningAngleFeatureTool">
+                <HitFraction>0.2</HitFraction>
+            </tool>
+        </FeatureToolsNoChargeInfo>
+        <WriteToTree>false</WriteToTree>
+        <OutputTree>tree</OutputTree>
+        <OutputFile>tree_ProtoDUNE.root</OutputFile>
+    </algorithm>
+
     <!-- Track and shower building -->
     <algorithm type = "LArTrackParticleBuilding">
         <PfoListName>TrackParticles3D</PfoListName>
