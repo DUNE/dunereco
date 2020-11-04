@@ -10,8 +10,6 @@ local g = import 'pgraph.jsonnet';
 local f = import 'pgrapher/common/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-local cli = import 'pgrapher/ui/cli/nodes.jsonnet';
-
 local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local params = import 'pgrapher/experiment/dune10kt-1x2x6/simparams.jsonnet';
@@ -22,32 +20,15 @@ local sim_maker = import 'pgrapher/experiment/dune10kt-1x2x6/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local stubby = {
-  tail: wc.point(1000.0, 3.0, 100.0, wc.mm),
-  head: wc.point(1100.0, 3.0, 200.0, wc.mm),
+  tail: wc.point(100.0, 300.0,   0.0, wc.cm),
+  head: wc.point(100.0, 300.0, 230.0, wc.cm),
 };
-
-// Something close to APA 0 (smallest Y,Z)
-local close0 = {
-  tail: wc.point(-3.000, 3.0, 1.000, wc.m),
-  head: wc.point(-3.000, 3.0, 2.000, wc.m),
-};
-
 
 local tracklist = [
-  // {
-  //     time: 1*wc.ms,
-  //     charge: -5000,
-  //     ray: stubby,
-  // },
-  //{
-  //  time: 0 * wc.ms,
-  //  charge: -5300,
-  //  ray: close0,
-  //},
   {
     time: 0,
-    charge: -5300,
-    ray: params.det.bounds,
+    charge: -5000,
+    ray: stubby, // params.det.bounds,
   },
 ];
 local output = 'wct-sim-ideal-sig.npz';
@@ -66,7 +47,7 @@ local bagger = sim.make_bagger();
 local sn_pipes = sim.splusn_pipelines;
 
 local multimagnify = import 'pgrapher/experiment/dune10kt-1x2x6/multimagnify.jsonnet';
-local magoutput = 'protodune-sim-check.root';
+local magoutput = 'dune10kt-1x2x6-sim-check.root';
 // please remove the root file before you generate a new one
 
 
@@ -123,9 +104,9 @@ local parallel_pipes = [
                // nf_pipes[n],
                // magnify_pipes2[n],
                sp_pipes[n],
-               magnify_pipes3[n],
-               magnify_pipes4[n],
-               magnify_pipes5[n],
+               // magnify_pipes3[n],
+               // magnify_pipes4[n],
+               // magnify_pipes5[n],
              ],
              'parallel_pipe_%d' % n)
   for n in std.range(0, std.length(tools.anodes) - 1)
@@ -137,8 +118,7 @@ local parallel_graph = f.fanpipe('DepoSetFanout', parallel_pipes, 'FrameFanin', 
 //local frameio = io.numpy.frames(output);
 local sink = sim.frame_sink;
 
-local graph = g.pipeline([depos, rootfile_creation_depos, drifter, bagger, parallel_graph, sink]);
-//local graph = g.pipeline([depos, drifter, bagger, sim.splusn, multi_magnify.magnify_pipeline, sink]);
+local graph = g.pipeline([depos, drifter, bagger, parallel_graph, sink]);
 
 local app = {
   type: 'Pgrapher',
@@ -147,6 +127,14 @@ local app = {
   },
 };
 
+local cmdline = {
+    type: "wire-cell",
+    data: {
+        plugins: ["WireCellGen", "WireCellPgraph", "WireCellSio", "WireCellSigProc", "WireCellRoot"],
+        apps: ["Pgrapher"]
+    }
+};
+
 // Finally, the configuration sequence which is emitted.
 
-[cli.cmdline] + g.uses(graph) + [app]
+[cmdline] + g.uses(graph) + [app]
