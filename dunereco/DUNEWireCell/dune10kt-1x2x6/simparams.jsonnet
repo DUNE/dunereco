@@ -83,7 +83,7 @@ base {
       volumes: [
           {
               local sign = 2*(n%2)-1,
-              local centerline = sign*apa_cpa,
+              local centerline = 0, // sign*apa_cpa,
               wires: n,       // anode number
               name: "apa%d"%n,
               faces:
@@ -113,7 +113,6 @@ base {
                       response: centerline - res_plane,
                       cathode: centerline - cpa_plane, 
                   }
-
               ],
           } for n in std.range(0,11)],
 
@@ -124,8 +123,8 @@ base {
       // rectangular solid.  Again "wirecell-util wires-info" helps
       // to choose something.
       bounds : {
-          tail: wc.point(-4.0, 0.0, 0.0, wc.m),
-          head: wc.point(+4.0, 6.1, 7.0, wc.m),
+          tail: wc.point(-363.376, -600.019, -0.87625, wc.cm),
+          head: wc.point( 363.376,  600.019, 1393.46, wc.cm),
       }
   },
 
