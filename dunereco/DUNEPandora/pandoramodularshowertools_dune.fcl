@@ -3,31 +3,60 @@
 
 BEGIN_PROLOG
 
+#Start position tools
 dune_showerpfpvertexstartposition:                                   @local::showerpfpvertexstartposition
 
+
+#Direction tools
 dune_showerpcadirection:                                             @local::showerpcadirection
-
-dune_showerlengthpercentile:                                         @local::showerlengthpercentile
-
-dune_showerincrementaltrackhitfinder:                                @local::showerincrementaltrackhitfinder
-
-dune_showerpandoraslidingfittrackfinder:                             @local::showerpandoraslidingfittrackfinder
 
 dune_showertracktrajpointdirection:                                  @local::showertracktrajpointdirection
 
 dune_showerdirectiontopologydecision:                                @local::showerdirectiontopologydecision
 
+
+#Length tools
+dune_showerlengthpercentile:                                         @local::showerlengthpercentile
+
+
+#Initial track finding tools
 dune_3dcylindertrackhitfinder:                                       @local::shower3dcylindertrackhitfinder
 dune_3dcylindertrackhitfinder.InitialTrackHitsOutputLabel:           "InitialTrackHits3DCylinder"
 dune_3dcylindertrackhitfinder.InitialTrackSpacePointsOutputLabel:    "InitialTrackSpacePoints3DCylinder"
+dune_3dcylindertrackhitfinder.MaxProjectionDist                      5.8
+dune_3dcylindertrackhitfinder.MaxPerpendicularDist:                  4.0
 
+dune_showerincrementaltrackhitfinder:                                @local::showerincrementaltrackhitfinder
+dune_showerincrementaltrackhitfinder.MaxResidualDiff:                0.75
+dune_showerincrementaltrackhitfinder.MaxAverageResidual:             0.75
+dune_showerincrementaltrackhitfinder.TrackMaxAdjacentSPDistance:     2.0
+dune_showerincrementaltrackhitfinder.StartFitSize:                   9
+dune_showerincrementaltrackhitfinder.NMissPoints:                    9
+dune_showerincrementaltrackhitfinder.StartDistanceCut:               0.0
+dune_showerincrementaltrackhitfinder.DistanceCut:                    999.0
+
+
+#Initial track fitting tools
+dune_showerpandoraslidingfittrackfinder:                             @local::showerpandoraslidingfittrackfinder
+dune_showerpandoraslidingfittrackfinder.SlidingFitHalfWindow:        12
+
+
+#dE/dx tools
 dune_showerunidirectiondedx:                                         @local::showerunidirectiondedx
 dune_showerunidirectiondedx.CalorimetryAlg:                          @local::dune10kt_calorimetryalgmc
 dune_showerunidirectiondedx.InitialTrackHitsInputLabel:              "InitialTrackHits3DCylinder"
+dune_showerunidirectiondedx.dEdxTrackLength:                         5.7
 
 dune_showertrajpointdedx:                                            @local::showertrajpointdedx
 dune_showertrajpointdedx.CalorimetryAlg:                             @local::dune10kt_calorimetryalgmc
+dune_showertrajpointdedx.MinDistCutOff:                              0
+dune_showertrajpointdedx.MaxDist:                                    4
+dune_showertrajpointdedx.MinAngleToWire:                             0.0
+dune_showertrajpointdedx.dEdxTrackLength:                            4.6
+dune_showertrajpointdedx.dEdxCut:                                    999.0
 
+
+#Shower energy tools
 dune_showernumelectronsenergy:                                       @local::showernumelectronsenergy
 dune_showernumelectronsenergy.CalorimetryAlg:                        @local::dune10kt_calorimetryalgmc
 
