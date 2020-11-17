@@ -1,0 +1,34 @@
+#include "pandorashowermodules.fcl"
+#include "calorimetry_dune10kt.fcl"
+
+BEGIN_PROLOG
+
+dune_showerpfpvertexstartposition:                                   @local::showerpfpvertexstartposition
+
+dune_showerpcadirection:                                             @local::showerpcadirection
+
+dune_showerlengthpercentile:                                         @local::showerlengthpercentile
+
+dune_showerincrementaltrackhitfinder:                                @local::showerincrementaltrackhitfinder
+
+dune_showerpandoraslidingfittrackfinder:                             @local::showerpandoraslidingfittrackfinder
+
+dune_showertracktrajpointdirection:                                  @local::showertracktrajpointdirection
+
+dune_showerdirectiontopologydecision:                                @local::showerdirectiontopologydecision
+
+dune_3dcylindertrackhitfinder:                                       @local::shower3dcylindertrackhitfinder
+dune_3dcylindertrackhitfinder.InitialTrackHitsOutputLabel:           "InitialTrackHits3DCylinder"
+dune_3dcylindertrackhitfinder.InitialTrackSpacePointsOutputLabel:    "InitialTrackSpacePoints3DCylinder"
+
+dune_showerunidirectiondedx:                                         @local::showerunidirectiondedx
+dune_showerunidirectiondedx.CalorimetryAlg:                          @local::dune10kt_calorimetryalgmc
+dune_showerunidirectiondedx.InitialTrackHitsInputLabel:              "InitialTrackHits3DCylinder"
+
+dune_showertrajpointdedx:                                            @local::showertrajpointdedx
+dune_showertrajpointdedx.CalorimetryAlg:                             @local::dune10kt_calorimetryalgmc
+
+dune_showernumelectronsenergy:                                       @local::showernumelectronsenergy
+dune_showernumelectronsenergy.CalorimetryAlg:                        @local::dune10kt_calorimetryalgmc
+
+END_PROLOG
