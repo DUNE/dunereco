@@ -103,47 +103,27 @@ dune35tdata_linecluster.ClusterCrawlerAlg.FindHammerClusters: false # look for h
 dune35tdata_linecluster.ClusterCrawlerAlg.RefineVertexClusters:  false
 
 dunefdmc_trajclusteralg:             @local::standard_trajclusteralg
-#                                     0    1   2   3    4  5   6  7   8    9   10  11  12
-dunefdmc_trajclusteralg.ShowerTag: [ -2, 100, 10, 50, 2.5, 0, 15, 3, 10, 0.7, 0.3, 10, 0 ]
-# 0 Mode (<= 0 OFF, 1 = Tag InShower tjs before 3D match, > 1 Find showers)
-# 1 Max Tj MCSMom for a shower tag
-# 2 Max InShower Tj separation
-# 3 Min energy (MeV)
-# 4 rms width factor
-# 5 Min shower 1/2 width (WSE units)
-# 6 Min total Tj Pts
-# 7 Min Tjs
-# 8 max parent FOM
-# 9 direction FOM cut
-# 10 max aspect ratio
-# 11 Max length for making a short Tj separation cut
-# 12 Print 2D showers in plane (0,1,2) or all planes (3) or just 3D matching (4)
 dunefdmc_trajclusteralg.CaloAlg:     @local::dune10kt_calorimetryalgmc
 dunefdmc_trajcluster:                @local::standard_trajcluster
 dunefdmc_trajcluster.TrajClusterAlg: @local::dunefdmc_trajclusteralg
 dunefdmc_trajcluster.HitModuleLabel: "hitfd"
 
 protodunespmc_trajclusteralg:       @local::standard_trajclusteralg
-protodunespmc_trajclusteralg.TestBeam: true # disables creating neutrino PFParticles
-protodunespmc_trajclusteralg.Mode:          1 # Step US -> DS
+protodunespmc_trajclusteralg.NeutrinoMode: false
 protodunespmc_trajclusteralg.HitErrFac:   0.5
 protodunespmc_trajclusteralg.MaxWireSkipNoSignal:   5
 protodunespmc_trajclusteralg.MultHitSep:  3
-protodunespmc_trajclusteralg.AveHitRMS: [ 4.8, 4.4, 4.4 ] # RMS in ticks
-#protodunespmc_trajclusteralg.Match3DCuts: [ 0.3, -0.3, 4, 0.9, 2000, 10, 0.2 ]
-protodunespmc_trajclusteralg.Match3DCuts: [ 0.5, 10000, 0, 2, 2.0, 2.5 ]
+protodunespmc_trajclusteralg.AveHitRMS: [ 4.0, 4.7, 4.0 ] # RMS in ticks
+protodunespmc_trajclusteralg.Match3DCuts: [ 0.5, 10000, 0, 2, 2.0, 2.5, 1000 ]
 # 0 dx (cm) matching cut
 # 1 max number of 3-plane matches for any Tj
 # 2 Attempt 2-view match?
 # 3 min number of TP3Ds in at least 2 planes to fit in each PFP section
 # 4 max pull for adding/rejecting TP3Ds in sections
 # 5 suggested max ChiDOF for a SectionFit
+# 6 don't attempt 3D matching of shower-like Tjs if too many shower-like TPs exist in a slice
 
 protodunespmc_trajclusteralg.AngleRanges: [ 50, 85, 90 ]
-
-protodunespmc_trajclusteralg.MatchTruth: [ -1, 0, 0.5, 10] # [1(nu), 2(cosmics), PrintLevel, Max EP, Min nTruHits]
-#                                                         0  1    2    3    4  5   6  7  8  9 10  11  12
-
 protodunespmc_trajclusteralg.VertexScoreWeights: [1, 2, 10, 2]
 # 0 = Vertex error weight (<= turn off vertex scoring)
 # 1 = 3D match weight
@@ -162,22 +142,9 @@ protodunespmc_trajclusteralg.Vertex2DCuts:  [ 6, 8, 45, 3, 3, 50, 0.6, 10, 0.8, 
 # 8 Min charge fraction near a merge point (not a vertex)
 # 9 max MCSmom asymmetry for a merge
 protodunespmc_trajclusteralg.ChargeCuts: [4, 0.15, 0.25]
-protodunespmc_trajclusteralg.SkipAlgs:  [ "ChkVxTj", "JunkVx", "CTKink", "SplitHiChgHits", "VtxHitsSwap"]
-protodunespmc_trajclusteralg.JTMaxHitSep: -3
+protodunespmc_trajclusteralg.SkipAlgs:  [ ]
+protodunespmc_trajclusteralg.JTMaxHitSep: 5
 
-protodunespmc_trajclusteralg.ShowerTag: [ 3, 100, 10, 50, 2.5, 1, 15, 3, 5, 1, 1, 10, 13]
-# 0 Mode (<= 0 OFF, 1 = Tag shower-like Tjs, 2 = Find showers, 3 = Tag with new cuts, 4 = Tag & find showers with new cuts)
-# 1 Max Tj MCSMom for a shower-like tag
-# 2 Max shower-like Tj separation (WSE units in 2D)
-# 3 Min energy (MeV)
-# 4 rms width factor
-# 5 Min shower 1/2 width (WSE units)
-# 6 Not used
-# 7 Not used
-# 8 Not used
-# 9 direction FOM cut
-# 10 Min AspectRatio for a 2D shower
-# 11 Not used
 protodunespmc_trajcluster:                @local::standard_trajcluster
 protodunespmc_trajcluster.TrajClusterAlg: @local::protodunespmc_trajclusteralg
 protodunespmc_trajcluster.HitModuleLabel: "hitpdune"
