@@ -23,7 +23,7 @@ dune_showerlengthpercentile:                                         @local::sho
 dune_3dcylindertrackhitfinder:                                       @local::shower3dcylindertrackhitfinder
 dune_3dcylindertrackhitfinder.InitialTrackHitsOutputLabel:           "InitialTrackHits3DCylinder"
 dune_3dcylindertrackhitfinder.InitialTrackSpacePointsOutputLabel:    "InitialTrackSpacePoints3DCylinder"
-dune_3dcylindertrackhitfinder.MaxProjectionDist                      5.8
+dune_3dcylindertrackhitfinder.MaxProjectionDist:                      5.8
 dune_3dcylindertrackhitfinder.MaxPerpendicularDist:                  4.0
 
 dune_showerincrementaltrackhitfinder:                                @local::showerincrementaltrackhitfinder

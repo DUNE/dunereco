@@ -66,7 +66,7 @@ dune_pandoraTrackCreation:
 }
 
 dune_pandoraShowerCreation:                                         @local::standard_pandoraModularShowerCreation
-dune_incremental_pandoraModularShowerCreation.ShowerFinderTools: [
+dune_pandoraShowerCreation.ShowerFinderTools: [
   @local::dune_showerpfpvertexstartposition,
   @local::dune_showerpcadirection,
   @local::dune_showerlengthpercentile,
