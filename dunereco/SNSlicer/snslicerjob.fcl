@@ -19,6 +19,7 @@ services:
   Geometry:		  @local::dune10kt_workspace_geo
 
   ExptGeoHelperInterface: @local::dune_geometry_helper
+  GeometryConfigurationWriter: {}
 
   LArG4Parameters:        @local::dunefd_largeantparameters
 
