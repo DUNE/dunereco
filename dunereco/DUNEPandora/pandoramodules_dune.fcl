@@ -65,8 +65,8 @@ dune_pandoraTrackCreation:
     module_type:                                                    "LArPandoraTrackCreation"
 }
 
-dune_pandoraShowerCreation:                                         @local::standard_pandoraModularShowerCreation
-dune_pandoraShowerCreation.ShowerFinderTools: [
+dune_pandoraModularShowerCreation:                                         @local::standard_pandoraModularShowerCreation
+dune_pandoraModularShowerCreation.ShowerFinderTools: [
   @local::dune_showerpfpvertexstartposition,
   @local::dune_showerpcadirection,
   @local::dune_showerlengthpercentile,
@@ -78,7 +78,7 @@ dune_pandoraShowerCreation.ShowerFinderTools: [
   @local::dune_showertrajpointdedx
 ]
 
-dune_pandoraLegacyShowerCreation:
+dune_pandoraShowerCreation:
 {
     module_type:                                                    "LArPandoraShowerCreation"
 }
