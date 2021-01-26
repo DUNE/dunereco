@@ -75,9 +75,7 @@ dune_pandoraShowerCreation.ShowerFinderTools: [
   @local::dune_showerunidirectiondedx,
   @local::dune_showerincrementaltrackhitfinder,
   @local::dune_showerpandoraslidingfittrackfinder,
-  @local::dune_showertrajpointdedx,
-  @local::dune_showertracktrajpointdirection,
-  @local::dune_showerdirectiontopologydecision
+  @local::dune_showertrajpointdedx
 ]
 
 dune_pandoraLegacyShowerCreation:
