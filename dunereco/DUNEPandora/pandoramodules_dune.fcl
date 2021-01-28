@@ -1,3 +1,5 @@
+#include "pandoramodularshowertools_dune.fcl"
+
 BEGIN_PROLOG
 
 dune_pandora:
@@ -62,6 +64,19 @@ dune_pandoraTrackCreation:
 {
     module_type:                                                    "LArPandoraTrackCreation"
 }
+
+dune_pandoraModularShowerCreation:                                         @local::standard_pandoraModularShowerCreation
+dune_pandoraModularShowerCreation.ShowerFinderTools: [
+  @local::dune_showerpfpvertexstartposition,
+  @local::dune_showerpcadirection,
+  @local::dune_showerlengthpercentile,
+  @local::dune_showernumelectronsenergy,
+  @local::dune_3dcylindertrackhitfinder,
+  @local::dune_showerunidirectiondedx,
+  @local::dune_showerincrementaltrackhitfinder,
+  @local::dune_showerpandoraslidingfittrackfinder,
+  @local::dune_showertrajpointdedx
+]
 
 dune_pandoraShowerCreation:
 {
