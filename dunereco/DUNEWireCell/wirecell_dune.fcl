@@ -102,6 +102,45 @@ protodunespdata_wctsp:
     }
 }
 
+wirecell_protodunespmc:
+{
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["Pgrapher"]
+
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellLarsoft"]
+
+        // needs to be found via your WIRECELL_PATH 
+        # configs: ["pgrapher/experiment/pdsp/wcls-sim-drift-simchannel.jsonnet"]
+        configs: ["pgrapher/experiment/pdsp/wcls-sim-drift-simchannel-priorSCE.jsonnet"]
+
+
+        // Contract note: these exact "type:name" must be used to identify
+        // the configuration data structures for these components in the Jsonnet.
+
+        inputers: ["wclsSimDepoSource:"]
+        outputers: [
+            "wclsSimChannelSink:postdrift",
+            "wclsFrameSaver:simdigits"
+        ]
+
+        // Make available parameters via Jsonnet's std.extVar()
+        params: {
+        }
+        structs: {
+            // Longitudinal diffusion constant [cm2/s]
+            DL: 4.0
+            // Transverse diffusion constant [cm2/s]
+            DT: 8.8
+            // Electron lifetime [ms]
+            lifetime: 35.0
+            // Electron drift speed, assumes a certain applied E-field [mm/us]
+            driftSpeed: 1.565
+        }
+    }
+}
+
 dune10kt_1x2x6_data_nfsp: 
 {
     module_type : WireCellToolkit
