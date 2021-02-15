@@ -40,6 +40,7 @@
         <RecreatedClusterListName>RecreatedClusters</RecreatedClusterListName>
         <RecreatedVertexListName>RecreatedVertices</RecreatedVertexListName>
         <VisualizeOverallRecoStatus>false</VisualizeOverallRecoStatus>
+        <LArCaloHitVersion>2</LArCaloHitVersion>
     </algorithm>
 
     <algorithm type = "LArVisualMonitoring">
