@@ -433,8 +433,8 @@ namespace cvn
     unsigned int& globalWire, double& globalTDC, unsigned int& globalPlane) const
   {
     // We can just use the existing function to get the global wire & plane
-    GetProtoDUNEGlobalWire(localWire, plane, tpc, globalWire, globalPlane);
-
+ //   GetProtoDUNEGlobalWire(localWire, plane, tpc, globalWire, globalPlane);
+    GetDUNEGlobalWire(localWire, plane, tpc, globalWire, globalPlane);
     // Implement additional mirroring here?
 
   } // function GetProtoDUNEGlobalWireTDC
@@ -462,9 +462,6 @@ namespace cvn
           // If it's a Michel electron, tag it with an unphysical PDG code             
           if (p.Process() == "muMinusCaptureAtRest" || p.Process() == "muPlusCaptureAtRest") {
             pdg = 99;
-          }
-          else if (p.Process() == "Decay") {
-            pdg = 98;
           }
         } // If electron parent is muon
       } // If non-primary electron
