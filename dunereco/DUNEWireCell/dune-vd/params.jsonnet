@@ -96,7 +96,9 @@ base {
     files: {
 
         // Standard wire geometry with 2 wire planes and third dummy induction
-        wires: "dunevd-wires-twoplanes.json.bz2", 
+        // wires: "dunevd-wires-twoplanes.json.bz2",
+        // wires: "dunevd10kt_3view_v1_1x6x6.json.bz2",
+        wires: "dunevd10kt_3view_30deg_v1_1x6x6.json.bz2",
 
         // Based on the simulations made for the 50L prototype 
         fields: [
@@ -106,7 +108,8 @@ base {
         // fixme: this is for microboone and probably bogus for
         // protodune because (at least) the span of MB wire lengths do
         // not cover pdsp's.
-        noise: "protodune-noise-spectra-v1.json.bz2",
+        // noise: "protodune-noise-spectra-v1.json.bz2",
+        noise: "dunevd10kt_3view_30deg_noise_spectra_v1.json.bz2",
 
 
         chresp: null,

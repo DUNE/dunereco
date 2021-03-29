@@ -49,7 +49,12 @@ physics :{
               driftSpeed: 1.565
               # G4RefTime
               G4RefTime: @local::dunefd_detectorclocks.G4RefTime
-
+              # file: wires
+              files_wires: "\"dunevd10kt_3view_30deg_v1_1x6x6.json.bz2\""
+              # file: fields
+              files_fields: "\"pcbro-response-avg.json.bz2\""
+              # file: noise
+              files_noise: "\"dunevd10kt_3view_30deg_noise_spectra_v1.json.bz2\""
             }
 
          }

@@ -24,6 +24,11 @@ local params = base {
     // Electron drift speed, assumes a certain applied E-field
     drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
   },
+  files: super.files {
+      wires: std.extVar('files_wires'),
+      fields: [ std.extVar('files_fields'), ],
+      noise: std.extVar('files_noise'),
+  },
 };
 
 local G4RefTime = std.extVar('G4RefTime') * wc.us;
@@ -195,10 +200,10 @@ local multipass = [
   g.pipeline([
                 // wcls_simchannel_sink[n],
                 sn_pipes[n],
-                origmagnify_pipe[n],
+                // origmagnify_pipe[n],
                 // nf_pipes[n],
                 sp_pipes[n],
-                spmagnify_pipe[n],
+                // spmagnify_pipe[n],
              ],
              'multipass%d' % n)
   for n in anode_iota
