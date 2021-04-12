@@ -1,0 +1,6 @@
+BEGIN_PROLOG
+decodeDigits:
+{
+  module_type:    "decodeDigits"
+}
+END_PROLOG

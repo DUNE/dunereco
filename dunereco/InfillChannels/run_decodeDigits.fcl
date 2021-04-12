@@ -1,0 +1,32 @@
+#include "services_dune.fcl"
+#include "decodeDigitsConfig.fcl"
+
+process_name: DecodeDigits
+
+source:
+{
+  module_type: RootInput
+               maxEvents:  -1
+}
+services:
+{
+  @table::dunefd_services
+  TFileService: { fileName: "decodeDigits_out.root" }
+  ChannelStatusService:	 @local::pdsp_channel_status
+}
+
+physics:
+{
+  analyzers:
+  {
+    dec: @local::decodeDigits
+  }
+  path0:      [ dec ]
+  end_paths:  [ path0 ]
+}
+
+services.Geometry: @local::protodune_geo
+
+services.Geometry.Name: "protodunev7"
+services.Geometry.GDML: "protodune_v7.gdml"
+services.Geometry.ROOT: "protodune_v7.gdml"
