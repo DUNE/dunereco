@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////
-// Class:       infillChannels
+// Class:       InfillChannels
 // Plugin Type: analyzer (art v3_05_01)
-// File:        infillChannels_module.cc
+// File:        InfillChannels_module.cc
 //
 // Alex Wilkinson - 08/03/21
 ////////////////////////////////////////////////////////////////////////
@@ -35,21 +35,21 @@
 #include <torch/script.h>
 #include <torch/torch.h>
 
-namespace infill 
+namespace Infill 
 {
-  class infillChannels;
+  class InfillChannels;
 }
 
-class infill::infillChannels : public art::EDProducer 
+class Infill::InfillChannels : public art::EDProducer 
 {
 public:
-  explicit infillChannels(fhicl::ParameterSet const& p);
+  explicit InfillChannels(fhicl::ParameterSet const& p);
 
   // Plugins should not be copied or assigned.
-  infillChannels(infillChannels const&) = delete;
-  infillChannels(infillChannels&&) = delete;
-  infillChannels& operator=(infillChannels const&) = delete;
-  infillChannels& operator=(infillChannels&&) = delete;
+  InfillChannels(InfillChannels const&) = delete;
+  InfillChannels(InfillChannels&&) = delete;
+  InfillChannels& operator=(InfillChannels const&) = delete;
+  InfillChannels& operator=(InfillChannels&&) = delete;
 
   // Required functions.
   void produce(art::Event& e) override;
@@ -60,34 +60,36 @@ public:
 
 private:
   // Declare member data here.
-  const geo::GeometryCore* geom;
+  const geo::GeometryCore* fGeom;
 
-  std::set<raw::ChannelID_t> badChannels; 
-  std::set<raw::ChannelID_t> noisyChannels;
-  std::set<raw::ChannelID_t> deadChannels;
+  std::set<raw::ChannelID_t> fBadChannels; 
+  std::set<raw::ChannelID_t> fNoisyChannels;
+  std::set<raw::ChannelID_t> fDeadChannels;
 
-  std::set<readout::ROPID> activeRops;
+  std::set<readout::ROPID> fActiveRops;
 
-  std::string networkLocInduction;
-  std::string networkLocCollection;
-  torch::jit::script::Module inductionModule;
-  torch::jit::script::Module collectionModule;
+  std::string fNetworkLocInduction;
+  std::string fNetworkLocCollection;
+  torch::jit::script::Module fInductionModule;
+  torch::jit::script::Module fCollectionModule;
+  std::string fInputLabel;
 };
 
-infill::infillChannels::infillChannels(fhicl::ParameterSet const& p)
+Infill::InfillChannels::InfillChannels(fhicl::ParameterSet const& p)
   : EDProducer{p},
-    networkLocInduction  (p.get<std::string> ("networkLocInduction")),
-    networkLocCollection (p.get<std::string> ("networkLocCollection"))
+    fNetworkLocInduction  (p.get<std::string> ("networkLocInduction")),
+    fNetworkLocCollection (p.get<std::string> ("networkLocCollection")),
+    fInputLabel           (p.get<std::string> ("inputLabel"))
 {
-  consumes<std::vector<raw::RawDigit>>("daq");
+  consumes<std::vector<raw::RawDigit>>(fInputLabel);
 
-  produces<std::vector<raw::RawDigit>>("infilled");
+  produces<std::vector<raw::RawDigit>>();
   // produces<std::vector<raw::RawDigit>>("masked");
 }
 
-void infill::infillChannels::produce(art::Event& e)
+void Infill::InfillChannels::produce(art::Event& e)
 {
-  typedef std::array<short, 6000> vecAdc; // A way to get number of ticks? (avoid hardcoded 6000)
+  typedef std::array<short, 6000> vecAdc;
   std::map<raw::ChannelID_t, vecAdc> infilledAdcs;
   torch::Tensor maskedRopTensor;
   torch::Tensor infilledRopTensor; 
@@ -98,22 +100,22 @@ void infill::infillChannels::produce(art::Event& e)
   // assert(detProp.NumberTimeSamples() == 6000);
 
   art::Handle<std::vector<raw::RawDigit>> digs;
-  e.getByLabel("daq", digs);
+  e.getByLabel(fInputLabel, digs);
 
   // Get infilled adc ROP by ROP
-  for (const readout::ROPID& currentRop : activeRops) {
+  for (const readout::ROPID& currentRop : fActiveRops) {
     maskedRopTensor = torch::zeros(
-      {1, 1 ,6000, geom->Nchannels(currentRop)}, torch::dtype(torch::kFloat32).device(torch::kCPU).requires_grad(false)
+      {1, 1 ,6000, fGeom->Nchannels(currentRop)}, torch::dtype(torch::kFloat32).device(torch::kCPU).requires_grad(false)
     );
     auto maskedRopTensorAccess = maskedRopTensor.accessor<float, 4>();
 
-    const raw::ChannelID_t firstCh = geom->FirstChannelInROP(currentRop);
+    const raw::ChannelID_t firstCh = fGeom->FirstChannelInROP(currentRop);
 
     // Fill ROP image
     for (const raw::RawDigit& dig : *digs) {
-      if (deadChannels.count(dig.Channel())) continue;
+      if (fDeadChannels.count(dig.Channel())) continue;
 
-      readout::ROPID rop = geom->ChannelToROP(dig.Channel());
+      readout::ROPID rop = fGeom->ChannelToROP(dig.Channel());
       if (rop != currentRop) continue;
 
       raw::RawDigit::ADCvector_t adcs(dig.Samples());
@@ -132,27 +134,24 @@ void infill::infillChannels::produce(art::Event& e)
     // Do the Infill
     std::vector<torch::jit::IValue> inputs;
     inputs.push_back(maskedRopTensor);
-    if (geom->SignalType(currentRop) == geo::kInduction) {
+    if (fGeom->SignalType(currentRop) == geo::kInduction) {
       torch::NoGradGuard no_grad_guard; 
-      infilledRopTensor = inductionModule.forward(inputs).toTensor().detach();
+      infilledRopTensor = fInductionModule.forward(inputs).toTensor().detach();
     }
-    else if (geom->SignalType(currentRop) == geo::kCollection) {
+    else if (fGeom->SignalType(currentRop) == geo::kCollection) {
       torch::NoGradGuard no_grad_guard; 
-      infilledRopTensor = collectionModule.forward(inputs).toTensor().detach();
+      infilledRopTensor = fCollectionModule.forward(inputs).toTensor().detach();
     }
 
     // Store infilled ADC of dead channels
     auto infilledRopTensorAccess = infilledRopTensor.accessor<float, 4>();
-    for (const raw::ChannelID_t ch : deadChannels) {
-      if (ch > firstCh + geom->Nchannels(currentRop)) {// Using some ChannelToROP would be better (think this algo is in another module as well)
-        break;
-      }
-      else if (ch > firstCh) {
+    for (const raw::ChannelID_t ch : fDeadChannels) {
+      if (fGeom->ChannelToROP(ch) == currentRop) {
         for (unsigned int tick = 0; tick < infilledRopTensor.sizes()[2]; ++tick) {
           infilledAdcs[ch][tick] = (short)std::round(infilledRopTensorAccess[0][0][tick][ch - firstCh]);
         }
       }
-    }
+    } // Could break early if ch > last ch in currentRop to save a bit of looping?
   }
 
   // Encode infilled ADC into RawDigit and put back onto event 
@@ -167,54 +166,54 @@ void infill::infillChannels::produce(art::Event& e)
       dig = raw::RawDigit(dig.Channel(), dig.Samples(), infilledAdc, dig.Compression());
     }
   }
-  e.put(std::move(infilledDigs), "infilled"); 
+  e.put(std::move(infilledDigs)); 
 }
 
-void infill::infillChannels::beginJob()
+void Infill::InfillChannels::beginJob()
 {
-  geom = art::ServiceHandle<geo::Geometry>()->provider();
+  fGeom = art::ServiceHandle<geo::Geometry>()->provider();
 
   // Get active ROPs (not facing a wall)
-  geo::ROP_id_iterator iRop, rBegin(geom, geo::ROP_id_iterator::begin_pos), 
-    rEnd(geom, geo::ROP_id_iterator::end_pos);
+  geo::ROP_id_iterator iRop, rBegin(fGeom, geo::ROP_id_iterator::begin_pos), 
+    rEnd(fGeom, geo::ROP_id_iterator::end_pos);
   for (iRop = rBegin; iRop != rEnd; ++iRop) { // Iterate over ROPs in detector
-    for (const geo::TPCID tpcId : geom->ROPtoTPCs(*iRop)) {
-      const geo::TPCGeo tpc = geom->TPC(tpcId);
+    for (const geo::TPCID tpcId : fGeom->ROPtoTPCs(*iRop)) {
+      const geo::TPCGeo tpc = fGeom->TPC(tpcId);
       const TGeoVolume* tpcVol = tpc.ActiveVolume();
       
       if (tpcVol->Capacity() > 1000000) { // At least one of the ROP's TPCIDs needs to be active
         // Networks expect a fixed image size
-        if(geom->SignalType(*iRop) == geo::kInduction) assert(geom->Nchannels(*iRop) == 800);
-        if(geom->SignalType(*iRop) == geo::kCollection) assert(geom->Nchannels(*iRop) == 480);
+        if(fGeom->SignalType(*iRop) == geo::kInduction) assert(fGeom->Nchannels(*iRop) == 800);
+        if(fGeom->SignalType(*iRop) == geo::kCollection) assert(fGeom->Nchannels(*iRop) == 480);
 
-        activeRops.insert(*iRop);
+        fActiveRops.insert(*iRop);
         break;
       }
     }
   }
 
   // Dead channels = bad channels + noisy channels
-  badChannels = art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider().BadChannels();
-  noisyChannels = art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider().NoisyChannels();
+  fBadChannels = art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider().BadChannels();
+  fNoisyChannels = art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider().NoisyChannels();
 
   std::merge(
-    badChannels.begin(), badChannels.end(), noisyChannels.begin(), noisyChannels.end(), 
-    std::inserter(deadChannels, deadChannels.begin())
+    fBadChannels.begin(), fBadChannels.end(), fNoisyChannels.begin(), fNoisyChannels.end(), 
+    std::inserter(fDeadChannels, fDeadChannels.begin())
   );
 
   // Check dead channels resemble the dead channels used for training
   raw::ChannelID_t chGap = 1;
-  for (const raw::ChannelID_t ch : deadChannels) {
-    if (deadChannels.count(ch + 1)) {
+  for (const raw::ChannelID_t ch : fDeadChannels) {
+    if (fDeadChannels.count(ch + 1)) {
       ++chGap;
       continue;
     }
-    if (geom->ChannelToROP(ch - chGap) == geom->ChannelToROP(ch + 1)) {
-      if (geom->SignalType(ch) == geo::kCollection && chGap > 3) {
+    if (fGeom->ChannelToROP(ch - chGap) == fGeom->ChannelToROP(ch + 1)) {
+      if (fGeom->SignalType(ch) == geo::kCollection && chGap > 3) {
         std::cerr << "There are dead channel gap larger than what was seen in training --- ";
         std::cerr << "\e[1m" << "Consider retraining collection plane infill network" << "\e[0m" << std::endl;
       }
-      else if (geom->SignalType(ch) == geo::kInduction && chGap > 2) {
+      else if (fGeom->SignalType(ch) == geo::kInduction && chGap > 2) {
         std::cerr << "There are dead channel gap larger than what was seen in training --- ";
         std::cerr << "\e[1m" << "Consider retraining induction plane infill network" << "\e[0m" << std::endl;
       }
@@ -225,16 +224,16 @@ void infill::infillChannels::beginJob()
   // Load torchscripts
   std::cout << "Loading modules..." << std::endl;
   try {
-    inductionModule = torch::jit::load(networkLocInduction);
-    std::cout << "Induction module loaded." << std::endl;
+    fInductionModule = torch::jit::load(fNetworkLocInduction);
+    std::cout << "Induction module loaded from " << fNetworkLocInduction <<std::endl;
   }
   catch (const c10::Error& err) {
     std::cerr << "error loading the model\n";
     std::cerr << err.what();
   }
   try {
-    collectionModule = torch::jit::load(networkLocCollection);
-    std::cout << "Collection module loaded." << std::endl;
+    fCollectionModule = torch::jit::load(fNetworkLocCollection);
+    std::cout << "Collection module loaded from " << fNetworkLocCollection << std::endl;
   }
   catch (const c10::Error& err) {
     std::cerr << "error loading the model\n";
@@ -242,9 +241,9 @@ void infill::infillChannels::beginJob()
   }
 }
 
-void infill::infillChannels::endJob()
+void Infill::InfillChannels::endJob()
 {
   // Implementation of optional member function here.
 }
 
-DEFINE_ART_MODULE(infill::infillChannels)
+DEFINE_ART_MODULE(Infill::InfillChannels)

@@ -11,8 +11,8 @@ from matplotlib import pyplot as plt
 def root_to_numpy(filepath, induct_saveloc, collect_saveloc):
     file = uproot.open(filepath)
 
-    for idx, key in enumerate(file["dec"].keys()):
-        z, _ = file["dec"][key].numpy()
+    for idx, key in enumerate(file['infilldata'].keys()):
+        z, _ = file['infilldata'][key].numpy()
 
         # print(z.dtype)
         # plt.imshow(z.T, aspect='auto', vmin=-20, vmax=20, cmap='coolwarm')

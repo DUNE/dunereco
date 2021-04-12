@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////
-// Class:       decodeDigits
+// Class:       MakeInfillTrainingData
 // Plugin Type: analyzer (art v3_05_01)
-// File:        decodeDigits_module.cc
+// File:        MakeInfillTrainingData
 //
 // Generated at Wed Dec  9 11:34:56 2020 by Alexander Wilkinson using cetskelgen
 // from cetlib version v3_10_00.
@@ -35,22 +35,22 @@
 #include <iterator>
 #include <utility>
 
-namespace infill {
-  class decodeDigits;
+namespace Infill {
+  class MakeInfillTrainingData;
 }
 
 
-class infill::decodeDigits : public art::EDAnalyzer {
+class Infill::MakeInfillTrainingData : public art::EDAnalyzer {
 public:
-  explicit decodeDigits(fhicl::ParameterSet const& p);
+  explicit MakeInfillTrainingData(fhicl::ParameterSet const& p);
   // The compiler-generated destructor is fine for non-base
   // classes without bare pointers or other resource use.
 
   // Plugins should not be copied or assigned.
-  decodeDigits(decodeDigits const&) = delete;
-  decodeDigits(decodeDigits&&) = delete;
-  decodeDigits& operator=(decodeDigits const&) = delete;
-  decodeDigits& operator=(decodeDigits&&) = delete;
+  MakeInfillTrainingData(MakeInfillTrainingData const&) = delete;
+  MakeInfillTrainingData(MakeInfillTrainingData&&) = delete;
+  MakeInfillTrainingData& operator=(MakeInfillTrainingData const&) = delete;
+  MakeInfillTrainingData& operator=(MakeInfillTrainingData&&) = delete;
 
   // Required functions.
   void analyze(art::Event const& e) override;
@@ -61,25 +61,27 @@ public:
 
 private:
   // Declare member data here.
-  const geo::GeometryCore* geom;
+  const geo::GeometryCore* fGeom;
 
   art::ServiceHandle<art::TFileService> tfs;
 
-  std::set<raw::ChannelID_t> badChannels;
-  std::set<raw::ChannelID_t> noisyChannels;
-  std::set<raw::ChannelID_t> deadChannels;
+  std::set<raw::ChannelID_t> fBadChannels;
+  std::set<raw::ChannelID_t> fNoisyChannels;
+  std::set<raw::ChannelID_t> fDeadChannels;
 
-  std::set<readout::ROPID> activeRops;
+  std::set<readout::ROPID> fActiveRops;
+
+  std::string fInputLabel;
 };
 
-infill::decodeDigits::decodeDigits(fhicl::ParameterSet const& p)
-  : EDAnalyzer{p}  // ,
-  // More initializers here.
+Infill::MakeInfillTrainingData::MakeInfillTrainingData(fhicl::ParameterSet const& p)
+  : EDAnalyzer{p},
+  fInputLabel           (p.get<std::string> ("inputLabel"))
 {
-  consumes<std::vector<raw::RawDigit>>("daq");
+  consumes<std::vector<raw::RawDigit>>(fInputLabel);
 }
 
-void infill::decodeDigits::analyze(art::Event const& e)
+void Infill::MakeInfillTrainingData::analyze(art::Event const& e)
 {
   std::string sEvent = (
     "Ev" + std::to_string(e.id().event()) + "Run" + std::to_string(e.id().run()) + 
@@ -88,26 +90,26 @@ void infill::decodeDigits::analyze(art::Event const& e)
   std::map<readout::ROPID, TH2F*> ropImages;
 
   // Prepare TH2s
-  for (const readout::ROPID& rop : activeRops) {
+  for (const readout::ROPID& rop : fActiveRops) {
     std::string sTitle = (
       sEvent + "_TPCset" + std::to_string(rop.TPCset) + "_ROP" + std::to_string(rop.ROP)
     );
     ropImages[rop] = tfs->make<TH2F>(
-      sTitle.c_str(), sTitle.c_str(), geom->Nchannels(rop), 0, geom->Nchannels(rop), 6000, 0, 6000
+      sTitle.c_str(), sTitle.c_str(), fGeom->Nchannels(rop), 0, fGeom->Nchannels(rop), 6000, 0, 6000
     );
   }
 
   art::Handle<std::vector<raw::RawDigit>> digs;
-  e.getByLabel("daq", digs);
+  e.getByLabel(fInputLabel, digs);
 
   // Fill TH2s
   for(const raw::RawDigit& dig : *digs){ 
-    readout::ROPID rop = geom->ChannelToROP(dig.Channel());
+    readout::ROPID rop = fGeom->ChannelToROP(dig.Channel());
     if(ropImages.count(rop)){ // Ignores ROPs associated with only inactive TPCIDs
       raw::RawDigit::ADCvector_t adcs(dig.Samples());
       raw::Uncompress(dig.ADCs(), adcs, dig.Compression());
 
-      const raw::ChannelID_t firstCh = geom->FirstChannelInROP(rop);
+      const raw::ChannelID_t firstCh = fGeom->FirstChannelInROP(rop);
       for(unsigned int tick = 0; tick < adcs.size(); ++tick){
         const int adc = adcs[tick] ? int(adcs[tick]) - dig.GetPedestal() : 0;
 
@@ -121,52 +123,49 @@ void infill::decodeDigits::analyze(art::Event const& e)
   for(auto it: ropImages) delete it.second;
 }
 
-void infill::decodeDigits::beginJob()
+void Infill::MakeInfillTrainingData::beginJob()
 {
-  geom = art::ServiceHandle<geo::Geometry>()->provider();
+  fGeom = art::ServiceHandle<geo::Geometry>()->provider();
 
   // Get active ROPs (not facing a wall)
-  geo::ROP_id_iterator iRop, rBegin(geom, geo::ROP_id_iterator::begin_pos), 
-    rEnd(geom, geo::ROP_id_iterator::end_pos);
+  geo::ROP_id_iterator iRop, rBegin(fGeom, geo::ROP_id_iterator::begin_pos), 
+    rEnd(fGeom, geo::ROP_id_iterator::end_pos);
   for (iRop = rBegin; iRop != rEnd; ++iRop) { // Iterate over ROPs in detector
-    for (const geo::TPCID tpcId : geom->ROPtoTPCs(*iRop)) {
-      const geo::TPCGeo tpc = geom->TPC(tpcId);
+    for (const geo::TPCID tpcId : fGeom->ROPtoTPCs(*iRop)) {
+      const geo::TPCGeo tpc = fGeom->TPC(tpcId);
       const TGeoVolume* tpcVol = tpc.ActiveVolume();
       
       if (tpcVol->Capacity() > 1000000) { // At least one of the ROP's TPCIDs needs to be active
-        activeRops.insert(*iRop);
+        fActiveRops.insert(*iRop);
         break;
       }
     }
   }
 }
 
-void infill::decodeDigits::endJob()
+void Infill::MakeInfillTrainingData::endJob()
 {
   std::cout << "Getting dead channels..." << std::endl;
 
-  badChannels = art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider().BadChannels();
-  noisyChannels = art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider().NoisyChannels();
+  fBadChannels = art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider().BadChannels();
+  fNoisyChannels = art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider().NoisyChannels();
 
   std::merge(
-    badChannels.begin(), badChannels.end(), noisyChannels.begin(), noisyChannels.end(), 
-    std::inserter(deadChannels, deadChannels.begin())
+    fBadChannels.begin(), fBadChannels.end(), fNoisyChannels.begin(), fNoisyChannels.end(), 
+    std::inserter(fDeadChannels, fDeadChannels.begin())
   );
 
   // Print dead channels to terminal
-  for(const readout::ROPID& rop : activeRops) {
+  for(const readout::ROPID& rop : fActiveRops) {
     std::cout << "(TPCset " << rop.TPCset << ", ROP " << rop.ROP << "): ";
-    const raw::ChannelID_t firstCh = geom->FirstChannelInROP(rop);
-    for (const raw::ChannelID_t ch : deadChannels) {
-      if (ch >= firstCh + geom->Nchannels(rop)) {
-        break;
-      }
-      else if (ch >= firstCh) {
+    const raw::ChannelID_t firstCh = fGeom->FirstChannelInROP(rop);
+    for (const raw::ChannelID_t ch : fDeadChannels) {
+      if (fGeom->ChannelToROP(ch) == rop) {
         std::cout << ch - firstCh << " ";
       }
-    }
+    } // Could break early if ch > last ch in currentRop to save a bit of looping?
     std::cout << std::endl;
   }
 }
 
-DEFINE_ART_MODULE(infill::decodeDigits)
+DEFINE_ART_MODULE(Infill::MakeInfillTrainingData)

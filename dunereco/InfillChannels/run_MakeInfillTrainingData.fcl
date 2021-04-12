@@ -1,7 +1,7 @@
 #include "services_dune.fcl"
-#include "decodeDigitsConfig.fcl"
+#include "MakeInfillTrainingDataConfig.fcl"
 
-process_name: DecodeDigits
+process_name: MakeInfillTrainingData
 
 source:
 {
@@ -11,7 +11,7 @@ source:
 services:
 {
   @table::dunefd_services
-  TFileService: { fileName: "decodeDigits_out.root" }
+  TFileService: { fileName: "MakeInfillTraining_out.root" }
   ChannelStatusService:	 @local::pdsp_channel_status
 }
 
@@ -19,9 +19,9 @@ physics:
 {
   analyzers:
   {
-    dec: @local::decodeDigits
+    infilldata: @local::MakeInfillTrainingData
   }
-  path0:      [ dec ]
+  path0:      [ infilldata ]
   end_paths:  [ path0 ]
 }
 

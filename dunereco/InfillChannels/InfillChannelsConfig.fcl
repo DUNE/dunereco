@@ -1,10 +1,11 @@
 BEGIN_PROLOG
 
-infillChannels:
+InfillChannels:
 {
-    module_type:              "infillChannels"
+    module_type:             "InfillChannels"
     networkLocInduction:     "/dune/app/users/awilkins/infill_work_updated/unetdense_induct800_small_68e_070421.pt"
     networkLocCollection:    "/dune/app/users/awilkins/infill_work_updated/unetdense_collect_small_22e_150321.pt"
+    inputLabel:              "daq"
 }
 
 END_PROLOG

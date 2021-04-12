@@ -1,5 +1,5 @@
 #include "services_dune.fcl"
-#include "infillChannelsConfig.fcl"
+#include "InfillChannelsConfig.fcl"
 
 process_name: InfillChannels
 
@@ -19,7 +19,7 @@ outputs:
   out1:
   {
     module_type: RootOutput
-    fileName:    "infill_out.root"
+    fileName:    "InfillChannels_out.root"
   }
 }
 
@@ -28,9 +28,9 @@ physics:
 {
   producers:
   {
-    inf: @local::infillChannels
+    infill: @local::InfillChannels
   }
-  ana: [ inf ]
+  ana: [ infill ]
   out: [ out1 ]
 }
 
