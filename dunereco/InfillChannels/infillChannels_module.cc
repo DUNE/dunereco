@@ -21,6 +21,7 @@
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RawData/raw.h"
 #include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include <TGeoVolume.h>
 
 #include <vector>
@@ -29,6 +30,7 @@
 #include <algorithm>
 #include <iterator>
 #include <array>
+#include <cassert>
 
 #include <torch/script.h>
 #include <torch/torch.h>
@@ -90,6 +92,11 @@ void infill::infillChannels::produce(art::Event& e)
   torch::Tensor maskedRopTensor;
   torch::Tensor infilledRopTensor; 
 
+  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
+  std::cout << detProp.NumberTimeSamples() << std::endl; // Returns 4492?
+  // Networks expect a fixed image size
+  // assert(detProp.NumberTimeSamples() == 6000);
+
   art::Handle<std::vector<raw::RawDigit>> digs;
   e.getByLabel("daq", digs);
 
@@ -111,6 +118,9 @@ void infill::infillChannels::produce(art::Event& e)
 
       raw::RawDigit::ADCvector_t adcs(dig.Samples());
       raw::Uncompress(dig.ADCs(), adcs, dig.Compression()); // can put pedestal in here
+
+      // Networks expect a fixed image size
+      assert(adcs.size() == 6000);
 
       for (unsigned int tick = 0; tick < adcs.size(); ++tick) {
         const short adc = adcs[tick] ? short(adcs[tick]) - dig.GetPedestal() : 0;
@@ -173,6 +183,10 @@ void infill::infillChannels::beginJob()
       const TGeoVolume* tpcVol = tpc.ActiveVolume();
       
       if (tpcVol->Capacity() > 1000000) { // At least one of the ROP's TPCIDs needs to be active
+        // Networks expect a fixed image size
+        if(geom->SignalType(*iRop) == geo::kInduction) assert(geom->Nchannels(*iRop) == 800);
+        if(geom->SignalType(*iRop) == geo::kCollection) assert(geom->Nchannels(*iRop) == 480);
+
         activeRops.insert(*iRop);
         break;
       }
@@ -187,6 +201,26 @@ void infill::infillChannels::beginJob()
     badChannels.begin(), badChannels.end(), noisyChannels.begin(), noisyChannels.end(), 
     std::inserter(deadChannels, deadChannels.begin())
   );
+
+  // Check dead channels resemble the dead channels used for training
+  raw::ChannelID_t chGap = 1;
+  for (const raw::ChannelID_t ch : deadChannels) {
+    if (deadChannels.count(ch + 1)) {
+      ++chGap;
+      continue;
+    }
+    if (geom->ChannelToROP(ch - chGap) == geom->ChannelToROP(ch + 1)) {
+      if (geom->SignalType(ch) == geo::kCollection && chGap > 3) {
+        std::cerr << "There are dead channel gap larger than what was seen in training --- ";
+        std::cerr << "\e[1m" << "Consider retraining collection plane infill network" << "\e[0m" << std::endl;
+      }
+      else if (geom->SignalType(ch) == geo::kInduction && chGap > 2) {
+        std::cerr << "There are dead channel gap larger than what was seen in training --- ";
+        std::cerr << "\e[1m" << "Consider retraining induction plane infill network" << "\e[0m" << std::endl;
+      }
+    }
+    chGap = 1;
+  }
 
   // Load torchscripts
   std::cout << "Loading modules..." << std::endl;

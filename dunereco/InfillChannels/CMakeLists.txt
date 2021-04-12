@@ -9,6 +9,7 @@ art_make(
                 lardataobj_RecoBase
                 lardataobj_RawData
                 larcorealg_Geometry
+                lardataalg_DetectorInfo
                 dune-raw-data_Overlays
 
                 art_Persistency_Common canvas
