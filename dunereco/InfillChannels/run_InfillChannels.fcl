@@ -10,7 +10,7 @@ source:
 }
 services:
 {
-  @table::dunefd_services
+  @table::protodune_services
   ChannelStatusService:	    @local::pdsp_channel_status
 }
 

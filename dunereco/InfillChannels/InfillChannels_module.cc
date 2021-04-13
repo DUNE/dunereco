@@ -95,9 +95,8 @@ void Infill::InfillChannels::produce(art::Event& e)
   torch::Tensor infilledRopTensor; 
 
   auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
-  std::cout << detProp.NumberTimeSamples() << std::endl; // Returns 4492?
   // Networks expect a fixed image size
-  // assert(detProp.NumberTimeSamples() == 6000);
+  assert(detProp.NumberTimeSamples() == 6000);
 
   art::Handle<std::vector<raw::RawDigit>> digs;
   e.getByLabel(fInputLabel, digs);
