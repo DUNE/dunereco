@@ -1,3 +1,5 @@
+#include "pandoramodularshowertools_dune.fcl"
+
 BEGIN_PROLOG
 
 dune_pandora:
@@ -25,9 +27,13 @@ dune35t_pandora.ConfigFile:                                         "PandoraSett
 dune35t_pandora.ShouldRunAllHitsCosmicReco:                         true
 dune35t_pandora.ShouldRunStitching:                                 true
 
-dunefd_pandora:                                                     @local::dune_pandora
-dunefd_pandora.ConfigFile:                                          "PandoraSettings_Master_DUNEFD.xml"
-dunefd_pandora.ShouldRunNeutrinoRecoOption:                         true
+dunefd_pandora_neutrino:                                            @local::dune_pandora
+dunefd_pandora_neutrino.ConfigFile:                                 "PandoraSettings_Master_DUNEFD.xml"
+dunefd_pandora_neutrino.ShouldRunNeutrinoRecoOption:                true
+
+dunefd_pandora_cosmic:                                              @local::dune_pandora
+dunefd_pandora_cosmic.ConfigFile:                                   "PandoraSettings_Master_DUNEFD.xml"
+dunefd_pandora_cosmic.ShouldRunCosmicRecoOption:                    true
 
 protodune_pandora:                                                  @local::dune_pandora
 protodune_pandora.ConfigFile:                                       "PandoraSettings_Master_ProtoDUNE.xml"
@@ -49,7 +55,6 @@ protodune_dp_pandora.ShouldRunNeutrinoRecoOption:                   true
 protodune_dp_pandora.ShouldRunCosmicRecoOption:                     true
 protodune_dp_pandora.ShouldPerformSliceId:                          true
 
-
 dune_pandorawriter:                                                 @local::dune_pandora
 dune_pandorawriter.ConfigFile:                                      "PandoraSettings_Write.xml"
 dune_pandorawriter.EnableMCParticles:                               true
@@ -60,9 +65,24 @@ dune_pandoraTrackCreation:
     module_type:                                                    "LArPandoraTrackCreation"
 }
 
+dune_pandoraModularShowerCreation:                                         @local::standard_pandoraModularShowerCreation
+dune_pandoraModularShowerCreation.ShowerFinderTools: [
+  @local::dune_showerpfpvertexstartposition,
+  @local::dune_showerpcadirection,
+  @local::dune_showerlengthpercentile,
+  @local::dune_showernumelectronsenergy,
+  @local::dune_3dcylindertrackhitfinder,
+  @local::dune_showerunidirectiondedx,
+  @local::dune_showerincrementaltrackhitfinder,
+  @local::dune_showerpandoraslidingfittrackfinder,
+  @local::dune_showertrajpointdedx
+]
+
 dune_pandoraShowerCreation:
 {
     module_type:                                                    "LArPandoraShowerCreation"
 }
+
+dunefd_pandora:                                                      @local::dunefd_pandora_neutrino
 
 END_PROLOG

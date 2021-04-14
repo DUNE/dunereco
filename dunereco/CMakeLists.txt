@@ -26,7 +26,6 @@ add_subdirectory(TrackFinderDUNE)
 add_subdirectory(DUNEPandora)
 add_subdirectory(SimFilter)
 add_subdirectory(FDSensOpt)
-add_subdirectory(Gaps)
 add_subdirectory(TrackingAna)
 add_subdirectory(ShowerAna)
 add_subdirectory(HitAnalysis)
@@ -53,6 +52,7 @@ add_subdirectory(APAIO)
 add_subdirectory(ProductFilters)
 add_subdirectory(AnaUtils)
 add_subdirectory(TrackPID)
+add_subdirectory(PandoraAnalysis)
 
 # Respect the order specified in lar_build, which is:
 #

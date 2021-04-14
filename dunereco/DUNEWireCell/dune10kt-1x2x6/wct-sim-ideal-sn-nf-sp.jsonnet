@@ -14,13 +14,13 @@ local f = import "pgrapher/common/funcs.jsonnet";
 local cli = import "pgrapher/ui/cli/nodes.jsonnet";
 
 local io = import "pgrapher/common/fileio.jsonnet";
-local params = import "pgrapher/experiment/pdsp/params.jsonnet";
+local params = import "pgrapher/experiment/dune10kt-1x2x6/params.jsonnet";
 local tools_maker = import "pgrapher/common/tools.jsonnet";
-local sim_maker = import "pgrapher/experiment/pdsp/sim.jsonnet";
+local sim_maker = import "pgrapher/experiment/dune10kt-1x2x6/sim.jsonnet";
 // Fixme: currently, no noise filter.  Need to at least add a "null" NF to produce thresholds.
 // Or, maybe better, move that into OSP.  W/out it, behavior is undefined.
 // local nf = ...
-local sp_maker = import "pgrapher/experiment/pdsp/sp.jsonnet";
+local sp_maker = import "pgrapher/experiment/dune10kt-1x2x6/sp.jsonnet";
 
 local tools = tools_maker(params);
 
@@ -59,7 +59,7 @@ local tracklist = [
    // },
 ];
 
-local output = "wct-pdsp-sim-ideal-sn-nf-sp.npz";
+local output = "wct-dune10kt-1x2x6-sim-ideal-sn-nf-sp.npz";
     
 //local depos = g.join_sources(g.pnode({type:"DepoMerger", name:"BlipTrackJoiner"}, nin=2, nout=1),
 //                             [sim.ar39(), sim.tracks(tracklist)]);

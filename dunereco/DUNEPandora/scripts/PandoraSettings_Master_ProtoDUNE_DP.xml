@@ -31,7 +31,7 @@
         <SliceIdTools>
             <tool type = "LArBdtBeamParticleId">
                 <BdtName>ProtoDUNESP_BeamParticleId</BdtName>
-                <BdtFileName>PandoraMVAData/PandoraBdt_v03_15_02.xml</BdtFileName>
+                <BdtFileName>PandoraMVAData/PandoraBdt_v03_20_00.xml</BdtFileName>
                 <MinAdaBDTScore>-0.225</MinAdaBDTScore>
             </tool>
         </SliceIdTools>
@@ -40,6 +40,7 @@
         <RecreatedClusterListName>RecreatedClusters</RecreatedClusterListName>
         <RecreatedVertexListName>RecreatedVertices</RecreatedVertexListName>
         <VisualizeOverallRecoStatus>false</VisualizeOverallRecoStatus>
+        <LArCaloHitVersion>2</LArCaloHitVersion>
     </algorithm>
 
     <algorithm type = "LArVisualMonitoring">
