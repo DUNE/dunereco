@@ -10,8 +10,8 @@ source:
 }
 services:
 {
-  @table::dunefd_services
-  TFileService: { fileName: "MakeInfillTraining_out.root" }
+  @table::protodune_services
+  TFileService:          { fileName: "MakeInfillTraining_out.root" }
   ChannelStatusService:	 @local::pdsp_channel_status
 }
 
@@ -26,7 +26,3 @@ physics:
 }
 
 services.Geometry: @local::protodune_geo
-
-services.Geometry.Name: "protodunev7"
-services.Geometry.GDML: "protodune_v7.gdml"
-services.Geometry.ROOT: "protodune_v7.gdml"

@@ -1,7 +1,7 @@
 #include "services_dune.fcl"
 #include "InfillChannelsConfig.fcl"
 
-process_name: InfillChannels
+process_name: InfillChannelsFD
 
 source:
 {
@@ -10,8 +10,8 @@ source:
 }
 services:
 {
-  @table::protodune_services
-  ChannelStatusService:	    @local::pdsp_channel_status
+  @table::dunefd_services
+  ChannelStatusService:	@local::dunefd_channel_status # @local::pdsp_channel_status 
 }
 
 outputs:
@@ -19,7 +19,7 @@ outputs:
   out1:
   {
     module_type: RootOutput
-    fileName:    "InfillChannels_out.root"
+    fileName:    "InfillChannelsFD_out.root"
   }
 }
 
@@ -34,4 +34,4 @@ physics:
   out: [ out1 ]
 }
 
-services.Geometry: @local::protodune_geo
+services.Geometry: @local::dune10kt_1x2x6_v2_geo

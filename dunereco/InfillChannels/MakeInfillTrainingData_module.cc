@@ -24,10 +24,13 @@
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RawData/raw.h"
 #include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+
 #include <TH2F.h>
 #include <TTree.h>
 #include <TGeoVolume.h>
 #include <TFile.h>
+
 #include <vector>
 #include <string>
 #include <map>
@@ -89,6 +92,10 @@ void Infill::MakeInfillTrainingData::analyze(art::Event const& e)
   );
   std::map<readout::ROPID, TH2F*> ropImages;
 
+  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
+  // Networks expect a fixed image size
+  assert(detProp.NumberTimeSamples() == 6000);
+
   // Prepare TH2s
   for (const readout::ROPID& rop : fActiveRops) {
     std::string sTitle = (
@@ -107,13 +114,14 @@ void Infill::MakeInfillTrainingData::analyze(art::Event const& e)
     readout::ROPID rop = fGeom->ChannelToROP(dig.Channel());
     if(ropImages.count(rop)){ // Ignores ROPs associated with only inactive TPCIDs
       raw::RawDigit::ADCvector_t adcs(dig.Samples());
+      // raw::Uncompress(dig.ADCs(), adcs, dig.GetPedestal(), dig.Compression());
       raw::Uncompress(dig.ADCs(), adcs, dig.Compression());
 
       const raw::ChannelID_t firstCh = fGeom->FirstChannelInROP(rop);
       for(unsigned int tick = 0; tick < adcs.size(); ++tick){
         const int adc = adcs[tick] ? int(adcs[tick]) - dig.GetPedestal() : 0;
 
-        ropImages[rop]->Fill(dig.Channel() - firstCh, tick, adc);
+        ropImages[rop]->Fill(dig.Channel() - firstCh, tick, adcs[tick]);
       }
     }
   }
@@ -136,6 +144,10 @@ void Infill::MakeInfillTrainingData::beginJob()
       const TGeoVolume* tpcVol = tpc.ActiveVolume();
       
       if (tpcVol->Capacity() > 1000000) { // At least one of the ROP's TPCIDs needs to be active
+        // Networks expect a fixed image size
+        if(fGeom->SignalType(*iRop) == geo::kInduction) assert(fGeom->Nchannels(*iRop) == 800);
+        if(fGeom->SignalType(*iRop) == geo::kCollection) assert(fGeom->Nchannels(*iRop) == 480);
+
         fActiveRops.insert(*iRop);
         break;
       }

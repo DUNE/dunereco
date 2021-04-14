@@ -22,6 +22,7 @@
 #include "lardataobj/RawData/raw.h"
 #include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+
 #include <TGeoVolume.h>
 
 #include <vector>
@@ -84,19 +85,18 @@ Infill::InfillChannels::InfillChannels(fhicl::ParameterSet const& p)
   consumes<std::vector<raw::RawDigit>>(fInputLabel);
 
   produces<std::vector<raw::RawDigit>>();
-  // produces<std::vector<raw::RawDigit>>("masked");
 }
 
 void Infill::InfillChannels::produce(art::Event& e)
 {
+  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
+  // Networks expect a fixed image size
+  assert(detProp.NumberTimeSamples() <= 6000);
+    
   typedef std::array<short, 6000> vecAdc;
   std::map<raw::ChannelID_t, vecAdc> infilledAdcs;
   torch::Tensor maskedRopTensor;
   torch::Tensor infilledRopTensor; 
-
-  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
-  // Networks expect a fixed image size
-  assert(detProp.NumberTimeSamples() == 6000);
 
   art::Handle<std::vector<raw::RawDigit>> digs;
   e.getByLabel(fInputLabel, digs);
@@ -118,13 +118,11 @@ void Infill::InfillChannels::produce(art::Event& e)
       if (rop != currentRop) continue;
 
       raw::RawDigit::ADCvector_t adcs(dig.Samples());
-      raw::Uncompress(dig.ADCs(), adcs, dig.Compression()); // can put pedestal in here
-
-      // Networks expect a fixed image size
-      assert(adcs.size() == 6000);
+      // raw::Uncompress(dig.ADCs(), adcs, dig.GetPedestal(), dig.Compression());
+      raw::Uncompress(dig.ADCs(), adcs, dig.Compression());
 
       for (unsigned int tick = 0; tick < adcs.size(); ++tick) {
-        const short adc = adcs[tick] ? short(adcs[tick]) - dig.GetPedestal() : 0;
+        const int adc = adcs[tick] ? int(adcs[tick]) - dig.GetPedestal() : 0;
 
         maskedRopTensorAccess[0][0][tick][dig.Channel() - firstCh] = adc;
       } 
@@ -146,7 +144,7 @@ void Infill::InfillChannels::produce(art::Event& e)
     auto infilledRopTensorAccess = infilledRopTensor.accessor<float, 4>();
     for (const raw::ChannelID_t ch : fDeadChannels) {
       if (fGeom->ChannelToROP(ch) == currentRop) {
-        for (unsigned int tick = 0; tick < infilledRopTensor.sizes()[2]; ++tick) {
+        for (unsigned int tick = 0; tick < detProp.NumberTimeSamples(); ++tick) {
           infilledAdcs[ch][tick] = (short)std::round(infilledRopTensorAccess[0][0][tick][ch - firstCh]);
         }
       }
@@ -159,7 +157,7 @@ void Infill::InfillChannels::produce(art::Event& e)
   for (raw::RawDigit& dig : *infilledDigs) {
     if (infilledAdcs.count(dig.Channel())) {
       raw::RawDigit::ADCvector_t infilledAdc(
-        infilledAdcs[dig.Channel()].begin(), infilledAdcs[dig.Channel()].end()
+        infilledAdcs[dig.Channel()].begin(), (infilledAdcs[dig.Channel()].begin() + detProp.NumberTimeSamples())
       );
       raw::Compress(infilledAdc, dig.Compression()); // need to consider compression parameters
       dig = raw::RawDigit(dig.Channel(), dig.Samples(), infilledAdc, dig.Compression());
@@ -172,25 +170,6 @@ void Infill::InfillChannels::beginJob()
 {
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
 
-  // Get active ROPs (not facing a wall)
-  geo::ROP_id_iterator iRop, rBegin(fGeom, geo::ROP_id_iterator::begin_pos), 
-    rEnd(fGeom, geo::ROP_id_iterator::end_pos);
-  for (iRop = rBegin; iRop != rEnd; ++iRop) { // Iterate over ROPs in detector
-    for (const geo::TPCID tpcId : fGeom->ROPtoTPCs(*iRop)) {
-      const geo::TPCGeo tpc = fGeom->TPC(tpcId);
-      const TGeoVolume* tpcVol = tpc.ActiveVolume();
-      
-      if (tpcVol->Capacity() > 1000000) { // At least one of the ROP's TPCIDs needs to be active
-        // Networks expect a fixed image size
-        if(fGeom->SignalType(*iRop) == geo::kInduction) assert(fGeom->Nchannels(*iRop) == 800);
-        if(fGeom->SignalType(*iRop) == geo::kCollection) assert(fGeom->Nchannels(*iRop) == 480);
-
-        fActiveRops.insert(*iRop);
-        break;
-      }
-    }
-  }
-
   // Dead channels = bad channels + noisy channels
   fBadChannels = art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider().BadChannels();
   fNoisyChannels = art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider().NoisyChannels();
@@ -200,6 +179,34 @@ void Infill::InfillChannels::beginJob()
     std::inserter(fDeadChannels, fDeadChannels.begin())
   );
 
+  // Get active ROPs (not facing a wall and has dead channels)
+  geo::ROP_id_iterator iRop, rBegin(fGeom, geo::ROP_id_iterator::begin_pos), 
+    rEnd(fGeom, geo::ROP_id_iterator::end_pos);
+  for (iRop = rBegin; iRop != rEnd; ++iRop) { // Iterate over ROPs in detector
+    bool hasDeadCh = false;
+    for (raw::ChannelID_t ch : fDeadChannels) {
+      if (fGeom->ChannelToROP(ch) == *iRop) {
+        hasDeadCh = true;
+        break;
+      }
+    }
+    if (!hasDeadCh) continue; // Don't need to infill ROPs without dead channels
+
+    for (const geo::TPCID tpcId : fGeom->ROPtoTPCs(*iRop)) {
+      const geo::TPCGeo tpc = fGeom->TPC(tpcId);
+      const TGeoVolume* tpcVol = tpc.ActiveVolume();
+      
+      if (tpcVol->Capacity() > 1000000) { // At least one of the ROP's TPCIDs needs to be active
+        // Networks expect a fixed image size
+        if(fGeom->SignalType(*iRop) == geo::kInduction) assert(fGeom->Nchannels(*iRop) <= 800);
+        if(fGeom->SignalType(*iRop) == geo::kCollection) assert(fGeom->Nchannels(*iRop) <= 480);
+
+        fActiveRops.insert(*iRop);
+        break;
+      }
+    }
+  }
+  
   // Check dead channels resemble the dead channels used for training
   raw::ChannelID_t chGap = 1;
   for (const raw::ChannelID_t ch : fDeadChannels) {
