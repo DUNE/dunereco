@@ -18,9 +18,9 @@ namespace cnn
   RegCNNBoundary3D::RegCNNBoundary3D(const int& nbinsX, // # of wires of pixel map
                      const int& nbinsY,              // # of TDC of pixel map
                      const int& nbinsZ,              // # of TDC of pixel map
-                     const float& x_length,              // # of Wire merging
-		             const float& y_length,              // # of TDC merging
-		             const float& z_length,              // # of TDC merging
+                     const double& x_length,              // # of Wire merging
+		             const double& y_length,              // # of TDC merging
+		             const double& z_length,              // # of TDC merging
                      const float& center_X,
                      const float& center_Y,
                      const float& center_Z):

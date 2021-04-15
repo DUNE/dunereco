@@ -29,6 +29,8 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/Shower.h"
 
 namespace detinfo {
     class DetectorClocksData;
@@ -44,35 +46,59 @@ namespace cnn
     class RegPixelMap3DProducer
     {
         public:
-            RegPixelMap3DProducer(unsigned int nbinsX, float xmin, float xmax, 
-                    unsigned int nbinsY, float ymin, float ymax,
-                    unsigned int nbinsZ, float zmin, float zmax);
+            RegPixelMap3DProducer(int nbinsX, int nbinsY, int nbinsZ,
+                    double XResolution, double YResolution, double ZResolution,
+                    bool Cropped, bool ProngOnly);
 
             /// Get boundaries for pixel map representation of cluster
             RegCNNBoundary3D Define3DBoundary(detinfo::DetectorPropertiesData const& detProp,
                     std::vector< art::Ptr< recob::Hit > > const& cluster,
                     const std::vector<float> &vtx);
 
+            // prong tag by track
             RegPixelMap3D Create3DMap(detinfo::DetectorClocksData const& clockData,
                     detinfo::DetectorPropertiesData const& detProp,
                     std::vector< art::Ptr< recob::Hit > > const& cluster,
                     art::FindManyP<recob::SpacePoint> const& fmSPFromHits,
+                    art::FindManyP<recob::Track> const& fmtrkhit,
                     const std::vector<float> &vtx);
 
             RegPixelMap3D Create3DMapGivenBoundaryBySP(detinfo::DetectorClocksData const& clockData,
                     detinfo::DetectorPropertiesData const& detProp,
                     std::vector< art::Ptr< recob::Hit > > const& cluster,
                     const RegCNNBoundary3D& bound,
-                    art::FindManyP<recob::SpacePoint> const& fmSPFromHits);
+                    art::FindManyP<recob::SpacePoint> const& fmSPFromHits,
+                    art::FindManyP<recob::Track> const& fmtrkhit,
+                    const bool& Cropped,
+                    const bool& ProngOnly);
+
+            // prong tag by shower
+            RegPixelMap3D Create3DMap(detinfo::DetectorClocksData const& clockData,
+                    detinfo::DetectorPropertiesData const& detProp,
+                    std::vector< art::Ptr< recob::Hit > > const& cluster,
+                    art::FindManyP<recob::SpacePoint> const& fmSPFromHits,
+                    art::FindManyP<recob::Shower> const& fmshwkhit,
+                    const std::vector<float> &vtx);
+
+            RegPixelMap3D Create3DMapGivenBoundaryBySP(detinfo::DetectorClocksData const& clockData,
+                    detinfo::DetectorPropertiesData const& detProp,
+                    std::vector< art::Ptr< recob::Hit > > const& cluster,
+                    const RegCNNBoundary3D& bound,
+                    art::FindManyP<recob::SpacePoint> const& fmSPFromHits,
+                    art::FindManyP<recob::Shower> const& fmshwhit,
+                    const bool& Cropped,
+                    const bool& ProngOnly);
 
         private:
 
-            unsigned int fNBinsX;
-            unsigned int fNBinsY;
-            unsigned int fNBinsZ;
-            float fLengthX;
-            float fLengthY;
-            float fLengthZ;
+            int fNBinsX;
+            int fNBinsY;
+            int fNBinsZ;
+            double fLengthX;
+            double fLengthY;
+            double fLengthZ;
+            bool fCropped;
+            bool fProngOnly;
 
             art::ServiceHandle<geo::Geometry> geom;
     };

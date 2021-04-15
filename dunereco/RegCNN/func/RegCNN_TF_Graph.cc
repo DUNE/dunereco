@@ -39,17 +39,16 @@ tf::RegCNNGraph::RegCNNGraph(const char* graph_file_name, const unsigned int &ni
     size_t ng = graph_def.node().size();
 
     // uncomment following to print debug info
-    std::cout<<"debug info :"<<graph_file_name<<" has "<<ng<<" nodes"<<std::endl;
-    for (size_t i= 0; i< ng; ++i) {
-      auto node = graph_def.node()[i];
-      std::cout<<i<<" "<<node.name()<<" "<<node.op();
-      for (auto iter=node.attr().cbegin(); iter!=node.attr().cend(); ++iter) {
-        std::cout<<" "<<iter->first;
-      }
-      std::cout<<std::endl;
-    }
+    //std::cout<<"debug info :"<<graph_file_name<<" has "<<ng<<" nodes"<<std::endl;
+    //for (size_t i= 0; i< ng; ++i) {
+    //  auto node = graph_def.node()[i];
+    //  std::cout<<i<<" "<<node.name()<<" "<<node.op();
+    //  for (auto iter=node.attr().cbegin(); iter!=node.attr().cend(); ++iter) {
+    //    std::cout<<" "<<iter->first;
+    //  }
+    //  std::cout<<std::endl;
+    //}
 
-    std::cout<<"Here 1"<<std::endl;
 
     // set input names
     std::string ss("input_");
@@ -60,7 +59,6 @@ tf::RegCNNGraph::RegCNNGraph(const char* graph_file_name, const unsigned int &ni
         //std::cout<< graph_def.node()[ii].name() << std::endl;
     }
 
-    std::cout<<"Here 2"<<std::endl;
 
     // last node as output if no specific name provided
     if (outputs.empty()) { fOutputNames.push_back(graph_def.node()[ng - 1].name()); }
@@ -97,12 +95,10 @@ tf::RegCNNGraph::RegCNNGraph(const char* graph_file_name, const unsigned int &ni
         return;
     }
 
-    std::cout<<"Here 3"<<std::endl;
 
     status = fSession->Create(graph_def);
     if (!status.ok())
     {
-        std::cout<<"Here 4"<<std::endl;
         std::cout << status.ToString() << std::endl;
         return;
     }

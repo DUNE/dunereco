@@ -68,7 +68,7 @@ namespace cnn {
             std::cerr<<"error loading the model\n";
             return;
         }
-        std::cout<<"loaded model "<<fNetwork<<" ... ok\n"<<std::endl;
+        mf::LogDebug("RegCNNPyTorch::beginJob")<<"loaded model "<<fNetwork<<" ... ok\n";
     }
 
     void RegCNNPyTorch::endJob() {
@@ -79,7 +79,7 @@ namespace cnn {
         std::unique_ptr< std::vector<RegCNNResult> >
                                       resultCol(new std::vector<RegCNNResult>);
 
-        /// Load in 3D pixel map for direction reco.
+        /// Load 3D pixel map for direction reco.
         art::Handle< std::vector< cnn::RegPixelMap3D > > pixelmap3DListHandle;
         std::vector< art::Ptr< cnn::RegPixelMap3D > > pixelmap3Dlist;
         if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmap3DListHandle)) {
@@ -87,22 +87,34 @@ namespace cnn {
         }
 
         if (pixelmap3Dlist.size() > 0) {
-            std::cout<<"have pixelmap3Dlist"<<std::endl;
+            mf::LogDebug("RegCNNPyTorch::produce")<<"3D pixel map was made for this event, loading it as the input";
+
             RegPixelMap3D pm = *pixelmap3Dlist[0];
 
-            at::Tensor t_pm = torch::from_blob(pm.fPE.data(), {1,1,32,32,32});
+            // Convert RegPixelMap3D to at::Tensor, which is the actual input of the network
+            // Currently we have two configurations for the 3D pixel map
+            // 100*100*100: a pixel map centered at the vertex, need longer evaluation time
+            // 32*32*32: cropped pixel map around the vertex of the interaction from 100*100*100 pm, faster
+            at::Tensor t_pm;
+            if (pm.IsCroppedPM()) {
+                t_pm = torch::from_blob(pm.fPECropped.data(), {1,1,32,32,32});
+            } else {
+                t_pm = torch::from_blob(pm.fPE.data(), {1,1,100,100,100});
+            }
 
             std::vector<torch::jit::IValue> inputs_pm;
             inputs_pm.push_back(t_pm);
             at::Tensor torchOutput = module.forward(inputs_pm).toTensor();
 
+            // Output of the network
+            // Currently only direction reconstruction utilizes 3D CNN, which has 3 output represent 3 components
+            // Absolute value of 3 output are meaningless, their combination is the direction of the prong
             std::vector<float> networkOutput;
             for (unsigned int i= 0; i< 3; ++i) {
                 networkOutput.push_back(torchOutput[0][i].item<float>());
                 std::cout<<torchOutput[0][i].item<float>()<<std::endl;
             }
 
-            //std::vector<float> networkOutput(3);
             resultCol->emplace_back(networkOutput);
 
             //std::cout<<output.slice(/*dim=*/1, /*start=*/0, /*end=*/10) << '\n';

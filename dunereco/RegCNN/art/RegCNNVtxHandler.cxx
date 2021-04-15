@@ -27,7 +27,8 @@ namespace cnn
     fTimeResolution   (pset.get<unsigned short>     ("TimeResolution")),
     fWireResolution   (pset.get<unsigned short>     ("WireResolution")),
     fGlobalWireMethod (pset.get<int>                ("GlobalWireMethod")),
-    fProducer      (fWireLength, fWireResolution, fTdcWidth, fTimeResolution, fGlobalWireMethod)
+//    fProngOnly        (pset.get<bool>               ("ProngOnly")),
+    fProducer      (fWireLength, fWireResolution, fTdcWidth, fTimeResolution, fGlobalWireMethod, 0, 1)
   {
   }
   std::vector<float> RegCNNVtxHandler::GetVertex(detinfo::DetectorClocksData const& clockData,

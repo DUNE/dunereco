@@ -4,23 +4,26 @@ BEGIN_PROLOG
 
 regcnn_analysistree:
 {
-    module_type:          "RegCNNAna"
+    module_type:            "RegCNNAna"
 
-    CalorimetryAlg:       @local::dune10kt_calorimetryalgmc
-    MCGenModuleLabel:     "generator"
-    RegCNNModuleLabel:    "regcnneval"
-    RegCNNResultLabel:    "regcnnresult"
-    RegCNNDirModuleLabel: "regcnnnumudireval"
-    RegCNNDirResultLabel: "regcnnnumudirresult"
-    HitsModuleLabel:      "linecluster"
-    EnergyRecoNueLabel:   "energyreconue"
-    TrackToHitLabel:      "pandoraTrack"
-    ShowerToHitLabel:     "pandoraShower"
-    ParticleLabel:        "pandora"
-    TrackLabel:           "pandoraTrack"
-    TrackLabelDir:        "pandoraTrack"
-    ShowerLabel:          "pandoraShower"
-    RecombFactor:         0.63
+    CalorimetryAlg:         @local::dune10kt_calorimetryalgmc
+    MCGenModuleLabel:       "generator"
+    RegCNNModuleLabel:      "regcnneval"
+    RegCNNResultLabel:      "regcnnresult"
+    RegCNNProngModuleLabel: "regcnnnueprongeval"
+    RegCNNProngResultLabel: "regcnnnueprongresult"
+    RegCNNDirModuleLabel:   "regcnnnumudireval"
+    RegCNNDirResultLabel:   "regcnnnumudirresult"
+    HitsModuleLabel:        "linecluster"
+    EnergyRecoNuLabel:      "energyreconue"
+    TrackToHitLabel:        "pandoraTrack"
+    ShowerToHitLabel:       "pandoraShower"
+    ParticleLabel:          "pandora"
+    TrackLabel:             "pandoraTrack"
+    TrackLabelDir:          "pandoraTrack"
+    ShowerLabel:            "pandoraShower"
+    ShowerLabelDir:         "emshowernew"
+    RecombFactor:           0.63
 }
 
 END_PROLOG

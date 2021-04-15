@@ -3,7 +3,7 @@
 // \brief   Producer module for creating RegCNN PixelMap objects modified from CVNMapper_module.cc
 // \author  Ilsoo Seong - iseong@uci.edu
 //
-// Modifications to interface for numu energy estimation
+// Modifications to interface for numu energy, prong direction
 //  - Wenjie Wu - wenjieww@uci.edu
 ////////////////////////////////////////////////////////////////////////
 
@@ -29,16 +29,18 @@
 #include "canvas/Persistency/Common/FindManyP.h"
 
 // LArSoft includes
-#include "lardataobj/RecoBase/Hit.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RawData/ExternalTrigger.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 
 #include "lardata/Utilities/AssociationUtil.h"
+#include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/Shower.h"
 #include "nusimdata/SimulationBase/MCNeutrino.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
@@ -73,12 +75,11 @@ namespace cnn {
     /// Minimum number of hits for cluster to be converted to pixel map
     unsigned short fMinClusterHits;
 
+    /// parameters for 2D pixel maps
     /// Width of pixel map in tdcs
     unsigned short fTdcWidth;
-
     /// Length of pixel map in wires
     unsigned short fWireLength;
-
     // resolution of ticks
     double fTimeResolution;
     // resolution of wires
@@ -95,9 +96,28 @@ namespace cnn {
     int fGlobalWireMethod;
     /// select how to choose center of pixel map
     int fUseRecoVertex;
+    /// select how to tag prong
+    int fProngTagMethod;
+
     /// choose to create 3D pixel maps
     int fUseThreeDMap;
+    // Crop pixel size to 32x32x32
+    bool fCropped;
+    // Use Prong only pixel maps
+    bool fProngOnly;
+    // How many pixels in each dimension
+    int fUnitX;
+    int fUnitY;
+    int fUnitZ;
+    // The real space covered by one pixel (in cm)
+    double fXResolution;
+    double fYResolution;
+    double fZResolution;
+    // generate pixel map by raw charge or by reco. hit
+    bool fByHit;
 
+    std::string fShowerModuleLabel;
+    std::string fTrackModuleLabel;
     std::string fVertexModuleLabel;
     std::string fPFParticleModuleLabel;
     std::string fPandoraNuVertexModuleLabel;
@@ -124,19 +144,31 @@ namespace cnn {
   fWireResolution   (pset.get<unsigned short>      ("WireResolution")),
   fGlobalWireMethod (pset.get<int>                 ("GlobalWireMethod")),
   fUseRecoVertex    (pset.get<int>                 ("UseRecoVertex")),
+  fProngTagMethod   (pset.get<int>                 ("ProngTagMethod")),
   fUseThreeDMap     (pset.get<int>                 ("UseThreeDMap")),
+  fCropped          (pset.get<bool>                ("Cropped")),
+  fProngOnly        (pset.get<bool>                ("ProngOnly")),
+  fUnitX            (pset.get<int>                 ("UnitX")),
+  fUnitY            (pset.get<int>                 ("UnitY")),
+  fUnitZ            (pset.get<int>                 ("UnitZ")),
+  fXResolution      (pset.get<double>              ("XResolution")),
+  fYResolution      (pset.get<double>              ("YResolution")),
+  fZResolution      (pset.get<double>              ("ZResolution")),
+  fByHit            (pset.get<bool>                ("ByHit")),
+  fShowerModuleLabel(pset.get<std::string>         ("ShowerModuleLabel")),
+  fTrackModuleLabel (pset.get<std::string>         ("TrackModuleLabel")),
   fVertexModuleLabel(pset.get<std::string>         ("VertexModuleLabel")),
   fPFParticleModuleLabel(pset.get<std::string>     ("PFParticleModuleLabel")),
   fPandoraNuVertexModuleLabel(pset.get<std::string>("PandoraNuVertexModuleLabel")),
   fRegCNNResultLabel (pset.get<std::string>        ("RegCNNResultLabel")),
   fRegCNNModuleLabel (pset.get<std::string>        ("RegCNNModuleLabel")),
-  fProducer(RegPixelMapProducer(fWireLength, fWireResolution, fTdcWidth, fTimeResolution, fGlobalWireMethod)),
-  fProducer3D(RegPixelMap3DProducer(32, 0., 160., 32, 0., 160, 32, 0., 320.))
+  fProducer(RegPixelMapProducer(fWireLength, fWireResolution, fTdcWidth, fTimeResolution, fGlobalWireMethod, fProngOnly, fByHit)),
+  fProducer3D(RegPixelMap3DProducer(fUnitX, fUnitY, fUnitZ, fXResolution, fYResolution, fZResolution, fCropped, fProngOnly))
     { 
         if (fUseThreeDMap==0) {
-            produces< std::vector<cnn::RegPixelMap>   >(fClusterPMLabel);
+            produces< std::vector<cnn::RegPixelMap> >(fClusterPMLabel);
         } else if (fUseThreeDMap==1) {
-            produces< std::vector<cnn::RegPixelMap3D>   >(fClusterPMLabel);
+            produces< std::vector<cnn::RegPixelMap3D> >(fClusterPMLabel);
         } else {
             mf::LogError("RegCNNMapper::RegCNNMapper")<<"RegCNNMapper accepts 0 or 1 for fUseThreeDMap"<<std::endl;
         }
@@ -152,7 +184,8 @@ namespace cnn {
 
   //......................................................................
   void RegCNNMapper::beginJob()
-  {  }
+  {  
+  }
 
   //......................................................................
   void RegCNNMapper::endJob()
@@ -162,6 +195,7 @@ namespace cnn {
   //......................................................................
   void RegCNNMapper::produce(art::Event& evt)
   {
+    std::cout<<"ievet : "<<evt.id()<<std::endl;
 
     art::Handle< std::vector< recob::Hit > > hitListHandle;
     std::vector< art::Ptr< recob::Hit > > hitlist;
@@ -169,6 +203,8 @@ namespace cnn {
       art::fill_ptr_vector(hitlist, hitListHandle);
 
     art::FindManyP<recob::Wire> fmwire(hitListHandle, evt, fHitsModuleLabel);
+    art::FindManyP<recob::Shower> fmshwhit(hitListHandle, evt, fShowerModuleLabel);
+    art::FindManyP<recob::Track> fmtrkhit(hitListHandle, evt, fTrackModuleLabel);
 
     unsigned short nhits = hitlist.size();
 
@@ -196,24 +232,29 @@ namespace cnn {
             if (fUseRecoVertex==0){
                 // create pixel map based on mean of wire and ticks
                 pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire);
-            } else if (fUseRecoVertex==1) {
-              // create pixel map based on the reconstructed vertex
-              // Get RegCNN Results
-              art::Handle<std::vector<cnn::RegCNNResult>> cnnresultListHandle;
-              evt.getByLabel(fRegCNNModuleLabel, fRegCNNResultLabel, cnnresultListHandle);
-                  std::vector<float> vtx(3, -99999);
-              if (!cnnresultListHandle.failedToGet())
-              {
-                  if (!cnnresultListHandle->empty())
-                  {
-                      const std::vector<float>& v = (*cnnresultListHandle)[0].fOutput;
-                      for (unsigned int ii = 0; ii < 3; ii++){
-                           vtx[ii] = v[ii];
-                           std::cout<<"vertex "<<ii<<" : "<<vtx[ii]<<std::endl;
-                      }
-                  }
-              }
-              pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, vtx);
+            } 
+            else if (fUseRecoVertex==1) {
+                // create pixel map based on the reconstructed vertex
+                // Get RegCNN Results
+                art::Handle<std::vector<cnn::RegCNNResult>> cnnresultListHandle;
+                evt.getByLabel(fRegCNNModuleLabel, fRegCNNResultLabel, cnnresultListHandle);
+                std::vector<float> vtx(3, -99999);
+                if (!cnnresultListHandle.failedToGet())
+                {
+                    if (!cnnresultListHandle->empty())
+                    {
+                        const std::vector<float>& v = (*cnnresultListHandle)[0].fOutput;
+                        for (unsigned int ii = 0; ii < 3; ii++){
+                            vtx[ii] = v[ii];
+                            std::cout<<"vertex "<<ii<<" : "<<vtx[ii]<<std::endl;
+                        }
+                    }
+                }
+                if (fProngTagMethod==1) {
+                    pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, fmtrkhit, vtx);
+                } else {
+                    pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, fmshwhit, vtx);
+                }
             }
             else if (fUseRecoVertex==2) {
                 // create pixel map based on pandora vertex
@@ -249,32 +290,42 @@ namespace cnn {
                         }
                     }
                 } 
-                pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, vtx);
+                if (fProngTagMethod==1) {
+                    pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, fmtrkhit, vtx);
+                } else {
+                    std::cout<<"FIXME: CreateMap from fmshwhit and pandora vtx"<<std::endl;
+                    pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, fmshwhit, vtx);
+                }
             }
             else {
-              // create pixel map based on the reconstructed vertex on wire and tick coordinate
-              // Get RegCNN Results
-              art::Handle<std::vector<cnn::RegCNNResult>> cnnresultListHandle;
-              evt.getByLabel(fRegCNNModuleLabel, fRegCNNResultLabel, cnnresultListHandle);
-                  std::vector<float> vtx(6, -99999);
-              if (!cnnresultListHandle.failedToGet())
-              {
-                  if (!cnnresultListHandle->empty())
-                  {
-                      const std::vector<float>& v = (*cnnresultListHandle)[0].fOutput;
-                      for (unsigned int ii = 0; ii < 6; ii++){
-                           vtx[ii] = v[ii];
-                      }
-                  }
-              }
-              pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, vtx);
+                // create pixel map based on the reconstructed vertex on wire and tick coordinate
+                // Get RegCNN Results
+                art::Handle<std::vector<cnn::RegCNNResult>> cnnresultListHandle;
+                evt.getByLabel(fRegCNNModuleLabel, fRegCNNResultLabel, cnnresultListHandle);
+                std::vector<float> vtx(6, -99999);
+                if (!cnnresultListHandle.failedToGet())
+                {
+                    if (!cnnresultListHandle->empty())
+                    {
+                        const std::vector<float>& v = (*cnnresultListHandle)[0].fOutput;
+                        for (unsigned int ii = 0; ii < 6; ii++){
+                            vtx[ii] = v[ii];
+                        }
+                    }
+                }
+                if (fProngTagMethod==1) {
+                    pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, fmtrkhit, vtx);
+                } else {
+                    pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, fmshwhit, vtx);
+                }
             }
             // skip if PixelMap is empty
             if (pm.fInPM) pmCol->push_back(pm);
-        }
+        } // end if fUseThreeDMap==0
         else if (fUseThreeDMap==1) {
             RegPixelMap3D pm;
             if (fUseRecoVertex==2) {
+                std::cout<<"Making 3D pixel maps ......"<<std::endl;
                 // create pixel map based on pandora vertex
                 lar_pandora::PFParticleVector particleVector;
                 lar_pandora::LArPandoraHelper::CollectPFParticles(evt, fPandoraNuVertexModuleLabel, particleVector);
@@ -308,12 +359,16 @@ namespace cnn {
                         }
                     }
                 } 
-                pm = fProducer3D.Create3DMap(clockData, detProp, hitlist, fmSPFromHits, vtx);
+                if (fProngTagMethod==1) {
+                    pm = fProducer3D.Create3DMap(clockData, detProp, hitlist, fmSPFromHits, fmtrkhit, vtx);
+                } else {
+                    pm = fProducer3D.Create3DMap(clockData, detProp, hitlist, fmSPFromHits, fmshwhit, vtx);
+                }
             }
             if (pm.fInPM) pm3DCol->push_back(pm);
         }
-        
-      //pm.Print();
+
+        //pm.Print();
     }
     //Boundary bound = pm.Bound();
     //}
@@ -324,7 +379,7 @@ namespace cnn {
         evt.put(std::move(pm3DCol), fClusterPMLabel);
     }
     std::cout<<"Map Complete!"<<std::endl;
-  }
+}
 
   //----------------------------------------------------------------------
 

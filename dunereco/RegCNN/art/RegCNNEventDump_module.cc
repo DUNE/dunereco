@@ -2,6 +2,9 @@
 // \file    RegCNNEventDump_module.cc
 // \brief   Analyzer module for creating RegCNN PixelMap objects modified from CVNEventDump_module.cc
 // \author  Ilsoo Seong - iseong@uci.edu
+// 
+// Modifications to implement 3D maps
+// - Wenjie Wu - wenjieww@uci.edu
 ////////////////////////////////////////////////////////////////////////
 
 // C/C++ includes
@@ -39,8 +42,7 @@
 #include "larsim/MCCheater/BackTracker.h"
 
 #include "dune/RegCNN/func/RegPixelMap.h"
-
-
+#include "dune/RegCNN/func/RegPixelMap3D.h"
 
 namespace cnn {
   class RegCNNEventDump : public art::EDAnalyzer {
@@ -57,14 +59,19 @@ namespace cnn {
   private:
 
     std::string fPixelMapInput;
+    std::string fPixelMap3DInput;
     std::string fGenieGenModuleLabel;
     bool        fWriteMapTH2;
+    bool        fWriteMapTH3;
+    bool        fWriteCroppedMapTH3;
     bool        fApplyFidVol;
 
     //art::ServiceHandle<cheat::BackTracker> fBT;
 
     /// Function to extract TH2 from PixelMap and write to TFile
     void WriteMapTH2(const art::Event& evt, int slice, const RegPixelMap& pm);
+    void WriteMapTH3(const art::Event& evt, int slice, const RegPixelMap3D& pm);
+    void WriteCroppedMapTH3(const art::Event& evt, int slice, const RegPixelMap3D& pm);
 
   };
 
@@ -82,10 +89,13 @@ namespace cnn {
   //......................................................................
   void RegCNNEventDump::reconfigure(const fhicl::ParameterSet& pset)
   {
-    fPixelMapInput  = pset.get<std::string>("PixelMapInput");
-    fGenieGenModuleLabel  = pset.get<std::string>("GenieGenModuleLabel");
-    fWriteMapTH2    = pset.get<bool>       ("WriteMapTH2");
-    fApplyFidVol    = pset.get<bool>("ApplyFidVol");
+    fPixelMapInput       = pset.get<std::string>("PixelMapInput");
+    fPixelMap3DInput     = pset.get<std::string>("PixelMap3DInput");
+    fGenieGenModuleLabel = pset.get<std::string>("GenieGenModuleLabel");
+    fWriteMapTH2         = pset.get<bool>       ("WriteMapTH2");
+    fWriteMapTH3         = pset.get<bool>       ("WriteMapTH3");
+    fWriteCroppedMapTH3  = pset.get<bool>       ("WriteCroppedMapTH3");
+    fApplyFidVol         = pset.get<bool>       ("ApplyFidVol");
     
   }
 
@@ -112,9 +122,18 @@ namespace cnn {
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
 
     unsigned short nhits =  pixelmaplist.size();
-    // If we have no hits then return
-    if(nhits < 1) return;
 
+    // Get the 3D pixel maps
+    art::Handle<std::vector<cnn::RegPixelMap3D> > pm3DListHandle;
+    std::vector<art::Ptr<cnn::RegPixelMap3D> > pm3Dlist;
+    if (evt.getByLabel(fPixelMap3DInput, fPixelMap3DInput, pm3DListHandle))
+        art::fill_ptr_vector(pm3Dlist, pm3DListHandle);
+
+    unsigned short npm3D = pm3Dlist.size();
+    std::cout<<"npm3D: "<<npm3D<<std::endl;
+
+    // If we have no hits then return
+    if (npm3D < 1 && nhits < 1) return;
 
     // * monte carlo
     art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
@@ -151,6 +170,8 @@ namespace cnn {
 
     // Make a plot of the pixel map if required
     if (fWriteMapTH2) WriteMapTH2(evt, 0, *pixelmaplist[0]);
+    if (fWriteMapTH3) WriteMapTH3(evt, 0, *pm3Dlist[0]);
+    if (fWriteCroppedMapTH3) WriteCroppedMapTH3(evt, 0, *pm3Dlist[0]);
 
   }
 
@@ -208,13 +229,38 @@ namespace cnn {
 
   }
 
+  void RegCNNEventDump::WriteMapTH3(const art::Event& evt, int slice, const RegPixelMap3D& pm) {
+      std::cout<<"Write Map to TH3"<<std::endl;
+      std::stringstream name;
+      name << "RegPixelMap3D_r" << evt.run() << "_s" << evt.subRun() << "_e" << evt.event() << "_sl" << slice;
+      TH3F* hist = pm.ToTH3();
+      hist->SetName(name.str().c_str());
+
+      art::ServiceHandle<art::TFileService> tfs;
+      TH3F* histWrite = tfs->make<TH3F>(*hist);
+      histWrite->Write();
+
+      delete hist;
+      delete histWrite;
+  }
+
+  void RegCNNEventDump::WriteCroppedMapTH3(const art::Event& evt, int slice, const RegPixelMap3D& pm) {
+      std::cout<<"Write Cropped Map to TH3"<<std::endl;
+      std::stringstream name;
+      name << "RegCroppedPixelMap3D_r" << evt.run() << "_s" << evt.subRun() << "_e" << evt.event() << "_sl" << slice;
+      TH3F* hist = pm.ToCroppedTH3();
+      hist->SetName(name.str().c_str());
+
+      art::ServiceHandle<art::TFileService> tfs;
+      TH3F* histWrite = tfs->make<TH3F>(*hist);
+      histWrite->Write();
+
+      delete hist;
+      delete histWrite;
+  }
+
 DEFINE_ART_MODULE(cnn::RegCNNEventDump)
 } // end namespace cnn
 ////////////////////////////////////////////////////////////////////////
-
-
-
-
-
 
 
