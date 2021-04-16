@@ -1,7 +1,7 @@
 find_ups_product(libtorch)
 find_package(Torch REQUIRED)
 
-include_directories(PRIVATE ${TORCH_INCLUDE_DIRS})
+include_directories(SYSTEM ${TORCH_INCLUDE_DIRS})
 
 art_make(
         MODULE_LIBRARIES
@@ -42,11 +42,6 @@ art_make(
                 ${ROOT_ROOFIT}
                 ${ROOT_ROOFITCORE}
         )
-
-cet_set_compiler_flags(DIAGS CAUTIOUS
-    NO_UNDEFINED
-    EXTRA_FLAGS)
-#    -pedantic)
 
 install_headers()
 install_fhicl()

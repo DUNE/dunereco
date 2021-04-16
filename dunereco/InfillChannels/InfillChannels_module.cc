@@ -31,7 +31,6 @@
 #include <algorithm>
 #include <iterator>
 #include <array>
-#include <cassert>
 
 #include <torch/script.h>
 #include <torch/torch.h>
@@ -91,8 +90,10 @@ void Infill::InfillChannels::produce(art::Event& e)
 {
   auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
   // Networks expect a fixed image size
-  assert(detProp.NumberTimeSamples() <= 6000);
-    
+  if (detProp.NumberTimeSamples() > 6000) {
+    throw std::invalid_argument("Networks cannot handle more than 6000 time ticks");
+  } 
+      
   typedef std::array<short, 6000> vecAdc;
   std::map<raw::ChannelID_t, vecAdc> infilledAdcs;
   torch::Tensor maskedRopTensor;
@@ -118,9 +119,8 @@ void Infill::InfillChannels::produce(art::Event& e)
       if (rop != currentRop) continue;
 
       raw::RawDigit::ADCvector_t adcs(dig.Samples());
-      // raw::Uncompress(dig.ADCs(), adcs, dig.GetPedestal(), dig.Compression());
       raw::Uncompress(dig.ADCs(), adcs, dig.Compression());
-
+      
       for (unsigned int tick = 0; tick < adcs.size(); ++tick) {
         const int adc = adcs[tick] ? int(adcs[tick]) - dig.GetPedestal() : 0;
 
@@ -198,8 +198,12 @@ void Infill::InfillChannels::beginJob()
       
       if (tpcVol->Capacity() > 1000000) { // At least one of the ROP's TPCIDs needs to be active
         // Networks expect a fixed image size
-        if(fGeom->SignalType(*iRop) == geo::kInduction) assert(fGeom->Nchannels(*iRop) <= 800);
-        if(fGeom->SignalType(*iRop) == geo::kCollection) assert(fGeom->Nchannels(*iRop) <= 480);
+        if(fGeom->SignalType(*iRop) == geo::kInduction && fGeom->Nchannels(*iRop) > 800) {
+          throw std::invalid_argument("Induction view network cannot handle more than 800 channels");
+        }
+        if(fGeom->SignalType(*iRop) == geo::kCollection && fGeom->Nchannels(*iRop) > 480) {
+          throw std::invalid_argument("Collection view network cannot handle more than 480 channels");
+        }
 
         fActiveRops.insert(*iRop);
         break;
@@ -217,11 +221,11 @@ void Infill::InfillChannels::beginJob()
     if (fGeom->ChannelToROP(ch - chGap) == fGeom->ChannelToROP(ch + 1)) {
       if (fGeom->SignalType(ch) == geo::kCollection && chGap > 3) {
         std::cerr << "There are dead channel gap larger than what was seen in training --- ";
-        std::cerr << "\e[1m" << "Consider retraining collection plane infill network" << "\e[0m" << std::endl;
+        std::cerr << "**Consider retraining collection plane infill network**" << std::endl;
       }
       else if (fGeom->SignalType(ch) == geo::kInduction && chGap > 2) {
         std::cerr << "There are dead channel gap larger than what was seen in training --- ";
-        std::cerr << "\e[1m" << "Consider retraining induction plane infill network" << "\e[0m" << std::endl;
+        std::cerr << "**Consider retraining induction plane infill network**" << std::endl;
       }
     }
     chGap = 1;
