@@ -1,0 +1,38 @@
+#include "services_dune.fcl"
+#include "energyreco.fcl"
+#include "VLNEnergyDataGenConfigs.fcl"
+#include "resourcetracking_services.fcl"
+
+process_name: VLNEnergyDataGen
+
+# TODO: figure out how to setup TFileService without fileName
+services:
+{
+    TFileService: { fileName: "dummyfile.root" }
+    @table::standard_resourcetrackers
+    @table::dunefd_simulation_services
+}
+
+source:
+{
+    module_type: RootInput
+    maxEvents:   -1
+}
+
+physics:
+{
+    producers: { energyreconumu: @local::dunefd_nuenergyreco }
+    analyzers: { vlnenergydatagen: @local::dunefd_vlnenergydatagen_numu }
+
+    ana:  [ vlnenergydatagen ]
+    prod: [ energyreconumu ]
+
+    trigger_paths: [ prod ]
+    end_paths:     [ ana ]
+}
+
+services.Geometry: @local::dune10kt_1x2x6_v2_geo
+
+# Method 1 -- using longest track
+physics.producers.energyreconumu.RecoMethod : 1
+
