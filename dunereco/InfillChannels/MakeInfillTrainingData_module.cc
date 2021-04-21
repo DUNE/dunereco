@@ -95,7 +95,8 @@ void Infill::MakeInfillTrainingData::analyze(art::Event const& e)
   auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
   // Networks expect a fixed image size
   if (detProp.NumberTimeSamples() != 6000) {
-    throw std::invalid_argument("Training data should have 6000 time ticks");
+    std::cerr << "MakeInfillTrainingData_module.cc: Training data should have 6000 time ticks\n";
+    std::abort();
   } 
 
   // Prepare TH2s
@@ -148,10 +149,12 @@ void Infill::MakeInfillTrainingData::beginJob()
       if (tpcVol->Capacity() > 1000000) { // At least one of the ROP's TPCIDs needs to be active
         // Networks expect a fixed image size
         if(fGeom->SignalType(*iRop) == geo::kInduction && fGeom->Nchannels(*iRop) != 800) {
-          throw std::invalid_argument("Induction view training data should have 800 channels");
+	  std::cerr << "MakeInfillTrainingData_module.cc: Induction view training data should have 800 channels\n";
+	  std::abort();
         }
         if(fGeom->SignalType(*iRop) == geo::kCollection && fGeom->Nchannels(*iRop) != 480) {
-          throw std::invalid_argument("Collection view training data should have 480 channels");
+	  std::cerr << "MakeInfillTrainingData_module.cc: Collection view training data should have 480 channels\n";
+	  std::abort();
         }
 
         fActiveRops.insert(*iRop);

@@ -1,6 +1,7 @@
 find_ups_product(libtorch)
 find_package(Torch REQUIRED)
 
+# using SYSTEM to prevent multiple "error: extra ‘;’ [-Werror=pedantic]" errors 
 include_directories(SYSTEM ${TORCH_INCLUDE_DIRS})
 
 art_make(
