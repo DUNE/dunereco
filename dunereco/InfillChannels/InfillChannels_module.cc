@@ -67,19 +67,21 @@ private:
   std::set<raw::ChannelID_t> fDeadChannels;
 
   std::set<readout::ROPID> fActiveRops;
-
-  std::string fNetworkLocInduction;
-  std::string fNetworkLocCollection;
+  
+  const std::string fNetworkPath;
+  const std::string fNetworkNameInduction;
+  const std::string fNetworkNameCollection;
   torch::jit::script::Module fInductionModule;
   torch::jit::script::Module fCollectionModule;
-  std::string fInputLabel;
+  const std::string fInputLabel;
 };
 
 Infill::InfillChannels::InfillChannels(fhicl::ParameterSet const& p)
   : EDProducer{p},
-    fNetworkLocInduction  (p.get<std::string> ("networkLocInduction")),
-    fNetworkLocCollection (p.get<std::string> ("networkLocCollection")),
-    fInputLabel           (p.get<std::string> ("inputLabel"))
+    fNetworkPath           (p.get<std::string> ("NetworkPath")),
+    fNetworkNameInduction  (p.get<std::string> ("NetworkNameInduction")),
+    fNetworkNameCollection (p.get<std::string> ("NetworkNameCollection")),
+    fInputLabel            (p.get<std::string> ("InputLabel"))
 {
   consumes<std::vector<raw::RawDigit>>(fInputLabel);
 
@@ -164,9 +166,7 @@ void Infill::InfillChannels::produce(art::Event& e)
       // Get new pedestal
       auto infilledAdcMin = std::min_element(infilledAdc.begin(), infilledAdc.end());
       short ped = *infilledAdcMin < 0 ? std::abs(*infilledAdcMin) + 1 : 0;
-      for (short& adc : infilledAdc) {
-	if (adc != 0) adc += ped;
-      }
+      for (short& adc : infilledAdc) adc += ped;
 
       raw::Compress(infilledAdc, dig.Compression()); // need to consider compression parameters
       dig = raw::RawDigit(dig.Channel(), dig.Samples(), infilledAdc, dig.Compression());
@@ -245,17 +245,25 @@ void Infill::InfillChannels::beginJob()
 
   // Load torchscripts
   std::cout << "Loading modules..." << std::endl;
+  const char* networkPath = std::getenv(fNetworkPath.c_str());
+  if (networkPath == nullptr) {
+    std::cerr << "InfillChannels_module.cc: Environment variable " << fNetworkPath << " was not found";
+    std::abort();
+  }
+  const std::string networkLocInduction = std::string(networkPath) + "/" + fNetworkNameInduction;
+  const std::string networkLocCollection = std::string(networkPath) + "/" + fNetworkNameCollection;
+
   try {
-    fInductionModule = torch::jit::load(fNetworkLocInduction);
-    std::cout << "Induction module loaded from " << fNetworkLocInduction <<std::endl;
+    fInductionModule = torch::jit::load(networkLocInduction);
+    std::cout << "Induction module loaded from " << networkLocInduction <<std::endl;
   }
   catch (const c10::Error& err) {
     std::cerr << "error loading the model\n";
     std::cerr << err.what();
   }
   try {
-    fCollectionModule = torch::jit::load(fNetworkLocCollection);
-    std::cout << "Collection module loaded from " << fNetworkLocCollection << std::endl;
+    fCollectionModule = torch::jit::load(networkLocCollection);
+    std::cout << "Collection module loaded from " << networkLocCollection << std::endl;
   }
   catch (const c10::Error& err) {
     std::cerr << "error loading the model\n";
