@@ -4,8 +4,8 @@ InfillChannels:
 {
     module_type:             "InfillChannels"
 
-    networkLocInduction:     "/dune/app/users/awilkins/infill_work_updated/unetdense_induct800_small_68e_070421.pt"
-    networkLocCollection:    "/dune/app/users/awilkins/infill_work_updated/unetdense_collect_small_22e_150321.pt"
+    networkLocInduction:     "/cvmfs/dune.opensciencegrid.org/products/dune/dune_pardata/v01_70_00/InfillChannels/unetdense_induct800_small_68e_070421.pt"
+    networkLocCollection:    "/cvmfs/dune.opensciencegrid.org/products/dune/dune_pardata/v01_70_00/InfillChannels/unetdense_collect_small_22e_150321.pt"
 
     inputLabel:              "daq"
 }
