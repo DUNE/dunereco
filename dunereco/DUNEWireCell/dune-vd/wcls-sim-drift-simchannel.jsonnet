@@ -202,7 +202,7 @@ local multipass = [
                 sn_pipes[n],
                 // origmagnify_pipe[n],
                 // nf_pipes[n],
-                sp_pipes[n],
+                // sp_pipes[n],
                 // spmagnify_pipe[n],
              ],
              'multipass%d' % n)
