@@ -20,8 +20,8 @@ physics :{
 
             // needs to be found via your WIRECELL_PATH
             # configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-3view.json"]
-            # configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-3view30deg.json"]
-            configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-2view.json"]
+            configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-3view30deg.json"]
+            # configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-2view.json"]
 
 
             // Contract note: these exact "type:name" must be used to identify
