@@ -295,4 +295,12 @@ tpcrawdecoder_dunefd_vertdrift_2view : {
     }
 }
 
+tpcrawdecoder_dunefd_vertdrift_3view: {
+    @table::tpcrawdecoder_dunefd_vertdrift_2view
+    wcls_main: {
+        @table::tpcrawdecoder_dunefd_vertdrift_2view.wcls_main
+        configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-3view.json"]
+    }
+}
+
 END_PROLOG
