@@ -1,0 +1,28 @@
+#include "services_dune.fcl"
+#include "MakeInfillTrainingDataConfig.fcl"
+
+process_name: MakeInfillTrainingData
+
+source:
+{
+  module_type: RootInput
+               maxEvents:  -1
+}
+services:
+{
+  @table::protodune_services
+  TFileService:          { fileName: "MakeInfillTraining_out.root" }
+  ChannelStatusService:	 @local::pdsp_channel_status
+}
+
+physics:
+{
+  analyzers:
+  {
+    infilldata: @local::MakeInfillTrainingData
+  }
+  path0:      [ infilldata ]
+  end_paths:  [ path0 ]
+}
+
+services.Geometry: @local::protodune_geo

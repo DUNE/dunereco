@@ -1,0 +1,7 @@
+BEGIN_PROLOG
+MakeInfillTrainingData:
+{
+  module_type:    "MakeInfillTrainingData"
+  inputLabel:     "daq"
+}
+END_PROLOG

@@ -1,0 +1,14 @@
+This directory contains the python scripts used to train the infill networks in InfillChannels_module.cc.
+
+Training was done with PDSPProd2_protoDUNE_sp_detsim_p3GeV_35ms_sce_datadriven data so networks are 
+configured for 800x6000 (induction view) and 480x6000 images (collection view).
+
+To setup python environment do 'conda env create -f infill_py2.yaml'.
+
+
+Workflow for training a model is:
+
+run_MakeInfillTrainingData.fcl -> data_prepare.py -> train.py -> make_tscript.py
+
+Use predict.py to check the performance of the trained model. 
+
