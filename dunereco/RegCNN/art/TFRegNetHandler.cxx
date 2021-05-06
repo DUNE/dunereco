@@ -107,40 +107,6 @@ namespace cnn
     return cnnResults[0];
   }
 
-  std::vector<float> TFRegNetHandler::Predict(const RegPixelMap3D& pm)
-  {
-   
-      std::cout<<pm.fPE.size()<<std::endl;
-
-      std::vector<float> cnnResults(3);
-
-      std::cout<<"HELLO ====> "<<cnnResults[0]<<std::endl;
-      return cnnResults;
-   // RegCNNImageUtils imageUtils;
-
-   // // Configure the image utility  
-   // imageUtils.SetViewReversal(fReverseViews);
-
-   // //std::cout << "Reverse views? [" << fReverseViews[0] << "," << fReverseViews[1] << "," << fReverseViews[2] << "]" << std::endl;
-
-   // ImageVectorF thisImage;
-   // imageUtils.ConvertPixelMapToImageVectorF(pm,thisImage);
-   // std::vector<ImageVectorF> vecForTF;
-   // vecForTF.push_back(thisImage);
-
-   // auto cnnResults = fTFGraph->run(vecForTF, fInputs);
-
-   // //std::cout << "Number of CNN result vectors " << cnnResults.size() << " with " << cnnResults[0].size() << " categories" << std::endl;
-
-   // //std::cout << "summary: ";
-   // //for(auto const v : cnnResults[0]){
-   // //  std::cout << v << ", ";
-   // //}
-   // //std::cout << std::endl;
-
-   // return cnnResults[0];
-  }//
- 
   std::vector<float> TFRegNetHandler::PredictNuEEnergy(const RegPixelMap& pm){
     std::vector<float> fullResults = this->Predict(pm);
     std::vector<float> nue_energy;

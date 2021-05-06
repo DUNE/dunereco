@@ -30,7 +30,6 @@ namespace cnn
     /// Return prediction arrays for RegPixelMap
     std::vector<float> Predict(const RegPixelMap& pm);
     std::vector<float> Predict(const RegPixelMap& pm, const std::vector<float> cm_list);
-    std::vector<float> Predict(const RegPixelMap3D& pm);
 
     std::vector<float> PredictNuEEnergy(const RegPixelMap& pm);
 

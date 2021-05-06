@@ -26,7 +26,10 @@ namespace cnn
     RegPixelMap3D() {};
     
     void AddHit(float rel_x, float rel_y, float rel_z, float charge, int hit_prong_tag);
-    bool IsCroppedPM() {return fCropped;};
+    bool IsCroppedPM() const {return fCropped;};
+    std::vector<float> GetPM() const {return fPE;};
+    std::vector<float> GetCroppedPM() const {return fPECropped;};
+
     // Add Finish method in order to determine whether to produce prong only/cropped
     // pixel maps or the full event/uncropped pixel maps
     void Finish();

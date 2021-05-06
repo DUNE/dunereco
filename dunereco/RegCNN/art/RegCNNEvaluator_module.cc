@@ -119,7 +119,8 @@ namespace cnn {
 
   //......................................................................
   void RegCNNEvaluator::beginJob()
-  {  }
+  {  
+  }
 
   //......................................................................
   void RegCNNEvaluator::endJob()
@@ -156,7 +157,7 @@ namespace cnn {
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
     }
 
-    /// load in the 3D pixel map for muon direction reco.
+    /// Load 3D pixel map for direction reco.
     art::Handle< std::vector< cnn::RegPixelMap3D > > pixelmap3DListHandle;
     std::vector< art::Ptr< cnn::RegPixelMap3D > > pixelmap3Dlist;
     if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmap3DListHandle)) {
@@ -195,24 +196,11 @@ namespace cnn {
             // cnn::Result can now take a vector of floats and works out the number of outputs
             resultCol->emplace_back(networkOutput);
         }
-        if (pixelmap3Dlist.size() > 0) {
-            std::vector<float> networkOutput;
-            if (fTarget == "muondir") {
-                networkOutput = fTFHandler.Predict(*pixelmap3Dlist[0]);
-            }
-            else {
-                std::cout<<"Wrong Target with 3D pixel maps"<<std::endl;
-                abort();
-            }
-            // cnn::Result can now take a vector of floats and works out the number of outputs
-            resultCol->emplace_back(networkOutput);
-        }
-    } // end fCNNType
-    else{
-        mf::LogError("RegCNNEvaluator::produce") << "CNN Type not in the allowed list: Tensorflow" << std::endl;
+    } else {
+        mf::LogError("RegCNNEvaluator::produce") << "CNN Type not in the allowed list: Tensorflow, Torch" << std::endl;
         mf::LogError("RegCNNEvaluator::produce") << "Exiting without processing events" << std::endl;
         return;
-    }
+    } // end fCNNType
 
     evt.put(std::move(resultCol), fResultLabel);
   }
