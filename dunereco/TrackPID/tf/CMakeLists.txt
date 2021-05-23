@@ -52,6 +52,7 @@ art_make(BASENAME_ONLY
 #  MVAAlg
   )
 
+cet_remove_compiler_flags(CXX -pedantic)
 
 install_headers()
 install_fhicl()
