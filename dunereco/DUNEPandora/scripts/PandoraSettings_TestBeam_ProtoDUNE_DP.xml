@@ -122,7 +122,7 @@
     <algorithm type = "LArTwoViewTransverseTracks">
       <InputClusterListName1>ClustersU</InputClusterListName1>
       <InputClusterListName2>ClustersV</InputClusterListName2>
-      <OutputPfoListName>MuonParticles3D</OutputPfoListName>
+      <OutputPfoListName>TrackParticles3D</OutputPfoListName>
       <TrackTools>
         <tool type = "LArTwoViewClearTracks">
           <MinMatchingScore>0.95</MinMatchingScore>

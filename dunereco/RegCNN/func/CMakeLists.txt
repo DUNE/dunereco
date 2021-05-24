@@ -33,5 +33,7 @@ art_make( BASENAME_ONLY
   RegCNNFunc
   )
 
+cet_remove_compiler_flags(CXX -pedantic)
+
 install_headers()
 install_source()
