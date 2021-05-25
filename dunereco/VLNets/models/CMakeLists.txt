@@ -1,4 +1,4 @@
-include_directories( $ENV{TENSORFLOW_INC}/eigen )
+include_directories( $ENV{TENSORFLOW_INC}/third_party/eigen3 )
 include_directories( $ENV{TENSORFLOW_INC}/absl )
 
 art_make_library(
