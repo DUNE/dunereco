@@ -3,8 +3,8 @@
 #include <utility>
 
 #include <boost/numeric/conversion/cast.hpp>
-#include "tensorflow/core/platform/env.h"
 #include "larrecodnn/ImagePatternAlgs/Tensorflow/quiet_session.h"
+#include "tensorflow/core/platform/env.h"
 
 using namespace tensorflow;
 

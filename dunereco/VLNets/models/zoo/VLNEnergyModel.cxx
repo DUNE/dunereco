@@ -1,7 +1,7 @@
 #include "VLNEnergyModel.h"
 
-#include "tensorflow/core/platform/env.h"
 #include "larrecodnn/ImagePatternAlgs/Tensorflow/quiet_session.h"
+#include "tensorflow/core/platform/env.h"
 
 namespace VLN
 {
