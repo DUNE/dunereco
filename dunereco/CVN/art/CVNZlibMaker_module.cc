@@ -30,7 +30,7 @@
 // Compression
 #include "zlib.h"
 
-namespace fs = boost::filesystem;;
+namespace fs = boost::filesystem;
 
 namespace cvn {
 
