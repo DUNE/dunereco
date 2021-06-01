@@ -116,7 +116,10 @@ tf::CTPGraph::CTPGraph(const char* graph_file_name, const std::vector<std::strin
 
 tf::CTPGraph::~CTPGraph()
 {
-    fSession->Close();
+    auto status = fSession->Close();
+    if (!status.ok()) {
+      std::cout << "tf::CTPGraph::dtor: " << "Close failed." << std::endl;
+    }
     delete fSession;
 }
 

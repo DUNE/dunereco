@@ -122,7 +122,7 @@ namespace cvn {
 //    bool gotPrimary = false;
     for(auto const m: piService->ParticleList()){
       const simb::MCParticle* particle = m.second;
-      if(abs(particle->Process().compare("primary")==0)){
+      if(particle->Process().compare("primary")==0){
         beamParticleEnergy = particle->E();
         beamParticleVtx.SetXYZ(particle->EndX(),particle->EndY(),particle->EndZ());
         beamParticlePDG = particle->PdgCode();
