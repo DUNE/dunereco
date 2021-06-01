@@ -84,7 +84,7 @@ namespace cnn {
     //unsigned int fMaxWireGap;
 
     /// Use unwrapped pixel maps?
-    bool fUnwrappedPixelMap;
+    //dla bool fUnwrappedPixelMap;
 
     /// select which global wire method
     int fGlobalWireMethod;
