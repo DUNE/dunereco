@@ -3,7 +3,7 @@
 local base = import 'pgrapher/experiment/dune10kt-1x2x6/params.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-base {
+function(G4RefTime) base(G4RefTime) {
   // lar: super.lar {
   //     // Longitudinal diffusion constant
   //     DL : 4.0 * wc.cm2/wc.s,
