@@ -4,7 +4,7 @@
 local wc = import "wirecell.jsonnet";
 local base = import "pgrapher/common/params.jsonnet";
 
-base {
+function(response_plane) base {
     // This section will be overwritten in simparams.jsonnet
     det : {
 
@@ -14,11 +14,11 @@ base {
         // Only one CRP is defined in this geometry 
         // CRMs are oneside anodes     
 
-        response_plane: 10*wc.cm, // relative to collection wires
+        response_plane: response_plane,
 
-        local upper_crp_x = 300.507*wc.cm,
+        local upper_crp_x = 325.00*wc.cm, //300.507*wc.cm,
         local upper_resp_x = upper_crp_x-self.response_plane,
-        local cathode_x = 0*wc.cm,
+        local cathode_x = -325.00*wc.cm,
        
         volumes: [
             {

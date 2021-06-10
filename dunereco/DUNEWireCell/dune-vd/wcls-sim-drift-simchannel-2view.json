@@ -35,9 +35,9 @@
          "time_offset": 0,
          "xregions": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ]
@@ -54,9 +54,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -71,9 +71,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -88,9 +88,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -105,9 +105,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -122,9 +122,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -139,9 +139,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -156,9 +156,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -173,9 +173,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -190,9 +190,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -207,9 +207,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -224,9 +224,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -241,9 +241,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -258,9 +258,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -275,9 +275,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -292,9 +292,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -309,9 +309,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -326,9 +326,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -343,9 +343,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -360,9 +360,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -377,9 +377,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -394,9 +394,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -411,9 +411,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -428,9 +428,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -445,9 +445,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -462,9 +462,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -479,9 +479,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -496,9 +496,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -513,9 +513,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -530,9 +530,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -547,9 +547,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -564,9 +564,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -581,9 +581,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -598,9 +598,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -615,9 +615,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -632,9 +632,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -649,9 +649,9 @@
       "data": {
          "faces": [
             {
-               "anode": 3005.0700000000002,
-               "cathode": 0,
-               "response": 2905.0700000000002
+               "anode": 3250,
+               "cathode": -3250,
+               "response": 3125
             },
             null
          ],
@@ -707,16 +707,17 @@
          "g4_ref_time": 0,
          "nsigma": 3,
          "readout_time": 4687500,
+         "response_plane": 125,
          "rng": "Random",
          "start_time": -250000,
          "tick": 500,
          "u_time_offset": 0,
-         "u_to_rp": 100,
+         "u_to_rp": 125,
          "use_energy": true,
          "v_time_offset": 0,
-         "v_to_rp": 100,
+         "v_to_rp": 125,
          "y_time_offset": 0,
-         "y_to_rp": 100
+         "y_to_rp": 125
       },
       "name": "postdrift",
       "type": "wclsSimChannelSink"
@@ -1104,7 +1105,7 @@
    },
    {
       "data": {
-         "filename": "pcbro-response-avg.json.bz2"
+         "filename": "pcbro-response-avg-12d50.json.bz2"
       },
       "name": "field0",
       "type": "FieldResponse"
