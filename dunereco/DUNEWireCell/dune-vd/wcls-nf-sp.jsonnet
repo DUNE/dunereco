@@ -32,21 +32,14 @@ local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
 
 local base = import 'pgrapher/experiment/dune-vd/params.jsonnet';
 local response_plane = std.extVar('response_plane')*wc.cm;
+local channel_per_crm = std.extVar('channel_per_crm');
 local params = base(response_plane) {
   lar: super.lar {
-    // Longitudinal diffusion constant
-    DL: std.extVar('DL') * wc.cm2 / wc.s,
-    // Transverse diffusion constant
-    DT: std.extVar('DT') * wc.cm2 / wc.s,
-    // Electron lifetime
-    lifetime: std.extVar('lifetime') * wc.ms,
-    // Electron drift speed, assumes a certain applied E-field
     drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
   },
   files: super.files {
       wires: std.extVar('files_wires'),
       fields: [ std.extVar('files_fields'), ],
-      noise: std.extVar('files_noise'),
   },
 };
 
@@ -154,7 +147,7 @@ local chsel_pipes = [
     type: 'ChannelSelector',
     name: 'chsel%d' % n,
     data: {
-      channels: std.range(900 * n, 900 * (n + 1) - 1),
+      channels: std.range(channel_per_crm * n, channel_per_crm * (n + 1) - 1), // 3view30: 900
     },
   }, nin=1, nout=1)
   for n in std.range(0, std.length(tools.anodes) - 1)
