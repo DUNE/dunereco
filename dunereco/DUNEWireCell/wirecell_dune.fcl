@@ -223,42 +223,51 @@ protodunespdata_digitwire : {
     sigscale: 0.005
 }
 
+
 tpcrawdecoder_dunefd_horizdrift : {
-      module_type : WireCellToolkit
-      wcls_main: {
-         tool_type: WCLS
-         apps: ["Pgrapher"]
 
-         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellLarsoft"]
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
 
-         # needs to be found via your WIRECELL_PATH
-         #configs: ["pgrapher/experiment/pdsp/wcls-sim-drift-simchannel.jsonnet"]
-	 configs: ["pgrapher/experiment/dune10kt-1x2x6/wcls-sim-drift-simchannel.jsonnet"]
+      logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
+      loglevels: ["debug"]
 
-         # Contract note: these exact "type:name" must be used to identify
-         # the configuration data structures for these components in the Jsonnet.
+      plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
 
-         inputers: ["wclsSimDepoSource:"]
-         outputers: [
-            "wclsSimChannelSink:postdrift",
-            "wclsFrameSaver:simdigits"
-         ]
+      // needs to be found via your WIRECELL_PATH
+      configs: ["pgrapher/experiment/dune10kt-1x2x6/wcls-sim-drift-simchannel.jsonnet"]
 
-         # Make available parameters via Jsonnet's std.extVar()
-         params: {
-         }
-         structs: {
-           # Longitudinal diffusion constant [cm2/s]
-           DL: 4.0
-           # Transverse diffusion constant [cm2/s]
-           DT: 8.8
-           # Electron lifetime [ms]
-           lifetime: 10.4
-           # Electron drift speed, assumes a certain applied E-field [mm/us]
-           driftSpeed: 1.565
-         }
+
+      // Contract note: these exact "type:name" must be used to identify
+      // the configuration data structures for these components in the Jsonnet.
+
+      inputers: ["wclsSimDepoSource:"]
+      outputers: [
+         "wclsSimChannelSink:postdrift",
+         "wclsFrameSaver:simdigits"
+      ]
+
+      // Make available parameters via Jsonnet's std.extVar()
+      params: {
       }
+      structs: {
+        # Longitudinal diffusion constant [cm2/s]
+        DL: 4.0
+        # Transverse diffusion constant [cm2/s]
+        DT: 8.8
+        # Electron lifetime [ms]
+        lifetime: 10.4
+        # Electron drift speed, assumes a certain applied E-field [mm/us]
+        driftSpeed: 1.565
+        # G4RefTime [us]
+        G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+      }
+
    }
+}
+
 
 tpcrawdecoder_dunefd_vertdrift_2view : {
     module_type : WireCellToolkit
