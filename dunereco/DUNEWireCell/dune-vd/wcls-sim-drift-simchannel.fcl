@@ -48,6 +48,8 @@ physics :{
               driftSpeed: 1.565
               # G4RefTime
               G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+              # response plane [cm]
+              response_plane: 10.0
               # file: wires
               files_wires: "\"dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2\""
               # file: fields

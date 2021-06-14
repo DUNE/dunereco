@@ -12,8 +12,11 @@ local wc = import 'wirecell.jsonnet';
 
 local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
+
+local G4RefTime = std.extVar('G4RefTime') * wc.us;
+
 local base = import 'pgrapher/experiment/dune10kt-1x2x6/simparams.jsonnet';
-local params = base {
+local params = base(G4RefTime) {
   lar: super.lar {
     // Longitudinal diffusion constant
     DL: std.extVar('DL') * wc.cm2 / wc.s,
@@ -149,14 +152,14 @@ local wcls_simchannel_sink = g.pnode({
     u_time_offset: 0.0 * wc.us,
     v_time_offset: 0.0 * wc.us,
     y_time_offset: 0.0 * wc.us,
-    g4_ref_time: -250 * wc.us,
+    g4_ref_time: G4RefTime, // -250 * wc.us,
     use_energy: true,
   },
 }, nin=1, nout=1, uses=tools.anodes);
 
-// local magoutput = 'protodune-data-check.root';
-// local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
-// local sinks = magnify(tools, magoutput);
+local magoutput = 'protodune-data-check.root';
+local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
+local sinks = magnify(tools, magoutput);
 
 local multipass = [
   g.pipeline([
