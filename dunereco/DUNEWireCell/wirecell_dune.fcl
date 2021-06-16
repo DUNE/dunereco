@@ -223,8 +223,11 @@ protodunespdata_digitwire : {
     sigscale: 0.005
 }
 
-
 tpcrawdecoder_dunefd_horizdrift : {
+ #Empty for now
+}
+
+tpcrawdecoder_dunefd_horizdrift_1x2x6 : {
 
    module_type : WireCellToolkit
    wcls_main: {
