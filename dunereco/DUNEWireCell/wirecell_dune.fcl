@@ -388,7 +388,7 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_data_nfsp : {
       # ext-code, code
       structs : {
           # for nticks calculation in common/params.jsonnet: elec
-          driftSpeed: 1.565
+          driftSpeed: 1.60563
           
           # used in ChannelSelector
           # 3view: 864; 3view30deg: 900; 2view: 928
