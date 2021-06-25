@@ -1,4 +1,5 @@
-#include "protoDUNE_reco_data_Dec2018.fcl"
+# #include "protoDUNE_reco_data_Dec2018.fcl"
+#include "services_dune.fcl"
 
 process_name: wclsdatanfsp
 
@@ -7,6 +8,7 @@ services:
   #message:              @local::dune_message_services_prod_debug
   TimeTracker:       {}
   RandomNumberGenerator: {}
+  # @table::dunefdvd_simulation_services
   @table::protodune_services
   # @table::protodune_rawdecoding_services
   # @table::protodune_simulation_services
@@ -58,9 +60,10 @@ physics :{
             # This sets the "main" Jsonnet file which provides the 
             # configuration for the Wire-Cell Toolkit components.  It is
             # take as relative to entries in WIRECELL_PATH.
-            configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.json"]
+            configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
 
             # Set the "external variables" required by the Jsonnet.
+            # ext-var, string
             params : {
                 # This locates the input raw::RawDigit collection in the art::Event 
                 raw_input_label: "tpcrawdecoder:daq"
@@ -81,6 +84,19 @@ physics :{
                 # Save output signal waveforms (recob::Wire) in "sparse" or "dense" form
                 signal_output_form: "sparse"
 
+                # file: wires
+                # dunevd10kt-1x6x6-3view-wires-v1.json.bz2
+                # dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2
+                # dunevd10kt-1x6x6-2view-wires-v1.json.bz2
+                files_wires: "dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2"
+
+                # file: fields
+                # 3view30: dunevd-resp-isoc3views-18d92.json.bz2
+                # 2view: pcbro-response-avg-12d50.json.bz2
+                files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
+            }
+            # ext-code, code
+            structs : {
                 # for nticks calculation in common/params.jsonnet: elec
                 driftSpeed: 1.565
                 
@@ -92,17 +108,6 @@ physics :{
                 # 3view30: dunevd-resp-isoc3views-18d92.json.bz2: 18.92
                 # 2view: pcbro-response-avg-12d50.json.bz2: 12.50
                 response_plane: 18.92
-
-                # file: wires
-                # dunevd10kt-1x6x6-3view-wires-v1.json.bz2
-                # dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2
-                # dunevd10kt-1x6x6-2view-wires-v1.json.bz2
-                files_wires: "\"dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2\""
-
-                # file: fields
-                # 3view30: dunevd-resp-isoc3views-18d92.json.bz2
-                # 2view: pcbro-response-avg-12d50.json.bz2
-                files_fields: "\"dunevd-resp-isoc3views-18d92.json.bz2\""
             }
          }
       }
