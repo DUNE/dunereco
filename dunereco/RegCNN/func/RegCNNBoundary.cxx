@@ -40,11 +40,6 @@ namespace cnn
         TDCMeanZ + (nTDC*tRes)/2-tRes/2}
   
   {
-      //FIXIT
-      //std::cout<<"RegCNNBoundary "<<WireMeanX<<","<<nWire<<","<<wRes<<std::endl;
-      //std::cout<<", "<<TDCMeanX<<","<<nTDC<<","<<tRes<<std::endl;
-      //std::cout<<fLastWire[0]<<", "<<fFirstWire[0]<<std::endl;
-      //std::cout<<fLastTDC[0]<<", "<<fFirstTDC[0]<<std::endl;
       if (fLastWire[0] - fFirstWire[0] != nWire*wRes - wRes/2)
           mf::LogError("RegCNNBoundary::RegCNNBoundary") << "RegCNN 1st Map Boundary Wrong"<<std::endl;
       if (fLastWire[1] - fFirstWire[1] != nWire*wRes - wRes/2)

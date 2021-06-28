@@ -7,6 +7,7 @@ art_make(MODULE_LIBRARIES
   ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
   ${ART_ROOT_IO_TFILESERVICE_SERVICE}
   ${ART_PERSISTENCY_COMMON}
+  dune_AnaUtils
   canvas
   art_Persistency_Provenance
   ${ART_UTILITIES}

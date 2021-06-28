@@ -1,13 +1,29 @@
+#include "calorimetry_dune10kt.fcl"
+
 BEGIN_PROLOG 
 
 regcnn_analysistree:
 {
-  module_type:        "RegCNNAna"
-  MCGenModuleLabel:   "generator"
-  RegCNNModuleLabel:  "regcnneval"
-  HitsModuleLabel:    "linecluster"
-  EnergyRecoNueLabel: "energyreconue"
-  RegCNNResultLabel:  "regcnnresult"
+    module_type:            "RegCNNAna"
+
+    CalorimetryAlg:         @local::dune10kt_calorimetryalgmc
+    MCGenModuleLabel:       "generator"
+    RegCNNModuleLabel:      "regcnneval"
+    RegCNNResultLabel:      "regcnnresult"
+    RegCNNProngModuleLabel: "regcnnnueprongeval"
+    RegCNNProngResultLabel: "regcnnnueprongresult"
+    RegCNNDirModuleLabel:   "regcnnnumudireval"
+    RegCNNDirResultLabel:   "regcnnnumudirresult"
+    HitsModuleLabel:        "linecluster"
+    EnergyRecoNuLabel:      "energyreconue"
+    TrackToHitLabel:        "pandoraTrack"
+    ShowerToHitLabel:       "pandoraShower"
+    ParticleLabel:          "pandora"
+    TrackLabel:             "pandoraTrack"
+    TrackLabelDir:          "pandoraTrack"
+    ShowerLabel:            "pandoraShower"
+    ShowerLabelDir:         "emshowernew"
+    RecombFactor:           0.63
 }
 
 END_PROLOG
