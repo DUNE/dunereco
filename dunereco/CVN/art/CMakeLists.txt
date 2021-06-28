@@ -31,7 +31,12 @@ if (DEFINED ENV{HEP_HPC_DIR} AND DEFINED ENV{HDF5_DIR})
 include_directories( $ENV{HEP_HPC_INC} )
 include_directories( $ENV{HDF5_INC} )
 cet_find_library( HEPHPCLIB NAMES hep_hpc_hdf5 PATHS ENV HEP_HPC_LIB NO_DEFAULT_PATH )
-cet_find_library( HDF5LIB NAMES hdf5 PATHS ENV HDF5_LIB NO_DEFAULT_PATH )
+string(TOUPPER ${CMAKE_BUILD_TYPE} BTYPE_UC )
+if( ${BTYPE_UC} MATCHES "DEBUG" )
+  cet_find_library( HDF5LIB NAMES hdf5_debug PATHS ENV HDF5_LIB NO_DEFAULT_PATH )
+else()
+  cet_find_library( HDF5LIB NAMES hdf5 PATHS ENV HDF5_LIB NO_DEFAULT_PATH )
+endif()
 else (DEFINED ENV{HEP_HPC_DIR} AND DEFINED ENV{HDF5_DIR})
 set (EXCLUDE_HEPHPC GCNH5_module.cc)
 endif (DEFINED ENV{HEP_HPC_DIR} AND DEFINED ENV{HDF5_DIR})
@@ -76,10 +81,12 @@ art_make(BASENAME_ONLY
   MVAAlg
   #larreco_RecoAlg
 #  ${LARRECO_RECOALG_IMAGEPATTERNALGS_TF}
-  stdc++fs
+  boost_filesystem
+#  stdc++fs
   MODULE_LIBRARIES dune_CVN_func
   dune_CVN_tf
   dune_CVN_art
+  stdc++fs
   )
 
 

@@ -117,7 +117,10 @@ tf::Graph::Graph(const char* graph_file_name, const std::vector<std::string> & o
 
 tf::Graph::~Graph()
 {
-    fSession->Close();
+    if ( ! fSession->Close().ok() ) {
+      std::cout << "tf::Graph::dtor: " << "Close failed." << std::endl;
+    }
+    //fSession->Close();
     delete fSession;
 }
 

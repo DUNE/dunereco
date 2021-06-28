@@ -109,7 +109,10 @@ tf::RegCNNGraph::RegCNNGraph(const char* graph_file_name, const unsigned int &ni
 
 tf::RegCNNGraph::~RegCNNGraph()
 {
-    fSession->Close();
+    auto status = fSession->Close();
+    if (!status.ok()) {
+      std::cout << "RegCNNGraph::dtor: " << "Close failed." << std::endl;
+    }
     delete fSession;
 }
 // -------------------------------------------------------------------

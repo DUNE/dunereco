@@ -10,7 +10,7 @@ if( DEFINED ENV{TENSORFLOW_DIR} )
 endif ()
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
-include_directories( $ENV{TENSORFLOW_INC}/eigen )
+include_directories( $ENV{TENSORFLOW_INC}/third_party/eigen3 )
 include_directories( $ENV{TENSORFLOW_INC}/absl )
 
 art_make( BASENAME_ONLY
@@ -32,6 +32,8 @@ art_make( BASENAME_ONLY
   DICT_LIBRARIES   lardataobj_RecoBase
   RegCNNFunc
   )
+
+cet_remove_compiler_flags(CXX -pedantic)
 
 install_headers()
 install_source()

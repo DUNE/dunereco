@@ -1,0 +1,37 @@
+#include "VLNVarConfigs.fcl"
+
+BEGIN_PROLOG
+
+dunefd_vlnenergydatagen_numu:
+{
+    module_type         : "VLNEnergyDataGen"
+
+    # Whether to require contained truth vertex during sample generation
+    ApplyFiducialCut    : false
+
+    # Flavor of neutrinos. Supported: "numu", "any"
+    Flavor              : "numu"
+
+    # CC/NC Selector.
+    # To select Charged Current use IsCC = 1
+    # To select Neutral Current use IsCC = 0
+    # To select both use IsCC = -1
+    IsCC                : 1
+
+    # Select only neutrinos with energies less than MaxEnergy.
+    # If MaxEnergy = -1, then select all neutrinos.
+    MaxEnergy           : 5.0
+
+    # File format of the training sample. Supported: "csv"
+    OutputFormat        : "csv"
+    # Number of sigfigs to save.
+    OutputPrecision     : 6
+
+    LabelGenerator      : "generator"
+    LabelRecoE          : "energyreconumu"
+
+    ConfigInputVars     : @local::dunefd_vln_default_input_vars
+    ConfigFiducialCut   : @local::dunefd_vln_fiducial_cut
+}
+
+END_PROLOG
