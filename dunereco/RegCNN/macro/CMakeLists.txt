@@ -11,7 +11,6 @@ art_make(MODULE_LIBRARIES
   canvas
   art_Persistency_Provenance
   ${ART_UTILITIES}
-
   ${MF_MESSAGELOGGER}
   ${FHICLCPP}
   cetlib cetlib_except
@@ -22,6 +21,7 @@ art_make(MODULE_LIBRARIES
   larsim_MCCheater_BackTrackerService_service           
   larsim_MCCheater_ParticleInventoryService_service
   larreco_RecoAlg
+  larreco_Calorimetry
   larcorealg_Geometry
   larcore_Geometry_Geometry_service
   larpandora_LArPandoraInterface
