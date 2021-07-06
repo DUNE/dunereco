@@ -143,7 +143,12 @@ wirecell_protodunespmc:
     }
 }
 
-dune10kt_1x2x6_data_nfsp: 
+dune10kt_mc_nfsp:
+{
+#empty for now
+}
+
+dune10kt_1x2x6_mc_nfsp: 
 {
     module_type : WireCellToolkit
     wcls_main: {
