@@ -6,15 +6,28 @@ standard_regcnnmapper:
 {
   module_type:        RegCNNMapper
   #==================
-  HitsModuleLabel:   "linecluster"
+  HitsModuleLabel: "linecluster"
   ClusterPMLabel: "regcnnmap"
-  GlobalWireMethod: 1
+  GlobalWireMethod: 1   # 1 = nue energy, 2 for others???
   MinClusterHits: 1
-  TdcWidth:      280 # time width of pixel map
-  WireLength:    400 # wire width of pixel map
+  TdcWidth:       280   # time width of pixel map
+  WireLength:     400   # wire width of pixel map
   TimeResolution: 6 
   WireResolution: 1 
-  UseRecoVertex: 0
+  UseRecoVertex:  0     # 0 = not use vertex, 1 = use regcnn vertex, 2 = use pandora vertex
+  ProngTagMethod: 1     # 0 = use shower, 1 = use track
+  UseThreeDMap:   0     # 0 = 3-view 2D pixel map (default), 1 = 3D pixel map (for direction reco.)
+  Cropped:        true  # Crop pixel size to 32x32x32
+  ProngOnly:      false
+  UnitX:          100
+  UnitY:          100
+  UnitZ:          100
+  XResolution:    5.0   # 5 cm for muon prong, 1.25 cm for electron prong
+  YResolution:    5.0   # 5 cm for muon prong, 1.25 cm for electron prong
+  ZResolution:    10.0  # 10 cm for muon prong, 2.5 cm for electron prong
+  ByHit:          true  # generate pixel map by raw charge or by reco. hit
+  ShowerModuleLabel: "emshowernew"
+  TrackModuleLabel:  "pandoraTrack"
   VertexModuleLabel: "pandora"
   PFParticleModuleLabel: "pandora"
   PandoraNuVertexModuleLabel: "pandora"
@@ -37,5 +50,21 @@ standard_regcnnnumumapper.TimeResolution:   24
 standard_regcnnnumumapper.WireResolution:   7
 standard_regcnnnumumapper.GlobalWireMethod: 2
 standard_regcnnnumumapper.UseRecoVertex:    2
+
+standard_regcnnnumudirmapper: @local::standard_regcnnmapper
+standard_regcnnnumudirmapper.ClusterPMLabel:   "regcnnnumudirmap"
+standard_regcnnnumudirmapper.UseRecoVertex:    2
+standard_regcnnnumudirmapper.UseThreeDMap:     1
+standard_regcnnnumudirmapper.GlobalWireMethod: 2
+
+standard_regcnnnuedirmapper: @local::standard_regcnnmapper
+standard_regcnnnuedirmapper.ClusterPMLabel:   "regcnnnuedirmap"
+standard_regcnnnuedirmapper.UseRecoVertex:    2
+standard_regcnnnuedirmapper.ProngTagMethod:   0
+standard_regcnnnuedirmapper.UseThreeDMap:     1
+standard_regcnnnuedirmapper.GlobalWireMethod: 2
+standard_regcnnnuedirmapper.XResolution:      1.25
+standard_regcnnnuedirmapper.YResolution:      1.25
+standard_regcnnnuedirmapper.ZResolution:      2.5
 
 END_PROLOG

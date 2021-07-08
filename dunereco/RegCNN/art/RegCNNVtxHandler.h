@@ -41,6 +41,7 @@ namespace cnn
     unsigned int fTimeResolution;  
     unsigned int fWireResolution;  
     unsigned int fGlobalWireMethod;
+//    bool fProngOnly;
     RegPixelMapProducer fProducer;
 
   };

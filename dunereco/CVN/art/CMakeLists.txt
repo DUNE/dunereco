@@ -81,10 +81,12 @@ art_make(BASENAME_ONLY
   MVAAlg
   #larreco_RecoAlg
 #  ${LARRECO_RECOALG_IMAGEPATTERNALGS_TF}
-  stdc++fs
+  boost_filesystem
+#  stdc++fs
   MODULE_LIBRARIES dune_CVN_func
   dune_CVN_tf
   dune_CVN_art
+  stdc++fs
   )
 
 

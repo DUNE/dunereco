@@ -27,6 +27,7 @@ standard_regcnnvtxhandler:
 }
 
 # Configuration for RegCNNNumuHandler
+# separated by events with contained and un-contained tracks
 standard_regcnnnumuhandler:
 {
   TFNetHandlerContained: @local::standard_tfregnethandler

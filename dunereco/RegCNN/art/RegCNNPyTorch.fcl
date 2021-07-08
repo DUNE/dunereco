@@ -1,0 +1,17 @@
+BEGIN_PROLOG
+
+standard_regcnntorch:
+{
+    module_type:    RegCNNPyTorch
+    LibPath:        "DUNE_PARDATA_DIR"
+    Network:        "3D_ResNet18_CroppedFullEvent_20200817_traced_resnet_model.pt"
+    PixelMapInput:  "regcnnnumudirmap"
+    ResultLabel:    "regcnnnumudirresult"
+}
+
+standard_regcnnnuetorch: @local::standard_regcnntorch
+standard_regcnnnuetorch.Network:       "3D_ResNet-18_NuECC_CroppedFullEvent_20200814_traced_resnet_model.pt"
+standard_regcnnnuetorch.PixelMapInput: "regcnnnuedirmap"
+standard_regcnnnuetorch.ResultLabel:   "regcnnnuedirresult"
+
+END_PROLOG

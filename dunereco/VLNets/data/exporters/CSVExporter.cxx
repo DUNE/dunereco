@@ -58,12 +58,12 @@ void CSVExporter::printHeader()
 
     firstValuePrinted = printSeparatedValues<std::string, char>(
         ofile, scalVarNames, firstValuePrinted, ',',
-        [this] (auto &output, const auto &name) { output << name; }
+        [] (auto &output, const auto &name) { output << name; }
     );
 
     printSeparatedValues<std::string, char>(
         ofile, vectVarNames, firstValuePrinted, ',',
-        [this] (auto &output, const auto &name) { output << name; }
+        [] (auto &output, const auto &name) { output << name; }
     );
 
     ofile << std::endl;
@@ -112,7 +112,7 @@ void CSVExporter::exportVars(const VarDict &vars)
 
     firstValuePrinted = printSeparatedValues<std::string, char>(
         ofile, scalVarNames, firstValuePrinted, ',',
-        [&vars,this] (auto &output, const auto &name)
+        [&vars] (auto &output, const auto &name)
         {
             auto it = vars.scalar.find(name);
             if (it != vars.scalar.end()) {
@@ -123,7 +123,7 @@ void CSVExporter::exportVars(const VarDict &vars)
 
     firstValuePrinted = printSeparatedValues<std::string, char>(
         ofile, vectVarNames, firstValuePrinted, ',',
-        [&vars,this] (auto &output, const auto &name)
+        [&vars] (auto &output, const auto &name)
         {
             output << "\"";
             auto it = vars.vector.find(name);
@@ -131,7 +131,7 @@ void CSVExporter::exportVars(const VarDict &vars)
             if (it != vars.vector.end()) {
                 printSeparatedValues<double, char>(
                     output, it->second, false, ',',
-                    [this] (auto &output, const auto x) { output << x; }
+                    [] (auto &output, const auto x) { output << x; }
                 );
             }
 

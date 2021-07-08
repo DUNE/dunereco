@@ -106,7 +106,7 @@ namespace cnn
 
     return cnnResults[0];
   }
- 
+
   std::vector<float> TFRegNetHandler::PredictNuEEnergy(const RegPixelMap& pm){
     std::vector<float> fullResults = this->Predict(pm);
     std::vector<float> nue_energy;
