@@ -1,0 +1,24 @@
+#include "VLNVarConfigs.fcl"
+
+BEGIN_PROLOG
+
+dunefd_vln_energy_producer_numu:
+{
+    module_type     : "VLNEnergyProducer"
+
+    ConfigInputVars : @local::dunefd_vln_default_input_vars
+    ModelPath       : "${DUNE_PARDATA_DIR}/VLNets/energy/fd_numu_mcc11_v1"
+}
+
+vln_energy_analyzer:
+{
+    module_type     : "VLNEnergyAnalyzer"
+
+    ConfigInputVars : @local::dunefd_vln_default_input_vars
+    ModelPath       : "${DUNE_PARDATA_DIR}/VLNets/energy/fd_numu_mcc11_v1"
+
+    OutputFormat    : "csv"
+    OutputPrecision : 6
+}
+
+END_PROLOG

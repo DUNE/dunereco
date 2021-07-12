@@ -1,0 +1,30 @@
+#include "services_dune.fcl"
+#include "VLNEvaluatorConfigs.fcl"
+#include "resourcetracking_services.fcl"
+
+process_name: VLNEnergyAnalyze
+
+services:
+{
+    TFileService: { fileName: "dummyfile.root" }
+    @table::standard_resourcetrackers
+    @table::dunefd_simulation_services
+}
+
+source:
+{
+    module_type: RootInput
+    maxEvents:   -1
+}
+
+physics:
+{
+    analyzers : { vlnana :   @local::vln_energy_analyzer }
+    ana       : [ vlnana ]
+
+    trigger_paths : [ ]
+    end_paths     : [ ana ]
+}
+
+services.Geometry: @local::dune10kt_1x2x6_v2_geo
+

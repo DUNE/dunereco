@@ -11,8 +11,10 @@
 
 #include "dune/RegCNN/func/RegCNN_TF_Graph.h"
 
-#include "tensorflow/core/public/session.h"
+#include "larrecodnn/ImagePatternAlgs/Tensorflow/quiet_session.h"
 #include "tensorflow/core/platform/env.h"
+
+//#include "tensorflow/core/kernels/conv_3d.h"
 
 // -------------------------------------------------------------------
 tf::RegCNNGraph::RegCNNGraph(const char* graph_file_name, const unsigned int &ninputs, const std::vector<std::string> & outputs, bool & success)
@@ -40,12 +42,13 @@ tf::RegCNNGraph::RegCNNGraph(const char* graph_file_name, const unsigned int &ni
     //std::cout<<"debug info :"<<graph_file_name<<" has "<<ng<<" nodes"<<std::endl;
     //for (size_t i= 0; i< ng; ++i) {
     //  auto node = graph_def.node()[i];
-    //  std::cout<<i<<" "<<node.name();
+    //  std::cout<<i<<" "<<node.name()<<" "<<node.op();
     //  for (auto iter=node.attr().cbegin(); iter!=node.attr().cend(); ++iter) {
     //    std::cout<<" "<<iter->first;
     //  }
     //  std::cout<<std::endl;
     //}
+
 
     // set input names
     std::string ss("input_");
@@ -55,6 +58,7 @@ tf::RegCNNGraph::RegCNNGraph(const char* graph_file_name, const unsigned int &ni
         //fInputNames.push_back(inname);
         //std::cout<< graph_def.node()[ii].name() << std::endl;
     }
+
 
     // last node as output if no specific name provided
     if (outputs.empty()) { fOutputNames.push_back(graph_def.node()[ng - 1].name()); }
@@ -91,6 +95,7 @@ tf::RegCNNGraph::RegCNNGraph(const char* graph_file_name, const unsigned int &ni
         return;
     }
 
+
     status = fSession->Create(graph_def);
     if (!status.ok())
     {
@@ -99,16 +104,21 @@ tf::RegCNNGraph::RegCNNGraph(const char* graph_file_name, const unsigned int &ni
     }
 
     success = true; // ok, graph loaded from the file
+    std::cout<<"ok, graph loaded from the file"<<std::endl;
 }
 
 tf::RegCNNGraph::~RegCNNGraph()
 {
-    fSession->Close();
+    auto status = fSession->Close();
+    if (!status.ok()) {
+      std::cout << "RegCNNGraph::dtor: " << "Close failed." << std::endl;
+    }
     delete fSession;
 }
 // -------------------------------------------------------------------
 
-std::vector<float> tf::RegCNNGraph::run(const std::vector< std::vector<float> > & x)
+std::vector<float> tf::RegCNNGraph::run(
+        const std::vector< std::vector<float> > & x)
 {
     if (x.empty() || x.front().empty()) { return std::vector<float>(); }
 
@@ -132,7 +142,7 @@ std::vector<float> tf::RegCNNGraph::run(const std::vector< std::vector<float> > 
 
 std::vector< std::vector<float> > tf::RegCNNGraph::run(
 	const std::vector<  std::vector<  std::vector< std::vector<float> > > > & x,
-        const unsigned int &ninputs,
+    const unsigned int &ninputs,
 	long long int samples)
 {
     if (ninputs == 1) return run(x);
@@ -178,7 +188,8 @@ std::vector< std::vector<float> > tf::RegCNNGraph::run(
 
 std::vector< std::vector<float> > tf::RegCNNGraph::run(
 	const std::vector<  std::vector<  std::vector< std::vector<float> > > > & x,
-        const std::vector<float> cm, const unsigned int &ninputs,
+    const std::vector<float> cm, 
+    const unsigned int &ninputs,
 	long long int samples)
 {
     // this is for the vertex reconstruction
@@ -265,7 +276,8 @@ std::vector< std::vector<float> > tf::RegCNNGraph::run(
 }
 // -------------------------------------------------------------------
 
-std::vector< std::vector< float > > tf::RegCNNGraph::run(const tensorflow::Tensor & x)
+std::vector< std::vector< float > > tf::RegCNNGraph::run(
+        const tensorflow::Tensor & x)
 {
 
     std::vector< std::pair<std::string, tensorflow::Tensor> > inputs = {
@@ -319,7 +331,8 @@ std::vector< std::vector< float > > tf::RegCNNGraph::run(const tensorflow::Tenso
     }
 }
 
-std::vector< std::vector< float > > tf::RegCNNGraph::run(const std::vector< tensorflow::Tensor >& x)
+std::vector< std::vector< float > > tf::RegCNNGraph::run(
+        const std::vector< tensorflow::Tensor >& x)
 {
 
     // make inputs to feed into the model

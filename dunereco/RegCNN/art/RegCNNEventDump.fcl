@@ -4,10 +4,13 @@ standard_regcnneventdump_fhc:
 {
   module_type:        RegCNNEventDump
   #==================
-  PixelMapInput: "regcnnmap"
+  PixelMapInput:       "regcnnmap"
+  PixelMap3DInput:     "regcnnnumudirmap"
   GenieGenModuleLabel: "generator"
-  WriteMapTH2: true
-  ApplyFidVol: true
+  WriteMapTH2:        false
+  WriteMapTH3:        false
+  WriteCroppedMapTH3: false
+  ApplyFidVol: false
   # Use the following to add the reco energy to the output tree
 }
 

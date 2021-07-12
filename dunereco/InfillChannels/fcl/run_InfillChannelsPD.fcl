@@ -1,0 +1,37 @@
+#include "services_dune.fcl"
+#include "InfillChannelsConfig.fcl"
+
+process_name: InfillChannelsPD
+
+source:
+{
+  module_type: RootInput
+               maxEvents:  -1
+}
+services:
+{
+  @table::protodune_services
+  ChannelStatusService:	    @local::pdsp_channel_status
+}
+
+outputs:
+{
+  out1:
+  {
+    module_type: RootOutput
+    fileName:    "InfillChannelsPD_out.root"
+  }
+}
+
+
+physics:
+{
+  producers:
+  {
+    infill: @local::InfillChannels
+  }
+  ana: [ infill ]
+  out: [ out1 ]
+}
+
+services.Geometry: @local::protodune_geo

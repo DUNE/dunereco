@@ -1,0 +1,6 @@
+<lcgdict>
+    <class name="VLN::VLNEnergy" ClassVersion="10">
+     <version ClassVersion="10" checksum="3869938830"/>
+    </class>
+    <class name="art::Wrapper<VLN::VLNEnergy>"/>
+</lcgdict>

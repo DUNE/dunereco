@@ -1,0 +1,23 @@
+#include "calorimetry_dune10kt.fcl"
+
+BEGIN_PROLOG
+
+dunefd_vln_default_input_vars:
+{
+    AlgCalorimetry      : @local::dune10kt_calorimetryalgmc
+
+    LabelPFPModule      : "pandora"
+    LabelPFPTrack       : "pandoraTrack"
+    LabelPFPShower      : "pandoraShower"
+    LabelHit            : "linecluster"
+}
+
+dunefd_vln_fiducial_cut:
+{
+    ContainVolMaxX      : 310.0
+    ContainVolMaxY      : 550.0
+    ContainVolMinZ      : 50.0
+    ContainVolMaxZ      : 1250.0
+}
+
+END_PROLOG

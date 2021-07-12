@@ -61,8 +61,8 @@ physics:
 }
 
 physics.producers.regcnnnumueval.RegCNNNumuHandler.TFNetHandlerContained.LibPath:    "MRB_INSTALL"
-physics.producers.regcnnnumueval.RegCNNNumuHandler.TFNetHandlerContained.TFProtoBuf: "duneRegCNNNetwork/jordan_numucc_eng_trackCont_1_trueDetin_1_20200529.pb"
+physics.producers.regcnnnumueval.RegCNNNumuHandler.TFNetHandlerContained.TFProtoBuf: "duneRegCNNNetwork/julian_numucc_eng_trackCont_01_trueDetin_1_20200823.pb"
 physics.producers.regcnnnumueval.RegCNNNumuHandler.TFNetHandlerExiting.LibPath:      "MRB_INSTALL"
-physics.producers.regcnnnumueval.RegCNNNumuHandler.TFNetHandlerExiting.TFProtoBuf:   "duneRegCNNNetwork/jordan_numucc_eng_trackCont_0_trueDetin_1_20200617.pb"
+physics.producers.regcnnnumueval.RegCNNNumuHandler.TFNetHandlerExiting.TFProtoBuf:   "duneRegCNNNetwork/julian_numucc_eng_trackCont_01_trueDetin_1_20200823.pb"
 
 ########################################################################

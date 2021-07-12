@@ -124,7 +124,24 @@
       <InputClusterListName2>ClustersV</InputClusterListName2>
       <OutputPfoListName>TrackParticles3D</OutputPfoListName>
       <TrackTools>
-        <tool type = "LArTwoViewClearTracks"/>
+        <tool type = "LArTwoViewThreeDKink">
+        <tool type = "LArTwoViewClearTracks">
+          <MinMatchingScore>0.95</MinMatchingScore>
+          <MinLocallyMatchedFraction>0.0</MinLocallyMatchedFraction>
+        </tool>
+        <tool type = "LArTwoViewClearTracks">
+          <MinMatchingScore>0.0</MinMatchingScore>
+          <MinLocallyMatchedFraction>0.30</MinLocallyMatchedFraction>
+        </tool>
+        <tool type = "LArTwoViewLongTracks">
+          <MinMatchingScore>0.0</MinMatchingScore>
+          <MinMatchedFraction>0.30</MinMatchedFraction>
+        </tool>
+        <tool type = "LArTwoViewLongTracks">
+          <MinMatchingScore>0.95</MinMatchingScore>
+          <MinMatchedFraction>0.0</MinMatchedFraction>
+        </tool>
+        <tool type = "LArTwoViewSimpleTracks"/>
       </TrackTools>
     </algorithm>
 

@@ -7,7 +7,8 @@
   </class>
 
 
-  <class name="cnn::RegPixelMap" ClassVersion="14" >
+  <class name="cnn::RegPixelMap" ClassVersion="15" >
+   <version ClassVersion="15" checksum="4152263686"/>
    <version ClassVersion="14" checksum="39635021"/>
    <version ClassVersion="13" checksum="2082878446"/>
    <version ClassVersion="12" checksum="991971656"/>
@@ -21,10 +22,24 @@
    <version ClassVersion="10" checksum="206696030"/>
   </class>
 
+  <class name="cnn::RegPixelMap3D" ClassVersion="12" >
+   <version ClassVersion="12" checksum="1762640847"/>
+   <version ClassVersion="11" checksum="950570409"/>
+   <version ClassVersion="10" checksum="251975117"/>
+  </class>
+
+  <class name="cnn::RegCNNBoundary3D" ClassVersion="11" >
+   <version ClassVersion="11" checksum="3244133187"/>
+   <version ClassVersion="10" checksum="2598904171"/>
+  </class>
 
   <class name="std::vector<cnn::RegPixelMap>"          />
   <class name="art::Ptr<cnn::RegPixelMap>"             />
   <class name="art::Wrapper< std::vector<cnn::RegPixelMap> >"    />
+
+  <class name="std::vector<cnn::RegPixelMap3D>"          />
+  <class name="art::Ptr<cnn::RegPixelMap3D>"             />
+  <class name="art::Wrapper< std::vector<cnn::RegPixelMap3D> >"    />
 
   <class name="std::vector<cnn::RegCNNResult>"          />
   <class name="art::Ptr<cnn::RegCNNResult>"             />

@@ -9,7 +9,7 @@
 
 #include "tf_graph.h"
 
-#include "tensorflow/core/public/session.h"
+#include "larrecodnn/ImagePatternAlgs/Tensorflow/quiet_session.h"
 #include "tensorflow/core/platform/env.h"
 
 #include "tensorflow/core/public/session_options.h"
@@ -117,7 +117,10 @@ tf::Graph::Graph(const char* graph_file_name, const std::vector<std::string> & o
 
 tf::Graph::~Graph()
 {
-    fSession->Close();
+    if ( ! fSession->Close().ok() ) {
+      std::cout << "tf::Graph::dtor: " << "Close failed." << std::endl;
+    }
+    //fSession->Close();
     delete fSession;
 }
 

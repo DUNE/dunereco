@@ -101,6 +101,7 @@
       <InputClusterListName2>ClustersV</InputClusterListName2>
       <OutputPfoListName>MuonParticles3D</OutputPfoListName>
       <TrackTools>
+        <tool type = "LArTwoViewThreeDKink">
         <tool type = "LArTwoViewClearTracks">
           <MinMatchingScore>0.95</MinMatchingScore>
           <MinLocallyMatchedFraction>0.0</MinLocallyMatchedFraction>

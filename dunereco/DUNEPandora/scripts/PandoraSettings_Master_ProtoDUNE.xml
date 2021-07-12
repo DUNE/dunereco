@@ -18,7 +18,7 @@
     </algorithm>
 
     <algorithm type = "LArMaster">
-        <CRSettingsFile>PandoraSettings_Cosmic_Standard.xml</CRSettingsFile>
+        <CRSettingsFile>PandoraSettings_Cosmic_ProtoDUNE.xml</CRSettingsFile>
         <NuSettingsFile>PandoraSettings_TestBeam_ProtoDUNE.xml</NuSettingsFile>
         <SlicingSettingsFile>PandoraSettings_Slicing_ProtoDUNE.xml</SlicingSettingsFile>
         <StitchingTools>

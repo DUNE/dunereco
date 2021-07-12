@@ -9,7 +9,7 @@
 // C/C++ includes
 #include <iostream>
 #include <sstream>
-#include <experimental/filesystem>
+#include "boost/filesystem.hpp"
 
 // Framework includes
 #include "art/Framework/Core/EDAnalyzer.h"
@@ -28,7 +28,7 @@
 // Compression
 #include "zlib.h"
 
-namespace fs = std::experimental::filesystem;
+namespace fs = boost::filesystem;
 
 namespace cvn {
 
@@ -122,7 +122,7 @@ namespace cvn {
 //    bool gotPrimary = false;
     for(auto const m: piService->ParticleList()){
       const simb::MCParticle* particle = m.second;
-      if(abs(particle->Process().compare("primary")==0)){
+      if(particle->Process().compare("primary")==0){
         beamParticleEnergy = particle->E();
         beamParticleVtx.SetXYZ(particle->EndX(),particle->EndY(),particle->EndZ());
         beamParticlePDG = particle->PdgCode();

@@ -28,6 +28,10 @@
 #include "dune/RegCNN/func/RegCNNBoundary.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/Shower.h"
+
 namespace detinfo {
   class DetectorClocksData;
   class DetectorPropertiesData;
@@ -42,7 +46,8 @@ namespace cnn
   class RegPixelMapProducer
   {
   public:
-    RegPixelMapProducer(unsigned int nWire, unsigned int wRes, unsigned int nTdc, double tRes, int Global);
+    RegPixelMapProducer(unsigned int nWire, unsigned int wRes, unsigned int nTdc, double tRes, int Global,
+            bool ProngOnly, bool ByHit);
 
     /// Get boundaries for pixel map representation of cluster
     RegCNNBoundary DefineBoundary(detinfo::DetectorPropertiesData const& detProp,
@@ -54,9 +59,9 @@ namespace cnn
     /// Function to convert to a global unwrapped wire number
     double GetGlobalWire(const geo::WireID& wireID);
     void GetDUNEGlobalWireTDC(detinfo::DetectorPropertiesData const& detProp,
-                              const geo::WireID& wireID, float localTDC,
-                              double& globalWire, unsigned int& globalPlane, 
-                              float& globalTDC);
+                              const geo::WireID& wireID, double localTDC,
+                              unsigned int& globalWire, unsigned int& globalPlane, 
+                              double& globalTDC);
 
 
     unsigned int NWire() const {return fNWire;};
@@ -68,6 +73,7 @@ namespace cnn
                           detinfo::DetectorPropertiesData const& detProp,
                           std::vector< art::Ptr< recob::Hit > > const& cluster,
                           art::FindManyP<recob::Wire> const& fmwire);
+
     RegPixelMap CreateMap(detinfo::DetectorClocksData const& clockData,
                           detinfo::DetectorPropertiesData const& detProp,
                           std::vector< art::Ptr< recob::Hit > > const& cluster,
@@ -77,8 +83,38 @@ namespace cnn
     RegPixelMap CreateMapGivenBoundary(detinfo::DetectorClocksData const& clockData,
                                        detinfo::DetectorPropertiesData const& detProp,
                                        std::vector< art::Ptr< recob::Hit > > const& cluster,
-                                    const RegCNNBoundary& bound,
+                                       const RegCNNBoundary& bound,
                                        art::FindManyP<recob::Wire> const& fmwire);
+
+    // tag prong by track
+    RegPixelMap CreateMap(detinfo::DetectorClocksData const& clockData,
+                          detinfo::DetectorPropertiesData const& detProp,
+                          std::vector< art::Ptr< recob::Hit > > const& cluster,
+                          art::FindManyP<recob::Wire> const& fmwire,
+                          art::FindManyP<recob::Track> const& fmtrkhit,
+                          const std::vector<float> &vtx);
+    RegPixelMap CreateMapGivenBoundaryByHit(detinfo::DetectorClocksData const& clockData,
+                                       detinfo::DetectorPropertiesData const& detProp,
+                                       std::vector< art::Ptr< recob::Hit > > const& cluster,
+                                       const RegCNNBoundary& bound,
+                                       art::FindManyP<recob::Wire> const& fmwire,
+                                       art::FindManyP<recob::Track> const& fmtrkhit,
+                                       const bool& ProngOnly);
+
+    // tag prong by shower
+    RegPixelMap CreateMap(detinfo::DetectorClocksData const& clockData,
+                          detinfo::DetectorPropertiesData const& detProp,
+                          std::vector< art::Ptr< recob::Hit > > const& cluster,
+                          art::FindManyP<recob::Wire> const& fmwire,
+                          art::FindManyP<recob::Shower> const& fmshwhit,
+                          const std::vector<float> &vtx);
+    RegPixelMap CreateMapGivenBoundaryByHit(detinfo::DetectorClocksData const& clockData,
+                                       detinfo::DetectorPropertiesData const& detProp,
+                                       std::vector< art::Ptr< recob::Hit > > const& cluster,
+                                       const RegCNNBoundary& bound,
+                                       art::FindManyP<recob::Wire> const& fmwire,
+                                       art::FindManyP<recob::Shower> const& fmshwhit,
+                                       const bool& ProngOnly);
 
     void ShiftGlobalWire(std::vector< art::Ptr< recob::Hit > > const& cluster);
 
@@ -89,6 +125,8 @@ namespace cnn
     unsigned int      fNTdc;   ///< Number of tdcs, width of pixel map
     unsigned int      fTRes;
     int               fGlobalWireMethod;
+    bool              fProngOnly;
+    bool              fByHit;
     double            fOffset[2];
     std::vector<int> hitwireidx; // collect hit wire
     std::vector<int> tmin_each_wire;

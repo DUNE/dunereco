@@ -52,13 +52,14 @@ art_make(BASENAME_ONLY
 #  MVAAlg
   )
 
+cet_remove_compiler_flags(CXX -pedantic)
 
 install_headers()
 install_fhicl()
 install_source()
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
-include_directories ( $ENV{TENSORFLOW_INC}/eigen )
+include_directories ( $ENV{TENSORFLOW_INC}/third_party/eigen3 )
 include_directories ( $ENV{TENSORFLOW_INC} )
 include_directories ( $ENV{PROTOBUF_INC} )
 include_directories ( $ENV{TENSORFLOW_INC}/absl )

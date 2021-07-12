@@ -8,7 +8,8 @@
 
 // C/C++ includes
 #include <iostream>
-#include <experimental/filesystem>
+
+#include "boost/filesystem.hpp"
 
 // Framework includes
 #include "art/Framework/Core/EDAnalyzer.h"
@@ -29,7 +30,7 @@
 // Compression
 #include "zlib.h"
 
-namespace fs = std::experimental::filesystem;
+namespace fs = boost::filesystem;
 
 namespace cvn {
 
