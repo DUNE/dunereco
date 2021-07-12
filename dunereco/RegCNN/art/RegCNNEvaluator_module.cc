@@ -4,6 +4,7 @@
 // \author  Ilsoo Seong - iseong@uci.edu
 //
 // Modifications to interface for numu energy estimation
+// Modifications to interface for direction reconstruction (electron and muon)
 //  - Wenjie Wu - wenjieww@uci.edu
 ////////////////////////////////////////////////////////////////////////
 
@@ -118,7 +119,8 @@ namespace cnn {
 
   //......................................................................
   void RegCNNEvaluator::beginJob()
-  {  }
+  {  
+  }
 
   //......................................................................
   void RegCNNEvaluator::endJob()
@@ -151,110 +153,116 @@ namespace cnn {
     /// Load in the pixel maps
     art::Handle< std::vector< cnn::RegPixelMap > > pixelmapListHandle;
     std::vector< art::Ptr< cnn::RegPixelMap > > pixelmaplist;
-    //if (evt.getByLabel(fPixelMapInput, "regcnnmap", pixelmapListHandle))
     if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmapListHandle)){
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
     }
 
+    /// Load 3D pixel map for direction reco.
+    art::Handle< std::vector< cnn::RegPixelMap3D > > pixelmap3DListHandle;
+    std::vector< art::Ptr< cnn::RegPixelMap3D > > pixelmap3Dlist;
+    if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmap3DListHandle)) {
+        art::fill_ptr_vector(pixelmap3Dlist, pixelmap3DListHandle);
+    }
+
     /// Make sure we have a valid name for the CNN type
     if(fCNNType == "TF" || fCNNType == "Tensorflow" || fCNNType == "TensorFlow"){
-      // If we have a pixel map then use the TF interface to give us a prediction
-      if(pixelmaplist.size() > 0){
-        std::vector<float> networkOutput;
-        if (fTarget == "nueenergy"){
-          networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
-          //std::cout << "-->" << networkOutput[0] << std::endl;
-        }
-        else if (fTarget == "nuevertex"){
-          std::vector<float> center_of_mass(6,0);
-          getCM(*pixelmaplist[0], center_of_mass);
-          std::cout << "cm: " << center_of_mass[0] << " " << center_of_mass[1] << " " << center_of_mass[2] << std::endl;
-          networkOutput = fTFHandler.Predict(*pixelmaplist[0], center_of_mass);
-          std::cout << "cnn nuevertex : "<<networkOutput[0] << " " << networkOutput[1] << " " << networkOutput[2] << std::endl;
+        // If we have a pixel map then use the TF interface to give us a prediction
+        if(pixelmaplist.size() > 0){
+            std::vector<float> networkOutput;
+            if (fTarget == "nueenergy"){
+                networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
+                //std::cout << "-->" << networkOutput[0] << std::endl;
             }
-        else if (fTarget == "numuenergy") {
-          networkOutput = fRegCNNNumuHandler.Predict(*pixelmaplist[0], fLongestTrackContained);
-        }
-        else if (fTarget == "nuevertex_on_img"){
-            auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
-            auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
-            networkOutput = fRegCNNVtxHandler.GetVertex(clockData, detProp, evt, *pixelmaplist[0]);
-        } else {
-            std::cout << "Wrong Target" << std::endl;
-            abort();
-        }
+            else if (fTarget == "nuevertex"){
+                std::vector<float> center_of_mass(6,0);
+                getCM(*pixelmaplist[0], center_of_mass);
+                std::cout << "cm: " << center_of_mass[0] << " " << center_of_mass[1] << " " << center_of_mass[2] << std::endl;
+                networkOutput = fTFHandler.Predict(*pixelmaplist[0], center_of_mass);
+                std::cout << "cnn nuevertex : "<<networkOutput[0] << " " << networkOutput[1] << " " << networkOutput[2] << std::endl;
+            }
+            else if (fTarget == "nuevertex_on_img"){
+                auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
+                auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
+                networkOutput = fRegCNNVtxHandler.GetVertex(clockData, detProp, evt, *pixelmaplist[0]);
+            } 
+            else if (fTarget == "numuenergy") {
+                networkOutput = fRegCNNNumuHandler.Predict(*pixelmaplist[0], fLongestTrackContained);
+            }
+            else {
+                std::cout << "Wrong Target with 2D 3-view pixel maps" << std::endl;
+                abort();
+            }
 
-        // cnn::Result can now take a vector of floats and works out the number of outputs
-        resultCol->emplace_back(networkOutput);
-      }
+            // cnn::Result can now take a vector of floats and works out the number of outputs
+            resultCol->emplace_back(networkOutput);
+        }
+    } else {
+        mf::LogError("RegCNNEvaluator::produce") << "CNN Type not in the allowed list: Tensorflow, Torch" << std::endl;
+        mf::LogError("RegCNNEvaluator::produce") << "Exiting without processing events" << std::endl;
+        return;
     } // end fCNNType
-    else{
-      mf::LogError("RegCNNEvaluator::produce") << "CNN Type not in the allowed list: Tensorflow" << std::endl;
-      mf::LogError("RegCNNEvaluator::produce") << "Exiting without processing events" << std::endl;
-      return;
-    }
 
     evt.put(std::move(resultCol), fResultLabel);
   }
 
   void RegCNNEvaluator::PrepareEvent(const art::Event& evt) {
-    // Hits
-    auto hitListHandle = evt.getValidHandle<std::vector<recob::Hit>>(fHitsModuleLabel);
+      // Hits
+      auto hitListHandle = evt.getValidHandle<std::vector<recob::Hit>>(fHitsModuleLabel);
 
-    // Tracks
-    art::Handle< std::vector<recob::Track> > trackListHandle;
-    std::vector<art::Ptr<recob::Track> > tracklist;
-    if (evt.getByLabel(fTrackModuleLabel,trackListHandle))
-      art::fill_ptr_vector(tracklist, trackListHandle);
+      // Tracks
+      art::Handle< std::vector<recob::Track> > trackListHandle;
+      std::vector<art::Ptr<recob::Track> > tracklist;
+      if (evt.getByLabel(fTrackModuleLabel,trackListHandle))
+          art::fill_ptr_vector(tracklist, trackListHandle);
 
-    // Associations
-    art::FindManyP<recob::Hit> fmth(trackListHandle, evt, fTrackModuleLabel);
-    art::FindManyP<recob::SpacePoint> fmhs(hitListHandle, evt, fTrackModuleLabel);
+      // Associations
+      art::FindManyP<recob::Hit> fmth(trackListHandle, evt, fTrackModuleLabel);
+      art::FindManyP<recob::SpacePoint> fmhs(hitListHandle, evt, fTrackModuleLabel);
 
-    int ntracks = tracklist.size();
+      int ntracks = tracklist.size();
 
-    double fMaxTrackLength = -1.0;
-    int iLongestTrack = -1;
-    // loop over tracks to find the longest track
-    for (int i = 0; i < ntracks; ++i){
-      if(tracklist[i]->Length() > fMaxTrackLength){
-            fMaxTrackLength = tracklist[i]->Length();
-            iLongestTrack = i;
-      }
-    }
-
-    fLongestTrackContained = true;
-    if (iLongestTrack >= 0 && iLongestTrack <= ntracks-1) {
-      if (fmth.isValid()) {
-        std::vector< art::Ptr<recob::Hit> > vhit = fmth.at(iLongestTrack);
-        for (size_t h = 0; h < vhit.size(); ++h) {
-          if (vhit[h]->WireID().Plane == 2) {
-            std::vector< art::Ptr<recob::SpacePoint> > spts = fmhs.at(vhit[h].key());
-            if (spts.size()) {
-              if (!insideContVol(spts[0]->XYZ()[0], spts[0]->XYZ()[1], spts[0]->XYZ()[2]))
-                fLongestTrackContained = false;
-            }
+      double fMaxTrackLength = -1.0;
+      int iLongestTrack = -1;
+      // loop over tracks to find the longest track
+      for (int i = 0; i < ntracks; ++i){
+          if(tracklist[i]->Length() > fMaxTrackLength){
+              fMaxTrackLength = tracklist[i]->Length();
+              iLongestTrack = i;
           }
-        }
       }
-    } // End of search longestTrack
+
+      fLongestTrackContained = true;
+      if (iLongestTrack >= 0 && iLongestTrack <= ntracks-1) {
+          if (fmth.isValid()) {
+              std::vector< art::Ptr<recob::Hit> > vhit = fmth.at(iLongestTrack);
+              for (size_t h = 0; h < vhit.size(); ++h) {
+                  if (vhit[h]->WireID().Plane == 2) {
+                      std::vector< art::Ptr<recob::SpacePoint> > spts = fmhs.at(vhit[h].key());
+                      if (spts.size()) {
+                          if (!insideContVol(spts[0]->XYZ()[0], spts[0]->XYZ()[1], spts[0]->XYZ()[2]))
+                              fLongestTrackContained = false;
+                      }
+                  }
+              }
+          }
+      } // End of search longestTrack
   }
 
   bool RegCNNEvaluator::insideContVol(const double posX, const double posY, const double posZ) {
-    double vtx[3] = {posX, posY, posZ};
-    bool inside = false;
+      double vtx[3] = {posX, posY, posZ};
+      bool inside = false;
 
-    geo::TPCID idtpc = fGeom->FindTPCAtPosition(vtx);
+      geo::TPCID idtpc = fGeom->FindTPCAtPosition(vtx);
 
-    if (fGeom->HasTPC(idtpc)) {
+      if (fGeom->HasTPC(idtpc)) {
           const geo::TPCGeo& tpcgeo = fGeom->GetElement(idtpc);
           double minx = tpcgeo.MinX(); double maxx = tpcgeo.MaxX();
           double miny = tpcgeo.MinY(); double maxy = tpcgeo.MaxY();
           double minz = tpcgeo.MinZ(); double maxz = tpcgeo.MaxZ();
 
           for (size_t c = 0; c < fGeom->Ncryostats(); c++) {
-            const geo::CryostatGeo& cryostat = fGeom->Cryostat(c);
-            for (size_t t = 0; t < cryostat.NTPC(); t++) {
+              const geo::CryostatGeo& cryostat = fGeom->Cryostat(c);
+              for (size_t t = 0; t < cryostat.NTPC(); t++) {
                   const geo::TPCGeo& tpcg = cryostat.TPC(t);
                   if (tpcg.MinX() < minx) minx = tpcg.MinX();
                   if (tpcg.MaxX() > maxx) maxx = tpcg.MaxX();
@@ -262,29 +270,29 @@ namespace cnn {
                   if (tpcg.MaxY() > maxy) maxy = tpcg.MaxY();
                   if (tpcg.MinZ() < minz) minz = tpcg.MinZ();
                   if (tpcg.MaxZ() > maxz) maxz = tpcg.MaxZ();
-        }
-      }
+              }
+          }
 
           //x
           double dista = fabs(minx - posX);
           double distb = fabs(posX - maxx);
           if ((posX > minx) && (posX < maxx) &&
-              (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
+                  (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
           //y
           dista = fabs(maxy - posY);
           distb = fabs(posY - miny);
           if (inside && (posY > miny) && (posY < maxy) &&
-              (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
+                  (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
           else inside = false;
           //z
           dista = fabs(maxz - posZ);
           distb = fabs(posZ - minz);
           if (inside && (posZ > minz) && (posZ < maxz) &&
-              (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
+                  (dista > fContVolCut) && (distb > fContVolCut)) inside = true;
           else inside = false;
-    }
+      }
 
-    return inside;
+      return inside;
   }
 
   DEFINE_ART_MODULE(cnn::RegCNNEvaluator)
