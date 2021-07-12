@@ -66,7 +66,7 @@ class myana::RegCNNAna : public art::EDAnalyzer
     void beginSubRun(const art::SubRun& sr) override;
     void endSubRun(const art::SubRun& sr) override;
 
-    void analyze(art::Event const& evt);
+    void analyze(art::Event const& evt) override;
     void reconfigure(fhicl::ParameterSet const& p);
     void reset();
 
@@ -282,7 +282,7 @@ void myana::RegCNNAna::beginJob() {
 void myana::RegCNNAna::beginSubRun(const art::SubRun& sr) {
 }
 
-void myana::RegCNNAna::analyze(art::Event const& evt)
+void myana::RegCNNAna::analyze(art::Event const& evt) 
 {
   this->reset();
   ievt = evt.id().event();
