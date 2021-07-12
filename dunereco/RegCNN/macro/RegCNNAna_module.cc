@@ -282,7 +282,7 @@ void myana::RegCNNAna::beginJob() {
 void myana::RegCNNAna::beginSubRun(const art::SubRun& sr) {
 }
 
-void myana::RegCNNAna::analyze(art::Event const& evt) 
+void myana::RegCNNAna::analyze(art::Event const& evt)
 {
   this->reset();
   ievt = evt.id().event();
