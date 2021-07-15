@@ -59,7 +59,9 @@ apa_hitfinder:
 }
 
 dunefd_disambigfromsp:                @local::standard_disambigfromsp
+dunefd_disambigfromsp.SpModuleLabel:  "spsolve"
 dunefd_disambigfromsp.ExcludeTPCs:    [] # workspace has no outer TPCs, but full FD has, I think
+dunefd_disambigfromsp.MoveLeftovers:  "repeat"
 
 pdune_disambigfromsp:                 @local::standard_disambigfromsp
 pdune_disambigfromsp.ExcludeTPCs:     []
