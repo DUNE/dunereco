@@ -1,0 +1,26 @@
+#Configuration FCL for the DUNE CVN
+#include "CVNMapper.fcl"
+#include "CVNEvaluator.fcl"
+
+BEGIN_PROLOG
+dunefd_horizdrift_cvnmapper:
+{
+    @table::standard_cvnmapper
+    HitsModuleLabel: "hitfd"
+    TimeResolution: 1600
+    WireLength: 2880
+    TdcWidth: 500
+    UnwrappedPixelMap: 1
+}
+
+dunefd_horizdrift_cvnevaluator:
+{
+    @table::standard_cvnevaluator
+    TFNetHandler:
+    {
+        @table::standard_cvnevaluator.TFNetHandler
+        TFProtoBuf: "duneCVNNetwork/dune_cvn_resnet_tf_v1.12.pb"
+        LibPath:    "DUNE_PARDATA_DIR"
+    }
+}
+END_PROLOG
