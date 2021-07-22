@@ -19,7 +19,7 @@ find_package(Torch REQUIRED)
 message(STATUS "Torch include: ${TORCH_INCLUDE_DIRS}")
 dump_cmake_variables("TORCH")
 
-include_directories(PRIVATE ${TORCH_INCLUDE_DIRS})
+include_directories(SYSTEM ${TORCH_INCLUDE_DIRS})
 
 art_make(BASENAME_ONLY
   LIBRARY_NAME      RegCNNArt
