@@ -14,6 +14,7 @@
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 
 #include "dune/TrackPID/products/CTPResult.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
 
 namespace dune_ana
 {

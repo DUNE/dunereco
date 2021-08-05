@@ -8,6 +8,7 @@
 // Framework Includes
 #include "cetlib/search_path.h"
 #include "cetlib/cpu_timer.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "dune/RecoAlgDUNE/Cluster3DAlgs/DBScanAlg_DUNE35t.h"
 
