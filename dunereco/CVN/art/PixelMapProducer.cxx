@@ -11,6 +11,7 @@
 #include  <ostream>
 #include  <list>
 #include  <algorithm>
+#include <numeric>
 
 #include "dune/CVN/art/PixelMapProducer.h"
 #include "dune/CVN/func/AssignLabels.h"
