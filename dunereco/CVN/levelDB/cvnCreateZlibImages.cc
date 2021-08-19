@@ -358,19 +358,8 @@ po::variables_map getOptions(int argc, char*  argv[], std::string& config,
 
 fhicl::ParameterSet getPSet(std::string configPath)
 {
-
   cet::filepath_first_absolute_or_lookup_with_dot policy("FHICL_FILE_PATH");
-
-  // parse a configuration file; obtain intermediate form
-  fhicl::intermediate_table tbl;
-  fhicl::parse_document(configPath, policy, tbl);
-
-  // convert to ParameterSet
-  fhicl::ParameterSet pset;
-  fhicl::make_ParameterSet(tbl, pset);
-
-  return pset;
-
+  return fhicl::ParameterSet::make(fhicl::parse_document(configPath, policy));
 }
 
 int main(int argc, char* argv[])
