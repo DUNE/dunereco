@@ -29,20 +29,20 @@ art_make(BASENAME_ONLY
 #  ${ART_FRAMEWORK_PRINCIPAL}
 #  ${ART_FRAMEWORK_SERVICES_REGISTRY}
 #  ${ART_FRAMEWORK_SERVICES_BASIC}
-#  ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
+#  ${ART_ROOT_IO_TFILE_SUPPORT} ROOT::Core
 #  ${ART_ROOT_IO_TFILESERVICE_SERVICE}
 #  ${ART_PERSISTENCY_COMMON}
   pthread
-  ${PROTOBUF}
+  PROTOBUF
 #  canvas
 #  art_Persistency_Provenance
 #  ${ART_UTILITIES}
-#  ${MF_MESSAGELOGGER}
+#  ${messagefacility::MF_MessageLogger}
 #  ${MF_UTILITIES}
 #  ${FHICLCPP}
 #  cetlib cetlib_except
-  ${TENSORFLOW}
-  ${FOR_TENSORFLOW}
+  TENSORFLOW
+  FOR_TENSORFLOW
 #  ${ROOT_BASIC_LIB_LIST}
   #lardataobj_RecoBase
   #lardata_Utilities

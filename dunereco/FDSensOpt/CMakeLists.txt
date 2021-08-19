@@ -59,54 +59,54 @@ include_directories ( $ENV{GENIE_INC}/GENIE )
   cet_find_library( GSL NAMES gsl PATHS ENV GSL_LIB NO_DEFAULT_PATH )
 
   set (GENIE_LIB_LIST ${GFWMSG}
-                      ${GFWREG}
-                      ${GFWALG}
-                      ${GFWINT}
-                      ${GFWGHEP}
-                      ${GFWNUM}
-                      ${GSL}  # FWNUM relies on GSL
-                      ${GFWUTL}
-                      ${GFWPARDAT}
-                      ${GFWEG}
-                      ${GFWNTP}
-                      ${GPHXSIG}
-                      ${GPHPDF}
-                      ${GPHNUCLST}
-                      ${GPHCMN}
-                      ${GPHDCY}
-                      ${GPHHADTRANSP}
-                      ${GPHHADNZ}
-                      ${GPHDEEX}
-                      ${GPHAMNGXS}
-                      ${GPHAMNGEG}
-                      ${GPHCHMXS}
-                      ${GPHCOHXS}
-                      ${GPHCOHEG}
-                      ${GPHDISXS}
-                      ${GPHDISEG}
-                      ${GPHDFRCXS}
-                      ${GPHDFRCEG}
-                      ${GPHGLWRESXS}
-                      ${GPHGLWRESEG}
-                      ${GPHIBDXS}
-                      ${GPHIBDEG}
-                      ${GPHMNUCXS}
-                      ${GPHMNUCEG}
-                      ${GPHMEL}
-                      ${GPHNUELXS}
-                      ${GPHNUELEG}
-                      ${GPHQELXS}
-                      ${GPHQELEG}
-                      ${GPHRESXS}
-                      ${GPHRESEG}
-                      ${GPHSTRXS}
-                      ${GPHSTREG}
-                      ${GPHNDCY}
-                      ${GTLGEO}
-                      ${GTLFLX}
-                      ${GRWFWK}
-                      ${GRWIO}
-                      ${GRWCLC}
+                      GFWREG
+                      GFWALG
+                      GFWINT
+                      GFWGHEP
+                      GFWNUM
+                      GSL  # FWNUM relies on GSL
+                      GFWUTL
+                      GFWPARDAT
+                      GFWEG
+                      GFWNTP
+                      GPHXSIG
+                      GPHPDF
+                      GPHNUCLST
+                      GPHCMN
+                      GPHDCY
+                      GPHHADTRANSP
+                      GPHHADNZ
+                      GPHDEEX
+                      GPHAMNGXS
+                      GPHAMNGEG
+                      GPHCHMXS
+                      GPHCOHXS
+                      GPHCOHEG
+                      GPHDISXS
+                      GPHDISEG
+                      GPHDFRCXS
+                      GPHDFRCEG
+                      GPHGLWRESXS
+                      GPHGLWRESEG
+                      GPHIBDXS
+                      GPHIBDEG
+                      GPHMNUCXS
+                      GPHMNUCEG
+                      GPHMEL
+                      GPHNUELXS
+                      GPHNUELEG
+                      GPHQELXS
+                      GPHQELEG
+                      GPHRESXS
+                      GPHRESEG
+                      GPHSTRXS
+                      GPHSTREG
+                      GPHNDCY
+                      GTLGEO
+                      GTLFLX
+                      GRWFWK
+                      GRWIO
+                      GRWCLC
                       )
 
 
@@ -125,18 +125,19 @@ simple_plugin(NueAna   "module"
 			larsim_MCCheater_BackTrackerService_service
            larsim_MCCheater_ParticleInventoryService_service
 			nusimdata_SimulationBase
-                        ${ART_FRAMEWORK_CORE}
-			${ART_FRAMEWORK_PRINCIPAL}
-			${ART_FRAMEWORK_SERVICES_REGISTRY}
-                        ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-                        ${ART_ROOT_IO_TFILESERVICE_SERVICE}
+                        ART_FRAMEWORK_CORE
+			ART_FRAMEWORK_PRINCIPAL
+			ART_FRAMEWORK_SERVICES_REGISTRY
+                        ART_ROOT_IO_TFILE_SUPPORT
+                        ROOT::Core
+                        ART_ROOT_IO_TFILESERVICE_SERVICE
  			art_Persistency_Common canvas
 			art_Persistency_Provenance canvas
 			art_Utilities canvas
-			${MF_MESSAGELOGGER}
+			messagefacility::MF_MessageLogger
 			
 			cetlib cetlib_except
-			${ROOT_BASIC_LIB_LIST}
+			ROOT_BASIC_LIB_LIST
               BASENAME_ONLY
 )
 
@@ -145,22 +146,20 @@ simple_plugin(MVASelect   "module"
                         nugen_NuReweight
                         nugen_NuReweight_art
 			nusimdata_SimulationBase
-                        ${GHEP}
-                        ${GEVGCORE}
-			${GPDG}
-                        ${ART_FRAMEWORK_CORE}
-                        ${ART_FRAMEWORK_PRINCIPAL}
-                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                        ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-                        ${ART_ROOT_IO_TFILESERVICE_SERVICE}
+                        ART_FRAMEWORK_CORE
+                        ART_FRAMEWORK_PRINCIPAL
+                        ART_FRAMEWORK_SERVICES_REGISTRY
+                        ART_ROOT_IO_TFILE_SUPPORT
+                        ROOT::Core
+                        ART_ROOT_IO_TFILESERVICE_SERVICE
                         art_Persistency_Common canvas
                         art_Persistency_Provenance canvas
                         art_Utilities canvas
-                        ${MF_MESSAGELOGGER}
+                        messagefacility::MF_MessageLogger
                         
                         cetlib cetlib_except
-                        ${ROOT_BASIC_LIB_LIST}
-			${GENIE_LIB_LIST}
+                        ROOT_BASIC_LIB_LIST
+			GENIE_LIB_LIST
               BASENAME_ONLY
 )
 
@@ -178,18 +177,19 @@ simple_plugin(IniSegReco "module"
 		      larsim_MCCheater_BackTrackerService_service
            larsim_MCCheater_ParticleInventoryService_service
 		      nusimdata_SimulationBase
-      		      ${ART_FRAMEWORK_CORE}
-		      ${ART_FRAMEWORK_PRINCIPAL}
-		      ${ART_FRAMEWORK_SERVICES_REGISTRY}
-      		      ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-      		      ${ART_ROOT_IO_TFILESERVICE_SERVICE}
+      		      ART_FRAMEWORK_CORE
+		      ART_FRAMEWORK_PRINCIPAL
+		      ART_FRAMEWORK_SERVICES_REGISTRY
+      		      ART_ROOT_IO_TFILE_SUPPORT
+      		      ROOT::Core
+      		      ART_ROOT_IO_TFILESERVICE_SERVICE
  		      art_Persistency_Common canvas
 		      art_Persistency_Provenance canvas
 		      art_Utilities canvas
-		      ${MF_MESSAGELOGGER}
+		      messagefacility::MF_MessageLogger
 		      
 		      cetlib cetlib_except
-		      ${ROOT_BASIC_LIB_LIST}
+		      ROOT_BASIC_LIB_LIST
               BASENAME_ONLY
 )
 
@@ -210,18 +210,19 @@ simple_plugin(ShSeg   "module"
 			larsim_MCCheater_BackTrackerService_service
            larsim_MCCheater_ParticleInventoryService_service
 			nusimdata_SimulationBase
-			${ART_FRAMEWORK_CORE}
-			${ART_FRAMEWORK_PRINCIPAL}
-			${ART_FRAMEWORK_SERVICES_REGISTRY}
-			${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-			${ART_ROOT_IO_TFILESERVICE_SERVICE}
+			ART_FRAMEWORK_CORE
+			ART_FRAMEWORK_PRINCIPAL
+			ART_FRAMEWORK_SERVICES_REGISTRY
+			ART_ROOT_IO_TFILE_SUPPORT
+			ROOT::Core
+			ART_ROOT_IO_TFILESERVICE_SERVICE
  			art_Persistency_Common canvas
 			art_Persistency_Provenance canvas
 			art_Utilities canvas
-			${MF_MESSAGELOGGER}
+			messagefacility::MF_MessageLogger
 			
 			cetlib cetlib_except
-			${ROOT_BASIC_LIB_LIST}
+			ROOT_BASIC_LIB_LIST
 			BASENAME_ONLY
 )
 
@@ -237,22 +238,20 @@ simple_plugin(EnergyReco   "module"
                         lardataalg_DetectorInfo
                         lardataobj_RecoBase
                         larsim_MCCheater_BackTrackerService_service
-                        ${GHEP}
-                        ${GEVGCORE}
-                        ${GPDG}
-                        ${ART_FRAMEWORK_CORE}
-                        ${ART_FRAMEWORK_PRINCIPAL}
-                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                        ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-                        ${ART_ROOT_IO_TFILESERVICE_SERVICE}
+                        ART_FRAMEWORK_CORE
+                        ART_FRAMEWORK_PRINCIPAL
+                        ART_FRAMEWORK_SERVICES_REGISTRY
+                        ART_ROOT_IO_TFILE_SUPPORT
+                        ROOT::Core
+                        ART_ROOT_IO_TFILESERVICE_SERVICE
                         art_Persistency_Common canvas
                         art_Persistency_Provenance canvas
                         art_Utilities canvas
-                        ${MF_MESSAGELOGGER}
+                        messagefacility::MF_MessageLogger
                         
-                        ${CETLIB}
-                        ${ROOT_BASIC_LIB_LIST}
-                         ${GENIE_LIB_LIST}
+                        CETLIB
+                        ROOT_BASIC_LIB_LIST
+                         GENIE_LIB_LIST
               BASENAME_ONLY
 )
 
@@ -260,22 +259,20 @@ simple_plugin(CheckRecoEnergy   "module"
                         nugen_NuReweight
                         nugen_NuReweight_art
                         nusimdata_SimulationBase
-                        ${GHEP}
-                        ${GEVGCORE}
-                        ${GPDG}
-                        ${ART_FRAMEWORK_CORE}
-                        ${ART_FRAMEWORK_PRINCIPAL}
-                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                        ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-                        ${ART_ROOT_IO_TFILESERVICE_SERVICE}
+                        ART_FRAMEWORK_CORE
+                        ART_FRAMEWORK_PRINCIPAL
+                        ART_FRAMEWORK_SERVICES_REGISTRY
+                        ART_ROOT_IO_TFILE_SUPPORT
+                        ROOT::Core
+                        ART_ROOT_IO_TFILESERVICE_SERVICE
                         art_Persistency_Common canvas
                         art_Persistency_Provenance canvas
                         art_Utilities canvas
-                        ${MF_MESSAGELOGGER}
+                        messagefacility::MF_MessageLogger
                         
                         cetlib cetlib_except
-                        ${ROOT_BASIC_LIB_LIST}
-                        ${GENIE_LIB_LIST}
+                        ROOT_BASIC_LIB_LIST
+                        GENIE_LIB_LIST
               BASENAME_ONLY
 )
 

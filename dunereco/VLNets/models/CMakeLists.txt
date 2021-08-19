@@ -16,8 +16,8 @@ art_make_library(
         tf_model/TFModel.cxx
         zoo/VLNEnergyModel.cxx
     LIBRARIES
-        ${TENSORFLOW}
-        ${FOR_TENSORFLOW}
+        TENSORFLOW
+        FOR_TENSORFLOW
 )
 
 cet_remove_compiler_flags(CXX -pedantic)

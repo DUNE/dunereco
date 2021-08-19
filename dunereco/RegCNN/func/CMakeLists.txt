@@ -19,16 +19,16 @@ art_make( BASENAME_ONLY
   lardataobj_RecoBase
   larsim_MCCheater_BackTrackerService_service
   larsim_MCCheater_ParticleInventoryService_service
-  ${ART_FRAMEWORK_SERVICES_REGISTRY}
-  ${MF_MESSAGELOGGER}
+  ART_FRAMEWORK_SERVICES_REGISTRY
+  messagefacility::MF_MessageLogger
 
   cetlib cetlib_except
   ${Boost_FILESYSTEM_LIBRARY}
   ${Boost_SYSTEM_LIBRARY}
-  ${ROOT_BASIC_LIB_LIST}
-  ${TENSORFLOW}
-  ${PROTOBUF}
-  ${FOR_TENSORFLOW}
+  ROOT_BASIC_LIB_LIST
+  TENSORFLOW
+  PROTOBUF
+  FOR_TENSORFLOW
   DICT_LIBRARIES   lardataobj_RecoBase
   RegCNNFunc
   )
