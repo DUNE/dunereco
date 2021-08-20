@@ -1,7 +1,7 @@
 # for classes_def.xml!!
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
-simple_plugin(SNSlicer "module"
+cet_build_plugin(SNSlicer art::module
                         larcore_Geometry_Geometry_service
                         larcorealg_Geometry
                         larsim_MCCheater_BackTrackerService_service

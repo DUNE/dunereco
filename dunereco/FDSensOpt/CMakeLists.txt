@@ -110,7 +110,7 @@ include_directories ( $ENV{GENIE_INC}/GENIE )
                       )
 
 
-simple_plugin(NueAna   "module"
+cet_build_plugin(NueAna   art::module
                         lardataalg_DetectorInfo
 		        lardataobj_RawData
 		        lardataobj_RecoBase
@@ -141,7 +141,7 @@ simple_plugin(NueAna   "module"
               BASENAME_ONLY
 )
 
-simple_plugin(MVASelect   "module"
+cet_build_plugin(MVASelect   art::module
                         MVAAlg
                         nugen_NuReweight
                         nugen_NuReweight_art
@@ -163,7 +163,7 @@ simple_plugin(MVASelect   "module"
               BASENAME_ONLY
 )
 
-simple_plugin(IniSegReco "module"
+cet_build_plugin(IniSegReco art::module
                       lardataalg_DetectorInfo
 		      lardataobj_RawData
 		      lardataobj_RecoBase
@@ -193,7 +193,7 @@ simple_plugin(IniSegReco "module"
               BASENAME_ONLY
 )
 
-simple_plugin(ShSeg   "module"
+cet_build_plugin(ShSeg   art::module
                         lardataalg_DetectorInfo
 			lardataobj_RawData
 			lardataobj_RecoBase
@@ -226,7 +226,7 @@ simple_plugin(ShSeg   "module"
 			BASENAME_ONLY
 )
 
-simple_plugin(EnergyReco   "module"
+cet_build_plugin(EnergyReco   art::module
                         MVAAlg
                         NeutrinoEnergyRecoAlg
                         nugen_NuReweight
@@ -255,7 +255,7 @@ simple_plugin(EnergyReco   "module"
               BASENAME_ONLY
 )
 
-simple_plugin(CheckRecoEnergy   "module"
+cet_build_plugin(CheckRecoEnergy   art::module
                         nugen_NuReweight
                         nugen_NuReweight_art
                         nusimdata_SimulationBase

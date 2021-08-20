@@ -9,7 +9,7 @@ art_make_library(
   ART_ROOT_IO_TFILESERVICE_SERVICE
   )
 
-simple_plugin(SPMultiTpcDump "module"
+cet_build_plugin(SPMultiTpcDump art::module
 			larcore_Geometry_Geometry_service
                         lardataalg_DetectorInfo
 			larcorealg_Geometry
