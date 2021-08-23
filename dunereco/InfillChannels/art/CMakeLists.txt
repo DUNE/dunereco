@@ -27,9 +27,9 @@ art_make(
                 FHICLCPP
                 CLHEP
 
-                ${TORCH_INSTALL_PREFIX}/lib/libtorch.so
-                ${TORCH_INSTALL_PREFIX}/lib/libtorch_cpu.so
-                ${TORCH_INSTALL_PREFIX}/lib/libc10.so
+                torch
+                torch_cpu
+                c10
 
                 ROOT_GEOM
                 ROOT_XMLIO
