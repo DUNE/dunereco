@@ -58,7 +58,7 @@ include_directories ( $ENV{GENIE_INC}/GENIE )
   # GENIE pre-R-3 used GSL via ROOT's Math libs, now makes direct call not available via that route
   cet_find_library( GSL NAMES gsl PATHS ENV GSL_LIB NO_DEFAULT_PATH )
 
-  set (GENIE_LIB_LIST ${GFWMSG}
+  set (GENIE_LIB_LIST GFWMSG
                       GFWREG
                       GFWALG
                       GFWINT
@@ -156,7 +156,6 @@ cet_build_plugin(MVASelect   art::module
                         art_Persistency_Provenance canvas
                         art_Utilities canvas
                         messagefacility::MF_MessageLogger
-                        
                         cetlib cetlib_except
                         ROOT_BASIC_LIB_LIST
 			GENIE_LIB_LIST
@@ -248,7 +247,6 @@ cet_build_plugin(EnergyReco   art::module
                         art_Persistency_Provenance canvas
                         art_Utilities canvas
                         messagefacility::MF_MessageLogger
-                        
                         CETLIB
                         ROOT_BASIC_LIB_LIST
                          GENIE_LIB_LIST

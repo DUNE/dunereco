@@ -43,7 +43,7 @@ art_make(BASENAME_ONLY
 #  cetlib cetlib_except
   TENSORFLOW
   FOR_TENSORFLOW
-#  ${ROOT_BASIC_LIB_LIST}
+#  ROOT_BASIC_LIB_LIST
   #lardataobj_RecoBase
   #lardata_Utilities
 #  nusimdata_SimulationBase

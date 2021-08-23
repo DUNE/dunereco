@@ -26,7 +26,7 @@ art_make(
 #    ${FHICLCPP}
 #    cetlib cetlib_except
 #    ${Boost_SYSTEM_LIBRARY}
-#    ${ROOT_BASIC_LIB_LIST}
+#    ROOT_BASIC_LIB_LIST
 )
 
 install_headers()
