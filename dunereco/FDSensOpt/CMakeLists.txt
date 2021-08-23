@@ -158,7 +158,7 @@ cet_build_plugin(MVASelect   art::module
                         messagefacility::MF_MessageLogger
                         cetlib cetlib_except
                         ROOT_BASIC_LIB_LIST
-			GENIE_LIB_LIST
+			${GENIE_LIB_LIST}
               BASENAME_ONLY
 )
 
@@ -249,7 +249,7 @@ cet_build_plugin(EnergyReco   art::module
                         messagefacility::MF_MessageLogger
                         CETLIB
                         ROOT_BASIC_LIB_LIST
-                         GENIE_LIB_LIST
+                         ${GENIE_LIB_LIST}
               BASENAME_ONLY
 )
 
@@ -270,7 +270,7 @@ cet_build_plugin(CheckRecoEnergy   art::module
                         
                         cetlib cetlib_except
                         ROOT_BASIC_LIB_LIST
-                        GENIE_LIB_LIST
+                        ${GENIE_LIB_LIST}
               BASENAME_ONLY
 )
 
