@@ -38,11 +38,16 @@ namespace cvn
   {
 
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());  
+    if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos)
+      _cacheIntercepts();
+    
   }
 
   PixelMapWireProducer::PixelMapWireProducer()
   {
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());  
+    if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos)
+      _cacheIntercepts();
   }
 
   PixelMap PixelMapWireProducer::CreateMap(detinfo::DetectorPropertiesData const& detProp,
@@ -58,9 +63,6 @@ namespace cvn
   PixelMap PixelMapWireProducer::CreateMap(detinfo::DetectorPropertiesData const& detProp,
                                        const std::vector<const recob::Wire* >& cluster)
   {
-    if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos)
-      _cacheIntercepts();
-    
     Boundary bound = DefineBoundary(detProp, cluster);
     return CreateMapGivenBoundary(detProp, cluster, bound);
   }
@@ -213,7 +215,7 @@ namespace cvn
       }
       unsigned int globalWire  = wireid.Wire;
       unsigned int globalPlane = wireid.Plane;
-      
+     
       if(!fProtoDUNE){
         if(fUnwrapped == 1){
           if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos){
@@ -265,7 +267,7 @@ namespace cvn
           }
         }
       }
-      
+    
       if(globalPlane==0){
         wire_0.push_back(globalWire);
       }
@@ -284,7 +286,7 @@ namespace cvn
     std::cout << "Boundary wire vector sizes: " << wire_0.size() << ", " << wire_1.size() << ", " << wire_2.size() << std::endl;
     
     auto minwireelement_0= std::min_element(wire_0.begin(), wire_0.end());
-    std::cout<<"minwire 0: "<<*minwireelement_0<<std::endl;
+    std::cout<<"minwire 0: "<<*minwireelement_0 <<std::endl;
     auto minwireelement_1= std::min_element(wire_1.begin(), wire_1.end());
     std::cout<<"minwire 1: "<<*minwireelement_1<<std::endl;
     auto minwireelement_2= std::min_element(wire_2.begin(), wire_2.end());
@@ -369,11 +371,6 @@ namespace cvn
     unsigned int drift_size = (driftLen / driftVel) * 2; // Time in ticks to cross a TPC 
     unsigned int apa_size   = 4*(apaLen / driftVel) * 2; // Width of the whole APA in TDC
 
-    std::cout << "MEASUREMENTS: " << drift_size << ", " << apa_size << std::endl;
-    std::cout << "Det Params : " << driftLen << ", " << apaLen << ", " << driftVel << std::endl;
-    std::cout << "geometry nwires : " << fGeometry->Nwires(globalPlane, tpc, 0) << std::endl;
-    std::cout << "Local : " << localWire << ", " << localTDC << ", " << plane << std::endl;
-
     globalWire = 0;
     globalPlane = 0;
 //    int dir = fGeometry->TPC(tpc,0).DetectDriftDirection();
@@ -395,7 +392,6 @@ namespace cvn
     //        | /       |  1  |  0  | /
     //  x <---|/        |-----|-----|/
     //
-    std::cout << "TPC : " << tpc << ", " << nWiresTPC << std::endl;
     int tpcMod4 = tpc%4;
     // Induction views depend on the drift direction
     if (plane < 2 and tpc%2 == 1) globalPlane = !plane;
@@ -416,7 +412,6 @@ namespace cvn
     else{
       globalTDC = localTDC + drift_size + apa_size;
     }
-    std::cout << "Global : " << globalWire << ", " << globalTDC << ", " << globalPlane << std::endl;
   }
 
   void PixelMapWireProducer::GetDUNE10ktGlobalWireTDC(detinfo::DetectorPropertiesData const& detProp,
@@ -431,7 +426,6 @@ namespace cvn
     unsigned int drift_size = (driftLen / driftVel) * 2; // Time in ticks to cross a TPC 
     unsigned int apa_size   = 4*(apaLen / driftVel) * 2; // Width of the whole APA in TDC
 
-    // std::cout << "Drift size is " << drift_size << ", APA size is " << apa_size << std::endl;
 
     globalWire = 0;
     globalPlane = 0;
@@ -566,7 +560,7 @@ namespace cvn
       double wire_intercept = _getIntercept(wire_id);
       double low_bound, upper_bound; 
       int start, end, diag_tpc;
-      // get wires on diagonal CRPs and their intercepts which bound the current wire's intercept 
+      // get wires on diagonal CRMs and their intercepts which bound the current wire's intercept 
       if(globalPlane == 0){
         start = std::lower_bound(fVDPlane0.begin(), fVDPlane0.end(), wire_intercept) - fVDPlane0.begin() - 1;
         end = std::upper_bound(fVDPlane0.begin(), fVDPlane0.end(), wire_intercept) - fVDPlane0.begin();
@@ -581,13 +575,13 @@ namespace cvn
         upper_bound = fVDPlane1[start];
         diag_tpc = (nCRM_row-(end/2) - 1);
       }
-      // if the intercept of the wire is in between two diagonal CRPs, assign it to the diagonal CRP its closest to 
+      // if the intercept of the wire is in between two diagonal CRMs, assign it to the diagonal CRM its closest to 
       if((start % 2)^globalPlane){
         
         int diag_idx = diag_tpc + !globalPlane;
         globalWire = (wire_intercept > (low_bound+upper_bound)*0.5) ? (nWiresTPC-1)*diag_idx + !globalPlane : (nWiresTPC-1)*diag_idx + globalPlane;
       }
-      // otherwise assign it to the closest wire within the same CRP
+      // otherwise assign it to the closest wire within the same CRM
       else{
         int diag_idx = diag_tpc;
         int offset = globalPlane ? std::round((upper_bound - wire_intercept)/spacing) : std::round((wire_intercept-low_bound)/spacing);

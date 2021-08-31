@@ -23,4 +23,10 @@ dunefd_horizdrift_cvnevaluator:
         LibPath:    "DUNE_PARDATA_DIR"
     }
 }
+
+dunevd10kt_cvnmapper:
+{
+   @table::standard_cvnmapper_wire
+}
+
 END_PROLOG

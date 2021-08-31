@@ -37,11 +37,15 @@ namespace cvn
   {
 
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());  
+    if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos)
+      _cacheIntercepts();
   }
 
   PixelMapProducer::PixelMapProducer()
   {
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());  
+    if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos)
+      _cacheIntercepts();
   }
 
   PixelMap PixelMapProducer::CreateMap(detinfo::DetectorPropertiesData const& detProp,
@@ -57,6 +61,12 @@ namespace cvn
   PixelMap PixelMapProducer::CreateMap(detinfo::DetectorPropertiesData const& detProp,
                                        const std::vector<const recob::Hit* >& cluster)
   {
+    if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos){
+      fVDPlane0.clear();
+      fVDPlane1.clear();
+      _cacheIntercepts();
+    }
+    
     Boundary bound = DefineBoundary(detProp, cluster);
     return CreateMapGivenBoundary(detProp, cluster, bound);
   }
@@ -83,6 +93,9 @@ namespace cvn
             if (wireid.TPC%6 == 0 or wireid.TPC%6 == 5) continue; // Skip dummy TPCs in 10kt module
             GetDUNE10ktGlobalWireTDC(detProp, wireid.Wire,cluster[iHit]->PeakTime(),
               wireid.Plane,wireid.TPC,tempWire,tempPlane,temptdc);
+          }
+          else if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos){
+            GetDUNEVertDrift3ViewGlobalWire(wireid.Wire, wireid.Plane,wireid.TPC,tempWire,tempPlane);
           }
           // Default to 1x2x6. Should probably specifically name this function as such
           else {
@@ -115,7 +128,49 @@ namespace cvn
     return os;
   }
 
+  double PixelMapProducer::_getIntercept(geo::WireID wireid) const
+  {
+    const geo::WireGeo* pwire = fGeometry->WirePtr(wireid);
+    geo::Point_t center = pwire->GetCenter<geo::Point_t>();
+    double slope = 0.;
+    if(!pwire->isVertical()) slope = pwire->TanThetaZ();
+    
+    double intercept = center.Y() - slope*center.Z();
+    if(wireid.Plane == 2) intercept = 0.;
+    
+    return intercept;
+  }
 
+  void PixelMapProducer::_cacheIntercepts(){
+   
+    // double spacing = 0.847;
+    for(int plane = 0; plane < 2; plane++){
+      
+      int nCRM_row = 6;
+      for(int diag_tpc = 0; diag_tpc < nCRM_row; diag_tpc++){
+        
+        unsigned int nWiresTPC = fGeometry->Nwires(plane, 0, 0);
+        int tpc_id = plane == 0 ? (nCRM_row+1)*diag_tpc : (nCRM_row-1)*(nCRM_row-diag_tpc);
+        geo::WireID start = geo::WireID(0, tpc_id, plane, 0); 
+        geo::WireID end = geo::WireID(0, tpc_id, plane, nWiresTPC-1);
+        geo::WireID next = geo::WireID(0, tpc_id, plane, 1);
+        const geo::WireGeo* pwire_next = fGeometry->WirePtr(next);
+        const geo::WireGeo* pwire_start = fGeometry->WirePtr(start);
+
+        double start_intercept = _getIntercept(start);
+        double end_intercept = _getIntercept(end);
+        if(plane == 0){
+          fVDPlane0.push_back(start_intercept);
+          fVDPlane0.push_back(end_intercept);
+        }
+        else{
+          fVDPlane1.push_back(_getIntercept(end));
+          fVDPlane1.push_back(_getIntercept(start));
+        }
+      }
+
+    }
+  }
 
   Boundary PixelMapProducer::DefineBoundary(detinfo::DetectorPropertiesData const& detProp,
                                             const std::vector< const recob::Hit*>& cluster)
@@ -129,11 +184,12 @@ namespace cvn
     std::vector<int> wire_0;
     std::vector<int> wire_1;
     std::vector<int> wire_2;
+    
 
     for(size_t iHit = 0; iHit < cluster.size(); ++iHit)
     {
       geo::WireID wireid = cluster[iHit]->WireID();
-      //wire.push_back(wireid.Wire);
+      
       unsigned int globalWire = wireid.Wire;
       unsigned int globalPlane = wireid.Plane;
       double globalTime = cluster[iHit]->PeakTime();
@@ -142,6 +198,9 @@ namespace cvn
           if (fGeometry->DetectorName() == "dune10kt_v1") {
             if (wireid.TPC%6 == 0 or wireid.TPC%6 == 5) continue; // Skip dummy TPCs in 10kt module
             GetDUNE10ktGlobalWireTDC(detProp, wireid.Wire,cluster[iHit]->PeakTime(),wireid.Plane,wireid.TPC,globalWire,globalPlane,globalTime);
+          }
+          else if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos){
+            GetDUNEVertDrift3ViewGlobalWire(wireid.Wire, wireid.Plane,wireid.TPC,globalWire,globalPlane);
           }
           else {
             GetDUNEGlobalWireTDC(detProp, wireid.Wire,cluster[iHit]->PeakTime(),wireid.Plane,wireid.TPC,globalWire,globalPlane,globalTime);
@@ -266,8 +325,6 @@ namespace cvn
     unsigned int drift_size = (driftLen / driftVel) * 2; // Time in ticks to cross a TPC 
     unsigned int apa_size   = 4*(apaLen / driftVel) * 2; // Width of the whole APA in TDC
 
-//    std::cout << "MEASUREMENTS: " << drift_size << ", " << apa_size << std::endl;
-
     globalWire = 0;
     globalPlane = 0;
 //    int dir = fGeometry->TPC(tpc,0).DetectDriftDirection();
@@ -289,7 +346,6 @@ namespace cvn
     //        | /       |  1  |  0  | /
     //  x <---|/        |-----|-----|/
     //
-
     int tpcMod4 = tpc%4;
     // Induction views depend on the drift direction
     if (plane < 2 and tpc%2 == 1) globalPlane = !plane;
@@ -300,6 +356,7 @@ namespace cvn
     if (globalPlane != 1) globalWire += (tpc/4)*nWiresTPC;
     else globalWire += ((23-tpc)/4)*nWiresTPC;
     // Reverse wires and add offset for upper modules in induction views
+    // Nitish : what's the difference between Nwires here and nWiresTPC?
     if (tpcMod4 > 1 and globalPlane < 2) globalWire += fGeometry->Nwires(globalPlane, tpc, 0) + offset - localWire;
     else globalWire += localWire;
 
@@ -323,7 +380,6 @@ namespace cvn
     unsigned int drift_size = (driftLen / driftVel) * 2; // Time in ticks to cross a TPC 
     unsigned int apa_size   = 4*(apaLen / driftVel) * 2; // Width of the whole APA in TDC
 
-    // std::cout << "Drift size is " << drift_size << ", APA size is " << apa_size << std::endl;
 
     globalWire = 0;
     globalPlane = 0;
@@ -438,6 +494,64 @@ namespace cvn
     // Implement additional mirroring here?
 
   } // function GetProtoDUNEGlobalWireTDC
+  
+  void PixelMapProducer::GetDUNEVertDrift3ViewGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const
+  {
+    // Preliminary function for VD Geometries (3 View for now)
+    // 1x6x6 -- single drift volume should make things significantly simpler
+    
+    int nCRM_row = 6;
+    // spacing between y-intercepts of parallel wires in a given plane. 
+    // seems its not actually the pitch/cos(theta_z) but rather the pitch/cos(theta_z) - 2*r_wire ??
+    double spacing = 0.847; 
+    
+    globalPlane = plane;
+    unsigned int nWiresTPC = fGeometry->Nwires(globalPlane, tpc, 0);
+    
+    if(globalPlane < 2){
+      
+      geo::WireID wire_id = geo::WireID(0, tpc, globalPlane, localWire);
+      double wire_intercept = _getIntercept(wire_id);
+      double low_bound, upper_bound; 
+      int start, end, diag_tpc;
+      // double matched_intercept;
+      // get wires on diagonal CRMs and their intercepts which bound the current wire's intercept 
+      if(globalPlane == 0){
+        start = std::lower_bound(fVDPlane0.begin(), fVDPlane0.end(), wire_intercept) - fVDPlane0.begin() - 1;
+        end = std::upper_bound(fVDPlane0.begin(), fVDPlane0.end(), wire_intercept) - fVDPlane0.begin();
+        low_bound = fVDPlane0[start];
+        upper_bound = fVDPlane0[end];
+        diag_tpc = (start/2);
+      }
+      else{
+        end = std::lower_bound(fVDPlane1.begin(), fVDPlane1.end(), wire_intercept) - fVDPlane1.begin() - 1;
+        start = std::upper_bound(fVDPlane1.begin(), fVDPlane1.end(), wire_intercept) - fVDPlane1.begin();
+        low_bound = fVDPlane1[end];
+        upper_bound = fVDPlane1[start];
+        diag_tpc = (nCRM_row-(end/2) - 1);
+      }
+      // if the intercept of the wire is in between two diagonal CRMs, assign it to the diagonal CRM its closest to 
+      if((start % 2)^globalPlane){
+        
+        int diag_idx = diag_tpc + !globalPlane;
+        globalWire = (wire_intercept > (low_bound+upper_bound)*0.5) ? (nWiresTPC-1)*diag_idx + !globalPlane : (nWiresTPC-1)*diag_idx + globalPlane;
+      }
+      // otherwise assign it to the closest wire within the same CRM
+      else{
+        int diag_idx = diag_tpc;
+        int offset = globalPlane ? std::round((upper_bound - wire_intercept)/spacing) : std::round((wire_intercept-low_bound)/spacing);
+        globalWire = (nWiresTPC-1)*diag_idx + offset + 1;
+        
+        int tpc_id  = (nCRM_row-1 + 2*!globalPlane)*(diag_idx + globalPlane);
+          
+      }
+    }
+    else{
+      int tpc_z = tpc/6;
+      globalWire = localWire + tpc_z*nWiresTPC;
+    }
+ 
+  }
 
   void PixelMapProducer::GetHitTruth(detinfo::DetectorClocksData const& clockData,
                                      art::Ptr<recob::Hit>& hit, std::vector<int>& pdgs,

@@ -45,12 +45,16 @@ namespace cvn
     void GetDUNEGlobalWireTDC(detinfo::DetectorPropertiesData const& detProp,
                               unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
                               unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const;
+
     void GetDUNE10ktGlobalWireTDC(detinfo::DetectorPropertiesData const& detProp,
                                   unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
                                   unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const;
     void GetProtoDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const; 
     void GetProtoDUNEGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
                                    unsigned int& globalWire, double& globalTDC, unsigned int& globalPlane) const;
+    // preliminary vert drift 3 view studies 
+    void GetDUNEVertDrift3ViewGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const; 
+
 
     unsigned int NWire() const {return fNWire;};
     unsigned int NTdc() const {return fNTdc;};
@@ -83,6 +87,13 @@ namespace cvn
     bool              fProtoDUNE; ///< Do we want to use this for particle extraction from protoDUNE?
 
     geo::GeometryCore const* fGeometry;
+    std::vector<double> fVDPlane0;
+    std::vector<double> fVDPlane1;
+    // std::vector<int> fPlane0GapWires;
+    // std::vector<int> fPlane1GapWires;
+
+    double _getIntercept(geo::WireID wireid) const;
+    void _cacheIntercepts();
   };
 
 }
