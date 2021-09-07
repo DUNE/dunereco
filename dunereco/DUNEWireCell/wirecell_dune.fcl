@@ -366,7 +366,7 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_data_nfsp : {
       # This sets the "main" Jsonnet file which provides the 
       # configuration for the Wire-Cell Toolkit components.  It is
       # take as relative to entries in WIRECELL_PATH.
-      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp-3view.jsonnet"]
+      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
 
       # Set the "external variables" required by the Jsonnet.
       # ext-var, string
@@ -400,6 +400,13 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_data_nfsp : {
           # 3view30: dunevd-resp-isoc3views-18d92.json.bz2
           # 2view: pcbro-response-avg-12d50.json.bz2
           files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
+
+          # set mapping between internal wct plane ids and larsoft
+          # WCT assumes kU, kV, kW regardless of orientation. 
+          # Larsoft expects kY for 2nd induction plane for this geometry
+          # Set the mapping as kU->kU, kV->kY, kW->kW in the jsonnet
+          geo_planeid_labels: "dunevd_3view"
+          
       }
       # ext-code, code
       structs : {
@@ -446,7 +453,7 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_30deg_data_nfsp : {
       # This sets the "main" Jsonnet file which provides the 
       # configuration for the Wire-Cell Toolkit components.  It is
       # take as relative to entries in WIRECELL_PATH.
-      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp-3view30deg.jsonnet"]
+      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
 
       # Set the "external variables" required by the Jsonnet.
       # ext-var, string
@@ -480,6 +487,10 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_30deg_data_nfsp : {
           # 3view30: dunevd-resp-isoc3views-18d92.json.bz2
           # 2view: pcbro-response-avg-12d50.json.bz2
           files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
+          
+          # set mapping between internal wct plane ids and larsoft
+          # default is to assume WireCell::kU->geo::kU, kV->kV, kW->kW
+          geo_planeid_labels: "default"
       }
       # ext-code, code
       structs : {
