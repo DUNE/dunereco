@@ -115,7 +115,7 @@ local wcls_output = {
     name: 'spsaver',
     data: {
       // anode: wc.tn(tools.anode),
-      plane_map: {"1":0, "2":3, "4":2},
+      plane_map: {"1":0, "2":3, "4":2}, // 2nd induction plane is labelled kY(= 3) in larsoft and kV(= 2) in WCT
       anode: wc.tn(mega_anode),
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],

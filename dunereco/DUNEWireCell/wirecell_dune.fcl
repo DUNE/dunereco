@@ -366,7 +366,7 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_data_nfsp : {
       # This sets the "main" Jsonnet file which provides the 
       # configuration for the Wire-Cell Toolkit components.  It is
       # take as relative to entries in WIRECELL_PATH.
-      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
+      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp-3view.jsonnet"]
 
       # Set the "external variables" required by the Jsonnet.
       # ext-var, string
@@ -446,7 +446,7 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_30deg_data_nfsp : {
       # This sets the "main" Jsonnet file which provides the 
       # configuration for the Wire-Cell Toolkit components.  It is
       # take as relative to entries in WIRECELL_PATH.
-      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
+      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp-3view30deg.jsonnet"]
 
       # Set the "external variables" required by the Jsonnet.
       # ext-var, string
