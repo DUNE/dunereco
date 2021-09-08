@@ -97,7 +97,7 @@ physics :{
 
                 # set mapping between internal wct plane ids and larsoft
                 # default is to assume WireCell::kU->geo::kU, kV->kV, kW->kW
-                geo_planeid_labels: "default"
+                # geo_planeid_labels: "default"
             }
             # ext-code, code
             structs : {
