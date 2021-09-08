@@ -94,6 +94,10 @@ physics :{
                 # 3view30: dunevd-resp-isoc3views-18d92.json.bz2
                 # 2view: pcbro-response-avg-12d50.json.bz2
                 files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
+
+                # set mapping between internal wct plane ids and larsoft
+                # default is to assume WireCell::kU->geo::kU, kV->kV, kW->kW
+                geo_planeid_labels: "default"
             }
             # ext-code, code
             structs : {
