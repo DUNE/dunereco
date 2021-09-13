@@ -54,7 +54,6 @@ art_make(BASENAME_ONLY
   larreco_RecoAlg
   larcorealg_Geometry
   larcore_Geometry_Geometry_service
-  LARRECO_RECOALG_IMAGEPATTERNALGS_TF
   MODULE_LIBRARIES  RegCNNFunc
   RegCNNArt
   )
