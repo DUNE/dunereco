@@ -2,19 +2,6 @@ BEGIN_PROLOG
 
 #   This file defines the configuration for the CVNEventDump module
 
-# Configuration for the CVN Caffe interface
-#standard_caffenethandler:
-#{
-#  LibPath: "DUNE_PARDATA_DIR"
-#  DeployProto: "networkDefinition.prototxt"
-#  ModelFile: "modelWeightsV2.caffemodel"
-#  FeatureMap: ""
-#  ChargeLogScale: false
-#  NImageWires: 500
-#  NImageTDCs  : 500
-#  ReverseViews: [false,true,false]
-#}
-
 # Configuration for the CVN TF interface
 standard_tfnethandler:
 {
@@ -34,7 +21,6 @@ standard_cvnevaluator:
   #==================
   PixelMapInput: "cvnmap"
   ResultLabel: "cvnresult"
-  #CaffeNetHandler: @local::standard_caffenethandler
   TFNetHandler: @local::standard_tfnethandler
   CVNType: "Tensorflow"
   MultiplePMs: false
@@ -46,7 +32,6 @@ standard_cvnevaluator_protodune:
   #==================
   PixelMapInput: "cvnmap"
   ResultLabel: "cvnresult"
-  #CaffeNetHandler: @local::standard_caffenethandler
   TFNetHandler: @local::standard_tfnethandler
   CVNType: "Tensorflow"
   MultiplePMs: true
