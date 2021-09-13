@@ -59,10 +59,11 @@ art_make(BASENAME_ONLY
   RegCNNArt
   )
 
-cet_set_compiler_flags(DIAGS CAUTIOUS
-    NO_UNDEFINED
-    EXTRA_FLAGS
-    -pedantic)
+# use add or remove
+##cet_set_compiler_flags(DIAGS CAUTIOUS
+##    NO_UNDEFINED
+##    EXTRA_FLAGS
+##    -pedantic)
 
 install_headers()
 install_fhicl()
