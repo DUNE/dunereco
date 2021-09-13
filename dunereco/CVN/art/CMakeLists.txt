@@ -1,18 +1,6 @@
-#Caffe stuff
-#include_directories( $ENV{CAFFE_INC} )
-#include_directories( $ENV{CAFFE_SRC} )
 include_directories( $ENV{GSL_INC}/gsl )
-#include_directories( $ENV{PROTOBUF_INC} )
-#include_directories( $ENV{LEVELDB_INC} )
-#include_directories( $ENV{GFLAGS_INC} )
-#include_directories( $ENV{GLOG_INC} )
 
-#cet_find_library( CAFFELIB NAMES caffe-d caffe PATHS ENV CAFFE_LIB NO_DEFAULT_PATH )
 cet_find_library( GSLLIB NAMES gsl PATHS ENV GSL_LIB NO_DEFAULT_PATH )
-#cet_find_library( PROTOBUFLIB NAMES protobuf PATHS ENV PROTOBUF_LIB NO_DEFAULT_PATH )
-#cet_find_library( LEVELDBLIB NAMES leveldb PATHS ENV LEVELDB_LIB NO_DEFAULT_PATH )
-#cet_find_library( GFLAGSLIB NAMES gflags PATHS ENV GFLAGS_LIB NO_DEFAULT_PATH )
-#cet_find_library( GLOGLIB NAMES glog PATHS ENV GLOG_LIB NO_DEFAULT_PATH )
 
 # Tensorflow stuff
 if (DEFINED ENV{TENSORFLOW_DIR})
@@ -67,21 +55,12 @@ art_make(BASENAME_ONLY
   lardataobj_RecoBase
   lardata_Utilities
   nusimdata_SimulationBase
-#  larsim_MCCheater_BackTrackerService_service           
   larsim_MCCheater_ParticleInventoryService_service
-  #${CAFFELIB}
   GSLLIB
   HEPHPCLIB
   HDF5LIB
-  #${PROTOBUFLIB}
-  #${LEVELDBLIB}
-  #${GFLAGSLIB}
-  #${GLOGLIB}                             
   MVAAlg
-  #larreco_RecoAlg
-#  ${LARRECO_RECOALG_IMAGEPATTERNALGS_TF}
   boost_filesystem
-#  stdc++fs
   MODULE_LIBRARIES dune_CVN_func
   dune_CVN_tf
   dune_CVN_art
