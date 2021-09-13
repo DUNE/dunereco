@@ -3,10 +3,11 @@ if( DEFINED ENV{TENSORFLOW_DIR} )
 
 art_make_library( 
   LIBRARY_NAME     GlobImage
+  LIBRARY_NAME_VAR GLOBIMAGE
   SOURCE EventImageData.h EventImageData.cxx
   LIBRARIES    dune_CVN_func
-  LIBRARY_NAME_VAR GLOBIMAGE
-  ART_ROOT_IO_TFILESERVICE_SERVICE
+               ART_ROOT_IO_TFILESERVICE_SERVICE
+               ART_ROOT_IO_TFILE_SUPPORT
   )
 
 cet_build_plugin(SPMultiTpcDump art::module
@@ -21,7 +22,6 @@ cet_build_plugin(SPMultiTpcDump art::module
 			ART_FRAMEWORK_CORE
 			ART_FRAMEWORK_PRINCIPAL
 			ART_FRAMEWORK_SERVICES_REGISTRY
-			ART_ROOT_IO_TFILE_SUPPORT
 			ROOT::Core
 			ART_ROOT_IO_TFILESERVICE_SERVICE
  			art_Persistency_Common
