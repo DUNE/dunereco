@@ -1,0 +1,9 @@
+TreeName: "cvndump/CVNTrainTree"
+OutputDir: "/dune/data/users/salonsom/test"
+
+SetLog: false
+
+NEvents:    1000000
+PlaneLimit: 500
+TDCLimit:   500
+ReverseViews: [false,true,false]
