@@ -1,0 +1,20 @@
+
+ 
+
+LearningRate: 0.1
+HiddenLayers: [100]
+TargetError: 0.055
+MaxEpochs:  1000 
+EpochsBetweenReports: 1
+
+RPropIncreaseFactor: 1.01 # Default is 1.200
+RPropDecreaseFactor: 0.500 # Default is 0.500
+
+RandomInitRcvne: 0.1
+UseWidrowInit: false
+
+CVNLabel: cvndump
+TreeName: CVNTrainTree
+TrainingDataBranchName: "train"
+
+SimpleOutput: false

@@ -1,0 +1,31 @@
+
+TreeName: "cvndump/CVNTrainTree"
+TrainingDataBranchName: "train"
+
+OutputFormat:   "LevelDB"
+TestOutputDir:  "/nova/ana/users/radovic/duneCopy/fdHitHighResUnwrapped/TestLevelDB"
+TrainOutputDir: "/nova/ana/users/radovic/duneCopy/fdHitHighResUnwrapped/TrainLevelDB"
+
+NTrainPerTest: 4 # 4 means 80/20 split
+ProgressInterval: 100
+
+SetLog: false
+ErrorIfExists: true
+CreateIfMissing: true
+WriteBufferSize: 268435456
+WriteSync: false
+MaxKeyLength: 10
+
+Labeling: "all" # all, numu, nue, nc, or energy
+WriteRegressionHDF5: false
+RegressionHDF5NameTest: "regression_test.h5"
+RegressionHDF5NameTrain: "regression_train.h5"
+
+UseGeV: true
+
+NEvents:    1000000
+PlaneLimit: 500
+TDCLimit:   500
+ReverseViews: [false,true,false]
+
+MaxEnergyForLabel:        5.0    # Top of energy scale when labeling with energy
