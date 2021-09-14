@@ -101,7 +101,7 @@
       <InputClusterListName2>ClustersV</InputClusterListName2>
       <OutputPfoListName>MuonParticles3D</OutputPfoListName>
       <TrackTools>
-        <tool type = "LArTwoViewThreeDKink">
+        <tool type = "LArTwoViewThreeDKink"/>
         <tool type = "LArTwoViewClearTracks">
           <MinMatchingScore>0.95</MinMatchingScore>
           <MinLocallyMatchedFraction>0.0</MinLocallyMatchedFraction>
@@ -121,7 +121,7 @@
         <tool type = "LArTwoViewSimpleTracks"/>
       </TrackTools>
     </algorithm>
-    
+
     <!-- ThreeDTrackAlgorithms -->
     <algorithm type = "LArThreeDTransverseTracks">
         <InputClusterListNameU>ClustersU</InputClusterListNameU>
@@ -169,7 +169,7 @@
         <InputClusterListNameW>ClustersW</InputClusterListNameW>
         <OutputPfoListName>MuonParticles3D</OutputPfoListName>
     </algorithm>
-    <algorithm type = "LArCosmicRayTrackRecovery"> 
+    <algorithm type = "LArCosmicRayTrackRecovery">
         <InputClusterListNameU>ClustersU</InputClusterListNameU>
         <InputClusterListNameV>ClustersV</InputClusterListNameV>
         <InputClusterListNameW>ClustersW</InputClusterListNameW>
@@ -319,7 +319,7 @@
             </tool>
             <tool type = "LArTwoViewShowerHits">
                 <ChiSquaredCut>5.</ChiSquaredCut>
-                <XTolerance>2.</XTolerance> 
+                <XTolerance>2.</XTolerance>
             </tool>
         </HitCreationTools>
     </algorithm>
