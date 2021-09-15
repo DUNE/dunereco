@@ -153,9 +153,6 @@ namespace cvn
         int tpc_id = plane == 0 ? (nCRM_row+1)*diag_tpc : (nCRM_row-1)*(nCRM_row-diag_tpc);
         geo::WireID start = geo::WireID(0, tpc_id, plane, 0); 
         geo::WireID end = geo::WireID(0, tpc_id, plane, nWiresTPC-1);
-        geo::WireID next = geo::WireID(0, tpc_id, plane, 1);
-        const geo::WireGeo* pwire_next = fGeometry->WirePtr(next);
-        const geo::WireGeo* pwire_start = fGeometry->WirePtr(start);
 
         double start_intercept = _getIntercept(start);
         double end_intercept = _getIntercept(end);
@@ -541,8 +538,6 @@ namespace cvn
         int diag_idx = diag_tpc;
         int offset = globalPlane ? std::round((upper_bound - wire_intercept)/spacing) : std::round((wire_intercept-low_bound)/spacing);
         globalWire = (nWiresTPC-1)*diag_idx + offset + 1;
-        
-        int tpc_id  = (nCRM_row-1 + 2*!globalPlane)*(diag_idx + globalPlane);
           
       }
     }
