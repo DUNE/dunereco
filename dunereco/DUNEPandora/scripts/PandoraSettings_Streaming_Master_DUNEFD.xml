@@ -19,7 +19,7 @@
 
     <algorithm type = "LArDLMaster">
         <CRSettingsFile>PandoraSettings_Cosmic_DUNEFD.xml</CRSettingsFile>
-        <NuSettingsFile>development/PandoraSettings_Streaming_Neutrino_DUNEFD.xml</NuSettingsFile>
+        <NuSettingsFile>PandoraSettings_Streaming_Neutrino_DUNEFD.xml</NuSettingsFile>
         <SlicingSettingsFile>PandoraSettings_Slicing_Standard.xml</SlicingSettingsFile>
         <StitchingTools>
             <tool type = "LArStitchingCosmicRayMerging"><ThreeDStitchingMode>true</ThreeDStitchingMode></tool>
