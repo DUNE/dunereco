@@ -4,7 +4,7 @@
 
 BEGIN_PROLOG
 
-dunefd_nuenergyreco:
+dunefd_nuenergyreco_pmtrack:
 {
     module_type:             "EnergyReco"
 
@@ -14,7 +14,7 @@ dunefd_nuenergyreco:
     # 3 Use charges of all hits and convert to energy, suitable for NC events, numu CC events with no reco track or nue CC events with no reco shower
     RecoMethod:              1
 
-    WireLabel:         "caldata"
+    WireLabel:         "wclsmcnfsp:gauss"
     HitLabel:         "linecluster"
     TrackLabel:        "pmtrack"
     ShowerLabel:       "emshower"
@@ -24,5 +24,31 @@ dunefd_nuenergyreco:
 
     NeutrinoEnergyRecoAlg:   @local::dune10kt_neutrinoenergyrecoalg
 }
+
+dunefd_nuenergyreco_pandora_numu:
+{
+    @table::dunefd_nuenergyreco_pmtrack
+    RecoMethod:             1
+    WireLabel:              "wclsmcnfsp:gauss"
+    HitLabel:               "pandora"
+    TrackLabel:             "pandoraTrack"
+    ShowerLabel:            "pandoraShower"
+    TrackToHitLabel:        "pandoraTrack"
+    ShowerToHitLabel:       "pandoraShower"
+    HitToSpacePointLabel:   "pandora"
+}
+
+dunefd_nuenergyreco_pandora_nue:
+{
+    @table::dunefd_nuenergyreco_pandora_numu
+    RecoMethod: 2
+}
+
+dunefd_nuenergyreco_pandora_nc:
+{
+    @table::dunefd_nuenergyreco_pandora_numu
+    RecoMethod: 3
+}
+
 
 END_PROLOG

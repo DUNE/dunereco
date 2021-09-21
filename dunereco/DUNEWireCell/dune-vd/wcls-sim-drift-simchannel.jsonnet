@@ -7,16 +7,14 @@
 // Output is a Python numpy .npz file.
 
 local g = import 'pgraph.jsonnet';
-local f = import 'pgrapher/common/funcs.jsonnet';
+local f = import 'pgrapher/experiment/dune-vd/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
 local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
-local params_maker = import 'pgrapher/experiment/dune10kt-1x2x6/simparams.jsonnet';
-local fcl_params = {
-    G4RefTime: std.extVar('G4RefTime') * wc.us,
-};
-local params = params_maker(fcl_params) {
+local base = import 'pgrapher/experiment/dune-vd/params.jsonnet';
+local response_plane = std.extVar('response_plane')*wc.cm;
+local params = base(response_plane) {
   lar: super.lar {
     // Longitudinal diffusion constant
     DL: std.extVar('DL') * wc.cm2 / wc.s,
@@ -27,12 +25,18 @@ local params = params_maker(fcl_params) {
     // Electron drift speed, assumes a certain applied E-field
     drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
   },
+  files: super.files {
+      wires: std.extVar('files_wires'),
+      fields: [ std.extVar('files_fields'), ],
+      noise: std.extVar('files_noise'),
+  },
 };
 
+local G4RefTime = std.extVar('G4RefTime') * wc.us;
 
 local tools = tools_maker(params);
 
-local sim_maker = import 'pgrapher/experiment/dune10kt-1x2x6/sim.jsonnet';
+local sim_maker = import 'pgrapher/experiment/dune-vd/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local nanodes = std.length(tools.anodes);
@@ -109,7 +113,7 @@ local bagger = sim.make_bagger();
 // }, nin=1, nout=1);
 
 // signal plus noise pipelines
-//local sn_pipes = sim.signal_pipelines;
+// local sn_pipes = sim.signal_pipelines;
 local sn_pipes = sim.splusn_pipelines;
 
 local perfect = import 'pgrapher/experiment/dune10kt-1x2x6/chndb-perfect.jsonnet';
@@ -129,7 +133,7 @@ local nf_maker = import 'pgrapher/experiment/dune10kt-1x2x6/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb_pipes[n]) for n in std.range(0, std.length(tools.anodes)-1)];
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in anode_iota];
 
-local sp_maker = import 'pgrapher/experiment/dune10kt-1x2x6/sp.jsonnet';
+local sp_maker = import 'pgrapher/experiment/dune-vd/sp.jsonnet';
 local sp = sp_maker(params, tools);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
@@ -141,40 +145,73 @@ local wcls_simchannel_sink = g.pnode({
     artlabel: 'simpleSC',  // where to save in art::Event
     anodes_tn: [wc.tn(anode) for anode in tools.anodes],
     rng: wc.tn(rng),
-    tick: 0.5 * wc.us,
+    tick: params.daq.tick,
     start_time: -0.25 * wc.ms,
-    readout_time: self.tick * 6000,
+    readout_time: params.daq.readout_time,
     nsigma: 3.0,
     drift_speed: params.lar.drift_speed,
-    u_to_rp: 100 * wc.mm,  // 90.58 * wc.mm,
-    v_to_rp: 100 * wc.mm,  // 95.29 * wc.mm,
-    y_to_rp: 100 * wc.mm,
+    u_to_rp: response_plane,  // 90.58 * wc.mm,
+    v_to_rp: response_plane,  // 95.29 * wc.mm,
+    y_to_rp: response_plane,
     u_time_offset: 0.0 * wc.us,
     v_time_offset: 0.0 * wc.us,
     y_time_offset: 0.0 * wc.us,
-    g4_ref_time: fcl_params.G4RefTime, // -250 * wc.us,
+    g4_ref_time: G4RefTime,
     use_energy: true,
+    response_plane: response_plane,
   },
 }, nin=1, nout=1, uses=tools.anodes);
 
-local magoutput = 'protodune-data-check.root';
-local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
-local sinks = magnify(tools, magoutput);
+// local magoutput = 'protodune-data-check.root';
+// local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
+// local sinks = magnify(tools, magoutput);
+
+local origmagnify = [ 
+  g.pnode({
+    type: 'MagnifySink',
+    name: 'origmag%d' % n,
+    data: {
+        output_filename: 'dune-vd-sim-check.root',
+        root_file_mode: 'UPDATE',
+        frames: ['orig%d' % n ],
+        trace_has_tag: false,
+        anode: wc.tn(tools.anodes[n]), 
+    },
+  }, nin=1, nout=1) for n in std.range(0, std.length(tools.anodes) - 1)];
+
+
+local origmagnify_pipe = [g.pipeline([origmagnify[n]], name='origmagnifypipes%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
+
+local spmagnify = [ 
+  g.pnode({
+    type: 'MagnifySink',
+    name: 'spmag%d' % n,
+    data: {
+        output_filename: 'dune-vd-sim-check.root',
+        root_file_mode: 'UPDATE',
+        frames: ['gauss%d' % n ],
+        trace_has_tag: false,
+        anode: wc.tn(tools.anodes[n]), 
+    },
+  }, nin=1, nout=1) for n in std.range(0, std.length(tools.anodes) - 1)];
+
+
+local spmagnify_pipe = [g.pipeline([spmagnify[n]], name='spmagnifypipes%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local multipass = [
   g.pipeline([
-               // wcls_simchannel_sink[n],
-               sn_pipes[n],
-               // sinks.orig_pipe[n],
-               // nf_pipes[n],
-               // sp_pipes[n],
+                // wcls_simchannel_sink[n],
+                sn_pipes[n],
+                // origmagnify_pipe[n],
+                // nf_pipes[n],
+                // sp_pipes[n],
+                // spmagnify_pipe[n],
              ],
              'multipass%d' % n)
   for n in anode_iota
 ];
 local outtags = ['orig%d' % n for n in anode_iota];
-local bi_manifold = f.fanpipe('DepoSetFanout', multipass, 'FrameFanin', 'sn_mag_nf', outtags);
-// local bi_manifold = f.fanpipe('DepoFanout', multipass, 'FrameFanin', 'sn_mag_nf', outtags);
+local bi_manifold = f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', 6, 'sn_mag', outtags);
 
 local retagger = g.pnode({
   type: 'Retagger',
@@ -199,10 +236,11 @@ local sink = sim.frame_sink;
 local graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, bi_manifold, retagger, wcls_output.sim_digits, sink]);
 
 local app = {
-  type: 'Pgrapher',
-  data: {
-    edges: g.edges(graph),
-  },
+    type: 'Pgrapher',
+    // type: 'TbbFlow',
+    data: {
+        edges: g.edges(graph),
+    },
 };
 
 

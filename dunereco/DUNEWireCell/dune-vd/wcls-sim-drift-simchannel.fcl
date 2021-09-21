@@ -1,0 +1,88 @@
+#include "services_dune.fcl"
+
+process_name: wclssim
+physics :{
+   producers: {
+      plopper : {
+        module_type : BlipMaker
+      }
+      tpcrawdecoder : {
+         module_type : WireCellToolkit
+         wcls_main: {
+            tool_type: WCLS
+            apps: ["Pgrapher"]
+            # apps: ["TbbFlow"]
+
+            logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
+            loglevels: ["debug"]
+
+            plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
+
+            // needs to be found via your WIRECELL_PATH
+            configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel.jsonnet"]
+
+
+            // Contract note: these exact "type:name" must be used to identify
+            // the configuration data structures for these components in the Jsonnet.
+
+            inputers: ["wclsSimDepoSource:"]
+            outputers: [
+               "wclsSimChannelSink:postdrift",
+               "wclsFrameSaver:simdigits"
+            //   ,"wclsFrameSaver:nfdigits",
+            //   "wclsFrameSaver:spsignals",
+            //   "wclsFrameSaver:spthresholds"
+            ]
+
+            // Make available parameters via Jsonnet's std.extVar()
+            params: {
+            }
+            structs: {
+              # Longitudinal diffusion constant [cm2/s]
+              DL: 4.0
+              # Transverse diffusion constant [cm2/s]
+              DT: 8.8
+              # Electron lifetime [ms]
+              lifetime: 10.4
+              # Electron drift speed, assumes a certain applied E-field [mm/us]
+              driftSpeed: 1.565
+              # G4RefTime
+              G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+              # response plane [cm]
+              response_plane: 10.0
+              # file: wires
+              files_wires: "\"dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2\""
+              # file: fields
+              files_fields: "\"pcbro-response-avg.json.bz2\""
+              # file: noise
+              files_noise: "\"dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2\""
+            }
+
+         }
+      }
+   }
+   p1 : [ plopper, tpcrawdecoder ]
+   outputFiles : [ out ]
+   
+   trigger_paths : [ p1 ]
+   end_paths: [ outputFiles ]
+}
+outputs: {
+   out: {
+      module_type: RootOutput
+      // fileName: "%ifb_wcsim.root"
+      fileName: "wcsim.root"
+
+      outputCommands :   [
+         // "drop *", "keep recob::Wires_*_*_*"
+         "keep *_*_*_*"
+         // "drop *_nfspl1_raw_*",
+         // "drop *_nfspl1_threshold_*",
+         // "drop *_nfspl1_wiener_*",
+         // "drop *_nfspl1_gauss_*",
+         // "drop *_wcNoiseFilter_*_*",
+         // "drop *_daq_*_*"
+      ]
+
+   }
+}

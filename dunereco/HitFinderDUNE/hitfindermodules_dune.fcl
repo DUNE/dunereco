@@ -59,7 +59,9 @@ apa_hitfinder:
 }
 
 dunefd_disambigfromsp:                @local::standard_disambigfromsp
+dunefd_disambigfromsp.SpModuleLabel:  "spsolve"
 dunefd_disambigfromsp.ExcludeTPCs:    [] # workspace has no outer TPCs, but full FD has, I think
+dunefd_disambigfromsp.MoveLeftovers:  "repeat"
 
 pdune_disambigfromsp:                 @local::standard_disambigfromsp
 pdune_disambigfromsp.ExcludeTPCs:     []
@@ -189,6 +191,19 @@ dunefd_clustercrawlerhit: @local::dune35t_clustercrawlerhit
 dunefd_hitfinderfd:       @local::dune35t_hitfinder35t
 dunefd_hitfinderfd.DisambigAlg.DoCleanUpHits:  false
 dunefd_hitfinderfd.DisambigAlg.DistanceCutClu: 100
+
+# gauss hit finder for VD module
+dunevdfd_gaushitfinder: @local::gaus_hitfinder
+dunevdfd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane0.RoiThreshold: 6.0
+dunevdfd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane1.RoiThreshold: 0.6
+dunevdfd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane2.RoiThreshold: 0.6
+dunevdfd_gaushitfinder.InitWidth: [6.0, 6.0, 6.0]
+dunevdfd_gaushitfinder.AreaNorms: [13.25, 13.25, 13.25]
+dunevdfd_gaushitfinder.MaxMultiHit: 4
+dunevdfd_gaushitfinder.Chi2NDF: 50
+dunevdfd_gaushitfinder.LongMaxHits: [ 25, 25, 25 ]
+dunevdfd_gaushitfinder.LongPulseWidth: [ 10, 10, 10 ]
+dunevdfd_gaushitfinder.PeakFitter:	@local::peakfitter_mrqdt
 
 protodunespmc_gaushitfinder: @local::gaus_hitfinder
 protodunespmc_gaushitfinder.HitFinderToolVec.CandidateHitsPlane0.RoiThreshold: 0.6

@@ -30,14 +30,23 @@ local g = import 'pgraph.jsonnet';
 
 local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
 
-
-local data_params = import 'params.jsonnet';
-local simu_params = import 'simparams.jsonnet';
-local params_maker = if reality == 'data' then data_params else simu_params;
-local params = params_maker({});
+local base = import 'pgrapher/experiment/dune-vd/params.jsonnet';
+local response_plane = std.extVar('response_plane')*wc.cm;
+local channel_per_crm = std.extVar('channel_per_crm');
+local params = base(response_plane) {
+  lar: super.lar {
+    drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
+  },
+  files: super.files {
+      wires: std.extVar('files_wires'),
+      fields: [ std.extVar('files_fields'), ],
+  },
+};
 
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local tools = tools_maker(params);
+local nanodes = std.length(tools.anodes);
+local anode_iota = std.range(0, nanodes - 1);
 
 local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
@@ -45,7 +54,13 @@ local wcls = wcls_maker(params, tools);
 //local nf_maker = import "pgrapher/experiment/pdsp/nf.jsonnet";
 //local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
 
-local sp_maker = import 'pgrapher/experiment/dune10kt-1x2x6/sp.jsonnet';
+local sp_maker = import 'pgrapher/experiment/dune-vd/sp.jsonnet';
+
+//local planemaps = {
+//  dunevd_3view: {"1":0, "2":3, "4":2},
+//  default: {"1":0, "2":1, "4":2}
+//};
+//local planemap = planemaps[std.extVar("geo_planeid_labels")];
 
 //local chndbm = chndb_maker(params, tools);
 //local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
@@ -106,6 +121,7 @@ local wcls_output = {
     name: 'spsaver',
     data: {
       // anode: wc.tn(tools.anode),
+      // plane_map: planemap,
       anode: wc.tn(mega_anode),
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
@@ -127,8 +143,8 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field],  // pnode extension
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local nf_maker = import 'pgrapher/experiment/dune10kt-1x2x6/nf.jsonnet';
-local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
+// local nf_maker = import 'pgrapher/experiment/dune10kt-1x2x6/nf.jsonnet';
+// local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
@@ -138,40 +154,43 @@ local chsel_pipes = [
     type: 'ChannelSelector',
     name: 'chsel%d' % n,
     data: {
-      channels: std.range(2560 * n, 2560 * (n + 1) - 1),
-      //channels: if n==0 then std.range(2560*n,2560*(n+1)-1) else [],
-      //tags: ['orig%d' % n], // traces tag
+      channels: std.range(channel_per_crm * n, channel_per_crm * (n + 1) - 1), // 3view30: 900
     },
   }, nin=1, nout=1)
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-local magoutput = 'protodune-data-check.root';
-local magnify = import 'pgrapher/experiment/dune10kt-1x2x6/magnify-sinks.jsonnet';
-local sinks = magnify(tools, magoutput);
+
+local spmagnify = [ 
+  g.pnode({
+    type: 'MagnifySink',
+    name: 'spmag%d' % n,
+    data: {
+        output_filename: 'dune-vd-sp-check.root',
+        root_file_mode: 'UPDATE',
+        frames: ['gauss%d' % n ],
+        trace_has_tag: false,
+        anode: wc.tn(tools.anodes[n]), 
+    },
+  }, nin=1, nout=1) for n in std.range(0, std.length(tools.anodes) - 1)];
+
+
+local spmagnify_pipe = [g.pipeline([spmagnify[n]], name='spmagnifypipes%d' % n) for n in anode_iota];
 
 local nfsp_pipes = [
   g.pipeline([
                chsel_pipes[n],
-               // sinks.orig_pipe[n],
-
-               // nf_pipes[n],
-               // sinks.raw_pipe[n],
-
                sp_pipes[n],
-               // sinks.decon_pipe[n],
-               // sinks.threshold_pipe[n],
-               // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
+               spmagnify_pipe[n],
              ],
              'nfsp_pipe_%d' % n)
-  for n in std.range(0, std.length(tools.anodes) - 1)
+  for n in anode_iota
 ];
 
-//local f = import 'pgrapher/common/funcs.jsonnet';
-local f = import 'pgrapher/experiment/dune10kt-1x2x6/funcs.jsonnet';
-//local outtags = ['gauss%d' % n for n in std.range(0, std.length(tools.anodes) - 1)];
-//local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf', outtags);
-local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf');
+
+local f = import 'pgrapher/experiment/dune-vd/funcs.jsonnet';
+local outtags = ['gauss%d' % n for n in std.range(0, std.length(tools.anodes) - 1)];
+local fanpipe = f.multifanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 6, 'sn_mag_nf', outtags);
 
 local retagger = g.pnode({
   type: 'Retagger',
