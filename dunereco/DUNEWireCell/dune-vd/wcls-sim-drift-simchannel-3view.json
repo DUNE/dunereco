@@ -1112,10 +1112,10 @@
    },
    {
       "data": {
-         "gain": 1.9226117844000003e-12,
+         "gain": 2.24304708180000035e-12,
          "nticks": 9503,
-         "postgain": 1,
-         "shaping": 1200,
+         "postgain": 1.1365,
+         "shaping": 2200,
          "tick": 500
       },
       "type": "ColdElecResponse"

@@ -66,11 +66,11 @@ function(response_plane) base {
 
         type: "ColdElecResponse",
 
-        gain: 12*wc.mV/wc.fC,
+        gain: 14*wc.mV/wc.fC,
         
-        shaping: 1.2*wc.us,
+        shaping: 2.2*wc.us,
 
-        postgain: 1.0,
+        postgain: 1.1365,
 
         start: 0,
     },
