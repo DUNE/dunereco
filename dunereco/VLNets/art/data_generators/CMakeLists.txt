@@ -1,5 +1,6 @@
 art_make(
     LIBRARY_NAME VLNDataGenerators
+    ALLOW_UNDERSCORES
     MODULE_LIBRARIES
         VLNData
         VLNVarExtractors

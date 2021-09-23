@@ -8,6 +8,7 @@
 // Framework Includes
 
 #include "dune/RecoAlgDUNE/Cluster3DAlgs/PrincipalComponentsAlg.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
 
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"

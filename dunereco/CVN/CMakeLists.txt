@@ -1,6 +1,4 @@
-#if(DEFINED ENV{CAFFE_LIB} )
 add_subdirectory(levelDB)
-#endif()
 # not ready for c2 yet
 if(( DEFINED ENV{TENSORFLOW_DIR} ) AND ( DEFINED ENV{TRITON_DIR} ))
   add_subdirectory(art)

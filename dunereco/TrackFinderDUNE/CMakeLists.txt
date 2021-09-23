@@ -9,19 +9,19 @@ art_make( BASENAME_ONLY
                            larsim_MCCheater_BackTrackerService_service
                            larsim_MCCheater_ParticleInventoryService_service
                            nusimdata_SimulationBase
-                           ${ART_FRAMEWORK_CORE}
-                           ${ART_FRAMEWORK_PRINCIPAL}
-                           ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                           ${ART_FRAMEWORK_SERVICES_BASIC}
-                           ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-                           ${ART_ROOT_IO_TFILESERVICE_SERVICE}
-                           ${ART_PERSISTENCY_PROVENANCE}
+                           ART_FRAMEWORK_CORE
+                           ART_FRAMEWORK_PRINCIPAL
+                           ART_FRAMEWORK_SERVICES_REGISTRY
+                           ART_ROOT_IO_TFILE_SUPPORT
+                           ROOT::Core
+                           ART_ROOT_IO_TFILESERVICE_SERVICE
+                           ART_PERSISTENCY_PROVENANCE
                            art_Persistency_Common
                            art_Utilities canvas
-                           ${MF_MESSAGELOGGER}
-                           ${FHICLCPP}
+                           messagefacility::MF_MessageLogger
+                           FHICLCPP
                            cetlib cetlib_except
-                           ${ROOT_BASIC_LIB_LIST}
+                           ROOT_BASIC_LIB_LIST
          )
 
 install_headers()
