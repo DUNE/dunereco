@@ -31,7 +31,7 @@
         <SliceIdTools>
             <tool type = "LArBdtBeamParticleId">
                 <BdtName>ProtoDUNESP_BeamParticleId</BdtName>
-                <BdtFileName>PandoraMVAData/PandoraBdt_v03_20_00.xml</BdtFileName>
+                <BdtFileName>PandoraMVAData/PandoraBdt_BeamParticleId_ProtoDUNESP_v03_26_00.xml</BdtFileName>
                 <MinAdaBDTScore>-0.225</MinAdaBDTScore>
             </tool>
         </SliceIdTools>
