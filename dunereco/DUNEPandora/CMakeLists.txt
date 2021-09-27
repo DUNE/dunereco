@@ -12,25 +12,25 @@ art_make( BASENAME_ONLY
                         larcorealg_Geometry
                         larcore_Geometry_Geometry_service
                         larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
-			${LARPANDORACONTENT}
-                        ${PANDORASDK}
-                        ${PANDORAMONITORING}
+			LARPANDORACONTENT
+                        PANDORASDK
+                        PANDORAMONITORING
                         nusimdata_SimulationBase
-                        ${ART_FRAMEWORK_CORE}
-                        ${ART_FRAMEWORK_PRINCIPAL}
-                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                        ${ART_FRAMEWORK_SERVICES_BASIC}
-                        ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-                        ${ART_ROOT_IO_TFILESERVICE_SERVICE}
+                        ART_FRAMEWORK_CORE
+                        ART_FRAMEWORK_PRINCIPAL
+                        ART_FRAMEWORK_SERVICES_REGISTRY
+                        ART_ROOT_IO_TFILE_SUPPORT
+                        ROOT::Core
+                        ART_ROOT_IO_TFILESERVICE_SERVICE
                         art_Persistency_Common canvas
                         art_Persistency_Provenance canvas
                         art_Utilities canvas
-                        ${MF_MESSAGELOGGER}
+                        messagefacility::MF_MessageLogger
                         
-                        ${FHICLCPP}
+                        FHICLCPP
                         cetlib cetlib_except
-                        ${ROOT_BASIC_LIB_LIST}
-                        ${ROOT_GEOM}
+                        ROOT_BASIC_LIB_LIST
+                        ROOT_GEOM
 			${Boost_SYSTEM_LIBRARY}
           MODULE_LIBRARIES DUNEPandora
           )
