@@ -231,11 +231,13 @@ namespace cvn
         GetProtoDUNEGlobalWire(wireid.Wire,wireid.Plane,wireid.TPC,globalWire,globalPlane);
       }
 
+      bool none_threshold = true;
       for(auto iROI = ROIs.begin_range(); iROI != ROIs.end_range(); ++iROI){
         auto& ROI = *iROI;
         for(int tick = ROI.begin_index(); tick < (int)ROI.end_index(); tick++){ 
           
           double globalTime  = (double)tick;
+          none_threshold = none_threshold && !(ROI[tick] > fThreshold);
           if(!(ROI[tick] > fThreshold)) continue;   
           // Leigh: Simple modification to unwrap the collection view wire plane
           if(!fProtoDUNE){
@@ -267,15 +269,17 @@ namespace cvn
           }
         }
       }
-    
-      if(globalPlane==0){
-        wire_0.push_back(globalWire);
-      }
-      if(globalPlane==1){
-        wire_1.push_back(globalWire);
-      }
-      if(globalPlane==2){
-        wire_2.push_back(globalWire);
+   
+      if(!none_threshold){ 
+        if(globalPlane==0){
+          wire_0.push_back(globalWire);
+        }
+        if(globalPlane==1){
+          wire_1.push_back(globalWire);
+        }
+        if(globalPlane==2){
+          wire_2.push_back(globalWire);
+        }
       }
 
     }
