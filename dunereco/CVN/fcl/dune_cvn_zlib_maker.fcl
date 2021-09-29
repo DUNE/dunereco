@@ -53,4 +53,3 @@ physics.producers.cvnmap.HitsModuleLabel: "hitfd"
 physics.producers.cvnmap.TimeResolution: 1600
 physics.producers.cvnmap.WireLength: 2880
 physics.producers.cvnmap.TdcWidth: 500
-

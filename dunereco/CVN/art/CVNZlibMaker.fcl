@@ -13,6 +13,9 @@ standard_cvnzlibmaker:
   EnergyNueLabel: "energynue"
   EnergyNumuLabel: "energynumu"
   EnergyNutauLabel: "energynutau"
+  PlaneLimit: 500
+  TDCLimit: 500
+  
 }
 
 standard_cvnzlibmaker_protodune_beam:

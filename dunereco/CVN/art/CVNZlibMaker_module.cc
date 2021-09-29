@@ -57,6 +57,9 @@ namespace cvn {
     std::string fEnergyNumuLabel;
     std::string fEnergyNutauLabel;
 
+    unsigned int fPlaneLimit;
+    unsigned int fTDCLimit;
+
     std::string out_dir;
 
     void write_files(TrainingData td, unsigned int n);
@@ -87,6 +90,9 @@ namespace cvn {
     fEnergyNueLabel = pset.get<std::string>("EnergyNueLabel");
     fEnergyNumuLabel = pset.get<std::string>("EnergyNumuLabel");
     fEnergyNutauLabel = pset.get<std::string>("EnergyNutauLabel");
+
+    fPlaneLimit = pset.get<unsigned int>("PlaneLimit");
+    fTDCLimit = pset.get<unsigned int>("TDCLimit");
   }
 
   //......................................................................
@@ -206,14 +212,16 @@ namespace cvn {
   //......................................................................
   void CVNZlibMaker::write_files(TrainingData td, unsigned int n)
   {
-    CVNImageUtils image_utils;
-    std::vector<unsigned char> pixel_array(3 * td.fPMap.NWire() * td.fPMap.NTdc());
-
+    // cropped from 2880 x 500 to 500 x 500 here 
+    std::vector<unsigned char> pixel_array(3 * fPlaneLimit * fTDCLimit);
+   
+    CVNImageUtils image_utils(fPlaneLimit, fTDCLimit, 3);
+    image_utils.SetPixelMapSize(td.fPMap.NWire(), td.fPMap.NTdc());
     image_utils.SetLogScale(fSetLog);
     image_utils.SetViewReversal(fReverseViews);
     image_utils.ConvertPixelMapToPixelArray(td.fPMap, pixel_array);
 
-    ulong src_len = 3 * td.fPMap.NWire() * td.fPMap.NTdc(); // pixelArray length
+    ulong src_len = 3 * fPlaneLimit * fTDCLimit; // pixelArray length
     ulong dest_len = compressBound(src_len);     // calculate size of the compressed data               
     char* ostream = (char *) malloc(dest_len);  // allocate memory for the compressed data
 
