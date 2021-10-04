@@ -21,29 +21,32 @@ dump_cmake_variables("TORCH")
 
 include_directories(SYSTEM ${TORCH_INCLUDE_DIRS})
 
+# libtorch libraries
+cet_find_library(LIBTORCH NAMES torch PATHS ENV LIBTORCH_LIB NO_DEFAULT_PATH)
+cet_find_library(LIBTORCH_CPU NAMES torch_cpu PATHS ENV LIBTORCH_LIB NO_DEFAULT_PATH)
+cet_find_library(LIBC10 NAMES c10 PATHS ENV LIBTORCH_LIB NO_DEFAULT_PATH)
+
 art_make(BASENAME_ONLY
   LIBRARY_NAME      RegCNNArt
   EXCLUDE ${EXCLUDE_TF}
   LIB_LIBRARIES RegCNNFunc
-  ${ART_FRAMEWORK_CORE}
-  ${ART_FRAMEWORK_PRINCIPAL}
-  ${ART_FRAMEWORK_SERVICES_REGISTRY}
-  ${ART_FRAMEWORK_SERVICES_BASIC}
-  ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-  ${ART_ROOT_IO_TFILESERVICE_SERVICE}
-  ${ART_PERSISTENCY_COMMON}
+  ART_FRAMEWORK_CORE
+  ART_FRAMEWORK_PRINCIPAL
+  ART_FRAMEWORK_SERVICES_REGISTRY
+  ART_ROOT_IO_TFILE_SUPPORT
+  ROOT::Core
+  ART_ROOT_IO_TFILESERVICE_SERVICE
+  ART_PERSISTENCY_COMMON
   canvas
   art_Persistency_Provenance
-  ${ART_UTILITIES}
-
-  ${TORCH_INSTALL_PREFIX}/lib/libtorch.so
-  ${TORCH_INSTALL_PREFIX}/lib/libtorch_cpu.so
-  ${TORCH_INSTALL_PREFIX}/lib/libc10.so
-
-  ${MF_MESSAGELOGGER}
-  ${FHICLCPP}
+  ART_UTILITIES
+  LIBTORCH
+  LIBTORCH_CPU
+  LIBC10
+  messagefacility::MF_MessageLogger
+  FHICLCPP
   cetlib cetlib_except
-  ${ROOT_BASIC_LIB_LIST}
+  ROOT_BASIC_LIB_LIST
   lardataobj_RecoBase
   lardata_Utilities
   larpandora_LArPandoraInterface
@@ -54,15 +57,15 @@ art_make(BASENAME_ONLY
   larreco_RecoAlg
   larcorealg_Geometry
   larcore_Geometry_Geometry_service
-  ${LARRECO_RECOALG_IMAGEPATTERNALGS_TF}
   MODULE_LIBRARIES  RegCNNFunc
   RegCNNArt
   )
 
-cet_set_compiler_flags(DIAGS CAUTIOUS
-    NO_UNDEFINED
-    EXTRA_FLAGS
-    -pedantic)
+# use add or remove
+##cet_set_compiler_flags(DIAGS CAUTIOUS
+##    NO_UNDEFINED
+##    EXTRA_FLAGS
+##    -pedantic)
 
 install_headers()
 install_fhicl()

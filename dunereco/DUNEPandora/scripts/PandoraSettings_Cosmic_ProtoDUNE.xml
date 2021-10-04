@@ -136,7 +136,7 @@
         <InputClusterListNameW>ClustersW</InputClusterListNameW>
         <OutputPfoListName>MuonParticles3D</OutputPfoListName>
     </algorithm>
-    <algorithm type = "LArCosmicRayTrackRecovery"> 
+    <algorithm type = "LArCosmicRayTrackRecovery">
         <InputClusterListNameU>ClustersU</InputClusterListNameU>
         <InputClusterListNameV>ClustersV</InputClusterListNameV>
         <InputClusterListNameW>ClustersW</InputClusterListNameW>
@@ -192,21 +192,21 @@
         <ParentPfoListName>MuonParticles3D</ParentPfoListName>
         <DaughterPfoListName>DeltaRayParticles3D</DaughterPfoListName>
     </algorithm>
-   <algorithm type = "LArThreeViewDeltaRayMatching">
+    <algorithm type = "LArThreeViewDeltaRayMatching">
         <InputClusterListNameU>ClustersU</InputClusterListNameU>
         <InputClusterListNameV>ClustersV</InputClusterListNameV>
         <InputClusterListNameW>ClustersW</InputClusterListNameW>
         <MuonPfoListName>MuonParticles3D</MuonPfoListName>
         <OutputPfoListName>DeltaRayParticles3D</OutputPfoListName>
-          <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
+        <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
         <DeltaRayTools>
-          <tool type = "LArDeltaRayRemoval"/>
-          <tool type = "LArCosmicRayRemoval"/>
-          <tool type = "LArUnambiguousDeltaRay"/>
-          <tool type = "LArDeltaRayMerge"/>
-          <tool type = "LArAmbiguousDeltaRay"/>
+            <tool type = "LArDeltaRayRemoval"/>
+            <tool type = "LArCosmicRayRemoval"/>
+            <tool type = "LArUnambiguousDeltaRay"/>
+            <tool type = "LArDeltaRayMerge"/>
+            <tool type = "LArAmbiguousDeltaRay"/>
         </DeltaRayTools>
-   </algorithm>
+    </algorithm>
     <algorithm type = "LArTwoViewDeltaRayMatching">
         <InputClusterListName1>ClustersU</InputClusterListName1>
         <InputClusterListName2>ClustersV</InputClusterListName2>
@@ -216,10 +216,10 @@
         <OutputPfoListName>DeltaRayParticles3D</OutputPfoListName>
         <PseudoChi2Cut>3.0</PseudoChi2Cut>
         <MinMatchedPoints>2</MinMatchedPoints>
-          <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
+        <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
         <DeltaRayTools>
-          <tool type = "LArTwoViewCosmicRayRemoval"/>
-          <tool type = "LArTwoViewAmbiguousDeltaRay"/>
+            <tool type = "LArTwoViewCosmicRayRemoval"/>
+            <tool type = "LArTwoViewAmbiguousDeltaRay"/>
         </DeltaRayTools>
     </algorithm>
     <algorithm type = "LArTwoViewDeltaRayMatching">
@@ -231,13 +231,13 @@
         <OutputPfoListName>DeltaRayParticles3D</OutputPfoListName>
         <PseudoChi2Cut>3.0</PseudoChi2Cut>
         <MinMatchedPoints>2</MinMatchedPoints>
-          <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
+        <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
         <DeltaRayTools>
-          <tool type = "LArTwoViewCosmicRayRemoval"/>
-          <tool type = "LArTwoViewAmbiguousDeltaRay"/>
+            <tool type = "LArTwoViewCosmicRayRemoval"/>
+            <tool type = "LArTwoViewAmbiguousDeltaRay"/>
         </DeltaRayTools>
     </algorithm>
-   <algorithm type = "LArTwoViewDeltaRayMatching">
+    <algorithm type = "LArTwoViewDeltaRayMatching">
         <InputClusterListName1>ClustersW</InputClusterListName1>
         <InputClusterListName2>ClustersU</InputClusterListName2>
         <InputClusterListName>ClustersV</InputClusterListName>
@@ -246,12 +246,12 @@
         <OutputPfoListName>DeltaRayParticles3D</OutputPfoListName>
         <PseudoChi2Cut>3.0</PseudoChi2Cut>
         <MinMatchedPoints>2</MinMatchedPoints>
-          <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
+        <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
         <DeltaRayTools>
-          <tool type = "LArTwoViewCosmicRayRemoval"/>
-          <tool type = "LArTwoViewAmbiguousDeltaRay"/>
+            <tool type = "LArTwoViewCosmicRayRemoval"/>
+            <tool type = "LArTwoViewAmbiguousDeltaRay"/>
         </DeltaRayTools>
-   </algorithm>
+    </algorithm>
     <algorithm type = "LArOneViewDeltaRayMatching">
         <InputClusterListNameU>ClustersU</InputClusterListNameU>
         <InputClusterListNameV>ClustersV</InputClusterListNameV>
@@ -262,8 +262,8 @@
         <SearchRegion1D>2.0</SearchRegion1D>
     </algorithm>
     <algorithm type = "LArDeltaRayParent">
-      <DeltaRayPfoListName>DeltaRayParticles3D</DeltaRayPfoListName>
-      <MuonPfoListName>MuonParticles3D</MuonPfoListName>
+        <DeltaRayPfoListName>DeltaRayParticles3D</DeltaRayPfoListName>
+        <MuonPfoListName>MuonParticles3D</MuonPfoListName>
     </algorithm>
     <algorithm type = "LArUnattachedDeltaRays">
         <PfoListName>DeltaRayParticles3D</PfoListName>
@@ -352,7 +352,7 @@
             </tool>
             <tool type = "LArTwoViewShowerHits">
                 <ChiSquaredCut>5.</ChiSquaredCut>
-                <XTolerance>2.</XTolerance> 
+                <XTolerance>2.</XTolerance>
             </tool>
         </HitCreationTools>
     </algorithm>

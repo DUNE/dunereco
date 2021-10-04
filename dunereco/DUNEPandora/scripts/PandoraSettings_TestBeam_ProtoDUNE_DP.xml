@@ -98,7 +98,7 @@
         <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
         <OutputVertexListName>NeutrinoVertices3D</OutputVertexListName>
         <ReplaceCurrentVertexList>true</ReplaceCurrentVertexList>
-        <MvaFileName>PandoraMVAData/PandoraBdt_v03_20_00.xml</MvaFileName>
+        <MvaFileName>PandoraMVAData/PandoraBdt_Vertexing_ProtoDUNESP_v03_26_00.xml</MvaFileName>
         <RegionMvaName>ProtoDUNE_VertexSelectionRegion</RegionMvaName>
         <VertexMvaName>ProtoDUNE_VertexSelectionVertex</VertexMvaName>
         <TestBeamMode>true</TestBeamMode>
@@ -124,7 +124,7 @@
       <InputClusterListName2>ClustersV</InputClusterListName2>
       <OutputPfoListName>TrackParticles3D</OutputPfoListName>
       <TrackTools>
-        <tool type = "LArTwoViewThreeDKink">
+        <tool type = "LArTwoViewThreeDKink"/>
         <tool type = "LArTwoViewClearTracks">
           <MinMatchingScore>0.95</MinMatchingScore>
           <MinLocallyMatchedFraction>0.0</MinLocallyMatchedFraction>

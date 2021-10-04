@@ -12,6 +12,7 @@
 //ROOT
 //ART
 #include "canvas/Utilities/Exception.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
 //LArSoft
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"

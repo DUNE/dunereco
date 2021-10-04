@@ -1,7 +1,7 @@
 # for classes_def.xml!!
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
-simple_plugin(SNSlicer "module"
+cet_build_plugin(SNSlicer art::module
                         larcore_Geometry_Geometry_service
                         larcorealg_Geometry
                         larsim_MCCheater_BackTrackerService_service
@@ -13,18 +13,19 @@ simple_plugin(SNSlicer "module"
 			nusimdata_SimulationBase
                         nug4_ParticleNavigation
                         lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
-                        ${ART_FRAMEWORK_CORE}
-                        ${ART_FRAMEWORK_PRINCIPAL}
-                        ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                        ${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-                        ${ART_ROOT_IO_TFILESERVICE_SERVICE}
+                        ART_FRAMEWORK_CORE
+                        ART_FRAMEWORK_PRINCIPAL
+                        ART_FRAMEWORK_SERVICES_REGISTRY
+                        ART_ROOT_IO_TFILE_SUPPORT
+                        ROOT::Core
+                        ART_ROOT_IO_TFILESERVICE_SERVICE
                         art_Persistency_Common canvas_Persistency_Common
                         art_Persistency_Provenance canvas_Persistency_Provenance
                         art_Utilities canvas_Utilities
-                        ${MF_MESSAGELOGGER}
+                        messagefacility::MF_MessageLogger
                         
-                        ${CETLIB}
-                        ${ROOT_BASIC_LIB_LIST}
+                        CETLIB
+                        ROOT_BASIC_LIB_LIST
 )
 
 cet_make( LIBRARIES lardataobj_RawData
@@ -34,7 +35,7 @@ cet_make( LIBRARIES lardataobj_RawData
                     MF_MessageLogger
                     
                     cetlib
-                    ${ROOT_BASIC_LIB_LIST}
+                    ROOT_BASIC_LIB_LIST
                     NO_DICTIONARY )
 
 
