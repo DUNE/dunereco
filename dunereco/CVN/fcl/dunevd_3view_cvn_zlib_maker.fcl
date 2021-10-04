@@ -1,0 +1,57 @@
+#include "services_dune.fcl"
+#include "energyreco.fcl"
+#include "CVNMapper.fcl"
+#include "CVNZlibMaker.fcl"
+#include "cvn_dune.fcl"
+
+process_name: ZlibMaker
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  # TFileService: {}
+  TimeTracker:       {}
+  RandomNumberGenerator: {}
+  MemoryTracker:         { } # default is one
+  message:      @local::dune_message_services_prod
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+                        @table::dunefdvd_1x6x6_3view_simulation_services
+                        Geometry: @local::dunevd10kt_1x6x6_3view_geo
+}
+
+source:
+{
+  module_type: RootInput
+  maxEvents: -1
+}
+
+physics:
+{
+  producers:
+  {
+    cvnmap:      @local::dunevd10kt_cvnmapper
+  }
+  analyzers:
+  {
+    zlib:        @local::standard_cvnzlibmaker
+  }
+
+  map:           [ cvnmap ]
+  ana:           [ zlib ]
+  end_paths:     [ ana ]  
+}
+
+# Use calorimetric energy reconstruction
+# physics.producers.energynue.RecoMethod: 1
+# physics.producers.energynumu.RecoMethod: 2
+# physics.producers.energynutau.RecoMethod: 3
+
+# CVNMapper configuration
+physics.producers.cvnmap.TimeResolution: 1500
+physics.producers.cvnmap.TdcWidth: 500
+physics.producers.cvnmap.Threshold: 0.6
+
+physics.analyzers.zlib.ReverseViews: [false, false, false]
+physics.analyzers.zlib.EnergyNueLabel: ""
+physics.analyzers.zlib.EnergyNumuLabel: ""
+physics.analyzers.zlib.EnergyNutauLabel: ""
