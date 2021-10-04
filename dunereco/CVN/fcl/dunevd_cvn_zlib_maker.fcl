@@ -49,6 +49,8 @@ physics:
 # CVNMapper configuration
 physics.producers.cvnmap.TimeResolution: 1500
 physics.producers.cvnmap.TdcWidth: 500
+physics.producers.cvnmap.Threshold: 0.6
+
 physics.analyzers.zlib.ReverseViews: [false, false, false]
 physics.analyzers.zlib.EnergyNueLabel: ""
 physics.analyzers.zlib.EnergyNumuLabel: ""
