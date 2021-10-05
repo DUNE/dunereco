@@ -34,7 +34,8 @@ namespace cvn
     fTRes(tRes),
     fThreshold(threshold),
     fUnwrapped(2),
-    fProtoDUNE(false)
+    fProtoDUNE(false),
+    fTotHits(0)
   {
 
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());  
@@ -78,7 +79,8 @@ namespace cvn
     {
       
       const recob::Wire* reco_wire = cluster[iHit];
-      if(!reco_wire->NSignal()) continue;
+      auto ROIs = reco_wire->SignalROI();
+      if(!(ROIs.get_ranges().size())) continue;
 
       std::vector<geo::WireID> wireids = fGeometry->ChannelToWire(reco_wire->Channel());
       if(!wireids.size()) continue;
@@ -106,7 +108,6 @@ namespace cvn
         GetProtoDUNEGlobalWire(wireid.Wire,wireid.Plane,wireid.TPC,tempWire,tempPlane);
       }
 
-      auto ROIs = reco_wire->SignalROI();
       for(auto iROI = ROIs.begin_range(); iROI != ROIs.end_range(); ++iROI){
         auto& ROI = *iROI;
         for(int tick = ROI.begin_index(); tick < (int)ROI.end_index(); tick++){ 
@@ -195,6 +196,10 @@ namespace cvn
     std::vector<int> wire_0;
     std::vector<int> wire_1;
     std::vector<int> wire_2;
+    
+    std::vector<double> twire_0;
+    std::vector<double> twire_1;
+    std::vector<double> twire_2;
    
     double tsum_0 = 0., tsum_1 = 0., tsum_2 = 0.;
     int total_t0 = 0, total_t1 = 0, total_t2 = 0;
@@ -232,13 +237,15 @@ namespace cvn
       }
 
       bool none_threshold = true;
+      int min_tick = 20000;
       for(auto iROI = ROIs.begin_range(); iROI != ROIs.end_range(); ++iROI){
         auto& ROI = *iROI;
         for(int tick = ROI.begin_index(); tick < (int)ROI.end_index(); tick++){ 
           
           double globalTime  = (double)tick;
           none_threshold = none_threshold && !(ROI[tick] > fThreshold);
-          if(!(ROI[tick] > fThreshold)) continue;   
+          if(!(ROI[tick] > fThreshold)) continue;  
+          if(tick < min_tick) min_tick = tick; 
           // Leigh: Simple modification to unwrap the collection view wire plane
           if(!fProtoDUNE){
             if(fUnwrapped == 1){
@@ -273,12 +280,15 @@ namespace cvn
       if(!none_threshold){ 
         if(globalPlane==0){
           wire_0.push_back(globalWire);
+          twire_0.push_back((double)min_tick);
         }
         if(globalPlane==1){
           wire_1.push_back(globalWire);
+          twire_1.push_back((double)min_tick);
         }
         if(globalPlane==2){
           wire_2.push_back(globalWire);
+          twire_2.push_back((double)min_tick);
         }
       }
 
@@ -287,14 +297,6 @@ namespace cvn
     double tmean_1 = tsum_1/total_t1; 
     double tmean_2 = tsum_2/total_t2; 
     
-    std::cout << "Boundary wire vector sizes: " << wire_0.size() << ", " << wire_1.size() << ", " << wire_2.size() << std::endl;
-    
-    auto minwireelement_0= std::min_element(wire_0.begin(), wire_0.end());
-    std::cout<<"minwire 0: "<<*minwireelement_0 <<std::endl;
-    auto minwireelement_1= std::min_element(wire_1.begin(), wire_1.end());
-    std::cout<<"minwire 1: "<<*minwireelement_1<<std::endl;
-    auto minwireelement_2= std::min_element(wire_2.begin(), wire_2.end());
-    std::cout<<"minwire 2: "<<*minwireelement_2<<std::endl;
 
     //auto maxwireelement_0= std::max_element(wire_0.begin(), wire_0.end());
     //std::cout<<"maxwire 0: "<<*maxwireelement_0<<std::endl;
@@ -304,12 +306,39 @@ namespace cvn
     //std::cout<<"maxwire 2: "<<*maxwireelement_2<<std::endl;
 
 
+    std::vector<int> bwire_0;
+    std::vector<int> bwire_1;
+    std::vector<int> bwire_2;
+    for(int i = 0; i < (int)wire_0.size(); i++){
+      double t = twire_0[i];
+      if(std::abs(t-tmean_0) < (double)fTRes)
+        bwire_0.push_back(wire_0[i]);
+    }
+    for(int i = 0; i < (int)wire_1.size(); i++){
+      double t = twire_1[i];
+      if(std::abs(t-tmean_1) < (double)fTRes)
+        bwire_1.push_back(wire_1[i]);
+    }
+    for(int i = 0; i < (int)wire_2.size(); i++){
+      double t = twire_2[i];
+      if(std::abs(t-tmean_2) < (double)fTRes)
+        bwire_2.push_back(wire_2[i]);
+    }
+    
+    std::cout << "Boundary wire vector sizes: " << bwire_0.size() << ", " << bwire_1.size() << ", " << bwire_2.size() << std::endl;
+   
     int minwire_0 = 0;
     int minwire_1 = 0;
     int minwire_2 = 0;
-    if(wire_0.size() > 0) minwire_0 = *minwireelement_0-1;
-    if(wire_1.size() > 0) minwire_1 = *minwireelement_1-1;
-    if(wire_2.size() > 0) minwire_2 = *minwireelement_2-1;
+    auto minwireelement_0 = std::min_element(bwire_0.begin(), bwire_0.end());
+    auto minwireelement_1 = std::min_element(bwire_1.begin(), bwire_1.end());
+    auto minwireelement_2 = std::min_element(bwire_2.begin(), bwire_2.end());
+    
+    if(bwire_0.size() > 0) { minwire_0 = *minwireelement_0-1; std::cout<<"minwire 0: "<<(*minwireelement_0) <<std::endl;}
+    if(bwire_1.size() > 0) { minwire_1 = *minwireelement_1-1; std::cout<<"minwire 1: "<<(*minwireelement_1) <<std::endl;}
+    if(bwire_2.size() > 0) { minwire_2 = *minwireelement_2-1; std::cout<<"minwire 2: "<<(*minwireelement_2) <<std::endl;}
+    
+    fTotHits = bwire_0.size() + bwire_1.size() + bwire_2.size();
 
     Boundary bound(fNWire,fTRes,minwire_0,minwire_1,minwire_2,tmean_0,tmean_1,tmean_2);
 
@@ -552,7 +581,6 @@ namespace cvn
     
     int nCRM_row = 6;
     // spacing between y-intercepts of parallel wires in a given plane. 
-    // seems its not actually the pitch/cos(theta_z) but rather the pitch/cos(theta_z) - 2*r_wire ??
     double spacing = 0.847; 
     
     globalPlane = plane;

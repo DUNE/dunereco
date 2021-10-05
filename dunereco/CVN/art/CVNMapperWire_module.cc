@@ -125,17 +125,17 @@ namespace cvn {
     std::vector< art::Ptr< recob::Wire > > hitlist;
     if (evt.getByLabel(fHitsModuleLabel, hitListHandle))
       art::fill_ptr_vector(hitlist, hitListHandle);
-    unsigned short nhits = hitlist.size();
+    // unsigned short nhits = hitlist.size();
 
     //Declaring containers for things to be stored in event
     std::unique_ptr< std::vector<cvn::PixelMap> >
       pmCol(new std::vector<cvn::PixelMap>);
 
-    if (nhits > fMinClusterHits) {
-      auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
-      PixelMap pm = fProducer.CreateMap(detProp, hitlist);
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
+    PixelMap pm = fProducer.CreateMap(detProp, hitlist);
+    std::cout << "NROI : " << fProducer.NROI() << std::endl;
+    if(fProducer.NROI() > fMinClusterHits)
       pmCol->push_back(pm);
-    }
     //pm.Print();
     //Boundary bound = pm.Bound();
     //}

@@ -39,6 +39,8 @@ namespace cvn
     Boundary DefineBoundary(detinfo::DetectorPropertiesData const& detProp,
                             const std::vector< const recob::Wire* >& cluster);
 
+    unsigned int NROI(){return fTotHits;};
+
     /// Function to convert to a global unwrapped wire number
     void GetDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const; 
     void GetDUNEGlobalWireTDC(detinfo::DetectorPropertiesData const& detProp,
@@ -76,6 +78,8 @@ namespace cvn
     double            fThreshold; ///< charge threshold for each time tick, below which isn't added to pixel map
     unsigned short    fUnwrapped; ///< Use unwrapped pixel maps?
     bool              fProtoDUNE; ///< Do we want to use this for particle extraction from protoDUNE?
+
+    unsigned int fTotHits;  ///<How many ROIs above threshold?
 
     geo::GeometryCore const* fGeometry;
     std::vector<double> fVDPlane0;
