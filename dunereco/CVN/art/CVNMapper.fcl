@@ -35,6 +35,20 @@ standard_cvnmapper_protodune:
   UseWholeEvent: false
 }
 
+standard_cvnmapper_wire:
+{
+  module_type:        CVNMapperWire
+  #==================
+  HitsModuleLabel:   "wclsdatanfsp:gauss"
+  ClusterPMLabel: "cvnmap"
+  MinClusterHits: 100
+  TdcWidth:      500
+  WireLength:    2880 #Unwrapped collection view max (6 x 480)
+  TimeResolution: 1500
+  UnwrappedPixelMap: 1
+  Threshold: 0
+}
+
 # This is for the beam slice usage of a CVN
 standard_cvnmapper_protodune_vertex: @local::standard_cvnmapper_protodune
 standard_cvnmapper_protodune_vertex.UseBeamSliceOnly: true

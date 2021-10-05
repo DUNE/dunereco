@@ -196,7 +196,7 @@
         <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
         <OutputVertexListName>NeutrinoVertices3D</OutputVertexListName>
         <ReplaceCurrentVertexList>true</ReplaceCurrentVertexList>
-        <MvaFileName>PandoraMVAData/PandoraBdt_v03_20_00.xml</MvaFileName>
+        <MvaFileName>PandoraMVAData/PandoraBdt_Vertexing_DUNEFD_v03_26_00.xml</MvaFileName>
         <RegionMvaName>DUNEFD_VertexSelectionRegion</RegionMvaName>
         <VertexMvaName>DUNEFD_VertexSelectionVertex</VertexMvaName>
         <FeatureTools>
@@ -492,9 +492,9 @@
         <MCParticleListName>Input</MCParticleListName>
         <CaloHitListName>CaloHitList2D</CaloHitListName>
         <UseThreeDInformation>true</UseThreeDInformation>
-        <MvaFileName>PandoraMVAData/PandoraBdt_v03_20_00.xml</MvaFileName>
+        <MvaFileName>PandoraMVAData/PandoraBdt_PfoCharacterisation_DUNEFD_v03_26_00.xml</MvaFileName>
         <MvaName>PfoCharacterisation</MvaName>
-        <MvaFileNameNoChargeInfo>PandoraMVAData/PandoraBdt_v03_20_00.xml</MvaFileNameNoChargeInfo>
+        <MvaFileNameNoChargeInfo>PandoraMVAData/PandoraBdt_PfoCharacterisation_DUNEFD_v03_26_00.xml</MvaFileNameNoChargeInfo>
         <MvaNameNoChargeInfo>PfoCharacterisationNoChargeInfo</MvaNameNoChargeInfo>
         <TrainingSetMode>false</TrainingSetMode>
         <TrainingOutputFileName>training_output</TrainingOutputFileName>
@@ -590,9 +590,9 @@
         <MCParticleListName>Input</MCParticleListName>
         <CaloHitListName>CaloHitList2D</CaloHitListName>
         <UseThreeDInformation>true</UseThreeDInformation>
-        <MvaFileName>PandoraMVAData/PandoraBdt_v03_20_00.xml</MvaFileName>
+        <MvaFileName>PandoraMVAData/PandoraBdt_PfoCharacterisation_DUNEFD_v03_26_00.xml</MvaFileName>
         <MvaName>PfoCharacterisation</MvaName>
-        <MvaFileNameNoChargeInfo>PandoraMVAData/PandoraBdt_v03_20_00.xml</MvaFileNameNoChargeInfo>
+        <MvaFileNameNoChargeInfo>PandoraMVAData/PandoraBdt_PfoCharacterisation_DUNEFD_v03_26_00.xml</MvaFileNameNoChargeInfo>
         <MvaNameNoChargeInfo>PfoCharacterisationNoChargeInfo</MvaNameNoChargeInfo>
         <TrainingSetMode>false</TrainingSetMode>
         <TrainingOutputFileName>training_output</TrainingOutputFileName>
