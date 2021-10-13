@@ -216,16 +216,13 @@ namespace {
     //    sim::EveIdCalculator eve;
     //    eve.Init(&bt->ParticleList());
 
-    art::Handle<std::vector<recob::Hit>> hits;
-    evt.getByLabel("gaushit", hits);
+    auto hits = evt.getHandle<std::vector<recob::Hit>>("gaushit");
     //    std::cout << "nhits: " << hits->size() << std::endl;
 
-    // art::Handle<std::vector<sim::SimChannel>> simchans;
-    // evt.getByLabel("largeant", simchans);
+    // auto simchans = evt.getHandle<std::vector<sim::SimChannel>>("largeant");
     // std::cout << "nsimchans: " << simchans->size() << std::endl;
 
-    //    art::Handle<std::vector<recob::OpHit>> ophits;
-    //    evt.getByLabel("ophit", ophits);
+    //    auto ophits = evt.getHandle<std::vector<recob::OpHit>>("ophit");
 
     // std::set<raw::ChannelID_t> hitChans;
 

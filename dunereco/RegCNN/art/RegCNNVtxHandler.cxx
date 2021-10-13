@@ -35,9 +35,9 @@ namespace cnn
                                                  detinfo::DetectorPropertiesData const& detProp,
                                                  art::Event &evt, const RegPixelMap &pixelmap){
 
-      art::Handle< std::vector< recob::Hit > > hitListHandle;
       std::vector< art::Ptr< recob::Hit > > hitlist;
-      if (evt.getByLabel(fHitsModuleLabel, hitListHandle))
+      auto hitListHandle = evt.getHandle< std::vector< recob::Hit > >(fHitsModuleLabel);
+      if (hitListHandle)
         art::fill_ptr_vector(hitlist, hitListHandle);
       art::FindManyP<recob::Wire> fmwire(hitListHandle, evt, fHitsModuleLabel);
 

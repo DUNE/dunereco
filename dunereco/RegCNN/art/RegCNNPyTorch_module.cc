@@ -80,9 +80,10 @@ namespace cnn {
                                       resultCol(new std::vector<RegCNNResult>);
 
         /// Load 3D pixel map for direction reco.
-        art::Handle< std::vector< cnn::RegPixelMap3D > > pixelmap3DListHandle;
         std::vector< art::Ptr< cnn::RegPixelMap3D > > pixelmap3Dlist;
-        if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmap3DListHandle)) {
+	art::InputTag itag1(fPixelMapInput, fPixelMapInput);
+        auto pixelmap3DListHandle = evt.getHandle< std::vector< cnn::RegPixelMap3D > >(itag1);
+        if (pixelmap3DListHandle) {
             art::fill_ptr_vector(pixelmap3Dlist, pixelmap3DListHandle);
         }
 

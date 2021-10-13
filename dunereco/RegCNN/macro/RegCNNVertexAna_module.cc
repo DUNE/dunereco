@@ -168,40 +168,38 @@ void myana::RegCNNVertexAna::analyze(art::Event const& evt)
   bool isMC = !evt.isRealData(); 
 
   // * MC truth information 
-  art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;             
+
   std::vector<art::Ptr<simb::MCTruth> > mclist;      
   if (isMC){    
-    if (evt.getByLabel(fMCGenModuleLabel,mctruthListHandle))         
+    auto mctruthListHandle = evt.getHandle< std::vector<simb::MCTruth> >(fMCGenModuleLabel);
+    if (mctruthListHandle)
       art::fill_ptr_vector(mclist, mctruthListHandle);  
   }  
 
   // Get the hits out of the event record
-  art::Handle<std::vector<recob::Hit> > hitHandle;
   std::vector<art::Ptr<recob::Hit> > hits;
-  if (evt.getByLabel(fHitsModuleLabel,hitHandle))
+  auto hitHandle = evt.getHandle<std::vector<recob::Hit> >(fHitsModuleLabel);
+  if (hitHandle)
     art::fill_ptr_vector(hits, hitHandle);
 
   // Get DUNE energy Reco
-  art::Handle<dune::EnergyRecoOutput> engrecoHandle;
-  evt.getByLabel(fEnergyRecoNueLabel,engrecoHandle);
-
+  auto engrecoHandle = evt.getHandle<dune::EnergyRecoOutput>(fEnergyRecoNueLabel);
 
   // Get RegCNN Results
-  art::Handle<std::vector<cnn::RegCNNResult>> cnnresultListHandle;
-  evt.getByLabel(fRegCNNModuleLabel, fRegCNNResultLabel, cnnresultListHandle);
+  art::InputTag itag(fRegCNNModuleLabel, fRegCNNResultLabel);
+  auto cnnresultListHandle = evt.getHandle<std::vector<cnn::RegCNNResult>>(itag);
 
-  art::Handle<std::vector<cnn::RegCNNResult>> cnnvtxresultListHandle;
-  evt.getByLabel(fRegCNNVtxModuleLabel, fRegCNNVtxResultLabel, cnnvtxresultListHandle);
+  art::InputTag itag2(fRegCNNVtxModuleLabel, fRegCNNVtxResultLabel);
+  auto cnnvtxresultListHandle = evt.getHandle<std::vector<cnn::RegCNNResult>>(itag2);
 
-  art::Handle<std::vector<cnn::RegCNNResult>> cnnvtxresultListHandle1st;
-  evt.getByLabel(fRegCNNVtx1ststepModuleLabel, fRegCNNVtx1ststepResultLabel, cnnvtxresultListHandle1st);
+  art::InputTag itag3(fRegCNNVtx1ststepModuleLabel, fRegCNNVtx1ststepResultLabel);
+  auto cnnvtxresultListHandle1st = evt.getHandle<std::vector<cnn::RegCNNResult>>(itag3);
 
-  art::Handle<std::vector<cnn::RegCNNResult>> cnnvtxresultListHandle2nd;
-  evt.getByLabel(fRegCNNVtx2ndstepModuleLabel, fRegCNNVtx2ndstepResultLabel, cnnvtxresultListHandle2nd);
+  art::InputTag itag4(fRegCNNVtx2ndstepModuleLabel, fRegCNNVtx2ndstepResultLabel);
+  auto cnnvtxresultListHandle2nd = evt.getHandle<std::vector<cnn::RegCNNResult>>(itag4);
 
-  art::Handle<std::vector<cnn::RegCNNResult>> cnnvtxresultListHandle2;
-  evt.getByLabel(fRegCNNVtxModule2Label, fRegCNNVtxResult2Label, cnnvtxresultListHandle2);
-
+  art::InputTag itag5(fRegCNNVtxModule2Label, fRegCNNVtxResult2Label);
+  auto cnnvtxresultListHandle2 = evt.getHandle<std::vector<cnn::RegCNNResult>>(itag5);
 
   // Get Truth information
   if (mclist.size()>0)

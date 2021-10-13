@@ -197,9 +197,9 @@ namespace cnn {
   {
     std::cout<<"ievet : "<<evt.id()<<std::endl;
 
-    art::Handle< std::vector< recob::Hit > > hitListHandle;
     std::vector< art::Ptr< recob::Hit > > hitlist;
-    if (evt.getByLabel(fHitsModuleLabel, hitListHandle))
+    auto hitListHandle = evt.getHandle< std::vector< recob::Hit > >(fHitsModuleLabel);
+    if (hitListHandle)
       art::fill_ptr_vector(hitlist, hitListHandle);
 
     art::FindManyP<recob::Wire> fmwire(hitListHandle, evt, fHitsModuleLabel);
@@ -209,9 +209,9 @@ namespace cnn {
     unsigned short nhits = hitlist.size();
 
     // Get the vertex out of the event record
-    art::Handle<std::vector<recob::Vertex> > vertexHandle;
     std::vector<art::Ptr<recob::Vertex> > vertex_list;
-    if (evt.getByLabel(fVertexModuleLabel,vertexHandle))
+    auto vertexHandle = evt.getHandle<std::vector<recob::Vertex> >(fVertexModuleLabel);
+    if (vertexHandle)
         art::fill_ptr_vector(vertex_list, vertexHandle);
     art::FindMany<recob::PFParticle> fmPFParticle(vertexHandle, evt, fPFParticleModuleLabel);
 
@@ -236,8 +236,8 @@ namespace cnn {
             else if (fUseRecoVertex==1) {
                 // create pixel map based on the reconstructed vertex
                 // Get RegCNN Results
-                art::Handle<std::vector<cnn::RegCNNResult>> cnnresultListHandle;
-                evt.getByLabel(fRegCNNModuleLabel, fRegCNNResultLabel, cnnresultListHandle);
+	        art::InputTag itag1(fRegCNNModuleLabel, fRegCNNResultLabel);
+	        auto cnnresultListHandle = evt.getHandle<std::vector<cnn::RegCNNResult>>(itag1);
                 std::vector<float> vtx(3, -99999);
                 if (!cnnresultListHandle.failedToGet())
                 {
@@ -300,8 +300,8 @@ namespace cnn {
             else {
                 // create pixel map based on the reconstructed vertex on wire and tick coordinate
                 // Get RegCNN Results
-                art::Handle<std::vector<cnn::RegCNNResult>> cnnresultListHandle;
-                evt.getByLabel(fRegCNNModuleLabel, fRegCNNResultLabel, cnnresultListHandle);
+	        art::InputTag itag2(fRegCNNModuleLabel, fRegCNNResultLabel);
+                auto cnnresultListHandle = evt.getHandle<std::vector<cnn::RegCNNResult>>(itag2);
                 std::vector<float> vtx(6, -99999);
                 if (!cnnresultListHandle.failedToGet())
                 {
