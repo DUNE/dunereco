@@ -911,12 +911,9 @@ namespace trkf {
 
 	
     // Get tracks and spacepoints and hits
-    art::Handle< std::vector<recob::Track> > trackh;
-    art::Handle< std::vector< art::PtrVector < recob::Track > > > trackvh;
 
-    evt.getByLabel(fTrackModuleLabel, trackh);
-    evt.getByLabel(fStitchModuleLabel,trackvh);
-
+    auto trackh = evt.getHandle< std::vector<recob::Track> >(fTrackModuleLabel);
+    auto  trackvh = evt.getHandle< std::vector< art::PtrVector < recob::Track > > >(fStitchModuleLabel);
 
     // This new top part of TrackAnaCT between two long lines of ************s
     // is particular to analyzing Stitched Tracks.
@@ -971,10 +968,11 @@ namespace trkf {
 	
  
 
-	/*	art::Handle< std::vector<recob::Hit> > hitListHandle;
+	/*	
 	std::vector<art::Ptr<recob::Hit> > hitlist;
-	if (evt.getByLabel(fHitsModuleLabel,hitListHandle))
-	art::fill_ptr_vector(hitlist, hitListHandle);*/
+        auto  hitListHandle = evt.getHandle< std::vector<recob::Hit> >(fHitsModuleLabel);
+	if (hitListHandle) art::fill_ptr_vector(hitlist, hitListHandle);
+        */
 
 	// Calculate the x offset due to nonzero reconstructed time.
 
@@ -1268,13 +1266,11 @@ namespace trkf {
     std::map<int, std::map<int, art::PtrVector<recob::Hit>> > hitmap; // trkID, otrk, hitvec
     std::map<int, int > KEmap; // length traveled in det [cm]?, trkID want to sort by KE
     bool mc = !evt.isRealData();
-    art::Handle< std::vector<recob::Track> > trackh;
-    art::Handle< std::vector< recob::SpacePoint> > sppth;
-    art::Handle< std::vector< art::PtrVector < recob::Track > > > trackvh;
 
-    evt.getByLabel(fTrackModuleLabel, trackh);
-    evt.getByLabel(fSpacepointModuleLabel, sppth);
-    evt.getByLabel(fStitchModuleLabel,trackvh);
+    auto trackh = evt.getHandle< std::vector<recob::Track> >(fTrackModuleLabel);
+    auto sppth = evt.getHandle< std::vector< recob::SpacePoint> >(fSpacepointModuleLabel);
+    auto trackvh = evt.getHandle< std::vector< art::PtrVector < recob::Track > > >(fStitchModuleLabel);
+
     int ntv(trackvh->size());
     
     std::vector < art::PtrVector<recob::Track> >::const_iterator cti = trackvh->begin();

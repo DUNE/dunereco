@@ -19,10 +19,10 @@ EventMCVarExtractor::EventMCVarExtractor(
 
 void EventMCVarExtractor::extractVars(const art::Event &evt, VarDict &vars)
 {
-    art::Handle<std::vector<simb::MCTruth>> mcTruth_h;
     std::vector<art::Ptr<simb::MCTruth>> mcTruth;
 
-    if ((! evt.getByLabel(labelGenerator, mcTruth_h))) {
+    auto mcTruth_h = evt.getHandle<std::vector<simb::MCTruth>>(labelGenerator);
+    if (!mcTruth_h) {
         return;
     }
 

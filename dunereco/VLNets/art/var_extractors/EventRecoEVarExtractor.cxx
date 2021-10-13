@@ -19,8 +19,7 @@ EventRecoEVarExtractor::EventRecoEVarExtractor(
 
 void EventRecoEVarExtractor::extractVars(const art::Event &evt, VarDict &vars)
 {
-    art::Handle<dune::EnergyRecoOutput> recoE_h;
-    evt.getByLabel(labelRecoE, recoE_h);
+    auto recoE_h = evt.getHandle<dune::EnergyRecoOutput>(labelRecoE);
 
     if (recoE_h.failedToGet()) {
         return;
