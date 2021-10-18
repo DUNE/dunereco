@@ -116,17 +116,19 @@ namespace cnn {
   {
 
     // Get the pixel maps
-    art::Handle< std::vector< cnn::RegPixelMap > > pixelmapListHandle;
     std::vector< art::Ptr< cnn::RegPixelMap > > pixelmaplist;
-    if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmapListHandle))
+    art::InputTag itag1(fPixelMapInput, fPixelMapInput);
+    auto pixelmapListHandle = evt.getHandle< std::vector< cnn::RegPixelMap > >(itag1);
+    if (pixelmapListHandle)
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
 
     unsigned short nhits =  pixelmaplist.size();
 
     // Get the 3D pixel maps
-    art::Handle<std::vector<cnn::RegPixelMap3D> > pm3DListHandle;
     std::vector<art::Ptr<cnn::RegPixelMap3D> > pm3Dlist;
-    if (evt.getByLabel(fPixelMap3DInput, fPixelMap3DInput, pm3DListHandle))
+    art::InputTag itag2(fPixelMap3DInput, fPixelMap3DInput);
+    auto pm3DListHandle = evt.getHandle<std::vector<cnn::RegPixelMap3D> >(itag2);
+    if (pm3DListHandle)
         art::fill_ptr_vector(pm3Dlist, pm3DListHandle);
 
     unsigned short npm3D = pm3Dlist.size();
@@ -136,9 +138,9 @@ namespace cnn {
     if (npm3D < 1 && nhits < 1) return;
 
     // * monte carlo
-    art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
     std::vector<art::Ptr<simb::MCTruth> > mclist;
-    if(evt.getByLabel(fGenieGenModuleLabel,mctruthListHandle))
+    auto mctruthListHandle = evt.getHandle< std::vector<simb::MCTruth> >(fGenieGenModuleLabel);
+    if (mctruthListHandle)
       art::fill_ptr_vector(mclist, mctruthListHandle);
 
     //unsigned short nmclist=  mclist.size();
