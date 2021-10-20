@@ -210,13 +210,11 @@ void EmLikeHits::produce(art::Event& evt)
 {
 	std::unique_ptr< std::vector< recob::Hit > > not_track_hits(new std::vector< recob::Hit >);
 
-	art::Handle< std::vector<recob::Hit> > hitListHandle;
 	std::vector< art::Ptr<recob::Hit> > hitlist;
+	auto hitListHandle = evt.getHandle< std::vector<recob::Hit> >(fHitModuleLabel);
+	auto trkListHandle = evt.getHandle< std::vector<recob::Track> >(fTrk3DModuleLabel);
 
-	art::Handle< std::vector<recob::Track> > trkListHandle;
-
-	if (evt.getByLabel(fHitModuleLabel, hitListHandle) &&
-	    evt.getByLabel(fTrk3DModuleLabel, trkListHandle))
+	if (hitListHandle && trkListHandle)
 	{
 		art::FindManyP< recob::Hit > fbp(trkListHandle, evt, fTrk3DModuleLabel);
 

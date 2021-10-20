@@ -213,11 +213,11 @@ namespace dune {
   //------------------------------------------------------------------------------
   void CheckRecoEnergy::analyze(art::Event const & evt)
   {
-    art::Handle<dune::EnergyRecoOutput> ereconuein;
-    if (!evt.getByLabel(fEnergyRecoNueLabel, ereconuein)) return;
+    auto ereconuein = evt.getHandle<dune::EnergyRecoOutput>(fEnergyRecoNueLabel);
+    if (!ereconuein) return;
 
-    art::Handle<dune::EnergyRecoOutput> ereconumuin;
-    if (!evt.getByLabel(fEnergyRecoNumuLabel, ereconumuin)) return;
+    auto ereconumuin = evt.getHandle<dune::EnergyRecoOutput>(fEnergyRecoNumuLabel);
+    if (!ereconumuin) return;
 
     fRun = evt.id().run();
     fSubrun = evt.id().subRun();
@@ -234,9 +234,9 @@ namespace dune {
     fLongestTrackContNumu  = ereconumuin->longestTrackContained;
     fTrackMomMethodNumu    = ereconumuin->trackMomMethod;
 
-    art::Handle< std::vector<simb::MCTruth> > mct;
     std::vector< art::Ptr<simb::MCTruth> > truth;
-    if( evt.getByLabel("generator", mct) )
+    auto mct = evt.getHandle< std::vector<simb::MCTruth> >("generator");
+    if( mct )
       art::fill_ptr_vector(truth, mct);
     else
       mf::LogWarning("CheckRecoEnergy") << "No MCTruth.";

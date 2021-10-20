@@ -65,9 +65,9 @@ ClusterHitTime::ClusterHitTime(fhicl::ParameterSet const& p)
 void ClusterHitTime::analyze(art::Event const& e)
 {
 
-  art::Handle< std::vector<recob::Cluster> > clusterListHandle;
   std::vector<art::Ptr<recob::Cluster> > clusterlist;
-  if (e.getByLabel(fClusterModuleLabel,clusterListHandle))
+  auto clusterListHandle = e.getHandle< std::vector<recob::Cluster> >(fClusterModuleLabel);
+  if (clusterListHandle)
     art::fill_ptr_vector(clusterlist, clusterListHandle);
 
   art::FindManyP<recob::Hit> fmhc(clusterListHandle, e, fClusterModuleLabel);
