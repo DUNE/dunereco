@@ -102,8 +102,7 @@ void Infill::InfillChannels::produce(art::Event& e)
   torch::Tensor maskedRopTensor;
   torch::Tensor infilledRopTensor; 
 
-  art::Handle<std::vector<raw::RawDigit>> digs;
-  e.getByLabel(fInputLabel, digs);
+  auto digs = e.getHandle<std::vector<raw::RawDigit> >(fInputLabel);
 
   // Get infilled adc ROP by ROP
   for (const readout::ROPID& currentRop : fActiveRops) {

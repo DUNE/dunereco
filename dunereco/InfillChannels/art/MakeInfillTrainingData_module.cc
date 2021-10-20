@@ -109,8 +109,7 @@ void Infill::MakeInfillTrainingData::analyze(art::Event const& e)
     );
   }
 
-  art::Handle<std::vector<raw::RawDigit>> digs;
-  e.getByLabel(fInputLabel, digs);
+  auto digs = e.getHandle<std::vector<raw::RawDigit>>(fInputLabel);
 
   // Fill TH2s
   for(const raw::RawDigit& dig : *digs){ 
