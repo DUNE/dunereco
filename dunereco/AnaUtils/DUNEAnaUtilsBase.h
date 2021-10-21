@@ -33,8 +33,8 @@ protected:
 // Implementation of the template function to get the products from the event
 template <typename T> std::vector<art::Ptr<T>> DUNEAnaUtilsBase::GetProductVector(const art::Event &evt, const std::string &label)
 {
-    art::Handle<std::vector<T>> theseProds;
-    bool success = evt.getByLabel(label,theseProds);
+    auto theseProds = evt.getHandle<std::vector<T>>(label);
+    bool success = theseProds.isValid();
 
     if (!success)
     {
@@ -52,8 +52,8 @@ template <typename T> std::vector<art::Ptr<T>> DUNEAnaUtilsBase::GetProductVecto
 // Implementation of the template function to get the associated products from the event
 template <typename T, typename U> std::vector<art::Ptr<T>> DUNEAnaUtilsBase::GetAssocProductVector(const art::Ptr<U> &pProd, const art::Event &evt, const std::string &label, const std::string &assocLabel)
 {
-    art::Handle<std::vector<U>> products;
-    bool success = evt.getByLabel(label,products);
+    auto products = evt.getHandle<std::vector<U>>(label);
+    bool success = products.isValid();
 
     if (!success)
     {

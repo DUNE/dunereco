@@ -80,9 +80,9 @@ namespace cvn {
   void CVNSparseMapper3D::produce(art::Event& evt)
   {
     // Get spacepoints from art event record
-    art::Handle< std::vector< recob::SpacePoint > > spListHandle;
     std::vector< art::Ptr< recob::SpacePoint > > splist;
-    if (evt.getByLabel(fSPModuleLabel, spListHandle))
+    auto spListHandle = evt.getHandle< std::vector< recob::SpacePoint > >(fSPModuleLabel);
+    if (spListHandle)
       art::fill_ptr_vector(splist, spListHandle);
     unsigned short nsp = splist.size();
 

@@ -90,9 +90,10 @@ namespace cvn {
   void CVNSparseROOT::analyze(art::Event const& e) {
 
     // Get the sparse maps
-    art::Handle<std::vector<SparsePixelMap>> hMaps;
     std::vector<art::Ptr<SparsePixelMap>> maps;
-    if (!e.getByLabel(fMapModuleLabel, fMapInstanceLabel, hMaps)) {
+    art::InputTag itag1(fMapModuleLabel, fMapInstanceLabel);
+    auto hMaps = e.getHandle<std::vector<SparsePixelMap>>(itag1);
+    if (!hMaps) {
       throw art::Exception(art::errors::ProductNotFound)
         << "Could not find SparsePixelMap vector with module label "
         << fMapModuleLabel << " and instance label "

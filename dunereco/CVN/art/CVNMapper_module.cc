@@ -117,9 +117,9 @@ namespace cvn {
     // 0 means no unwrap, 1 means unwrap in wire, 2 means unwrap in wire and time
     fProducer.SetUnwrapped(fUnwrappedPixelMap);
 
-    art::Handle< std::vector< recob::Hit > > hitListHandle;
     std::vector< art::Ptr< recob::Hit > > hitlist;
-    if (evt.getByLabel(fHitsModuleLabel, hitListHandle))
+    auto hitListHandle = evt.getHandle< std::vector< recob::Hit > >(fHitsModuleLabel);
+    if (hitListHandle)
       art::fill_ptr_vector(hitlist, hitListHandle);
     unsigned short nhits = hitlist.size();
 

@@ -42,8 +42,8 @@ std::vector<art::Ptr<anab::CosmicTag>> DUNEAnaPFParticleUtils::GetCosmicTag(cons
 
 std::vector<art::Ptr<recob::PFParticle>> DUNEAnaPFParticleUtils::GetChildParticles(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &label)
 {
-    art::Handle<std::vector<recob::PFParticle>> theseParticles;
-    bool success = evt.getByLabel(label,theseParticles);
+    auto theseParticles = evt.getHandle<std::vector<recob::PFParticle>>(label);
+    bool success = theseParticles.isValid();
     
     if (!success)
     {   

@@ -134,9 +134,10 @@ namespace cvn {
   {
 
     // Get the pixel maps
-    art::Handle<std::vector<cvn::PixelMap>> h_pixelmaps;
     std::vector<art::Ptr<cvn::PixelMap>> pixelmaps;
-    if (evt.getByLabel(fPixelMapInput, fPixelMapInput, h_pixelmaps))
+    art::InputTag itag1(fPixelMapInput, fPixelMapInput);
+    auto h_pixelmaps = evt.getHandle<std::vector<cvn::PixelMap>>(itag1);
+    if (h_pixelmaps)
       art::fill_ptr_vector(pixelmaps, h_pixelmaps);
 
     // If no pixel maps, quit
@@ -145,9 +146,9 @@ namespace cvn {
     InteractionType interaction = kOther;
 
     // MC information
-    art::Handle<std::vector<simb::MCTruth>> h_mctruth;
     std::vector<art::Ptr<simb::MCTruth>> mctruth_list;
-    if (evt.getByLabel(fGenieGenModuleLabel, h_mctruth))
+    auto h_mctruth = evt.getHandle<std::vector<simb::MCTruth>>(fGenieGenModuleLabel);
+    if (h_mctruth)
       art::fill_ptr_vector(mctruth_list, h_mctruth);
 
     art::Ptr<simb::MCTruth> mctruth = mctruth_list[0];
@@ -170,22 +171,19 @@ namespace cvn {
 
     // Get nue info
     if (fEnergyNueLabel != "") {
-      art::Handle<dune::EnergyRecoOutput> h_ereco;
-      evt.getByLabel(fEnergyNueLabel, h_ereco);
+      auto h_ereco = evt.getHandle<dune::EnergyRecoOutput>(fEnergyNueLabel);
       reco_nue_energy = h_ereco->fNuLorentzVector.E();
     }
 
     // Get numu info
     if (fEnergyNueLabel != "") {
-      art::Handle<dune::EnergyRecoOutput> h_ereco;
-      evt.getByLabel(fEnergyNumuLabel, h_ereco);
+      auto h_ereco = evt.getHandle<dune::EnergyRecoOutput>(fEnergyNumuLabel);
       reco_numu_energy = h_ereco->fNuLorentzVector.E();
     }
 
     // Get nutau info
     if (fEnergyNutauLabel != "") {
-      art::Handle<dune::EnergyRecoOutput> h_ereco;
-      evt.getByLabel(fEnergyNutauLabel, h_ereco);
+      auto h_ereco = evt.getHandle<dune::EnergyRecoOutput>(fEnergyNutauLabel);
       reco_nutau_energy = h_ereco->fNuLorentzVector.E();
     }
 
