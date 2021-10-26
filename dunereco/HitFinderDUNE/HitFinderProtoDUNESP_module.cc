@@ -116,9 +116,6 @@ namespace dune{
   void HitFinderProtoDUNESP::produce(art::Event& evt)
   {
     
-    //art::Handle< std::vector<recob::Hit> > ChannelHits;
-    //evt.getByLabel(fChanHitLabel, ChannelHits);
-    
     auto ChannelHits = evt.getValidHandle<std::vector<recob::Hit>>(fChanHitLabel);
 
     // also get the associated wires and raw digits;

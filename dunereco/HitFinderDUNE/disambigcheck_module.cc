@@ -160,15 +160,15 @@ namespace disambigcheck{
   {
     
     std::unique_ptr<std::vector<recob::Hit> > hcol(new std::vector<recob::Hit>);
-    art::Handle< std::vector<recob::Hit> > ChannelHitsDisambig;
     std::vector< art::Ptr<recob::Hit> >  ChHitsDisambig;
-    if (evt.getByLabel(fChanHitDisambig, ChannelHitsDisambig))
+    auto ChannelHitsDisambig = evt.getHandle< std::vector<recob::Hit> >(fChanHitDisambig);
+    if (ChannelHitsDisambig)
       art::fill_ptr_vector(ChHitsDisambig, ChannelHitsDisambig);
 
     // Make unambiguous collection hits
-    art::Handle< std::vector<recob::Hit> > ChannelHitsCheater;
     std::vector< art::Ptr<recob::Hit> >  ChHitsCheater;
-    if(evt.getByLabel(fChanHitCheater, ChannelHitsCheater))
+    auto ChannelHitsCheater = evt.getHandle< std::vector<recob::Hit> >(fChanHitCheater);
+    if (ChannelHitsCheater)
       art::fill_ptr_vector(ChHitsCheater, ChannelHitsCheater);
     
     int correcthits = 0;

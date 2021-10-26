@@ -266,9 +266,9 @@ void dunefd::IniSegReco::produce(art::Event& evt)
 	if (!isdata)
 	{
 		// * MC truth information
-    		art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
     		std::vector<art::Ptr<simb::MCTruth> > mclist;
-    		if (evt.getByLabel(fGenieGenModuleLabel,mctruthListHandle))
+    		auto mctruthListHandle = evt.getHandle< std::vector<simb::MCTruth> >(fGenieGenModuleLabel);
+    		if (mctruthListHandle)
       		art::fill_ptr_vector(mclist, mctruthListHandle);
 
 		if (mclist.size()) 
@@ -327,9 +327,9 @@ void dunefd::IniSegReco::UseClusters(art::Event const & evt,
 	if (!isdata)
 	{
 		 // * MC truth information
-    		art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
     		std::vector<art::Ptr<simb::MCTruth> > mclist;
-    		if (evt.getByLabel(fGenieGenModuleLabel,mctruthListHandle))
+    		auto mctruthListHandle = evt.getHandle< std::vector<simb::MCTruth> >(fGenieGenModuleLabel);
+    		if (mctruthListHandle)
       		art::fill_ptr_vector(mclist, mctruthListHandle);
 
     		if (mclist.size())
@@ -348,27 +348,27 @@ void dunefd::IniSegReco::UseTracks(art::Event const & evt,
 	if (!isdata)
 	{
 		// * hits
-		art::Handle< std::vector<recob::Hit> > hitListHandle;
   		std::vector<art::Ptr<recob::Hit> > hitlist;
- 		if (evt.getByLabel(fHitsModuleLabel,hitListHandle))
+		auto hitListHandle = evt.getHandle< std::vector<recob::Hit> >(fHitsModuleLabel);
+ 		if (hitListHandle)
     			art::fill_ptr_vector(hitlist, hitListHandle);
 
 		// * tracks
-		art::Handle< std::vector<recob::Track> > trackListHandle;
   		std::vector<art::Ptr<recob::Track> > tracklist;
-  		if (evt.getByLabel(fTrackModuleLabel,trackListHandle))
+		auto trackListHandle = evt.getHandle< std::vector<recob::Track> >(fTrackModuleLabel);
+  		if (trackListHandle)
     			art::fill_ptr_vector(tracklist, trackListHandle); 
 
 		// * vertices
-  		art::Handle< std::vector<recob::Vertex> > vtxListHandle;
   		std::vector<art::Ptr<recob::Vertex> > vtxlist;
-  		if (evt.getByLabel(fVertexModuleLabel,vtxListHandle))
+  		auto vtxListHandle = evt.getHandle< std::vector<recob::Vertex> >(fVertexModuleLabel);
+  		if (vtxListHandle)
     			art::fill_ptr_vector(vtxlist, vtxListHandle);
 
 		// * monte carlo
-    		art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
     		std::vector<art::Ptr<simb::MCTruth> > mclist;
-    		if (evt.getByLabel(fGenieGenModuleLabel,mctruthListHandle))
+    		auto mctruthListHandle = evt.getHandle< std::vector<simb::MCTruth> >(fGenieGenModuleLabel);
+    		if (mctruthListHandle)
       		art::fill_ptr_vector(mclist, mctruthListHandle);
 
 		if (mclist.size())
@@ -661,10 +661,9 @@ void dunefd::IniSegReco::collectCls(art::Event const & evt,
 	art::ServiceHandle<geo::Geometry> geom;
 	
 	// * clusters
-  	art::Handle< std::vector<recob::Cluster> > clusterListHandle;
- 	std::vector<art::Ptr<recob::Cluster> > clusterlist;		
-
-	if (evt.getByLabel(fClusterModuleLabel,clusterListHandle))
+ 	std::vector<art::Ptr<recob::Cluster> > clusterlist;
+  	auto clusterListHandle = evt.getHandle< std::vector<recob::Cluster> >(fClusterModuleLabel);
+	if (clusterListHandle)
 	{
    		art::fill_ptr_vector(clusterlist, clusterListHandle);
 		art::FindManyP< recob::Hit > hc(clusterListHandle, evt, fClusterModuleLabel);		
@@ -759,9 +758,9 @@ void dunefd::IniSegReco::make3dseg(
 	if (src.size() < 2) return;
 	if ((src[0].size() < 2) || (src[1].size() < 2)) return;
 
-	art::Handle< std::vector<recob::Hit> > hitListHandle;
   	std::vector<art::Ptr<recob::Hit> > hitlist;
- 	if (evt.getByLabel(fHitsModuleLabel,hitListHandle))
+	auto hitListHandle = evt.getHandle< std::vector<recob::Hit> >(fHitsModuleLabel);
+ 	if (hitListHandle)
     		art::fill_ptr_vector(hitlist, hitListHandle);
 
 	std::vector< art::Ptr<recob::Hit> > hitsel;
@@ -957,10 +956,10 @@ float dunefd::IniSegReco::t0Corr(art::Event const & evt,
 	art::ServiceHandle<geo::Geometry> geom;
 
 	// * MC truth information
-	art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
     	std::vector<art::Ptr<simb::MCTruth> > mclist;
-    	if (evt.getByLabel(fGenieGenModuleLabel,mctruthListHandle))
-      	art::fill_ptr_vector(mclist, mctruthListHandle);
+	auto mctruthListHandle = evt.getHandle< std::vector<simb::MCTruth> >(fGenieGenModuleLabel);
+    	if (mctruthListHandle)
+      	  art::fill_ptr_vector(mclist, mctruthListHandle);
 
 	double vtx[3] = {pvtx.X(), pvtx.Y(), pvtx.Z()};
 

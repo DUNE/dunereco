@@ -129,9 +129,10 @@ namespace cvn {
   {
 
     // Get the pixel maps
-    art::Handle< std::vector< cvn::PixelMap > > pixelmapListHandle;
     std::vector< art::Ptr< cvn::PixelMap > > pixelmaplist;
-    if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmapListHandle))
+    art::InputTag itag1(fPixelMapInput, fPixelMapInput);
+    auto pixelmapListHandle = evt.getHandle< std::vector< cvn::PixelMap > >(itag1);
+    if (pixelmapListHandle)
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
 
     // If we have no pixel map then return
@@ -140,9 +141,9 @@ namespace cvn {
     InteractionType interaction = kOther;
 
     // * monte carlo
-    art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
     std::vector<art::Ptr<simb::MCTruth> > mclist;
-    if(evt.getByLabel(fGenieGenModuleLabel,mctruthListHandle))
+    auto mctruthListHandle = evt.getHandle< std::vector<simb::MCTruth> >(fGenieGenModuleLabel);
+    if (mctruthListHandle)
       art::fill_ptr_vector(mclist, mctruthListHandle);
 
     //unsigned short nmclist=  mclist.size();
@@ -184,23 +185,17 @@ namespace cvn {
     if(fGetEnergyOutput){
       // Get the nue info
       if(fEnergyNueLabel != ""){
-        art::Handle<dune::EnergyRecoOutput> energyRecoNueHandle;
-        evt.getByLabel(fEnergyNueLabel, energyRecoNueHandle);
-
+        auto energyRecoNueHandle = evt.getHandle<dune::EnergyRecoOutput>(fEnergyNueLabel);
         recoNueEnergy = energyRecoNueHandle->fNuLorentzVector.E();
       }
       // And the numu
       if(fEnergyNumuLabel != ""){
-        art::Handle<dune::EnergyRecoOutput> energyRecoNumuHandle;
-        evt.getByLabel(fEnergyNumuLabel, energyRecoNumuHandle);
-
+        auto energyRecoNumuHandle = evt.getHandle<dune::EnergyRecoOutput>(fEnergyNumuLabel);
         recoNumuEnergy = energyRecoNumuHandle->fNuLorentzVector.E();
       }
       // And the nutau
       if(fEnergyNutauLabel != ""){
-        art::Handle<dune::EnergyRecoOutput> energyRecoNutauHandle;
-        evt.getByLabel(fEnergyNutauLabel, energyRecoNutauHandle);
-
+        auto energyRecoNutauHandle = evt.getHandle<dune::EnergyRecoOutput>(fEnergyNutauLabel);
         recoNutauEnergy = energyRecoNutauHandle->fNuLorentzVector.E();
       }
     }

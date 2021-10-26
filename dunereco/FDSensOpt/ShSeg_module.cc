@@ -285,9 +285,9 @@ bool dunefd::ShSeg::BuildSegMC(art::Event & e)
 {
 	bool result = true;
 
-	art::Handle< std::vector<recob::Hit> > hitListHandle;
 	std::vector<art::Ptr<recob::Hit> > hitlist;
-	if (e.getByLabel(fHitsModuleLabel, hitListHandle))
+	auto hitListHandle = e.getHandle< std::vector<recob::Hit> >(fHitsModuleLabel);
+	if (hitListHandle)
 		art::fill_ptr_vector(hitlist, hitListHandle);
 
 	art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;

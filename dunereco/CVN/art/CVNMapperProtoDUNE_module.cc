@@ -152,9 +152,9 @@ namespace cvn {
     // Use the whole event just like we would for the FD
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
     if(fUseWholeEvent){
-      art::Handle< std::vector< recob::Hit > > hitListHandle;
       std::vector< art::Ptr< recob::Hit > > hitlist;
-      if (evt.getByLabel(fHitsModuleLabel, hitListHandle))
+      auto hitListHandle = evt.getHandle< std::vector< recob::Hit > >(fHitsModuleLabel);
+      if (hitListHandle)
         art::fill_ptr_vector(hitlist, hitListHandle);
       unsigned short nhits = hitlist.size();
   

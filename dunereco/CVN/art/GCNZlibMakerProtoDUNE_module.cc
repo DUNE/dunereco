@@ -100,9 +100,9 @@ namespace cvn {
     std::cout << "GCNZlibMakerProtoDUNE: looking for graphs with label " << fGraphLabel << std::endl;
 
     // Get the graphs
-    art::Handle<std::vector<cvn::GCNGraph>> h_graphs;
     std::vector<art::Ptr<cvn::GCNGraph>> graphs;
-    if (evt.getByLabel(fGraphLabel,h_graphs))
+    auto h_graphs = evt.getHandle<std::vector<cvn::GCNGraph>>(fGraphLabel);
+    if (h_graphs)
       art::fill_ptr_vector(graphs, h_graphs);
 
     // If no graphs, quit
