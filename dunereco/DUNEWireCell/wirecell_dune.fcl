@@ -509,4 +509,91 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_30deg_data_nfsp : {
    }
 }
 
+dune10kt_dunefd_vertdrift_1x8x14_3view_data_nfsp : {
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+
+      logsinks: ["stdout"]
+      loglevels: ["debug", "pgraph:info"]
+
+      # Libraries in which to look for WCT components
+      plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
+
+      # The tool marshals the art::Event to these visitors before.
+      # See notes below in params.
+      inputers: ["wclsRawFrameSource"
+         # To use wclsMultiChannelNoiseDB you must also put epoch:dynamic below
+         # and you must have geo::Geometry service in your environment.
+         # ,"wclsMultiChannelNoiseDB"  
+      ]
+
+      # or after the WCT app is run.  These names MUST be used identically in the Jsonnet
+      # fixme: https://github.com/WireCell/larwirecell/issues/3
+      #outputers: ["wclsFrameSaver:nfsaver", "wclsFrameSaver:spsaver"]
+      outputers: ["wclsFrameSaver:spsaver"]
+
+      # This sets the "main" Jsonnet file which provides the 
+      # configuration for the Wire-Cell Toolkit components.  It is
+      # take as relative to entries in WIRECELL_PATH.
+      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
+
+      # Set the "external variables" required by the Jsonnet.
+      # ext-var, string
+      params : {
+          # This locates the input raw::RawDigit collection in the art::Event 
+          raw_input_label: "tpcrawdecoder:daq"
+          # raw_input_label: "simmer:orig"
+          #raw_input_label: "caldata"
+
+          # Set "data" vs. "sim".  The epoch below probably should follow suit.
+          reality: "data"
+          # reality: "sim"
+
+          # if epoch is "dynamic" you MUST add
+          # "wclsMultiChannelNoiseDB" to "inputers" and must NOT
+          # add it if not "dynamic"
+          # epoch: "dynamic"
+          # epoch: "perfect"
+          epoch: "after"
+
+          # Save output signal waveforms (recob::Wire) in "sparse" or "dense" form
+          signal_output_form: "sparse"
+
+          # file: wires
+          # dunevd10kt-1x6x6-3view-wires-v1.json.bz2
+          # dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2
+          # dunevd10kt-1x6x6-2view-wires-v1.json.bz2
+          files_wires: "dunevd10kt-1x8x14-3view-wires-v1.json.bz2"
+
+          # file: fields
+          # 3view30: dunevd-resp-isoc3views-18d92.json.bz2
+          # 2view: pcbro-response-avg-12d50.json.bz2
+          files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
+
+          # set mapping between internal wct plane ids and larsoft
+          # WCT assumes kU, kV, kW regardless of orientation. 
+          # Larsoft expects kY for 2nd induction plane for this geometry
+          # Set the mapping as kU->kU, kV->kY, kW->kW in the jsonnet
+          geo_planeid_labels: "dunevd_3view"
+          
+      }
+      # ext-code, code
+      structs : {
+          # for nticks calculation in common/params.jsonnet: elec
+          driftSpeed: 1.60563
+          
+          # used in ChannelSelector
+          # 3view: 864; 3view30deg: 900; 2view: 928
+          channel_per_crm: 864
+          
+          # response plane, related to which field response is used [cm]
+          # 3view30: dunevd-resp-isoc3views-18d92.json.bz2: 18.92
+          # 2view: pcbro-response-avg-12d50.json.bz2: 12.50
+          response_plane: 18.92
+      }
+   }
+}
+
 END_PROLOG
