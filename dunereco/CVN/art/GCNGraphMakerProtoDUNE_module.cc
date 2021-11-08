@@ -112,9 +112,9 @@ namespace cvn {
     //    std::cout << "GCNGraphMakerProtoDUNE: checking if we have enough space points (" << pointList.size() << " / " << fMinClusterHits << ")" << std::endl;
     // Vector for all of the space points
     // Get the space points from the event
-    art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
     std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
-    if(evt.getByLabel(fSpacePointLabel,spacePointHandle)){
+    auto spacePointHandle = evt.getHandle<std::vector<recob::SpacePoint>>(fSpacePointLabel);
+    if (spacePointHandle){
       art::fill_ptr_vector(allSpacePoints, spacePointHandle);
     }
 
@@ -164,7 +164,8 @@ namespace cvn {
     }
     else{
       std::vector<art::Ptr<recob::SpacePoint>> eventSpacePoints;
-      if(evt.getByLabel(fSpacePointLabel,spacePointHandle)){
+      spacePointHandle = evt.getHandle<std::vector<recob::SpacePoint>>(fSpacePointLabel);
+      if (spacePointHandle){
         art::fill_ptr_vector(eventSpacePoints, spacePointHandle);
       }
       //Convert this vector to a map

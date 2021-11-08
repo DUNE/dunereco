@@ -63,9 +63,9 @@ namespace cvn {
   void GCNHitGraphMaker::produce(art::Event& e)
   {
     // Retrieve hits
-    art::Handle<std::vector<recob::Hit>> hitHandle;
     std::vector<art::Ptr<recob::Hit>> hits;
-    if (!e.getByLabel(fHitModuleLabel, hitHandle)) {
+    auto hitHandle = e.getHandle<std::vector<recob::Hit>>(fHitModuleLabel);
+    if (!hitHandle) {
       throw art::Exception(art::errors::LogicError)
         << "Could not find hits with module label " << fHitModuleLabel;
     }

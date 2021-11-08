@@ -82,9 +82,9 @@ namespace cvn {
   //......................................................................
   void CVNSparseMapper::produce(art::Event& evt)
   {
-    art::Handle< std::vector< recob::Hit > > hitListHandle;
     std::vector< art::Ptr< recob::Hit > > hitlist;
-    if (evt.getByLabel(fHitsModuleLabel, hitListHandle))
+    auto hitListHandle = evt.getHandle< std::vector< recob::Hit > >(fHitsModuleLabel);
+    if (hitListHandle)
       art::fill_ptr_vector(hitlist, hitListHandle);
     unsigned short nhits = hitlist.size();
 

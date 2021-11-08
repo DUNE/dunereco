@@ -109,10 +109,10 @@ namespace cvn {
   //......................................................................
   void GCNGraphMaker::produce(art::Event& evt)
   {
-    art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
     std::vector<art::Ptr<recob::SpacePoint>> spacePoints;
-    if (!evt.getByLabel(fSpacePointModuleLabel,
-      fSpacePointInstanceLabel, spacePointHandle)) {
+    art::InputTag itag1(fSpacePointModuleLabel,fSpacePointInstanceLabel);
+    auto spacePointHandle = evt.getHandle<std::vector<recob::SpacePoint>>(itag1);
+    if (!spacePointHandle) {
 
       throw art::Exception(art::errors::LogicError)
         << "Could not find spacepoints with module label "

@@ -139,9 +139,10 @@ namespace cvn {
                                   resultCol(new std::vector<Result>);
 
     /// Load in the pixel maps
-    art::Handle< std::vector< cvn::PixelMap > > pixelmapListHandle;
     std::vector< art::Ptr< cvn::PixelMap > > pixelmaplist;
-    if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmapListHandle))
+    art::InputTag itag1(fPixelMapInput, fPixelMapInput);
+    auto pixelmapListHandle = evt.getHandle< std::vector< cvn::PixelMap > >(itag1);
+    if (pixelmapListHandle)
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
 
     /// Make sure we have a valid name for the CVN type
@@ -227,9 +228,9 @@ namespace cvn {
     InteractionType interaction = kOther;
 
     // * monte carlo
-    art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
     std::vector<art::Ptr<simb::MCTruth> > mclist;
-    if(evt.getByLabel("generator",mctruthListHandle))
+    auto mctruthListHandle = evt.getHandle< std::vector<simb::MCTruth> >("generator");
+    if (mctruthListHandle)
       art::fill_ptr_vector(mclist, mctruthListHandle);
 
     //unsigned short nmclist=  mclist.size();

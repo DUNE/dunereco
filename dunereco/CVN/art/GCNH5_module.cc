@@ -126,9 +126,10 @@ namespace cvn {
   void GCNH5::analyze(art::Event const& e) {
 
     // Get the graphVector
-    art::Handle<std::vector<GCNGraph>> graphHandle;
     std::vector<art::Ptr<GCNGraph>> graphVector;
-    if (!e.getByLabel(fGraphModuleLabel, fGraphInstanceLabel, graphHandle)) {
+    art::InputTag itag1(fGraphModuleLabel, fGraphInstanceLabel);
+    auto graphHandle = e.getHandle<std::vector<GCNGraph>>(itag1);
+    if (!graphHandle) {
       throw art::Exception(art::errors::ProductNotFound)
         << "Could not find GCNGraph vector with module label "
         << fGraphModuleLabel << " and instance label "
@@ -162,9 +163,8 @@ namespace cvn {
     if (fSaveEventTruth) {
 
       // Get MC truth
-      art::Handle<vector<simb::MCTruth>> truthHandle;
-      e.getByLabel(fTruthLabel, truthHandle);
-      if (!truthHandle.isValid() || truthHandle->size() != 1) {
+      auto truthHandle = e.getHandle<vector<simb::MCTruth>>(fTruthLabel);
+      if (!truthHandle || truthHandle->size() != 1) {
         throw art::Exception(art::errors::LogicError)
           << "Expected to find exactly one MC truth object!";
       }

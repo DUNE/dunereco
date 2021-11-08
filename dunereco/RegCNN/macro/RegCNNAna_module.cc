@@ -332,25 +332,25 @@ void myana::RegCNNAna::analyze(art::Event const& evt)
   }
 
   // * MC truth information 
-  art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;             
   std::vector<art::Ptr<simb::MCTruth> > mclist;      
   if (isMC){    
-    if (evt.getByLabel(fMCGenModuleLabel,mctruthListHandle))         
+    auto mctruthListHandle = evt.getHandle< std::vector<simb::MCTruth> >(fMCGenModuleLabel);
+    if (mctruthListHandle) 
       art::fill_ptr_vector(mclist, mctruthListHandle);  
   }  
 
   // Get the hits out of the event record
-  art::Handle<std::vector<recob::Hit> > hitHandle;
   std::vector<art::Ptr<recob::Hit> > hits;
-  if (evt.getByLabel(fHitsModuleLabel,hitHandle))
+  auto hitHandle = evt.getHandle<std::vector<recob::Hit> >(fHitsModuleLabel);
+  if (hitHandle)
     art::fill_ptr_vector(hits, hitHandle);
 
   const sim::ParticleList& trueParticles = particleinventory->ParticleList();
 
   // Get the pandoratrack out of the event record
-  art::Handle<std::vector<recob::Track> > trackHandleDir;
   std::vector<art::Ptr<recob::Track> > trackDir;
-  if (evt.getByLabel(fTrackLabelDir, trackHandleDir))
+  auto trackHandleDir = evt.getHandle<std::vector<recob::Track> >(fTrackLabelDir);
+  if (trackHandleDir)
     art::fill_ptr_vector(trackDir, trackHandleDir);
   art::FindManyP<recob::Hit> fmtrkDir(trackHandleDir, evt, fTrackLabelDir);
 
@@ -386,9 +386,9 @@ void myana::RegCNNAna::analyze(art::Event const& evt)
   } // end of trackHandleDir
 
   // Get the emshower out of the event record
-  art::Handle<std::vector<recob::Shower> > showerHandleDir;
   std::vector<art::Ptr<recob::Shower> > showersDir;
-  if (evt.getByLabel(fShowerLabelDir, showerHandleDir))
+  auto showerHandleDir = evt.getHandle<std::vector<recob::Shower> >(fShowerLabelDir);
+  if (showerHandleDir)
     art::fill_ptr_vector(showersDir, showerHandleDir);
   art::FindManyP<recob::Hit> fmshDir(showerHandleDir, evt, fShowerLabelDir);
 
@@ -425,23 +425,26 @@ void myana::RegCNNAna::analyze(art::Event const& evt)
 
 
   // Get DUNE energy Reco
-  art::Handle<dune::EnergyRecoOutput> engrecoHandle;
-  evt.getByLabel(fEnergyRecoNuLabel,engrecoHandle);
+  auto engrecoHandle = evt.getHandle<dune::EnergyRecoOutput>(fEnergyRecoNuLabel);
 
   // Get RegCNN Results
+
   // neutrino energy
-  art::Handle<std::vector<cnn::RegCNNResult>> cnnresultListHandle;
-  evt.getByLabel(fRegCNNModuleLabel, fRegCNNResultLabel, cnnresultListHandle);
+  art::InputTag itag1(fRegCNNModuleLabel, fRegCNNResultLabel);
+  auto cnnresultListHandle = evt.getHandle<std::vector<cnn::RegCNNResult>>(itag1);
+
   // lepton energy
-  art::Handle<std::vector<cnn::RegCNNResult>> RegCnnProngResultListHandle;
-  evt.getByLabel(fRegCNNProngModuleLabel, fRegCNNProngResultLabel, RegCnnProngResultListHandle);
+  art::InputTag itag2(fRegCNNProngModuleLabel, fRegCNNProngResultLabel);
+  auto RegCnnProngResultListHandle = evt.getHandle<std::vector<cnn::RegCNNResult>>(itag2);
+
   // lepton direction
-  art::Handle<std::vector<cnn::RegCNNResult> > RegCnnDirResultListHandle;
-  evt.getByLabel(fRegCNNDirModuleLabel, fRegCNNDirResultLabel, RegCnnDirResultListHandle);
+  art::InputTag itag3(fRegCNNDirModuleLabel, fRegCNNDirResultLabel);
+  auto RegCnnDirResultListHandle = evt.getHandle<std::vector<cnn::RegCNNResult> >(itag3);
 
   //std::vector<art::Ptr<cnn::Result> > cnnlist;
-  //if (evt.getByLabel(fRegCNNModuleLabel, cnnresultListHandle))
-  //  art::fill_ptr_vector(cnnlist, cnnresultListHandle);
+  // auto cnnresultListHandle2 = evt.getHandle<std::vector<cnn::RegCNNResult>>(fRegCNNModuleLabel);
+  //if (cnnresultListHandle2)
+  //  art::fill_ptr_vector(cnnlist, cnnresultListHandle2);
 
   // Get Truth information
   if (mclist.size()>0) {

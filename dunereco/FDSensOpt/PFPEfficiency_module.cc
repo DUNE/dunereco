@@ -123,8 +123,7 @@ void dune::PFPEfficiency::analyze(art::Event const& event)
 {
 
   //!save neutrino's interaction info
-  art::Handle<std::vector<simb::MCTruth>> MCtruthHandle;
-  event.getByLabel(fMCTruthModuleLabel, MCtruthHandle);
+  auto MCtruthHandle = event.getHandle<std::vector<simb::MCTruth> >(fMCTruthModuleLabel);
   std::vector<art::Ptr<simb::MCTruth>> MCtruthlist;
   art::fill_ptr_vector(MCtruthlist, MCtruthHandle);
   art::Ptr<simb::MCTruth> MCtruth; 
@@ -149,21 +148,21 @@ void dune::PFPEfficiency::analyze(art::Event const& event)
   if( !isFiducial ) return;
 
   // * hits
-  art::Handle< std::vector<recob::Hit> > hitListHandle;
   std::vector<art::Ptr<recob::Hit> > hitlist;
-  if (event.getByLabel(fHitModuleLabel,hitListHandle))
+  auto hitListHandle = event.getHandle< std::vector<recob::Hit> >(fHitModuleLabel);
+  if (hitListHandle)
     art::fill_ptr_vector(hitlist, hitListHandle);
 
-  art::Handle < std::vector < recob::PFParticle > > pfpListHandle;
   std::vector < art::Ptr < recob::PFParticle > > pfpList;
-  if (event.getByLabel(fPFPModuleLabel, pfpListHandle)) {
+  auto pfpListHandle = event.getHandle < std::vector < recob::PFParticle > >(fPFPModuleLabel);
+  if (pfpListHandle) {
     art::fill_ptr_vector(pfpList, pfpListHandle);
   }
 
   // Get all clusters
-  art::Handle < std::vector < recob::Cluster > > cluListHandle;
   std::vector < art::Ptr < recob::Cluster > > cluList;
-  if (event.getByLabel(fPFPModuleLabel, cluListHandle)) {
+  auto cluListHandle = event.getHandle < std::vector < recob::Cluster > >(fPFPModuleLabel);
+  if (cluListHandle) {
     art::fill_ptr_vector(cluList, cluListHandle);
   }
 

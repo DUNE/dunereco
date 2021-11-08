@@ -81,8 +81,7 @@ HitHandScan::HitHandScan(fhicl::ParameterSet const & p) : EDProducer{p}
 
 void HitHandScan::produce(art::Event & e)
 {
-  art::Handle< std::vector< recob::Hit> > prevHitHandle;
-  e.getByLabel(fPreviousHitModuleLabel,prevHitHandle);
+  auto prevHitHandle = e.getHandle< std::vector< recob::Hit> >(fPreviousHitModuleLabel);
 
   art::FindOneP<recob::Wire> wires(prevHitHandle,e,fPreviousHitModuleLabel);
   art::FindOneP<raw::RawDigit> rawdigits(prevHitHandle,e,fPreviousHitModuleLabel);

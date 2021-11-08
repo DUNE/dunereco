@@ -107,9 +107,9 @@ namespace cvn
   std::map<int,unsigned int> GCNFeatureUtils::GetAllNeighbours(art::Event const &evt, const float rangeCut, const std::string &spLabel) const{
 
     // Get the space points from the event and make the map
-    art::Handle<vector<SpacePoint>> spacePointHandle;
     vector<Ptr<SpacePoint>> spacePoints;
-    if(evt.getByLabel(spLabel,spacePointHandle)){
+    auto spacePointHandle = evt.getHandle<vector<SpacePoint>>(spLabel);
+    if (spacePointHandle) {
       art::fill_ptr_vector(spacePoints, spacePointHandle);
     }
     return GetAllNeighbours(evt, rangeCut, spacePoints);
@@ -148,9 +148,9 @@ namespace cvn
   // Sometimes we might want to know the number of neighbours within various radii
   std::vector<std::map<int,unsigned int>> GCNFeatureUtils::GetNeighboursForRadii(art::Event const &evt, const std::vector<float>& rangeCuts, const std::string &spLabel) const{
     // Get the space points from the event and make the map
-    art::Handle<vector<SpacePoint>> spacePointHandle;
     vector<Ptr<SpacePoint>> allSpacePoints;
-    if(evt.getByLabel(spLabel,spacePointHandle)){
+    auto spacePointHandle = evt.getHandle<vector<SpacePoint>>(spLabel);
+    if (spacePointHandle) {
       art::fill_ptr_vector(allSpacePoints, spacePointHandle);
     }
     return GetNeighboursForRadii(evt,rangeCuts,allSpacePoints);
@@ -200,9 +200,9 @@ namespace cvn
 
   std::map<int,int> GCNFeatureUtils::GetNearestNeighbours(art::Event const &evt,
     const std::string &spLabel) const{
-    art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
     std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
-    if(evt.getByLabel(spLabel,spacePointHandle)){
+    auto spacePointHandle = evt.getHandle<std::vector<recob::SpacePoint>>(spLabel);
+    if (spacePointHandle) {
       art::fill_ptr_vector(allSpacePoints, spacePointHandle);
     }
     return GetNearestNeighbours(evt,allSpacePoints);
@@ -240,9 +240,9 @@ namespace cvn
   // Get the two nearest neighbours to use for calcuation of angles between them and the node in question
   std::map<int,std::pair<int,int>> GCNFeatureUtils::GetTwoNearestNeighbours(art::Event const &evt,
     const std::string &spLabel) const{
-    art::Handle<std::vector<recob::SpacePoint>> spacePointHandle;
     std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
-    if(evt.getByLabel(spLabel,spacePointHandle)){
+    auto spacePointHandle = evt.getHandle<std::vector<recob::SpacePoint>>(spLabel);
+    if (spacePointHandle) {
       art::fill_ptr_vector(allSpacePoints, spacePointHandle);
     }
     return GetTwoNearestNeighbours(evt,allSpacePoints);
@@ -337,9 +337,9 @@ namespace cvn
   std::map<unsigned int, float> GCNFeatureUtils::GetSpacePointChargeMap(
     art::Event const &evt, const std::string &spLabel) const {
 
-    art::Handle<vector<SpacePoint>> spacePointHandle;
     vector<Ptr<SpacePoint>> spacePoints;
-    if (!evt.getByLabel(spLabel, spacePointHandle)) {
+    auto spacePointHandle = evt.getHandle<vector<SpacePoint>>(spLabel);
+    if (!spacePointHandle) {
       throw art::Exception(art::errors::LogicError)
         << "Could not find spacepoints with module label "
         << spLabel << "!";
@@ -409,9 +409,9 @@ namespace cvn
     detinfo::DetectorClocksData const& clockData,
     art::Event const &evt, const std::string &spLabel) const {
 
-    art::Handle<vector<SpacePoint>> spacePointHandle;
     vector<Ptr<SpacePoint>> spacePoints;
-    if (!evt.getByLabel(spLabel, spacePointHandle)) {
+    auto spacePointHandle = evt.getHandle<vector<SpacePoint>>(spLabel);
+    if (!spacePointHandle) {
 
       throw art::Exception(art::errors::LogicError)
         << "Could not find spacepoints with module label "
@@ -457,9 +457,9 @@ namespace cvn
     detinfo::DetectorClocksData const& clockData,
     art::Event const &evt, const std::string &spLabel) const {
 
-    art::Handle<vector<SpacePoint>> spacePointHandle;
     vector<Ptr<SpacePoint>> spacePoints;
-    if (!evt.getByLabel(spLabel, spacePointHandle)) {
+    auto spacePointHandle = evt.getHandle<vector<SpacePoint>>(spLabel);
+    if (!spacePointHandle) {
 
       throw art::Exception(art::errors::LogicError)
         << "Could not find spacepoints with module label "

@@ -371,9 +371,8 @@ void dunemva::MVAAlg::Run( const art::Event & evt, double& result, double& wgt )
 
 //--------------------------------------------------------------------------------
 void dunemva::MVAAlg::endSubRun(const art::SubRun& sr){
-  art::Handle< sumdata::POTSummary > potListHandle;
-
-  if(sr.getByLabel(fPOTModuleLabel,potListHandle))
+  auto potListHandle = sr.getHandle< sumdata::POTSummary >(fPOTModuleLabel);
+  if (potListHandle)
     pot = potListHandle->totpot;
   else
     pot = 0.;
@@ -1143,45 +1142,45 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
   isdata = evt.isRealData();
 
   // * Raw Digits
-  art::Handle<std::vector<raw::RawDigit> > rawListHandle;
   std::vector<art::Ptr<raw::RawDigit> > rawlist;
-  if (evt.getByLabel(fRawDigitModuleLabel,rawListHandle))
+  auto rawListHandle = evt.getHandle<std::vector<raw::RawDigit> >(fRawDigitModuleLabel);
+  if (rawListHandle)
     art::fill_ptr_vector(rawlist, rawListHandle);
 
   // * wires
-  art::Handle< std::vector<recob::Wire>> wireListHandle;
   std::vector<art::Ptr<recob::Wire>> wirelist;
-  if (evt.getByLabel(fWireModuleLabel, wireListHandle))
+  auto wireListHandle = evt.getHandle< std::vector<recob::Wire>>(fWireModuleLabel);
+  if (wireListHandle)
     art::fill_ptr_vector(wirelist, wireListHandle);
 
   // * hits
-  art::Handle< std::vector<recob::Hit> > hitListHandle;
   std::vector<art::Ptr<recob::Hit> > hitlist;
-  if (evt.getByLabel(fHitsModuleLabel,hitListHandle))
+  auto hitListHandle = evt.getHandle< std::vector<recob::Hit> >(fHitsModuleLabel);
+  if (hitListHandle)
     art::fill_ptr_vector(hitlist, hitListHandle);
 
   // * tracks
-  art::Handle< std::vector<recob::Track> > trackListHandle;
   std::vector<art::Ptr<recob::Track> > tracklist;
-  if (evt.getByLabel(fTrackModuleLabel,trackListHandle))
+  auto trackListHandle = evt.getHandle< std::vector<recob::Track> >(fTrackModuleLabel);
+  if (trackListHandle)
     art::fill_ptr_vector(tracklist, trackListHandle);
 
   // * vertices
-  art::Handle< std::vector<recob::Vertex> > vtxListHandle;
   std::vector<art::Ptr<recob::Vertex> > vtxlist;
-  if (evt.getByLabel(fVertexModuleLabel,vtxListHandle))
+  auto vtxListHandle = evt.getHandle< std::vector<recob::Vertex> >(fVertexModuleLabel);
+  if (vtxListHandle)
     art::fill_ptr_vector(vtxlist, vtxListHandle);
 
   // * showers
-  art::Handle<std::vector<recob::Shower>> shwListHandle;
   std::vector<art::Ptr<recob::Shower>> shwlist;
-  if (evt.getByLabel(fShowerModuleLabel,shwListHandle))
+  auto shwListHandle = evt.getHandle<std::vector<recob::Shower>>(fShowerModuleLabel);
+  if (shwListHandle)
     art::fill_ptr_vector(shwlist, shwListHandle);
 
   // * flashes
-  art::Handle< std::vector<recob::OpFlash> > flashListHandle;
   std::vector<art::Ptr<recob::OpFlash> > flashlist;
-  if (evt.getByLabel(fFlashModuleLabel, flashListHandle))
+  auto flashListHandle = evt.getHandle< std::vector<recob::OpFlash> >(fFlashModuleLabel);
+  if (flashListHandle)
     art::fill_ptr_vector(flashlist, flashListHandle);
 
   // * associations
@@ -1499,14 +1498,14 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
   if (!isdata){
 
     // * MC truth information
-    art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
     std::vector<art::Ptr<simb::MCTruth> > mclist;
-    if (evt.getByLabel(fGenieGenModuleLabel,mctruthListHandle))
+    auto mctruthListHandle = evt.getHandle< std::vector<simb::MCTruth> >(fGenieGenModuleLabel);
+    if (mctruthListHandle)
       art::fill_ptr_vector(mclist, mctruthListHandle);
 
-    art::Handle< std::vector<simb::MCFlux> > mcfluxListHandle;
     std::vector<art::Ptr<simb::MCFlux> > fluxlist;
-    if (evt.getByLabel(fGenieGenModuleLabel,mcfluxListHandle))
+    auto mcfluxListHandle = evt.getHandle< std::vector<simb::MCFlux> >(fGenieGenModuleLabel);
+    if (mcfluxListHandle)
       art::fill_ptr_vector(fluxlist, mcfluxListHandle);
 
 

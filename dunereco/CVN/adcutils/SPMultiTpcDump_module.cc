@@ -158,8 +158,8 @@ namespace nnet
   bool SPMultiTpcDump::prepareEv(const art::Event& event,
                                  detinfo::DetectorPropertiesData const& detProp)
   {
-	art::Handle< std::vector<simb::MCTruth> > mctruthHandle;
-	if (!event.getByLabel(fGenieGenLabel, mctruthHandle)) { return false; }
+        auto mctruthHandle = event.getHandle< std::vector<simb::MCTruth> >(fGenieGenLabel);
+	if (!mctruthHandle) { return false; }
 
 	for (auto const & mc : (*mctruthHandle))
 	{

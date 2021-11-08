@@ -15,8 +15,7 @@ VLNEnergyVarExtractor::VLNEnergyVarExtractor(
 
 void VLNEnergyVarExtractor::extractVars(const art::Event &evt, VarDict &vars)
 {
-    art::Handle<VLN::VLNEnergy> vlnEnergy_h;
-    evt.getByLabel(labelVLNEnergy, vlnEnergy_h);
+    auto vlnEnergy_h = evt.getHandle<VLN::VLNEnergy>(labelVLNEnergy);
 
     if (vlnEnergy_h.failedToGet()) {
         return;

@@ -178,8 +178,7 @@ namespace shs {
       const art::FindManyP<recob::Hit> hitsFromClusters(fMVAClusters, evt,fMVAClusterLabel);
 
       // We also need the hit selection that was used by the CNN
-      art::Handle<std::vector<recob::Hit> > inputHits;
-      evt.getByLabel(fHitLabel,inputHits);
+      auto inputHits = evt.getHandle<std::vector<recob::Hit> >(fHitLabel);
       art::FindOneP<raw::RawDigit> rawDigits(inputHits,evt,fHitLabel);
       art::FindOneP<recob::Wire> recoWires(inputHits,evt,fHitLabel);
 

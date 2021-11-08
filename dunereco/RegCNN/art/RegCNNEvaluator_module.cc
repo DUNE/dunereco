@@ -151,16 +151,18 @@ namespace cnn {
                                   resultCol(new std::vector<RegCNNResult>);
 
     /// Load in the pixel maps
-    art::Handle< std::vector< cnn::RegPixelMap > > pixelmapListHandle;
     std::vector< art::Ptr< cnn::RegPixelMap > > pixelmaplist;
-    if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmapListHandle)){
+    art::InputTag itag1(fPixelMapInput, fPixelMapInput);
+    auto pixelmapListHandle = evt.getHandle< std::vector< cnn::RegPixelMap > >(itag1);
+    if (pixelmapListHandle){
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
     }
 
     /// Load 3D pixel map for direction reco.
-    art::Handle< std::vector< cnn::RegPixelMap3D > > pixelmap3DListHandle;
     std::vector< art::Ptr< cnn::RegPixelMap3D > > pixelmap3Dlist;
-    if (evt.getByLabel(fPixelMapInput, fPixelMapInput, pixelmap3DListHandle)) {
+    art::InputTag itag2(fPixelMapInput, fPixelMapInput);
+    auto pixelmap3DListHandle = evt.getHandle< std::vector< cnn::RegPixelMap3D > >(itag2);
+    if (pixelmap3DListHandle) {
         art::fill_ptr_vector(pixelmap3Dlist, pixelmap3DListHandle);
     }
 
@@ -210,9 +212,9 @@ namespace cnn {
       auto hitListHandle = evt.getValidHandle<std::vector<recob::Hit>>(fHitsModuleLabel);
 
       // Tracks
-      art::Handle< std::vector<recob::Track> > trackListHandle;
       std::vector<art::Ptr<recob::Track> > tracklist;
-      if (evt.getByLabel(fTrackModuleLabel,trackListHandle))
+      auto trackListHandle = evt.getHandle< std::vector<recob::Track> >(fTrackModuleLabel);
+      if (trackListHandle)
           art::fill_ptr_vector(tracklist, trackListHandle);
 
       // Associations
