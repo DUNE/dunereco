@@ -22,11 +22,13 @@ dune_pandora:
     PrintOverallRecoStatus:                                         false
 }
 
+#----35t prototype----
 dune35t_pandora:                                                    @local::dune_pandora
 dune35t_pandora.ConfigFile:                                         "PandoraSettings_Master_Standard.xml"
 dune35t_pandora.ShouldRunAllHitsCosmicReco:                         true
 dune35t_pandora.ShouldRunStitching:                                 true
 
+#----DUNE FD Horizontal drift----
 dunefd_pandora_neutrino:                                            @local::dune_pandora
 dunefd_pandora_neutrino.ConfigFile:                                 "PandoraSettings_Master_DUNEFD.xml"
 dunefd_pandora_neutrino.ShouldRunNeutrinoRecoOption:                true
@@ -35,6 +37,16 @@ dunefd_pandora_cosmic:                                              @local::dune
 dunefd_pandora_cosmic.ConfigFile:                                   "PandoraSettings_Master_DUNEFD.xml"
 dunefd_pandora_cosmic.ShouldRunCosmicRecoOption:                    true
 
+#----DUNE FD Vertical drift----
+dunefdvd_pandora_neutrino:                                          @local::dune_pandora
+dunefdvd_pandora_neutrino.ConfigFile:                               "PandoraSettings_Master_DUNEFD_VD.xml"
+dunefdvd_pandora_neutrino.ShouldRunNeutrinoRecoOption:              true
+dunefdvd_pandora_neutrino.HitFinderModuleLabel:                     "gaushit"
+
+dunefdvd_pandora_cosmic:                                            @local::dunefdvd_pandora_neutrino
+dunefdvd_pandora_cosmic.ShouldRunCosmicRecoOption:                  true
+
+#----ProtoDUNE SP----
 protodune_pandora:                                                  @local::dune_pandora
 protodune_pandora.ConfigFile:                                       "PandoraSettings_Master_ProtoDUNE.xml"
 protodune_pandora.ShouldRunAllHitsCosmicReco:                       true
@@ -45,6 +57,7 @@ protodune_pandora.ShouldRunNeutrinoRecoOption:                      true
 protodune_pandora.ShouldRunCosmicRecoOption:                        true
 protodune_pandora.ShouldPerformSliceId:                             true
 
+#----ProtoDUNE DP----
 protodune_dp_pandora:                                               @local::dune_pandora
 protodune_dp_pandora.ConfigFile:                                    "PandoraSettings_Master_ProtoDUNE_DP.xml"
 protodune_dp_pandora.ShouldRunAllHitsCosmicReco:                    true
@@ -63,9 +76,13 @@ dune_pandorawriter.EnableProduction:                                false
 dune_pandoraTrackCreation:
 {
     module_type:                                                    "LArPandoraTrackCreation"
+    PFParticleLabel:                                                "pandora"
 }
 
+dunefdvd_pandoraTrackCreation: @local::dune_pandoraTrackCreation 
+
 dune_pandoraModularShowerCreation:                                         @local::standard_pandoraModularShowerCreation
+dune_pandoraModularShowerCreation.PFParticleLabel:                  "pandora"
 dune_pandoraModularShowerCreation.ShowerFinderTools: [
   @local::dune_showerpfpvertexstartposition,
   @local::dune_showerpcadirection,
@@ -77,6 +94,8 @@ dune_pandoraModularShowerCreation.ShowerFinderTools: [
   @local::dune_showerpandoraslidingfittrackfinder,
   @local::dune_showertrajpointdedx
 ]
+
+dunefdvd_pandoraModularShowerCreation: @local::dune_pandoraModularShowerCreation
 
 dune_pandoraShowerCreation:
 {
