@@ -50,5 +50,9 @@ dunefd_nuenergyreco_pandora_nc:
     RecoMethod: 3
 }
 
+dunefdvd_nuenergyreco_pandora_numu: @local::dunefd_nuenergyreco_pandora_numu
+dunefdvd_nuenergyreco_pandora_nue:  @local::dunefd_nuenergyreco_pandora_nue
+dunefdvd_nuenergyreco_pandora_nc:   @local::dunefd_nuenergyreco_pandora_nc
+
 
 END_PROLOG
