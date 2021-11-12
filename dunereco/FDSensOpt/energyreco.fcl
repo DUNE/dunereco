@@ -51,8 +51,13 @@ dunefd_nuenergyreco_pandora_nc:
 }
 
 dunefdvd_nuenergyreco_pandora_numu: @local::dunefd_nuenergyreco_pandora_numu
+dunefdvd_nuenergyreco_pandora_numu.NeutrinoEnergyRecoAlg: @local::dunevd10kt_neutrinoenergyrecoalg
+
 dunefdvd_nuenergyreco_pandora_nue:  @local::dunefd_nuenergyreco_pandora_nue
+dunefdvd_nuenergyreco_pandora_nue.NeutrinoEnergyRecoAlg: @local::dunevd10kt_neutrinoenergyrecoalg
+
 dunefdvd_nuenergyreco_pandora_nc:   @local::dunefd_nuenergyreco_pandora_nc
+dunefdvd_nuenergyreco_pandora_nc.NeutrinoEnergyRecoAlg: @local::dunevd10kt_neutrinoenergyrecoalg
 
 
 END_PROLOG
