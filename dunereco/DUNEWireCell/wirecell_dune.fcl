@@ -344,7 +344,6 @@ tpcrawdecoder_dunefd_vertdrift_2view : {
 
 tpcrawdecoder_dunefd_vertdrift_3view: {
     @table::tpcrawdecoder_dunefd_vertdrift_2view
-    ise-spectra-v1.json.bz2
     wcls_main: {
         @table::tpcrawdecoder_dunefd_vertdrift_2view.wcls_main
         params: {
