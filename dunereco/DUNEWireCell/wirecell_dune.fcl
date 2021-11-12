@@ -525,6 +525,9 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_data_nfsp : {
           # 2view: pcbro-response-avg-12d50.json.bz2: 12.50
           response_plane: 18.92
 
+          # number of time samples
+          nticks: @local::dunefdvd_detproperties.NumberTimeSamples
+
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 36
       }
@@ -611,6 +614,9 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_30deg_data_nfsp : {
           # 3view30: dunevd-resp-isoc3views-18d92.json.bz2: 18.92
           # 2view: pcbro-response-avg-12d50.json.bz2: 12.50
           response_plane: 18.92
+
+          # number of time samples
+          nticks: @local::dunefdvd_detproperties.NumberTimeSamples
 
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 36
@@ -701,6 +707,9 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_data_nfsp : {
           # 3view30: dunevd-resp-isoc3views-18d92.json.bz2: 18.92
           # 2view: pcbro-response-avg-12d50.json.bz2: 12.50
           response_plane: 18.92
+
+          # number of time samples
+          nticks: @local::dunefdvd_detproperties.NumberTimeSamples
 
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 112
