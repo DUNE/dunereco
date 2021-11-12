@@ -6,29 +6,30 @@ process_name: wclsdatanfsp
 services:
 {
   #message:              @local::dune_message_services_prod_debug
-  TimeTracker:       {}
-  RandomNumberGenerator: {}
+  # TimeTracker:       {}
+  # RandomNumberGenerator: {}
   # @table::dunefdvd_simulation_services
-  @table::protodune_services
+  # @table::protodune_services
+  # @table::dunefdvd_1x6x6_3view_simulation_services
   # @table::protodune_rawdecoding_services
   # @table::protodune_simulation_services
   # @table::protodune_data_services
-  TFileService: { 
-   closeFileFast: true  # default
-   fileName:  "%ifb_raw_anal.root"
-   tmpDir: "<parent-path-of-filename>"  # default
-  }
-  IFBeam:            {}
+  # TFileService: { 
+  #  closeFileFast: true  # default
+  #  fileName:  "%ifb_raw_anal.root"
+  #  tmpDir: "<parent-path-of-filename>"  # default
+  # }
+  # IFBeam:            {}
 }
 
 
-source: {
-   module_type: RootInput
-   saveMemoryObjectThreshold: 10485760
+# source: {
+#    module_type: RootInput
+#    saveMemoryObjectThreshold: 10485760
 
-   #inputCommands: ["drop *", "keep raw::RawDigits_*_*_*"]
-   #inputCommands: ["drop *", "keep *_*_*_Swizzler"]
-}
+#    #inputCommands: ["drop *", "keep raw::RawDigits_*_*_*"]
+#    #inputCommands: ["drop *", "keep *_*_*_Swizzler"]
+# }
 
 physics :{
    producers: {
@@ -36,13 +37,14 @@ physics :{
          module_type : WireCellToolkit
          wcls_main: {
             tool_type: WCLS
+            # Pgrapher, TbbFlow
             apps: ["Pgrapher"]
 
             logsinks: ["stdout"]
             loglevels: ["debug", "pgraph:info"]
 
             # Libraries in which to look for WCT components
-            plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
+            plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellTbb", "WireCellLarsoft"]
 
             # The tool marshals the art::Event to these visitors before.
             # See notes below in params.
@@ -88,7 +90,8 @@ physics :{
                 # dunevd10kt-1x6x6-3view-wires-v1.json.bz2
                 # dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2
                 # dunevd10kt-1x6x6-2view-wires-v1.json.bz2
-                files_wires: "dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2"
+                # dunevd10kt-1x8x14-3view-wires-v1.json.bz2
+                files_wires: "dunevd10kt-1x6x6-3view-wires-v1.json.bz2"
 
                 # file: fields
                 # 3view30: dunevd-resp-isoc3views-18d92.json.bz2
@@ -97,21 +100,27 @@ physics :{
 
                 # set mapping between internal wct plane ids and larsoft
                 # default is to assume WireCell::kU->geo::kU, kV->kV, kW->kW
-                geo_planeid_labels: "default"
+                # geo_planeid_labels: "default"
             }
             # ext-code, code
             structs : {
+                # number of time samples
+                nticks: @local::dunefdvd_detproperties.NumberTimeSamples
+
                 # for nticks calculation in common/params.jsonnet: elec
                 driftSpeed: 1.565
                 
                 # used in ChannelSelector
                 # 3view: 864; 3view30deg: 900; 2view: 928
-                channel_per_crm: 900
+                channel_per_crm: 864
                 
                 # response plane, related to which field response is used [cm]
                 # 3view30: dunevd-resp-isoc3views-18d92.json.bz2: 18.92
                 # 2view: pcbro-response-avg-12d50.json.bz2: 12.50
                 response_plane: 18.92
+
+                # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
+                ncrm: 36
             }
          }
       }

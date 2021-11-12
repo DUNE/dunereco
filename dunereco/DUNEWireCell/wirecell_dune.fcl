@@ -138,7 +138,7 @@ wirecell_protodunespmc:
             // Electron lifetime [ms]
             lifetime: 35.0
             // Electron drift speed, assumes a certain applied E-field [mm/us]
-            driftSpeed: 1.565
+            driftSpeed: 1.60563
         }
     }
 }
@@ -266,7 +266,7 @@ tpcrawdecoder_dunefd_horizdrift_1x2x6 : {
         # Transverse diffusion constant [cm2/s]
         DT: 8.8
         # Electron lifetime [ms]
-        lifetime: 10.4
+        lifetime: 10
         # Electron drift speed, assumes a certain applied E-field [mm/us]
         driftSpeed: 1.60563
         # G4RefTime [us]
@@ -276,57 +276,161 @@ tpcrawdecoder_dunefd_horizdrift_1x2x6 : {
    }
 }
 
-
 tpcrawdecoder_dunefd_vertdrift_2view : {
-    module_type : WireCellToolkit
-    wcls_main: {
-       tool_type: WCLS
-       apps: ["Pgrapher"]
-       # apps: ["TbbFlow"]
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+      # apps: ["TbbFlow"]
 
-       logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
-       loglevels: ["debug"]
+      logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
+      loglevels: ["debug"]
 
-       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
+      plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
 
-       // needs to be found via your WIRECELL_PATH
-       # configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-3view.json"]
-       #configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-3view30deg.json"]
-        configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-2view.json"]
+      // needs to be found via your WIRECELL_PATH
+      configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel.jsonnet"]
 
 
-       // Contract note: these exact "type:name" must be used to identify
-       // the configuration data structures for these components in the Jsonnet.
+      // Contract note: these exact "type:name" must be used to identify
+      // the configuration data structures for these components in the Jsonnet.
 
-       inputers: ["wclsSimDepoSource:"]
-       outputers: [
-          "wclsSimChannelSink:postdrift",
-          "wclsFrameSaver:simdigits"
-       ]
+      inputers: ["wclsSimDepoSource:"]
+      outputers: [
+         "wclsSimChannelSink:postdrift",
+         "wclsFrameSaver:simdigits"
+      ]
 
-       // Make available parameters via Jsonnet's std.extVar()
-       params: {
-       }
-       structs: {
-       }
-    }
+      // Make available parameters via Jsonnet's std.extVar()
+      params: {
+        # file: wires
+        # dunevd10kt-1x6x6-3view-wires-v1.json.bz2
+        # dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2
+        # dunevd10kt-1x6x6-2view-wires-v1.json.bz2
+        # dunevd10kt-1x8x14-3view-wires-v1.json.bz2
+        files_wires: "dunevd10kt-1x6x6-2view-wires-v1.json.bz2"
+        # file: fields
+        # dunevd-resp-isoc3views-18d92.json.bz2 30,-30,90
+        # pcbro-response-avg-12d50.json.bz2 2view prototype
+        files_fields: "pcbro-response-avg-12d50.json.bz2"
+        # file: noise
+        # dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2
+        # dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2
+        # dunevd10kt-1x6x6-2view-noise-spectra-v1.json.bz2
+        files_noise: "dunevd10kt-1x6x6-2view-noise-spectra-v1.json.bz2"
+      }
+      structs: {
+        # number of time samples
+        nticks: @local::dunefdvd_detproperties.NumberTimeSamples
+        # Longitudinal diffusion constant [cm2/ns] 4.0e-9
+        DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+        # Transverse diffusion constant [cm2/ns] 8.8e-9
+        DT: @local::dunefd_largeantparameters.TransverseDiffusion
+        # Electron lifetime [us] #10.4e3
+        lifetime: 10.4e3 #@local::dunefdvd_detproperties.Electronlifetime
+        # Electron drift speed, assumes a certain applied E-field [mm/us]
+        driftSpeed: 1.60563
+        # G4RefTime [us]
+        G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+        # response plane [cm]
+        response_plane: 18.92
+        # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
+        ncrm: 36
+      }
+   }
 }
 
 
 
 tpcrawdecoder_dunefd_vertdrift_3view: {
     @table::tpcrawdecoder_dunefd_vertdrift_2view
+    ise-spectra-v1.json.bz2
     wcls_main: {
         @table::tpcrawdecoder_dunefd_vertdrift_2view.wcls_main
-        configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-3view.json"]
+        params: {
+          files_wires: "dunevd10kt-1x6x6-3view-wires-v1.json.bz2"
+          files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
+          files_noise: "dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2"
+        }
+        structs: {
+          # number of time samples
+          nticks: @local::dunefdvd_detproperties.NumberTimeSamples
+          # Longitudinal diffusion constant [cm2/ns] 4.0e-9
+          DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+          # Transverse diffusion constant [cm2/ns] 8.8e-9
+          DT: @local::dunefd_largeantparameters.TransverseDiffusion
+          # Electron lifetime [us] #10.4e3
+          lifetime: 10.4e3 #@local::dunefdvd_detproperties.Electronlifetime
+          # Electron drift speed, assumes a certain applied E-field [mm/us]
+          driftSpeed: 1.60563
+          # G4RefTime [us]
+          G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+          # response plane [cm]
+          response_plane: 18.92
+          # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
+          ncrm: 36
+        }
     }
 }
+
+tpcrawdecoder_dunefd_vertdrift_1x8x14_3view: {
+    @table::tpcrawdecoder_dunefd_vertdrift_2view
+    wcls_main: {
+        @table::tpcrawdecoder_dunefd_vertdrift_2view.wcls_main
+        params: {
+          files_wires: "dunevd10kt-1x8x14-3view-wires-v1.json.bz2"
+          files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
+          files_noise: "dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2"
+        }
+        structs: {
+          # number of time samples
+          nticks: @local::dunefdvd_detproperties.NumberTimeSamples
+          # Longitudinal diffusion constant [cm2/ns] 4.0e-9
+          DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+          # Transverse diffusion constant [cm2/ns] 8.8e-9
+          DT: @local::dunefd_largeantparameters.TransverseDiffusion
+          # Electron lifetime [us] #10.4e3
+          lifetime: 10.4e3 #@local::dunefdvd_detproperties.Electronlifetime
+          # Electron drift speed, assumes a certain applied E-field [mm/us]
+          driftSpeed: 1.60563
+          # G4RefTime [us]
+          G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+          # response plane [cm]
+          response_plane: 18.92
+          # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
+          ncrm: 112
+        }
+    }
+}
+
 
 tpcrawdecoder_dunefd_vertdrift_3view_30deg: {
     @table::tpcrawdecoder_dunefd_vertdrift_2view
     wcls_main: {
         @table::tpcrawdecoder_dunefd_vertdrift_2view.wcls_main
-        configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-3view30deg.json"]
+        params: {
+          files_wires: "dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2"
+          files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
+          files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
+        }
+        structs: {
+          # number of time samples
+          nticks: @local::dunefdvd_detproperties.NumberTimeSamples
+          # Longitudinal diffusion constant [cm2/ns] 4.0e-9
+          DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+          # Transverse diffusion constant [cm2/ns] 8.8e-9
+          DT: @local::dunefd_largeantparameters.TransverseDiffusion
+          # Electron lifetime [us] #10.4e3
+          lifetime: 10.4e3 #@local::dunefdvd_detproperties.Electronlifetime
+          # Electron drift speed, assumes a certain applied E-field [mm/us]
+          driftSpeed: 1.60563
+          # G4RefTime [us]
+          G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+          # response plane [cm]
+          response_plane: 18.92
+          # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
+          ncrm: 36
+        }
     }
 }
 
@@ -421,6 +525,9 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_data_nfsp : {
           # 3view30: dunevd-resp-isoc3views-18d92.json.bz2: 18.92
           # 2view: pcbro-response-avg-12d50.json.bz2: 12.50
           response_plane: 18.92
+
+          # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
+          ncrm: 36
       }
    }
 }
@@ -505,6 +612,9 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_30deg_data_nfsp : {
           # 3view30: dunevd-resp-isoc3views-18d92.json.bz2: 18.92
           # 2view: pcbro-response-avg-12d50.json.bz2: 12.50
           response_plane: 18.92
+
+          # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
+          ncrm: 36
       }
    }
 }
@@ -592,6 +702,9 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_data_nfsp : {
           # 3view30: dunevd-resp-isoc3views-18d92.json.bz2: 18.92
           # 2view: pcbro-response-avg-12d50.json.bz2: 12.50
           response_plane: 18.92
+
+          # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
+          ncrm: 112
       }
    }
 }
