@@ -327,7 +327,7 @@ tpcrawdecoder_dunefd_vertdrift_2view : {
         # Transverse diffusion constant [cm2/ns] 8.8e-9
         DT: @local::dunefd_largeantparameters.TransverseDiffusion
         # Electron lifetime [us] #10.4e3
-        lifetime: 10.4e3 #@local::dunefdvd_detproperties.Electronlifetime
+        lifetime: @local::dunefdvd_detproperties.Electronlifetime
         # Electron drift speed, assumes a certain applied E-field [mm/us]
         driftSpeed: 1.60563
         # G4RefTime [us]
@@ -359,7 +359,7 @@ tpcrawdecoder_dunefd_vertdrift_3view: {
           # Transverse diffusion constant [cm2/ns] 8.8e-9
           DT: @local::dunefd_largeantparameters.TransverseDiffusion
           # Electron lifetime [us] #10.4e3
-          lifetime: 10.4e3 #@local::dunefdvd_detproperties.Electronlifetime
+          lifetime: @local::dunefdvd_detproperties.Electronlifetime
           # Electron drift speed, assumes a certain applied E-field [mm/us]
           driftSpeed: 1.60563
           # G4RefTime [us]
@@ -389,7 +389,7 @@ tpcrawdecoder_dunefd_vertdrift_1x8x6_3view: {
           # Transverse diffusion constant [cm2/ns] 8.8e-9
           DT: @local::dunefd_largeantparameters.TransverseDiffusion
           # Electron lifetime [us] #10.4e3
-          lifetime: 10.4e3 #@local::dunefdvd_detproperties.Electronlifetime
+          lifetime: @local::dunefdvd_detproperties.Electronlifetime
           # Electron drift speed, assumes a certain applied E-field [mm/us]
           driftSpeed: 1.60563
           # G4RefTime [us]
@@ -419,7 +419,7 @@ tpcrawdecoder_dunefd_vertdrift_1x8x14_3view: {
           # Transverse diffusion constant [cm2/ns] 8.8e-9
           DT: @local::dunefd_largeantparameters.TransverseDiffusion
           # Electron lifetime [us] #10.4e3
-          lifetime: 10.4e3 #@local::dunefdvd_detproperties.Electronlifetime
+          lifetime: @local::dunefdvd_detproperties.Electronlifetime
           # Electron drift speed, assumes a certain applied E-field [mm/us]
           driftSpeed: 1.60563
           # G4RefTime [us]
@@ -450,7 +450,7 @@ tpcrawdecoder_dunefd_vertdrift_3view_30deg: {
           # Transverse diffusion constant [cm2/ns] 8.8e-9
           DT: @local::dunefd_largeantparameters.TransverseDiffusion
           # Electron lifetime [us] #10.4e3
-          lifetime: 10.4e3 #@local::dunefdvd_detproperties.Electronlifetime
+          lifetime: @local::dunefdvd_detproperties.Electronlifetime
           # Electron drift speed, assumes a certain applied E-field [mm/us]
           driftSpeed: 1.60563
           # G4RefTime [us]
