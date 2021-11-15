@@ -21,19 +21,23 @@
 
 
 local epoch = std.extVar('epoch');  // eg "dynamic", "after", "before", "perfect"
+local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
 local reality = std.extVar('reality');
 local sigoutform = std.extVar('signal_output_form');  // eg "sparse" or "dense"
-
 
 local wc = import 'wirecell.jsonnet';
 local g = import 'pgraph.jsonnet';
 
-local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
-
-local base = import 'pgrapher/experiment/dune-vd/params.jsonnet';
 local response_plane = std.extVar('response_plane')*wc.cm;
 local channel_per_crm = std.extVar('channel_per_crm');
-local params = base(response_plane) {
+
+local params_maker = import 'pgrapher/experiment/dune-vd/params.jsonnet';
+local fcl_params = {
+    response_plane: std.extVar('response_plane')*wc.cm,
+    nticks: std.extVar('nticks'),
+    ncrm: std.extVar('ncrm')
+};
+local params = params_maker(fcl_params) {
   lar: super.lar {
     drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
   },
@@ -53,8 +57,6 @@ local wcls = wcls_maker(params, tools);
 
 //local nf_maker = import "pgrapher/experiment/pdsp/nf.jsonnet";
 //local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
-
-local sp_maker = import 'pgrapher/experiment/dune-vd/sp.jsonnet';
 
 local planemaps = {
   dunevd_3view: {"1":0, "2":3, "4":2},
@@ -146,6 +148,7 @@ local chndb = [{
 // local nf_maker = import 'pgrapher/experiment/dune10kt-1x2x6/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
+local sp_maker = import 'pgrapher/experiment/dune-vd/sp.jsonnet';
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
@@ -160,37 +163,32 @@ local chsel_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-
-local spmagnify = [ 
-  g.pnode({
-    type: 'MagnifySink',
-    name: 'spmag%d' % n,
-    data: {
-        output_filename: 'dune-vd-sp-check.root',
-        root_file_mode: 'UPDATE',
-        frames: ['gauss%d' % n ],
-        trace_has_tag: false,
-        anode: wc.tn(tools.anodes[n]), 
-    },
-  }, nin=1, nout=1) for n in std.range(0, std.length(tools.anodes) - 1)];
-
-
-local spmagnify_pipe = [g.pipeline([spmagnify[n]], name='spmagnifypipes%d' % n) for n in anode_iota];
+local magoutput = 'dune-vd-sp-check.root';
+local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
+local sinks = magnify(tools, magoutput);
 
 local nfsp_pipes = [
   g.pipeline([
                chsel_pipes[n],
                sp_pipes[n],
-               spmagnify_pipe[n],
+               // sinks.decon_pipe[n],
              ],
              'nfsp_pipe_%d' % n)
   for n in anode_iota
 ];
 
 
+// assert (fcl_params.ncrm == 36 || fcl_params.ncrm == 112) : "only ncrm == 36 or 112 are configured";
 local f = import 'pgrapher/experiment/dune-vd/funcs.jsonnet';
 local outtags = ['gauss%d' % n for n in std.range(0, std.length(tools.anodes) - 1)];
-local fanpipe = f.multifanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 6, 'sn_mag_nf', outtags);
+// local fanpipe = f.multifanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 6, 'sn_mag_nf', outtags);
+local fanpipe =
+    if fcl_params.ncrm == 36
+    then f.multifanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', [1,6], [6,6], [1,6], [6,6], 'sn_mag_nf', outtags)
+    else if fcl_params.ncrm == 48
+    then f.multifanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', [1,8], [8,6], [1,8], [8,6], 'sn_mag_nf', outtags)
+    else if fcl_params.ncrm == 112
+    then f.multifanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', [1,8,16], [8,2,7], [1,8,16], [8,2,7], 'sn_mag_nf', outtags);
 
 local retagger = g.pnode({
   type: 'Retagger',
@@ -217,7 +215,7 @@ local sink = g.pnode({ type: 'DumpFrames' }, nin=1, nout=0);
 local graph = g.pipeline([wcls_input.adc_digits, fanpipe, retagger, wcls_output.sp_signals, sink]);
 
 local app = {
-  type: 'Pgrapher',
+  type: 'Pgrapher', //Pgrapher, TbbFlow
   data: {
     edges: g.edges(graph),
   },

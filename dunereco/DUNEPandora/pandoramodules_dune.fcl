@@ -96,6 +96,18 @@ dune_pandoraModularShowerCreation.ShowerFinderTools: [
 ]
 
 dunefdvd_pandoraModularShowerCreation: @local::dune_pandoraModularShowerCreation
+dunefdvd_pandoraModularShowerCreation.ShowerFinderTools: [
+  @local::dune_showerpfpvertexstartposition,
+  @local::dune_showerpcadirection,
+  @local::dune_showerlengthpercentile,
+  @local::dunefdvd_showernumelectronsenergy,
+  @local::dune_3dcylindertrackhitfinder,
+  @local::dunefdvd_showerunidirectiondedx,
+  @local::dune_showerincrementaltrackhitfinder,
+  @local::dune_showerpandoraslidingfittrackfinder,
+  @local::dunefdvd_showertrajpointdedx
+]
+
 
 dune_pandoraShowerCreation:
 {

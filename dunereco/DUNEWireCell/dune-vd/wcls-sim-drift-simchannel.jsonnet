@@ -7,21 +7,26 @@
 // Output is a Python numpy .npz file.
 
 local g = import 'pgraph.jsonnet';
-local f = import 'pgrapher/experiment/dune-vd/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
 local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
-local base = import 'pgrapher/experiment/dune-vd/params.jsonnet';
+local params_maker = import 'pgrapher/experiment/dune-vd/params.jsonnet';
 local response_plane = std.extVar('response_plane')*wc.cm;
-local params = base(response_plane) {
+local fcl_params = {
+    G4RefTime: std.extVar('G4RefTime') * wc.us,
+    response_plane: std.extVar('response_plane')*wc.cm,
+    nticks: std.extVar('nticks'),
+    ncrm: std.extVar('ncrm')
+};
+local params = params_maker(fcl_params) {
   lar: super.lar {
     // Longitudinal diffusion constant
-    DL: std.extVar('DL') * wc.cm2 / wc.s,
+    DL: std.extVar('DL') * wc.cm2 / wc.ns,
     // Transverse diffusion constant
-    DT: std.extVar('DT') * wc.cm2 / wc.s,
+    DT: std.extVar('DT') * wc.cm2 / wc.ns,
     // Electron lifetime
-    lifetime: std.extVar('lifetime') * wc.ms,
+    lifetime: std.extVar('lifetime') * wc.us,
     // Electron drift speed, assumes a certain applied E-field
     drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
   },
@@ -31,8 +36,6 @@ local params = base(response_plane) {
       noise: std.extVar('files_noise'),
   },
 };
-
-local G4RefTime = std.extVar('G4RefTime') * wc.us;
 
 local tools = tools_maker(params);
 
@@ -129,12 +132,12 @@ local chndb = [{
 //local noise_epoch = "after";
 //local chndb_pipes = [chndb_maker(params, tools.anodes[n], tools.fields[n]).wct(noise_epoch)
 //                for n in std.range(0, std.length(tools.anodes)-1)];
-local nf_maker = import 'pgrapher/experiment/dune10kt-1x2x6/nf.jsonnet';
+local nf_maker = import 'pgrapher/experiment/dune-vd/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb_pipes[n]) for n in std.range(0, std.length(tools.anodes)-1)];
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in anode_iota];
 
 local sp_maker = import 'pgrapher/experiment/dune-vd/sp.jsonnet';
-local sp = sp_maker(params, tools);
+local sp = sp_maker(params, tools, { sparse: true });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
 local rng = tools.random;
@@ -156,62 +159,40 @@ local wcls_simchannel_sink = g.pnode({
     u_time_offset: 0.0 * wc.us,
     v_time_offset: 0.0 * wc.us,
     y_time_offset: 0.0 * wc.us,
-    g4_ref_time: G4RefTime,
+    g4_ref_time: fcl_params.G4RefTime,
     use_energy: true,
     response_plane: response_plane,
   },
 }, nin=1, nout=1, uses=tools.anodes);
 
-// local magoutput = 'protodune-data-check.root';
-// local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
-// local sinks = magnify(tools, magoutput);
-
-local origmagnify = [ 
-  g.pnode({
-    type: 'MagnifySink',
-    name: 'origmag%d' % n,
-    data: {
-        output_filename: 'dune-vd-sim-check.root',
-        root_file_mode: 'UPDATE',
-        frames: ['orig%d' % n ],
-        trace_has_tag: false,
-        anode: wc.tn(tools.anodes[n]), 
-    },
-  }, nin=1, nout=1) for n in std.range(0, std.length(tools.anodes) - 1)];
-
-
-local origmagnify_pipe = [g.pipeline([origmagnify[n]], name='origmagnifypipes%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
-
-local spmagnify = [ 
-  g.pnode({
-    type: 'MagnifySink',
-    name: 'spmag%d' % n,
-    data: {
-        output_filename: 'dune-vd-sim-check.root',
-        root_file_mode: 'UPDATE',
-        frames: ['gauss%d' % n ],
-        trace_has_tag: false,
-        anode: wc.tn(tools.anodes[n]), 
-    },
-  }, nin=1, nout=1) for n in std.range(0, std.length(tools.anodes) - 1)];
-
-
-local spmagnify_pipe = [g.pipeline([spmagnify[n]], name='spmagnifypipes%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
+local magoutput = 'dune-vd-sim-check.root';
+local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
+local sinks = magnify(tools, magoutput);
 
 local multipass = [
   g.pipeline([
-                // wcls_simchannel_sink[n],
                 sn_pipes[n],
-                // origmagnify_pipe[n],
+                // sinks.orig_pipe[n],
                 // nf_pipes[n],
                 // sp_pipes[n],
-                // spmagnify_pipe[n],
+                // sinks.decon_pipe[n],
+                // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
              ],
              'multipass%d' % n)
   for n in anode_iota
 ];
+
+// assert (fcl_params.ncrm == 36 || fcl_params.ncrm == 112) : "only ncrm == 36 or 112 are configured";
+local f = import 'pgrapher/experiment/dune-vd/funcs.jsonnet';
 local outtags = ['orig%d' % n for n in anode_iota];
-local bi_manifold = f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', 6, 'sn_mag', outtags);
+// local bi_manifold = f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', 6, 'sn_mag', outtags);
+local bi_manifold =
+    if fcl_params.ncrm == 36
+    then f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,6], [6,6], [1,6], [6,6], 'sn_mag', outtags)
+    else if fcl_params.ncrm == 48
+    then f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,8], [8,6], [1,8], [8,6], 'sn_mag', outtags)
+    else if fcl_params.ncrm == 112
+    then f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,8,16], [8,2,7], [1,8,16], [8,2,7], 'sn_mag', outtags);
 
 local retagger = g.pnode({
   type: 'Retagger',
@@ -236,8 +217,7 @@ local sink = sim.frame_sink;
 local graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, bi_manifold, retagger, wcls_output.sim_digits, sink]);
 
 local app = {
-    type: 'Pgrapher',
-    // type: 'TbbFlow',
+    type: 'Pgrapher', //Pgrapher, TbbFlow
     data: {
         edges: g.edges(graph),
     },
