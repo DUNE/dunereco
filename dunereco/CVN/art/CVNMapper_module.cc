@@ -130,6 +130,7 @@ namespace cvn {
     if (nhits > fMinClusterHits) {
       auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
       PixelMap pm = fProducer.CreateMap(detProp, hitlist);
+      pm.SetTotHits(nhits);
       pmCol->push_back(pm);
     }
     //pm.Print();

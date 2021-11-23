@@ -23,7 +23,7 @@ namespace cvn
   {
   public:
     PixelMap(unsigned int nWire, unsigned int nTdc, const Boundary& bound);
-    PixelMap(){};
+    PixelMap(){ fTotHits = 0; };
 
     /// Length in wires
     unsigned int NWire() const {return fNWire;};
@@ -64,6 +64,8 @@ namespace cvn
                                      const unsigned int& view)
 ;
 
+    void SetTotHits(unsigned int tothits){ fTotHits = tothits; } 
+    unsigned int GetTotHits(){ return fTotHits; } 
     /// Draw pixel map to the screen.  This is pretty hokey and the aspect ratio
     /// is totally unrealistic.
     void Print() const;
@@ -87,6 +89,7 @@ namespace cvn
     std::vector<HitType> fLabX; ///< Vector of X Truth labels for pixels
     std::vector<HitType> fLabY; ///< Vector of Y Truth labels for pixels
     std::vector<HitType> fLabZ; ///< Vector of Y Truth labels for pixels
+    unsigned int fTotHits; ///< Number of hits that make up the pixel map
 
     Boundary          fBound;    //< Boundary of pixel map
 

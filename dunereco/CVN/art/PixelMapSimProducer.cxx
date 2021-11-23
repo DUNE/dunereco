@@ -87,10 +87,10 @@ namespace cvn
       if(!wireids.size()) continue;
       geo::WireID wireid = wireids[0];
       
-      if(wireids.size() > 1){
-        for(auto iwire : wireids)
-          if(iwire.Plane == reco_wire->View()) wireid = iwire;
-      }
+      // if(wireids.size() > 1){
+      //   for(auto iwire : wireids)
+      //     if(iwire.Plane == reco_wire->View()) wireid = iwire;
+      // }
       unsigned int tempWire  = wireid.Wire;
       unsigned int tempPlane = wireid.Plane;
 
@@ -138,6 +138,7 @@ namespace cvn
       }
 
     }
+    pm.SetTotHits(fTotHits);
     return pm;
   }
 
@@ -214,10 +215,10 @@ namespace cvn
       if(!wireids.size()) continue;
       geo::WireID wireid = wireids[0];
       
-      if(wireids.size() > 1){
-        for(auto iwire : wireids)
-          if(iwire.Plane == reco_wire->View()) wireid = iwire;
-      }
+      // if(wireids.size() > 1){
+      //   for(auto iwire : wireids)
+      //     if(iwire.Plane == reco_wire->View()) wireid = iwire;
+      // }
       unsigned int globalWire  = wireid.Wire;
       unsigned int globalPlane = wireid.Plane;
      
@@ -236,8 +237,6 @@ namespace cvn
         GetProtoDUNEGlobalWire(wireid.Wire,wireid.Plane,wireid.TPC,globalWire,globalPlane);
       }
 
-      bool none_threshold = true;
-      int min_tick = 20000;
       for(auto iROI = ROIs.begin(); iROI != ROIs.end(); ++iROI){
         auto& ROI = *iROI;
         auto tick = ROI.first;
@@ -245,9 +244,7 @@ namespace cvn
           
         double globalTime  = (double)tick;
         double charge = 0.005*reco_wire->Charge(tick);
-        none_threshold = none_threshold && !(charge > fThreshold);
         if(!(charge > fThreshold)) continue;  
-        if(tick < min_tick) min_tick = tick; 
         // Leigh: Simple modification to unwrap the collection view wire plane
         if(!fProtoDUNE){
           if(fUnwrapped == 1){
@@ -267,32 +264,39 @@ namespace cvn
         if(globalPlane==0){
           tsum_0 += globalTime;
           total_t0++;
+          wire_0.push_back(globalWire);
+          twire_0.push_back((double)tick);
         }
         if(globalPlane==1){
           tsum_1 += globalTime;
           total_t1++;
+          wire_1.push_back(globalWire);
+          twire_1.push_back((double)tick);
         }
         if(globalPlane==2){
           tsum_2 += globalTime;
           total_t2++;
+          wire_2.push_back(globalWire);
+          twire_2.push_back((double)tick);
         }
+        
         // }
       }
    
-      if(!none_threshold){ 
-        if(globalPlane==0){
-          wire_0.push_back(globalWire);
-          twire_0.push_back((double)min_tick);
-        }
-        if(globalPlane==1){
-          wire_1.push_back(globalWire);
-          twire_1.push_back((double)min_tick);
-        }
-        if(globalPlane==2){
-          wire_2.push_back(globalWire);
-          twire_2.push_back((double)min_tick);
-        }
-      }
+      // if(!none_threshold){
+      //   if(globalPlane==0){
+      //     wire_0.push_back(globalWire);
+      //     twire_0.push_back((double)min_tick);
+      //   }
+      //   if(globalPlane==1){
+      //     wire_1.push_back(globalWire);
+      //     twire_1.push_back((double)min_tick);
+      //   }
+      //   if(globalPlane==2){
+      //     wire_2.push_back(globalWire);
+      //     twire_2.push_back((double)min_tick);
+      //   }
+      // }
 
     }
     double tmean_0 = tsum_0/total_t0; 

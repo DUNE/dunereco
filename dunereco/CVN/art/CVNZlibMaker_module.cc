@@ -64,7 +64,7 @@ namespace cvn {
 
     std::string out_dir;
 
-    void write_files(TrainingData td, unsigned int n);
+    void write_files(TrainingData td, unsigned int n, std::string evtid);
 
   };
 
@@ -206,11 +206,12 @@ namespace cvn {
     train.SetTopologyInformation(pdg, n_proton, n_pion,
       n_pi0, n_neutron, toptype, toptypealt);
 
-    this->write_files(train, evt.event());
+    std::string evtid = "r"+std::to_string(evt.run())+"_s"+std::to_string(evt.subRun())+"_e"+std::to_string(evt.event());
+    this->write_files(train, evt.event(), evtid);
   }
 
   //......................................................................
-  void CVNZlibMaker::write_files(TrainingData td, unsigned int n)
+  void CVNZlibMaker::write_files(TrainingData td, unsigned int n, std::string evtid)
   {
     // cropped from 2880 x 500 to 500 x 500 here 
     std::vector<unsigned char> pixel_array(3 * fPlaneLimit * fTDCLimit);
@@ -240,8 +241,8 @@ namespace cvn {
     else {
 
       // Create output files 
-      std::string image_file_name = out_dir + "/event_" + std::to_string(n) + ".gz";
-      std::string info_file_name = out_dir + "/event_" + std::to_string(n) + ".info";
+      std::string image_file_name = out_dir + "/event_" + evtid + ".gz";
+      std::string info_file_name = out_dir + "/event_" +  evtid + ".info";
 
       std::ofstream image_file (image_file_name, std::ofstream::binary);
       std::ofstream info_file  (info_file_name);
@@ -278,7 +279,8 @@ namespace cvn {
         info_file << td.fNNeutron << std::endl;
 
         info_file << td.fTopologyType << std::endl;
-        info_file << td.fTopologyTypeAlt;        
+        info_file << td.fTopologyTypeAlt << std::endl;
+        info_file << td.fPMap.GetTotHits() << std::endl;        
 
         info_file.close(); // close file
       }

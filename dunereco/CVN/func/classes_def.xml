@@ -13,7 +13,8 @@
    <version ClassVersion="10" checksum="16422645"/>
   </class>
 
-  <class name="cvn::PixelMap" ClassVersion="18" >
+  <class name="cvn::PixelMap" ClassVersion="19" >
+   <version ClassVersion="19" checksum="1463336170"/>
    <version ClassVersion="18" checksum="341721657"/>
    <version ClassVersion="17" checksum="706586784"/>
    <version ClassVersion="16" checksum="3213795157"/>

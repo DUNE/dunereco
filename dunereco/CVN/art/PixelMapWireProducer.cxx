@@ -138,6 +138,7 @@ namespace cvn
       }
 
     }
+    pm.SetTotHits(fTotHits);
     return pm;
   }
 
@@ -236,10 +237,12 @@ namespace cvn
         GetProtoDUNEGlobalWire(wireid.Wire,wireid.Plane,wireid.TPC,globalWire,globalPlane);
       }
 
-      bool none_threshold = true;
-      int min_tick = 20000;
+      // bool none_threshold = true;
+      // int min_tick = 20000;
       for(auto iROI = ROIs.begin_range(); iROI != ROIs.end_range(); ++iROI){
         auto& ROI = *iROI;
+        bool none_threshold = true;
+        int min_tick = 20000;
         for(int tick = ROI.begin_index(); tick < (int)ROI.end_index(); tick++){ 
           
           double globalTime  = (double)tick;
@@ -275,22 +278,36 @@ namespace cvn
             total_t2++;
           }
         }
+        if(!none_threshold){ 
+          if(globalPlane==0){
+            wire_0.push_back(globalWire);
+            twire_0.push_back((double)min_tick);
+          }
+          if(globalPlane==1){
+            wire_1.push_back(globalWire);
+            twire_1.push_back((double)min_tick);
+          }
+          if(globalPlane==2){
+            wire_2.push_back(globalWire);
+            twire_2.push_back((double)min_tick);
+          }
+        }
       }
    
-      if(!none_threshold){ 
-        if(globalPlane==0){
-          wire_0.push_back(globalWire);
-          twire_0.push_back((double)min_tick);
-        }
-        if(globalPlane==1){
-          wire_1.push_back(globalWire);
-          twire_1.push_back((double)min_tick);
-        }
-        if(globalPlane==2){
-          wire_2.push_back(globalWire);
-          twire_2.push_back((double)min_tick);
-        }
-      }
+      // if(!none_threshold){
+      //   if(globalPlane==0){
+      //     wire_0.push_back(globalWire);
+      //     twire_0.push_back((double)min_tick);
+      //   }
+      //   if(globalPlane==1){
+      //     wire_1.push_back(globalWire);
+      //     twire_1.push_back((double)min_tick);
+      //   }
+      //   if(globalPlane==2){
+      //     wire_2.push_back(globalWire);
+      //     twire_2.push_back((double)min_tick);
+      //   }
+      // }
 
     }
     double tmean_0 = tsum_0/total_t0; 
