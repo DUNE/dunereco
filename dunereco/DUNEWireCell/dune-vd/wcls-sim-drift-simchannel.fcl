@@ -36,26 +36,39 @@ physics :{
 
             // Make available parameters via Jsonnet's std.extVar()
             params: {
+              # file: wires
+              # dunevd10kt-1x6x6-3view-wires-v1.json.bz2
+              # dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2
+              # dunevd10kt-1x6x6-2view-wires-v1.json.bz2
+              # dunevd10kt-1x8x14-3view-wires-v1.json.bz2
+              files_wires: "dunevd10kt-1x6x6-3view-wires-v1.json.bz2"
+              # file: fields
+              # dunevd-resp-isoc3views-18d92.json.bz2 30,-30,90
+              # pcbro-response-avg-12d50.json.bz2 2view prototype
+              files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
+              # file: noise
+              # dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2
+              # dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2
+              # dunevd10kt-1x6x6-2view-noise-spectra-v1.json.bz2
+              files_noise: "dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2"
             }
             structs: {
-              # Longitudinal diffusion constant [cm2/s]
-              DL: 4.0
-              # Transverse diffusion constant [cm2/s]
-              DT: 8.8
-              # Electron lifetime [ms]
-              lifetime: 10.4
+              # number of time samples
+              nticks: @local::dunefdvd_detproperties.NumberTimeSamples
+              # Longitudinal diffusion constant [cm2/ns] 4.0e-9
+              DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+              # Transverse diffusion constant [cm2/ns] 8.8e-9
+              DT: @local::dunefd_largeantparameters.TransverseDiffusion
+              # Electron lifetime [us] #10.4e3
+              lifetime: 10.4e3 #@local::dunefdvd_detproperties.Electronlifetime
               # Electron drift speed, assumes a certain applied E-field [mm/us]
               driftSpeed: 1.565
-              # G4RefTime
+              # G4RefTime [us]
               G4RefTime: @local::dunefd_detectorclocks.G4RefTime
               # response plane [cm]
-              response_plane: 10.0
-              # file: wires
-              files_wires: "\"dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2\""
-              # file: fields
-              files_fields: "\"pcbro-response-avg.json.bz2\""
-              # file: noise
-              files_noise: "\"dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2\""
+              response_plane: 18.92
+              # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
+              ncrm: 36
             }
 
          }
@@ -74,6 +87,7 @@ outputs: {
       fileName: "wcsim.root"
 
       outputCommands :   [
+         // "drop *"
          // "drop *", "keep recob::Wires_*_*_*"
          "keep *_*_*_*"
          // "drop *_nfspl1_raw_*",
