@@ -44,17 +44,17 @@ art_make(BASENAME_ONLY
   ROOT::Core
   ART_ROOT_IO_TFILESERVICE_SERVICE
   ART_PERSISTENCY_COMMON
-  canvas
-  art_Persistency_Provenance
+  canvas::canvas
+  art::Persistency_Provenance
   ART_UTILITIES
   messagefacility::MF_MessageLogger
   z
-  FHICLCPP
-  cetlib cetlib_except
+  fhiclcpp::fhiclcpp
+  cetlib::cetlib cetlib_except
   ROOT_BASIC_LIB_LIST
   lardataobj_RecoBase
   lardata_Utilities
-  nusimdata_SimulationBase
+  nusimdata::SimulationBase
   larsim_MCCheater_ParticleInventoryService_service
   GSLLIB
   HEPHPCLIB

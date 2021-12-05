@@ -24,20 +24,20 @@ message("Boost manual lib      : ${BOOSTLIB}")
 
 art_make_exec( cvnCreateZlibImages       
                SOURCE    cvnCreateZlibImages.cc
-               LIBRARIES ${ART_FRAMEWORK_CORE}
+               LIBRARIES art::Framework_Core
                          ART_FRAMEWORK_PRINCIPAL
                          ART_FRAMEWORK_SERVICES_REGISTRY
                          ART_ROOT_IO_TFILE_SUPPORT
                          ROOT::Core
                          ART_ROOT_IO_TFILESERVICE_SERVICE
                          ART_PERSISTENCY_COMMON
-                         canvas
-                         art_Persistency_Provenance
+                         canvas::canvas
+                         art::Persistency_Provenance
                          z
                          ART_UTILITIES
                          BOOSTLIB
                          #${GLOGLIB}
-                         FHICLCPP
+                         fhiclcpp::fhiclcpp
                          CETLIB
                          ROOT_BASIC_LIB_LIST
                          dune_CVN_func

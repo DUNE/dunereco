@@ -3,7 +3,7 @@ art_make(
 	  LIBRARY_NAME  dune_RecoAlgDUNE_Cluster3DAlgs
           LIB_LIBRARIES larreco_VertexFinder_HarrisVertexFinder_module
                         lardataobj_RecoBase
-                        larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
+                        larsim_Simulation nug4::ParticleNavigation lardataobj_Simulation
                         larevt_Filters
                         larcorealg_Geometry
                         larcore_Geometry_Geometry_service
@@ -17,19 +17,19 @@ art_make(
 			ROOT::Core
 			ART_ROOT_IO_TFILESERVICE_SERVICE
                         ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE
-			art_Persistency_Common canvas
-			art_Persistency_Provenance canvas
-			art_Utilities canvas
+			art::Persistency_Common canvas
+			art::Persistency_Provenance canvas
+			art::Utilities canvas
 			messagefacility::MF_MessageLogger
 			
-	                FHICLCPP
-			cetlib cetlib_except
+	                fhiclcpp::fhiclcpp
+			cetlib::cetlib cetlib_except
                         CLHEP
 			ROOT_BASIC_LIB_LIST
                         ROOT_MINUIT
 			ROOT_MINUIT2	
-                        ${Boost_FILESYSTEM_LIBRARY}
-                        ${Boost_SYSTEM_LIBRARY}
+                        Boost::filesystem
+                        
         )
 
 install_headers()

@@ -5,10 +5,10 @@ art_make( BASENAME_ONLY
                            larcorealg_Geometry
                            larcore_Geometry_Geometry_service
                            lardata_Utilities
-                           larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
+                           larsim_Simulation nug4::ParticleNavigation lardataobj_Simulation
                            larsim_MCCheater_BackTrackerService_service
                            larsim_MCCheater_ParticleInventoryService_service
-                           nusimdata_SimulationBase
+                           nusimdata::SimulationBase
                            ART_FRAMEWORK_CORE
                            ART_FRAMEWORK_PRINCIPAL
                            ART_FRAMEWORK_SERVICES_REGISTRY
@@ -16,11 +16,11 @@ art_make( BASENAME_ONLY
                            ROOT::Core
                            ART_ROOT_IO_TFILESERVICE_SERVICE
                            ART_PERSISTENCY_PROVENANCE
-                           art_Persistency_Common
-                           art_Utilities canvas
+                           art::Persistency_Common
+                           art::Utilities canvas
                            messagefacility::MF_MessageLogger
-                           FHICLCPP
-                           cetlib cetlib_except
+                           fhiclcpp::fhiclcpp
+                           cetlib::cetlib cetlib_except
                            ROOT_BASIC_LIB_LIST
          )
 

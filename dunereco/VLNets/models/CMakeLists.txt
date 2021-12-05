@@ -10,7 +10,7 @@ art_make_library(
         tf_model/TFModel.cxx
         zoo/VLNEnergyModel.cxx
     LIBRARIES
-        ${TENSORFLOW}
+        TENSORFLOW
 )
 
 install_headers(SUBDIRS tf_model zoo)

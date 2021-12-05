@@ -13,10 +13,10 @@ art_make(
                 lardataalg_DetectorInfo
                 dune_raw_data::dune-raw-data_Overlays
 
-                art_Persistency_Common canvas
-                art_Persistency_Provenance canvas
-                art_Utilities canvas
-                cetlib cetlib_except
+                art::Persistency_Common canvas
+                art::Persistency_Provenance canvas
+                art::Utilities canvas
+                cetlib::cetlib cetlib_except
                 ART_FRAMEWORK_CORE
                 ART_FRAMEWORK_PRINCIPAL
                 ART_FRAMEWORK_SERVICES_REGISTRY
@@ -24,7 +24,7 @@ art_make(
                 ROOT::Core
                 ART_ROOT_IO_TFILESERVICE_SERVICE
                 messagefacility::MF_MessageLogger
-                FHICLCPP
+                fhiclcpp::fhiclcpp
                 CLHEP
 
                 torch
