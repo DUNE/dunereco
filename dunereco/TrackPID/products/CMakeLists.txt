@@ -22,8 +22,8 @@ art_make(
 #    art::Persistency_Provenance
 #    art::Utilities
 #    canvas::canvas
-#    ${messagefacility::MF_MessageLogger}
-#    ${fhiclcpp::fhiclcpp}
+#    messagefacility::MF_MessageLogger
+#    fhiclcpp::fhiclcpp
 #    cetlib::cetlib cetlib_except
 #    
 #    ROOT_BASIC_LIB_LIST

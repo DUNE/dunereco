@@ -24,9 +24,8 @@
 #                           art_root_io::TFileService_service
 #                           art::Persistency_Common canvas
 #                           art::Utilities canvas
-#                           ${messagefacility::MF_MessageLogger}
-#                           
-#                           ${fhiclcpp::fhiclcpp}
+#                           messagefacility::MF_MessageLogger
+#                           fhiclcpp::fhiclcpp
 #                           cetlib::cetlib cetlib_except
 #         )
 
