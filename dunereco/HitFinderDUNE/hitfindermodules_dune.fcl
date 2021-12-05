@@ -204,6 +204,7 @@ dunevdfd_gaushitfinder.Chi2NDF: 50
 dunevdfd_gaushitfinder.LongMaxHits: [ 25, 25, 25 ]
 dunevdfd_gaushitfinder.LongPulseWidth: [ 10, 10, 10 ]
 dunevdfd_gaushitfinder.PeakFitter:	@local::peakfitter_mrqdt
+dunevdfd_gaushitfinder.CalDataModuleLabel: "wclsdatanfsp:gauss"
 
 protodunespmc_gaushitfinder: @local::gaus_hitfinder
 protodunespmc_gaushitfinder.HitFinderToolVec.CandidateHitsPlane0.RoiThreshold: 0.6

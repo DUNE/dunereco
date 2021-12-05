@@ -29,7 +29,7 @@ namespace cvn
   fLabY(nWire*nTdc),
   fLabZ(nWire*nTdc),
   fBound(bound)
-  {}
+  { fTotHits = 0; }
 
   void PixelMap::FillInputVector(float* input) const
   {

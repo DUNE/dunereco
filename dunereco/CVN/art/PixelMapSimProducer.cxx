@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////
-/// \file    PixelMapWireProducer.h
-/// \brief   PixelMapWireProducer for CVN
+/// \file    PixelMapSimProducer.h
+/// \brief   PixelMapSimProducer for CVN
 /// \author  Alexander Radovic - a.radovic@gmail.com
 //
 //  Modifications to allow unwrapped collection view
@@ -12,7 +12,7 @@
 #include  <list>
 #include  <algorithm>
 
-#include "dune/CVN/art/PixelMapWireProducer.h"
+#include "dune/CVN/art/PixelMapSimProducer.h"
 #include "dune/CVN/func/AssignLabels.h"
 #include "TVector2.h"
 #include "TH2D.h"
@@ -28,7 +28,7 @@
 namespace cvn
 {
 
-  PixelMapWireProducer::PixelMapWireProducer(unsigned int nWire, unsigned int nTdc, double tRes, double threshold):
+  PixelMapSimProducer::PixelMapSimProducer(unsigned int nWire, unsigned int nTdc, double tRes, double threshold):
     fNWire(nWire),
     fNTdc(nTdc),
     fTRes(tRes),
@@ -44,32 +44,32 @@ namespace cvn
     
   }
 
-  PixelMapWireProducer::PixelMapWireProducer()
+  PixelMapSimProducer::PixelMapSimProducer()
   {
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());  
     if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos)
       _cacheIntercepts();
   }
 
-  PixelMap PixelMapWireProducer::CreateMap(detinfo::DetectorPropertiesData const& detProp,
-                                       const std::vector< art::Ptr< recob::Wire > >& cluster)
+  PixelMap PixelMapSimProducer::CreateMap(detinfo::DetectorPropertiesData const& detProp,
+                                       const std::vector< art::Ptr< sim::SimChannel > >& cluster)
   {
-    std::vector<const recob::Wire*> newCluster;
-    for(const art::Ptr<recob::Wire> hit : cluster){
+    std::vector<const sim::SimChannel*> newCluster;
+    for(const art::Ptr<sim::SimChannel> hit : cluster){
       newCluster.push_back(hit.get());
     }
     return CreateMap(detProp, newCluster);
   }
 
-  PixelMap PixelMapWireProducer::CreateMap(detinfo::DetectorPropertiesData const& detProp,
-                                       const std::vector<const recob::Wire* >& cluster)
+  PixelMap PixelMapSimProducer::CreateMap(detinfo::DetectorPropertiesData const& detProp,
+                                       const std::vector<const sim::SimChannel* >& cluster)
   {
     Boundary bound = DefineBoundary(detProp, cluster);
     return CreateMapGivenBoundary(detProp, cluster, bound);
   }
 
-  PixelMap PixelMapWireProducer::CreateMapGivenBoundary(detinfo::DetectorPropertiesData const& detProp,
-                                                    const std::vector<const recob::Wire*>& cluster,
+  PixelMap PixelMapSimProducer::CreateMapGivenBoundary(detinfo::DetectorPropertiesData const& detProp,
+                                                    const std::vector<const sim::SimChannel*>& cluster,
       const Boundary& bound)
   {
 
@@ -78,18 +78,19 @@ namespace cvn
     for(size_t iHit = 0; iHit < cluster.size(); ++iHit)
     {
       
-      const recob::Wire* reco_wire = cluster[iHit];
-      auto ROIs = reco_wire->SignalROI();
-      if(!(ROIs.get_ranges().size())) continue;
+      const sim::SimChannel* reco_wire = cluster[iHit];
+      auto& ROIs = reco_wire->TDCIDEMap();
+      if(!(ROIs.size())) continue;
+      // auto ROIs = reco_wire->SignalROI();
 
       std::vector<geo::WireID> wireids = fGeometry->ChannelToWire(reco_wire->Channel());
       if(!wireids.size()) continue;
       geo::WireID wireid = wireids[0];
       
-      if(wireids.size() > 1){
-        for(auto iwire : wireids)
-          if(iwire.Plane == reco_wire->View()) wireid = iwire;
-      }
+      // if(wireids.size() > 1){
+      //   for(auto iwire : wireids)
+      //     if(iwire.Plane == reco_wire->View()) wireid = iwire;
+      // }
       unsigned int tempWire  = wireid.Wire;
       unsigned int tempPlane = wireid.Plane;
 
@@ -108,33 +109,32 @@ namespace cvn
         GetProtoDUNEGlobalWire(wireid.Wire,wireid.Plane,wireid.TPC,tempWire,tempPlane);
       }
 
-      for(auto iROI = ROIs.begin_range(); iROI != ROIs.end_range(); ++iROI){
+      for(auto iROI = ROIs.begin(); iROI != ROIs.end(); ++iROI){
         auto& ROI = *iROI;
-        for(int tick = ROI.begin_index(); tick < (int)ROI.end_index(); tick++){ 
-          
-          double temptdc  = (double)tick;
-          if(!(ROI[tick] > fThreshold)) continue;   
-          // Leigh: Simple modification to unwrap the collection view wire plane
-          if(!fProtoDUNE){
-            if(fUnwrapped == 1){
-              // Jeremy: Autodetect geometry for DUNE 10kt module. Is this a bad idea??
-              if (fGeometry->DetectorName() == "dune10kt_v1") {
-                if (wireid.TPC%6 == 0 or wireid.TPC%6 == 5) continue; // Skip dummy TPCs in 10kt module
-                GetDUNE10ktGlobalWireTDC(detProp, wireid.Wire,(double)tick,
-                  wireid.Plane,wireid.TPC,tempWire,tempPlane,temptdc);
-              }
-              else if (fGeometry->DetectorName().find("dunevd10kt_3view") == std::string::npos){
-                GetDUNEGlobalWireTDC(detProp, wireid.Wire,(double)tick,
-                  wireid.Plane,wireid.TPC,tempWire,tempPlane,temptdc);
-              }
+        auto tick = ROI.first;
+        double temptdc  = (double)tick;
+        double charge =  0.005*reco_wire->Charge(tick); 
+        if(!(charge > fThreshold)) continue;   
+        // Leigh: Simple modification to unwrap the collection view wire plane
+        if(!fProtoDUNE){
+          if(fUnwrapped == 1){
+            // Jeremy: Autodetect geometry for DUNE 10kt module. Is this a bad idea??
+            if (fGeometry->DetectorName() == "dune10kt_v1") {
+              if (wireid.TPC%6 == 0 or wireid.TPC%6 == 5) continue; // Skip dummy TPCs in 10kt module
+              GetDUNE10ktGlobalWireTDC(detProp, wireid.Wire,(double)tick,
+                wireid.Plane,wireid.TPC,tempWire,tempPlane,temptdc);
+            }
+            else if (fGeometry->DetectorName().find("dunevd10kt_3view") == std::string::npos){
+              GetDUNEGlobalWireTDC(detProp, wireid.Wire,(double)tick,
+                wireid.Plane,wireid.TPC,tempWire,tempPlane,temptdc);
             }
           }
-          const double pe  = ROI[tick];
-          const unsigned int wire = tempWire;
-          const unsigned int wirePlane = tempPlane;
-          const double tdc = temptdc;
-          pm.Add(wire, tdc, wirePlane, pe);
         }
+        const double pe  = charge;
+        const unsigned int wire = tempWire;
+        const unsigned int wirePlane = tempPlane;
+        const double tdc = temptdc;
+        pm.Add(wire, tdc, wirePlane, pe);
       }
 
     }
@@ -142,14 +142,14 @@ namespace cvn
     return pm;
   }
 
-  std::ostream& operator<<(std::ostream& os, const PixelMapWireProducer& p)
+  std::ostream& operator<<(std::ostream& os, const PixelMapSimProducer& p)
   {
-    os << "PixelMapWireProducer: "
+    os << "PixelMapSimProducer: "
       << p.NTdc()  <<" tdcs X  " <<  p.NWire() << " wires";
     return os;
   }
 
-  double PixelMapWireProducer::_getIntercept(geo::WireID wireid) const
+  double PixelMapSimProducer::_getIntercept(geo::WireID wireid) const
   {
     const geo::WireGeo* pwire = fGeometry->WirePtr(wireid);
     geo::Point_t center = pwire->GetCenter<geo::Point_t>();
@@ -162,7 +162,7 @@ namespace cvn
     return intercept;
   }
 
-  void PixelMapWireProducer::_cacheIntercepts(){
+  void PixelMapSimProducer::_cacheIntercepts(){
    
     // double spacing = 0.847;
     for(int plane = 0; plane < 2; plane++){
@@ -190,8 +190,8 @@ namespace cvn
     }
   }
 
-  Boundary PixelMapWireProducer::DefineBoundary(detinfo::DetectorPropertiesData const& detProp,
-                                            const std::vector< const recob::Wire*>& cluster)
+  Boundary PixelMapSimProducer::DefineBoundary(detinfo::DetectorPropertiesData const& detProp,
+                                            const std::vector< const sim::SimChannel*>& cluster)
   {
 
     std::vector<int> wire_0;
@@ -207,18 +207,18 @@ namespace cvn
 
     for(size_t iHit = 0; iHit < cluster.size(); ++iHit)
     {
-      const recob::Wire* reco_wire = cluster[iHit];
-      auto ROIs = reco_wire->SignalROI();
-      if(!(ROIs.get_ranges().size())) continue;
+      const sim::SimChannel* reco_wire = cluster[iHit];
+      auto& ROIs = reco_wire->TDCIDEMap();
+      if(!(ROIs.size())) continue;
 
       std::vector<geo::WireID> wireids = fGeometry->ChannelToWire(reco_wire->Channel());
       if(!wireids.size()) continue;
       geo::WireID wireid = wireids[0];
       
-      if(wireids.size() > 1){
-        for(auto iwire : wireids)
-          if(iwire.Plane == reco_wire->View()) wireid = iwire;
-      }
+      // if(wireids.size() > 1){
+      //   for(auto iwire : wireids)
+      //     if(iwire.Plane == reco_wire->View()) wireid = iwire;
+      // }
       unsigned int globalWire  = wireid.Wire;
       unsigned int globalPlane = wireid.Plane;
      
@@ -237,61 +237,50 @@ namespace cvn
         GetProtoDUNEGlobalWire(wireid.Wire,wireid.Plane,wireid.TPC,globalWire,globalPlane);
       }
 
-      // bool none_threshold = true;
-      // int min_tick = 20000;
-      for(auto iROI = ROIs.begin_range(); iROI != ROIs.end_range(); ++iROI){
+      for(auto iROI = ROIs.begin(); iROI != ROIs.end(); ++iROI){
         auto& ROI = *iROI;
-        bool none_threshold = true;
-        int min_tick = 20000;
-        for(int tick = ROI.begin_index(); tick < (int)ROI.end_index(); tick++){ 
+        auto tick = ROI.first;
+        // for(int tick = ROI.begin_index(); tick < (int)ROI.end_index(); tick++){
           
-          double globalTime  = (double)tick;
-          none_threshold = none_threshold && !(ROI[tick] > fThreshold);
-          if(!(ROI[tick] > fThreshold)) continue;  
-          if(tick < min_tick) min_tick = tick; 
-          // Leigh: Simple modification to unwrap the collection view wire plane
-          if(!fProtoDUNE){
-            if(fUnwrapped == 1){
-              // Jeremy: Autodetect geometry for DUNE 10kt module. Is this a bad idea??
-              if (fGeometry->DetectorName() == "dune10kt_v1") {
-                if (wireid.TPC%6 == 0 or wireid.TPC%6 == 5) continue; // Skip dummy TPCs in 10kt module
-                GetDUNE10ktGlobalWireTDC(detProp, wireid.Wire,(double)tick,
-                  wireid.Plane,wireid.TPC,globalWire,globalPlane,globalTime);
-              }
-              else if (fGeometry->DetectorName().find("dunevd10kt_3view") == std::string::npos){
-                GetDUNEGlobalWireTDC(detProp, wireid.Wire,(double)tick,
-                  wireid.Plane,wireid.TPC,globalWire,globalPlane,globalTime);
-              }
+        double globalTime  = (double)tick;
+        double charge = 0.005*reco_wire->Charge(tick);
+        if(!(charge > fThreshold)) continue;  
+        // Leigh: Simple modification to unwrap the collection view wire plane
+        if(!fProtoDUNE){
+          if(fUnwrapped == 1){
+            // Jeremy: Autodetect geometry for DUNE 10kt module. Is this a bad idea??
+            if (fGeometry->DetectorName() == "dune10kt_v1") {
+              if (wireid.TPC%6 == 0 or wireid.TPC%6 == 5) continue; // Skip dummy TPCs in 10kt module
+              GetDUNE10ktGlobalWireTDC(detProp, wireid.Wire,(double)tick,
+                wireid.Plane,wireid.TPC,globalWire,globalPlane,globalTime);
+            }
+            else if (fGeometry->DetectorName().find("dunevd10kt_3view") == std::string::npos){
+              GetDUNEGlobalWireTDC(detProp, wireid.Wire,(double)tick,
+                wireid.Plane,wireid.TPC,globalWire,globalPlane,globalTime);
             }
           }
+        }
 
-          if(globalPlane==0){
-            tsum_0 += globalTime;
-            total_t0++;
-          }
-          if(globalPlane==1){
-            tsum_1 += globalTime;
-            total_t1++;
-          }
-          if(globalPlane==2){
-            tsum_2 += globalTime;
-            total_t2++;
-          }
+        if(globalPlane==0){
+          tsum_0 += globalTime;
+          total_t0++;
+          wire_0.push_back(globalWire);
+          twire_0.push_back((double)tick);
         }
-        if(!none_threshold){ 
-          if(globalPlane==0){
-            wire_0.push_back(globalWire);
-            twire_0.push_back((double)min_tick);
-          }
-          if(globalPlane==1){
-            wire_1.push_back(globalWire);
-            twire_1.push_back((double)min_tick);
-          }
-          if(globalPlane==2){
-            wire_2.push_back(globalWire);
-            twire_2.push_back((double)min_tick);
-          }
+        if(globalPlane==1){
+          tsum_1 += globalTime;
+          total_t1++;
+          wire_1.push_back(globalWire);
+          twire_1.push_back((double)tick);
         }
+        if(globalPlane==2){
+          tsum_2 += globalTime;
+          total_t2++;
+          wire_2.push_back(globalWire);
+          twire_2.push_back((double)tick);
+        }
+        
+        // }
       }
    
       // if(!none_threshold){
@@ -362,7 +351,7 @@ namespace cvn
     return bound;
   }
 
-  void PixelMapWireProducer::GetDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const
+  void PixelMapSimProducer::GetDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const
   {
     unsigned int nWiresTPC = 400;
 
@@ -408,7 +397,7 @@ namespace cvn
   }
 
   // Based on Robert's code in adcutils
-  void PixelMapWireProducer::GetDUNEGlobalWireTDC(detinfo::DetectorPropertiesData const& detProp,
+  void PixelMapSimProducer::GetDUNEGlobalWireTDC(detinfo::DetectorPropertiesData const& detProp,
                                               unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
                                              unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const
   {
@@ -464,7 +453,7 @@ namespace cvn
     }
   }
 
-  void PixelMapWireProducer::GetDUNE10ktGlobalWireTDC(detinfo::DetectorPropertiesData const& detProp,
+  void PixelMapSimProducer::GetDUNE10ktGlobalWireTDC(detinfo::DetectorPropertiesData const& detProp,
                                                   unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
                                                   unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const
   {
@@ -529,11 +518,11 @@ namespace cvn
     else globalTDC = (2*drift_size) - localTDC;
     if (tpc_x > 1) globalTDC += 2 * (drift_size + apa_size);
 
-  } // function PixelMapWireProducer::GetDUNE10ktGlobalWireTDC
+  } // function PixelMapSimProducer::GetDUNE10ktGlobalWireTDC
 
   // Special case for ProtoDUNE where we want to extract single particles to mimic CCQE interactions. The output pixel maps should be the same as the workspace
   // but we need different treatment of the wire numbering
-  void PixelMapWireProducer::GetProtoDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const
+  void PixelMapSimProducer::GetProtoDUNEGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const
   { 
     unsigned int nWiresTPC = 400;
     
@@ -577,11 +566,11 @@ namespace cvn
       globalWire += ((12-tpc)/4)*nWiresTPC;
     }
   
-  } // function PixelMapWireProducer::GetProtoDUNEGlobalWire
+  } // function PixelMapSimProducer::GetProtoDUNEGlobalWire
 
   // Special case for ProtoDUNE where we want to extract single particles to mimic CCQE interactions. The output pixel maps should be the same as the workspace
   // but we need different treatment of the wire numbering
-  void PixelMapWireProducer::GetProtoDUNEGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
+  void PixelMapSimProducer::GetProtoDUNEGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
     unsigned int& globalWire, double& globalTDC, unsigned int& globalPlane) const
   {
     // We can just use the existing function to get the global wire & plane
@@ -591,7 +580,7 @@ namespace cvn
 
   } // function GetProtoDUNEGlobalWireTDC
   
-  void PixelMapWireProducer::GetDUNEVertDrift3ViewGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const
+  void PixelMapSimProducer::GetDUNEVertDrift3ViewGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const
   {
     // Preliminary function for VD Geometries (3 View for now)
     // 1x6x6 -- single drift volume should make things significantly simpler

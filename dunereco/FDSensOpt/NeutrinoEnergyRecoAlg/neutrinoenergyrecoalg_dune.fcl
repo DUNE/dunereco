@@ -25,4 +25,7 @@ dune_neutrinoenergyrecoalg:
 
 dune10kt_neutrinoenergyrecoalg: @local::dune_neutrinoenergyrecoalg
 
+dunevd10kt_neutrinoenergyrecoalg: @local::dune_neutrinoenergyrecoalg
+dunevd10kt_neutrinoenergyrecoalg.CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
+
 END_PROLOG
