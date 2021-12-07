@@ -18,7 +18,8 @@ art_make( BASENAME_ONLY
   Boost::filesystem
   
   ROOT_BASIC_LIB_LIST
-  TENSORFLOW
+  TENSORFLOW_CC
+  TENSORFLOW_FRAMEWORK
   PROTOBUF
   DICT_LIBRARIES   lardataobj_RecoBase
   RegCNNFunc
