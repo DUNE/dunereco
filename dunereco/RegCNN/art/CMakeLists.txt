@@ -37,20 +37,20 @@ art_make(BASENAME_ONLY
   ROOT::Core
   ART_ROOT_IO_TFILESERVICE_SERVICE
   ART_PERSISTENCY_COMMON
-  canvas
-  art_Persistency_Provenance
+  canvas::canvas
+  art::Persistency_Provenance
   ART_UTILITIES
   LIBTORCH
   LIBTORCH_CPU
   LIBC10
   messagefacility::MF_MessageLogger
-  FHICLCPP
-  cetlib cetlib_except
+  fhiclcpp::fhiclcpp
+  cetlib::cetlib cetlib_except
   ROOT_BASIC_LIB_LIST
   lardataobj_RecoBase
   lardata_Utilities
   larpandora_LArPandoraInterface
-  nusimdata_SimulationBase
+  nusimdata::SimulationBase
   larsim_MCCheater_BackTrackerService_service           
   larsim_MCCheater_ParticleInventoryService_service
   MVAAlg

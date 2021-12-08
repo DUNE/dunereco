@@ -5,7 +5,7 @@ art_make(
            larsim_MCCheater_ParticleInventoryService_service
                         lardataobj_RecoBase
                         lardata_ArtDataHelper
-                        larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
+                        larsim_Simulation nug4::ParticleNavigation lardataobj_Simulation
                         larevt_Filters
                         larcorealg_Geometry
                         larcore_Geometry_Geometry_service
@@ -20,7 +20,7 @@ art_make(
 			larreco_RecoAlg_CMTool_CMTAlgMatch
 			larreco_RecoAlg_CMTool_CMToolApp
 			larreco_RecoAlg_PMAlg
-                        nusimdata_SimulationBase
+                        nusimdata::SimulationBase
                         ART_FRAMEWORK_CORE
 			ART_FRAMEWORK_PRINCIPAL
 			ART_FRAMEWORK_SERVICES_REGISTRY
@@ -28,19 +28,19 @@ art_make(
 			ROOT::Core
 			ART_ROOT_IO_TFILESERVICE_SERVICE
                         ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE
-			art_Persistency_Common canvas
-			art_Persistency_Provenance canvas
-			art_Utilities canvas
+			art::Persistency_Common canvas
+			art::Persistency_Provenance canvas
+			art::Utilities canvas
 			messagefacility::MF_MessageLogger
 			
-	                FHICLCPP
-			cetlib cetlib_except
+	                fhiclcpp::fhiclcpp
+			cetlib::cetlib cetlib_except
                         CLHEP
 			ROOT_BASIC_LIB_LIST
                         ROOT_MINUIT
 			ROOT_MINUIT2	
-                        ${Boost_FILESYSTEM_LIBRARY}
-                        ${Boost_SYSTEM_LIBRARY}
+                        Boost::filesystem
+                        
         )
 
 #add_subdirectory(Cluster3DAlgs)

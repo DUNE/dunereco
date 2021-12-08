@@ -14,20 +14,19 @@
 #                           lardataobj_RecoBase
 #                           larcorealg_Geometry
 #                           larcore_Geometry_Geometry_service
-#                           nurandom_RandomUtils_NuRandomService_service
-#                           nusimdata_SimulationBase
-#                           ${ART_FRAMEWORK_CORE}
-#                           ${ART_FRAMEWORK_PRINCIPAL}
-#                           ${ART_FRAMEWORK_SERVICES_REGISTRY}
+#                           nurandom::RandomUtils_NuRandomService_service
+#                           nusimdata::SimulationBase
+#                           art::Framework_Core
+#                           art::Framework_Principal
+#                           art::Framework_Services_Registry
 #                           ${ART_FRAMEWORK_SERVICES_BASIC}
-#                           ${ART_ROOT_IO_TFILE_SUPPORT} ROOT::Core
-#                           ${ART_ROOT_IO_TFILESERVICE_SERVICE}
-#                           art_Persistency_Common canvas
-#                           art_Utilities canvas
-#                           ${messagefacility::MF_MessageLogger}
-#                           
-#                           ${FHICLCPP}
-#                           cetlib cetlib_except
+#                           art_root_io::tfile_support ROOT::Core
+#                           art_root_io::TFileService_service
+#                           art::Persistency_Common canvas
+#                           art::Utilities canvas
+#                           messagefacility::MF_MessageLogger
+#                           fhiclcpp::fhiclcpp
+#                           cetlib::cetlib cetlib_except
 #         )
 
 install_headers()

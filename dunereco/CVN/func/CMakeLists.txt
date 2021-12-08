@@ -4,7 +4,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 art_make( BASENAME_ONLY
 #  LIBRARY_NAME     CVNFunc
-  LIB_LIBRARIES    nusimdata_SimulationBase
+  LIB_LIBRARIES    nusimdata::SimulationBase
   larcorealg_Geometry
   larcorealg_GeoAlgo
   lardataobj_RecoBase
@@ -13,15 +13,15 @@ art_make( BASENAME_ONLY
   ART_FRAMEWORK_CORE
   ART_FRAMEWORK_PRINCIPAL
   ART_FRAMEWORK_SERVICES_REGISTRY
-  art_Persistency_Provenance
+  art::Persistency_Provenance
   messagefacility::MF_MessageLogger
-  art_Persistency_Common canvas
-  art_Persistency_Provenance canvas
-  art_Utilities canvas
-  cetlib cetlib_except
-  canvas
-  ${Boost_FILESYSTEM_LIBRARY}            
-  ${Boost_SYSTEM_LIBRARY}
+  art::Persistency_Common canvas
+  art::Persistency_Provenance canvas
+  art::Utilities canvas
+  cetlib::cetlib cetlib_except
+  canvas::canvas
+  Boost::filesystem            
+  
   ROOT_BASIC_LIB_LIST
   DICT_LIBRARIES   lardataobj_RecoBase
   dune_CVN_func

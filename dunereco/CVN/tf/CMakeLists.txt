@@ -6,7 +6,8 @@ art_make(BASENAME_ONLY
   LIB_LIBRARIES
   pthread
   PROTOBUF
-  ${TENSORFLOW}
+  TENSORFLOW_CC
+  TENSORFLOW_FRAMEWORK
   )
 
 install_headers()

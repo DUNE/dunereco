@@ -8,7 +8,7 @@ art_make(
     lardataobj_RecoBase
     lardataobj_AnalysisBase
     lardata_Utilities
-    nusimdata_SimulationBase
+    nusimdata::SimulationBase
     larsim_MCCheater_BackTrackerService_service           
     larsim_MCCheater_ParticleInventoryService_service
     ART_FRAMEWORK_CORE
@@ -17,14 +17,14 @@ art_make(
     ART_ROOT_IO_TFILE_SUPPORT
     ROOT::Core
     ART_ROOT_IO_TFILESERVICE_SERVICE
-    art_Persistency_Common
-    art_Persistency_Provenance
-    art_Utilities
-    canvas
+    art::Persistency_Common
+    art::Persistency_Provenance
+    art::Utilities
+    canvas::canvas
     messagefacility::MF_MessageLogger
-    FHICLCPP
-    cetlib cetlib_except
-    ${Boost_SYSTEM_LIBRARY}
+    fhiclcpp::fhiclcpp
+    cetlib::cetlib cetlib_except
+    
     ROOT_BASIC_LIB_LIST
     dune_AnaUtils
     dune_TrackPID_tf

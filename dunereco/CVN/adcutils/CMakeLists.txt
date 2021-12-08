@@ -18,19 +18,19 @@ cet_build_plugin(SPMultiTpcDump art::module
 			larreco_Calorimetry
 			larrecodnn_ImagePatternAlgs_Tensorflow_PointIdAlg
 			larreco_RecoAlg_PMAlg
-			nusimdata_SimulationBase
+			nusimdata::SimulationBase
 			ART_FRAMEWORK_CORE
 			ART_FRAMEWORK_PRINCIPAL
 			ART_FRAMEWORK_SERVICES_REGISTRY
 			ROOT::Core
 			ART_ROOT_IO_TFILESERVICE_SERVICE
- 			art_Persistency_Common
-			art_Persistency_Provenance
-			art_Utilities
-			canvas
+ 			art::Persistency_Common
+			art::Persistency_Provenance
+			art::Utilities
+			canvas::canvas
 			messagefacility::MF_MessageLogger
 			
-			cetlib cetlib_except
+			cetlib::cetlib cetlib_except
 			ROOT_BASIC_LIB_LIST
       GLOBIMAGE
 )

@@ -10,8 +10,8 @@ cet_build_plugin(SNSlicer art::module
                         larsim_Simulation
                         lardataobj_RawData
 			lardataobj_RecoBase
-			nusimdata_SimulationBase
-                        nug4_ParticleNavigation
+			nusimdata::SimulationBase
+                        nug4::ParticleNavigation
                         lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
                         ART_FRAMEWORK_CORE
                         ART_FRAMEWORK_PRINCIPAL
@@ -19,9 +19,9 @@ cet_build_plugin(SNSlicer art::module
                         ART_ROOT_IO_TFILE_SUPPORT
                         ROOT::Core
                         ART_ROOT_IO_TFILESERVICE_SERVICE
-                        art_Persistency_Common canvas_Persistency_Common
-                        art_Persistency_Provenance canvas_Persistency_Provenance
-                        art_Utilities canvas_Utilities
+                        art::Persistency_Common canvas_Persistency_Common
+                        art::Persistency_Provenance canvas_Persistency_Provenance
+                        art::Utilities canvas_Utilities
                         messagefacility::MF_MessageLogger
                         
                         CETLIB
@@ -32,9 +32,9 @@ cet_make( LIBRARIES lardataobj_RawData
                     canvas_Persistency_Common
                     canvas_Persistency_Provenance
                     canvas_Utilities
-                    MF_MessageLogger
+                    messagefacility::MF_MessageLogger
                     
-                    cetlib
+                    cetlib::cetlib
                     ROOT_BASIC_LIB_LIST
                     NO_DICTIONARY )
 
