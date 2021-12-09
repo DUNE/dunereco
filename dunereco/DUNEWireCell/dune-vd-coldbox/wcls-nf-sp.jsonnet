@@ -154,7 +154,7 @@ local sinks = magnify(tools, magoutput);
 local nfsp_pipes = [
   g.pipeline([
                chsel_pipes[n],
-               sinks.orig_pipe[n],
+               // sinks.orig_pipe[n],
 
                // nf_pipes[n],
                // sinks.raw_pipe[n],
