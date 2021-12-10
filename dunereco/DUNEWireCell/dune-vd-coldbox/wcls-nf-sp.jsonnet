@@ -78,6 +78,13 @@ local mega_anode = {
     anodes_tn: [wc.tn(anode) for anode in tools.anodes],
   },
 };
+
+local planemaps = {
+  dunevd_3view: {"1":0, "2":3, "4":2},
+  default: {"1":0, "2":1, "4":2}
+};
+local planemap = planemaps[std.extVar("geo_planeid_labels")];
+
 local wcls_output = {
   // The noise filtered "ADC" values.  These are truncated for
   // art::Event but left as floats for the WCT SP.  Note, the tag
@@ -107,9 +114,10 @@ local wcls_output = {
     data: {
       // anode: wc.tn(tools.anode),
       anode: wc.tn(mega_anode),
+      plane_map: planemap,
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
-      frame_scale: [0.001, 0.001],
+      frame_scale: [1.0, 1.0],
       // nticks: params.daq.nticks,
       chanmaskmaps: [],
       nticks: -1,
@@ -160,7 +168,7 @@ local nfsp_pipes = [
                // sinks.raw_pipe[n],
 
                sp_pipes[n],
-               sinks.decon_pipe[n],
+               // sinks.decon_pipe[n],
                // sinks.threshold_pipe[n],
                // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
              ],

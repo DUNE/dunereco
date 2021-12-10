@@ -987,6 +987,13 @@ dune_vd_coldbox_nfsp : {
          # epoch: "perfect"
          epoch: "after"
          signal_output_form: "sparse"
+
+         # set mapping between internal wct plane ids and larsoft
+         # WCT assumes kU, kV, kW regardless of orientation. 
+         # Larsoft expects kY for 2nd induction plane for this geometry
+         # Set the mapping as kU->kU, kV->kY, kW->kW in the jsonnet
+         geo_planeid_labels: "dunevd_3view"
+
       }
    }
 }
