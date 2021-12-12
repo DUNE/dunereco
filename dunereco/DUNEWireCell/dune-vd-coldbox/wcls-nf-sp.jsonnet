@@ -159,18 +159,24 @@ local magoutput = 'protodune-data-check.root';
 local magnify = import 'pgrapher/experiment/dune-vd-coldbox/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
+local use_magnify = std.extVar("use_magnify");
 local nfsp_pipes = [
-  g.pipeline([
+  g.pipeline(
+             if use_magnify =='true' then
+             [
                chsel_pipes[n],
-               // sinks.orig_pipe[n],
-
+               sinks.orig_pipe[n],
                // nf_pipes[n],
                // sinks.raw_pipe[n],
-
                sp_pipes[n],
-               // sinks.decon_pipe[n],
+               sinks.decon_pipe[n],
                // sinks.threshold_pipe[n],
                // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
+             ]
+             else [
+               chsel_pipes[n],
+               // nf_pipes[n],
+               sp_pipes[n],
              ],
              'nfsp_pipe_%d' % n)
   for n in std.range(0, std.length(tools.anodes) - 1)

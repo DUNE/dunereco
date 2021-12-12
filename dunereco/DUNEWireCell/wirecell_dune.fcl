@@ -994,6 +994,7 @@ dune_vd_coldbox_nfsp : {
          # Set the mapping as kU->kU, kV->kY, kW->kW in the jsonnet
          geo_planeid_labels: "dunevd_3view"
 
+         use_magnify: "false"
       }
    }
 }
