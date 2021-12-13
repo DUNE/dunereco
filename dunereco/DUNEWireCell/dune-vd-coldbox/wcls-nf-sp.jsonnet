@@ -117,7 +117,7 @@ local wcls_output = {
       plane_map: planemap,
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
-      frame_scale: [1.0, 1.0],
+      frame_scale: [0.005, 0.005],
       // nticks: params.daq.nticks,
       chanmaskmaps: [],
       nticks: -1,
