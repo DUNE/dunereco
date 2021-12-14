@@ -194,7 +194,7 @@ dunefd_hitfinderfd.DisambigAlg.DistanceCutClu: 100
 
 # gauss hit finder for VD module
 dunevdfd_gaushitfinder: @local::gaus_hitfinder
-dunevdfd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane0.RoiThreshold: 6.0
+dunevdfd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane0.RoiThreshold: 0.6
 dunevdfd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane1.RoiThreshold: 0.6
 dunevdfd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane2.RoiThreshold: 0.6
 dunevdfd_gaushitfinder.InitWidth: [6.0, 6.0, 6.0]
