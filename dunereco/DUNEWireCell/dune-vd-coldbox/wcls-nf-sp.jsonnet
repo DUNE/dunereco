@@ -78,6 +78,13 @@ local mega_anode = {
     anodes_tn: [wc.tn(anode) for anode in tools.anodes],
   },
 };
+
+local planemaps = {
+  dunevd_3view: {"1":0, "2":3, "4":2},
+  default: {"1":0, "2":1, "4":2}
+};
+local planemap = planemaps[std.extVar("geo_planeid_labels")];
+
 local wcls_output = {
   // The noise filtered "ADC" values.  These are truncated for
   // art::Event but left as floats for the WCT SP.  Note, the tag
@@ -107,9 +114,10 @@ local wcls_output = {
     data: {
       // anode: wc.tn(tools.anode),
       anode: wc.tn(mega_anode),
+      plane_map: planemap,
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
-      frame_scale: [0.001, 0.001],
+      frame_scale: [0.005, 0.005],
       // nticks: params.daq.nticks,
       chanmaskmaps: [],
       nticks: -1,
@@ -151,18 +159,24 @@ local magoutput = 'protodune-data-check.root';
 local magnify = import 'pgrapher/experiment/dune-vd-coldbox/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
+local use_magnify = std.extVar("use_magnify");
 local nfsp_pipes = [
-  g.pipeline([
+  g.pipeline(
+             if use_magnify =='true' then
+             [
                chsel_pipes[n],
                sinks.orig_pipe[n],
-
                // nf_pipes[n],
                // sinks.raw_pipe[n],
-
                sp_pipes[n],
                sinks.decon_pipe[n],
                // sinks.threshold_pipe[n],
                // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
+             ]
+             else [
+               chsel_pipes[n],
+               // nf_pipes[n],
+               sp_pipes[n],
              ],
              'nfsp_pipe_%d' % n)
   for n in std.range(0, std.length(tools.anodes) - 1)

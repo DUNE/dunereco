@@ -961,4 +961,42 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_data_nfsp : {
    }
 }
 
+dune_vd_coldbox_nfsp : {
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+      logsinks: ["stdout"]
+      loglevels: ["debug", "pgraph:info"]
+      # Libraries in which to look for WCT components
+      plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
+      inputers: ["wclsCookedFrameSource"
+         # To use wclsMultiChannelNoiseDB you must also put epoch:dynamic below
+         # and you must have geo::Geometry service in your environment.
+         # ,"wclsMultiChannelNoiseDB"  
+      ]
+      # outputers: ["wclsFrameSaver:nfsaver", "wclsFrameSaver:spsaver"]
+      outputers: ["wclsFrameSaver:spsaver"]
+      configs: ["pgrapher/experiment/dune-vd-coldbox/wcls-nf-sp.jsonnet"]
+      params : {
+         # raw_input_label: "tpcrawdecoder:daq"
+         raw_input_label: "caldata:dataprep"
+         reality: "data"
+         # reality: "sim"
+         # epoch: "dynamic"
+         # epoch: "perfect"
+         epoch: "after"
+         signal_output_form: "sparse"
+
+         # set mapping between internal wct plane ids and larsoft
+         # WCT assumes kU, kV, kW regardless of orientation. 
+         # Larsoft expects kY for 2nd induction plane for this geometry
+         # Set the mapping as kU->kU, kV->kY, kW->kW in the jsonnet
+         geo_planeid_labels: "dunevd_3view"
+
+         use_magnify: "false"
+      }
+   }
+}
+
 END_PROLOG
