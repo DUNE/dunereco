@@ -1,11 +1,11 @@
 /**
 *
-* @file dune/AnaUtils/DUNEAnaPFParticleUtils.cxx
+* @file dunereco/AnaUtils/DUNEAnaPFParticleUtils.cxx
 *
 * @brief Utility containing helpful functions for end users to access information about PFParticles
 */
 
-#include "dune/AnaUtils/DUNEAnaPFParticleUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaPFParticleUtils.h"
 
 #include "cetlib_except/exception.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"

@@ -45,11 +45,11 @@
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 
-#include "dune/RegCNN/art/RegPixelMapProducer.h"
-#include "dune/RegCNN/art/RegPixelMap3DProducer.h"
-#include "dune/RegCNN/func/RegPixelMap.h"
-#include "dune/RegCNN/func/RegPixelMap3D.h"
-#include "dune/RegCNN/func/RegCNNResult.h"
+#include "dunereco/RegCNN/art/RegPixelMapProducer.h"
+#include "dunereco/RegCNN/art/RegPixelMap3DProducer.h"
+#include "dunereco/RegCNN/func/RegPixelMap.h"
+#include "dunereco/RegCNN/func/RegPixelMap3D.h"
+#include "dunereco/RegCNN/func/RegCNNResult.h"
 
 namespace lar_pandora{class LArPandoraHelper;}
 

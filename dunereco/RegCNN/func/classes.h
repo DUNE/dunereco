@@ -1,6 +1,6 @@
-#include "dune/RegCNN/func/RegPixelMap.h"
-#include "dune/RegCNN/func/RegPixelMap3D.h"
-#include "dune/RegCNN/func/RegCNNResult.h"
+#include "dunereco/RegCNN/func/RegPixelMap.h"
+#include "dunereco/RegCNN/func/RegPixelMap3D.h"
+#include "dunereco/RegCNN/func/RegCNNResult.h"
 #include "lardataobj/RecoBase/Cluster.h"
 
 #include "canvas/Persistency/Common/Assns.h"

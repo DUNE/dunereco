@@ -5,7 +5,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include  <iostream>
-#include "dune/CVN/func/SparsePixelMap.h"
+#include "dunereco/CVN/func/SparsePixelMap.h"
 #include "canvas/Utilities/Exception.h"
 
 

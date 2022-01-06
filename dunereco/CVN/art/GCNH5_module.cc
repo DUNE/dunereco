@@ -16,8 +16,8 @@
 
 // Data product includes
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "dune/CVN/func/GCNGraph.h"
-#include "dune/CVN/func/GCNFeatureUtils.h"
+#include "dunereco/CVN/func/GCNGraph.h"
+#include "dunereco/CVN/func/GCNFeatureUtils.h"
 
 #include "hep_hpc/hdf5/make_ntuple.hpp"
 

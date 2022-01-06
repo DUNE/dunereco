@@ -1,11 +1,11 @@
 /**
 *
-* @file dune/AnaUtils/DUNEAnaSliceUtils.cxx
+* @file dunereco/AnaUtils/DUNEAnaSliceUtils.cxx
 *
 * @brief Utility containing helpful functions for end users to access information about Slices
 */
 
-#include "dune/AnaUtils/DUNEAnaSliceUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaSliceUtils.h"
 
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Slice.h"

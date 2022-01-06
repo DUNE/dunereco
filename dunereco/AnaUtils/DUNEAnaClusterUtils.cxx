@@ -1,11 +1,11 @@
 /**
 *
-* @file dune/AnaUtils/DUNEAnaClusterUtils.cxx
+* @file dunereco/AnaUtils/DUNEAnaClusterUtils.cxx
 *
 * @brief Utility containing helpful functions for end users to access information about Clusters
 */
 
-#include "dune/AnaUtils/DUNEAnaClusterUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaClusterUtils.h"
 
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"

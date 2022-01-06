@@ -13,7 +13,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
-#include "dune/RegCNN/art/RegCNNVtxHandler.h"
+#include "dunereco/RegCNN/art/RegCNNVtxHandler.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 namespace cnn

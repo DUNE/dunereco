@@ -21,10 +21,10 @@
 // LArSoft includes
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
-#include "dune/CVN/func/GCNGraph.h"
-#include "dune/CVN/func/GCNFeatureUtils.h"
+#include "dunereco/CVN/func/GCNGraph.h"
+#include "dunereco/CVN/func/GCNFeatureUtils.h"
 
-#include "dune/CVN/func/CVNProtoDUNEUtils.h"
+#include "dunereco/CVN/func/CVNProtoDUNEUtils.h"
 
 namespace cvn {
 

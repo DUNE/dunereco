@@ -1,7 +1,7 @@
 #include <vector>
 #include <iostream>
 
-#include "dune/RegCNN/func/RegCNNImageUtils.h"
+#include "dunereco/RegCNN/func/RegCNNImageUtils.h"
 
 cnn::RegCNNImageUtils::RegCNNImageUtils(){
   // Set a default image size

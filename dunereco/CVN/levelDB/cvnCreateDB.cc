@@ -26,7 +26,7 @@
 #include "TGraph.h"
 
 // CVN stuff
-#include "dune/CVN/func/CVNImageUtils.h"
+#include "dunereco/CVN/func/CVNImageUtils.h"
 //#include "CVN/art/CaffeNetHandler.h"
 
 // Caffe stuff

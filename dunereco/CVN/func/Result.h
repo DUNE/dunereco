@@ -10,7 +10,7 @@
 
 #include <math.h>
 #include <vector>
-#include "dune/CVN/func/InteractionType.h"
+#include "dunereco/CVN/func/InteractionType.h"
 
 namespace cvn
 {

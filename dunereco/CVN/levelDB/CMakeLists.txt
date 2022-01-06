@@ -40,7 +40,7 @@ art_make_exec( cvnCreateZlibImages
                          fhiclcpp::fhiclcpp
                          CETLIB
                          ROOT_BASIC_LIB_LIST
-                         dune_CVN_func
+                         dunereco_CVN_func
                )
 
 

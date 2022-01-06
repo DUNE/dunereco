@@ -14,7 +14,7 @@
 #ifndef SPMultiTpcDump_Module
 #define SPMultiTpcDump_Module
 
-#include "dune/CVN/adcutils/EventImageData.h"
+#include "dunereco/CVN/adcutils/EventImageData.h"
 
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"

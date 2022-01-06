@@ -18,8 +18,8 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 #include "lardataobj/RecoBase/Hit.h"
-#include "dune/CVN/func/GCNGraph.h"
-#include "dune/CVN/art/PixelMapProducer.h"
+#include "dunereco/CVN/func/GCNGraph.h"
+#include "dunereco/CVN/art/PixelMapProducer.h"
 #include "larsim/MCCheater/BackTrackerService.h"
 
 #include <memory>

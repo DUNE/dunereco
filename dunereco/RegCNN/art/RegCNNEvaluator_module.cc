@@ -45,11 +45,11 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 
-#include "dune/RegCNN/func/RegCNNResult.h"
-#include "dune/RegCNN/func/RegPixelMap.h"
-#include "dune/RegCNN/art/TFRegNetHandler.h"
-#include "dune/RegCNN/art/RegCNNVtxHandler.h"
-#include "dune/RegCNN/art/RegCNNNumuHandler.h"
+#include "dunereco/RegCNN/func/RegCNNResult.h"
+#include "dunereco/RegCNN/func/RegPixelMap.h"
+#include "dunereco/RegCNN/art/TFRegNetHandler.h"
+#include "dunereco/RegCNN/art/RegCNNVtxHandler.h"
+#include "dunereco/RegCNN/art/RegCNNNumuHandler.h"
 
 namespace cnn {
 

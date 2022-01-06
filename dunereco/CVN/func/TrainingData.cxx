@@ -6,7 +6,7 @@
 
 //#include "art/Framework/Services/Registry/ServiceHandle.h"
 
-#include "dune/CVN/func/TrainingData.h"
+#include "dunereco/CVN/func/TrainingData.h"
 //#include "MCCheater/BackTracker.h"
 
 namespace cvn

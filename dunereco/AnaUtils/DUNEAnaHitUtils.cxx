@@ -1,6 +1,6 @@
 /**
 *
-* @file dune/AnaUtils/DUNEAnaHitUtils.cxx
+* @file dunereco/AnaUtils/DUNEAnaHitUtils.cxx
 *
 * @brief Utility containing helpful functions for end users to access information about hits
 */
@@ -16,7 +16,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 //DUNE
-#include "dune/AnaUtils/DUNEAnaHitUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaHitUtils.h"
 
 namespace dune_ana
 {

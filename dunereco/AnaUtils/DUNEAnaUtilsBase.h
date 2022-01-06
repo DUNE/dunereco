@@ -1,6 +1,6 @@
 /**
  *
- * @file dune/AnaUtils/DUNEAnaUtilsBase.h
+ * @file dunereco/AnaUtils/DUNEAnaUtilsBase.h
  *
  * @brief Base class containing functionality to extract products from the event
 */

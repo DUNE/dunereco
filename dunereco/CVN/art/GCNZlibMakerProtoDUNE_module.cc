@@ -20,11 +20,11 @@
 #include "larsim/MCCheater/ParticleInventoryService.h"
 // Data products
 #include "nusimdata/SimulationBase/MCParticle.h"
-#include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
+#include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 
 // CVN includes
-#include "dune/CVN/func/AssignLabels.h"
-#include "dune/CVN/func/GCNGraph.h"
+#include "dunereco/CVN/func/AssignLabels.h"
+#include "dunereco/CVN/func/GCNGraph.h"
 
 // Compression
 #include "zlib.h"

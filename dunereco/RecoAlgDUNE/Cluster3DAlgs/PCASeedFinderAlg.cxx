@@ -8,7 +8,7 @@
  */
 
 // The main include
-#include "dune/RecoAlgDUNE/Cluster3DAlgs/PCASeedFinderAlg.h"
+#include "dunereco/RecoAlgDUNE/Cluster3DAlgs/PCASeedFinderAlg.h"
 // Framework Includes
 
 // LArSoft includes

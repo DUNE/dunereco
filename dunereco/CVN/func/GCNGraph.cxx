@@ -7,8 +7,8 @@
 #include <cassert>
 #include <iostream>
 #include <ostream>
-#include "dune/CVN/func/GCNGraph.h"
-#include "dune/CVN/func/GCNGraphNode.h"
+#include "dunereco/CVN/func/GCNGraph.h"
+#include "dunereco/CVN/func/GCNGraphNode.h"
 
 namespace cvn
 {

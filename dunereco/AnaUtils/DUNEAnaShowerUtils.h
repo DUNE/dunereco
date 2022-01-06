@@ -1,6 +1,6 @@
 /**
  *
- * @file dune/AnaUtils/DUNEAnaShowerUtils.h
+ * @file dunereco/AnaUtils/DUNEAnaShowerUtils.h
  *
  * @brief Utility containing helpful functions for end users to access information about Showers
 */
@@ -10,7 +10,7 @@
 
 #include "art/Framework/Principal/Event.h"
 
-#include "dune/AnaUtils/DUNEAnaUtilsBase.h"
+#include "dunereco/AnaUtils/DUNEAnaUtilsBase.h"
 
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"

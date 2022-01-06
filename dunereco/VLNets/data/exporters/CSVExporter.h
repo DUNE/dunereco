@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 
-#include "dune/VLNets/data/structs/VarDict.h"
+#include "dunereco/VLNets/data/structs/VarDict.h"
 
 class CSVExporter
 {

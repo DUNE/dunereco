@@ -27,11 +27,11 @@
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Shower.h"
 
-#include "dune/CVN/art/PixelMapProducer.h"
-#include "dune/CVN/func/PixelMap.h"
-#include "dune/CVN/func/TrainingData.h"
+#include "dunereco/CVN/art/PixelMapProducer.h"
+#include "dunereco/CVN/func/PixelMap.h"
+#include "dunereco/CVN/func/TrainingData.h"
 
-#include "dune/CVN/func/CVNProtoDUNEUtils.h"
+#include "dunereco/CVN/func/CVNProtoDUNEUtils.h"
 
 namespace cvn {
 

@@ -4,5 +4,5 @@
 
 # install xml files
 file(GLOB xml_file *.xml )
-install(FILES ${xml_file} DESTINATION ${dunetpc_SCRIPTS_DIR})
+install(FILES ${xml_file} DESTINATION ${dunereco_SCRIPTS_DIR})
 

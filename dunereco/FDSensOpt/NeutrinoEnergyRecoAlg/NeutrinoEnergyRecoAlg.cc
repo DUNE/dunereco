@@ -1,5 +1,5 @@
 /**
-*  @file   dune/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.cc
+*  @file   dunereco/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.cc
 
 *  @brief  Implementation file for the neutrino energy reconstruction algorithm.  A heavily refactored version of Nick Grant's module
 *
@@ -21,12 +21,12 @@
 #include "lardataobj/RecoBase/Wire.h"
 #include "larreco/RecoAlg/TrackMomentumCalculator.h"
 //DUNE
-#include "dune/AnaUtils/DUNEAnaEventUtils.h"
-#include "dune/AnaUtils/DUNEAnaHitUtils.h"
-#include "dune/AnaUtils/DUNEAnaShowerUtils.h"
-#include "dune/AnaUtils/DUNEAnaTrackUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaEventUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaHitUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaShowerUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaTrackUtils.h"
 
-#include "dune/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.h"
+#include "dunereco/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.h"
 
 namespace dune
 {

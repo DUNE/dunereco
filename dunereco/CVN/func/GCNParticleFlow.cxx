@@ -5,7 +5,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include <sstream>
-#include "dune/CVN/func/GCNParticleFlow.h"
+#include "dunereco/CVN/func/GCNParticleFlow.h"
 
 namespace cvn
 {

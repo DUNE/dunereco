@@ -23,8 +23,8 @@ art_make(
     cetlib::cetlib cetlib_except
     
     ROOT_BASIC_LIB_LIST
-    dune_CVN_func
-    dune_TrackPID_products
+    dunereco_CVN_func
+    dunereco_TrackPID_products
 )
 
 install_headers()

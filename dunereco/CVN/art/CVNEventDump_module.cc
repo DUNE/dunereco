@@ -31,12 +31,12 @@
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 
-#include "dune/CVN/func/AssignLabels.h"
-#include "dune/CVN/func/TrainingData.h"
-#include "dune/CVN/func/InteractionType.h"
-#include "dune/CVN/func/PixelMap.h"
-#include "dune/FDSensOpt/MVAAlg/MVAAlg.h"
-#include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
+#include "dunereco/CVN/func/AssignLabels.h"
+#include "dunereco/CVN/func/TrainingData.h"
+#include "dunereco/CVN/func/InteractionType.h"
+#include "dunereco/CVN/func/PixelMap.h"
+#include "dunereco/FDSensOpt/MVAAlg/MVAAlg.h"
+#include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 
 
 

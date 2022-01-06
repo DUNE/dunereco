@@ -3,9 +3,9 @@
 #include <string>
 #include <vector>
 
-#include "dune/VLNets/data/structs/VarDict.h"
-#include "dune/VLNets/data/structs/VLNEnergy.h"
-#include "dune/VLNets/models/tf_model/TFModel.h"
+#include "dunereco/VLNets/data/structs/VarDict.h"
+#include "dunereco/VLNets/data/structs/VLNEnergy.h"
+#include "dunereco/VLNets/models/tf_model/TFModel.h"
 
 namespace VLN
 {

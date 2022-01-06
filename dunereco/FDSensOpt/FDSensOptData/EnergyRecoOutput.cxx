@@ -1,4 +1,4 @@
-#include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
+#include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 
 namespace dunemva
 {

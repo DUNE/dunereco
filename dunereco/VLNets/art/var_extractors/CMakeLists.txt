@@ -12,7 +12,7 @@ art_make_library(
         VarExtractorBase.cxx
         utils.cxx
     LIBRARIES
-        dune_AnaUtils
+        dunereco_AnaUtils
         larreco_Calorimetry
 )
 

@@ -2,7 +2,7 @@
 #include <iostream>
 #include <ctime>
 
-#include "dune/CVN/func/GCNFeatureUtils.h"
+#include "dunereco/CVN/func/GCNFeatureUtils.h"
 #include "canvas/Persistency/Common/Assns.h"
 #include "art/Framework/Principal/Event.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
@@ -11,9 +11,9 @@
 #include "larsim/MCCheater/BackTrackerService.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
 
-#include "dune/CVN/func/GCNGraph.h"
-#include "dune/CVN/func/GCNGraphNode.h"
-#include "dune/CVN/func/PixelMap.h"
+#include "dunereco/CVN/func/GCNGraph.h"
+#include "dunereco/CVN/func/GCNGraphNode.h"
+#include "dunereco/CVN/func/PixelMap.h"
 
 #include "TVector3.h"
 

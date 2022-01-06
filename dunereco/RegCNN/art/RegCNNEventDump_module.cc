@@ -41,8 +41,8 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "larsim/MCCheater/BackTracker.h"
 
-#include "dune/RegCNN/func/RegPixelMap.h"
-#include "dune/RegCNN/func/RegPixelMap3D.h"
+#include "dunereco/RegCNN/func/RegPixelMap.h"
+#include "dunereco/RegCNN/func/RegPixelMap3D.h"
 
 namespace cnn {
   class RegCNNEventDump : public art::EDAnalyzer {

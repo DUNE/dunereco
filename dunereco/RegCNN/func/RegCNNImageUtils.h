@@ -9,7 +9,7 @@
 
 #include <vector>
 
-#include "dune/RegCNN/func/RegPixelMap.h"
+#include "dunereco/RegCNN/func/RegPixelMap.h"
 
 namespace cnn
 {

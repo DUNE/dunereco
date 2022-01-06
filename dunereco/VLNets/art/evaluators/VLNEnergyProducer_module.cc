@@ -1,8 +1,8 @@
 #include "art/Framework/Core/EDProducer.h"
 #include "art/Framework/Core/ModuleMacros.h"
 
-#include "dune/VLNets/art/var_extractors/DefaultInputVarExtractor.h"
-#include "dune/VLNets/models/zoo/VLNEnergyModel.h"
+#include "dunereco/VLNets/art/var_extractors/DefaultInputVarExtractor.h"
+#include "dunereco/VLNets/models/zoo/VLNEnergyModel.h"
 
 namespace VLN {
 

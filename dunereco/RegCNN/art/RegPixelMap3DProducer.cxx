@@ -11,7 +11,7 @@
 
 #include "larcorealg/Geometry/Exceptions.h" // geo::InvalidWireError
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "dune/RegCNN/art/RegPixelMap3DProducer.h"
+#include "dunereco/RegCNN/art/RegPixelMap3DProducer.h"
 #include "TVector2.h"
 
 namespace cnn

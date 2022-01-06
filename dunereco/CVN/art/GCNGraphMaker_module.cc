@@ -24,9 +24,9 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
-#include "dune/CVN/func/GCNGraph.h"
-#include "dune/CVN/func/GCNParticleFlow.h"
-#include "dune/CVN/func/GCNFeatureUtils.h"
+#include "dunereco/CVN/func/GCNGraph.h"
+#include "dunereco/CVN/func/GCNParticleFlow.h"
+#include "dunereco/CVN/func/GCNFeatureUtils.h"
 
 namespace cvn {
 

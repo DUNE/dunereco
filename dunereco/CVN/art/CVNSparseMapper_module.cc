@@ -23,8 +23,8 @@
 // LArSoft includes
 #include "lardataobj/RecoBase/Hit.h"
 
-#include "dune/CVN/art/PixelMapProducer.h"
-#include "dune/CVN/func/SparsePixelMap.h"
+#include "dunereco/CVN/art/PixelMapProducer.h"
+#include "dunereco/CVN/func/SparsePixelMap.h"
 
 namespace cvn {
 

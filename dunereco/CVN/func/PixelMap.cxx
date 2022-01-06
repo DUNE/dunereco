@@ -7,7 +7,7 @@
 #include <cassert>
 #include <iostream>
 #include <ostream>
-#include "dune/CVN/func/PixelMap.h"
+#include "dunereco/CVN/func/PixelMap.h"
 
 namespace cvn
 {

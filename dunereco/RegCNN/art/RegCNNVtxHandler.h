@@ -13,9 +13,9 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
-#include "dune/RegCNN/art/RegPixelMapProducer.h"
-#include "dune/RegCNN/func/RegPixelMap.h"
-#include "dune/RegCNN/art/TFRegNetHandler.h"
+#include "dunereco/RegCNN/art/RegPixelMapProducer.h"
+#include "dunereco/RegCNN/func/RegPixelMap.h"
+#include "dunereco/RegCNN/art/TFRegNetHandler.h"
 
 namespace cnn
 {

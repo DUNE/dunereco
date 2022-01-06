@@ -11,8 +11,8 @@
 #include "canvas/Utilities/Exception.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "dune/RegCNN/art/TFRegNetHandler.h"
-#include "dune/RegCNN/func/RegCNNImageUtils.h"
+#include "dunereco/RegCNN/art/TFRegNetHandler.h"
+#include "dunereco/RegCNN/func/RegCNNImageUtils.h"
 
 #include "TH2D.h"
 #include "TCanvas.h"

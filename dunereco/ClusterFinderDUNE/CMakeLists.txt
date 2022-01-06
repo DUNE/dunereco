@@ -1,11 +1,11 @@
 
 #art_make( 
-#	  LIBRARY_NAME  dune_ClusterFinderDUNE          
+#	  LIBRARY_NAME  dunereco_ClusterFinderDUNE          
 #          LIB_LIBRARIES larcorealg_Geometry
-#	  		dune_RecoAlgDUNE
+#	  		dunereco_RecoAlgDUNE
 #                        lardataobj_RecoBase
 #                        larreco_RecoAlg_ClusterRecoUtil
-#          MODULE_LIBRARIES dune_RecoAlgDUNE_Cluster3DAlgs
+#          MODULE_LIBRARIES dunereco_RecoAlgDUNE_Cluster3DAlgs
 #                           larreco_RecoAlg_ClusterRecoUtil			   
 #                           larreco_ClusterFinder
 #                           larsim_MCCheater_BackTrackerService_service

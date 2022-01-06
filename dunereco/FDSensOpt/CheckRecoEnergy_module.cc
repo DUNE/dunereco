@@ -25,7 +25,7 @@
 #include "nugen/NuReweight/art/NuReweight.h"
 #include "Framework/Utils/AppInit.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
+#include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 
 #include "TH1D.h"
 #include "TF1.h"

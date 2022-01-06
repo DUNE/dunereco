@@ -1,11 +1,11 @@
 /**
 *
-* @file dune/AnaUtils/DUNEAnaSpacePointUtils.cxx
+* @file dunereco/AnaUtils/DUNEAnaSpacePointUtils.cxx
 *
 * @brief Utility containing helpful functions for end users to access information about SpacePoints
 */
 
-#include "dune/AnaUtils/DUNEAnaSpacePointUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaSpacePointUtils.h"
 
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"

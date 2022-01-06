@@ -24,8 +24,8 @@ namespace detinfo {
   class DetectorClocksData;
 }
 
-#include "dune/CVN/func/GCNGraph.h"
-#include "dune/CVN/func/PixelMap.h"
+#include "dunereco/CVN/func/GCNGraph.h"
+#include "dunereco/CVN/func/PixelMap.h"
 
 namespace cvn
 {

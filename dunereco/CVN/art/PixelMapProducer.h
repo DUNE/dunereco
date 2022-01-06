@@ -14,9 +14,9 @@
 // Framework includes
 #include "art/Framework/Principal/Handle.h"
 
-#include "dune/CVN/func/PixelMap.h"
-#include "dune/CVN/func/SparsePixelMap.h"
-#include "dune/CVN/func/Boundary.h"
+#include "dunereco/CVN/func/PixelMap.h"
+#include "dunereco/CVN/func/SparsePixelMap.h"
+#include "dunereco/CVN/func/Boundary.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 

@@ -12,7 +12,7 @@
 
 #include "lardataobj/RecoBase/OpHit.h"
 
-#include "dune/SNSlicer/SNSlice.h"
+#include "dunereco/SNSlicer/SNSlice.h"
 
 namespace{
   double mysqr(double x){return x*x;}

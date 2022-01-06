@@ -10,8 +10,8 @@
 #include <ostream>
 #include <vector>
 
-#include "dune/RegCNN/func/RegCNNBoundary3D.h"
-#include "dune/RegCNN/func/HitType.h"
+#include "dunereco/RegCNN/func/RegCNNBoundary3D.h"
+#include "dunereco/RegCNN/func/HitType.h"
 #include "TH3F.h"
 #include "TAxis.h"
 

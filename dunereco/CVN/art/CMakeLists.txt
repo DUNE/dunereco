@@ -35,8 +35,8 @@ art_make(BASENAME_ONLY
 #  LIBRARY_NAME      CVNArt
   EXCLUDE ${EXCLUDE_TF}
   EXCLUDE ${EXCLUDE_HEPHPC}
-  LIB_LIBRARIES dune_CVN_func
-  dune_CVN_tf
+  LIB_LIBRARIES dunereco_CVN_func
+  dunereco_CVN_tf
   ART_FRAMEWORK_CORE
   ART_FRAMEWORK_PRINCIPAL
   ART_FRAMEWORK_SERVICES_REGISTRY
@@ -61,9 +61,9 @@ art_make(BASENAME_ONLY
   HDF5LIB
   MVAAlg
   boost_filesystem
-  MODULE_LIBRARIES dune_CVN_func
-  dune_CVN_tf
-  dune_CVN_art
+  MODULE_LIBRARIES dunereco_CVN_func
+  dunereco_CVN_tf
+  dunereco_CVN_art
   stdc++fs
   )
 

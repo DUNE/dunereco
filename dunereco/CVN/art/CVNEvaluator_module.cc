@@ -21,12 +21,12 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "canvas/Persistency/Common/Assns.h"
 
-#include "dune/CVN/func/Result.h"
-#include "dune/CVN/func/PixelMap.h"
-//#include "dune/CVN/art/CaffeNetHandler.h"
-#include "dune/CVN/art/TFNetHandler.h"
-#include "dune/CVN/func/AssignLabels.h"
-#include "dune/CVN/func/InteractionType.h"
+#include "dunereco/CVN/func/Result.h"
+#include "dunereco/CVN/func/PixelMap.h"
+//#include "dunereco/CVN/art/CaffeNetHandler.h"
+#include "dunereco/CVN/art/TFNetHandler.h"
+#include "dunereco/CVN/func/AssignLabels.h"
+#include "dunereco/CVN/func/InteractionType.h"
 
 namespace cvn {
 

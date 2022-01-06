@@ -9,7 +9,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "dune/RegCNN/func/RegCNN_TF_Graph.h"
+#include "dunereco/RegCNN/func/RegCNN_TF_Graph.h"
 
 #include "larrecodnn/ImagePatternAlgs/Tensorflow/quiet_session.h"
 #include "tensorflow/core/platform/env.h"

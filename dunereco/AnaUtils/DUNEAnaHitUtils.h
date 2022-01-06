@@ -1,6 +1,6 @@
 /**
  *
- * @file dune/AnaUtils/DUNEAnaHitUtils.h
+ * @file dunereco/AnaUtils/DUNEAnaHitUtils.h
  *
  * @brief Utility containing helpful functions for end users to access information about Hits
 */
@@ -18,7 +18,7 @@
 //LARSOFT
 #include "lardataobj/RecoBase/Hit.h"
 //DUNE
-#include "dune/AnaUtils/DUNEAnaUtilsBase.h"
+#include "dunereco/AnaUtils/DUNEAnaUtilsBase.h"
 
 namespace dune_ana
 {

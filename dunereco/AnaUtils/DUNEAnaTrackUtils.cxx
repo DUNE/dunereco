@@ -1,11 +1,11 @@
 /**
 *
-* @file dune/AnaUtils/DUNEAnaTrackUtils.cxx
+* @file dunereco/AnaUtils/DUNEAnaTrackUtils.cxx
 *
 * @brief Utility containing helpful functions for end users to access information about Tracks
 */
 
-#include "dune/AnaUtils/DUNEAnaTrackUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaTrackUtils.h"
 
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
@@ -13,7 +13,7 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 
-#include "dune/TrackPID/products/CTPResult.h"
+#include "dunereco/TrackPID/products/CTPResult.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 namespace dune_ana

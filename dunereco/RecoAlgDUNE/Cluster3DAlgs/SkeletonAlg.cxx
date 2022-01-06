@@ -10,7 +10,7 @@
 // Framework Includes
 #include "fhiclcpp/ParameterSet.h"
 
-#include "dune/RecoAlgDUNE/Cluster3DAlgs/SkeletonAlg.h"
+#include "dunereco/RecoAlgDUNE/Cluster3DAlgs/SkeletonAlg.h"
 
 // LArSoft includes
 #include "larcore/Geometry/Geometry.h"

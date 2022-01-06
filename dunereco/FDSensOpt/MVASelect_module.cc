@@ -27,9 +27,9 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCFlux.h"
 #include "larcoreobj/SummaryData/POTSummary.h"
-#include "dune/FDSensOpt/MVAAlg/MVAAlg.h"
+#include "dunereco/FDSensOpt/MVAAlg/MVAAlg.h"
 
-#include "dune/FDSensOpt/FDSensOptData/MVASelectPID.h"
+#include "dunereco/FDSensOpt/FDSensOptData/MVASelectPID.h"
 
 #include "TTree.h"
 #include "TH1D.h"

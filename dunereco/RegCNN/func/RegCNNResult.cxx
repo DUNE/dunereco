@@ -9,7 +9,7 @@
 #include <ostream>
 #include <algorithm>
 
-#include "dune/RegCNN/func/RegCNNResult.h"
+#include "dunereco/RegCNN/func/RegCNNResult.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 namespace cnn

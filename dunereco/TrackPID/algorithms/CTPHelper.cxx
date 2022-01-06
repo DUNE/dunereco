@@ -17,9 +17,9 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 
-#include "dune/TrackPID/algorithms/CTPHelper.h"
-#include "dune/TrackPID/products/CTPResult.h"
-#include "dune/TrackPID/tf/CTPGraph.h"
+#include "dunereco/TrackPID/algorithms/CTPHelper.h"
+#include "dunereco/TrackPID/products/CTPResult.h"
+#include "dunereco/TrackPID/tf/CTPGraph.h"
 
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
@@ -27,8 +27,8 @@
 #include "larsim/MCCheater/BackTrackerService.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
 
-#include "dune/AnaUtils/DUNEAnaPFParticleUtils.h"
-#include "dune/AnaUtils/DUNEAnaTrackUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaPFParticleUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaTrackUtils.h"
 
 #include "cetlib/getenv.h"
 

@@ -1,12 +1,12 @@
 /**
 *
-* @file dune/AnaUtils/DUNEAnaEventUtils.cxx
+* @file dunereco/AnaUtils/DUNEAnaEventUtils.cxx
 *
 * @brief Utility containing helpful functions for end users to access products from events
 */
 
-#include "dune/AnaUtils/DUNEAnaEventUtils.h"
-#include "dune/AnaUtils/DUNEAnaPFParticleUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaEventUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaPFParticleUtils.h"
 
 #include "cetlib_except/exception.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -19,8 +19,8 @@
 #include "lardataobj/RecoBase/Slice.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 
-#include "dune/CVN/func/Result.h"
-#include "dune/TrackPID/products/CTPResult.h"
+#include "dunereco/CVN/func/Result.h"
+#include "dunereco/TrackPID/products/CTPResult.h"
 
 namespace dune_ana
 {

@@ -1,6 +1,6 @@
 
 art_make( 
-	  LIBRARY_NAME  dune_RecoAlgDUNE_Cluster3DAlgs
+	  LIBRARY_NAME  dunereco_RecoAlgDUNE_Cluster3DAlgs
           LIB_LIBRARIES larreco_VertexFinder_HarrisVertexFinder_module
                         lardataobj_RecoBase
                         larsim_Simulation nug4::ParticleNavigation lardataobj_Simulation

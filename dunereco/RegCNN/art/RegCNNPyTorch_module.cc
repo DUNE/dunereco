@@ -19,8 +19,8 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "canvas/Persistency/Common/Assns.h"
 
-#include "dune/RegCNN/func/RegCNNResult.h"
-#include "dune/RegCNN/func/RegPixelMap3D.h"
+#include "dunereco/RegCNN/func/RegCNNResult.h"
+#include "dunereco/RegCNN/func/RegPixelMap3D.h"
 
 namespace cnn {
 

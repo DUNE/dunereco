@@ -1,5 +1,5 @@
 /**
-*  @file   dune/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.h
+*  @file   dunereco/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.h
 *
 *  @brief  Header file for the neutrino energy reconstruction algorithm.  A heavily refactored version of Nick Grant's module
 *
@@ -19,7 +19,7 @@
 //LArSoft
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 //DUNE
-#include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
+#include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 
 namespace dune
 {

@@ -10,7 +10,7 @@
 #include <iostream>
 #include <ostream>
 #include <iomanip>
-#include "dune/RegCNN/func/RegPixelMap.h"
+#include "dunereco/RegCNN/func/RegPixelMap.h"
 
 namespace cnn
 {

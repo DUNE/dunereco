@@ -10,7 +10,7 @@
 #include "cetlib/cpu_timer.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "dune/RecoAlgDUNE/Cluster3DAlgs/DBScanAlg_DUNE35t.h"
+#include "dunereco/RecoAlgDUNE/Cluster3DAlgs/DBScanAlg_DUNE35t.h"
 
 // LArSoft includes
 #include "lardata/Utilities/AssociationUtil.h"

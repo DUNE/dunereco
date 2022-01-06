@@ -23,9 +23,9 @@
 // LArSoft includes
 #include "lardataobj/RecoBase/Wire.h"
 
-#include "dune/CVN/art/PixelMapWireProducer.h"
-#include "dune/CVN/func/PixelMap.h"
-#include "dune/CVN/func/TrainingData.h"
+#include "dunereco/CVN/art/PixelMapWireProducer.h"
+#include "dunereco/CVN/func/PixelMap.h"
+#include "dunereco/CVN/func/TrainingData.h"
 
 
 

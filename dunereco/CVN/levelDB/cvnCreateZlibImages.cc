@@ -28,7 +28,7 @@
 #include "TFile.h"
 
 // CVN stuff
-#include "dune/CVN/func/CVNImageUtils.h"
+#include "dunereco/CVN/func/CVNImageUtils.h"
 //#include "CVN/art/CaffeNetHandler.h"
 
 #include "zlib.h" // compression algorithm

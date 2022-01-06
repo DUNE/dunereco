@@ -25,8 +25,8 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Vertex.h"
-#include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
-#include "dune/RegCNN/func/RegCNNResult.h"
+#include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
+#include "dunereco/RegCNN/func/RegCNNResult.h"
 
 const int kMax = 1000;
 namespace myana {

@@ -1,7 +1,7 @@
 #include <vector>
 #include <iostream>
 
-#include "dune/CVN/func/CVNImageUtils.h"
+#include "dunereco/CVN/func/CVNImageUtils.h"
 
 cvn::CVNImageUtils::CVNImageUtils(){
   // Set a default image size

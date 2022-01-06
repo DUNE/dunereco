@@ -9,7 +9,7 @@
 
 #include "art/Framework/Principal/Handle.h"
 
-#include "dune/CVN/func/InteractionType.h"
+#include "dunereco/CVN/func/InteractionType.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 

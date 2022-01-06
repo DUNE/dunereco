@@ -1,6 +1,6 @@
 /**
  *
- * @file dune/AnaUtils/DUNEAnaSliceUtils.h
+ * @file dunereco/AnaUtils/DUNEAnaSliceUtils.h
  *
  * @brief Utility containing helpful functions for end users to access information about Slices
 */
@@ -10,7 +10,7 @@
 
 #include "art/Framework/Principal/Event.h"
 
-#include "dune/AnaUtils/DUNEAnaUtilsBase.h"
+#include "dunereco/AnaUtils/DUNEAnaUtilsBase.h"
 
 #include <string>
 #include <vector>

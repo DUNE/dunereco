@@ -12,8 +12,8 @@
 #include  <list>
 #include  <algorithm>
 
-#include "dune/CVN/art/PixelMapWireProducer.h"
-#include "dune/CVN/func/AssignLabels.h"
+#include "dunereco/CVN/art/PixelMapWireProducer.h"
+#include "dunereco/CVN/func/AssignLabels.h"
 #include "TVector2.h"
 #include "TH2D.h"
 // #include "lardataobj/RecoBase/Wire.h"

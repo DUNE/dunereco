@@ -1,4 +1,4 @@
-#include "dune/CVN/func/HitType.h"
+#include "dunereco/CVN/func/HitType.h"
 
 namespace cvn
 {

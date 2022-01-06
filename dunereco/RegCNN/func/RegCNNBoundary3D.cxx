@@ -10,7 +10,7 @@
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "dune/RegCNN/func/RegCNNBoundary3D.h"
+#include "dunereco/RegCNN/func/RegCNNBoundary3D.h"
 
 namespace cnn
 {

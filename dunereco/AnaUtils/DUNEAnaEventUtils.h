@@ -1,6 +1,6 @@
 /**
  *
- * @file dune/AnaUtils/DUNEAnaEventUtils.h
+ * @file dunereco/AnaUtils/DUNEAnaEventUtils.h
  *
  * @brief Utility containing helpful functions for end users to access products from events
 */
@@ -10,9 +10,9 @@
 
 #include "art/Framework/Principal/Event.h"
 
-#include "dune/AnaUtils/DUNEAnaUtilsBase.h"
-#include "dune/CVN/func/Result.h"
-#include "dune/TrackPID/products/CTPResult.h"
+#include "dunereco/AnaUtils/DUNEAnaUtilsBase.h"
+#include "dunereco/CVN/func/Result.h"
+#include "dunereco/TrackPID/products/CTPResult.h"
 
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"

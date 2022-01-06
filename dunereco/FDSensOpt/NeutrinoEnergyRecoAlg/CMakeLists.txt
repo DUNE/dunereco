@@ -4,7 +4,7 @@ art_make( BASENAME_ONLY
   LIBRARY_NAME  NeutrinoEnergyRecoAlg
   LIB_LIBRARIES 
   larcorealg_Geometry
-  dune_AnaUtils
+  dunereco_AnaUtils
   larcore_Geometry_Geometry_service
   larsim_Simulation nug4::ParticleNavigation lardataobj_Simulation
   lardataobj_RawData

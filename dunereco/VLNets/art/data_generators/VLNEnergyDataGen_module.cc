@@ -4,11 +4,11 @@
 #include "art/Framework/Core/FileBlock.h"
 #include "art/Framework/Core/ModuleMacros.h"
 
-#include "dune/VLNets/art/var_extractors/DefaultInputVarExtractor.h"
-#include "dune/VLNets/art/var_extractors/EventRecoEVarExtractor.h"
-#include "dune/VLNets/art/var_extractors/EventMCVarExtractor.h"
-#include "dune/VLNets/art/var_extractors/FiducialCutVarExtractor.h"
-#include "dune/VLNets/data/exporters/CSVExporter.h"
+#include "dunereco/VLNets/art/var_extractors/DefaultInputVarExtractor.h"
+#include "dunereco/VLNets/art/var_extractors/EventRecoEVarExtractor.h"
+#include "dunereco/VLNets/art/var_extractors/EventMCVarExtractor.h"
+#include "dunereco/VLNets/art/var_extractors/FiducialCutVarExtractor.h"
+#include "dunereco/VLNets/data/exporters/CSVExporter.h"
 
 #include "utils.h"
 

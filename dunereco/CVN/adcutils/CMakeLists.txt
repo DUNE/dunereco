@@ -5,7 +5,7 @@ art_make_library(
   LIBRARY_NAME     GlobImage
   LIBRARY_NAME_VAR GLOBIMAGE
   SOURCE EventImageData.h EventImageData.cxx
-  LIBRARIES    dune_CVN_func
+  LIBRARIES    dunereco_CVN_func
                ART_ROOT_IO_TFILESERVICE_SERVICE
                ART_ROOT_IO_TFILE_SUPPORT
   )

@@ -30,11 +30,11 @@
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 //DUNE
-#include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
-#include "dune/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.h"
-#include "dune/AnaUtils/DUNEAnaEventUtils.h"
-#include "dune/AnaUtils/DUNEAnaHitUtils.h"
-#include "dune/AnaUtils/DUNEAnaShowerUtils.h"
+#include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
+#include "dunereco/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.h"
+#include "dunereco/AnaUtils/DUNEAnaEventUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaHitUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaShowerUtils.h"
 
 namespace dune {
 

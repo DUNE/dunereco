@@ -3,7 +3,7 @@
 //  tylerdalion@gmail.com
 ////////////////////////////////////////////////////////////////////
 
-#include "dune/FDSensOpt/MVAAlg/MVAAlg.h"
+#include "dunereco/FDSensOpt/MVAAlg/MVAAlg.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/TPCGeo.h"
 #include "lardataalg/DetectorInfo/DetectorProperties.h"

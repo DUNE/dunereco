@@ -23,9 +23,9 @@
 // LArSoft includes
 #include "lardataobj/Simulation/SimChannel.h"
 
-#include "dune/CVN/art/PixelMapSimProducer.h"
-#include "dune/CVN/func/PixelMap.h"
-#include "dune/CVN/func/TrainingData.h"
+#include "dunereco/CVN/art/PixelMapSimProducer.h"
+#include "dunereco/CVN/func/PixelMap.h"
+#include "dunereco/CVN/func/TrainingData.h"
 
 
 

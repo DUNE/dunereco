@@ -13,8 +13,8 @@
 #include "canvas/Utilities/Exception.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "dune/CVN/art/TFNetHandler.h"
-#include "dune/CVN/func/CVNImageUtils.h"
+#include "dunereco/CVN/art/TFNetHandler.h"
+#include "dunereco/CVN/func/CVNImageUtils.h"
 
 namespace cvn
 {

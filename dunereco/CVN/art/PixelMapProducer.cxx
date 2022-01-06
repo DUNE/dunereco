@@ -13,8 +13,8 @@
 #include  <algorithm>
 #include <numeric>
 
-#include "dune/CVN/art/PixelMapProducer.h"
-#include "dune/CVN/func/AssignLabels.h"
+#include "dunereco/CVN/art/PixelMapProducer.h"
+#include "dunereco/CVN/func/AssignLabels.h"
 #include "TVector2.h"
 #include "TH2D.h"
 #include "lardataobj/RecoBase/Hit.h"

@@ -1,5 +1,5 @@
 #include "VLNEnergyVarExtractor.h"
-#include "dune/VLNets/data/structs/VLNEnergy.h"
+#include "dunereco/VLNets/data/structs/VLNEnergy.h"
 
 namespace VLN {
 

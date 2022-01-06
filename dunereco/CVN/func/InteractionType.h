@@ -8,7 +8,7 @@
 #ifndef CVN_INTERACTION_H
 #define CVN_INTERACTION_H
 
-#include "dune/CVN/func/PixelMap.h"
+#include "dunereco/CVN/func/PixelMap.h"
 
 namespace cvn
 {

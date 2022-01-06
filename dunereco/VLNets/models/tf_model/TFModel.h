@@ -5,7 +5,7 @@
 #include <utility>
 #include <vector>
 
-#include "dune/VLNets/data/structs/VarDict.h"
+#include "dunereco/VLNets/data/structs/VarDict.h"
 #include "ModelConfig.h"
 
 namespace tensorflow { class Session; class Tensor; }

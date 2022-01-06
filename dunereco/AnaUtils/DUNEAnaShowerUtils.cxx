@@ -1,11 +1,11 @@
 /**
 *
-* @file dune/AnaUtils/DUNEAnaShowerUtils.cxx
+* @file dunereco/AnaUtils/DUNEAnaShowerUtils.cxx
 *
 * @brief Utility containing helpful functions for end users to access information about Showers
 */
 
-#include "dune/AnaUtils/DUNEAnaShowerUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaShowerUtils.h"
 
 #include "cetlib_except/exception.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"

@@ -26,11 +26,11 @@ art_make(
     cetlib::cetlib cetlib_except
     
     ROOT_BASIC_LIB_LIST
-    dune_AnaUtils
-    dune_TrackPID_tf
-    dune_TrackPID_algorithms
-    dune_TrackPID_products
-#    MODULE_LIBRARIES dune_TrackPID
+    dunereco_AnaUtils
+    dunereco_TrackPID_tf
+    dunereco_TrackPID_algorithms
+    dunereco_TrackPID_products
+#    MODULE_LIBRARIES dunereco_TrackPID
 )
 
 install_headers()

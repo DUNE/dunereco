@@ -1,4 +1,4 @@
-#include "dune/CVN/func/CVNProtoDUNEUtils.h"
+#include "dunereco/CVN/func/CVNProtoDUNEUtils.h"
 
 #include "lardataobj/RecoBase/Hit.h"
 #include "art/Framework/Principal/Event.h"

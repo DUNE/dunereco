@@ -23,9 +23,9 @@
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Hit.h"
 
-#include "dune/CVN/func/PixelMap.h"
-#include "dune/CVN/func/GCNGraph.h"
-#include "dune/CVN/func/GCNFeatureUtils.h"
+#include "dunereco/CVN/func/PixelMap.h"
+#include "dunereco/CVN/func/GCNGraph.h"
+#include "dunereco/CVN/func/GCNFeatureUtils.h"
 
 namespace cvn {
 

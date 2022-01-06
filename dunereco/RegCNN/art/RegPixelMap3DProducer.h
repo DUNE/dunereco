@@ -24,8 +24,8 @@
 #include "canvas/Persistency/Common/Assns.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 
-#include "dune/RegCNN/func/RegPixelMap3D.h"
-#include "dune/RegCNN/func/RegCNNBoundary3D.h"
+#include "dunereco/RegCNN/func/RegPixelMap3D.h"
+#include "dunereco/RegCNN/func/RegCNNBoundary3D.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RecoBase/SpacePoint.h"

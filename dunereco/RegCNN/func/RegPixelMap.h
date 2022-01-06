@@ -10,8 +10,8 @@
 #include <ostream>
 #include <vector>
 
-#include "dune/RegCNN/func/RegCNNBoundary.h"
-#include "dune/RegCNN/func/HitType.h"
+#include "dunereco/RegCNN/func/RegCNNBoundary.h"
+#include "dunereco/RegCNN/func/HitType.h"
 #include "TH2F.h"
 
 namespace cnn

@@ -1,5 +1,5 @@
 /**
- *  @file   dune/TrackPID/modules/CTPEvaluator_module.cc
+ *  @file   dunereco/TrackPID/modules/CTPEvaluator_module.cc
  *
  *  @brief  This module performs track PID using the convolutionsl 
  *          track PID network
@@ -11,13 +11,13 @@
 #include "TTree.h"
 #include "TVector3.h"
 
-#include "dune/AnaUtils/DUNEAnaEventUtils.h"
-#include "dune/AnaUtils/DUNEAnaPFParticleUtils.h"
-#include "dune/AnaUtils/DUNEAnaTrackUtils.h"
-#include "dune/AnaUtils/DUNEAnaShowerUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaEventUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaPFParticleUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaTrackUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaShowerUtils.h"
 
-#include "dune/TrackPID/algorithms/CTPHelper.h"
-#include "dune/TrackPID/products/CTPResult.h"
+#include "dunereco/TrackPID/algorithms/CTPHelper.h"
+#include "dunereco/TrackPID/products/CTPResult.h"
 
 #include "larsim/MCCheater/BackTrackerService.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"

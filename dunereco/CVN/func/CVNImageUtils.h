@@ -9,7 +9,7 @@
 
 #include <vector>
 
-#include "dune/CVN/func/PixelMap.h"
+#include "dunereco/CVN/func/PixelMap.h"
 
 namespace cvn
 {

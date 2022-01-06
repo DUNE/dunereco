@@ -7,7 +7,7 @@ art_make(MODULE_LIBRARIES
   ROOT::Core
   ART_ROOT_IO_TFILESERVICE_SERVICE
   ART_PERSISTENCY_COMMON
-  dune_AnaUtils
+  dunereco_AnaUtils
   canvas::canvas
   art::Persistency_Provenance
   ART_UTILITIES

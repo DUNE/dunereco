@@ -1,8 +1,8 @@
 #include "EventRecoVarExtractor.h"
 
 #include "lardataobj/RecoBase/SpacePoint.h"
-#include "dune/AnaUtils/DUNEAnaEventUtils.h"
-#include "dune/AnaUtils/DUNEAnaHitUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaEventUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaHitUtils.h"
 
 #include "utils.h"
 

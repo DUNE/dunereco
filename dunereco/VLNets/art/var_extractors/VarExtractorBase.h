@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "art/Framework/Principal/Event.h"
-#include "dune/VLNets/data/structs/VarDict.h"
+#include "dunereco/VLNets/data/structs/VarDict.h"
 
 namespace VLN {
 

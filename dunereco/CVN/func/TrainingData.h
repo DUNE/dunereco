@@ -7,8 +7,8 @@
 #ifndef CVN_TRAININGDATA_H
 #define CVN_TRAININGDATA_H
 
-#include "dune/CVN/func/InteractionType.h"
-#include "dune/CVN/func/AssignLabels.h"
+#include "dunereco/CVN/func/InteractionType.h"
+#include "dunereco/CVN/func/AssignLabels.h"
 
 namespace cvn
 {

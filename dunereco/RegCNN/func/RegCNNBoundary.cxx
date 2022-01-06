@@ -11,7 +11,7 @@
 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "dune/RegCNN/func/RegCNNBoundary.h"
+#include "dunereco/RegCNN/func/RegCNNBoundary.h"
 
 namespace cnn
 {

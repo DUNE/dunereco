@@ -2,10 +2,10 @@
 #include "art/Framework/Core/FileBlock.h"
 #include "art/Framework/Core/ModuleMacros.h"
 
-#include "dune/VLNets/art/var_extractors/DefaultInputVarExtractor.h"
-#include "dune/VLNets/art/data_generators/utils.h"
-#include "dune/VLNets/data/exporters/CSVExporter.h"
-#include "dune/VLNets/models/zoo/VLNEnergyModel.h"
+#include "dunereco/VLNets/art/var_extractors/DefaultInputVarExtractor.h"
+#include "dunereco/VLNets/art/data_generators/utils.h"
+#include "dunereco/VLNets/data/exporters/CSVExporter.h"
+#include "dunereco/VLNets/models/zoo/VLNEnergyModel.h"
 
 namespace VLN {
 

@@ -23,9 +23,9 @@
 // LArSoft includes
 #include "lardataobj/RecoBase/Hit.h"
 
-#include "dune/CVN/art/PixelMapProducer.h"
-#include "dune/CVN/func/PixelMap.h"
-#include "dune/CVN/func/TrainingData.h"
+#include "dunereco/CVN/art/PixelMapProducer.h"
+#include "dunereco/CVN/func/PixelMap.h"
+#include "dunereco/CVN/func/TrainingData.h"
 
 
 

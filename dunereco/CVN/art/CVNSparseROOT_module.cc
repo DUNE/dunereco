@@ -18,7 +18,7 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // CVN includes
-#include "dune/CVN/func/SparsePixelMap.h"
+#include "dunereco/CVN/func/SparsePixelMap.h"
 
 // ROOT includes
 #include "TFile.h"

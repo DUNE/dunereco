@@ -20,14 +20,14 @@
 
 // Data products
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "dune/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
+#include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 
 // CVN includes
-#include "dune/CVN/func/AssignLabels.h"
-#include "dune/CVN/func/TrainingData.h"
-#include "dune/CVN/func/InteractionType.h"
-#include "dune/CVN/func/PixelMap.h"
-#include "dune/CVN/func/CVNImageUtils.h"
+#include "dunereco/CVN/func/AssignLabels.h"
+#include "dunereco/CVN/func/TrainingData.h"
+#include "dunereco/CVN/func/InteractionType.h"
+#include "dunereco/CVN/func/PixelMap.h"
+#include "dunereco/CVN/func/CVNImageUtils.h"
 
 // Compression
 #include "zlib.h"

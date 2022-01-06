@@ -10,10 +10,10 @@
 #include <vector>
 #include <memory>
 
-#include "dune/RegCNN/func/RegPixelMap.h"
-#include "dune/RegCNN/func/RegPixelMap3D.h"
+#include "dunereco/RegCNN/func/RegPixelMap.h"
+#include "dunereco/RegCNN/func/RegPixelMap3D.h"
 #include "fhiclcpp/ParameterSet.h"
-#include "dune/RegCNN/func/RegCNN_TF_Graph.h"
+#include "dunereco/RegCNN/func/RegCNN_TF_Graph.h"
 //#include "larreco/RecoAlg/ImagePatternAlgs/Tensorflow/TF/tf_graph.h"
 
 namespace cnn

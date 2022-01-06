@@ -39,7 +39,7 @@ cet_make( LIBRARIES lardataobj_RawData
                     NO_DICTIONARY )
 
 
-art_dictionary( DICTIONARY_LIBRARIES ) # dune_SNSlicer )
+art_dictionary( DICTIONARY_LIBRARIES ) # dunereco_SNSlicer )
 
 install_headers()
 install_fhicl()

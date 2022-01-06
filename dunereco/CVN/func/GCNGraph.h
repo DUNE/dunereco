@@ -9,7 +9,7 @@
 
 #include <ostream>
 #include <vector>
-#include "dune/CVN/func/GCNGraphNode.h"
+#include "dunereco/CVN/func/GCNGraphNode.h"
 
 namespace cvn
 {

@@ -1,6 +1,6 @@
 /**
  *
- * @file dune/AnaUtils/DUNEAnaPFParticleUtils.h
+ * @file dunereco/AnaUtils/DUNEAnaPFParticleUtils.h
  *
  * @brief Utility containing helpful functions for end users to access information about PFParticles
 */
@@ -10,7 +10,7 @@
 
 #include "art/Framework/Principal/Event.h"
 
-#include "dune/AnaUtils/DUNEAnaUtilsBase.h"
+#include "dunereco/AnaUtils/DUNEAnaUtilsBase.h"
 
 #include <string>
 #include <vector>

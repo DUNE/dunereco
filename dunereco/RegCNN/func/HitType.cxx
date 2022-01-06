@@ -1,4 +1,4 @@
-#include "dune/RegCNN/func/HitType.h"
+#include "dunereco/RegCNN/func/HitType.h"
 
 namespace cnn
 {

@@ -11,8 +11,8 @@
 #include <memory>
 
 #include "fhiclcpp/ParameterSet.h"
-#include "dune/RegCNN/func/RegPixelMap.h"
-#include "dune/RegCNN/art/TFRegNetHandler.h"
+#include "dunereco/RegCNN/func/RegPixelMap.h"
+#include "dunereco/RegCNN/art/TFRegNetHandler.h"
 
 namespace cnn
 {
