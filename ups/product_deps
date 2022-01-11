@@ -21,6 +21,9 @@ wpdir product_dir wire-cell-cfg
 
 table_fragment_begin
     pathPrepend(FW_SEARCH_PATH, ${DUNERECO_DIR}/scripts)
+    envSet(WIRECELL_PATH, ${WIRECELL_FQ_DIR}/share/wirecell)
+    pathPrepend(WIRECELL_PATH, ${DUNE_PARDATA_DIR}/WireCellData)
+    pathPrepend(WIRECELL_PATH, ${UPS_PROD_DIR}/wire-cell-cfg)
 table_fragment_end
 
 # With "product  version" table below, we now define depdendencies

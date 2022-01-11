@@ -17,7 +17,7 @@ function(tools, outputfile) {
       data: {
         output_filename: outputfile,
         root_file_mode: 'UPDATE',
-        frames: ['orig%d' % n],
+        frames: ['orig%d' % tools.anodes[n].data.ident],
         trace_has_tag: false,   // traces from source have NO tag
         anode: wc.tn(tools.anodes[n]),
       },
@@ -32,12 +32,12 @@ function(tools, outputfile) {
       data: {
         output_filename: outputfile,
         root_file_mode: 'UPDATE',
-        frames: ['raw%d' % n],
+        frames: ['raw%d' % tools.anodes[n].data.ident],
         trace_has_tag: true,
-        cmmtree: [["noisy", "T_noisy%d"%n],
-                  ["sticky", "T_stky%d"%n],
-                  ["ledge", "T_ldg%d"%n],
-                  ["harmonic", "T_hm%d"%n] ], // maskmap in nf.jsonnet 
+//        cmmtree: [["noisy", "T_noisy%d"%n],
+//                  ["sticky", "T_stky%d"%n],
+//                  ["ledge", "T_ldg%d"%n],
+//                  ["harmonic", "T_hm%d"%n] ], // maskmap in nf.jsonnet 
         anode: wc.tn(tools.anodes[n]),
       },
     }, nin=1, nout=1)
@@ -51,7 +51,7 @@ function(tools, outputfile) {
       data: {
         output_filename: outputfile,
         root_file_mode: 'UPDATE',
-        frames: ['gauss%d' % n, 'wiener%d' % n],
+        frames: ['gauss%d' % tools.anodes[n].data.ident, 'wiener%d' % tools.anodes[n].data.ident],
         trace_has_tag: true,
         anode: wc.tn(tools.anodes[n]),
       },
@@ -66,9 +66,9 @@ function(tools, outputfile) {
       data: {
         output_filename: outputfile,
         root_file_mode: 'UPDATE',
-        frames: ['tight_lf%d' %n, 'loose_lf%d' %n, 'cleanup_roi%d' %n,
-                 'break_roi_1st%d' %n, 'break_roi_2nd%d' %n,
-                 'shrink_roi%d' %n, 'extend_roi%d' %n],
+        frames: ['tight_lf%d' % tools.anodes[n].data.ident, 'loose_lf%d' % tools.anodes[n].data.ident, 'cleanup_roi%d' % tools.anodes[n].data.ident,
+                 'break_roi_1st%d' % tools.anodes[n].data.ident, 'break_roi_2nd%d' % tools.anodes[n].data.ident,
+                 'shrink_roi%d' % tools.anodes[n].data.ident, 'extend_roi%d' % tools.anodes[n].data.ident],
         trace_has_tag: true,
         anode: wc.tn(tools.anodes[n]),
       },
@@ -83,8 +83,8 @@ function(tools, outputfile) {
       data: {
         output_filename: outputfile,
         root_file_mode: 'UPDATE',
-        summaries: ['threshold%d' % n],  // note that if tag set, each apa should have a tag set for FrameFanin
-        summary_operator: { ['threshold%d' % n]: 'set' },  // []: obj comprehension
+        summaries: ['threshold%d' % tools.anodes[n].data.ident],  // note that if tag set, each apa should have a tag set for FrameFanin
+        summary_operator: { ['threshold%d' % tools.anodes[n].data.ident]: 'set' },  // []: obj comprehension
         anode: wc.tn(tools.anodes[n]),
       },
     }, nin=1, nout=1)
