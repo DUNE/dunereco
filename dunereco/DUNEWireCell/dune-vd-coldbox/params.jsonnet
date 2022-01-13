@@ -65,33 +65,26 @@ base {
         // important is that the faces are listed "front" first.
         // Front is the one with the more positive X coordinates and
         // if we want to ignore a face it is made null.
+
         volumes: [
             {
-                local sign = 2*(n%2)-1,
-                local centerline = sign*apa_cpa,
-                wires: n,       // anode number
-                name: "apa%d"%n,
-                faces:
-                // top, front face is against cryo wall
-                if sign > 0
-                then [
-                    null,
+                local world = 100,
+                local split = s*10, // 1: left, 2: right
+                local anode = a, // physical anode number
+
+                wires: world + split + anode,
+                name: "anode%d"%(world + split + anode),
+
+                faces: [
                     {
-                        anode: centerline - apa_plane,
-                        response: centerline - res_plane,
-                        cathode: centerline - cpa_plane, 
-                    }
-                ]
-                // bottom, back face is against cryo wall
-                else [
-                    {
-                        anode: centerline + apa_plane,
-                        response: centerline + res_plane,
-                        cathode: centerline + cpa_plane, 
+                        anode:     15.07*wc.cm,
+                        response:  15.07*wc.cm - 18.92*wc.cm,
+                        cathode:   -300*wc.cm,
                     },
                     null
                 ],
-            } for n in std.range(0,1)],
+            } for a in std.range(0,1) for s in std.range(1,2)
+        ],
 
         // This describes some rough, overall bounding box.  It's not
         // directly needed but can be useful on the Jsonnet side, for
@@ -162,13 +155,14 @@ base {
     },
 
     files: {
-        wires: "dunevdcb1-3view-wires-v1.json.bz2",
+        wires: "dunevdcb1-3view-wires-v2-splitanode.json.bz2",
 
         fields: [
             // "garfield-1d-3planes-21wires-6impacts-dune-v1.json.bz2",
             // "garfield-1d-boundary-path-rev-dune.json.bz2",
             // "dunevd-resp-isoc3views.json.bz2",
             "dunevd-resp-isoc3views-18d92.json.bz2",
+            // "dune-garfield-1d565.json.bz2"
         ],
 
         // fixme: this is for microboone and probably bogus for
