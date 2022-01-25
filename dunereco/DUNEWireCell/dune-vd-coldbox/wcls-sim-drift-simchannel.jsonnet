@@ -76,6 +76,7 @@ local wcls_output = {
       // nticks: params.daq.nticks,
       // nticks: -1,
       // chanmaskmaps: ['bad'],
+      pedestal_mean: 'native',
     },
   }, nin=1, nout=1, uses=[mega_anode_active]),
 
