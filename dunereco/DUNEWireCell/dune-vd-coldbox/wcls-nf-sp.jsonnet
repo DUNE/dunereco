@@ -85,6 +85,16 @@ local planemaps = {
 };
 local planemap = planemaps[std.extVar("geo_planeid_labels")];
 
+local mega_anode_active = {
+  type: 'MegaAnodePlane',
+  name: 'meganodesact',
+  data: {
+    anodes_tn: if std.extVar('active_cru')=='tde'
+               then [wc.tn(tools.anodes[0]), wc.tn(tools.anodes[1])]
+               else [wc.tn(tools.anodes[2]), wc.tn(tools.anodes[3])],
+  },
+};
+
 local wcls_output = {
   // The noise filtered "ADC" values.  These are truncated for
   // art::Event but left as floats for the WCT SP.  Note, the tag
@@ -113,7 +123,7 @@ local wcls_output = {
     name: 'spsaver',
     data: {
       // anode: wc.tn(tools.anode),
-      anode: wc.tn(mega_anode),
+      anode: wc.tn(mega_anode_active),
       plane_map: planemap,
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
@@ -122,7 +132,7 @@ local wcls_output = {
       chanmaskmaps: [],
       nticks: -1,
     },
-  }, nin=1, nout=1, uses=[mega_anode]),
+  }, nin=1, nout=1, uses=[mega_anode_active]),
 };
 
 // local perfect = import 'chndb-perfect.jsonnet';
@@ -141,14 +151,13 @@ local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
+local util = import 'pgrapher/experiment/dune-vd-coldbox/funcs.jsonnet';
 local chsel_pipes = [
   g.pnode({
     type: 'ChannelSelector',
     name: 'chsel%d' % n,
     data: {
-      channels: std.range(1600 * n, 1600 * (n + 1) - 1),
-      // channels: std.range(2560 * n, 2560 * (n + 1) - 1),
-      //channels: if n==0 then std.range(2560*n,2560*(n+1)-1) else [],
+      channels: util.anode_channels(n),
       //tags: ['orig%d' % n], // traces tag
     },
   }, nin=1, nout=1)
@@ -182,11 +191,7 @@ local nfsp_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-//local f = import 'pgrapher/common/funcs.jsonnet';
-local f = import 'pgrapher/experiment/dune-vd-coldbox/funcs.jsonnet';
-//local outtags = ['gauss%d' % n for n in std.range(0, std.length(tools.anodes) - 1)];
-//local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf', outtags);
-local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf');
+local fanpipe = util.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf');
 
 local retagger = g.pnode({
   type: 'Retagger',
@@ -207,9 +212,6 @@ local retagger = g.pnode({
 }, nin=1, nout=1);
 
 local sink = g.pnode({ type: 'DumpFrames' }, nin=1, nout=0);
-
-
-// local graph = g.pipeline([wcls_input.adc_digits, rootfile_creation_frames, fanpipe, retagger, wcls_output.sp_signals, sink]);
 local graph = g.pipeline([wcls_input.adc_digits, fanpipe, retagger, wcls_output.sp_signals, sink]);
 
 local app = {

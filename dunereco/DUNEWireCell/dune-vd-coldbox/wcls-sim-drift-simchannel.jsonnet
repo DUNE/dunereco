@@ -74,7 +74,7 @@ local wcls_output = {
       // - If zero, use whatever input data has. (default)
       // - If -1, use value as per LS's detector properties service.
       // nticks: params.daq.nticks,
-      // nticks: -1,
+      nticks: -1,
       // chanmaskmaps: ['bad'],
       pedestal_mean: 'native',
     },
