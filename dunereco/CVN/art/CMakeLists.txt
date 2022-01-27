@@ -60,7 +60,7 @@ art_make(BASENAME_ONLY
   HEPHPCLIB
   HDF5LIB
   MVAAlg
-  boost_filesystem
+  Boost::filesystem
   MODULE_LIBRARIES dunereco_CVN_func
   dunereco_CVN_tf
   dunereco_CVN_art
