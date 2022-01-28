@@ -191,7 +191,41 @@ local nfsp_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-local fanpipe = util.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf');
+// local fanpipe = util.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf');
+local fanout_tag_rules = [ 
+          {
+            frame: {
+              '.*': 'orig%d' % tools.anodes[n].data.ident,
+            },
+            trace: {
+              // fake doing Nmult SP pipelines
+              //orig: ['wiener', 'gauss'],
+              //'.*': 'orig',
+            },
+          }
+          for n in std.range(0, std.length(tools.anodes) - 1)
+        ];
+
+local anode_ident = [tools.anodes[n].data.ident for n in std.range(0, std.length(tools.anodes) - 1)];
+local fanin_tag_rules = [
+          {
+            frame: {
+              //['number%d' % n]: ['output%d' % n, 'output'],
+              '.*': 'framefanin',
+            },
+            trace: {
+              ['gauss%d'%ind]:'gauss%d'%ind,
+              ['wiener%d'%ind]:'wiener%d'%ind,
+              ['threshold%d'%ind]:'threshold%d'%ind,
+              // ['tight_lf%d'%ind]:'tight_lf%d'%ind,
+              ['loose_lf%d'%ind]:'loose_lf%d'%ind,
+            },
+
+          }
+          for ind in anode_ident
+        ];
+local fanpipe = util.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'nfsp', [], fanout_tag_rules, fanin_tag_rules);
+
 
 local retagger = g.pnode({
   type: 'Retagger',
@@ -204,8 +238,8 @@ local retagger = g.pnode({
         '.*': 'retagger',
       },
       merge: {
-        'gauss\\d': 'gauss',
-        'wiener\\d': 'wiener',
+        'gauss\\d\\d\\d': 'gauss',
+        'wiener\\d\\d\\d': 'wiener',
       },
     }],
   },
