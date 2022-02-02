@@ -143,6 +143,29 @@ wirecell_protodunespmc:
     }
 }
 
+wirecell_dunevd_coldbox_mc:
+{
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["Pgrapher"]
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"]
+        // needs to be found via your WIRECELL_PATH 
+        configs: ["pgrapher/experiment/dune-vd-coldbox/wcls-sim-drift-simchannel.jsonnet"]
+        inputers: ["wclsSimDepoSource:electron"]
+        outputers: [
+            "wclsSimChannelSink:postdrift",
+            "wclsFrameSaver:simdigits"
+        ]
+
+        // Make available parameters via Jsonnet's std.extVar()
+        params: {
+            active_cru: 'tde' // 'bde'
+        }
+    }
+}
+
+
 dune10kt_mc_nfsp:
 {
 #empty for now
@@ -993,6 +1016,8 @@ dune_vd_coldbox_nfsp : {
          # Larsoft expects kY for 2nd induction plane for this geometry
          # Set the mapping as kU->kU, kV->kY, kW->kW in the jsonnet
          geo_planeid_labels: "dunevd_3view"
+
+         active_cru: "bde" // "tde"
 
          use_magnify: "false"
       }
