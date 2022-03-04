@@ -6,7 +6,7 @@
 # use cmake 3.14 or later
 cmake_minimum_required (VERSION 3.12...3.14 FATAL_ERROR)
 
-project(dunereco VERSION 09.43.00.00 LANGUAGES CXX)
+project(dunereco VERSION 09.44.00.00 LANGUAGES CXX)
 
 # cetbuildtools contains our cmake modules
 find_package(cetbuildtools REQUIRED)
