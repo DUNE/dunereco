@@ -984,6 +984,39 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_data_nfsp : {
    }
 }
 
+dune10kt_dunefd_vertdrift_1x6x6_2view_data_nfsp : {
+    @table::dune10kt_dunefd_vertdrift_1x6x6_3view_data_nfsp
+    wcls_main: {
+        @table::dune10kt_dunefd_vertdrift_1x6x6_3view_30deg_data_nfsp.wcls_main
+        params: {
+            @table::dune10kt_dunefd_vertdrift_1x6x6_3view_30deg_data_nfsp.wcls_main.params
+            files_wires: "dunevd10kt-1x6x6-2view-wires-v1.json.bz2"
+            files_fields: "pcbro-response-avg-12d50.json.bz2"
+            geo_planeid_labels: "dunevd_3view"
+        }
+        structs: {
+            @table::dune10kt_dunefd_vertdrift_1x6x6_3view_30deg_data_nfsp.wcls_main.structs
+            channel_per_crm: 928
+            response_plane: 12.50
+        }
+    }
+}
+
+dune10kt_dunefd_vertdrift_1x8x6_2view_data_nfsp : {
+    @table::dune10kt_dunefd_vertdrift_1x6x6_2view_data_nfsp
+    wcls_main: {
+        @table::dune10kt_dunefd_vertdrift_1x6x6_2view_data_nfsp.wcls_main
+        params: {
+            @table::dune10kt_dunefd_vertdrift_1x6x6_2view_data_nfsp.wcls_main.params
+            files_wires: "dunevd10kt_2view_v2_refactored_1x8x6ref.json.bz2"
+        }
+        structs: {
+            @table::dune10kt_dunefd_vertdrift_1x6x6_2view_data_nfsp.wcls_main.structs
+            ncrm: 48
+        }
+    }
+}
+
 dune_vd_coldbox_nfsp : {
    module_type : WireCellToolkit
    wcls_main: {
