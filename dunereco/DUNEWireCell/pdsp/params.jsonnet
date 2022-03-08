@@ -131,6 +131,11 @@ base {
                        // theoretical elec resp (14mV/fC): 36.6475 ADC*tick/1ke
       shaping: 2.2 * wc.us,
     },
+    // elec: super.elec {
+    //     type: "JsonElecResponse",
+    //     filename: "bnl-coldelec-response-gain14-shaping5.json.bz2",
+    //     postgain: 1.0,
+    // },
 
     sim: super.sim {
 

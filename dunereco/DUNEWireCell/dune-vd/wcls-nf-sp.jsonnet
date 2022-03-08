@@ -59,8 +59,8 @@ local wcls = wcls_maker(params, tools);
 //local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
 
 local planemaps = {
-  dunevd_3view: {"1":0, "2":3, "4":2},
-  default: {"1":0, "2":1, "4":2}
+ dunevd_3view: {"1":0, "2":3, "4":2},
+ default: {"1":0, "2":1, "4":2}
 };
 local planemap = planemaps[std.extVar("geo_planeid_labels")];
 
@@ -140,9 +140,9 @@ local base = import 'chndb-base.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
-  // data: perfect(params, tools.anodes[n], tools.field, n),
-  data: base(params, tools.anodes[n], tools.field, n),
-  uses: [tools.anodes[n], tools.field],  // pnode extension
+  // data: perfect(params, tools.anodes[n], tools.field, n) { dft:wc.tn(tools.dft) },
+  data: base(params, tools.anodes[n], tools.field, n) { dft:wc.tn(tools.dft) },
+  uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
 // local nf_maker = import 'pgrapher/experiment/dune10kt-1x2x6/nf.jsonnet';
