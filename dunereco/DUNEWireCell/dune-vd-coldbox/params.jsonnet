@@ -124,11 +124,17 @@ base {
     //                    // theoretical elec resp (14mV/fC): 36.6475 ADC*tick/1ke
     //   shaping: 2.2 * wc.us,
     // },
-    elec: super.elec {
-         type: "JsonElecResponse",
-         filename: "cold-elec-response-gain14-shape2d2.json.bz2",
-         postgain: 1.0,
-    },
+    elec: if std.extVar('active_cru')=='tde'
+          then super.elec {
+              type: "JsonElecResponse",
+              filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
+              postgain: 1.0,
+          }
+          else super.elec {
+              postgain: 1.1365, // pulser calibration: 41.649 ADC*tick/1ke
+                               // theoretical elec resp (14mV/fC): 36.6475 ADC*tick/1ke
+              shaping: 2.2 * wc.us,
+          },
 
     sim: super.sim {
 

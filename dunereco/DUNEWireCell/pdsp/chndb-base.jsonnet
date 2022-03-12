@@ -258,11 +258,11 @@ function(params, anode, field, n, rms_cuts=[])
         roi_min_max_ratio: 1.5,
       },
 
-      local freqbinner = wc.freqbinner(params.daq.tick, params.nf.nsamples);
-      local harmonic_freqs = [f*wc.kilohertz for f in
-        // [51.5, 102.8, 154.2, 205.5, 256.8, 308.2, 359.2, 410.5, 461.8, 513.2, 564.5, 615.8]
-        [51.5, 77.2, 102.8, 128.5, 154.2, 180.0, 205.5, 231.5, 256.8, 282.8, 308.2, 334.0, 359.2, 385.5, 410.5, 461.8, 513.2, 564.5, 615.8, 625.0]
-      ];
+      // local freqbinner = wc.freqbinner(params.daq.tick, params.nf.nsamples);
+      // local harmonic_freqs = [f*wc.kilohertz for f in
+      //   // [51.5, 102.8, 154.2, 205.5, 256.8, 308.2, 359.2, 410.5, 461.8, 513.2, 564.5, 615.8]
+      //   [51.5, 77.2, 102.8, 128.5, 154.2, 180.0, 205.5, 231.5, 256.8, 282.8, 308.2, 334.0, 359.2, 385.5, 410.5, 461.8, 513.2, 564.5, 615.8, 625.0]
+      // ];
       
       {
         //channels: { wpid: wc.WirePlaneId(wc.Wlayer) },
@@ -270,7 +270,7 @@ function(params, anode, field, n, rms_cuts=[])
         nominal_baseline: 400.0,
         decon_limit: 0.05,
         decon_limit1: 0.08,
-        freqmasks: freqbinner.freqmasks(harmonic_freqs, 5.0*wc.kilohertz),
+        // freqmasks: freqbinner.freqmasks(harmonic_freqs, 5.0*wc.kilohertz),
       },
 
     ] + rms_cuts,
