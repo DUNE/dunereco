@@ -91,7 +91,9 @@ physics :{
                 # dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2
                 # dunevd10kt-1x6x6-2view-wires-v1.json.bz2
                 # dunevd10kt-1x8x14-3view-wires-v1.json.bz2
-                files_wires: "dunevd10kt-1x6x6-3view-wires-v1.json.bz2"
+                # dunevd10kt_3view_v2_refactored_1x8x6ref.json.bz2
+                # dunevd10kt_3view_30deg_v2_refactored_1x8x6ref.json.bz2
+                files_wires: "dunevd10kt_3view_v2_refactored_1x8x6ref.json.bz2"
 
                 # file: fields
                 # 3view30: dunevd-resp-isoc3views-18d92.json.bz2
@@ -100,7 +102,8 @@ physics :{
 
                 # set mapping between internal wct plane ids and larsoft
                 # default is to assume WireCell::kU->geo::kU, kV->kV, kW->kW
-                # geo_planeid_labels: "default"
+                # 3view-30deg: default, 3view: dunevd_3view
+                geo_planeid_labels: "dunevd_3view"
             }
             # ext-code, code
             structs : {
@@ -120,7 +123,7 @@ physics :{
                 response_plane: 18.92
 
                 # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
-                ncrm: 36
+                ncrm: 48
             }
          }
       }
