@@ -8,18 +8,32 @@
 
 // C/C++ includes
 #include <iostream>
+#include <cstdlib>
 
 #include "boost/filesystem.hpp"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Principal/SubRun.h"
+#include "art_root_io/TFileDirectory.h"
+#include "art_root_io/TFileService.h"
 
 // Framework includes
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "canvas/Persistency/Common/Ptr.h"
+#include "art/Framework/Principal/SubRun.h"
 #include "canvas/Utilities/Exception.h"
+#include "canvas/Persistency/Common/PtrVector.h"
+#include "canvas/Persistency/Common/FindManyP.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "art_root_io/TFileService.h"
 
 // Data products
+#include "nusimdata/SimulationBase/GTruth.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
+#include "nusimdata/SimulationBase/MCFlux.h"
+#include "nusimdata/SimulationBase/MCNeutrino.h"
 #include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 
 // CVN includes
@@ -31,6 +45,10 @@
 
 // Compression
 #include "zlib.h"
+#include "math.h"
+
+#include "TH1.h"
+#include "larcoreobj/SummaryData/POTSummary.h"
 
 namespace fs = boost::filesystem;
 
@@ -43,14 +61,18 @@ namespace cvn {
     ~CVNZlibMaker();
 
     void beginJob() override;
+    void endSubRun(art::SubRun const &sr) override;
     void analyze(const art::Event& evt) override;
     void reconfigure(const fhicl::ParameterSet& pset);
 
+    double SimpleOscProb(const simb::MCFlux& flux, const simb::MCNeutrino& nu) const;
+  
   private:
 
     std::string fOutputDir;
     std::string fPixelMapInput;
     bool fSetLog;
+    bool fIsVD;
     std::vector<bool> fReverseViews;
     unsigned int fTopologyHitsCut;
 
@@ -65,6 +87,11 @@ namespace cvn {
     std::string out_dir;
 
     void write_files(TrainingData td, unsigned int n, std::string evtid);
+
+    TH1D* hPOT;
+    double fPOT;
+    int fRun;
+    int fSubRun; 
 
   };
 
@@ -85,6 +112,7 @@ namespace cvn {
     fOutputDir = pset.get<std::string>("OutputDir", "");
     fPixelMapInput = pset.get<std::string>("PixelMapInput");
     fSetLog = pset.get<bool>("SetLog");
+    fIsVD = pset.get<bool>("IsVD");
     fReverseViews = pset.get<std::vector<bool>>("ReverseViews");
     fTopologyHitsCut = pset.get<unsigned int>("TopologyHitsCut");
 
@@ -97,6 +125,73 @@ namespace cvn {
     fTDCLimit = pset.get<unsigned int>("TDCLimit");
   }
 
+  //......................................................................
+  void CVNZlibMaker::endSubRun(const art::SubRun & sr){
+
+    std::string fPOTModuleLabel = "generator";
+    fRun = sr.run();
+    fSubRun = sr.subRun();
+
+    art::Handle< sumdata::POTSummary > potListHandle;
+    if(sr.getByLabel(fPOTModuleLabel,potListHandle))
+      fPOT = potListHandle->totpot;
+    else
+      fPOT = 0.;
+    if(hPOT) hPOT->Fill(0.5, fPOT);
+  }
+
+  //......................................................................
+  double CVNZlibMaker::SimpleOscProb(const simb::MCFlux& flux, const simb::MCNeutrino& nu) const {
+
+    if( nu.CCNC() == 1 && nu.Nu().PdgCode() == flux.fntype) return 1;
+    if( nu.CCNC() == 1 && nu.Nu().PdgCode() != flux.fntype) return 0;
+    
+    double E = nu.Nu().E();
+    int flavAfter = nu.Nu().PdgCode();
+    int flavBefore = flux.fntype;
+    const double L      = 1284.9;    // km
+    const double ldm    = 2.40e-3; // large delta m^2, m23
+    const double ss2t13 = 0.1;     // sin^2(2theta_13)
+    const double ss2t23 = 1.;      // maximal sin^2(2theta_23)
+    const double ssth23 = 0.5;     // sin^2(theta_23) corresponding to above
+
+    // Signal
+    if(abs(flavAfter) == 12 && abs(flavBefore) == 14){
+      // Nue appearance
+      return ss2t13*ssth23*std::pow(sin(1.267*ldm*L/E), 2.);
+    }
+    if(abs(flavAfter) == 14 && abs(flavBefore) == 14){
+      // CC mu disappearance
+      return 1. - ss2t23*std::pow(sin(1.267*ldm*L/E), 2.);
+    }
+
+    // Background
+    if(abs(flavAfter) == 12 && abs(flavBefore) == 12){
+      // Beam nue
+      return 1. - ss2t13*std::pow(sin(1.267*ldm*L/E), 2.);
+    }
+    if(abs(flavAfter) == 14 && abs(flavBefore) == 12){
+      // CC mu appearance
+      return ss2t13*ssth23*std::pow(sin(1.267*ldm*L/E), 2.);
+    }
+    if(abs(flavAfter) == 16 && abs(flavBefore) == 14){
+      //numu to nutau CC appearance
+      return (1.-ss2t13)*ss2t23*std::pow(sin(1.267*ldm*L/E), 2.);
+    }
+    if(abs(flavAfter) == 16 && abs(flavBefore) == 12){
+      //nue to nutau CC appearance
+      return ss2t13*(1.-ssth23)*std::pow(sin(1.267*ldm*L/E), 2.);
+    }
+    if(abs(flavAfter) == 16 && abs(flavBefore) == 16){
+      //nutau to nutau CC disappearance
+      return 1.-(ss2t23-ss2t23*ss2t13+ss2t13-ss2t13*ssth23)*std::pow(sin(1.267*ldm*L/E), 2.);
+    }
+
+    // Don't know what this is
+    return 0;
+
+  }
+  
   //......................................................................
   void CVNZlibMaker::beginJob()
   {
@@ -115,6 +210,7 @@ namespace cvn {
       out_dir = std::string(tmp_grid_dir) + "/out";
     }
 */
+    art::ServiceHandle<art::TFileService> tfs;
     if (fOutputDir != "")
       out_dir = fOutputDir;
 
@@ -127,6 +223,8 @@ namespace cvn {
         << "Output directory " << out_dir << " does not exist!" << std::endl;
 
     // std::cout << "Writing files to output directory " << out_dir << std::endl;
+
+    hPOT = tfs->make<TH1D>("TotalPOT", "Total POT;; POT", 1, 0, 1);
   }
 
   //......................................................................
@@ -154,6 +252,22 @@ namespace cvn {
     art::Ptr<simb::MCTruth> mctruth = mctruth_list[0];
     simb::MCNeutrino true_neutrino = mctruth->GetNeutrino();
 
+    // Hard-coding event weight for now
+    // Should probably fix this at some point
+    double event_weight = 1.;
+
+    art::PtrVector<simb::MCTruth> pv;
+    pv.push_back(mctruth);
+    art::FindManyP<simb::MCFlux> fmFlux(pv, evt, fGenieGenModuleLabel);
+
+    if( fmFlux.isValid() ) {
+      std::vector<art::Ptr<simb::MCFlux>> fluxes = fmFlux.at(0);
+      if (!fluxes.empty()) {
+        const simb::MCFlux& flux = *fluxes[0];
+        event_weight = SimpleOscProb(flux, true_neutrino);
+      }
+    }
+
     AssignLabels labels;
 
     interaction = labels.GetInteractionType(true_neutrino);
@@ -164,6 +278,20 @@ namespace cvn {
     float lep_energy = true_neutrino.Lepton().E();
 
     // Put a containment cut here
+    bool fApplyFidVol = true;
+    bool isFid = true;
+    // If outside the fiducial volume don't waste any time filling other variables
+    if(fApplyFidVol){
+      // Get the interaction vertex from the end point of the neutrino. This is
+      // because the start point of the lepton doesn't make sense for taus as they
+      // are decayed by the generator and not GEANT
+      TVector3 vtx = true_neutrino.Nu().EndPosition().Vect();
+      if(fIsVD)
+        isFid = (fabs(vtx.X())<300 && fabs(vtx.Y())<680 && vtx.Z()>40 && vtx.Z()<850); // vd
+      else
+        isFid = (fabs(vtx.X())<310 && fabs(vtx.Y())<550 && vtx.Z()>50 && vtx.Z()<1244); // hd
+      if(!isFid) return;
+    }
 
     float reco_nue_energy = 0;
     float reco_numu_energy = 0;
@@ -187,9 +315,6 @@ namespace cvn {
       reco_nutau_energy = h_ereco->fNuLorentzVector.E();
     }
 
-    // Hard-coding event weight for now
-    // Should probably fix this at some point
-    int event_weight = 1;
 
     TrainingData train(interaction, nu_energy, lep_energy,
       reco_nue_energy, reco_numu_energy, reco_nutau_energy,
@@ -206,7 +331,7 @@ namespace cvn {
     train.SetTopologyInformation(pdg, n_proton, n_pion,
       n_pi0, n_neutron, toptype, toptypealt);
 
-    std::string evtid = "r"+std::to_string(evt.run())+"_s"+std::to_string(evt.subRun())+"_e"+std::to_string(evt.event());
+    std::string evtid = "r"+std::to_string(evt.run())+"_s"+std::to_string(evt.subRun())+"_e"+std::to_string(evt.event())+"_h"+std::to_string(time(0));
     this->write_files(train, evt.event(), evtid);
   }
 

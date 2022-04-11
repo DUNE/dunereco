@@ -13,9 +13,10 @@ local sim = sim_maker(params, tools);
 
 // Deposit and drifter ///////////////////////////////////////////////////////////////////////////////
 
+// APA 35
 local stubby = {
-  tail: wc.point(280, 360.0,  780.0, wc.cm),
-  head: wc.point(270, 480.0,  880.0, wc.cm),
+  tail: wc.point(290, 340.0,   755.0, wc.cm),
+  head: wc.point(50,  508.101,  905.0, wc.cm),
 };
 
 local tracklist = [
@@ -44,7 +45,8 @@ local bagger = sim.make_bagger();
 // Parallel part //////////////////////////////////////////////////////////////////////////////
 
 
-local sn_pipes = sim.signal_pipelines;
+// local sn_pipes = sim.signal_pipelines;
+local sn_pipes = sim.splusn_pipelines;
 
 
 local parallel_pipes = [ g.pipeline([ sn_pipes[n] ], 'parallel_pipe_%d' % n)  for n in std.range(0, std.length(tools.anodes) - 1)];

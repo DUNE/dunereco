@@ -68,7 +68,7 @@ function(tools, outputfile) {
         root_file_mode: 'UPDATE',
         frames: ['tight_lf%d' %n, 'loose_lf%d' %n, 'cleanup_roi%d' %n,
                  'break_roi_1st%d' %n, 'break_roi_2nd%d' %n,
-                 'shrink_roi%d' %n, 'extend_roi%d' %n],
+                 'shrink_roi%d' %n, 'extend_roi%d' %n, 'mp2_roi%d' %n, 'mp3_roi%d' %n],
         trace_has_tag: true,
         anode: wc.tn(tools.anodes[n]),
       },
@@ -91,6 +91,21 @@ function(tools, outputfile) {
     for n in std.range(0, nanodes - 1)
   ],
 
+  local magdnnroi = [
+    g.pnode({
+      type: 'MagnifySink',
+      name: 'magdnnroi%d' % n,
+      data: {
+        output_filename: outputfile,
+        root_file_mode: 'UPDATE',
+        frames: ['dnnsp%d' %n],
+        trace_has_tag: true,
+        anode: wc.tn(tools.anodes[n]),
+      },
+    }, nin=1, nout=1)
+    for n in std.range(0, nanodes - 1)
+  ],
+
 
   return: {
     orig_pipe: [g.pipeline([magorig[n]], name='magorigpipe%d' % n) for n in std.range(0, nanodes - 1)],
@@ -98,6 +113,7 @@ function(tools, outputfile) {
     decon_pipe: [g.pipeline([magdecon[n]], name='magdeconpipe%d' % n) for n in std.range(0, nanodes - 1)],
     debug_pipe: [g.pipeline([magdebug[n]], name='magdebugpipe%d' % n) for n in std.range(0, nanodes - 1)],
     threshold_pipe: [g.pipeline([magthr[n]], name='magthrpipe%d' % n) for n in std.range(0, nanodes - 1)],
+    dnnroi_pipe: [g.pipeline([magdnnroi[n]], name='magdnnroipipe%d' % n) for n in std.range(0, nanodes - 1)],
   },
 
 

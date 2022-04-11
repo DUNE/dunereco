@@ -84,6 +84,7 @@ namespace cvn
     geo::GeometryCore const* fGeometry;
     std::vector<double> fVDPlane0;
     std::vector<double> fVDPlane1;
+    double fSpacing0, fSpacing1;
     // std::vector<int> fPlane0GapWires;
     // std::vector<int> fPlane1GapWires;
 

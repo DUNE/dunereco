@@ -47,6 +47,7 @@ function(params, tools, override = {}) {
        *  Associated tuning in sp-filters.jsonnet
        */
       anode: wc.tn(anode),
+      dft: wc.tn(tools.dft),
       field_response: wc.tn(tools.field),
       elecresponse: wc.tn(tools.elec_resp),
       ftoffset: 0.0, // default 0.0
@@ -76,7 +77,21 @@ function(params, tools, override = {}) {
       wiener_tag: 'wiener%d' % anode.data.ident,
       wiener_threshold_tag: 'threshold%d' % anode.data.ident,
       gauss_tag: 'gauss%d' % anode.data.ident,
+
+      use_roi_debug_mode: false,
+      tight_lf_tag: 'tight_lf%d' % anode.data.ident,
+      loose_lf_tag: 'loose_lf%d' % anode.data.ident,
+      cleanup_roi_tag: 'cleanup_roi%d' % anode.data.ident,
+      break_roi_loop1_tag: 'break_roi_1st%d' % anode.data.ident,
+      break_roi_loop2_tag: 'break_roi_2nd%d' % anode.data.ident,
+      shrink_roi_tag: 'shrink_roi%d' % anode.data.ident,
+      extend_roi_tag: 'extend_roi%d' % anode.data.ident,
+      decon_charge_tag: 'decon_charge%d' % anode.data.ident,
+
+      use_multi_plane_protection: false,
+      mp3_roi_tag: 'mp3_roi%d' % anode.data.ident,
+      mp2_roi_tag: 'mp2_roi%d' % anode.data.ident,
     } + override,
-  }, nin=1, nout=1, uses=[anode, tools.field, tools.elec_resp] + pc.uses + spfilt),
+  }, nin=1, nout=1, uses=[anode, tools.dft, tools.field, tools.elec_resp] + pc.uses + spfilt),
 
 }

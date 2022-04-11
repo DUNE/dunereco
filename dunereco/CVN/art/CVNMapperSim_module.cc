@@ -133,12 +133,10 @@ namespace cvn {
 
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
     PixelMap pm = fProducer.CreateMap(detProp, hitlist);
-    std::cout << "NROI : " << fProducer.NROI() << std::endl;
-    if(fProducer.NROI() > fMinClusterHits)
+    auto nhits = fProducer.NROI();
+    pm.SetTotHits(nhits);
+    if(nhits > fMinClusterHits)
       pmCol->push_back(pm);
-    //pm.Print();
-    //Boundary bound = pm.Bound();
-    //}
     evt.put(std::move(pmCol), fClusterPMLabel);
     //std::cout<<"Map Complete!"<<std::endl;
   }

@@ -148,10 +148,27 @@ namespace cvn
     for(int plane = 0; plane < 2; plane++){
       
       int nCRM_row = 6;
+      int nCRM_col = 6;
+      bool is8x6 = fGeometry->DetectorName().find("8x6") != std::string::npos;
+      if(is8x6)
+        nCRM_col = 8;
+      
+      geo::WireID wstart = geo::WireID(0, 0, plane,0);
+      geo::WireID wstartplus1 = geo::WireID(0, 0, plane, 1);
+      double wstart_intercept = _getIntercept(wstart);
+      double wstartplus1_intercept = _getIntercept(wstartplus1);
+      if(plane == 0)
+        fSpacing0 = std::abs(wstartplus1_intercept - wstart_intercept);
+      else
+        fSpacing1 = std::abs(wstartplus1_intercept - wstart_intercept);
+
+      bool is3view30deg = fGeometry->DetectorName().find("30deg") != std::string::npos;
+      
       for(int diag_tpc = 0; diag_tpc < nCRM_row; diag_tpc++){
         
         unsigned int nWiresTPC = fGeometry->Nwires(plane, 0, 0);
-        int tpc_id = plane == 0 ? (nCRM_row+1)*diag_tpc : (nCRM_row-1)*(nCRM_row-diag_tpc);
+        int tpc_id = (plane == 0 || !is3view30deg) ? (nCRM_col+1)*diag_tpc : (nCRM_col-1)*(nCRM_row-diag_tpc);
+     
         geo::WireID start = geo::WireID(0, tpc_id, plane, 0); 
         geo::WireID end = geo::WireID(0, tpc_id, plane, nWiresTPC-1);
 
@@ -161,9 +178,13 @@ namespace cvn
           fVDPlane0.push_back(start_intercept);
           fVDPlane0.push_back(end_intercept);
         }
+        else if (is3view30deg){
+          fVDPlane1.push_back(end_intercept);
+          fVDPlane1.push_back(start_intercept);
+        }
         else{
-          fVDPlane1.push_back(_getIntercept(end));
-          fVDPlane1.push_back(_getIntercept(start));
+          fVDPlane1.push_back(start_intercept);
+          fVDPlane1.push_back(end_intercept);
         }
       }
 
@@ -238,11 +259,11 @@ namespace cvn
     std::cout << "Boundary wire vector sizes: " << wire_0.size() << ", " << wire_1.size() << ", " << wire_2.size() << std::endl;
 
     auto minwireelement_0= std::min_element(wire_0.begin(), wire_0.end());
-    std::cout<<"minwire 0: "<<*minwireelement_0<<std::endl;
+    if(wire_0.size() > 0) std::cout<<"minwire 0: "<<*minwireelement_0<<std::endl;
     auto minwireelement_1= std::min_element(wire_1.begin(), wire_1.end());
-    std::cout<<"minwire 1: "<<*minwireelement_1<<std::endl;
+    if(wire_1.size() > 0) std::cout<<"minwire 1: "<<*minwireelement_1<<std::endl;
     auto minwireelement_2= std::min_element(wire_2.begin(), wire_2.end());
-    std::cout<<"minwire 2: "<<*minwireelement_2<<std::endl;
+    if(wire_2.size() > 0) std::cout<<"minwire 2: "<<*minwireelement_2<<std::endl;
 
     //auto maxwireelement_0= std::max_element(wire_0.begin(), wire_0.end());
     //std::cout<<"maxwire 0: "<<*maxwireelement_0<<std::endl;
@@ -346,17 +367,21 @@ namespace cvn
     //
     int tpcMod4 = tpc%4;
     // Induction views depend on the drift direction
-    if (plane < 2 and tpc%2 == 1) globalPlane = !plane;
+    // if (plane < 2 and tpc%2 == 1) globalPlane = !plane;
+    if (plane < 2 and tpcMod4 > 0 and tpcMod4 < 3) globalPlane = !plane;
     else globalPlane = plane;
 
-    int offset = 752; // Offset between upper and lower modules in induction views, from Robert & Dorota's code
+    // int offset = 752; // Offset between upper and lower modules in induction views, from Robert & Dorota's code
+    int offset = 0; // Offset between upper and lower modules in induction views, from Robert & Dorota's code
     // Second induction plane gets offset from the back of the TPC
-    if (globalPlane != 1) globalWire += (tpc/4)*nWiresTPC;
-    else globalWire += ((23-tpc)/4)*nWiresTPC;
+    // if (globalPlane != 1) globalWire += (tpc/4)*nWiresTPC;
+    // else globalWire += ((23-tpc)/4)*nWiresTPC;
+    if (globalPlane != 1) globalWire += (tpc/4)*nWiresTPC + (tpcMod4 > 1)*offset + localWire;
+    else globalWire += ((23-tpc)/4)*nWiresTPC + (tpcMod4 > 1)*offset + localWire;
     // Reverse wires and add offset for upper modules in induction views
     // Nitish : what's the difference between Nwires here and nWiresTPC?
-    if (tpcMod4 > 1 and globalPlane < 2) globalWire += fGeometry->Nwires(globalPlane, tpc, 0) + offset - localWire;
-    else globalWire += localWire;
+    // if (tpcMod4 > 1 and globalPlane < 2) globalWire += fGeometry->Nwires(globalPlane, tpc, 0) + offset - localWire;
+    // else globalWire += localWire;
 
     if(tpcMod4 == 0 || tpcMod4 == 2){
       globalTDC = drift_size - localTDC;
@@ -495,58 +520,79 @@ namespace cvn
   
   void PixelMapProducer::GetDUNEVertDrift3ViewGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const
   {
-    // Preliminary function for VD Geometries (3 View for now)
-    // 1x6x6 -- single drift volume should make things significantly simpler
+    // Preliminary function for VD Geometries
     
     int nCRM_row = 6;
+    int nCRM_col = 6;
+    bool is8x6 = fGeometry->DetectorName().find("8x6") != std::string::npos;
+    if(is8x6)
+      nCRM_col = 8;
     // spacing between y-intercepts of parallel wires in a given plane. 
-    // seems its not actually the pitch/cos(theta_z) but rather the pitch/cos(theta_z) - 2*r_wire ??
     double spacing = 0.847; 
     
     globalPlane = plane;
     unsigned int nWiresTPC = fGeometry->Nwires(globalPlane, tpc, 0);
+    bool is3view30deg = fGeometry->DetectorName().find("30deg") != std::string::npos;
     
     if(globalPlane < 2){
       
       geo::WireID wire_id = geo::WireID(0, tpc, globalPlane, localWire);
       double wire_intercept = _getIntercept(wire_id);
-      double low_bound, upper_bound; 
+   
+      double low_bound = 0., upper_bound = 0.; 
       int start, end, diag_tpc;
-      // double matched_intercept;
       // get wires on diagonal CRMs and their intercepts which bound the current wire's intercept 
       if(globalPlane == 0){
         start = std::lower_bound(fVDPlane0.begin(), fVDPlane0.end(), wire_intercept) - fVDPlane0.begin() - 1;
         end = std::upper_bound(fVDPlane0.begin(), fVDPlane0.end(), wire_intercept) - fVDPlane0.begin();
+        
         low_bound = fVDPlane0[start];
-        upper_bound = fVDPlane0[end];
+        if(end < (int) fVDPlane0.size())
+          upper_bound = fVDPlane0[end];
         diag_tpc = (start/2);
+        spacing = fSpacing0;
       }
-      else{
+      else if (is3view30deg){
         end = std::lower_bound(fVDPlane1.begin(), fVDPlane1.end(), wire_intercept) - fVDPlane1.begin() - 1;
         start = std::upper_bound(fVDPlane1.begin(), fVDPlane1.end(), wire_intercept) - fVDPlane1.begin();
-        low_bound = fVDPlane1[end];
+       
+        if(end > 0)
+          low_bound = fVDPlane1[end];
         upper_bound = fVDPlane1[start];
         diag_tpc = (nCRM_row-(end/2) - 1);
+        if(end < 0) 
+          diag_tpc = nCRM_row - 1;
+        spacing = fSpacing1;
+      }
+      else{
+        int tpc_y = tpc % nCRM_col;
+        globalWire = localWire + tpc_y*nWiresTPC;
+        
+        start = std::lower_bound(fVDPlane1.begin(), fVDPlane1.end(), wire_intercept) - fVDPlane1.begin() - 1;
+        end = std::upper_bound(fVDPlane1.begin(), fVDPlane1.end(), wire_intercept) - fVDPlane1.begin();
+        
+        low_bound = fVDPlane1[start];
+        if(end < (int) fVDPlane1.size())
+          upper_bound = fVDPlane1[end];
+        diag_tpc = (start/2);
       }
       // if the intercept of the wire is in between two diagonal CRMs, assign it to the diagonal CRM its closest to 
-      if((start % 2)^globalPlane){
-        
+      if((((start % 2)^globalPlane && is3view30deg) || (globalPlane == 0 && !is3view30deg && (start % 2 == 1))) && (diag_tpc < nCRM_row-1)){
         int diag_idx = diag_tpc + !globalPlane;
         globalWire = (wire_intercept > (low_bound+upper_bound)*0.5) ? (nWiresTPC-1)*diag_idx + !globalPlane : (nWiresTPC-1)*diag_idx + globalPlane;
       }
       // otherwise assign it to the closest wire within the same CRM
-      else{
+      else if(is3view30deg || (globalPlane == 0 && !is3view30deg && (start %2 == 0))){
         int diag_idx = diag_tpc;
         int offset = globalPlane ? std::round((upper_bound - wire_intercept)/spacing) : std::round((wire_intercept-low_bound)/spacing);
         globalWire = (nWiresTPC-1)*diag_idx + offset + 1;
-          
+        
       }
     }
     else{
-      int tpc_z = tpc/6;
+      int tpc_z = tpc/nCRM_col;
       globalWire = localWire + tpc_z*nWiresTPC;
     }
- 
   }
 
   void PixelMapProducer::GetHitTruth(detinfo::DetectorClocksData const& clockData,

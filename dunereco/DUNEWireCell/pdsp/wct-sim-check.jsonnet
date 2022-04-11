@@ -49,8 +49,10 @@ local tracklist = [
 
   {
     time: 0 * wc.us, 
-    charge: -5000, // 5000 e/mm
-    ray: params.det.bounds,
+    // charge: -5000, // 5000 e/mm
+    // ray: params.det.bounds,
+    charge: -10000, // 5000 e/mm
+    ray: parallel,
   },
 
 ];
@@ -99,8 +101,8 @@ local perfect = import 'pgrapher/experiment/pdsp/chndb-base.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
-  data: perfect(params, tools.anodes[n], tools.field, n),
-  uses: [tools.anodes[n], tools.field],  // pnode extension
+  data: perfect(params, tools.anodes[n], tools.field, n){dft:wc.tn(tools.dft)},
+  uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
 //local chndb_maker = import 'pgrapher/experiment/pdsp/chndb.jsonnet';
@@ -123,12 +125,12 @@ local parallel_pipes = [
   g.pipeline([
                sn_pipes[n],
                magnify_pipes[n],
-               nf_pipes[n],
-               magnify_pipes2[n],
-               sp_pipes[n],
-               magnify_pipes3[n],
-               magnify_pipes4[n],
-               magnify_pipes5[n],
+               // nf_pipes[n],
+               // magnify_pipes2[n],
+               // sp_pipes[n],
+               // magnify_pipes3[n],
+               // magnify_pipes4[n],
+               // magnify_pipes5[n],
              ],
              'parallel_pipe_%d' % n)
   for n in std.range(0, std.length(tools.anodes) - 1)

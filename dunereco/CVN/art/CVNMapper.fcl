@@ -46,7 +46,7 @@ standard_cvnmapper_wire:
   WireLength:    2880 #Unwrapped collection view max (6 x 480)
   TimeResolution: 1500
   UnwrappedPixelMap: 1
-  Threshold: 0
+  Threshold: 0.6
 }
 
 standard_cvnmapper_sim:
@@ -60,7 +60,7 @@ standard_cvnmapper_sim:
   WireLength:    2880 #Unwrapped collection view max (6 x 480)
   TimeResolution: 1500
   UnwrappedPixelMap: 1
-  Threshold: 0
+  Threshold: 0.6
 }
 # This is for the beam slice usage of a CVN
 standard_cvnmapper_protodune_vertex: @local::standard_cvnmapper_protodune

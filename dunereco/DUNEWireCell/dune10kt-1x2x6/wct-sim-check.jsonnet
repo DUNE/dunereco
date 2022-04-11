@@ -77,8 +77,8 @@ local perfect = import 'chndb-perfect.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
-  data: perfect(params, tools.anodes[n], tools.field),
-  uses: [tools.anodes[n], tools.field],  // pnode extension
+  data: perfect(params, tools.anodes[n], tools.field){dft:wc.tn(tools.dft)},
+  uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
 //local chndb_maker = import 'pgrapher/experiment/pdsp/chndb.jsonnet';
