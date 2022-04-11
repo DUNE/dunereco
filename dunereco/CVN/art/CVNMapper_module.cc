@@ -133,9 +133,6 @@ namespace cvn {
       pm.SetTotHits(nhits);
       pmCol->push_back(pm);
     }
-    //pm.Print();
-    //Boundary bound = pm.Bound();
-    //}
     evt.put(std::move(pmCol), fClusterPMLabel);
     //std::cout<<"Map Complete!"<<std::endl;
   }
