@@ -9,14 +9,14 @@ process_name: ZlibMaker
 services:
 {
   # Load the service that manages root files for histograms.
-  # TFileService: {}
+  TFileService: { fileName: "potinfo_r%r-r%R_s%s-s%S_hist.root" }
   TimeTracker:       {}
   RandomNumberGenerator: {}
   MemoryTracker:         { } # default is one
   message:      @local::dune_message_services_prod
   FileCatalogMetadata:  @local::art_file_catalog_mc
-                        @table::dunefdvd_1x6x6_3view_30deg_simulation_services
-                        Geometry: @local::dunevd10kt_1x6x6_3view_30deg_geo
+                        @table::dunefdvd_1x8x6_3view_30deg_simulation_services
+                        Geometry: @local::dunevd10kt_1x8x6_3view_30deg_geo
 }
 
 source:
@@ -47,11 +47,12 @@ physics:
 # physics.producers.energynutau.RecoMethod: 3
 
 # CVNMapper configuration
-physics.producers.cvnmap.TimeResolution: 1500
-physics.producers.cvnmap.TdcWidth: 500
-physics.producers.cvnmap.Threshold: 0.6
+# physics.producers.cvnmap.TimeResolution: 1500
+# physics.producers.cvnmap.TdcWidth: 500
+# physics.producers.cvnmap.HitsModuleLabel: "gaushit"
 
 physics.analyzers.zlib.ReverseViews: [false, false, false]
 physics.analyzers.zlib.EnergyNueLabel: ""
 physics.analyzers.zlib.EnergyNumuLabel: ""
 physics.analyzers.zlib.EnergyNutauLabel: ""
+physics.analyzers.zlib.IsVD: true

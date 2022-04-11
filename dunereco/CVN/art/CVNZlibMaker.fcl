@@ -15,7 +15,7 @@ standard_cvnzlibmaker:
   EnergyNutauLabel: "energynutau"
   PlaneLimit: 500
   TDCLimit: 500
-  
+  IsVD: false
 }
 
 standard_cvnzlibmaker_protodune_beam:
