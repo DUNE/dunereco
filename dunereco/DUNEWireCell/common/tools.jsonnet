@@ -1,19 +1,32 @@
-
 // This file provides a function which takes a params object (see
 // ../params/) and returns a data structure with a number of
 // sub-objects that may configure various WCT "tool" type componets
 // which are not INodes.
 
+// Some attributes are merely default and you may wish to override
+// them.  For example, the default IDFT FftwDFT and to instead ues
+// TorchDFT you may do something like:
+//
+// local default_tools = tools_maker(params)
+// local tools = std.mergePatch(default_tools,
+//   {dft: {type: "TorchDFT", data: {device: "gpu"}}});
+// 
+
 local wc = import "wirecell.jsonnet";
 
 function(params)
 {
+    // The IRandom pRNG
     random : {
         type: "Random",
         data: {
             generator: "default",
             seeds: [0,1,2,3,4],
         }
+    },
+    // The IDFT FFT implementation 
+    dft : {
+        type: "FftwDFT",
     },
 
     // One FR per field file.
@@ -93,13 +106,15 @@ function(params)
     },
 
     // there is one trio of PIRs (one per wire plane in a face) for
-    // each field response.
+    // each field response.  WARNING/fixme: this sets the default DFT
+    // with no way to override!  This config structure needs a redo!
     pirs : std.mapWithIndex(function (n, fr) [
         {
             type: "PlaneImpactResponse",
             name : "PIR%splane%d" % [fr.name, plane],
             data : sim_response_binning {
                 plane: plane,
+                dft: wc.tn($.dft),
                 field_response: wc.tn(fr),
                 // note twice we give rc so we have rc^2 in the final convolution
                 short_responses: if params.sys_status == false
@@ -117,7 +132,7 @@ function(params)
         else [wc.tn($.rc_resp), wc.tn($.rc_resp)],
 		long_padding: 1.5*wc.ms,
 	    },
-            uses: [fr, $.elec_resp, $.rc_resp, $.sys_resp],
+            uses: [$.dft, fr, $.elec_resp, $.rc_resp, $.sys_resp],
         } for plane in [0,1,2]], $.fields),
 
     // One anode per detector "volume"
