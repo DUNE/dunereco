@@ -15,10 +15,6 @@ function(params, anode, field, n)
     // same number of samples.
     nsamples: params.nf.nsamples,
 
-    // For MicroBooNE, channel groups is a 2D list.  Each element is
-    // one group of channels which should be considered together for
-    // coherent noise filtering.
-    //groups: [std.range(g*48, (g+1)*48-1) for g in std.range(0,171)],
     groups: [std.range(n * 2560 + u * 40, n * 2560 + (u + 1) * 40 - 1) for u in std.range(0, 19)]
             + [std.range(n * 2560 + 800 + v * 40, n * 2560 + 800 + (v + 1) * 40 - 1) for v in std.range(0, 19)]
             + [std.range(n * 2560 + 1600 + w * 48, n * 2560 + 1600 + (w + 1) * 48 - 1) for w in std.range(0, 19)],

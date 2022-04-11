@@ -6,7 +6,7 @@ local wc = import 'wirecell.jsonnet';
 function(params, anode, chndbobj, n, name='')
   {
     local status = {
-      type: 'mbOneChannelStatus',
+      type: std.trace("Warning MB in DUNE?", 'mbOneChannelStatus'),
       name: name,
       data: {
         Threshold: 3.5,
@@ -17,7 +17,7 @@ function(params, anode, chndbobj, n, name='')
       },
     },
     local single = {
-      type: 'mbOneChannelNoise',
+      type: std.trace("Warning MB in DUNE?", 'mbOneChannelNoise'),
       name: name,
       data: {
         noisedb: wc.tn(chndbobj),
@@ -25,7 +25,7 @@ function(params, anode, chndbobj, n, name='')
       },
     },
     local grouped = {
-      type: 'mbCoherentNoiseSub',
+      type: std.trace("Warning MB in DUNE?", 'mbCoherentNoiseSub'),
       name: name,
       data: {
         noisedb: wc.tn(chndbobj),

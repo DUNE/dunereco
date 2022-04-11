@@ -29,9 +29,6 @@ physics :{
             outputers: [
                "wclsSimChannelSink:postdrift",
                "wclsFrameSaver:simdigits"
-            //   ,"wclsFrameSaver:nfdigits",
-            //   "wclsFrameSaver:spsignals",
-            //   "wclsFrameSaver:spthresholds"
             ]
 
             // Make available parameters via Jsonnet's std.extVar()
@@ -41,7 +38,8 @@ physics :{
               # dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2
               # dunevd10kt-1x6x6-2view-wires-v1.json.bz2
               # dunevd10kt-1x8x14-3view-wires-v1.json.bz2
-              files_wires: "dunevd10kt-1x6x6-3view-wires-v1.json.bz2"
+              # dunevd10kt_3view_v2_refactored_1x8x6ref.json.bz2
+              files_wires: "dunevd10kt_3view_v2_refactored_1x8x6ref.json.bz2"
               # file: fields
               # dunevd-resp-isoc3views-18d92.json.bz2 30,-30,90
               # pcbro-response-avg-12d50.json.bz2 2view prototype
@@ -62,13 +60,13 @@ physics :{
               # Electron lifetime [us] #10.4e3
               lifetime: 10.4e3 #@local::dunefdvd_detproperties.Electronlifetime
               # Electron drift speed, assumes a certain applied E-field [mm/us]
-              driftSpeed: 1.565
+              driftSpeed: 1.60563 # 1.60563, 1.565
               # G4RefTime [us]
               G4RefTime: @local::dunefd_detectorclocks.G4RefTime
               # response plane [cm]
               response_plane: 18.92
               # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
-              ncrm: 36
+              ncrm: 48
             }
 
          }

@@ -140,9 +140,9 @@ local base = import 'chndb-base.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
-  // data: perfect(params, tools.anodes[n], tools.field, n),
-  data: base(params, tools.anodes[n], tools.field, n),
-  uses: [tools.anodes[n], tools.field],  // pnode extension
+  // data: perfect(params, tools.anodes[n], tools.field, n) { dft:wc.tn(tools.dft) },
+  data: base(params, tools.anodes[n], tools.field, n) { dft:wc.tn(tools.dft) },
+  uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local nf_maker = import 'pgrapher/experiment/dune-vd-coldbox/nf.jsonnet';

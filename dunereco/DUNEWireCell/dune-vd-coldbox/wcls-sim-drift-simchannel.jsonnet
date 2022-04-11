@@ -110,8 +110,8 @@ local perfect = import 'pgrapher/experiment/dune-vd-coldbox/chndb-base.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
-  data: perfect(params, tools.anodes[n], tools.field, n),
-  uses: [tools.anodes[n], tools.field],  // pnode extension
+  data: perfect(params, tools.anodes[n], tools.field, n) {dft:wc.tn(tools.dft)},
+  uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in anode_iota];
 
 
