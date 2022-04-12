@@ -322,7 +322,7 @@ void cvn::CVNImageUtils::GetMinMaxWires(std::vector<float> &wireCharges, unsigne
   maxWire = fNWires;
 
   for(unsigned int wire = 0; wire < wireCharges.size(); ++wire){
-
+  
     // If we have got to fNWires from the end, the start needs to be this wire
     if(wireCharges.size() - wire == fNWires){
       break;
@@ -339,7 +339,6 @@ void cvn::CVNImageUtils::GetMinMaxWires(std::vector<float> &wireCharges, unsigne
       return;
     }
   }
-
   // If we don't find a region where we have fewer than 5 empty planes then we just want to select the fNWires wires containing
   // the most charge
   float maxCharge = 0.;

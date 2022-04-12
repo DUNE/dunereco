@@ -32,19 +32,17 @@ dunevd10kt_cvnmapper:
    TimeResolution: 1500 
 }
 
-# dunevd10kt_3view_cvnevaluator:
-# {
-#     @table::standard_cvnevaluator
-#     TFNetHandler:
-#     {
-#         @table::standard_cvnevaluator.TFNetHandler
-#         TFProtoBuf: "duneCVNNetwork/dune_cvn_vd_3view_resnet_tf_v1.12.pb"
-#         LibPath:    "DUNE_PARDATA_DIR"
-#         # TFProtoBuf: "dunereco/CVN/dune_cvn_vd_3view_resnet_tf_v1.12.pb"
-#         # LibPath:    "MRB_SOURCE"
-#         ReverseViews: [false, false, false]
-#     }
-# }
+dunevd10kt_3view_cvnevaluator:
+{
+    @table::standard_cvnevaluator
+    TFNetHandler:
+    {
+        @table::standard_cvnevaluator.TFNetHandler
+        TFProtoBuf: "duneCVNNetwork/dune_cvn_vd_3view_resnet_tf_v2.3.1.pb"
+        LibPath:    "DUNE_PARDATA_DIR"
+        ReverseViews: [false, false, false]
+    }
+}
   
 
 END_PROLOG

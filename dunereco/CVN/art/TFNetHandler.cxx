@@ -69,12 +69,12 @@ namespace cvn
   std::vector< std::vector<float> > TFNetHandler::Predict(const PixelMap& pm)
   {
    
-    CVNImageUtils imageUtils;
-
+    CVNImageUtils imageUtils(fImageWires,fImageTDCs, 3);
     // Configure the image utility  
     imageUtils.SetViewReversal(fReverseViews);
     imageUtils.SetImageSize(fImageWires,fImageTDCs,3);
     imageUtils.SetLogScale(fUseLogChargeScale);
+    imageUtils.SetPixelMapSize(pm.NWire(), pm.NTdc());
 
     ImageVectorF thisImage;
     imageUtils.ConvertPixelMapToImageVectorF(pm,thisImage);
