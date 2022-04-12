@@ -30,7 +30,7 @@ dunefd_nuenergyreco_pandora_numu:
     @table::dunefd_nuenergyreco_pmtrack
     RecoMethod:             1
     WireLabel:              "wclsdatanfsp:gauss"
-    HitLabel:               "pandora"
+    HitLabel:               "gaushit"
     TrackLabel:             "pandoraTrack"
     ShowerLabel:            "pandoraShower"
     TrackToHitLabel:        "pandoraTrack"
