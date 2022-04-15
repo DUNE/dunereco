@@ -1,0 +1,45 @@
+#include "services_dune.fcl"
+#include "cvn_dune.fcl"
+
+process_name: CVNEvaluator
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "cvn_dunevd_event_dump_r%r_s%s_hist.root"
+                  closeFileFast: false }
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+                        @table::dunefdvd_1x8x6_3view_simulation_services
+                        Geometry: @local::dunevd10kt_1x8x6_3view_geo
+  #@table::standard_services
+}
+
+# Input source is a ROOT file 
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1        # Number of events to create
+
+}
+
+# Define and configure some modules to do work on each event.
+# First modules are defined; they are scheduled later.
+# Modules are grouped by type.
+physics:
+{
+  # Declare the modules
+  producers:
+  { 
+    cvnmap:     @local::dunevd10kt_cvnmapper
+    cvneva:     @local::dunevd10kt_3view_cvnevaluator
+  }
+
+  # Build the paths
+  map: [cvnmap, cvneva ]
+}
+
+# physics.producers.cvnmap.TimeResolution: 1500
+# physics.producers.cvnmap.TdcWidth: 500
+# physics.producers.cvnmap.HitsModuleLabel: "gaushit"
+
+########################################################################
