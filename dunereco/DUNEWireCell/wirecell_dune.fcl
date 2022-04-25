@@ -1065,6 +1065,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp {
         @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main
         params: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main.params
+            # TODO: needs 8x14 geom for 3view_30deg
             files_wires: "dunevd10kt_3view_30deg_v2_refactored_1x8x6ref.json.bz2"
             files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
             files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
@@ -1076,7 +1077,6 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp {
             ncrm: 48
         }
     }
-
 }
 
 dune10kt_dunefd_vertdrift_1x6x6_2view_data_nfsp : {
