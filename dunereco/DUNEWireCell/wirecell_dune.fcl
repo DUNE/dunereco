@@ -1059,7 +1059,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
     }
 }
 
-dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp {
+dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp : {
     @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp
     wcls_main: {
         @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main
