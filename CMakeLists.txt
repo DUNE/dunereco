@@ -30,6 +30,8 @@ cet_report_compiler_flags()
 
 find_ups_product( eigen )
 include_directories( $ENV{EIGEN_INC} )
+# testing use of rstartree ups product
+find_ups_product( rstartree )
 find_ups_product( art )
 find_ups_product( art_root_io )
 find_ups_product( canvas_root_io )
