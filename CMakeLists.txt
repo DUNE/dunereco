@@ -7,7 +7,7 @@
 cmake_minimum_required (VERSION 3.12...3.14 FATAL_ERROR)
 
 project(dunereco LANGUAGES CXX)
-set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.48.01d00)
+set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.49.00d00)
 
 # cetbuildtools contains our cmake modules
 find_package(cetbuildtools REQUIRED)
@@ -30,6 +30,8 @@ cet_report_compiler_flags()
 
 find_ups_product( eigen )
 include_directories( $ENV{EIGEN_INC} )
+# testing use of rstartree ups product
+find_ups_product( rstartree )
 find_ups_product( art )
 find_ups_product( art_root_io )
 find_ups_product( canvas_root_io )

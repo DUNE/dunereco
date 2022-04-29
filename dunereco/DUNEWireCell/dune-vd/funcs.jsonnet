@@ -11,7 +11,7 @@ local g = import "pgraph.jsonnet";
     multifanpipe :: function( fout, pipelines, fin,
     fout_nnodes=[1,8,16], fout_multi=[8,2,7],
     fin_nnodes=[1,8,16], fin_multi=[8,2,7],
-    name='multifanpipe', outtags=[], tag_rules=[] ) {
+    name='multifanpipe', outtags=[], tag_rules=null ) {
         local fout_nlayers = std.length(fout_multi),
         assert fout_nlayers >= 2 : "fout_nlayers should be >= 2",
         local fin_nlayers = std.length(fin_multi),
@@ -30,7 +30,7 @@ local g = import "pgraph.jsonnet";
                     name: name+"_fout_%d"%ilayer + "_%d"%inode,
                     data: {
                         multiplicity: nmulti,
-                        tag_rules: tag_rules,
+                        tag_rules: [],
                     }}, nin=1, nout=nmulti
                 ) for inode in std.range(0,nnodes-1)],
         }.ret,
@@ -68,6 +68,7 @@ local g = import "pgraph.jsonnet";
                     data: {
                         multiplicity: nmulti,
                         tags: outtags,
+                        tag_rules: [tag_rules for irule in std.range(0,nmulti-1)],
                     }}, nin=nmulti, nout=1
                 ) for inode in std.range(0,nnodes-1)],
         }.ret,
@@ -121,7 +122,7 @@ local g = import "pgraph.jsonnet";
                     name: name+"_fout_%d"%ilayer + "_%d"%inode,
                     data: {
                         multiplicity: nmulti,
-                        tag_rules: tag_rules,
+                        tag_rules: [],
                     }}, nin=1, nout=nmulti
                 ) for inode in std.range(0,nnodes-1)],
         }.ret,
