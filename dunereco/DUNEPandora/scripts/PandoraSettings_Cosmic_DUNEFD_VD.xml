@@ -311,6 +311,7 @@
     <algorithm type = "LArCosmicRayVertexBuilding">
         <InputPfoListName>MuonParticles3D</InputPfoListName>
         <OutputVertexListName>CRVertices3D</OutputVertexListName>
+	<IsDualPhase>true</IsDualPhase>
     </algorithm>
 
     <!-- Track and shower building -->
