@@ -28,7 +28,6 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "APAGeometryAlg.h"
-#include "larreco/RecoAlg/DBScanAlg.h"
 namespace detinfo {
   class DetectorPropertiesData;
 }

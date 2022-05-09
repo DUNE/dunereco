@@ -1,0 +1,44 @@
+#+title: WCT Configuration Helpers
+
+This area provides configuration helper code in a "new style"
+different than the "tools" based approach which grew to be a mess.
+
+Code added here must follow these requirements/guidelines.  Any
+transgressions are subject to removal/reverting without notice even if
+that breaks your usage.  When in doubt, ask.
+
+- Helpers should be in the form of *functions* returning data structures
+  instead of structures directly.
+
+- Helpers must be generic to all detectors.
+
+- Helper function arguments should be small "leaf" objects and
+  preferably scalar.  Do not pass large aggregates and especially any
+  form not universally all detectors is not allowed.
+
+- Functions specific to particular detector variations can be created
+  if a generic helper function is provided.  For example, see
+  ~img.tiling()~ for an example of how a general detector is supported
+  through the use of one function for single-faced anode and one for
+  double-faced.
+
+- Generally, do not ~import~ any Jsonnet file except at top level ~cfg/~
+  or in ~helpers/~
+
+- Absolutely no ~std.extVar()~ allowed.  Do feel free to liberally use
+  TLAs.
+
+- Wherever a node name may be ambiguous, allow user to provide a name.
+  Wherever a node name can be generated unambigously, use shortest
+  possible name.  For example, if function is parameterized by an
+  ~anode~ and if the node being produced is 1-to-1 with the anode, name
+  the node simply the value of ~anode.data.ident~.  Do not tack on extra
+  prefix/suffix based on the type of the node (that's handled by
+  ~type~).  Your logs and eyeballs will thank you.
+
+
+
+
+  
+
+

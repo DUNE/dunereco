@@ -11,21 +11,21 @@ function(params, tools) {
     local nanodes = std.length(tools.anodes),
 
 
-    local ductors = [sim.make_depotransform("ductor%d"%n, tools.anodes[n], tools.pirs[0]) for n in std.range(0, nanodes-1)],
+    local ductors = [sim.make_depotransform("ductor%d"%anode.data.ident, anode, tools.pirs[0]) for anode in tools.anodes],
 
     local reframers = [
         g.pnode({
             type: 'Reframer',
-            name: 'reframer%d'%n,
+            name: 'reframer%d'%anode.data.ident,
             data: {
-                anode: wc.tn(tools.anodes[n]),
+                anode: wc.tn(anode),
                 tags: [],           // ?? what do?
                 fill: 0.0,
                 tbin: params.sim.reframer.tbin,
                 toffset: 0,
                 nticks: params.sim.reframer.nticks,
             },
-        }, nin=1, nout=1) for n in std.range(0, nanodes-1)],
+        }, nin=1, nout=1) for anode in tools.anodes],
 
     // fixme: see https://github.com/WireCell/wire-cell-gen/issues/29
     local make_noise_model = function(anode, csdb=null) {
@@ -59,16 +59,16 @@ function(params, tools) {
     local noises = [add_noise(model) for model in noise_models],
 
     local digitizers = [
-        sim.digitizer(tools.anodes[n], name="digitizer%d"%n, tag="orig%d"%n)
-        for n in std.range(0,nanodes-1)],
+        sim.digitizer(anode, name="digitizer%d"%anode.data.ident, tag="orig%d"%anode.data.ident)
+        for anode in tools.anodes],
 
     ret : {
 
         signal_pipelines: [g.pipeline([ductors[n], reframers[n],  digitizers[n]],
-                                      name="simsigpipe%d"%n) for n in std.range(0, nanodes-1)],
+                                      name="simsigpipe%d"%tools.anodes[n].data.ident,) for n in std.range(0, nanodes-1)],
 
         splusn_pipelines: [g.pipeline([ductors[n], reframers[n], noises[n],  digitizers[n]],
-                                      name="simsigpipe%d"%n) for n in std.range(0, nanodes-1)],
+                                      name="simsigpipe%d"%tools.anodes[n].data.ident) for n in std.range(0, nanodes-1)],
 
 
     } + sim,      
