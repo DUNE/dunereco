@@ -41,6 +41,8 @@ dunefd_pandora_cosmic.ShouldRunCosmicRecoOption:                    true
 dunefdvd_pandora_neutrino:                                          @local::dune_pandora
 dunefdvd_pandora_neutrino.ConfigFile:                               "PandoraSettings_Master_DUNEFD_VD.xml"
 dunefdvd_pandora_neutrino.ShouldRunNeutrinoRecoOption:              true
+dunefdvd_pandora_neutrino.EnableMCParticles:                        true
+dunefdvd_pandora_neutrino.SimChannelModuleLabel:                    "tpcrawdecoder:simpleSC"
 dunefdvd_pandora_neutrino.HitFinderModuleLabel:                     "gaushit"
 
 dunefdvd_pandora_cosmic:                                            @local::dunefdvd_pandora_neutrino
