@@ -162,6 +162,14 @@ wirecell_dunevd_coldbox_mc:
         params: {
             active_cru: 'tde' // 'bde'
         }
+	structs: {
+           # number of time samples
+           nticks: @local::protodunedphase_detproperties.NumberTimeSamples
+	   lifetime: @local::protodunedphase_detproperties.Electronlifetime
+	   DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+	   DT: @local::dunefd_largeantparameters.TransverseDiffusion
+	   driftSpeed: 0.000142572 # corresponds to Efield = 0.404 kV/cm, nov2021 value. See services_coldbox.fcl
+		}
     }
 }
 
