@@ -168,8 +168,9 @@ wirecell_dunevd_coldbox_mc:
 	   lifetime: @local::protodunedphase_detproperties.Electronlifetime
 	   DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
 	   DT: @local::dunefd_largeantparameters.TransverseDiffusion
-	   driftSpeed: 0.000142572 # corresponds to Efield = 0.404 kV/cm, nov2021 value. See services_coldbox.fcl
-		}
+           efield: @local::vdcb_services.DetectorPropertiesService.Efield[0] # kV/cm
+           temperature: @local::vdcb_services.DetectorPropertiesService.Temperature # K
+	}
     }
 }
 
