@@ -8,6 +8,7 @@
 
 local g = import 'pgraph.jsonnet';
 local f = import 'pgrapher/common/funcs.jsonnet';
+local util = import 'pgrapher/experiment/dune-vd-coldbox/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
 local io = import 'pgrapher/common/fileio.jsonnet';
@@ -24,8 +25,9 @@ local params = base {
     DT: std.extVar('DT') * wc.cm2 / wc.s,
     // Electron lifetime
     lifetime: std.extVar('lifetime') * wc.ms,
-    // Electron drift speed, assumes a certain applied E-field
-    drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
+    // Electron drift speed
+    // drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
+    drift_speed: util.drift_velocity(std.extVar('efield'), std.extVar('temperature')) * wc.mm / wc.us,
   },
 };
 
@@ -214,7 +216,6 @@ local frame_summers = [
     }, nin=2, nout=1) for n in std.range(0, 1)];
 
 local actpipes = [g.pipeline([noises[n], digitizers[n]], name="noise-digitizer%d" %n) for n in std.range(0,1)];
-local util = import 'pgrapher/experiment/dune-vd-coldbox/funcs.jsonnet';
 local outtags = ['orig%d' % n for n in std.range(0, 1)];
 local pipe_reducer = util.fansummer('DepoSetFanout', analog_pipes, frame_summers, actpipes, 'FrameFanin', 'fansummer', outtags);
 
