@@ -31,8 +31,8 @@ table_fragment_end
 # Add the dependent product and version
 
 product          version
-cetbuildtools	 v8_18_09	-	only_for_build
-dunecore         v09_51_00d00
+cetbuildtools	 v8_20_00	-	only_for_build
+dunecore         v09_52_01d00
 hep_hpc          v0_14_01
 end_product_list
 
