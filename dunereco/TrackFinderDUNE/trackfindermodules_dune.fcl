@@ -90,4 +90,14 @@ dunefd_pmalgtrajfitter.ProjectionMatchingAlg.HitWeightZ: 1.0
 dunefd_pmalgtrajfitter.ProjectionMatchingAlg.HitWeightV: 1.0
 dunefd_pmalgtrajfitter.ProjectionMatchingAlg.HitWeightU: 1.0
 dunefd_pmalgtrajfitter.PMAlgFitting.RunVertexing:        false
+
+dunefdvd_pmalgtrackmaker: @local::dunefd_pmalgtrackmaker
+dunefdvd_pmalgtrackmaker.HitModuleLabel:                    "trajcluster"
+dunefdvd_pmalgtrackmaker.ClusterModuleLabel:                "trajcluster"
+dunefdvd_pmalgtrackmaker.WireModuleLabel:                   "tpcrawdecoder:gauss"
+dunefdvd_pmalgtrackmaker.PMAlgTracking.RunVertexing:        true
+dunefdvd_pmalgtrackmaker.PMAlgTracking.MinSeedSize2ndPass:  2
+dunefdvd_pmalgtrackmaker.PMAlgTracking.FlipToBeam:          false
+dunefdvd_pmalgtrackmaker.PMAlgTracking.AutoFlip_dQdx:       true
+
 END_PROLOG

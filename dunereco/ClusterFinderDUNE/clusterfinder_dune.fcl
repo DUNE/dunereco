@@ -157,4 +157,13 @@ protodunespmc_dbcluster3d.MinHitDis: 1000
 protodunespmc_linecluster:                    @local::standard_linecluster
 protodunespmc_linecluster.DoRawDigitAssns:    true
 protodunespmc_linecluster.ClusterCrawlerAlg.KinkAngCut: [0.2, 0.2, 0.2] # Max kink angle
+
+dunefdvd_linecluster:                                 @local::dunefd_linecluster
+dunefdvd_linecluster.LogLevel:                        2
+dunefdvd_linecluster.HitFinderModuleLabel:            gaushit  # std::vector<recob::Hit> This is the default
+dunefdvd_trajcluster:                                 @local::dunefdmc_trajcluster
+dunefdvd_trajcluster.LogLevel:                        2
+dunefdvd_trajcluster.HitModuleLabel:                  gaushit   # since hitfd fails
+
+
 END_PROLOG

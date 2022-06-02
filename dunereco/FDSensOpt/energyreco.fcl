@@ -62,5 +62,13 @@ dunefdvd_nuenergyreco_pandora_nc:   @local::dunefd_nuenergyreco_pandora_nc
 dunefdvd_nuenergyreco_pandora_nc.NeutrinoEnergyRecoAlg: @local::dunevd10kt_neutrinoenergyrecoalg
 dunefdvd_nuenergyreco_pandora_nc.WireLabel:  "tpcrawdecoder:gauss"
 
+dunefdvd_nuenergyreco_pmtracktc:   @local::dunefd_nuenergyreco_pmtrack
+dunefdvd_nuenergyreco_pmtracktc.NeutrinoEnergyRecoAlg: @local::dunevd10kt_neutrinoenergyrecoalg
+dunefdvd_nuenergyreco_pmtracktc.WireLabel:             "tpcrawdecoder:gauss"
+dunefdvd_nuenergyreco_pmtracktc.RecoMethod:            3
+dunefdvd_nuenergyreco_pmtracktc.TrackLabel:            "pmtracktc"
+dunefdvd_nuenergyreco_pmtracktc.TrackToHitLabel:       "pmtracktc"
+dunefdvd_nuenergyreco_pmtracktc.HitToSpacePointLabel:  "pmtracktc"
+dunefdvd_nuenergyreco_pmtracktc.ShowerLabel:           "pandoraShower"
 
 END_PROLOG
