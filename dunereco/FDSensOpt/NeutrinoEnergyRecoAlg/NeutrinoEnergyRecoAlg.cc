@@ -297,7 +297,7 @@ double NeutrinoEnergyRecoAlg::CalculateLinearlyCorrectedValue(const double value
 double NeutrinoEnergyRecoAlg::CalculateUncorrectedMuonMomentumByMCS(const art::Ptr<recob::Track> &pMuonTrack)
 {
     trkf::TrackMomentumCalculator TrackMomCalc;
-    return (TrackMomCalc.GetMomentumMultiScatterChi2(pMuonTrack));
+    return (TrackMomCalc.GetMomentumMultiScatterChi2(pMuonTrack, true));
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
