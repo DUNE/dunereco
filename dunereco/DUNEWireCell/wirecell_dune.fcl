@@ -692,7 +692,7 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_30deg_data_nfsp : {
           
           # used in ChannelSelector
           # 3view: 864; 3view30deg: 900; 2view: 928
-          channel_per_crm: 864
+          channel_per_crm: 900
           
           # response plane, related to which field response is used [cm]
           # 3view30: dunevd-resp-isoc3views-18d92.json.bz2: 18.92
