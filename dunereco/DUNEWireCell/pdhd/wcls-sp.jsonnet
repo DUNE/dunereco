@@ -21,36 +21,23 @@
 
 
 local epoch = std.extVar('epoch');  // eg "dynamic", "after", "before", "perfect"
-local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
 local reality = std.extVar('reality');
 local sigoutform = std.extVar('signal_output_form');  // eg "sparse" or "dense"
+// local nsample_ext = std.extVar('nsample'); // eg 6000, 10000, or "auto"
+// local nsample = if nsample_ext == 'auto' then 6000 else std.parseInt(nsample_ext); // set auto to 0 once larwirecell fixed
 
 local wc = import 'wirecell.jsonnet';
 local g = import 'pgraph.jsonnet';
 
-local response_plane = std.extVar('response_plane')*wc.cm;
-local channel_per_crm = std.extVar('channel_per_crm');
+local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
 
-local params_maker = import 'pgrapher/experiment/dune-vd/params.jsonnet';
-local fcl_params = {
-    response_plane: std.extVar('response_plane')*wc.cm,
-    nticks: std.extVar('nticks'),
-    ncrm: std.extVar('ncrm')
-};
-local params = params_maker(fcl_params) {
-  lar: super.lar {
-    drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
-  },
-  files: super.files {
-      wires: std.extVar('files_wires'),
-      fields: [ std.extVar('files_fields'), ],
-  },
-};
+
+local data_params = import 'pgrapher/experiment/pdhd/params.jsonnet';
+local simu_params = import 'pgrapher/experiment/pdhd/simparams.jsonnet';
+local params = if reality == 'data' then data_params else simu_params;
 
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local tools = tools_maker(params);
-local nanodes = std.length(tools.anodes);
-local anode_iota = std.range(0, nanodes - 1);
 
 local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
@@ -58,11 +45,7 @@ local wcls = wcls_maker(params, tools);
 //local nf_maker = import "pgrapher/experiment/pdsp/nf.jsonnet";
 //local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
 
-local planemaps = {
- dunevd_3view: {"1":0, "2":3, "4":2},
- default: {"1":0, "2":1, "4":2}
-};
-local planemap = planemaps[std.extVar("geo_planeid_labels")];
+local sp_maker = import 'pgrapher/experiment/pdsp/sp.jsonnet';
 
 //local chndbm = chndb_maker(params, tools);
 //local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
@@ -74,12 +57,13 @@ local planemap = planemaps[std.extVar("geo_planeid_labels")];
 // must be the emtpy string.
 local wcls_input = {
   adc_digits: g.pnode({
-    type: 'wclsRawFrameSource',
+    type: 'wclsCookedFrameSource',
     name: '',
     data: {
       art_tag: raw_input_label,
       frame_tags: ['orig'],  // this is a WCT designator
-      // nticks: params.daq.nticks,
+      //nticks: params.daq.nticks,
+      // nticks: nsample,
     },
   }, nin=0, nout=1),
 
@@ -104,14 +88,14 @@ local wcls_output = {
     type: 'wclsFrameSaver',
     name: 'nfsaver',
     data: {
-      // anode: wc.tn(tools.anode),
-      anode: wc.tn(mega_anode),
+      anode: wc.tn(tools.anode),
       digitize: true,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['raw'],
-      // nticks: params.daq.nticks,
+      //nticks: params.daq.nticks,
+      // nticks: nsample,
       chanmaskmaps: ['bad'],
     },
-  }, nin=1, nout=1, uses=[mega_anode]),
+  }, nin=1, nout=1, uses=[tools.anode]),
 
 
   // The output of signal processing.  Note, there are two signal
@@ -123,81 +107,119 @@ local wcls_output = {
     name: 'spsaver',
     data: {
       // anode: wc.tn(tools.anode),
-      plane_map: planemap,
       anode: wc.tn(mega_anode),
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
-      frame_scale: [0.005, 0.005],
-      // nticks: params.daq.nticks,
+      frame_scale: [0.001, 0.001],
+      //nticks: params.daq.nticks,
+      // nticks: nsample,
       chanmaskmaps: [],
+      summary_tags: ['threshold'],  // retagger makes this tag
+      //  just one threshold value
+      summary_operator: { threshold: 'set' },
       nticks: -1,
+
     },
   }, nin=1, nout=1, uses=[mega_anode]),
 };
 
 // local perfect = import 'chndb-perfect.jsonnet';
-local base = import 'chndb-base.jsonnet';
+local base = import 'pgrapher/experiment/pdsp/chndb-base.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
-  // data: perfect(params, tools.anodes[n], tools.field, n) { dft:wc.tn(tools.dft) },
-  data: base(params, tools.anodes[n], tools.field, n) { dft:wc.tn(tools.dft) },
+  // data: perfect(params, tools.anodes[n], tools.field, n),
+  data: base(params, tools.anodes[n], tools.field, n){dft:wc.tn(tools.dft)},
   uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
-// local nf_maker = import 'pgrapher/experiment/dune10kt-1x2x6/nf.jsonnet';
+// local nf_maker = import 'pgrapher/experiment/pdsp/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local sp_maker = import 'pgrapher/experiment/dune-vd/sp.jsonnet';
+// an empty omnibus noise filter
+// for suppressing bad channels stored in the noise db
+local obnf = [
+  g.pnode(
+    {
+      type: 'OmnibusNoiseFilter',
+      name: 'nf%d' % n,
+      data: {
+
+        // This is the number of bins in various filters
+        // nsamples: params.nf.nsamples,
+
+        channel_filters: [],
+        grouped_filters: [],
+        channel_status_filters: [],
+        noisedb: wc.tn(chndb[n]),
+        intraces: 'orig%d' % n,  // frame tag get all traces
+        outtraces: 'raw%d' % n,
+      },
+    }, uses=[chndb[n], tools.anodes[n]], nin=1, nout=1
+  )
+  for n in std.range(0, std.length(tools.anodes) - 1)
+];
+local nf_pipes = [g.pipeline([obnf[n]], name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
+
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
+
+local multimagnify = import 'pgrapher/experiment/pdsp/multimagnify.jsonnet';
+local magoutput = 'protodune-data-check.root';
+
+local rootfile_creation_frames = g.pnode({
+  type: 'RootfileCreation_frames',
+  name: 'origmag',
+  data: {
+    output_filename: magoutput,
+    root_file_mode: 'RECREATE',
+  },
+}, nin=1, nout=1);
+
+
+local multi_magnify = multimagnify('orig', tools, magoutput);
+local magnify_pipes = multi_magnify.magnify_pipelines;
+local multi_magnify2 = multimagnify('raw', tools, magoutput);
+local magnify_pipes2 = multi_magnify2.magnify_pipelines;
+local multi_magnify3 = multimagnify('gauss', tools, magoutput);
+local magnify_pipes3 = multi_magnify3.magnify_pipelines;
+local multi_magnify4 = multimagnify('wiener', tools, magoutput);
+local magnify_pipes4 = multi_magnify4.magnify_pipelines;
+local multi_magnify5 = multimagnify('threshold', tools, magoutput);
+local magnify_pipes5 = multi_magnify5.magnifysummaries_pipelines;
 
 local chsel_pipes = [
   g.pnode({
     type: 'ChannelSelector',
     name: 'chsel%d' % n,
     data: {
-      channels: std.range(channel_per_crm * n, channel_per_crm * (n + 1) - 1), // 3view30: 900
+      channels: std.range(2560 * n, 2560 * (n + 1) - 1),
+      //tags: ['orig%d' % n], // traces tag
     },
   }, nin=1, nout=1)
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-local magoutput = 'dune-vd-sp-check.root';
-local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
-local sinks = magnify(tools, magoutput);
-
 local nfsp_pipes = [
   g.pipeline([
                chsel_pipes[n],
+               //magnify_pipes[n],
+               nf_pipes[n],
+               //magnify_pipes2[n],
                sp_pipes[n],
-               // sinks.decon_pipe[n],
+               //magnify_pipes3[n],
+               //magnify_pipes4[n],
+               //magnify_pipes5[n],
              ],
              'nfsp_pipe_%d' % n)
-  for n in anode_iota
+  for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-
-// assert (fcl_params.ncrm == 36 || fcl_params.ncrm == 112) : "only ncrm == 36 or 112 are configured";
-local f = import 'pgrapher/experiment/dune-vd/funcs.jsonnet';
-local outtags = [];
-local tag_rules = {
-    frame: {
-        '.*': 'framefanin',
-    },
-    trace: {['gauss%d' % anode.data.ident]: ['gauss%d' % anode.data.ident] for anode in tools.anodes}
-        + {['wiener%d' % anode.data.ident]: ['wiener%d' % anode.data.ident] for anode in tools.anodes}
-        + {['threshold%d' % anode.data.ident]: ['threshold%d' % anode.data.ident] for anode in tools.anodes}
-        + {['dnnsp%d' % anode.data.ident]: ['dnnsp%d' % anode.data.ident] for anode in tools.anodes},
-};
-// local fanpipe = f.multifanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 6, 'sn_mag_nf', outtags);
-local fanpipe =
-    if fcl_params.ncrm == 36
-    then f.multifanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', [1,6], [6,6], [1,6], [6,6], 'sn_mag_nf', outtags, tag_rules)
-    else if fcl_params.ncrm == 48
-    then f.multifanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', [1,8], [8,6], [1,8], [8,6], 'sn_mag_nf', outtags, tag_rules)
-    else if fcl_params.ncrm == 112
-    then f.multifanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', [1,8,16], [8,2,7], [1,8,16], [8,2,7], 'sn_mag_nf', outtags, tag_rules);
+//local f = import 'pgrapher/common/funcs.jsonnet';
+local f = import 'pgrapher/experiment/pdsp/funcs.jsonnet';
+//local outtags = ['gauss%d' % n for n in std.range(0, std.length(tools.anodes) - 1)];
+//local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf', outtags);
+local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf');
 
 local retagger = g.pnode({
   type: 'Retagger',
@@ -210,8 +232,9 @@ local retagger = g.pnode({
         '.*': 'retagger',
       },
       merge: {
-        'gauss\\d+': 'gauss',
-        'wiener\\d+': 'wiener',
+        'gauss\\d': 'gauss',
+        'wiener\\d': 'wiener',
+        'theshold\\d': 'theshold',
       },
     }],
   },
@@ -220,11 +243,11 @@ local retagger = g.pnode({
 local sink = g.pnode({ type: 'DumpFrames' }, nin=1, nout=0);
 
 
-// local graph = g.pipeline([wcls_input.adc_digits, rootfile_creation_frames, fanpipe, retagger, wcls_output.sp_signals, sink]);
+//local graph = g.pipeline([wcls_input.adc_digits, rootfile_creation_frames, fanpipe, retagger, wcls_output.sp_signals, sink]);
 local graph = g.pipeline([wcls_input.adc_digits, fanpipe, retagger, wcls_output.sp_signals, sink]);
 
 local app = {
-  type: 'Pgrapher', //Pgrapher, TbbFlow
+  type: 'Pgrapher',
   data: {
     edges: g.edges(graph),
   },
