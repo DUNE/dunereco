@@ -105,6 +105,9 @@ protodunespdata_wctsp:
     }
 }
 
+protodunehddata_wctsp: @local::protodunespdata_wctsp
+protodunehddata_wctsp.wcls_main.configs: ["pgrapher/experiment/pdhd/wcls-sp.jsonnet"]
+
 wirecell_protodunespmc:
 {
     module_type : WireCellToolkit
@@ -143,6 +146,9 @@ wirecell_protodunespmc:
         }
     }
 }
+
+wirecell_protodunehdmc: @local::wirecell_protodunespmc
+wirecell_protodunehdmc.wcls_main.configs: ["pgrapher/experiment/pdhd/wcls-sim-drift-simchannel-priorSCE.jsonnet"]
 
 wirecell_dunevd_coldbox_mc:
 {
