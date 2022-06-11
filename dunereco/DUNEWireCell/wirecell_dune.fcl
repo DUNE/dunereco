@@ -171,11 +171,11 @@ wirecell_dunevd_coldbox_mc:
         }
 	structs: {
            # number of time samples
-           nticks: @local::protodunedphase_detproperties.NumberTimeSamples
-	   lifetime: @local::protodunedphase_detproperties.Electronlifetime
+           nticks: @local::vdcb_crp1_top_services.DetectorPropertiesService.NumberTimeSamples
+	   lifetime: @local::vdcb_crp1_top_services.DetectorPropertiesService.Electronlifetime
 	   DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
 	   DT: @local::dunefd_largeantparameters.TransverseDiffusion
-           efield: @local::vdcb_services.DetectorPropertiesService.Efield[0] # kV/cm
+           efield: @local::vdcb_crp1_top_services.DetectorPropertiesService.Efield[0] # kV/cm
            temperature: @local::vdcb_services.DetectorPropertiesService.Temperature # K
 	}
     }
