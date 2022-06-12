@@ -1,6 +1,6 @@
 // Here we override params.jsonnet to provide simulation-specific params.
 
-local base = import 'pgrapher/experiment/pdsp/params.jsonnet';
+local base = import 'pgrapher/experiment/pdhd/params.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
 base {

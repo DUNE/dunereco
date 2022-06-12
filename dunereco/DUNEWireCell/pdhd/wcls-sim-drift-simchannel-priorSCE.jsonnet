@@ -28,7 +28,7 @@ local params = base {
 
 local tools = tools_maker(params);
 
-local sim_maker = import 'pgrapher/experiment/pdsp/sim.jsonnet';
+local sim_maker = import 'pgrapher/experiment/pdhd/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local nanodes = std.length(tools.anodes);
