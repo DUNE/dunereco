@@ -45,7 +45,7 @@ local wcls = wcls_maker(params, tools);
 //local nf_maker = import "pgrapher/experiment/pdsp/nf.jsonnet";
 //local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
 
-local sp_maker = import 'pgrapher/experiment/pdsp/sp.jsonnet';
+local sp_maker = import 'pgrapher/experiment/pdhd/sp.jsonnet';
 
 //local chndbm = chndb_maker(params, tools);
 //local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
@@ -124,7 +124,7 @@ local wcls_output = {
 };
 
 // local perfect = import 'chndb-perfect.jsonnet';
-local base = import 'pgrapher/experiment/pdsp/chndb-base.jsonnet';
+local base = import 'pgrapher/experiment/pdhd/chndb-base.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
@@ -216,7 +216,7 @@ local nfsp_pipes = [
 ];
 
 //local f = import 'pgrapher/common/funcs.jsonnet';
-local f = import 'pgrapher/experiment/pdsp/funcs.jsonnet';
+local f = import 'pgrapher/experiment/pdhd/funcs.jsonnet';
 //local outtags = ['gauss%d' % n for n in std.range(0, std.length(tools.anodes) - 1)];
 //local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf', outtags);
 local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf');
