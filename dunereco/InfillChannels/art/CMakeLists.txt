@@ -11,7 +11,7 @@ art_make(
                 lardataobj_RawData
                 larcorealg_Geometry
                 lardataalg_DetectorInfo
-                dune_raw_data::dune-raw-data_Overlays
+                dunepdlegacy_Overlays
 
                 art::Persistency_Common canvas
                 art::Persistency_Provenance canvas
