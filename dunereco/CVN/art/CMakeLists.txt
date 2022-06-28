@@ -1,6 +1,3 @@
-include_directories( $ENV{GSL_INC}/gsl )
-
-cet_find_library( GSLLIB NAMES gsl PATHS ENV GSL_LIB NO_DEFAULT_PATH )
 
 # Tensorflow stuff
 if (DEFINED ENV{TENSORFLOW_DIR})
@@ -35,35 +32,37 @@ art_make(BASENAME_ONLY
 #  LIBRARY_NAME      CVNArt
   EXCLUDE ${EXCLUDE_TF}
   EXCLUDE ${EXCLUDE_HEPHPC}
-  LIB_LIBRARIES dunereco_CVN_func
-  dunereco_CVN_tf
-  ART_FRAMEWORK_CORE
-  ART_FRAMEWORK_PRINCIPAL
-  ART_FRAMEWORK_SERVICES_REGISTRY
-  ART_ROOT_IO_TFILE_SUPPORT
+  LIB_LIBRARIES 
+  dunereco::CVN_func
+  dunereco::CVN_tf
+  art::Framework_Core
+  art::Framework_Principal
+  art::Framework_Services_Registry
+  art_root_io::tfile_support
+  art_root_io::TFileService_service
   ROOT::Core
-  ART_ROOT_IO_TFILESERVICE_SERVICE
-  ART_PERSISTENCY_COMMON
-  canvas::canvas
+  art::Persistency_Common
   art::Persistency_Provenance
-  ART_UTILITIES
+  art::Utilities 
+  canvas::canvas
   messagefacility::MF_MessageLogger
   z
   fhiclcpp::fhiclcpp
   cetlib::cetlib cetlib_except
   ROOT_BASIC_LIB_LIST
-  lardataobj_RecoBase
-  lardata_Utilities
+  lardataobj::RecoBase
+  lardata::Utilities
   nusimdata::SimulationBase
   larsim_MCCheater_ParticleInventoryService_service
-  GSLLIB
+  gsl
   HEPHPCLIB
   HDF5LIB
   MVAAlg
   Boost::filesystem
-  MODULE_LIBRARIES dunereco_CVN_func
-  dunereco_CVN_tf
-  dunereco_CVN_art
+  MODULE_LIBRARIES 
+  dunereco::CVN_func
+  dunereco::CVN_tf
+  dunereco::CVN_art
   stdc++fs
   )
 
