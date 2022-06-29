@@ -1,4 +1,3 @@
-
 # Tensorflow stuff
 if (DEFINED ENV{TENSORFLOW_DIR})
 # For some reason we apparently need to care if larreco is checked out.
@@ -10,17 +9,6 @@ if (DEFINED ENV{TENSORFLOW_DIR})
 else(DEFINED ENV{TENSORFLOW_DIR})
 set (EXCLUDE_TF TFNetHandler.cxx)
 endif (DEFINED ENV{TENSORFLOW_DIR})
-
-# HDF5 stuff
-if (DEFINED ENV{HDF5_DIR})
-string(TOUPPER ${CMAKE_BUILD_TYPE} BTYPE_UC )
-if( ${BTYPE_UC} MATCHES "DEBUG" )
-  cet_find_library( HDF5LIB NAMES hdf5_debug PATHS ENV HDF5_LIB NO_DEFAULT_PATH )
-else()
-  cet_find_library( HDF5LIB NAMES hdf5 PATHS ENV HDF5_LIB NO_DEFAULT_PATH )
-endif()
-endif (DEFINED ENV{HDF5_DIR})
-
 
 art_make(BASENAME_ONLY
 #  LIBRARY_NAME      CVNArt
@@ -50,7 +38,7 @@ art_make(BASENAME_ONLY
   gsl
   hep_hpc_hdf5
   hep_hpc_Utilities
-  HDF5LIB
+  ${HDF5_LIBRARIES}
   MVAAlg
   Boost::filesystem
   MODULE_LIBRARIES 
