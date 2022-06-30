@@ -5,9 +5,9 @@ cet_add_compiler_flags(CXX -Wno-pedantic)
 art_make(BASENAME_ONLY
   LIB_LIBRARIES
   pthread
-  PROTOBUF
-  TENSORFLOW_CC
-  TENSORFLOW_FRAMEWORK
+  protobuf
+  tensorflow_cc
+  tensorflow_framework
   )
 
 install_headers()

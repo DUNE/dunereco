@@ -66,11 +66,8 @@ if(( DEFINED ENV{TENSORFLOW_DIR} ) AND ( DEFINED ENV{TRITON_DIR} ))
   find_ups_product( tensorflow )
   find_ups_product( triton )
   find_ups_product( larrecodnn )
-  cet_find_library(TENSORFLOW_CC NAMES tensorflow_cc PATHS ENV TENSORFLOW_LIB NO_DEFAULT_PATH )
-  cet_find_library(TENSORFLOW_FRAMEWORK NAMES tensorflow_framework PATHS ENV TENSORFLOW_LIB NO_DEFAULT_PATH )
-  set(TENSORFLOW TENSORFLOW_CC TENSORFLOW_FRAMEWORK)
-  cet_find_library(PROTOBUF NAMES protobuf PATHS ENV PROTOBUF_LIB NO_DEFAULT_PATH )
 endif()
+find_ups_product( libtorch )
 
 # macros for artdaq_dictionary and simple_plugin
 include(ArtDictionary)
