@@ -28,6 +28,10 @@ find_ups_boost( )
 
 cet_report_compiler_flags()
 
+cet_cmake_module_directories(Modules BINARY)
+
+add_subdirectory(Modules)
+
 find_ups_product( eigen )
 include_directories( $ENV{EIGEN_INC} )
 # testing use of rstartree ups product
@@ -66,9 +70,14 @@ if(( DEFINED ENV{TENSORFLOW_DIR} ) AND ( DEFINED ENV{TRITON_DIR} ))
   find_ups_product( tensorflow )
   find_ups_product( triton )
   find_ups_product( larrecodnn )
+  cet_find_library(TENSORFLOW_CC NAMES tensorflow_cc PATHS ENV TENSORFLOW_LIB NO_DEFAULT_PATH )
+  cet_find_library(TENSORFLOW_FRAMEWORK NAMES tensorflow_framework PATHS ENV TENSORFLOW_LIB NO_DEFAULT_PATH )
+# from larrecodnn -- hopefully we can use this to eiliminate cet_find_library
+  find_package(TensorFlow 2.6.0 QUIET EXPORT)
 endif()
 find_ups_product( libtorch )
 find_package(Torch REQUIRED)
+
 
 # macros for artdaq_dictionary and simple_plugin
 include(ArtDictionary)
