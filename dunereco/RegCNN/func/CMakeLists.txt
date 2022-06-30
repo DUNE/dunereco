@@ -16,11 +16,8 @@ art_make( BASENAME_ONLY
   cetlib::cetlib cetlib_except
   Boost::filesystem
   ROOT_BASIC_LIB_LIST
-  TENSORFLOW_FRAMEWORK
-  TENSORFLOW_CC
-#  TensorFlow::framework
-#  TensorFlow::cc
-  protobuf::libprotobuf
+  TensorFlow::framework
+  TensorFlow::cc
   DICT_LIBRARIES   lardataobj_RecoBase
   RegCNNFunc
   )

@@ -3,7 +3,7 @@
 #include <utility>
 
 #include <boost/numeric/conversion/cast.hpp>
-#include "larrecodnn/ImagePatternAlgs/Tensorflow/quiet_session.h"
+#include "tensorflow/core/public/session.h"
 #include "tensorflow/core/platform/env.h"
 
 using namespace tensorflow;
