@@ -13,18 +13,8 @@ function(dump_cmake_variables)
     endforeach()
 endfunction()
 
-find_ups_product(libtorch)
-find_package(Torch REQUIRED)
-
 message(STATUS "Torch include: ${TORCH_INCLUDE_DIRS}")
 dump_cmake_variables("TORCH")
-
-include_directories(SYSTEM ${TORCH_INCLUDE_DIRS})
-
-# libtorch libraries
-cet_find_library(LIBTORCH NAMES torch PATHS ENV LIBTORCH_LIB NO_DEFAULT_PATH)
-cet_find_library(LIBTORCH_CPU NAMES torch_cpu PATHS ENV LIBTORCH_LIB NO_DEFAULT_PATH)
-cet_find_library(LIBC10 NAMES c10 PATHS ENV LIBTORCH_LIB NO_DEFAULT_PATH)
 
 art_make(BASENAME_ONLY
   LIBRARY_NAME      RegCNNArt
@@ -39,10 +29,10 @@ art_make(BASENAME_ONLY
   ART_PERSISTENCY_COMMON
   canvas::canvas
   art::Persistency_Provenance
-  ART_UTILITIES
-  LIBTORCH
-  LIBTORCH_CPU
-  LIBC10
+  art::Utilities
+  torch
+  torch_cpu
+  c10
   messagefacility::MF_MessageLogger
   fhiclcpp::fhiclcpp
   cetlib::cetlib cetlib_except

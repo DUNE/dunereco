@@ -68,6 +68,7 @@ if(( DEFINED ENV{TENSORFLOW_DIR} ) AND ( DEFINED ENV{TRITON_DIR} ))
   find_ups_product( larrecodnn )
 endif()
 find_ups_product( libtorch )
+find_package(Torch REQUIRED)
 
 # macros for artdaq_dictionary and simple_plugin
 include(ArtDictionary)
