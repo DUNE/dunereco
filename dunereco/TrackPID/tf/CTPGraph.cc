@@ -9,7 +9,7 @@
 
 #include "CTPGraph.h"
 
-#include "larrecodnn/ImagePatternAlgs/Tensorflow/quiet_session.h"
+#include "tensorflow/core/public/session.h"
 #include "tensorflow/core/platform/env.h"
 
 #include "tensorflow/core/public/session_options.h"

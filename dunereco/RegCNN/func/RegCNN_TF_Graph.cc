@@ -11,7 +11,7 @@
 
 #include "dunereco/RegCNN/func/RegCNN_TF_Graph.h"
 
-#include "larrecodnn/ImagePatternAlgs/Tensorflow/quiet_session.h"
+#include "tensorflow/core/public/session.h"
 #include "tensorflow/core/platform/env.h"
 
 //#include "tensorflow/core/kernels/conv_3d.h"

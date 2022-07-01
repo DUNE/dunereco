@@ -7,7 +7,7 @@
 cmake_minimum_required (VERSION 3.12...3.14 FATAL_ERROR)
 
 project(dunereco LANGUAGES CXX)
-set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.53.02d00)
+set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.54.00d00)
 
 # cetbuildtools contains our cmake modules
 find_package(cetbuildtools REQUIRED)
@@ -27,6 +27,10 @@ cet_set_compiler_flags(DIAGS CAUTIOUS
 find_ups_boost( )
 
 cet_report_compiler_flags()
+
+cet_cmake_module_directories(Modules BINARY)
+
+add_subdirectory(Modules)
 
 find_ups_product( eigen )
 include_directories( $ENV{EIGEN_INC} )
@@ -49,6 +53,10 @@ find_ups_product( lardata )
 find_ups_product( larrecodnn )
 find_ups_product( larpandora )
 find_ups_product( clhep )
+find_package(GENIE REQUIRED EXPORT)
+find_ups_product( gsl )
+find_ups_product( hep_hpc )
+find_ups_product( hdf5 )
 find_ups_geant4( )
 if(DEFINED ENV{CAFFE_LIB} )
   find_ups_product(caffe)
@@ -56,17 +64,12 @@ endif()
 if(DEFINED ENV{LAPACK_LIB} )
   find_ups_product( lapack )
 endif()
-if(( DEFINED ENV{TENSORFLOW_DIR} ) AND ( DEFINED ENV{TRITON_DIR} ))
-  # find tensorflow library
-  find_ups_product( protobuf )
-  find_ups_product( tensorflow )
-  find_ups_product( triton )
-  find_ups_product( larrecodnn )
-  cet_find_library(TENSORFLOW_CC NAMES tensorflow_cc PATHS ENV TENSORFLOW_LIB NO_DEFAULT_PATH )
-  cet_find_library(TENSORFLOW_FRAMEWORK NAMES tensorflow_framework PATHS ENV TENSORFLOW_LIB NO_DEFAULT_PATH )
-  set(TENSORFLOW TENSORFLOW_CC TENSORFLOW_FRAMEWORK)
-  cet_find_library(PROTOBUF NAMES protobuf PATHS ENV PROTOBUF_LIB NO_DEFAULT_PATH )
-endif()
+find_package(TRITON QUIET EXPORT)
+find_ups_product( larrecodnn )
+find_package(TensorFlow 2.6.0 QUIET EXPORT)
+find_ups_product( libtorch )
+find_package(Torch REQUIRED)
+
 
 # macros for artdaq_dictionary and simple_plugin
 include(ArtDictionary)
