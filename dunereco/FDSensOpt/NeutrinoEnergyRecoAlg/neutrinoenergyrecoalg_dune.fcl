@@ -40,9 +40,29 @@ dunevd_neutrinoenergyrecoalg:
     IntNuEHadEn:             0.042
 }
 
+dunevd_30deg_neutrinoenergyrecoalg:
+{
+    @table::dune_neutrinoenergyrecoalg
+    GradTrkMomRange:         414.0
+    IntTrkMomRange:          -30.11
+    GradTrkMomMCS:           1.103
+    IntTrkMomMCS:            0.068
+    GradNuMuHadEnCont:       0.582
+    IntNuMuHadEnCont:        -0.049
+    GradNuMuHadEnExit:	     0.561
+    IntNuMuHadEnExit:        -0.043
+    GradShwEnergy:           0.926
+    IntShwEnergy:            -0.047
+    GradNuEHadEn:            0.441
+    IntNuEHadEn:             0.062
+}
+
 dune10kt_neutrinoenergyrecoalg: @local::dune_neutrinoenergyrecoalg
 
 dunevd10kt_neutrinoenergyrecoalg: @local::dunevd_neutrinoenergyrecoalg
 dunevd10kt_neutrinoenergyrecoalg.CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
+
+dunevd10kt_30deg_neutrinoenergyrecoalg: @local::dunevd_30deg_neutrinoenergyrecoalg
+dunevd10kt_30deg_neutrinoenergyrecoalg.CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
 
 END_PROLOG
