@@ -71,4 +71,17 @@ dunefdvd_nuenergyreco_pmtracktc.TrackToHitLabel:       "pmtracktc"
 dunefdvd_nuenergyreco_pmtracktc.HitToSpacePointLabel:  "pmtracktc"
 dunefdvd_nuenergyreco_pmtracktc.ShowerLabel:           "pandoraShower"
 
+dunefdvd_30deg_nuenergyreco_pandora_numu: @local::dunefd_nuenergyreco_pandora_numu
+dunefdvd_30deg_nuenergyreco_pandora_numu.NeutrinoEnergyRecoAlg: @local::dunevd10kt_30deg_neutrinoenergyrecoalg
+dunefdvd_30deg_nuenergyreco_pandora_numu.WireLabel: "tpcrawdecoder:gauss"
+
+dunefdvd_30deg_nuenergyreco_pandora_nue:  @local::dunefd_nuenergyreco_pandora_nue
+dunefdvd_30deg_nuenergyreco_pandora_nue.NeutrinoEnergyRecoAlg: @local::dunevd10kt_30deg_neutrinoenergyrecoalg
+dunefdvd_30deg_nuenergyreco_pandora_nue.WireLabel:  "tpcrawdecoder:gauss"
+
+dunefdvd_30deg_nuenergyreco_pandora_nc:   @local::dunefd_nuenergyreco_pandora_nc
+dunefdvd_30deg_nuenergyreco_pandora_nc.NeutrinoEnergyRecoAlg: @local::dunevd10kt_30deg_neutrinoenergyrecoalg
+dunefdvd_30deg_nuenergyreco_pandora_nc.WireLabel:  "tpcrawdecoder:gauss"
+
+
 END_PROLOG
