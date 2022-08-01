@@ -17,7 +17,7 @@
         <ShowDetector>true</ShowDetector>
     </algorithm>
 
-    <algorithm type = "LArMaster">
+    <algorithm type = "LArDLMaster">
         <CRSettingsFile>PandoraSettings_Cosmic_DUNEFD.xml</CRSettingsFile>
         <NuSettingsFile>PandoraSettings_Neutrino_DUNEFD.xml</NuSettingsFile>
         <SlicingSettingsFile>PandoraSettings_Slicing_Standard.xml</SlicingSettingsFile>
