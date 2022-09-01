@@ -17,10 +17,10 @@
         <ShowDetector>true</ShowDetector>
     </algorithm>
 
-    <algorithm type = "LArDLMaster">
-        <CRSettingsFile>PandoraSettings_Cosmic_DUNEFD.xml</CRSettingsFile>
-        <NuSettingsFile>PandoraSettings_Neutrino_DUNEFD.xml</NuSettingsFile>
-        <SlicingSettingsFile>PandoraSettings_Slicing_Standard.xml</SlicingSettingsFile>
+    <algorithm type = "LArMaster">
+        <CRSettingsFile>PandoraSettings_Cosmic_ProtoDUNE.xml</CRSettingsFile>
+        <NuSettingsFile>PandoraSettings_TestBeam_ProtoDUNE.xml</NuSettingsFile>
+        <SlicingSettingsFile>PandoraSettings_Slicing_ProtoDUNE.xml</SlicingSettingsFile>
         <StitchingTools>
             <tool type = "LArStitchingCosmicRayMerging"><ThreeDStitchingMode>true</ThreeDStitchingMode></tool>
             <tool type = "LArStitchingCosmicRayMerging"><ThreeDStitchingMode>false</ThreeDStitchingMode></tool>
@@ -29,7 +29,18 @@
             <tool type = "LArCosmicRayTagging"/>
         </CosmicRayTaggingTools>
         <SliceIdTools>
-            <tool type = "LArSimpleNeutrinoId"/>
+<!--
+            <tool type = "LArBdtBeamParticleId">
+                <BdtName>ProtoDUNESP_BeamParticleId</BdtName>
+                <BdtFileName>PandoraMVAData/PandoraBdt_BeamParticleId_ProtoDUNESP_v03_26_00.xml</BdtFileName>
+                <MinAdaBDTScore>-0.225</MinAdaBDTScore>
+            </tool>
+-->
+        <!-- Fall back to the old cuts method for now -->
+            <tool type = "LArBeamParticleId">
+                <BeamTPCIntersection>-66.06 400.3 0.0</BeamTPCIntersection>
+                <BeamDirection>-0.201890 -0.192850 0.960234</BeamDirection> 
+            </tool>
         </SliceIdTools>
         <InputHitListName>CaloHitList2D</InputHitListName>
         <RecreatedPfoListName>RecreatedPfos</RecreatedPfoListName>

@@ -59,6 +59,10 @@ protodune_pandora.ShouldRunNeutrinoRecoOption:                      true
 protodune_pandora.ShouldRunCosmicRecoOption:                        true
 protodune_pandora.ShouldPerformSliceId:                             true
 
+#----ProtoDUNE HD----
+protodunehd_pandora:                                                @local::protodune_pandora
+protodunehd_pandora.ConfigFile:                                     "PandoraSettings_Master_ProtoDUNE_HD.xml"
+
 #----ProtoDUNE DP----
 protodune_dp_pandora:                                               @local::dune_pandora
 protodune_dp_pandora.ConfigFile:                                    "PandoraSettings_Master_ProtoDUNE_DP.xml"
