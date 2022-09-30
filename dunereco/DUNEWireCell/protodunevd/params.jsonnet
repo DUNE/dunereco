@@ -8,40 +8,16 @@ base {
     // This section will be overwritten in simparams.jsonnet
     det : {
 
-        // define the 6 APAs.  This must use the coordinate system
-        // defined by the wire geometry file.
-        // A full drift is a box: xyz=[3.594*wc.m, 5.9*wc.m, 2.2944*wc.m].
-        //
-        // The "faces" is consumed by, at least, the Drifter and
-        // AnodePlane.  The "wires" number is used to set
-        // AnodePlane.ident used to lookup the anode in WireSchema.
-        // It corresponds to the anode number.
-        //
-        // Also see:
-        //   wirecell-util wire-volumes protodune-wires-larsoft-v3.json.bz2
+        // See:  wirecell-util wire-volumes protodune-wires-larsoft-v3.json.bz2
         // to help with defining these parameters.
 
-        // from DocDB 203 and assuming wires are symmetric across x=0
-
         // between center lines
-        local apa_cpa = 3.637*wc.m,
+        local apa_cpa = 313.03*wc.cm,
         local cpa_thick = 50.8*wc.mm,
-        local apa_w2w = 85.725*wc.mm, // DocDB 203 calls "W" as "X"
+        local apa_w2w = 85.725*wc.mm,
         local plane_gap = 4.76*wc.mm,
-        local apa_g2g = 114.3*wc.mm, // note that grid plane must have
-                                     // gap 4.7675mm for this number
-                                     // to be consistent with above.
-                                     // There's probably round-off
-                                     // error in DocDB 203.
+        local apa_g2g = 114.3*wc.mm, 
 
-        // The "anode" cut off plane, here measured from APA
-        // centerline, determines how close to the wires do we
-        // consider any depo.  Anything closer will simply be
-        // discarded, else it will either be drifted or "backed up" to
-        // the response plane.  This is somewhat arbitrary choice.
-        // Placing it w/in the response plane means any depos that are
-        // "backed up" won't have proper field response.  But, the
-        // tighter this is made, the less volume is simulated.
         local apa_plane = 0.5*apa_g2g, // pick it to be at the grid wires
 
         // The "response" plane is where the field response functions
@@ -55,35 +31,37 @@ base {
         // depo not between the two is dropped prior to drifting.
         local cpa_plane = apa_cpa - 0.5*cpa_thick,
 
-
-        // The volumes are then defined in terms of these above
-        // numbers.  You can use "wirecell-util wires-info" or
-        // "wirecell-util wires-volumes" or others to understand the
-        // mapping of anode number to the 6 locations in X and Z.  For
-        // Larsoft wires the numbering is column major starting at
-        // small X and Z so the centerline is -/+/-/+/-/+.  Also
-        // important is that the faces are listed "front" first.
-        // Front is the one with the more positive X coordinates and
-        // if we want to ignore a face it is made null.
-
         volumes: [
             {
                 local world = 100,
                 local split = s*10, // 1: left, 2: right
                 local anode = a, // physical anode number
-
                 wires: world + split + anode,
                 name: "anode%d"%(world + split + anode),
 
-                faces: [
+                local sign = if a>3 then 1 else -1,
+                local centerline = sign * apa_cpa,
+                faces:
+                // top drift volume
+                if sign > 0
+                then [
+                    null,
                     {
-                        anode:     15.07*wc.cm,
-                        response:  15.07*wc.cm - 18.92*wc.cm,
-                        cathode:   -300*wc.cm,
+                        anode: centerline - apa_plane,
+                        response: centerline - res_plane,
+                        cathode: centerline - cpa_plane, 
+                    }
+                ]
+                // bottom drift volume
+                else [
+                    {
+                        anode: centerline + apa_plane,
+                        response: centerline + res_plane,
+                        cathode: centerline + cpa_plane, 
                     },
                     null
                 ],
-            } for a in std.range(0,1) for s in std.range(1,2)
+            } for a in std.range(0,7) for s in std.range(1,2)
         ],
 
         // This describes some rough, overall bounding box.  It's not
@@ -119,22 +97,11 @@ base {
     // place.  See the "scale" parameter of wcls.input.depos() defined
     // in pgrapher/common/ui/wcls/nodes.jsonnet.
     // also, see later overwriting in simparams.jsonnet
-    // elec: super.elec {
-    //   postgain: 1.1365, // pulser calibration: 41.649 ADC*tick/1ke
-    //                    // theoretical elec resp (14mV/fC): 36.6475 ADC*tick/1ke
-    //   shaping: 2.2 * wc.us,
-    // },
-    elec: if std.extVar('active_cru')=='tde'
-          then super.elec {
-              type: "JsonElecResponse",
-              filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
-              postgain: 1.0,
-          }
-          else super.elec {
-              postgain: 1.1365, // pulser calibration: 41.649 ADC*tick/1ke
-                               // theoretical elec resp (14mV/fC): 36.6475 ADC*tick/1ke
-              shaping: 2.2 * wc.us,
-          },
+    elec: super.elec {
+      postgain: 1.1365, // pulser calibration: 41.649 ADC*tick/1ke
+                       // theoretical elec resp (14mV/fC): 36.6475 ADC*tick/1ke
+      shaping: 2.2 * wc.us,
+    },
 
     sim: super.sim {
 
@@ -166,19 +133,12 @@ base {
     },
 
     files: {
-        wires: "dunevdcb1-3view-wires-v2-splitanode.json.bz2",
+        wires: "protodunevd-wires-larsoft-v1.json.bz2",
 
         fields: [
-            // "garfield-1d-3planes-21wires-6impacts-dune-v1.json.bz2",
-            // "garfield-1d-boundary-path-rev-dune.json.bz2",
-            // "dunevd-resp-isoc3views.json.bz2",
             "dunevd-resp-isoc3views-18d92.json.bz2",
-            // "dune-garfield-1d565.json.bz2"
         ],
 
-        // fixme: this is for microboone and probably bogus for
-        // protodune because (at least) the span of MB wire lengths do
-        // not cover pdsp's.
         noise: "protodune-noise-spectra-v1.json.bz2",
 
 

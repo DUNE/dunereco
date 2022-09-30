@@ -198,16 +198,14 @@ wirecell_protodunevd_mc:
 
         // Make available parameters via Jsonnet's std.extVar()
         params: {
-            active_cru: 'tde' // 'bde'
         }
 	structs: {
-           # number of time samples
-           nticks: @local::vdcb_crp1_top_services.DetectorPropertiesService.NumberTimeSamples
-	   lifetime: @local::vdcb_crp1_top_services.DetectorPropertiesService.Electronlifetime
-	   DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
-	   DT: @local::dunefd_largeantparameters.TransverseDiffusion
-           efield: @local::vdcb_crp1_top_services.DetectorPropertiesService.Efield[0] # kV/cm
-           temperature: @local::vdcb_services.DetectorPropertiesService.Temperature # K
+           nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
+           lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
+           DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+           DT: @local::dunefd_largeantparameters.TransverseDiffusion
+           efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
+           temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
 	}
     }
 }

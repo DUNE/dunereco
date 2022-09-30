@@ -9,12 +9,12 @@ local g = import 'pgraph.jsonnet';
     // "AnodePlane:anode111" -> 2
     // "AnodePlane:anode121" -> 3
 
-    local chrng = [ [ std.range(0,703), std.range(1024,1599) ],
-                      [ std.range(0,383), std.range(704,1599)],
-                      [ std.range(1600,2303), std.range(2624,3199)],
-                      [ std.range(1600,1983), std.range(2304,3199)]
-                  ],
-    anode_channels(n):: chrng[n][0] + chrng[n][1],
+    // local chrng = [ [ std.range(0,703), std.range(1024,1599) ],
+    //                   [ std.range(0,383), std.range(704,1599)],
+    //                   [ std.range(1600,2303), std.range(2624,3199)],
+    //                   [ std.range(1600,1983), std.range(2304,3199)]
+    //               ],
+    // anode_channels(n):: chrng[n][0] + chrng[n][1],
 
     // Return the number of split (1 or 2) for an anode
     anode_split(ident):: (ident%100 - ident%10)/10,
@@ -55,6 +55,22 @@ local g = import 'pgraph.jsonnet';
                                  + [g.edge(sigpipes[1], summers[0],0,1)]
                                  + [g.edge(sigpipes[2], summers[1],0,0)]
                                  + [g.edge(sigpipes[3], summers[1],0,1)]
+
+                                 + [g.edge(sigpipes[4], summers[2],0,0)]
+                                 + [g.edge(sigpipes[5], summers[2],0,1)]
+                                 + [g.edge(sigpipes[6], summers[3],0,0)]
+                                 + [g.edge(sigpipes[7], summers[3],0,1)]
+
+                                 + [g.edge(sigpipes[8], summers[4],0,0)]
+                                 + [g.edge(sigpipes[9], summers[4],0,1)]
+                                 + [g.edge(sigpipes[10], summers[5],0,0)]
+                                 + [g.edge(sigpipes[11], summers[5],0,1)]
+
+                                 + [g.edge(sigpipes[12], summers[6],0,0)]
+                                 + [g.edge(sigpipes[13], summers[6],0,1)]
+                                 + [g.edge(sigpipes[14], summers[7],0,0)]
+                                 + [g.edge(sigpipes[15], summers[7],0,1)]
+
                                  // connecting summer and the operator pipelines
                                  + [g.edge(summers[n], actpipes[n]) for n in std.range(0,faninmult-1)],
                                  name=name),

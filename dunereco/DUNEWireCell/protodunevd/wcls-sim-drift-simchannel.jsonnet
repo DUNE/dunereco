@@ -65,15 +65,15 @@ local mega_anode = {
   },
 };
 
-local mega_anode_active = {
-  type: 'MegaAnodePlane',
-  name: 'meganodesact',
-  data: {
-    anodes_tn: if std.extVar('active_cru')=='tde'
-               then [wc.tn(tools.anodes[0]), wc.tn(tools.anodes[1])]
-               else [wc.tn(tools.anodes[2]), wc.tn(tools.anodes[3])],
-  },
-};
+// local mega_anode_active = {
+//   type: 'MegaAnodePlane',
+//   name: 'meganodesact',
+//   data: {
+//     anodes_tn: if std.extVar('active_cru')=='tde'
+//                then [wc.tn(tools.anodes[0]), wc.tn(tools.anodes[1])]
+//                else [wc.tn(tools.anodes[2]), wc.tn(tools.anodes[3])],
+//   },
+// };
 
 local wcls_output = {
   // ADC output from simulation
@@ -83,7 +83,7 @@ local wcls_output = {
     name: 'simdigits',
     data: {
       // anode: wc.tn(tools.anode),
-      anode: wc.tn(mega_anode_active),
+      anode: wc.tn(mega_anode),
       digitize: true,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['daq'],
       // Three options for nticks:
@@ -95,7 +95,7 @@ local wcls_output = {
       // chanmaskmaps: ['bad'],
       pedestal_mean: 'native',
     },
-  }, nin=1, nout=1, uses=[mega_anode_active]),
+  }, nin=1, nout=1, uses=[mega_anode]),
 
   // The noise filtered "ADC" values.  These are truncated for
   // art::Event but left as floats for the WCT SP.  Note, the tag
@@ -146,23 +146,23 @@ local wcls_simchannel_sink = g.pnode({
   name: 'postdrift',
   data: {
     artlabel: 'simpleSC',  // where to save in art::Event
-    // anodes_tn: [wc.tn(anode) for anode in tools.anodes],
-    anodes_tn: if std.extVar('active_cru')=='tde'
-               then [wc.tn(tools.anodes[0]), wc.tn(tools.anodes[1])]
-               else [wc.tn(tools.anodes[2]), wc.tn(tools.anodes[3])],
+    anodes_tn: [wc.tn(anode) for anode in tools.anodes],
+    // anodes_tn: if std.extVar('active_cru')=='tde'
+    //            then [wc.tn(tools.anodes[0]), wc.tn(tools.anodes[1])]
+    //            else [wc.tn(tools.anodes[2]), wc.tn(tools.anodes[3])],
     rng: wc.tn(rng),
     tick: params.daq.tick,
-    start_time: -0.34 * wc.ms, // TriggerOffsetTPC from detectorclocks_icarus.fcl
+    start_time: -0.25 * wc.ms, 
     readout_time: params.daq.readout_time,
     nsigma: 3.0,
     drift_speed: params.lar.drift_speed,
-    u_to_rp: 100 * wc.mm,
-    v_to_rp: 100 * wc.mm,
-    y_to_rp: 100 * wc.mm,
+    u_to_rp: 189.5 * wc.mm,
+    v_to_rp: 189.5 * wc.mm,
+    y_to_rp: 189.5 * wc.mm,
     u_time_offset: 0.0 * wc.us,
     v_time_offset: 0.0 * wc.us,
     y_time_offset: 0.0 * wc.us,
-    g4_ref_time: -1150 * wc.us, // G4RefTime from detectorclocks_icarus.fcl
+    g4_ref_time: -250 * wc.us,
     use_energy: true,
   },
 }, nin=1, nout=1, uses=tools.anodes);
@@ -194,7 +194,7 @@ local add_noise = function(model, n) g.pnode({
         replacement_percentage: 0.02, // random optimization
     // }}, nin=1, nout=1, uses=[tools.random, tools.dft, model]);
     }}, nin=1, nout=1, uses=[tools.random, model]);
-local noises = [add_noise(noise_model, n) for n in std.range(0,1)];
+local noises = [add_noise(noise_model, n) for n in std.range(0,7)];
 
 // local digitizer = sim.digitizer(mega_anode, name="digitizer", tag="orig");
 // "AnodePlane:anode110"
@@ -203,7 +203,7 @@ local noises = [add_noise(noise_model, n) for n in std.range(0,1)];
 // "AnodePlane:anode121"
 local digitizers = [
     sim.digitizer(mega_anode, name="digitizer%d-" %n + mega_anode.name, tag="orig%d"%n)
-    for n in std.range(0,1)];
+    for n in std.range(0,7)];
 
 local frame_summers = [
     g.pnode({
@@ -213,10 +213,10 @@ local frame_summers = [
             align: true,
             offset: 0.0*wc.s,
         },
-    }, nin=2, nout=1) for n in std.range(0, 1)];
+    }, nin=2, nout=1) for n in std.range(0, 7)];
 
-local actpipes = [g.pipeline([noises[n], digitizers[n]], name="noise-digitizer%d" %n) for n in std.range(0,1)];
-local outtags = ['orig%d' % n for n in std.range(0, 1)];
+local actpipes = [g.pipeline([noises[n], digitizers[n]], name="noise-digitizer%d" %n) for n in std.range(0,7)];
+local outtags = ['orig%d' % n for n in std.range(0, 7)];
 local pipe_reducer = util.fansummer('DepoSetFanout', analog_pipes, frame_summers, actpipes, 'FrameFanin', 'fansummer', outtags);
 
 local retagger = g.pnode({
