@@ -32,7 +32,7 @@ table_fragment_end
 
 product          version
 cetbuildtools	 v8_20_00	-	only_for_build
-dunecore         v09_60_00d00
+dunecore         v09_60_01d00
 hep_hpc          v0_14_01
 end_product_list
 
