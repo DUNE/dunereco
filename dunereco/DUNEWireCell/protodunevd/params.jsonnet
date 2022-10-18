@@ -45,12 +45,11 @@ base {
                 // top drift volume
                 if sign > 0
                 then [
-                    null,
                     {
                         anode: centerline - apa_plane,
                         response: centerline - res_plane,
                         cathode: centerline - cpa_plane, 
-                    }
+                    },
                 ]
                 // bottom drift volume
                 else [
@@ -59,7 +58,6 @@ base {
                         response: centerline + res_plane,
                         cathode: centerline + cpa_plane, 
                     },
-                    null
                 ],
             } for a in std.range(0,7) for s in std.range(1,2)
         ],
@@ -71,8 +69,8 @@ base {
         // rectangular solid.  Again "wirecell-util wires-info" helps
         // to choose something.
         bounds : {
-            tail: wc.point(-4.0, 0.0, 0.0, wc.m),
-            head: wc.point(+4.0, 6.1, 7.0, wc.m),
+            tail: wc.point(-3.15, -3.42, 0, wc.m),
+            head: wc.point(3.13, 3.42, 3.04, wc.m),
         }
     },
 
@@ -97,11 +95,18 @@ base {
     // place.  See the "scale" parameter of wcls.input.depos() defined
     // in pgrapher/common/ui/wcls/nodes.jsonnet.
     // also, see later overwriting in simparams.jsonnet
-    elec: super.elec {
-      postgain: 1.1365, // pulser calibration: 41.649 ADC*tick/1ke
-                       // theoretical elec resp (14mV/fC): 36.6475 ADC*tick/1ke
-      shaping: 2.2 * wc.us,
-    },
+    elecs: [
+      super.elec { // bottom drifter
+        postgain: 1.1365, 
+        shaping: 2.2 * wc.us,
+      },
+      super.elec { // top
+        type: "JsonElecResponse",
+        filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
+        postgain: 1.0,
+      },
+    ],
+    elec: $.elecs[0], // nominal 
 
     sim: super.sim {
 
@@ -137,6 +142,7 @@ base {
 
         fields: [
             "dunevd-resp-isoc3views-18d92.json.bz2",
+            "dunevd-resp-isoc3views-18d92.json.bz2", // repeat for top drifter
         ],
 
         noise: "protodune-noise-spectra-v1.json.bz2",

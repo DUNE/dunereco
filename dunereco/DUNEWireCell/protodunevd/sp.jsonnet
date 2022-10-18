@@ -16,6 +16,8 @@ function(params, tools, override = {}) {
   local fullscale = params.adc.fullscale[1] - params.adc.fullscale[0],
   local ADC_mV_ratio = ((1 << resolution) - 1 ) / fullscale,
 
+  local bottom_anodes = [110,120, 111,121, 112,122, 113,123],
+
   // pDSP needs a per-anode sigproc
   make_sigproc(anode, name=null):: g.pnode({
     type: 'OmnibusSigProc',
@@ -49,7 +51,10 @@ function(params, tools, override = {}) {
       anode: wc.tn(anode),
       dft: wc.tn(tools.dft),
       field_response: wc.tn(tools.field),
-      elecresponse: wc.tn(tools.elec_resp),
+      // elecresponse: wc.tn(tools.elec_resp),
+      elecresponse: if std.count(bottom_anodes, anode.data.ident)>0
+                    then wc.tn(tools.elec_resps[0])
+                    else wc.tn(tools.elec_resps[1]),
       ftoffset: 0.0, // default 0.0
       ctoffset: 1.0*wc.microsecond, // default -8.0
       per_chan_resp: pc.name,
@@ -96,6 +101,6 @@ function(params, tools, override = {}) {
       // process_planes: [0, 2],
 
     } + override,
-  }, nin=1, nout=1, uses=[anode, tools.dft, tools.field, tools.elec_resp] + pc.uses + spfilt),
+  }, nin=1, nout=1, uses=[anode, tools.dft, tools.field, tools.elec_resps[0], tools.elec_resps[1] ] + pc.uses + spfilt),
 
 }

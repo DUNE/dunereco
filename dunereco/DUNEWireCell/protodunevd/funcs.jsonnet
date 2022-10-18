@@ -9,12 +9,22 @@ local g = import 'pgraph.jsonnet';
     // "AnodePlane:anode111" -> 2
     // "AnodePlane:anode121" -> 3
 
-    // local chrng = [ [ std.range(0,703), std.range(1024,1599) ],
-    //                   [ std.range(0,383), std.range(704,1599)],
-    //                   [ std.range(1600,2303), std.range(2624,3199)],
-    //                   [ std.range(1600,1983), std.range(2304,3199)]
+    // local chrng = [ [ std.range(0,475), std.range(952,1427), std.range(1904,2195) ],
+    //                 [ std.range(0,475), std.range(952,1427), std.range(2196,2487) ],
+    //                 [ std.range(476,951), std.range(1428,1903), std.range(2488,2779) ],
+    //                 [ std.range(476,951), std.range(1428,1903), std.range(2780,3071) ]
     //               ],
-    // anode_channels(n):: chrng[n][0] + chrng[n][1],
+    local chrng = [ [ std.range(0,476), std.range(954,1430), std.range(1908,2199) ],
+                    [ std.range(0,476), std.range(954,1430), std.range(2200,2491) ],
+                    [ std.range(477,953), std.range(1431,1907), std.range(2492,2783) ],
+                    [ std.range(477,953), std.range(1431,1907), std.range(2784,3075) ]
+                  ],
+    anode_channels :: function(n) {
+      local nmod = n % 4,
+      local channels = chrng[nmod][0] + chrng[nmod][1] + chrng[nmod][2],
+      local nmulti = ( n - nmod ) / 4,
+      ret: [ x + 3076 * nmulti for x in channels],
+    }.ret,
 
     // Return the number of split (1 or 2) for an anode
     anode_split(ident):: (ident%100 - ident%10)/10,
