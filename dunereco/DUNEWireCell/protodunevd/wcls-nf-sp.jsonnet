@@ -79,22 +79,6 @@ local mega_anode = {
   },
 };
 
-local planemaps = {
-  dunevd_3view: {"1":0, "2":3, "4":2},
-  default: {"1":0, "2":1, "4":2}
-};
-local planemap = planemaps[std.extVar("geo_planeid_labels")];
-
-local mega_anode_active = {
-  type: 'MegaAnodePlane',
-  name: 'meganodesact',
-  data: {
-    anodes_tn: if std.extVar('active_cru')=='tde'
-               then [wc.tn(tools.anodes[0]), wc.tn(tools.anodes[1])]
-               else [wc.tn(tools.anodes[2]), wc.tn(tools.anodes[3])],
-  },
-};
-
 local wcls_output = {
   // The noise filtered "ADC" values.  These are truncated for
   // art::Event but left as floats for the WCT SP.  Note, the tag
@@ -123,8 +107,7 @@ local wcls_output = {
     name: 'spsaver',
     data: {
       // anode: wc.tn(tools.anode),
-      anode: wc.tn(mega_anode_active),
-      plane_map: planemap,
+      anode: wc.tn(mega_anode),
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
       frame_scale: [0.005, 0.005],
@@ -132,7 +115,7 @@ local wcls_output = {
       chanmaskmaps: [],
       nticks: -1,
     },
-  }, nin=1, nout=1, uses=[mega_anode_active]),
+  }, nin=1, nout=1, uses=[mega_anode]),
 };
 
 // local perfect = import 'chndb-perfect.jsonnet';
