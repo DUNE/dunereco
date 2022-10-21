@@ -39,27 +39,15 @@ base {
                 wires: world + split + anode,
                 name: "anode%d"%(world + split + anode),
 
-                local sign = if a>3 then 1 else -1,
-                local centerline = sign * apa_cpa,
-                faces:
-                // top drift volume
-                if sign > 0
-                then [
+                faces: [
                     {
-                        anode: centerline - apa_plane,
-                        response: centerline - res_plane,
-                        cathode: centerline - cpa_plane, 
+                        anode:     15.07*wc.cm,
+                        response:  15.07*wc.cm - 18.92*wc.cm,
+                        cathode:   -300*wc.cm,
                     },
-                ]
-                // bottom drift volume
-                else [
-                    {
-                        anode: centerline + apa_plane,
-                        response: centerline + res_plane,
-                        cathode: centerline + cpa_plane, 
-                    },
+                    null
                 ],
-            } for a in std.range(0,7) for s in std.range(1,2)
+            } for a in std.range(0,1) for s in std.range(1,2)
         ],
 
         // This describes some rough, overall bounding box.  It's not
@@ -69,8 +57,8 @@ base {
         // rectangular solid.  Again "wirecell-util wires-info" helps
         // to choose something.
         bounds : {
-            tail: wc.point(-3.15, -3.42, 0, wc.m),
-            head: wc.point(3.13, 3.42, 3.04, wc.m),
+            tail: wc.point(-4.0, 0.0, 0.0, wc.m),
+            head: wc.point(+4.0, 6.1, 7.0, wc.m),
         }
     },
 
@@ -90,23 +78,11 @@ base {
         fullscale: [0.2*wc.volt, 1.6*wc.volt],
     },
 
-    // This sets a relative gain at the input to the ADC.  Note, if
-    // you are looking to fix SimDepoSource, you are in the wrong
-    // place.  See the "scale" parameter of wcls.input.depos() defined
-    // in pgrapher/common/ui/wcls/nodes.jsonnet.
-    // also, see later overwriting in simparams.jsonnet
-    elecs: [
-      super.elec { // bottom drifter
-        postgain: 1.1365, 
-        shaping: 2.2 * wc.us,
-      },
-      super.elec { // top
-        type: "JsonElecResponse",
-        filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
-        postgain: 1.0,
-      },
-    ],
-    elec: $.elecs[0], // nominal 
+    elec: super.elec {
+      type: "JsonElecResponse",
+      filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
+      postgain: 1.0,
+    },
 
     sim: super.sim {
 
@@ -138,11 +114,10 @@ base {
     },
 
     files: {
-        wires: "protodunevd-wires-larsoft-v1.json.bz2",
+        wires: "dunevdcrp2-wires-larsoft-v1.json.bz2",
 
         fields: [
             "dunevd-resp-isoc3views-18d92.json.bz2",
-            "dunevd-resp-isoc3views-18d92.json.bz2", // repeat for top drifter
         ],
 
         noise: "protodune-noise-spectra-v1.json.bz2",

@@ -15,9 +15,14 @@ local tools = tools_maker(params);
 local sim_maker = import 'pgrapher/experiment/protodunevd/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
-local stubby = {
-  tail: wc.point(-3000, 0, -9100, wc.cm),
-  head: wc.point(-3000, 0, 8800, wc.cm),
+local stubby_top = {
+  tail: wc.point(100, -75,   0, wc.cm),
+  head: wc.point(100, -75, 300, wc.cm),
+};
+
+local stubby_bottom = {
+  tail: wc.point(-100, -75,   0, wc.cm),
+  head: wc.point(-100, -75, 300, wc.cm),
 };
 
 local tracklist = [
@@ -25,7 +30,13 @@ local tracklist = [
   {
     time: 0 * wc.us,
     charge: -5000, // 5000 e/mm
-    ray: params.det.bounds,
+    ray: stubby_top, // params.det.bounds,
+  },
+
+  {
+    time: 0 * wc.us,
+    charge: -5000,
+    ray: stubby_bottom,
   },
 
 ];
@@ -95,7 +106,7 @@ local add_noise = function(model, n) g.pnode({
         replacement_percentage: 0.02, // random optimization
     // }}, nin=1, nout=1, uses=[tools.random, tools.dft, model]);
     }}, nin=1, nout=1, uses=[tools.random, model]);
-local noises = [add_noise(noise_model, n) for n in std.range(0,1)];
+local noises = [add_noise(noise_model, n) for n in std.range(0,7)];
 
 // local digitizer = sim.digitizer(mega_anode, name="digitizer", tag="orig");
 // "AnodePlane:anode110"
@@ -104,7 +115,7 @@ local noises = [add_noise(noise_model, n) for n in std.range(0,1)];
 // "AnodePlane:anode121"
 local digitizers = [
     sim.digitizer(mega_anode, name="digitizer%d-" %n + mega_anode.name, tag="orig%d"%n)
-    for n in std.range(0,1)];
+    for n in std.range(0,7)];
 
 local frame_summers = [
     g.pnode({
@@ -114,9 +125,9 @@ local frame_summers = [
             align: true,
             offset: 0.0*wc.s,
         },
-    }, nin=2, nout=1) for n in std.range(0, 1)];
+    }, nin=2, nout=1) for n in std.range(0, 7)];
 
-local actpipes = [g.pipeline([noises[n], digitizers[n]], name="noise-digitizer%d" %n) for n in std.range(0,1)];
+local actpipes = [g.pipeline([noises[n], digitizers[n]], name="noise-digitizer%d" %n) for n in std.range(0,7)];
 local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
 local pipe_reducer = util.fansummer('DepoSetFanout', analog_pipes, frame_summers, actpipes, 'FrameFanin');
 

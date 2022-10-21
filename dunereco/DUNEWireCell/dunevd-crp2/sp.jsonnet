@@ -6,7 +6,7 @@ local wc = import 'wirecell.jsonnet';
 // BIG FAT FIXME: we are taking from uboone.  If PDSP needs tuning do
 // four things: 0) read this comment, 1) cp this file into pdsp/, 2)
 // fix the import and 3) delete this comment.
-local spfilt = import 'pgrapher/experiment/protodunevd/sp-filters.jsonnet';
+local spfilt = import 'pgrapher/experiment/dunevd-crp2/sp-filters.jsonnet';
 
 function(params, tools, override = {}) {
 
@@ -15,8 +15,6 @@ function(params, tools, override = {}) {
   local resolution = params.adc.resolution,
   local fullscale = params.adc.fullscale[1] - params.adc.fullscale[0],
   local ADC_mV_ratio = ((1 << resolution) - 1 ) / fullscale,
-
-  local bottom_anodes = [110,120, 111,121, 112,122, 113,123],
 
   // pDSP needs a per-anode sigproc
   make_sigproc(anode, name=null):: g.pnode({
@@ -51,10 +49,7 @@ function(params, tools, override = {}) {
       anode: wc.tn(anode),
       dft: wc.tn(tools.dft),
       field_response: wc.tn(tools.field),
-      // elecresponse: wc.tn(tools.elec_resp),
-      elecresponse: if std.count(bottom_anodes, anode.data.ident)>0
-                    then wc.tn(tools.elec_resps[0])
-                    else wc.tn(tools.elec_resps[1]),
+      elecresponse: wc.tn(tools.elec_resp),
       ftoffset: 0.0, // default 0.0
       ctoffset: 1.0*wc.microsecond, // default -8.0
       per_chan_resp: pc.name,
@@ -101,6 +96,6 @@ function(params, tools, override = {}) {
       // process_planes: [0, 2],
 
     } + override,
-  }, nin=1, nout=1, uses=[anode, tools.dft, tools.field, tools.elec_resps[0], tools.elec_resps[1] ] + pc.uses + spfilt),
+  }, nin=1, nout=1, uses=[anode, tools.dft, tools.field, tools.elec_resp] + pc.uses + spfilt),
 
 }
