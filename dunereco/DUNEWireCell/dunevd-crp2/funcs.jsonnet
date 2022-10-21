@@ -9,22 +9,12 @@ local g = import 'pgraph.jsonnet';
     // "AnodePlane:anode111" -> 2
     // "AnodePlane:anode121" -> 3
 
-    // local chrng = [ [ std.range(0,475), std.range(952,1427), std.range(1904,2195) ],
-    //                 [ std.range(0,475), std.range(952,1427), std.range(2196,2487) ],
-    //                 [ std.range(476,951), std.range(1428,1903), std.range(2488,2779) ],
-    //                 [ std.range(476,951), std.range(1428,1903), std.range(2780,3071) ]
-    //               ],
-    local chrng = [ [ std.range(0,476), std.range(954,1430), std.range(1908,2199) ],
-                    [ std.range(0,476), std.range(954,1430), std.range(2200,2491) ],
-                    [ std.range(477,953), std.range(1431,1907), std.range(2492,2783) ],
-                    [ std.range(477,953), std.range(1431,1907), std.range(2784,3075) ]
+    local chrng = [ [ std.range(0,475), std.range(952,1427), std.range(1904,2195) ],
+                    [ std.range(0,475), std.range(952,1427), std.range(2196,2487) ],
+                    [ std.range(476,951), std.range(1428,1903), std.range(2488,2779) ],
+                    [ std.range(476,951), std.range(1428,1903), std.range(2780,3071) ]
                   ],
-    anode_channels :: function(n) {
-      local nmod = n % 4,
-      local channels = chrng[nmod][0] + chrng[nmod][1] + chrng[nmod][2],
-      local nmulti = ( n - nmod ) / 4,
-      ret: [ x + 3076 * nmulti for x in channels],
-    }.ret,
+    anode_channels(n):: chrng[n][0] + chrng[n][1] + chrng[n][2],
 
     // Return the number of split (1 or 2) for an anode
     anode_split(ident):: (ident%100 - ident%10)/10,
@@ -65,21 +55,6 @@ local g = import 'pgraph.jsonnet';
                                  + [g.edge(sigpipes[1], summers[0],0,1)]
                                  + [g.edge(sigpipes[2], summers[1],0,0)]
                                  + [g.edge(sigpipes[3], summers[1],0,1)]
-
-                                 + [g.edge(sigpipes[4], summers[2],0,0)]
-                                 + [g.edge(sigpipes[5], summers[2],0,1)]
-                                 + [g.edge(sigpipes[6], summers[3],0,0)]
-                                 + [g.edge(sigpipes[7], summers[3],0,1)]
-
-                                 + [g.edge(sigpipes[8], summers[4],0,0)]
-                                 + [g.edge(sigpipes[9], summers[4],0,1)]
-                                 + [g.edge(sigpipes[10], summers[5],0,0)]
-                                 + [g.edge(sigpipes[11], summers[5],0,1)]
-
-                                 + [g.edge(sigpipes[12], summers[6],0,0)]
-                                 + [g.edge(sigpipes[13], summers[6],0,1)]
-                                 + [g.edge(sigpipes[14], summers[7],0,0)]
-                                 + [g.edge(sigpipes[15], summers[7],0,1)]
 
                                  // connecting summer and the operator pipelines
                                  + [g.edge(summers[n], actpipes[n]) for n in std.range(0,faninmult-1)],

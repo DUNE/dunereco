@@ -45,7 +45,7 @@ local wcls = wcls_maker(params, tools);
 //local nf_maker = import "pgrapher/experiment/pdsp/nf.jsonnet";
 //local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
 
-local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
+local sp_maker = import 'pgrapher/experiment/dunevd-crp2/sp.jsonnet';
 
 //local chndbm = chndb_maker(params, tools);
 //local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
@@ -128,13 +128,13 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local nf_maker = import 'pgrapher/experiment/protodunevd/nf.jsonnet';
+local nf_maker = import 'pgrapher/experiment/dunevd-crp2/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
-local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
+local util = import 'pgrapher/experiment/dunevd-crp2/funcs.jsonnet';
 local chsel_pipes = [
   g.pnode({
     type: 'ChannelSelector',
@@ -148,7 +148,7 @@ local chsel_pipes = [
 ];
 
 local magoutput = 'protodune-data-check.root';
-local magnify = import 'pgrapher/experiment/protodunevd/magnify-sinks.jsonnet';
+local magnify = import 'pgrapher/experiment/dunevd-crp2/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
 local use_magnify = std.extVar("use_magnify");
