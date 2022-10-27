@@ -309,6 +309,7 @@ bool dunefd::ShSeg::BuildSegMC(art::Event & e)
 	if ((firstel->PdgCode() == 22) && (firstel->EndProcess() == "conv")) 
 	{
 		startingp = primaries[0]->EndPosition();
+		TVector3 startp(startingp.X(), startingp.Y(), startingp.Z());
 		// smear with normal dist (only for gammas)
 		Smearph();
 	}
@@ -330,13 +331,15 @@ bool dunefd::ShSeg::BuildSegMC(art::Event & e)
         CorrOffset(detProp, firstpoint, *firstel);
         CorrOffset(detProp, secondpoint, *firstel);
 
+	double startvtx[3] = {firstpoint.X(), firstpoint.Y(), firstpoint.Z()};
+	
 	// check if it is inside
-        geo::TPCID tpcid = geom->FindTPCAtPosition(geo::vect::toPoint(firstpoint));
+	geo::TPCID tpcid = geom->FindTPCAtPosition(startvtx);		
 	if (!tpcid.isValid) return false;
 
 	// try to build seg, it is based on MC truth 
 	size_t tpc = tpcid.TPC;
-        size_t cryo = geom->PositionToCryostatID(geo::vect::toPoint(firstpoint)).Cryostat;
+	size_t cryo = geom->FindCryostatAtPosition(startvtx);	
 	pma::Track3D* iniseg = new pma::Track3D();
         iniseg->AddNode(detProp, firstpoint, tpc, cryo);
         iniseg->AddNode(detProp, secondpoint, tpc, cryo);
