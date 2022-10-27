@@ -43,7 +43,6 @@
 #include <string>
 #include <cmath>
 #include <fstream>
-#include <tuple>
 
 #include "TFile.h"
 #include "TTree.h"
@@ -167,7 +166,7 @@ namespace nnet
 		if (mc.Origin() == simb::kBeamNeutrino)
 		{
 			const TLorentzVector& pvtx = mc.GetNeutrino().Nu().Position();
-                        auto vtx = pvtx.Vect();
+			TVector3 vtx(pvtx.X(), pvtx.Y(), pvtx.Z());
 
             CorrOffset(detProp, vtx, mc.GetNeutrino().Nu());
 
@@ -177,13 +176,13 @@ namespace nnet
 
 			if (InsideFidVol(vtx)) 
 			{	
-                                auto const v = geo::vect::toPoint(vtx);
-                                geo::TPCID const tpcID = fGeometry->PositionToTPCID(v);
-                                auto const [cryo, tpc] = std::make_tuple(tpcID.Cryostat, tpcID.TPC);
+				double v[3] = {vtx.X(), vtx.Y(), vtx.Z()}; 
+				unsigned int cryo = fGeometry->FindCryostatAtPosition(v);
+				unsigned int tpc = fGeometry->FindTPCAtPosition(v).TPC;
 				
 				for (size_t i = 0; i < 3; ++i)
 				{
-                                        if (fGeometry->TPC(tpcID).HasPlane(i))
+					if (fGeometry->TPC(tpc, cryo).HasPlane(i))
                       { fPointid.position[i] = GetProjVtx(detProp, vtx, cryo, tpc, i); }
 					else
 					{ fPointid.position[i] = TVector2(0, 0); }
