@@ -1,0 +1,5 @@
+#include "pointrestree.fcl"
+process_name: PointResTree
+
+physics.analyzers.PointResTree.GeneratorLabel:	   "marley" #MARLEY
+
