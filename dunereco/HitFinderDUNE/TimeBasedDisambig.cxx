@@ -193,14 +193,13 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 	    double ChargePerNumZ=hitsZ[z]->Integral()/hitsZ[z]->Multiplicity();
 	    double rChargeZ=hitsUV[uv0]->Integral()/hitsZ[z]->Integral();
 	    if (hitsUV[uv0]->Multiplicity()>0 && hitsZ[z]->Integral()>0) rChargeZ=ChargePerNum0/ChargePerNumZ;
-	    double vert[3]={0.0,0.0,0.0};
 	    std::vector<geo::WireID> wires = geo->ChannelToWire(hitsZ[z]->Channel());
-	    geo->Cryostat(wires[0].Cryostat).TPC(wires[0].TPC).Plane(2).Wire(wires[0].Wire).GetCenter(vert);
+            auto const vert = geo->Wire(wires[0]).GetCenter();
 	    if (fabs(PeakTimeMinusUV-PeakTimeMinusZ)<MinPeakTime && fabs(PeakTimeUV-PeakTimeZ)<20 &&
 		(rChargeZ<rmax && rChargeZ>(1/rmax)) &&
 	  	wireiduv0[wireid0].TPC==wires[0].TPC){
 	      MinPeakTime=fabs(PeakTimeMinusUV-PeakTimeMinusZ);
-	      VertPos=vert[2];
+              VertPos=vert.Z();
 	    } 
 	  }
 
@@ -216,16 +215,15 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 	    double ChargePerNumZ=hitsZ[z]->Integral()/hitsZ[z]->Multiplicity();
 	    double rChargeZ=hitsUV[uv0]->Integral()/hitsZ[z]->Integral();
 	    if (hitsUV[uv0]->Multiplicity()>0 && hitsZ[z]->Integral()>0) rChargeZ=ChargePerNum0/ChargePerNumZ;
-	    double vert[3]={0.0,0.0,0.0};
 	    std::vector<geo::WireID> wires = geo->ChannelToWire(hitsZ[z]->Channel());
-	    geo->Cryostat(wires[0].Cryostat).TPC(wires[0].TPC).Plane(2).Wire(wires[0].Wire).GetCenter(vert);
+            auto const vert = geo->Wire(wires[0]).GetCenter();
 	    if (fabs(fabs(PeakTimeMinusUV-PeakTimeMinusZ)-MinPeakTime)<10 &&
 		//fabs(PeakTimeUV-PeakTimeZ)<20 &&
 		(rChargeZ<rmax && rChargeZ>(1/rmax)) &&
 		wireiduv0[wireid0].TPC==wires[0].TPC ){
 	      CollectionHits++;
-	      VertPosMean+=vert[2];
-	      RMS+=(VertPos-vert[2])*(VertPos-vert[2]);
+              VertPosMean+=vert.Z();
+              RMS+=(VertPos-vert.Z())*(VertPos-vert.Z());
 	    } 
 	  }
 	  VertPosMean=VertPosMean/double(CollectionHits); //average position
