@@ -470,7 +470,7 @@ namespace cnn
           if (inTPC){
               for (int iplane = 0; iplane<3; iplane++){
                   int rawtpc = (int) (geom->FindTPCAtPosition(regvtx_loc)).TPC;
-                  geo::PlaneGeo const& planegeo_temp = geom->Plane(iplane);
+                  geo::PlaneGeo const& planegeo_temp = geom->Plane(geo::PlaneID(0, 0, iplane));
                   geo::PlaneID const planeID(rawcrys, rawtpc, iplane);
                   geo::WireID w1;
                   try { 
@@ -522,10 +522,10 @@ namespace cnn
   double RegPixelMapProducer::GetGlobalWire(const geo::WireID& wireID){
     // Get Global Wire Coordinate for RegCNN
     double globalWire = -9999;
-    unsigned int nwires = geom->Nwires(wireID.Plane, 0, wireID.Cryostat); 
+    unsigned int nwires = geom->Nwires(geo::PlaneID(wireID.Cryostat, 0, wireID.Plane));
     // Induction
     if (geom->SignalType(wireID) == geo::kInduction) {
-      auto const WireCentre = geom->WireIDToWireGeo(wireID).GetCenter<geo::Point_t>();
+      auto const WireCentre = geom->WireIDToWireGeo(wireID).GetCenter();
       geo::PlaneID p1;
       int temp_tpc = 0;
       if (wireID.TPC % 2 == 0) { temp_tpc = 0; }
@@ -623,8 +623,9 @@ namespace cnn
 
     unsigned int nWiresTPC = 400;
     unsigned int wireGap = 4;
-    double driftLen = geom->TPC(tpc,0).DriftDistance();
-    double apaLen = geom->TPC(tpc,0).Width() - geom->TPC(tpc,0).ActiveWidth();
+    auto const& tpcg = geom->TPC(geo::TPCID{0, tpc});
+    double driftLen = tpcg.DriftDistance();
+    double apaLen = tpcg.Width() - tpcg.ActiveWidth();
     double driftVel = detProp.DriftVelocity();
     //unsigned int drift_size = (driftLen / driftVel) * 2;
     //unsigned int apa_size   = 4*(apaLen / driftVel) * 2;

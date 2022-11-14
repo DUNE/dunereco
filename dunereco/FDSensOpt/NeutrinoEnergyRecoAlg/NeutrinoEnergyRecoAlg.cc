@@ -335,7 +335,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const std:
 
 bool NeutrinoEnergyRecoAlg::IsPointContained(const double x, const double y, const double z)
 {
-    double position[3] = {x,y,z};
+    geo::Point_t const position{x,y,z};
     art::ServiceHandle<geo::Geometry> fGeometry;
 
     geo::TPCID tpcID(fGeometry->FindTPCAtPosition(position));
@@ -348,19 +348,14 @@ bool NeutrinoEnergyRecoAlg::IsPointContained(const double x, const double y, con
     double maxY(std::numeric_limits<double>::lowest());
     double minZ(std::numeric_limits<double>::max());
     double maxZ(std::numeric_limits<double>::lowest());
-    for (unsigned int iCryostat = 0; iCryostat < fGeometry->Ncryostats(); ++iCryostat)
+    for (auto const& tpc : fGeometry->Iterate<geo::TPCGeo>())
     {
-        const geo::CryostatGeo& cryostat(fGeometry->Cryostat(iCryostat));
-        for (unsigned int iTPC = 0; iTPC < cryostat.NTPC(); ++iTPC)
-        {
-            const geo::TPCGeo& tpc(cryostat.TPC(iTPC));
             minX = std::min(minX,tpc.MinX());
             maxX = std::max(maxX,tpc.MaxX());
             minY = std::min(minY,tpc.MinY());
             maxY = std::max(maxY,tpc.MaxY());
             minZ = std::min(minZ,tpc.MinZ());
             maxZ = std::max(maxZ,tpc.MaxZ());
-        }
     }
 
     minX += fDistanceToWallThreshold;

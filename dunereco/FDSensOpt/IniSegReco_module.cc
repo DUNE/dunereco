@@ -668,14 +668,11 @@ void dunefd::IniSegReco::collectCls(art::Event const & evt,
    		art::fill_ptr_vector(clusterlist, clusterListHandle);
 		art::FindManyP< recob::Hit > hc(clusterListHandle, evt, fClusterModuleLabel);		
 
-		for (size_t c = 0; c < geom->Ncryostats(); ++c) 
+                for (auto const& tpcg : geom->Iterate<geo::TPCGeo>())
 		{
-			const geo::CryostatGeo& cryo = geom->Cryostat(c);
-			for (size_t t = 0; t < cryo.NTPC(); ++t)
-			{
-				const geo::TPCGeo& tpc = cryo.TPC(t);
+                        auto const [c, t] = std::make_pair(tpcg.ID().Cryostat, tpcg.ID().TPC);
 				std::vector< std::vector< dunefd::Hit2D > > clinput;
-				for (size_t p = 0; p < tpc.Nplanes(); ++p) 
+                        for (size_t p = 0; p < tpcg.Nplanes(); ++p)
 				{	
 					std::map<size_t, std::vector< dunefd::Hit2D > > cls; 
 					for (size_t i = 0; i < clusterlist.size(); ++i)
@@ -692,7 +689,8 @@ void dunefd::IniSegReco::collectCls(art::Event const & evt,
 							size_t tpc = hitscl[h]->WireID().TPC;
 							size_t cryo = hitscl[h]->WireID().Cryostat;
 
-							if ((plane == p) && (tpc == t) && (cryo == c))
+
+                                                if (cryo == c && tpc == t && plane == p)
 							{
 								found = true;
                                                                 TVector2 point = pma::WireDriftToCm(detProp, wire, hitscl[h]->PeakTime(), plane, tpc, cryo);
@@ -714,7 +712,6 @@ void dunefd::IniSegReco::collectCls(art::Event const & evt,
 					TVector3 primary(pvtx.X(), pvtx.Y(), pvtx.Z());
                                         make3dseg(evt, detProp, clinput, primary);
 				}
-			}
 		}
 
 	}		
@@ -961,7 +958,7 @@ float dunefd::IniSegReco::t0Corr(art::Event const & evt,
     	if (mctruthListHandle)
       	  art::fill_ptr_vector(mclist, mctruthListHandle);
 
-	double vtx[3] = {pvtx.X(), pvtx.Y(), pvtx.Z()};
+        geo::Point_t const vtx{pvtx.X(), pvtx.Y(), pvtx.Z()};
 
 	geo::TPCID idtpc = geom->FindTPCAtPosition(vtx);
 
@@ -986,7 +983,7 @@ float dunefd::IniSegReco::t0Corr(art::Event const & evt,
 bool dunefd::IniSegReco::insideFidVol(TLorentzVector const & pvtx) const
 {
 	art::ServiceHandle<geo::Geometry> geom;
-	double vtx[3] = {pvtx.X(), pvtx.Y(), pvtx.Z()};
+        geo::Point_t const vtx{pvtx.X(), pvtx.Y(), pvtx.Z()};
 	bool inside = false;
 
 	geo::TPCID idtpc = geom->FindTPCAtPosition(vtx);

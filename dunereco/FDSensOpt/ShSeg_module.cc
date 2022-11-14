@@ -469,7 +469,7 @@ void dunefd::ShSeg::Smearph()
 bool dunefd::ShSeg::InsideFidVol(TLorentzVector const & pvtx) const
 {
 	art::ServiceHandle<geo::Geometry> geom;
-	double vtx[3] = {pvtx.X(), pvtx.Y(), pvtx.Z()};
+        geo::Point_t const vtx{pvtx.X(), pvtx.Y(), pvtx.Z()};
 	bool inside = false;
 
 	geo::TPCID idtpc = geom->FindTPCAtPosition(vtx);

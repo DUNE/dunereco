@@ -138,25 +138,23 @@ void Infill::MakeInfillTrainingData::beginJob()
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
 
   // Get active ROPs (not facing a wall)
-  geo::ROP_id_iterator iRop, rBegin(fGeom, geo::ROP_id_iterator::begin_pos), 
-    rEnd(fGeom, geo::ROP_id_iterator::end_pos);
-  for (iRop = rBegin; iRop != rEnd; ++iRop) { // Iterate over ROPs in detector
-    for (const geo::TPCID tpcId : fGeom->ROPtoTPCs(*iRop)) {
+  for (auto const& ropID : fGeom->Iterate<readout::ROPID>()) { // Iterate over ROPs in detector
+    for (const geo::TPCID tpcId : fGeom->ROPtoTPCs(ropID)) {
       const geo::TPCGeo tpc = fGeom->TPC(tpcId);
       const TGeoVolume* tpcVol = tpc.ActiveVolume();
       
       if (tpcVol->Capacity() > 1000000) { // At least one of the ROP's TPCIDs needs to be active
         // Networks expect a fixed image size
-        if(fGeom->SignalType(*iRop) == geo::kInduction && fGeom->Nchannels(*iRop) != 800) {
+        if(fGeom->SignalType(ropID) == geo::kInduction && fGeom->Nchannels(ropID) != 800) {
 	  std::cerr << "MakeInfillTrainingData_module.cc: Induction view training data should have 800 channels\n";
 	  std::abort();
         }
-        if(fGeom->SignalType(*iRop) == geo::kCollection && fGeom->Nchannels(*iRop) != 480) {
+        if(fGeom->SignalType(ropID) == geo::kCollection && fGeom->Nchannels(ropID) != 480) {
 	  std::cerr << "MakeInfillTrainingData_module.cc: Collection view training data should have 480 channels\n";
 	  std::abort();
         }
 
-        fActiveRops.insert(*iRop);
+        fActiveRops.insert(ropID);
         break;
       }
     }

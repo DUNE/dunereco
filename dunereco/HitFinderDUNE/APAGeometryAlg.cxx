@@ -19,6 +19,7 @@
 
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
+#include "larcorealg/CoreUtils/NumericUtils.h"
 #include "larcorealg/Geometry/CryostatGeo.h"
 #include "larcorealg/Geometry/TPCGeo.h"
 #include "larcorealg/Geometry/PlaneGeo.h"
@@ -114,7 +115,7 @@ namespace dune::apa {
 					   << "Channel boundaries are inconsistent.\n";
 
     // some other things that will be needed
-    fAPAsPerCryo = fGeom->NTPC(0)/2;
+    fAPAsPerCryo = fGeom->NTPC()/2;
     fChannelRange[0] = (fLastU-fFirstU + 1)*fGeom->WirePitch(geo::kU);
     fChannelRange[1] = (fLastV-fFirstV + 1)*fGeom->WirePitch(geo::kV);
 
@@ -352,7 +353,7 @@ namespace dune::apa {
       unsigned int ext = 0;
       if ( ExtendLine) ext = 10;
 
-      if( fGeom->ValueInRange( wids[w].Wire*1., (startW-ext)*1., (endW+ext)*1. ) ) widsCrossed.push_back(wids[w]);
+      if( lar::util::ValueInRange( wids[w].Wire*1., (startW-ext)*1., (endW+ext)*1. ) ) widsCrossed.push_back(wids[w]);
 
     }
 
@@ -424,13 +425,14 @@ namespace dune::apa {
     // Note: this will not happen for APAs with UV angle at about 36, but will for 45
     std::cout << "UVzToZ = ";
     for( size_t widI = 0; widI < UVIntersects.size(); widI++ ){
-      UVzToZ[widI] = std::abs( UVIntersects[widI].z - Zcent[2] );
+      UVzToZ[widI] = std::abs( UVIntersects[widI].z - Zcent.Z() );
       std::cout << UVzToZ[widI] << ", ";
     }
     std::cout<<"\n";
 
     unsigned int bestWidI = 0;
-    double minZdiff = fGeom->Cryostat(cryo).TPC(tpc).Length(); // start it out at maximum z
+    geo::TPCID const tpcid{cryo, tpc};
+    double minZdiff = fGeom->TPC(tpcid).Length(); // start it out at maximum z
     for( unsigned int widI = 0; widI < UVIntersects.size(); widI++ ){
 
       //std::cout << "widI = " << widI << std::endl; 

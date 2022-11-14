@@ -242,10 +242,11 @@ namespace nnet
 
     bool goodEvent = false;
     unsigned int gd0 = 0, gd1 = 0;
+    constexpr geo::CryostatID cryoID{0};
 	for (int p = 2; p >= 0; --p) // loop over planes and make global images
 	{
 	    size_t drift_size = detProp.NumberTimeSamples() / fTrainingDataAlg.DriftWindow(); // tpc size in drift direction
-	    size_t wire_size = fGeometry->Nwires(p, 0, cryo);                                   // tpc size in wire direction
+        size_t wire_size = fGeometry->Nwires(geo::PlaneID(0, 0, p));                   // tpc size in wire direction
 	    size_t max_offset = (p < 2) ? 752 : 0;                                              // top-bottom projection max offset
 
         size_t ntotw = (tpcs[2] - 1) * weff[p] + wire_size + tpcs[1] * max_offset;          // global image size in wire direction
@@ -255,13 +256,13 @@ namespace nnet
 	    EventImageData fullimg(ntotw, ntotd, fSaveDepositMap);
 
         size_t a, maxArea = 0;
-	    for (size_t t = 0; t < fGeometry->NTPC(cryo); ++t) // loop over tpc's
+        for (size_t t = 0; t < fGeometry->NTPC(cryoID); ++t) // loop over tpc's
 	    {
             size_t tpc_z = t / (tpcs[0] * tpcs[1]);
             size_t tpc_y = (t / tpcs[0]) % tpcs[1];
             size_t tpc_x = t % tpcs[0];
 
-            int dir = fGeometry->TPC(t, cryo).DetectDriftDirection();
+            int dir = fGeometry->TPC(geo::TPCID(cryoID, t)).DetectDriftDirection();
             bool flip_d = (dir > 0); // need the flip in drift direction?
 
 	        bool flip_w = false;     // need the flip in wire direction?
@@ -403,7 +404,7 @@ namespace nnet
   void SPMultiTpcDump::CorrOffset(detinfo::DetectorPropertiesData const& detProp,
                                   TVector3& vec, const simb::MCParticle& particle)
   {
-  	double vtx[3] = {vec.X(), vec.Y(), vec.Z()};
+        auto vtx = geo::vect::toPoint(vec);
   	geo::TPCID tpcid = fGeometry->FindTPCAtPosition(vtx);
 
 	if (tpcid.isValid)
@@ -411,16 +412,16 @@ namespace nnet
 	  	float corrt0x = particle.T() * 1.e-3 * detProp.DriftVelocity();
 	  	if (fGeometry->TPC(tpcid).DetectDriftDirection() == 1) { corrt0x = corrt0x*(-1); }
 	  	
-	  	vtx[0] = vec.X() + corrt0x;
+                vtx.SetX(vec.X() + corrt0x);
 	  }
 
-	vec.SetX(vtx[0]);
+        vec.SetX(vtx.X());
   }
 
   //-----------------------------------------------------------------------
   bool SPMultiTpcDump::InsideFidVol(TVector3 const & pvtx) const
   {
-		double vtx[3] = {pvtx.X(), pvtx.Y(), pvtx.Z()};
+                auto vtx = geo::vect::toPoint(pvtx);
 		bool inside = false;
 
 		if (!fGeometry->FindTPCAtPosition(vtx).isValid) return false;
