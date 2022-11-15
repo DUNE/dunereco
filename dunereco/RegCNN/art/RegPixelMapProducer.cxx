@@ -463,7 +463,7 @@ namespace cnn
       double center_tick[3] = {-99999, -99999, -99999};
       unsigned int size_vtx = (unsigned int) vtx.size();
       if (size_vtx == 3){
-          double regvtx_loc[3] = {(double)vtx[0], (double)vtx[1], (double)vtx[2]};
+          geo::Point_t const regvtx_loc{(double)vtx[0], (double)vtx[1], (double)vtx[2]};
           int rawcrys = 0;
           bool inTPC = false;
           if (geom->FindTPCAtPosition(regvtx_loc).isValid) inTPC = true;
@@ -471,15 +471,16 @@ namespace cnn
               for (int iplane = 0; iplane<3; iplane++){
                   int rawtpc = (int) (geom->FindTPCAtPosition(regvtx_loc)).TPC;
                   geo::PlaneGeo const& planegeo_temp = geom->Plane(iplane);
+                  geo::PlaneID const planeID(rawcrys, rawtpc, iplane);
                   geo::WireID w1;
                   try { 
-                      w1 = geom->NearestWireID(regvtx_loc, iplane, rawtpc, rawcrys);
+                      w1 = geom->NearestWireID(regvtx_loc, planeID);
                   }
                   catch (geo::InvalidWireError const& e){
                       if (!e.hasSuggestedWire()) throw;
                       w1 = planegeo_temp.ClosestWireID(e.suggestedWireID());
                   }
-                  double time1 = detProp.ConvertXToTicks(regvtx_loc[0], iplane, rawtpc, rawcrys);
+                  double time1 = detProp.ConvertXToTicks(regvtx_loc.X(), planeID);
                   if (fGlobalWireMethod == 1){
                       std::cout << "You Can't use this with GlobalWireMethod = 1" << std::endl;
                       abort();
@@ -524,14 +525,13 @@ namespace cnn
     unsigned int nwires = geom->Nwires(wireID.Plane, 0, wireID.Cryostat); 
     // Induction
     if (geom->SignalType(wireID) == geo::kInduction) {
-      double WireCentre[3] = {0};
-      geom->WireIDToWireGeo(wireID).GetCenter(WireCentre);
+      auto const WireCentre = geom->WireIDToWireGeo(wireID).GetCenter<geo::Point_t>();
       geo::PlaneID p1;
       int temp_tpc = 0;
       if (wireID.TPC % 2 == 0) { temp_tpc = 0; }
       else { temp_tpc = 1;  }
       p1 = geo::PlaneID(wireID.Cryostat, temp_tpc, wireID.Plane);
-      globalWire = geom->WireCoordinate(WireCentre[1], WireCentre[2], p1);
+      globalWire = geom->WireCoordinate(WireCentre, p1);
     }
     // Collection
     else {
