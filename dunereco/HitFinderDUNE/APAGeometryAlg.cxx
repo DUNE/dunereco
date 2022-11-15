@@ -298,7 +298,8 @@ namespace dune::apa {
     // special case for vertical wires
     if(fGeom->View(chan)==geo::kZ) return fGeom->ChannelToWire(chan)[0];
 
-    unsigned int xyzWire = fGeom->NearestWireID( WorldLoc, plane, tpc, cstat ).Wire;
+    unsigned int xyzWire = fGeom->NearestWireID( geo::vect::toPoint(WorldLoc),
+                                                 geo::PlaneID{cstat, tpc, plane} ).Wire;
 
     // The desired wire ID will be the only channel 
     // segment within half the channel range.
@@ -324,25 +325,22 @@ namespace dune::apa {
     // by matching cluster endpoints in disambiguation.
 
     // Find tpc, use midpoint in case start/end is on a boundary
-    unsigned int tpc, cryo;
-    double xyzMid[3];
-    xyzMid[0] = (xyzStart[0]+xyzEnd[0])/2;
-    xyzMid[1] = (xyzStart[1]+xyzEnd[1])/2;
-    xyzMid[2] = (xyzStart[2]+xyzEnd[2])/2;
-    fGeom->PositionToTPC(xyzMid, tpc, cryo);
+    using geo::vect::toPoint;
+    auto const tpcID = fGeom->PositionToTPCID(toPoint((xyzStart + xyzEnd) * 0.5));
 
     // Find the nearest wire number to the line segment endpoints
     std::vector<geo::WireID> wids = fGeom->ChannelToWire(chan);
-    unsigned int startW = fGeom->NearestWire( xyzStart, wids[0].Plane, tpc, cryo );
-    unsigned int endW   = fGeom->NearestWire( xyzEnd,   wids[0].Plane, tpc, cryo );
+    geo::PlaneID const planeID{tpcID, wids[0].Plane};
+    unsigned int startW = fGeom->NearestWireID( toPoint(xyzStart), planeID ).Wire;
+    unsigned int endW   = fGeom->NearestWireID( toPoint(xyzEnd),   planeID ).Wire;
 
     if( startW > endW ) std::swap(startW, endW);
 
 
     // Loop through wireIDs and check for intersection, if in the right TPC
     for( size_t w = 0; w < wids.size(); w++ ){
-      if( wids[w].TPC != tpc ) continue;
-      if( wids[w].Cryostat != cryo ) throw cet::exception("LineSegChanIntersect")
+      if( wids[w].TPC != tpcID.TPC ) continue;
+      if( wids[w].Cryostat != tpcID.Cryostat ) throw cet::exception("LineSegChanIntersect")
 				       << "Channel and line not in the same crostat.\n";
 
       // If the current wire id wire number is inbetween the start/end 
@@ -385,10 +383,9 @@ namespace dune::apa {
     std::vector<geo::WireID> UwidsInTPC, VwidsInTPC;
     for(size_t i=0; i<Uwids.size(); i++) if( Uwids[i].TPC==tpc ) UwidsInTPC.push_back(Uwids[i]);
     for(size_t i=0; i<Vwids.size(); i++) if( Vwids[i].TPC==tpc ) VwidsInTPC.push_back(Vwids[i]);
-    double Zcent[3] = {0.};
-    fGeom->WireIDToWireGeo( Zwid ).GetCenter(Zcent);
+    auto const Zcent = fGeom->WireIDToWireGeo( Zwid ).GetCenter();
 
-    std::cout << "Zcent = " << Zcent[2] << ", UVintersects zpos = ";
+    std::cout << "Zcent = " << Zcent.Z() << ", UVintersects zpos = ";
     for(size_t uv=0; uv<UVIntersects.size(); uv++){
       std::cout << UVIntersects[uv].z << ", ";
     }
