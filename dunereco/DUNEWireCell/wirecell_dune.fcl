@@ -141,8 +141,8 @@ wirecell_protodunespmc:
             DT: 8.8
             // Electron lifetime [ms]
             lifetime: 35.0
-            // Electron drift speed, assumes a certain applied E-field [mm/us]
-            driftSpeed: 1.60563
+            // Electron drift speed from SP measurement
+            driftSpeed: 1.565
         }
     }
 }

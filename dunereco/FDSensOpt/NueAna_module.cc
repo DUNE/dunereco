@@ -1153,7 +1153,7 @@ bool dunefd::NueAna::insideFidVol(const double posX, const double posY, const do
 {
 	
 	art::ServiceHandle<geo::Geometry> geom;
-	double vtx[3] = {posX, posY, posZ};
+        geo::Point_t const vtx{posX, posY, posZ};
 	bool inside = false;
 
 	geo::TPCID idtpc = geom->FindTPCAtPosition(vtx);
@@ -1165,12 +1165,8 @@ bool dunefd::NueAna::insideFidVol(const double posX, const double posY, const do
 		double miny = tpcgeo.MinY(); double maxy = tpcgeo.MaxY();
 		double minz = tpcgeo.MinZ(); double maxz = tpcgeo.MaxZ();
 
-		for (size_t c = 0; c < geom->Ncryostats(); c++)
+                for (auto const& tpcg : geom->Iterate<geo::TPCGeo>())
 		{
-			const geo::CryostatGeo& cryostat = geom->Cryostat(c);
-			for (size_t t = 0; t < cryostat.NTPC(); t++)
-			{	
-				const geo::TPCGeo& tpcg = cryostat.TPC(t);
 				if (tpcg.MinX() < minx) minx = tpcg.MinX();
 				if (tpcg.MaxX() > maxx) maxx = tpcg.MaxX(); 
 				if (tpcg.MinY() < miny) miny = tpcg.MinY();
@@ -1178,7 +1174,6 @@ bool dunefd::NueAna::insideFidVol(const double posX, const double posY, const do
 				if (tpcg.MinZ() < minz) minz = tpcg.MinZ();
 				if (tpcg.MaxZ() > maxz) maxz = tpcg.MaxZ();
 			}
-		}	
 
 		
 		//x

@@ -152,7 +152,7 @@ namespace cvn
   double PixelMapSimProducer::_getIntercept(geo::WireID wireid) const
   {
     const geo::WireGeo* pwire = fGeometry->WirePtr(wireid);
-    geo::Point_t center = pwire->GetCenter<geo::Point_t>();
+    geo::Point_t center = pwire->GetCenter();
     double slope = 0.;
     if(!pwire->isVertical()) slope = pwire->TanThetaZ();
     
@@ -186,11 +186,12 @@ namespace cvn
       
       for(int diag_tpc = 0; diag_tpc < nCRM_row; diag_tpc++){
         
-        unsigned int nWiresTPC = fGeometry->Nwires(plane, 0, 0);
-        int tpc_id = (plane == 0 || !is3view30deg) ? (nCRM_col+1)*diag_tpc : (nCRM_col-1)*(nCRM_row-diag_tpc);
+        int tpc = (plane == 0 || !is3view30deg) ? (nCRM_col+1)*diag_tpc : (nCRM_col-1)*(nCRM_row-diag_tpc);
+        geo::PlaneID const planeID(0, tpc, plane);
+        unsigned int nWiresTPC = fGeometry->Nwires(planeID);
         
-        geo::WireID start = geo::WireID(0, tpc_id, plane, 0); 
-        geo::WireID end = geo::WireID(0, tpc_id, plane, nWiresTPC-1);
+        geo::WireID start = geo::WireID(planeID, 0);
+        geo::WireID end = geo::WireID(planeID, nWiresTPC-1);
 
         double start_intercept = _getIntercept(start);
         double end_intercept = _getIntercept(end);
@@ -425,15 +426,16 @@ namespace cvn
 
     unsigned int nWiresTPC = 400;
     unsigned int wireGap = 4;
-    double driftLen = fGeometry->TPC(tpc,0).DriftDistance();
-    double apaLen = fGeometry->TPC(tpc,0).Width() - fGeometry->TPC(tpc,0).ActiveWidth();
+    auto const& tpcgeom = fGeometry->TPC(geo::TPCID{0, tpc});
+    double driftLen = tpcgeom.DriftDistance();
+    double apaLen = tpcgeom.Width() - tpcgeom.ActiveWidth();
     double driftVel = detProp.DriftVelocity();
     unsigned int drift_size = (driftLen / driftVel) * 2; // Time in ticks to cross a TPC 
     unsigned int apa_size   = 4*(apaLen / driftVel) * 2; // Width of the whole APA in TDC
 
     globalWire = 0;
     globalPlane = 0;
-//    int dir = fGeometry->TPC(tpc,0).DetectDriftDirection();
+//    int dir = tpcgeom.DetectDriftDirection();
 
     // Collection plane has more wires
     if(plane == 2){
@@ -463,7 +465,7 @@ namespace cvn
     else globalWire += ((23-tpc)/4)*nWiresTPC;
     // Reverse wires and add offset for upper modules in induction views
     // Nitish : what's the difference between Nwires here and nWiresTPC?
-    if (tpcMod4 > 1 and globalPlane < 2) globalWire += fGeometry->Nwires(globalPlane, tpc, 0) + offset - localWire;
+    if (tpcMod4 > 1 and globalPlane < 2) globalWire += fGeometry->Nwires(geo::PlaneID{0, tpc, globalPlane}) + offset - localWire;
     else globalWire += localWire;
 
     if(tpcMod4 == 0 || tpcMod4 == 2){
@@ -480,8 +482,9 @@ namespace cvn
   {
     unsigned int nWiresTPC = 400;
     unsigned int wireGap = 4;
-    double driftLen = fGeometry->TPC(tpc).DriftDistance();
-    double apaLen = fGeometry->TPC(tpc).Width() - fGeometry->TPC(tpc).ActiveWidth();
+    auto const& tpcgeom = fGeometry->TPC(geo::TPCID{0, tpc});
+    double driftLen = tpcgeom.DriftDistance();
+    double apaLen = tpcgeom.Width() - tpcgeom.ActiveWidth();
     double driftVel = detProp.DriftVelocity();
     unsigned int drift_size = (driftLen / driftVel) * 2; // Time in ticks to cross a TPC 
     unsigned int apa_size   = 4*(apaLen / driftVel) * 2; // Width of the whole APA in TDC
@@ -532,7 +535,7 @@ namespace cvn
     if (globalPlane != 1) globalWire += (tpc/12)*nWiresTPC;
     else globalWire += ((300-tpc)/12)*nWiresTPC;
     // Reverse wires and add offset for upper modules in induction views
-    if (tpc_xy > 3 and globalPlane < 2) globalWire += fGeometry->Nwires(globalPlane, tpc, 0) + offset - localWire;
+    if (tpc_xy > 3 and globalPlane < 2) globalWire += fGeometry->Nwires(geo::PlaneID{0, tpc, globalPlane}) + offset - localWire;
     else globalWire += localWire;
 
     if (tpc_x % 2 == 0) globalTDC = localTDC;
@@ -614,12 +617,13 @@ namespace cvn
     double spacing = 0.847; 
     
     globalPlane = plane;
-    unsigned int nWiresTPC = fGeometry->Nwires(globalPlane, tpc, 0);
+    geo::PlaneID const planeID{0, tpc, globalPlane};
+    unsigned int nWiresTPC = fGeometry->Nwires(planeID);
     bool is3view30deg = fGeometry->DetectorName().find("30deg") != std::string::npos;
     
     if(globalPlane < 2){
       
-      geo::WireID wire_id = geo::WireID(0, tpc, globalPlane, localWire);
+      geo::WireID wire_id = geo::WireID(planeID, localWire);
       double wire_intercept = _getIntercept(wire_id);
    
       double low_bound = 0., upper_bound = 0.; 
