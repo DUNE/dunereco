@@ -90,7 +90,7 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 
   //loop over detector volumn in each component
   for (unsigned int Cstat=0; Cstat < geo->Ncryostats(); ++Cstat){
-    for (unsigned int APA=0; APA < geo->Cryostat(Cstat).NTPC()/2; ++APA){
+    for (unsigned int APA=0; APA < geo->Cryostat(geo::CryostatID{Cstat}).NTPC()/2; ++APA){
       hitsUV.clear();
       hitsZ.clear();
       //loop over all induction and collection plane hits and save the hits within each component
@@ -107,19 +107,17 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 	}
       }
 
-      //define variables to save boundary information
-      double origin[3]={0.0,0.0,0.0};
-      double world[3]={0.0,0.0,0.0};
       //double xbound[2]={-2000,2000};
       //define xbound using peaktime for now but need to be replaced with coverted position in the future
       double xbound[2]={0,2000};
       double ybound[2]= {0.0,0.0};
       double zbound[2]= {0.0,0.0};
-      geo->Cryostat(Cstat).TPC(APA*2).LocalToWorld(origin, world);
-      ybound[0]=world[1]-geo->Cryostat(Cstat).TPC(APA*2).HalfHeight();
-      ybound[1]=world[1]+geo->Cryostat(Cstat).TPC(APA*2).HalfHeight();
-      zbound[0]=world[2]-0.5*geo->Cryostat(Cstat).TPC(APA*2).Length();
-      zbound[1]=world[2]+0.5*geo->Cryostat(Cstat).TPC(APA*2).Length();
+      auto const& tpc = geo->TPC(geo::TPCID{Cstat, APA*2});
+      auto const world = tpc.GetCenter();
+      ybound[0]=world.Y()-tpc.HalfHeight();
+      ybound[1]=world.Y()+tpc.HalfHeight();
+      zbound[0]=world.Z()-0.5*tpc.Length();
+      zbound[1]=world.Z()+0.5*tpc.Length();
 
       //position-correction function needs to be applied on hits in certain time and longitudinal position ranges
       //thus need to create a struct of vectors where hit informations including their positions returned in the
@@ -235,9 +233,7 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 	  //plane hit found in the loop above.
 	  for (unsigned int wireid1=0; wireid1 < wireiduv1.size(); ++wireid1){
 	    if (abs(int(wireid0)-int(wireid1))<3 && wireiduv0[wireid0].TPC==wireiduv1[wireid1].TPC){
-	      geo->IntersectionPoint(wireiduv0[wireid0].Wire, wireiduv1[wireid1].Wire,
-				     wireiduv0[wireid0].Plane, wireiduv1[wireid1].Plane,
-				     wireiduv0[wireid0].Cryostat, wireiduv0[wireid0].TPC,
+              geo->IntersectionPoint(wireiduv0[wireid0], wireiduv1[wireid1],
 				     CandPosition[1], CandPosition[2]);
 	      //double VertBetUVandZ=fabs(VertPosMean-CandPosition[2]);
 	      double VertBetUVandZ=fabs(VertPos-CandPosition[2]);

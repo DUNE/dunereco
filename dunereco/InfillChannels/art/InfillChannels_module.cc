@@ -189,34 +189,32 @@ void Infill::InfillChannels::beginJob()
   );
 
   // Get active ROPs (not facing a wall and has dead channels)
-  geo::ROP_id_iterator iRop, rBegin(fGeom, geo::ROP_id_iterator::begin_pos), 
-    rEnd(fGeom, geo::ROP_id_iterator::end_pos);
-  for (iRop = rBegin; iRop != rEnd; ++iRop) { // Iterate over ROPs in the detector
+  for (auto const& ropID : fGeom->Iterate<readout::ROPID>()) { // Iterate over ROPs in the detector
     bool hasDeadCh = false;
     for (raw::ChannelID_t ch : fDeadChannels) {
-      if (fGeom->ChannelToROP(ch) == *iRop) {
+      if (fGeom->ChannelToROP(ch) == ropID) {
         hasDeadCh = true;
         break;
       }
     }
     if (!hasDeadCh) continue; // Don't need to infill ROPs without dead channels
 
-    for (const geo::TPCID tpcId : fGeom->ROPtoTPCs(*iRop)) {
+    for (const geo::TPCID tpcId : fGeom->ROPtoTPCs(ropID)) {
       const geo::TPCGeo tpc = fGeom->TPC(tpcId);
       const TGeoVolume* tpcVol = tpc.ActiveVolume();
       
       if (tpcVol->Capacity() > 1000000) { // At least one of the ROP's TPCIDs needs to be active
         // Networks expect a fixed image size
-        if(fGeom->SignalType(*iRop) == geo::kInduction && fGeom->Nchannels(*iRop) > 800) {
+        if(fGeom->SignalType(ropID) == geo::kInduction && fGeom->Nchannels(ropID) > 800) {
 	  std::cerr << "InfillChannels_module.cc: Induction view network cannot handle more then 800 channels\n";
 	  std::abort();
         }
-        if(fGeom->SignalType(*iRop) == geo::kCollection && fGeom->Nchannels(*iRop) > 480) {
+        if(fGeom->SignalType(ropID) == geo::kCollection && fGeom->Nchannels(ropID) > 480) {
 	  std::cerr << "InfillChannels_module.cc: Collection view network cannot handle more then 400 channels\n";
 	  std::abort();
         }
 
-        fActiveRops.insert(*iRop);
+        fActiveRops.insert(ropID);
         break;
       }
     }

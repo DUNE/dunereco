@@ -385,8 +385,8 @@ namespace dune {
         std::vector<geo::WireID> cwids = fGeom->ChannelToWire(hit->Channel());
         if (cwids.empty()) { mf::LogWarning("DisambigFromSpacePoints") << "No wires for this channel???"; continue; }
 
-        const float dwMax = fMaxDistance / fGeom->TPC(0, 0).Plane(plane).WirePitch(); // max distance in wires to look for neighbors
-        const float ddMax = dwMax * fGeom->TPC(0, 0).Plane(plane).WirePitch() / std::fabs(detProp.GetXTicksCoefficient(0, 0));
+        const float dwMax = fMaxDistance / fGeom->TPC().Plane(plane).WirePitch(); // max distance in wires to look for neighbors
+        const float ddMax = dwMax * fGeom->TPC().Plane(plane).WirePitch() / std::fabs(detProp.GetXTicksCoefficient(0, 0));
 
         float bestScore = 0;
         geo::WireID bestId;
@@ -399,7 +399,8 @@ namespace dune {
             for (auto t : fExcludeTPCs) { if (t == tpc) { allowed = false; break; } }
             if (!allowed) { continue; }
 
-            const float wirePitch = fGeom->TPC(tpc, cryo).Plane(plane).WirePitch();
+            geo::PlaneID const planeID(cryo, tpc, plane);
+            const float wirePitch = fGeom->Plane(planeID).WirePitch();
             const float driftPitch = std::fabs(detProp.GetXTicksCoefficient(tpc, cryo));
 
             float maxDValue = fMaxDistance*fMaxDistance;

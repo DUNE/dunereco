@@ -59,6 +59,8 @@ namespace {
     double d3,d4;
     art::ServiceHandle<geo::Geometry> geom;
       
+    auto const& tpcg = geom->TPC(geo::TPCID{0, tpc}); // FIXME (KJK): Should probably be TPCID{cstat, tpc}
+
     if(tpc==2 || tpc==3 || tpc==4 || tpc==5)
       {
 	d3 = pos.Y() - 1.25;     // 1.25cm APA 2/3 distance to horizontal.
@@ -68,9 +70,9 @@ namespace {
       }
     else  //tpc 0 1  6  7
       {
-	d3 = pos.Y() + geom->DetHalfHeight(tpc)-15.0;     // Distance to bottom.
+        d3 = pos.Y() + tpcg.HalfHeight()-15.0;     // Distance to bottom.
 	//    double d3 = pos.Y() + 85.0;     // Distance to bottom.
-	d4 = geom->DetHalfHeight(tpc)+15.0 - pos.Y();     // Distance to top.
+        d4 = tpcg.HalfHeight()+15.0 - pos.Y();     // Distance to top.
 	//    double d4 = 113.0 - pos.Y();     // Distance to top.
       }
     
@@ -78,7 +80,7 @@ namespace {
     //    mf::LogVerbatim("output") <<"d4" << d4;
 
     double d1 = abs(pos.X());          // Distance to right side (wires).
-    double d2=2.*geom->DetHalfWidth(tpc)- abs(pos.X());
+    double d2=2.*tpcg.HalfWidth()- abs(pos.X());
     //    mf::LogVerbatim("output") <<"d1" << d1;
     //    mf::LogVerbatim("output") <<"d2" << d2;
     //    double d2 = 226.539 - pos.X();   // Distance to left side (cathode).
@@ -88,28 +90,28 @@ namespace {
     if(tpc==0 || tpc==1)
       {
 	d5 = pos.Z()+1.0;                             // Distance to front.
-	d6 = geom->DetLength(tpc) -1.0- pos.Z();         // Distance to back.
+        d6 = tpcg.Length() -1.0- pos.Z();         // Distance to back.
       }
     else if (tpc==2||tpc==3 || tpc==4 || tpc==5)
       {
 	d5 = pos.Z()-51.0;                             // Distance to front.     
-	d6 = geom->DetLength(tpc) +51.0- pos.Z();         // Distance to back.   
+        d6 = tpcg.Length() +51.0- pos.Z();         // Distance to back.
       }
     else if (tpc==6 || tpc==7)
       {
 	d5 = pos.Z()-103.0;                             // Distance to front.     
-        d6 = geom->DetLength(tpc) +103.0- pos.Z();         // Distance to back.   
+        d6 = tpcg.Length() +103.0- pos.Z();         // Distance to back.
 	
       }
     if(d6<0){
       //      mf::LogVerbatim("output")<< "z"  <<pos.Z();
       //      mf::LogVerbatim("output")<< "Tpc" <<tpc;
-      //      mf::LogVerbatim("output")<< "DetLength" <<geom->DetLength(tpc);
+      //      mf::LogVerbatim("output")<< "DetLength" <<tpcg.Length();
       
     }
     //    mf::LogVerbatim("output") <<"d5" << d5;
     //    mf::LogVerbatim("output") <<"d6" << d6;
-    double result = std::min(std::min(std::min(std::min(std::min(d1, d2), d3), d4), d5), d6);
+    double result = std::min({d1, d2, d3, d4, d5, d6});
     //    mf::LogVerbatim("output")<< "bdist" << result;
     //    mf::LogVerbatim("output")<< "Height" << geom->DetHalfHeight(tpc);
     //    mf::LogVerbatim("output")<< "Width" << geom->DetHalfWidth(tpc);
@@ -142,21 +144,19 @@ namespace {
     bool first = true;
 
     for(int i = 0; i < n; ++i) {
-      TVector3 pos = part.Position(i).Vect();
+      auto pos = part.Position(i).Vect();
 
       // Make fiducial cuts.  Require the particle to be within the physical volume of
       // the tpc, and also require the apparent x position to be within the expanded
       // readout frame.
 
-      double const tmpArray[]={pos.X(),pos.Y(),pos.Z()};
-      
-      geo::TPCID tpcid=geom->FindTPCAtPosition(tmpArray);
+      geo::TPCID tpcid=geom->FindTPCAtPosition(geo::vect::toPoint(pos));
       if (!tpcid.isValid) continue;
       
-      pos[0] += dx;
+      pos.SetX(pos.X() + dx);
       
       double ticks=0;
-      ticks = detProp.ConvertXToTicks(pos[0], 0, tpcid.TPC, tpcid.Cryostat);
+      ticks = detProp.ConvertXToTicks(pos.X(), 0, tpcid.TPC, tpcid.Cryostat);
       if(ticks >= 0. && ticks < detProp.ReadOutWindowSize()) {
 	if(first) {
 	  start = pos;
@@ -472,29 +472,29 @@ namespace trkf {
     art::TFileDirectory dir = topdir.mkdir(subdir);
 
     // Book histograms.
-
+    auto const& cryostat = geom->Cryostat(geo::CryostatID{0});
     fHstartx = dir.make<TH1F>("xstart", "X Start Position",
-			      100, -2.*geom->Cryostat(0).HalfWidth(), 4.*geom->Cryostat(0).HalfWidth());
+                              100, -2.*cryostat.HalfWidth(), 4.*cryostat.HalfWidth());
     fHstarty = dir.make<TH1F>("ystart", "Y Start Position",
-			      100, -geom->Cryostat(0).HalfHeight(), geom->Cryostat(0).HalfHeight());
+                              100, -cryostat.HalfHeight(), cryostat.HalfHeight());
     fHstartz = dir.make<TH1F>("zstart", "Z Start Position",
-			      100, 0., geom->Cryostat(0).Length());
+                              100, 0., cryostat.Length());
     fHstartd = dir.make<TH1F>("dstart", "Start Position Distance to Boundary",
-			      100, -10., geom->Cryostat(0).HalfWidth());
+                              100, -10., cryostat.HalfWidth());
     fHendx = dir.make<TH1F>("xend", "X End Position",
-			    100, -2.*geom->Cryostat(0).HalfWidth(), 4.*geom->Cryostat(0).HalfWidth());
+                            100, -2.*cryostat.HalfWidth(), 4.*cryostat.HalfWidth());
     fHendy = dir.make<TH1F>("yend", "Y End Position",
-			    100, -geom->Cryostat(0).HalfHeight(), geom->Cryostat(0).HalfHeight());
+                            100, -cryostat.HalfHeight(), cryostat.HalfHeight());
     fHendz = dir.make<TH1F>("zend", "Z End Position",
-			    100, 0., geom->Cryostat(0).Length());
+                            100, 0., cryostat.Length());
     fHendd = dir.make<TH1F>("dend", "End Position Distance to Boundary",
-			    100, -10., geom->Cryostat(0).HalfWidth());
+                            100, -10., cryostat.HalfWidth());
     fHtheta = dir.make<TH1F>("theta", "Theta", 100, 0., 3.142);
     fHphi = dir.make<TH1F>("phi", "Phi", 100, -3.142, 3.142);
     fHtheta_xz = dir.make<TH1F>("theta_xz", "Theta_xz", 100, -3.142, 3.142);
     fHtheta_yz = dir.make<TH1F>("theta_yz", "Theta_yz", 100, -3.142, 3.142);
     fHmom = dir.make<TH1F>("mom", "Momentum", 100, 0., 10.);
-    fHlen = dir.make<TH1F>("len", "Track Length", 100, 0., 3.0 * geom->Cryostat(0).Length());
+    fHlen = dir.make<TH1F>("len", "Track Length", 100, 0., 3.0 * cryostat.Length());
     fHHitChg = dir.make<TH1F>("hchg", "Hit Charge (ADC counts)", 100, 0., 4000.);
     fHHitWidth = dir.make<TH1F>("hwid", "Hit Width (ticks)", 40, 0., 20.);
     fHHitPdg = dir.make<TH1F>("hpdg", "Hit Pdg code",5001, -2500.5, +2500.5);
@@ -597,6 +597,7 @@ namespace trkf {
     art::TFileDirectory dir = topdir.mkdir(subdir);
 
     // Book histograms.
+    auto const& cryostat = geom->Cryostat(geo::CryostatID{0});
 
     fHduvcosth = dir.make<TH2F>("duvcosth", "Delta(uv) vs. Colinearity", 
 				100, 0.95, 1., 100, 0., 1.);
@@ -617,7 +618,7 @@ namespace trkf {
     fHenddy = dir.make<TH1F>("enddy", "End Delta y", 100, -10., 10.);
     fHenddz = dir.make<TH1F>("enddz", "End Delta z", 100, -10., 10.);
     fHlvsl = dir.make<TH2F>("lvsl", "Reco Length vs. MC Truth Length",
-			    100, 0., 1.1 * geom->Cryostat(0).Length(), 100, 0., 1.1 * geom->Cryostat(0).Length());
+                            100, 0., 1.1 * cryostat.Length(), 100, 0., 1.1 * cryostat.Length());
     fHdl = dir.make<TH1F>("dl", "Track Length Minus MC Particle Length", 100, -50., 50.);
     fHpvsp = dir.make<TH2F>("pvsp", "Reco Momentum vs. MC Truth Momentum",
 			    100, 0., 5., 100, 0., 5.);
@@ -630,62 +631,62 @@ namespace trkf {
     fHppullc = dir.make<TH1F>("ppullc", "Momentum Pull (Contained Tracks)", 100, -10., 10.);
 
     fHmcstartx = dir.make<TH1F>("mcxstart", "MC X Start Position",
-				10, -2.*geom->Cryostat(0).HalfWidth(), 4.*geom->Cryostat(0).HalfWidth());
+                                10, -2.*cryostat.HalfWidth(), 4.*cryostat.HalfWidth());
     fHmcstarty = dir.make<TH1F>("mcystart", "MC Y Start Position",
-				10, -geom->Cryostat(0).HalfHeight(), geom->Cryostat(0).HalfHeight());
+                                10, -cryostat.HalfHeight(), cryostat.HalfHeight());
     fHmcstartz = dir.make<TH1F>("mczstart", "MC Z Start Position",
-				10, 0., geom->Cryostat(0).Length());
+                                10, 0., cryostat.Length());
     fHmcendx = dir.make<TH1F>("mcxend", "MC X End Position",
-			      10, -2.*geom->Cryostat(0).HalfWidth(), 4.*geom->Cryostat(0).HalfWidth());
+                              10, -2.*cryostat.HalfWidth(), 4.*cryostat.HalfWidth());
     fHmcendy = dir.make<TH1F>("mcyend", "MC Y End Position",
-			      10, -geom->Cryostat(0).HalfHeight(), geom->Cryostat(0).HalfHeight());
+                              10, -cryostat.HalfHeight(), cryostat.HalfHeight());
     fHmcendz = dir.make<TH1F>("mczend", "MC Z End Position",
-			      10, 0., geom->Cryostat(0).Length());
+                              10, 0., cryostat.Length());
     fHmctheta = dir.make<TH1F>("mctheta", "MC Theta", 20, 0., 3.142);
     fHmcphi = dir.make<TH1F>("mcphi", "MC Phi", 10, -3.142, 3.142);
     fHmctheta_xz = dir.make<TH1F>("mctheta_xz", "MC Theta_xz", 40, -3.142, 3.142);
     fHmctheta_yz = dir.make<TH1F>("mctheta_yz", "MC Theta_yz", 40, -3.142, 3.142);
     fHmcmom = dir.make<TH1F>("mcmom", "MC Momentum", 10, 0., 10.);
-    fHmclen = dir.make<TH1F>("mclen", "MC Particle Length", 10, 0., 1.1 * geom->Cryostat(0).Length());
+    fHmclen = dir.make<TH1F>("mclen", "MC Particle Length", 10, 0., 1.1 * cryostat.Length());
 
     fHgstartx = dir.make<TH1F>("gxstart", "Good X Start Position",
-			       10, -2.*geom->Cryostat(0).HalfWidth(), 4.*geom->Cryostat(0).HalfWidth());
+                               10, -2.*cryostat.HalfWidth(), 4.*cryostat.HalfWidth());
     fHgstarty = dir.make<TH1F>("gystart", "Good Y Start Position",
-			       10, -geom->Cryostat(0).HalfHeight(), geom->Cryostat(0).HalfHeight());
+                               10, -cryostat.HalfHeight(), cryostat.HalfHeight());
     fHgstartz = dir.make<TH1F>("gzstart", "Good Z Start Position",
-			       10, 0., geom->Cryostat(0).Length());
+                               10, 0., cryostat.Length());
     fHgendx = dir.make<TH1F>("gxend", "Good X End Position",
-			     10, -2.*geom->Cryostat(0).HalfWidth(), 4.*geom->Cryostat(0).HalfWidth());
+                             10, -2.*cryostat.HalfWidth(), 4.*cryostat.HalfWidth());
     fHgendy = dir.make<TH1F>("gyend", "Good Y End Position",
-			     10, -geom->Cryostat(0).HalfHeight(), geom->Cryostat(0).HalfHeight());
+                             10, -cryostat.HalfHeight(), cryostat.HalfHeight());
     fHgendz = dir.make<TH1F>("gzend", "Good Z End Position",
-			     10, 0., geom->Cryostat(0).Length());
+                             10, 0., cryostat.Length());
     fHgtheta = dir.make<TH1F>("gtheta", "Good Theta", 20, 0., 3.142);
     fHgphi = dir.make<TH1F>("gphi", "Good Phi", 10, -3.142, 3.142);
     fHgtheta_xz = dir.make<TH1F>("gtheta_xz", "Good Theta_xz", 40, -3.142, 3.142);
     fHgtheta_yz = dir.make<TH1F>("gtheta_yz", "Good Theta_yz", 40, -3.142, 3.142);
     fHgmom = dir.make<TH1F>("gmom", "Good Momentum", 10, 0., 10.);
-    fHglen = dir.make<TH1F>("glen", "Good Particle Length", 10, 0., 1.1 * geom->Cryostat(0).Length());
+    fHglen = dir.make<TH1F>("glen", "Good Particle Length", 10, 0., 1.1 * cryostat.Length());
 
     fHestartx = dir.make<TH1F>("exstart", "Efficiency vs. X Start Position",
-			       10, -2.*geom->Cryostat(0).HalfWidth(), 4.*geom->Cryostat(0).HalfWidth());
+                               10, -2.*cryostat.HalfWidth(), 4.*cryostat.HalfWidth());
     fHestarty = dir.make<TH1F>("eystart", "Efficiency vs. Y Start Position",
-			       10, -geom->Cryostat(0).HalfHeight(), geom->Cryostat(0).HalfHeight());
+                               10, -cryostat.HalfHeight(), cryostat.HalfHeight());
     fHestartz = dir.make<TH1F>("ezstart", "Efficiency vs. Z Start Position",
-			       10, 0., geom->Cryostat(0).Length());
+                               10, 0., cryostat.Length());
     fHeendx = dir.make<TH1F>("exend", "Efficiency vs. X End Position",
-			     10, -2.*geom->Cryostat(0).HalfWidth(), 4.*geom->Cryostat(0).HalfWidth());
+                             10, -2.*cryostat.HalfWidth(), 4.*cryostat.HalfWidth());
     fHeendy = dir.make<TH1F>("eyend", "Efficiency vs. Y End Position",
-			     10, -geom->Cryostat(0).HalfHeight(), geom->Cryostat(0).HalfHeight());
+                             10, -cryostat.HalfHeight(), cryostat.HalfHeight());
     fHeendz = dir.make<TH1F>("ezend", "Efficiency vs. Z End Position",
-			     10, 0., geom->Cryostat(0).Length());
+                             10, 0., cryostat.Length());
     fHetheta = dir.make<TH1F>("etheta", "Efficiency vs. Theta", 20, 0., 3.142);
     fHephi = dir.make<TH1F>("ephi", "Efficiency vs. Phi", 10, -3.142, 3.142);
     fHetheta_xz = dir.make<TH1F>("etheta_xz", "Efficiency vs. Theta_xz", 40, -3.142, 3.142);
     fHetheta_yz = dir.make<TH1F>("etheta_yz", "Efficiency vs. Theta_yz", 40, -3.142, 3.142);
     fHemom = dir.make<TH1F>("emom", "Efficiency vs. Momentum", 10, 0., 10.);
     fHelen = dir.make<TH1F>("elen", "Efficiency vs. Particle Length",
-			    10, 0., 1.1 * geom->Cryostat(0).Length());
+                            10, 0., 1.1 * cryostat.Length());
   }
 
   TrackAnaCT::TrackAnaCT(const fhicl::ParameterSet& pset)
