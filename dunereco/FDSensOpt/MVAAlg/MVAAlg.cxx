@@ -664,7 +664,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
         if (hit_shwkey[i]==ishw){
           //if (lastwire == -1) lastwire = hit_wire[i];
           //if (hit_wire[i]<lastwire) offset = 479;
-          offset = (hit_tpc[i]/4)*fGeom->Nwires(2);
+          offset = (hit_tpc[i]/4)*fGeom->Nwires(geo::PlaneID{0, 0, 2});
           if (hit_wire[i]+offset<shwwire0){
             shwwire0 = hit_wire[i]+offset;
           }
@@ -831,7 +831,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
         frshower+=hit_charge[i]*exp(hit_peakT[i]*0.5/taulife);
         shwwires[hit_wire[i]] = 1;
         ++totalshwhits;
-        offset = (hit_tpc[i]/4)*fGeom->Nwires(2);
+        offset = (hit_tpc[i]/4)*fGeom->Nwires(geo::PlaneID{0, 0, 2});
         //if (lastwire ==-1) lastwire = hit_wire[i];
         //if (hit_wire[i]<lastwire) offset = 479;
         shwph[hit_wire[i]+offset-shwwire0] += hit_charge[i]*exp(hit_peakT[i]*0.5/taulife);
@@ -1702,7 +1702,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
 bool dunemva::MVAAlg::insideFidVol(const double posX, const double posY, const double posZ) 
 {
 
-  double vtx[3] = {posX, posY, posZ};
+  geo::Point_t const vtx{posX, posY, posZ};
   bool inside = false;
 
   geo::TPCID idtpc = fGeom->FindTPCAtPosition(vtx);
@@ -1714,12 +1714,8 @@ bool dunemva::MVAAlg::insideFidVol(const double posX, const double posY, const d
     double miny = tpcgeo.MinY(); double maxy = tpcgeo.MaxY();
     double minz = tpcgeo.MinZ(); double maxz = tpcgeo.MaxZ();
 
-    for (size_t c = 0; c < fGeom->Ncryostats(); c++)
+    for (auto const& tpcg : fGeom->Iterate<geo::TPCGeo>())
     {
-      const geo::CryostatGeo& cryostat = fGeom->Cryostat(c);
-      for (size_t t = 0; t < cryostat.NTPC(); t++)
-      {	
-        const geo::TPCGeo& tpcg = cryostat.TPC(t);
         if (tpcg.MinX() < minx) minx = tpcg.MinX();
         if (tpcg.MaxX() > maxx) maxx = tpcg.MaxX(); 
         if (tpcg.MinY() < miny) miny = tpcg.MinY();
@@ -1727,7 +1723,6 @@ bool dunemva::MVAAlg::insideFidVol(const double posX, const double posY, const d
         if (tpcg.MinZ() < minz) minz = tpcg.MinZ();
         if (tpcg.MaxZ() > maxz) maxz = tpcg.MaxZ();
       }
-    }	
 
 
     //x

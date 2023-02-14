@@ -194,7 +194,7 @@ local add_noise = function(model, n) g.pnode({
         replacement_percentage: 0.02, // random optimization
     // }}, nin=1, nout=1, uses=[tools.random, tools.dft, model]);
     }}, nin=1, nout=1, uses=[tools.random, model]);
-local noises = [add_noise(noise_model, n) for n in std.range(0,7)];
+local noises = [add_noise(noise_model, n) for n in std.range(0,1)];
 
 // local digitizer = sim.digitizer(mega_anode, name="digitizer", tag="orig");
 // "AnodePlane:anode110"
@@ -203,7 +203,7 @@ local noises = [add_noise(noise_model, n) for n in std.range(0,7)];
 // "AnodePlane:anode121"
 local digitizers = [
     sim.digitizer(mega_anode, name="digitizer%d-" %n + mega_anode.name, tag="orig%d"%n)
-    for n in std.range(0,7)];
+    for n in std.range(0,1)];
 
 local frame_summers = [
     g.pnode({
@@ -213,10 +213,10 @@ local frame_summers = [
             align: true,
             offset: 0.0*wc.s,
         },
-    }, nin=2, nout=1) for n in std.range(0, 7)];
+    }, nin=2, nout=1) for n in std.range(0, 1)];
 
-local actpipes = [g.pipeline([noises[n], digitizers[n]], name="noise-digitizer%d" %n) for n in std.range(0,7)];
-local outtags = ['orig%d' % n for n in std.range(0, 7)];
+local actpipes = [g.pipeline([noises[n], digitizers[n]], name="noise-digitizer%d" %n) for n in std.range(0,1)];
+local outtags = ['orig%d' % n for n in std.range(0, 1)];
 local pipe_reducer = util.fansummer('DepoSetFanout', analog_pipes, frame_summers, actpipes, 'FrameFanin', 'fansummer', outtags);
 
 local retagger = g.pnode({

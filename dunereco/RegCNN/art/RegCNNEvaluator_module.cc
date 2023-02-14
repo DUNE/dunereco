@@ -251,7 +251,7 @@ namespace cnn {
   }
 
   bool RegCNNEvaluator::insideContVol(const double posX, const double posY, const double posZ) {
-      double vtx[3] = {posX, posY, posZ};
+      geo::Point_t const vtx{posX, posY, posZ};
       bool inside = false;
 
       geo::TPCID idtpc = fGeom->FindTPCAtPosition(vtx);
@@ -262,17 +262,13 @@ namespace cnn {
           double miny = tpcgeo.MinY(); double maxy = tpcgeo.MaxY();
           double minz = tpcgeo.MinZ(); double maxz = tpcgeo.MaxZ();
 
-          for (size_t c = 0; c < fGeom->Ncryostats(); c++) {
-              const geo::CryostatGeo& cryostat = fGeom->Cryostat(c);
-              for (size_t t = 0; t < cryostat.NTPC(); t++) {
-                  const geo::TPCGeo& tpcg = cryostat.TPC(t);
+          for (auto const& tpcg : fGeom->Iterate<geo::TPCGeo>()) {
                   if (tpcg.MinX() < minx) minx = tpcg.MinX();
                   if (tpcg.MaxX() > maxx) maxx = tpcg.MaxX();
                   if (tpcg.MinY() < miny) miny = tpcg.MinY();
                   if (tpcg.MaxY() > maxy) maxy = tpcg.MaxY();
                   if (tpcg.MinZ() < minz) minz = tpcg.MinZ();
                   if (tpcg.MaxZ() > maxz) maxz = tpcg.MaxZ();
-              }
           }
 
           //x
