@@ -309,7 +309,6 @@ bool dunefd::ShSeg::BuildSegMC(art::Event & e)
 	if ((firstel->PdgCode() == 22) && (firstel->EndProcess() == "conv")) 
 	{
 		startingp = primaries[0]->EndPosition();
-		TVector3 startp(startingp.X(), startingp.Y(), startingp.Z());
 		// smear with normal dist (only for gammas)
 		Smearph();
 	}
@@ -331,15 +330,13 @@ bool dunefd::ShSeg::BuildSegMC(art::Event & e)
         CorrOffset(detProp, firstpoint, *firstel);
         CorrOffset(detProp, secondpoint, *firstel);
 
-	double startvtx[3] = {firstpoint.X(), firstpoint.Y(), firstpoint.Z()};
-	
 	// check if it is inside
-	geo::TPCID tpcid = geom->FindTPCAtPosition(startvtx);		
+        geo::TPCID tpcid = geom->FindTPCAtPosition(geo::vect::toPoint(firstpoint));
 	if (!tpcid.isValid) return false;
 
 	// try to build seg, it is based on MC truth 
 	size_t tpc = tpcid.TPC;
-	size_t cryo = geom->FindCryostatAtPosition(startvtx);	
+        size_t cryo = geom->PositionToCryostatID(geo::vect::toPoint(firstpoint)).Cryostat;
 	pma::Track3D* iniseg = new pma::Track3D();
         iniseg->AddNode(detProp, firstpoint, tpc, cryo);
         iniseg->AddNode(detProp, secondpoint, tpc, cryo);
@@ -472,7 +469,7 @@ void dunefd::ShSeg::Smearph()
 bool dunefd::ShSeg::InsideFidVol(TLorentzVector const & pvtx) const
 {
 	art::ServiceHandle<geo::Geometry> geom;
-	double vtx[3] = {pvtx.X(), pvtx.Y(), pvtx.Z()};
+        geo::Point_t const vtx{pvtx.X(), pvtx.Y(), pvtx.Z()};
 	bool inside = false;
 
 	geo::TPCID idtpc = geom->FindTPCAtPosition(vtx);

@@ -138,7 +138,8 @@ bool EmLikeHits::isCloseToTrack(TVector2 p, const recob::Track& trk,
 	unsigned int view, unsigned int tpc, unsigned int cryo)
 {
 	art::ServiceHandle<geo::Geometry> geom;
-	double wirePitch = geom->TPC(tpc, cryo).Plane(view).WirePitch();
+        geo::PlaneID const planeID{cryo, tpc, view};
+        double wirePitch = geom->Plane(planeID).WirePitch();
 
 	//double driftPitch = detProp.GetXTicksCoefficient(tpc, cryo);
 
