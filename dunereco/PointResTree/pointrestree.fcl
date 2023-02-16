@@ -1,0 +1,142 @@
+# A script to run an analysis module: PointResTree. You may want to
+# compare this script with ${LARSIM_DIR}/job/prodsingle.fcl; in
+# particular, in this script there are no output streams because the
+# module doesn't write any events, just histograms or n-tuples.
+
+# See <https://cdcvs.fnal.gov/redmine/projects/larsoftsvn/wiki/Running_Jobs> for 
+# more information on the structure of .fcl files. 
+
+# The following line will have to be changed to match your experiment;
+# e.g., "services_dune.fcl", "services_microboone.fcl".
+# Here we pick the relevant services and the FHiCL files with their
+# configurations one by one, according to what is directly used in
+# PointResTree plus a bit of knowledge about what each service depends on
+#
+#include "geometry_dune.fcl"
+#include "messageservice.fcl"
+#include "services_dune.fcl"
+#include "calorimetry_dune10kt.fcl"
+
+process_name: PointResTree
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  # Any histograms or n-tuples that you create in the program will be
+  # written to this file. You can override the file name with the -T
+  # option on the command line; e.g.,
+  #  lar -c pointrestree.fcl -T myhistograms.root -s myinput.root
+
+  TFileService:           { fileName: "PointResTree.root" }
+
+  # This constrols the display in the output of how long each job step
+  # takes for each event. A lot of configuration can be added: details at
+  # https://cdcvs.fnal.gov/redmine/projects/art/wiki/TimeTracker#TimeTracker
+
+  TimeTracker:            {}
+
+  # This parameter controls the level of descriptive output from
+  # various LArSoft modules. For a list of different message levels,
+  # see ${LARDATA_DIR}/job/messageservice.fcl. For most jobs this is
+  # set to standard_warning; here it is set to standard_info because I
+  # write some LogInfo messages in the analysis module for
+  # demonstration purposes.
+
+  message:                @local::standard_info
+
+  # The following services are from LArSoft.
+  # We pick exactly the ones we need here.
+  # In alternative, we could load a standard set provided by the experiment,
+  # but we would be wasting resources on unused services.
+  # 
+  # - Geometry service:
+  #   provides information about the geometry of the detector and the mapping
+  #   of TPC channels to the wires.
+  #   Needed by PointResTree module; from larcore/Geometry/geometry_dune.fcl .
+
+  #
+  # - Geometry service helper:
+  #   used internally by Geometry to set up the channel mappings.
+  #   Needed by Geometry service; from larcore/Geometry/geometry_dune.fcl .
+  ExptGeoHelperInterface: @local::dune_geometry_helper
+  #
+  # - Geant4 simulation parameters for liquid argon
+  #   Needed by PointResTree module; from larsim/Simulation/services_dune.fcl .
+  LArG4Parameters:        @local::dunefd_largeantparameters
+  @table::dunefd_simulation_services
+
+  Geometry:		  @local::dune10kt_1x2x6_geo
+} # services
+
+services.BackTrackerService.BackTracker.SimChannelModuleLabel: "elecDrift"
+# The 'source' section tells the script to expect an input file with art::Event records.
+# Note that the name of the input file is not included here. You specify that on the
+# command line when you run this script; e.g.,
+#    lar -c pointrestree.fcl -s myinput.root
+# The file "myinput.root" is assumed to have been created by a previous LArSoft job.
+
+source:
+{
+  module_type: RootInput
+
+  # Number of events to analyze; "-1" means all of the events in the input
+  # file. You can override this value with the "-n" option on the command line. 
+  maxEvents:  -1 
+
+  # I've commented this out, but if you really want to include the name of
+  # an input file in this script, here's how you do it.
+  # fileNames: ["myinput.root"]
+}
+
+# This is empty, because we're not writing any art::Events to an output file. 
+outputs:{}
+
+# The 'physics' section defines and configures some modules to do work on each event.
+# First modules are defined; they are scheduled later. Modules are grouped by type.
+physics:
+{
+  # Define the variables we'll need to run for this analysis program.
+  analyzers:
+  {
+    # This name defines a job step below, and will appear as a directory 
+    # in the output histogram file. 
+    PointResTree: 
+    {
+      # The "module_type" tells us which module to run. The name here
+      # matches the name supplied to DEFINE_ART_MODULE near the end of
+      # PointResTree_module.cc.
+
+      module_type:     "PointResTree"
+
+      # The input parameters for our PointResTree module. Compare
+      # the names you see here with the reconfigure method in
+      # PointResTree.cxx. You will want to add/remove/rename the
+      # example parameters below to suit your task.
+      GeneratorLabel:      "NuEScatter"
+      SimulationLabel:	   "largeant" 
+      SimChannelModuleLabel: "elecDrift"
+      HitsModuleLabel:	   "hitfd"
+      #TrackModuleLabel:	   ["pandoraShower", "pandoraTrack"]
+      TrackModuleLabel:	   ["pmtracktc"]
+      OpFlashLabel:        "opslicerDEF35QENonRefl2PE"
+	  HitToSpacePointLabel:"hitfd"
+      SpacePointModuleLabel:    "spsolve"
+      CollectTracks:        true
+
+    }
+  }
+
+  # Schedule job step(s) for execution by defining the analysis module
+  # for this job. An 'analysis' module (as opposed to a 'producer' or
+  # a 'filter') does not alter the contents of events in the input
+  # file, nor does it create any events as output. Any step names
+  # listed here must match a name in the 'analyzers' section above.
+
+  analysis: [ PointResTree ]
+
+  # "end_paths" is a keyword and contains the modules that do not modify the art::Event;
+  # i.e., analyzers and output streams.
+
+  end_paths: [ analysis ]
+}
+
