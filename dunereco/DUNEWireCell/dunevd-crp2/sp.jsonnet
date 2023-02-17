@@ -7,6 +7,7 @@ local wc = import 'wirecell.jsonnet';
 // four things: 0) read this comment, 1) cp this file into pdsp/, 2)
 // fix the import and 3) delete this comment.
 local spfilt = import 'pgrapher/experiment/dunevd-crp2/sp-filters.jsonnet';
+local util = import 'pgrapher/experiment/dunevd-crp2/funcs.jsonnet';
 
 function(params, tools, override = {}) {
 
@@ -94,6 +95,7 @@ function(params, tools, override = {}) {
       
       isWrapped: false,
       // process_planes: [0, 2],
+      process_planes: [util.anode_split(anode.data.ident) - 1, 2], // balance the left and right split
 
     } + override,
   }, nin=1, nout=1, uses=[anode, tools.dft, tools.field, tools.elec_resp] + pc.uses + spfilt),
