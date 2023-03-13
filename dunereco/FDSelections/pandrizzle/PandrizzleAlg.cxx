@@ -18,6 +18,7 @@
 #include "lardataobj/RecoBase/TrackingTypes.h"
 
 #include "larcorealg/Geometry/GeometryCore.h"
+#include "larcore/Geometry/WireReadout.h"
 #include "larcore/Geometry/Geometry.h"
 
 //Custom
@@ -731,7 +732,7 @@ void FDSelection::PandrizzleAlg::GetShowerRegionVariables(const TVector3 &nuVert
 
     // Find 2D showers
 
-    art::ServiceHandle<geo::Geometry const> theGeometry;
+    auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
 
     std::vector<art::Ptr<recob::Hit>> allShowerHits(dune_ana::DUNEAnaPFParticleUtils::GetHits(pfp, evt, "pandoraSel"));
@@ -805,9 +806,9 @@ void FDSelection::PandrizzleAlg::GetShowerRegionVariables(const TVector3 &nuVert
     // Need to make fits etc...
     try
     {
-        lar_content::TwoDSlidingFitResult slidingFitResultU(&cartesianPointVectorU, 1000, theGeometry->WirePitch(geo::kW));
-        lar_content::TwoDSlidingFitResult slidingFitResultV(&cartesianPointVectorV, 1000, theGeometry->WirePitch(geo::kW));
-        lar_content::TwoDSlidingFitResult slidingFitResultW(&cartesianPointVectorW, 1000, theGeometry->WirePitch(geo::kW));
+        lar_content::TwoDSlidingFitResult slidingFitResultU(&cartesianPointVectorU, 1000, wireReadout.Plane({}, geo::kW).WirePitch());
+        lar_content::TwoDSlidingFitResult slidingFitResultV(&cartesianPointVectorV, 1000, wireReadout.Plane({}, geo::kW).WirePitch());
+        lar_content::TwoDSlidingFitResult slidingFitResultW(&cartesianPointVectorW, 1000, wireReadout.Plane({}, geo::kW).WirePitch());
 
         pandora::CartesianVector fittedShowerDirectionU(isDownstream ? slidingFitResultU.GetGlobalMinLayerDirection() : slidingFitResultU.GetGlobalMaxLayerDirection() * -1.0);
         pandora::CartesianVector fittedShowerDirectionV(isDownstream ? slidingFitResultV.GetGlobalMinLayerDirection() : slidingFitResultV.GetGlobalMaxLayerDirection() * -1.0);
@@ -880,9 +881,9 @@ void FDSelection::PandrizzleAlg::GetShowerRegionVariables(const TVector3 &nuVert
         modularShowerMaxFoundHitRatio = std::min(std::max(std::max(foundHitRatioU, foundHitRatioV), foundHitRatioW), 1.5f);
         
         // Update fits
-        lar_content::TwoDSlidingFitResult updatedSlidingFitResultU(&cartesianPointVectorU, 1000, theGeometry->WirePitch(geo::kW));
-        lar_content::TwoDSlidingFitResult updatedSlidingFitResultV(&cartesianPointVectorV, 1000, theGeometry->WirePitch(geo::kW));
-        lar_content::TwoDSlidingFitResult updatedSlidingFitResultW(&cartesianPointVectorW, 1000, theGeometry->WirePitch(geo::kW));
+        lar_content::TwoDSlidingFitResult updatedSlidingFitResultU(&cartesianPointVectorU, 1000, wireReadout.Plane({}, geo::kW).WirePitch());
+        lar_content::TwoDSlidingFitResult updatedSlidingFitResultV(&cartesianPointVectorV, 1000, wireReadout.Plane({}, geo::kW).WirePitch());
+        lar_content::TwoDSlidingFitResult updatedSlidingFitResultW(&cartesianPointVectorW, 1000, wireReadout.Plane({}, geo::kW).WirePitch());
 
         const pandora::CartesianVector &updatedFittedShowerDirectionU(isDownstream ? updatedSlidingFitResultU.GetGlobalMinLayerDirection() : 
             updatedSlidingFitResultU.GetGlobalMaxLayerDirection() * -1.0);
@@ -947,7 +948,7 @@ void FDSelection::PandrizzleAlg::GetShowerRegionVariables(const TVector3 &nuVert
 float FDSelection::PandrizzleAlg::GetShowerOpeningAngle(const geo::Vector_t &showerStart, const pandora::CartesianVector &fittedShowerDirection, 
     pandora::CartesianPointVector &cartesianPointVector)
 {
-    art::ServiceHandle<geo::Geometry const> theGeometry;
+    auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
     pandora::CartesianVector pandoraShowerStart(showerStart.X(), showerStart.Y(), showerStart.Z());
 
     float openingAngle(-10.f);
@@ -980,8 +981,8 @@ float FDSelection::PandrizzleAlg::GetShowerOpeningAngle(const geo::Vector_t &sho
         for (auto &entry : negativeEdges)
             negativeEdgePositions.push_back(pandora::CartesianVector(entry.second, 0.f, entry.first));
 
-        const lar_content::TwoDSlidingFitResult positiveEdgeFit(&positiveEdgePositions, 1000, theGeometry->WirePitch(geo::kW));
-        const lar_content::TwoDSlidingFitResult negativeEdgeFit(&negativeEdgePositions, 1000, theGeometry->WirePitch(geo::kW));
+        const lar_content::TwoDSlidingFitResult positiveEdgeFit(&positiveEdgePositions, 1000, wireReadout.Plane({}, geo::kW).WirePitch());
+        const lar_content::TwoDSlidingFitResult negativeEdgeFit(&negativeEdgePositions, 1000, wireReadout.Plane({}, geo::kW).WirePitch());
 
         const pandora::CartesianVector positiveMinLayer(positiveEdgeFit.GetGlobalMinLayerPosition());
         const pandora::CartesianVector positiveMaxLayer(positiveEdgeFit.GetGlobalMaxLayerPosition());
@@ -1173,8 +1174,8 @@ double FDSelection::PandrizzleAlg::YZtoW(double y, double z)
 
 const geo::Vector_t FDSelection::PandrizzleAlg::GetPandoraHitPosition(art::Ptr<recob::Hit> pHit, const art::Event& evt)
 {
-    art::ServiceHandle<geo::Geometry const> theGeometry;
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
+  auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
 
    const geo::WireID hit_WireID(pHit->WireID());
    const double hit_Time(pHit->PeakTime());
@@ -1183,7 +1184,7 @@ const geo::Vector_t FDSelection::PandrizzleAlg::GetPandoraHitPosition(art::Ptr<r
 
    const geo::View_t pandora_View(lar_pandora::LArPandoraGeometry::GetGlobalView(hit_WireID.Cryostat, hit_WireID.TPC, hit_View));
 
-   geo::Point_t hitXYZ = theGeometry->Cryostat(cryostatID).TPC(hit_WireID.TPC).Plane(hit_WireID.Plane).Wire(hit_WireID.Wire).GetCenter();
+   geo::Point_t hitXYZ = wireReadout.Wire(hit_WireID).GetCenter();
    const double hitY(hitXYZ.Y());
    const double hitZ(hitXYZ.Z());
 

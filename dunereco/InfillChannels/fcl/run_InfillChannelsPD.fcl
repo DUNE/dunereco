@@ -34,4 +34,5 @@ physics:
   out: [ out1 ]
 }
 
+services.AuxDetGeometry: @local::protodune_auxdet_geo
 services.Geometry: @local::protodune_geo

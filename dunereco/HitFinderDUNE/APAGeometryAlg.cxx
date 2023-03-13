@@ -70,10 +70,10 @@ namespace dune::apa {
     //while( fGeom->ChannelToWire(channel+1)[0].TPC < 2 ) channel++;
     //fChannelsPerAPA = channel + 1;
 
-    fChannelsPerAPA = fGeom->Nchannels();
-    for (channel=0; channel < fGeom->Nchannels(); ++channel)
+    fChannelsPerAPA = fWireReadoutGeom->Nchannels();
+    for (channel=0; channel < fWireReadoutGeom->Nchannels(); ++channel)
       {
-	if ( fGeom->ChannelToWire(channel)[0].TPC > 1 )
+        if ( fWireReadoutGeom->ChannelToWire(channel)[0].TPC > 1 )
 	  {
 	    fChannelsPerAPA = channel;
 	    break;
@@ -85,15 +85,15 @@ namespace dune::apa {
     // (very dependent on the conventions implimented in the channel map)
     fFirstU = 0;
     uint32_t c = 1;
-    geo::WireID wid = (fGeom->ChannelToWire(c))[0];
+    geo::WireID wid = (fWireReadoutGeom->ChannelToWire(c))[0];
     geo::WireID lastwid;
     while( wid.TPC < 2 ){
 
-      if( fGeom->View(c) == geo::kV && fGeom->View(c-1) == geo::kU ){
+      if( fWireReadoutGeom->View(c) == geo::kV && fWireReadoutGeom->View(c-1) == geo::kU ){
 	fLastU = c-1;
 	fFirstV = c;   }
       
-      if( fGeom->View(c) == geo::kZ && fGeom->View(c-1) == geo::kV ){
+      if( fWireReadoutGeom->View(c) == geo::kZ && fWireReadoutGeom->View(c-1) == geo::kV ){
 	fLastV = c-1;
 	fFirstZ0 = c;  }
       
@@ -103,8 +103,8 @@ namespace dune::apa {
 
       lastwid = wid;
       c++;
-      if (c >=  fGeom->Nchannels()) break;
-      wid = (fGeom->ChannelToWire(c))[0]; // for the while condition
+      if (c >=  fWireReadoutGeom->Nchannels()) break;
+      wid = (fWireReadoutGeom->ChannelToWire(c))[0]; // for the while condition
 
     }
 
@@ -116,8 +116,8 @@ namespace dune::apa {
 
     // some other things that will be needed
     fAPAsPerCryo = fGeom->NTPC()/2;
-    fChannelRange[0] = (fLastU-fFirstU + 1)*fGeom->WirePitch(geo::kU);
-    fChannelRange[1] = (fLastV-fFirstV + 1)*fGeom->WirePitch(geo::kV);
+    fChannelRange[0] = (fLastU-fFirstU + 1)*fWireReadoutGeom->Plane({0, 0, geo::kU}).WirePitch();
+    fChannelRange[1] = (fLastV-fFirstV + 1)*fWireReadoutGeom->Plane({0, 0, geo::kV}).WirePitch();
 
   }
 
@@ -207,7 +207,7 @@ namespace dune::apa {
   //----------------------------------------------------------
   uint32_t APAGeometryAlg::FirstChannelInView( uint32_t chan ){
 
-    geo::View_t geoview = fGeom->View(chan);
+    geo::View_t geoview = fWireReadoutGeom->View(chan);
     unsigned int apa, cryo;
     this->ChannelToAPA( chan, apa, cryo );
     return this->FirstChannelInView( geoview, chan );
@@ -232,7 +232,7 @@ namespace dune::apa {
     // it seems trivial to do this for U and V, but this gives a side to
     // geo::kZ, unlike Geometry::View(c), as is often needed in disambiguation
 
-    geo::View_t view = fGeom->View( chan );
+    geo::View_t view = fWireReadoutGeom->View( chan );
     switch(view){
     default       :  
       break;
@@ -255,7 +255,7 @@ namespace dune::apa {
   //----------------------------------------------------------
   std::vector<geo::WireID> APAGeometryAlg::ChanSegsPerSide(uint32_t chan, unsigned int side){
 
-    std::vector<geo::WireID> wids = fGeom->ChannelToWire(chan);
+    std::vector<geo::WireID> wids = fWireReadoutGeom->ChannelToWire(chan);
     return this->ChanSegsPerSide(wids, side);
 
   }
@@ -287,7 +287,7 @@ namespace dune::apa {
 						    unsigned int const cstat   )
   {
 
-    std::vector<geo::WireID> cWids = fGeom->ChannelToWire( chan );
+    std::vector<geo::WireID> cWids = fWireReadoutGeom->ChannelToWire( chan );
 
     if( cWids[0].Cryostat != cstat ) 
       throw cet::exception("APAGeometryAlg") << "Channel " << chan 
@@ -297,10 +297,10 @@ namespace dune::apa {
 					     << "not in APA " << std::floor(tpc/2) << "\n";
 
     // special case for vertical wires
-    if(fGeom->View(chan)==geo::kZ) return fGeom->ChannelToWire(chan)[0];
+    if(fWireReadoutGeom->View(chan)==geo::kZ) return fWireReadoutGeom->ChannelToWire(chan)[0];
 
-    unsigned int xyzWire = fGeom->NearestWireID( geo::vect::toPoint(WorldLoc),
-                                                 geo::PlaneID{cstat, tpc, plane} ).Wire;
+    unsigned int xyzWire = fWireReadoutGeom->Plane(geo::PlaneID{cstat, tpc, plane})
+      .NearestWireID(geo::vect::toPoint(WorldLoc)).Wire;
 
     // The desired wire ID will be the only channel 
     // segment within half the channel range.
@@ -330,10 +330,10 @@ namespace dune::apa {
     auto const tpcID = fGeom->PositionToTPCID(toPoint((xyzStart + xyzEnd) * 0.5));
 
     // Find the nearest wire number to the line segment endpoints
-    std::vector<geo::WireID> wids = fGeom->ChannelToWire(chan);
-    geo::PlaneID const planeID{tpcID, wids[0].Plane};
-    unsigned int startW = fGeom->NearestWireID( toPoint(xyzStart), planeID ).Wire;
-    unsigned int endW   = fGeom->NearestWireID( toPoint(xyzEnd),   planeID ).Wire;
+    std::vector<geo::WireID> wids = fWireReadoutGeom->ChannelToWire(chan);
+    geo::PlaneGeo const& plane = fWireReadoutGeom->Plane({tpcID, wids[0].Plane});
+    unsigned int startW = plane.NearestWireID( toPoint(xyzStart)).Wire;
+    unsigned int endW   = plane.NearestWireID( toPoint(xyzEnd)).Wire;
 
     if( startW > endW ) std::swap(startW, endW);
 
@@ -376,15 +376,15 @@ namespace dune::apa {
     std::vector< geo::WireIDIntersection > UVIntersects;
     this->APAChannelsIntersect( u, v, UVIntersects );
     std::vector< double > UVzToZ(UVIntersects.size());
-    geo::WireID Zwid = fGeom->ChannelToWire(z)[0];
+    geo::WireID Zwid = fWireReadoutGeom->ChannelToWire(z)[0];
     unsigned int cryo = Zwid.Cryostat;
     unsigned int tpc = Zwid.TPC;
-    std::vector<geo::WireID> Uwids = fGeom->ChannelToWire(u);
-    std::vector<geo::WireID> Vwids = fGeom->ChannelToWire(v);
+    std::vector<geo::WireID> Uwids = fWireReadoutGeom->ChannelToWire(u);
+    std::vector<geo::WireID> Vwids = fWireReadoutGeom->ChannelToWire(v);
     std::vector<geo::WireID> UwidsInTPC, VwidsInTPC;
     for(size_t i=0; i<Uwids.size(); i++) if( Uwids[i].TPC==tpc ) UwidsInTPC.push_back(Uwids[i]);
     for(size_t i=0; i<Vwids.size(); i++) if( Vwids[i].TPC==tpc ) VwidsInTPC.push_back(Vwids[i]);
-    auto const Zcent = fGeom->WireIDToWireGeo( Zwid ).GetCenter();
+    auto const Zcent = fWireReadoutGeom->Wire( Zwid ).GetCenter();
 
     std::cout << "Zcent = " << Zcent.Z() << ", UVintersects zpos = ";
     for(size_t uv=0; uv<UVIntersects.size(); uv++){
@@ -406,14 +406,13 @@ namespace dune::apa {
       std::vector<double> yzCenter(2,0.);
       geo::WireID Uwid = UwidsInTPC[0];
       geo::WireID Vwid = VwidsInTPC[0];
-      geo::WireIDIntersection UZInt, VZInt;
-      bool checkUZ = fGeom->WireIDsIntersect( Uwid, Zwid, UZInt );
-      bool checkVZ = fGeom->WireIDsIntersect( Vwid, Zwid, VZInt );
-      if( !checkUZ && !checkVZ )
+      auto const UZInt = fWireReadoutGeom->WireIDsIntersect( Uwid, Zwid );
+      auto const VZInt = fWireReadoutGeom->WireIDsIntersect( Vwid, Zwid );
+      if( !UZInt && !VZInt )
 	throw cet::exception("NoChanIntersect") << "No channels intersect, bad return.\n";
-      if( checkUZ && !checkVZ ){ yzCenter[0] = UZInt.y; yzCenter[1] = UZInt.z; }
-      if( checkVZ && !checkUZ ){ yzCenter[0] = VZInt.y; yzCenter[1] = VZInt.z; }
-      if( checkUZ &&  checkVZ ){ yzCenter[0] = (VZInt.y+UZInt.y)/2; yzCenter[1] = (VZInt.z+UZInt.z)/2; }
+      if( UZInt && !VZInt ){ yzCenter[0] = UZInt->y; yzCenter[1] = UZInt->z; }
+      if( VZInt && !UZInt ){ yzCenter[0] = VZInt->y; yzCenter[1] = VZInt->z; }
+      if( UZInt &&  VZInt ){ yzCenter[0] = (VZInt->y+UZInt->y)/2; yzCenter[1] = (VZInt->z+UZInt->z)/2; }
       return yzCenter;
     }
 
@@ -450,17 +449,27 @@ namespace dune::apa {
     UVInt[1] = ChosenUVInt.y; UVInt[2] = ChosenUVInt.z;
     geo::WireID Uwid = this->NearestWireIDOnChan( UVInt, u, 0, tpc, cryo );
     geo::WireID Vwid = this->NearestWireIDOnChan( UVInt, v, 1, tpc, cryo );
-    geo::WireIDIntersection UZInt, VZInt;
-    bool checkUZ = fGeom->WireIDsIntersect( Uwid, Zwid, UZInt );
-    bool checkVZ = fGeom->WireIDsIntersect( Vwid, Zwid, VZInt );
+    auto const UZInt = fWireReadoutGeom->WireIDsIntersect( Uwid, Zwid );
+    auto const VZInt = fWireReadoutGeom->WireIDsIntersect( Vwid, Zwid );
 
-    std::cout << "UZint.z = " << UZInt.z << " (" << checkUZ << "), VZint.z = " << VZInt.z << " (" << checkVZ << ")\n";
+    auto maybe_print_z = [](auto const& intersection) {
+                           if (intersection) {
+                             std::cout << intersection->z;
+                           } else {
+                             std::cout << "(no intersection)";
+                           }
+                         };
+
+
+    std::cout << "UZint.z = "; maybe_print_z(UZInt);
+    std::cout << ", VZint.z = "; maybe_print_z(VZInt);
+    std::cout << '\n';
     
     // find the center
     std::vector<double> yzCenter(2,0.);
 
 
-    if( !checkUZ || !checkVZ ){
+    if( !UZInt || !VZInt ){
       //throw cet::exception("ThreeChanPos")  << "WireIDs were expected to intersect.\n";
 
       std::cout << "ChosenUVint.y = " << ChosenUVInt.y << "ChosenUVint.z = " << ChosenUVInt.z << std::endl;
@@ -472,8 +481,8 @@ namespace dune::apa {
 
     } else {
 
-    yzCenter[0] =  (ChosenUVInt.y + UZInt.y + VZInt.y)/3; 
-    yzCenter[1] =  (ChosenUVInt.z + UZInt.z + VZInt.z)/3;
+    yzCenter[0] =  (ChosenUVInt.y + UZInt->y + VZInt->y)/3;
+    yzCenter[1] =  (ChosenUVInt.z + UZInt->z + VZInt->z)/3;
 
     }
 
@@ -492,11 +501,10 @@ namespace dune::apa {
 
     
     // Get the WireIDs and view for each channel, make sure views are different
-    geo::WireIDIntersection    widIntersect;
-    std::vector< geo::WireID > wids1 = fGeom->ChannelToWire( chan1 );
-    std::vector< geo::WireID > wids2 = fGeom->ChannelToWire( chan2 );
-    geo::View_t                view1 = fGeom->View( chan1 );
-    geo::View_t                view2 = fGeom->View( chan2 );
+    std::vector< geo::WireID > wids1 = fWireReadoutGeom->ChannelToWire( chan1 );
+    std::vector< geo::WireID > wids2 = fWireReadoutGeom->ChannelToWire( chan2 );
+    geo::View_t                view1 = fWireReadoutGeom->View( chan1 );
+    geo::View_t                view2 = fWireReadoutGeom->View( chan2 );
     if( view1 == view2 ){
       mf::LogWarning("APAChannelsIntersect") << "Comparing two channels in the same view, return false";
       return false;     }
@@ -529,11 +537,11 @@ namespace dune::apa {
 // 		  << wids2[i2].Plane    << "," << wids2[i2].Wire << ")" << std::endl;
 
 	// Check if they even intersect; if they do, push back
-	if( fGeom->WireIDsIntersect( wids1[i1], wids2[i2], widIntersect ) ){
+        if(auto widIntersect =  fWireReadoutGeom->WireIDsIntersect( wids1[i1], wids2[i2] ) ){
 
 //	  std::cout << "we have an intersect" << std::endl;
 
-	  IntersectVector.push_back( widIntersect );
+          IntersectVector.push_back( *widIntersect );
 	}
       }
     }
