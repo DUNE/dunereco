@@ -104,8 +104,19 @@ dune_pandoraModularShowerCreation.ShowerFinderTools: [
   @local::dune_showertrajpointdedx
 ]
 
-dunefdhd_pandoraModularShowerCreation: @local::pandoraModularShowerCreation
+dunefdhd_pandoraModularShowerCreation: @local::dune_pandoraModularShowerCreation
 dunefdhd_pandoraModularShowerCreation.UseAllParticles:                      true
+dunefdhd_pandoraModularShowerCreation.ShowerFinderTools: [
+  @local::dune_showerpfpvertexstartposition,
+  @local::dune_showerpcadirection,
+  @local::dune_showerlengthpercentile,
+  @local::dunefdhd_showernumelectronsenergy,
+  @local::dune_3dcylindertrackhitfinder,
+  @local::dunefdhd_showerunidirectiondedx,
+  @local::dune_showerincrementaltrackhitfinder,
+  @local::dune_showerpandoraslidingfittrackfinder,
+  @local::dunefdhd_showertrajpointdedx
+]
 
 dunefdvd_pandoraModularShowerCreation: @local::dunefdhd_pandoraModularShowerCreation
 dunefdvd_pandoraModularShowerCreation.ShowerFinderTools: [
@@ -126,7 +137,7 @@ dune_pandoraShowerCreation:
     module_type:                                                    "LArPandoraShowerCreation"
 }
 
-dunefdhd_pandoraShowerCreation: @local::pandoraShowerCreation
+dunefdhd_pandoraShowerCreation: @local::dune_pandoraShowerCreation
 dunefdhd_pandoraShowerCreation.UseAllParticles:                      true
 
 dunefdvd_pandoraShowerCreation: @local::dunefdhd_pandoraShowerCreation 
