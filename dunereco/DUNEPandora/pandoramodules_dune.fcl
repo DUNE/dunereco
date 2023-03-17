@@ -85,7 +85,10 @@ dune_pandoraTrackCreation:
     PFParticleLabel:                                                "pandora"
 }
 
-dunefdvd_pandoraTrackCreation: @local::dune_pandoraTrackCreation 
+dunefdhd_pandoraTrackCreation: @local::dune_pandoraTrackCreation
+dunefdhd_pandoraTrackCreation.UseAllParticles:                      true
+
+dunefdvd_pandoraTrackCreation: @local::dunefdhd_pandoraTrackCreation 
 
 dune_pandoraModularShowerCreation:                                         @local::standard_pandoraModularShowerCreation
 dune_pandoraModularShowerCreation.PFParticleLabel:                  "pandora"
@@ -101,7 +104,10 @@ dune_pandoraModularShowerCreation.ShowerFinderTools: [
   @local::dune_showertrajpointdedx
 ]
 
-dunefdvd_pandoraModularShowerCreation: @local::dune_pandoraModularShowerCreation
+dunefdhd_pandoraModularShowerCreation: @local::pandoraModularShowerCreation
+dunefdhd_pandoraModularShowerCreation.UseAllParticles:                      true
+
+dunefdvd_pandoraModularShowerCreation: @local::dunefdhd_pandoraModularShowerCreation
 dunefdvd_pandoraModularShowerCreation.ShowerFinderTools: [
   @local::dune_showerpfpvertexstartposition,
   @local::dune_showerpcadirection,
@@ -119,6 +125,12 @@ dune_pandoraShowerCreation:
 {
     module_type:                                                    "LArPandoraShowerCreation"
 }
+
+dunefdhd_pandoraShowerCreation: @local::pandoraShowerCreation
+dunefdhd_pandoraShowerCreation.UseAllParticles:                      true
+
+dunefdvd_pandoraShowerCreation: @local::dunefdhd_pandoraShowerCreation 
+
 
 dunefd_pandora:                                                      @local::dunefd_pandora_neutrino
 
