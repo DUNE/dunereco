@@ -501,6 +501,7 @@
         <MvaNameNoChargeInfo>PfoCharacterisationNoChargeInfo</MvaNameNoChargeInfo>
         <TrainingSetMode>false</TrainingSetMode>
         <TrainingOutputFileName>training_output</TrainingOutputFileName>
+        <PersistFeatures>true</PersistFeatures>
         <FeatureTools>
             <tool type = "LArThreeDLinearFitFeatureTool"/>
             <tool type = "LArThreeDVertexDistanceFeatureTool"/>
@@ -599,6 +600,7 @@
         <MvaNameNoChargeInfo>PfoCharacterisationNoChargeInfo</MvaNameNoChargeInfo>
         <TrainingSetMode>false</TrainingSetMode>
         <TrainingOutputFileName>training_output</TrainingOutputFileName>
+        <PersistFeatures>true</PersistFeatures>
         <FeatureTools>
             <tool type = "LArThreeDLinearFitFeatureTool"/>
             <tool type = "LArThreeDVertexDistanceFeatureTool"/>

@@ -47,7 +47,10 @@ dune_showerunidirectiondedx.CalorimetryAlg:                          @local::dun
 dune_showerunidirectiondedx.InitialTrackHitsInputLabel:              "InitialTrackHits3DCylinder"
 dune_showerunidirectiondedx.dEdxTrackLength:                         5.7
 
-dunefdvd_showerunidirectiondedx: @local::dune_showerunidirectiondedx
+dunefdhd_showerunidirectiondedx: @local::dune_showerunidirectiondedx
+dunefdhd_showerunidirectiondedx.CalorimetryAlg: @local::dune10kt_calorimetryalgmc
+
+dunefdvd_showerunidirectiondedx: @local::dunefdhd_showerunidirectiondedx
 dunefdvd_showerunidirectiondedx.CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
 
 dune_showertrajpointdedx:                                            @local::showertrajpointdedx
@@ -58,14 +61,20 @@ dune_showertrajpointdedx.MinAngleToWire:                             0.0
 dune_showertrajpointdedx.dEdxTrackLength:                            4.6
 dune_showertrajpointdedx.dEdxCut:                                    999.0
 
-dunefdvd_showertrajpointdedx: @local::dune_showertrajpointdedx
+dunefdhd_showertrajpointdedx: @local::dune_showertrajpointdedx
+dunefdhd_showertrajpointdedx.CalorimetryAlg: @local::dune10kt_calorimetryalgmc
+
+dunefdvd_showertrajpointdedx: @local::dunefdhd_showertrajpointdedx
 dunefdvd_showertrajpointdedx.CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
 
 #Shower energy tools
 dune_showernumelectronsenergy:                                       @local::showernumelectronsenergy
 dune_showernumelectronsenergy.CalorimetryAlg:                        @local::dune10kt_calorimetryalgmc
 
-dunefdvd_showernumelectronsenergy: @local::dune_showernumelectronsenergy
+dunefdhd_showernumelectronsenergy: @local::dune_showernumelectronsenergy
+dunefdhd_showernumelectronsenergy.CalorimetryAlg: @local::dune10kt_calorimetryalgmc
+
+dunefdvd_showernumelectronsenergy: @local::dunefdhd_showernumelectronsenergy
 dunefdvd_showernumelectronsenergy.CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
 
 END_PROLOG
