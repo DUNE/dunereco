@@ -86,7 +86,7 @@ dune_pandoraTrackCreation:
 }
 
 dunefdhd_pandoraTrackCreation: @local::dune_pandoraTrackCreation
-dunefdhd_pandoraTrackCreation.UseAllParticles:                      false
+dunefdhd_pandoraTrackCreation.UseAllParticles:                      true
 
 dunefdvd_pandoraTrackCreation: @local::dunefdhd_pandoraTrackCreation 
 
@@ -105,7 +105,7 @@ dune_pandoraModularShowerCreation.ShowerFinderTools: [
 ]
 
 dunefdhd_pandoraModularShowerCreation: @local::dune_pandoraModularShowerCreation
-dunefdhd_pandoraModularShowerCreation.UseAllParticles:                      false
+dunefdhd_pandoraModularShowerCreation.UseAllParticles:                      true
 dunefdhd_pandoraModularShowerCreation.ShowerFinderTools: [
   @local::dune_showerpfpvertexstartposition,
   @local::dune_showerpcadirection,
@@ -138,7 +138,7 @@ dune_pandoraShowerCreation:
 }
 
 dunefdhd_pandoraShowerCreation: @local::dune_pandoraShowerCreation
-dunefdhd_pandoraShowerCreation.UseAllParticles:                      false
+dunefdhd_pandoraShowerCreation.UseAllParticles:                      true
 
 dunefdvd_pandoraShowerCreation: @local::dunefdhd_pandoraShowerCreation 
 
