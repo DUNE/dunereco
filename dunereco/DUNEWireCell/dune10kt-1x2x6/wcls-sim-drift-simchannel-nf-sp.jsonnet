@@ -30,10 +30,7 @@ local params = params_maker(fcl_params) {
 };
 
 
-local tools_all = tools_maker(params);
-local tools = tools_all {
-    anodes: [tools_all.anodes[n] for n in [3]]
-};
+local tools = tools_maker(params);
 
 local sim_maker = import 'pgrapher/experiment/dune10kt-1x2x6/sim.jsonnet';
 local sim = sim_maker(params, tools);
@@ -44,20 +41,16 @@ local anode_iota = std.range(0, nanodes - 1);
 
 local output = 'wct-sim-ideal-sig.npz';
 
+
+//local depos = g.join_sources(g.pnode({type:"DepoMerger", name:"BlipTrackJoiner"}, nin=2, nout=1),
+//                             [sim.ar39(), sim.tracks(tracklist)]);
+// local depos = sim.tracks(tracklist, step=1.0 * wc.mm);
+
 local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 local wcls_input = {
-    depos: wcls.input.depos(name='', art_tag='IonAndScint'),
-    deposet: g.pnode({
-            type: 'wclsSimDepoSetSource',
-            name: "", 
-            data: {
-                model: "", 
-                scale: -1, //scale is -1 to correct a sign error in the SimDepoSource converter.
-                art_tag: "IonAndScint", //name of upstream art producer of depos "label:instance:processName"
-                assn_art_tag: "", 
-            },
-        }, nin=0, nout=1),
+  depos: wcls.input.depos(name='', art_tag='IonAndScint'),
+  // depos: wcls.input.depos(name='electron'),  // default art_tag="blopper"
 };
 
 // Collect all the wc/ls output converters for use below.  Note the
@@ -106,13 +99,6 @@ local wcls_output = {
 
 //local deposio = io.numpy.depos(output);
 local drifter = sim.drifter;
-local setdrifter = g.pnode({
-            type: 'DepoSetDrifter',
-            data: {
-                drifter: "Drifter"
-            }
-        }, nin=1, nout=1,
-        uses=[drifter]);
 local bagger = sim.make_bagger();
 // local bagger = g.pnode({
 //   type: 'DepoBagger',
@@ -150,7 +136,7 @@ local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
 local rng = tools.random;
 local wcls_simchannel_sink = g.pnode({
-  type: 'wclsDepoSetSimChannelSink',
+  type: 'wclsSimChannelSink',
   name: 'postdrift',
   data: {
     artlabel: 'simpleSC',  // where to save in art::Event
@@ -173,17 +159,16 @@ local wcls_simchannel_sink = g.pnode({
 }, nin=1, nout=1, uses=tools.anodes);
 
 local magoutput = 'protodune-data-check.root';
-local magnify = import 'pgrapher/experiment/dune-vd/magnify-sinks.jsonnet';
+local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
 local multipass = [
   g.pipeline([
                // wcls_simchannel_sink[n],
                sn_pipes[n],
-               sinks.orig_pipe[n],
+               // sinks.orig_pipe[n],
                // nf_pipes[n],
                sp_pipes[n],
-               sinks.decon_pipe[n],
              ],
              'multipass%d' % n)
   for n in anode_iota
@@ -213,11 +198,10 @@ local retagger = g.pnode({
 //local frameio = io.numpy.frames(output);
 local sink = sim.frame_sink;
 
-// local graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, bi_manifold, retagger, wcls_output.sp_signals, sink]);
-local graph = g.pipeline([wcls_input.deposet, setdrifter, wcls_simchannel_sink, bi_manifold, retagger, wcls_output.sp_signals, sink]);
+local graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, bi_manifold, retagger, wcls_output.sp_signals, sink]);
 
 local app = {
-  type: 'Pgrapher', # TbbFlow, Pgrapher
+  type: 'Pgrapher',
   data: {
     edges: g.edges(graph),
   },
