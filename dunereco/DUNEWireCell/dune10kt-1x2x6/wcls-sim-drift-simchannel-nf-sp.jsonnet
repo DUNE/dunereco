@@ -86,11 +86,20 @@ local wcls_output = {
   // "raw data".
   nf_digits: wcls.output.digits(name='nfdigits', tags=['raw']),
 
-  // The output of signal processing.  Note, there are two signal
-  // sets each created with its own filter.  The "gauss" one is best
-  // for charge reconstruction, the "wiener" is best for S/N
-  // separation.  Both are used in downstream WC code.
-  sp_signals: wcls.output.signals(name='spsignals', tags=['gauss', 'wiener']),
+  // this wcls.output.signals one only use one APA?
+  // sp_signals: wcls.output.signals(name='spsignals', tags=['gauss', 'wiener']),
+  sp_signals: g.pnode({
+  type: 'wclsFrameSaver',
+  name: 'spsignals',
+  data: {
+    anode: wc.tn(mega_anode),
+    digitize: false,  // true means save as RawDigit, else recob::Wire
+    frame_tags: ['gauss', 'wiener','dnnsp'],
+    frame_scale: [0.005, 0.005, 0.005],
+    chanmaskmaps: [],
+    nticks: params.daq.nticks,
+  },
+  }, nin=1, nout=1, uses=[mega_anode]),
 
   // save "threshold" from normal decon for each channel noise
   // used in imaging
