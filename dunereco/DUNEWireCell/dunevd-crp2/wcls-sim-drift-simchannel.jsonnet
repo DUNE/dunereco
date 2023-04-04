@@ -17,6 +17,7 @@ local base = import 'pgrapher/experiment/dunevd-crp2/simparams.jsonnet';
 local params = base {
   daq: super.daq {
     nticks: std.extVar('nticks'),
+    tick: 1.0/std.extVar('clock_speed') * wc.us,
   },
   lar: super.lar {
     // Longitudinal diffusion constant

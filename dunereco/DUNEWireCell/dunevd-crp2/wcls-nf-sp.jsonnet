@@ -33,8 +33,12 @@ local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
 
 local data_params = import 'params.jsonnet';
 local simu_params = import 'simparams.jsonnet';
-local params = if reality == 'data' then data_params else simu_params;
-
+local base = if reality == 'data' then data_params else simu_params;
+local params = base {
+    daq: super.daq {
+      tick: 1.0/std.extVar('clock_speed') * wc.us,
+    },
+};
 
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local tools = tools_maker(params);
@@ -63,6 +67,7 @@ local wcls_input = {
       art_tag: raw_input_label,
       frame_tags: ['orig'],  // this is a WCT designator
       // nticks: params.daq.nticks,
+      tick: params.daq.tick,
     },
   }, nin=0, nout=1),
 
