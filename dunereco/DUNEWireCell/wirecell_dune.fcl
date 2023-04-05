@@ -413,16 +413,19 @@ tpcrawdecoder_dunefd_horizdrift_1x2x6 : {
       params: {
       }
       structs: {
-        # Longitudinal diffusion constant [cm2/s]
-        DL: 4.0
-        # Transverse diffusion constant [cm2/s]
-        DT: 8.8
-        # Electron lifetime [ms]
-        lifetime: 10
-        # Electron drift speed, assumes a certain applied E-field [mm/us]
-        driftSpeed: 1.60563
-        # G4RefTime [us]
-        G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+          # number of time samples
+          #nticks: @local::dunefd_detproperties.NumberTimeSamples
+          # Longitudinal diffusion constant [cm2/ns]
+          DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+          # Transverse diffusion constant [cm2/ns]
+          DT: @local::dunefd_largeantparameters.TransverseDiffusion
+          # Electron lifetime [us]
+          lifetime: @local::dunefd_detproperties.Electronlifetime
+          # Electron drift speed, assumes a certain applied E-field [mm/us]
+          driftSpeed: 1.60563
+          # G4RefTime [us]
+          G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+
       }
 
    }
@@ -449,16 +452,20 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
         params: {
         }
         structs: {
-          # Longitudinal diffusion constant [cm2/s]
-          DL: 4.0
-          # Transverse diffusion constant [cm2/s]
-          DT: 8.8
-          # Electron lifetime [ms]
-          lifetime: 10
+          # number of time samples
+          #nticks: @local::dunefd_detproperties.NumberTimeSamples
+          # Longitudinal diffusion constant [cm2/ns]
+          DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+          # Transverse diffusion constant [cm2/ns]
+          DT: @local::dunefd_largeantparameters.TransverseDiffusion
+          # Electron lifetime [us]
+          lifetime: @local::dunefd_detproperties.Electronlifetime
           # Electron drift speed, assumes a certain applied E-field [mm/us]
           driftSpeed: 1.60563
           # G4RefTime [us]
           G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+
+
         }
     }
 }
