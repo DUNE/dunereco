@@ -25,6 +25,7 @@
 #include "art/Framework/Core/ModuleMacros.h" 
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "canvas/Persistency/Common/FindManyP.h"
+#include "canvas/Persistency/Common/PtrVector.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h" 
 #include "art_root_io/TFileService.h"
 #include "art/Framework/Principal/Event.h"

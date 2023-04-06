@@ -234,37 +234,40 @@ namespace dune {
     fLongestTrackContNumu  = ereconumuin->longestTrackContained;
     fTrackMomMethodNumu    = ereconumuin->trackMomMethod;
 
-    std::vector< art::Ptr<simb::MCTruth> > truth;
     auto mct = evt.getHandle< std::vector<simb::MCTruth> >("generator");
-    if( mct )
-      art::fill_ptr_vector(truth, mct);
-    else
+    if(!mct) {
       mf::LogWarning("CheckRecoEnergy") << "No MCTruth.";
+      return;
+    }
 
+    std::vector<simb::MCTruth> const& truth = *mct;
     for(size_t i=0; i<truth.size(); i++){
 
+      // FIXME: The following check is unlikely to provide a friendly message.  It would
+      // be better to limit the iteration to std::min(truth.size(), 2) and provide a
+      // single warning message that says which range of indices will be skipped.
       if(i>1){
         mf::LogWarning("CheckRecoEnergy") << "Skipping MC truth index " << i;
         continue;
       }
 
-      fCCNC     = truth[i]->GetNeutrino().CCNC();  //0=CC 1=NC
-      fNuPDG    = truth[i]->GetNeutrino().Nu().PdgCode();
-      fMode     = truth[i]->GetNeutrino().Mode(); //0=QE/El, 1=RES, 2=DIS, 3=Coherent production
-      fNuVtxX = truth[i]->GetNeutrino().Nu().Vx();
-      fNuVtxY = truth[i]->GetNeutrino().Nu().Vy();
-      fNuVtxZ = truth[i]->GetNeutrino().Nu().Vz();
-      fEtrue    = truth[i]->GetNeutrino().Nu().E();
-      fNuMomX   = truth[i]->GetNeutrino().Nu().Momentum().X();
-      fNuMomY   = truth[i]->GetNeutrino().Nu().Momentum().Y();
-      fNuMomZ   = truth[i]->GetNeutrino().Nu().Momentum().Z();
-      fNuMomT   = truth[i]->GetNeutrino().Nu().Momentum().T();
-      fLepPDG     = truth[i]->GetNeutrino().Lepton().PdgCode();
-      fLepMomX    = truth[i]->GetNeutrino().Lepton().Momentum().X();
-      fLepMomY    = truth[i]->GetNeutrino().Lepton().Momentum().Y();
-      fLepMomZ    = truth[i]->GetNeutrino().Lepton().Momentum().Z();
-      fLepMomT    = truth[i]->GetNeutrino().Lepton().Momentum().T();
-      fLepNuAngle = truth[i]->GetNeutrino().Nu().Momentum().Vect().Angle(truth[i]->GetNeutrino().Lepton().Momentum().Vect());
+      fCCNC     = truth[i].GetNeutrino().CCNC();  //0=CC 1=NC
+      fNuPDG    = truth[i].GetNeutrino().Nu().PdgCode();
+      fMode     = truth[i].GetNeutrino().Mode(); //0=QE/El, 1=RES, 2=DIS, 3=Coherent production
+      fNuVtxX = truth[i].GetNeutrino().Nu().Vx();
+      fNuVtxY = truth[i].GetNeutrino().Nu().Vy();
+      fNuVtxZ = truth[i].GetNeutrino().Nu().Vz();
+      fEtrue    = truth[i].GetNeutrino().Nu().E();
+      fNuMomX   = truth[i].GetNeutrino().Nu().Momentum().X();
+      fNuMomY   = truth[i].GetNeutrino().Nu().Momentum().Y();
+      fNuMomZ   = truth[i].GetNeutrino().Nu().Momentum().Z();
+      fNuMomT   = truth[i].GetNeutrino().Nu().Momentum().T();
+      fLepPDG     = truth[i].GetNeutrino().Lepton().PdgCode();
+      fLepMomX    = truth[i].GetNeutrino().Lepton().Momentum().X();
+      fLepMomY    = truth[i].GetNeutrino().Lepton().Momentum().Y();
+      fLepMomZ    = truth[i].GetNeutrino().Lepton().Momentum().Z();
+      fLepMomT    = truth[i].GetNeutrino().Lepton().Momentum().T();
+      fLepNuAngle = truth[i].GetNeutrino().Nu().Momentum().Vect().Angle(truth[i].GetNeutrino().Lepton().Momentum().Vect());
 
       //true CC event with true vertex in fiducial volume
       if(fCCNC == 0 && fabs(fNuVtxX) < fFidVolXMax && fabs(fNuVtxY) < fFidVolYMax && fabs(fNuVtxZ) > fFidVolZMin && fabs(fNuVtxZ) < fFidVolZMax) 

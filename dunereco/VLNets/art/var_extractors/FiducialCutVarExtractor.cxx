@@ -21,19 +21,17 @@ FiducialCutVarExtractor::FiducialCutVarExtractor(
 
 void FiducialCutVarExtractor::extractVars(const art::Event &evt, VarDict &vars)
 {
-    std::vector<art::Ptr<simb::MCTruth>> mcTruth;
-
     auto mcTruth_h = evt.getHandle<std::vector<simb::MCTruth>>(labelGenerator);
     if (!mcTruth_h) {
         return;
     }
 
-    art::fill_ptr_vector(mcTruth, mcTruth_h);
+    std::vector<simb::MCTruth> const& mcTruth = *mcTruth_h;
     if (mcTruth.empty()) {
         return;
     }
 
-    const auto &nu = mcTruth[0]->GetNeutrino();
+    const auto &nu = mcTruth[0].GetNeutrino();
 
     auto vtxX = nu.Nu().Vx();
     auto vtxY = nu.Nu().Vy();
@@ -49,4 +47,3 @@ void FiducialCutVarExtractor::extractVars(const art::Event &evt, VarDict &vars)
 }
 
 }
-
