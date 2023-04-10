@@ -204,6 +204,7 @@ wirecell_dunevd_coldboxcrp2_mc:
 	structs: {
            # number of time samples
            nticks: @local::vdcb_crp2_services.DetectorPropertiesService.NumberTimeSamples
+           clock_speed: @local::vdcb_crp2_services.DetectorClocksService.ClockSpeedTPC
 	   lifetime: @local::vdcb_crp2_services.DetectorPropertiesService.Electronlifetime
 	   DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
 	   DT: @local::dunefd_largeantparameters.TransverseDiffusion
@@ -1383,6 +1384,10 @@ dune_vd_crp2_nfsp : {
          signal_output_form: "sparse"
          use_magnify: "false"
       }
+      structs: {
+         clock_speed: @local::vdcb_crp2_services.DetectorClocksService.ClockSpeedTPC
+      }
+
    }
 }
 

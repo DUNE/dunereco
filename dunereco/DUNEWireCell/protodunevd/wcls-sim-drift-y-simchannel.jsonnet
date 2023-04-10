@@ -289,7 +289,8 @@ local deposet_rotate_rev = g.pnode({
 
 
 // local graph = g.pipeline([wcls_input.depos, plainbagger, /*deposet_rotate,*/  setdrifter, /*deposet_rotate_rev, wcls_simchannel_sink, bagger,*/ pipe_reducer, retagger, wcls_output.sim_digits, sink]);
-local graph = g.pipeline([wcls_input.depos, plainbagger, deposet_rotate, setdrifter, deposet_rotate_rev,  pipe_reducer, retagger, wcls_output.sim_digits, sink]);
+// local graph = g.pipeline([wcls_input.depos, plainbagger, deposet_rotate, setdrifter, deposet_rotate_rev,  pipe_reducer, retagger, wcls_output.sim_digits, sink]);
+local graph = g.pipeline([wcls_input.depos, plainbagger, deposet_rotate_rev, setdrifter,  pipe_reducer, retagger, wcls_output.sim_digits, sink]);
 
 local app = {
   type: 'Pgrapher',
