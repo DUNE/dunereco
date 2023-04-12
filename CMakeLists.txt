@@ -56,7 +56,6 @@ find_ups_product( clhep )
 find_package(GENIE REQUIRED EXPORT)
 find_ups_product( gsl )
 find_ups_product( hep_hpc )
-find_ups_product( hdf5 )
 find_ups_geant4( )
 if(DEFINED ENV{CAFFE_LIB} )
   find_ups_product(caffe)
@@ -69,7 +68,7 @@ find_ups_product( larrecodnn )
 find_package(TensorFlow 2.6.0 QUIET EXPORT)
 find_ups_product( libtorch )
 find_package(Torch REQUIRED)
-
+find_package(HDF5 REQUIRED EXPORT)
 
 # macros for artdaq_dictionary and simple_plugin
 include(ArtDictionary)
