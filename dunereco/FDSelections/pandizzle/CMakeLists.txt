@@ -9,7 +9,6 @@ art_make( LIBRARY_NAME PandizzleAlg
 	  	        lardataobj_RawData
 	  	        lardataobj_RecoBase
 	  	        lardata_RecoObjects 
-#larreco_Deprecated
 	  	        larreco_RecoAlg
          			larreco_Calorimetry
 	  	        larpandora_LArPandoraInterface
@@ -27,11 +26,11 @@ art_make( LIBRARY_NAME PandizzleAlg
             ${ROOT_TMVA}
             larsim_Utils
             NeutrinoEnergyRecoAlg
-
 MODULE_LIBRARIES PandizzleAlg
 #dune_TrackPID
 dune_TrackPID_algorithms
 dune_TrackPID_products
+
           	           ${ART_FRAMEWORK_CORE}
 	  	           ${ART_FRAMEWORK_PRINCIPAL}
 		       	   ${ART_FRAMEWORK_SERVICES_REGISTRY}
