@@ -758,8 +758,6 @@ FDSelection::CCNuSelection::CCNuSelection(fhicl::ParameterSet const & pset)
 
 void FDSelection::CCNuSelection::analyze(art::Event const & evt)
 {
-    std::cout << "YO YOY YO YOY O" << std::endl;
-
   Reset(); //Reset at the start of the event
   //Get the generic stuff that can be pulled from the top of the record
 
@@ -2747,7 +2745,7 @@ void FDSelection::CCNuSelection::GetRecoShowerInfo(art::Event const & evt){
     }
 
     // fill pandrizzle variables
-    FDSelection::PandrizzleAlg::Record pandrizzleRecord(fPandrizzleAlg.RunPID(current_shower, TVector3(fRecoNuVtxX, fRecoNuVtxY, fRecoNuVtxZ), evt));
+    FDSelection::PandrizzleAlg::Record pandrizzleRecord(fPandrizzleAlg.RunPID(current_shower, evt));//fPandrizzleAlg.RunPID(current_shower, TVector3(fRecoNuVtxX, fRecoNuVtxY, fRecoNuVtxZ), evt));
 
     fRecoShowerPandrizzleEvalRatio[i_shower]     = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kEvalRatio);
     fRecoShowerPandrizzleConcentration[i_shower] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kConcentration);
@@ -2967,7 +2965,7 @@ void FDSelection::CCNuSelection::RunShowerSelection(art::Event const & evt)
   }
 
   //Pandrizzle
-  FDSelection::PandrizzleAlg::Record pandrizzleRecord(fPandrizzleAlg.RunPID(sel_shower, TVector3(fRecoNuVtxX, fRecoNuVtxY, fRecoNuVtxZ), evt));
+  FDSelection::PandrizzleAlg::Record pandrizzleRecord(fPandrizzleAlg.RunPID(sel_shower, evt));//fPandrizzleAlg.RunPID(sel_shower, TVector3(fRecoNuVtxX, fRecoNuVtxY, fRecoNuVtxZ), evt));
   fSelShowerPandrizzleEvalRatio     = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kEvalRatio);
   fSelShowerPandrizzleConcentration = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kConcentration);
   fSelShowerPandrizzleCoreHaloRatio = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kCoreHaloRatio);

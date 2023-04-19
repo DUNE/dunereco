@@ -15,6 +15,7 @@
 #include "canvas/Persistency/Common/PtrVector.h" 
 #include "messagefacility/MessageLogger/MessageLogger.h" 
 #include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "canvas/Persistency/Common/FindManyP.h"
 
 // LArSoft
 #include "nusimdata/SimulationBase/MCParticle.h"
@@ -86,9 +87,7 @@ namespace FDSelection
                     Record(const InputVarsToReader &inputVars, const Float_t mvaScore, const bool isFilled);
 
                     Float_t GetVar(const FDSelection::PandrizzleAlg::Vars var);
-
                     bool IsFilled();
-
                     Float_t GetMVAScore();
 
                 private:
@@ -101,68 +100,62 @@ namespace FDSelection
             PandrizzleAlg(const fhicl::ParameterSet& pset);
 
             void Run(const art::Event& evt);
-            Record RunPID(const art::Ptr<recob::Shower> pShower, const TVector3 &nuVertex, const art::Event& evt);
+            Record RunPID(const art::Ptr<recob::Shower> pShower, const art::Event& evt);
 
         private:
-            Float_t* GetVarPtr(const FDSelection::PandrizzleAlg::Vars var);
-            void SetVar(const FDSelection::PandrizzleAlg::Vars var, const Float_t value);
-
+            void InitialiseTrees();
+            void BookTreeInt(TTree *tree, std::string branch_name);
+            void BookTreeFloat(TTree *tree, std::string branch_name);
+            void BookTreeBool(TTree *tree, std::string branch_name);
+            void ProcessPFParticle(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt);
+            void FillTruthInfo(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt);
+            void FillMVAInfo(const art::Ptr<recob::Shower> pShower, const art::Event& evt);
+            void FillPandrizzleInfo(const art::Ptr<recob::Shower> pShower, const art::Event& evt);
+            void FillEnhancedPandrizzleInfo(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt);
+            void FillBackupPandrizzleInfo(const art::Ptr<recob::PFParticle> pfp, const art::Ptr<recob::Shower> pShower, const art::Event& evt);
             void GetPathwayVariables(art::Ptr<recob::Track> &trackStub, float &modularShowerPathwayLengthMin, float &modularShowerPathwayKink3D);
             float GetLargest3DPathwayKink(art::Ptr<recob::Track> &trackStub);
             void SetInitialRegionVariables(TVector3 &nuVertexPosition, art::Ptr<recob::Track> &trackStub);
-            double YZtoU(double y, double z);
-            double YZtoV(double y, double z);
-            double YZtoW(double y, double z);
-            const geo::Vector_t GetPandoraHitPosition(art::Ptr<recob::Hit> pHit, const art::Event& evt);
-            const geo::View_t GetPandoraHitView(art::Ptr<recob::Hit> pHit);
             void GetShowerRegionVariables(const TVector3 &nuVertex, const art::Ptr<recob::PFParticle> &pfp, art::Ptr<recob::Track> &trackStub, float &modularShowerMaxNShowerHits,
                 float &modularShowerMaxFoundHitRatio, float &modularShowerMaxOpeningAngle, float &modularShowerMaxScatterAngle, float &modularShowerMaxNuVertexChargeAsymmetry,
                 float &modularShowerMaxShowerStartChargeAsymmetry, float &modularShowerMaxNuVertexChargeWeightedMeanRadialDistance, float &modularShowerMinShowerStartMoliereRadius, 
                 const art::Event& evt);
-
             float GetShowerOpeningAngle(const geo::Vector_t &showerStart, const pandora::CartesianVector &fittedShowerDirection,
                 pandora::CartesianPointVector &cartesianPointVector);
             void GetShowerChargeDistributionVariables(const pandora::CartesianVector nuVertexPosition, const pandora::CartesianVector connectionPathwayDirection,
                 const pandora::CartesianVector &fittedShowerStart, const pandora::CartesianVector &fittedShowerDirection, std::vector<art::Ptr<recob::Hit>> &showerHits, float &nuVertexChargeAsymmetry,
                 float &showerStartChargeAsymmetry, float &nuVertexChargeWeightedMeanRadialDistance, float &showerStartMoliereRadius, const art::Event& evt);
-
-
-            void InitialiseTrees();
-            void BookTreeInt(TTree *tree, std::string branch_name);
-            void BookTreeFloat(TTree *tree, std::string branch_name);
-            std::vector<art::Ptr<recob::PFParticle> > SelectChildPFParticles(const art::Ptr<recob::PFParticle> parent_pfp, const lar_pandora::PFParticleMap & pfp_map);
-            void ProcessPFParticle(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt);
             void FillTree();
             void ResetTreeVariables();
-            art::Ptr<recob::PFParticle> GetPFParticle(const art::Ptr<recob::Shower> pShower, const art::Event& evt);
+            double YZtoU(double y, double z);
+            double YZtoV(double y, double z);
+            double YZtoW(double y, double z);
+            const geo::Vector_t GetPandoraHitPosition(art::Ptr<recob::Hit> pHit, const art::Event& evt);
+            const geo::View_t GetPandoraHitView(art::Ptr<recob::Hit> pHit);
 
-            std::vector<art::Ptr<recob::Hit> > GetPFPHits(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt);
+            Float_t* GetVarPtr(const FDSelection::PandrizzleAlg::Vars var);
+            void SetVar(const FDSelection::PandrizzleAlg::Vars var, const Float_t value);
+            Record ReturnEmptyRecord();
 
             std::string fNuGenModuleLabel;
             std::string fPFParticleModuleLabel;
             std::string fShowerModuleLabel;
-            std::string fCheatShowerModuleLabel;
             std::string fClusterModuleLabel;
             std::string fPIDModuleLabel;
-            std::string fCheatPIDModuleLabel;
+            std::string fPFPMetadataLabel;
             std::string fPandrizzleWeightFileName;
-            std::string fJamPandrizzleWeightFileName;
-            std::vector<int> fShowerPDGToCheat;
-            bool fCheatCharacterisation;
-            bool fShiftDisplacement;
-            bool fShiftdEdX;
+            std::string fEnhancedPandrizzleWeightFileName;
 
             TMVA::Reader fReader;
-            TMVA::Reader fJamReader;
+            TMVA::Reader fEnhancedReader;
             InputVarsToReader fInputsToReader;
 
-            Record ReturnEmptyRecord();
-
-            // Training Stuff
-            // tree
+            // Tree things
             bool fMakeTree;
             TTree *fSignalShowerTree;
             TTree *fBackgroundShowerTree;
+
+            // Configuration for BDTs
             bool fUseConcentration;
             bool fUseDisplacement;
             bool fUseDCA;
@@ -171,11 +164,12 @@ namespace FDSelection
             int fEnhancedPandrizzleHitCut;
             int fModularShowerPandrizzleHitCut;
 
-             //This thing holds all variables to be handed to the trees
+            //Hold all variables to be handed to the trees
             struct VarHolder
             {
                 std::map<std::string, int> IntVars;
                 std::map<std::string, float> FloatVars;
+                std::map<std::string, bool> BoolVars;
 
                 std::vector<float> m_trajPositionX;
                 std::vector<float> m_trajPositionY;
@@ -185,6 +179,7 @@ namespace FDSelection
             VarHolder fVarHolder;
 
             //services
+            art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
             art::ServiceHandle<art::TFileService> tfs;
     };
 }

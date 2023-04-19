@@ -6,6 +6,7 @@
 ///////////////////////////////////////////////
 
 #include "PandizzleAlg.h"
+#include "canvas/Persistency/Common/FindOneP.h"
 #include "larsim/Utils/TruthMatchUtils.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
@@ -333,34 +334,29 @@ void FDSelection::PandizzleAlg::FillTrackVariables(const art::Ptr<recob::PFParti
 
   art::Ptr<recob::Track> pfp_track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel);
 
-  //Get the track handle
-  art::Handle< std::vector<recob::Track> > trackListHandle;
-  if (!(evt.getByLabel(fTrackModuleLabel, trackListHandle))){
-    mf::LogWarning("PandizzleAlg") << "Unable to find std::vector<recob::Track> with module label: " << fTrackModuleLabel;
-    return;
-  }
-
   CalculateTrackDeflection(pfp_track);
   CalculateTrackLengthVariables(pfp, evt);
 
   //PID
-  art::FindManyP<anab::MVAPIDResult> fmpidt(trackListHandle, evt, fPIDModuleLabel);
-  std::vector<art::Ptr<anab::MVAPIDResult> > pids = fmpidt.at(pfp_track.key());
+  art::FindOneP<anab::MVAPIDResult> findPIDResult(std::vector<art::Ptr<recob::Track> >{pfp_track}, evt, fPIDModuleLabel);
+  art::Ptr<anab::MVAPIDResult> pid(findPIDResult.at(0));
 
-  art::Ptr<anab::MVAPIDResult> pid = pids[0];
-  fVarHolder.FloatVars["PFPTrackEvalRatio"] = pid->evalRatio;
-  fVarHolder.FloatVars["PFPTrackConcentration"] = pid->concentration;
-  fVarHolder.FloatVars["PFPTrackCoreHaloRatio"] = pid->coreHaloRatio;
-  fVarHolder.FloatVars["PFPTrackConicalness"] = pid->conicalness;
-  fVarHolder.FloatVars["PFPTrackdEdxStart"] = pid->dEdxStart;
-  fVarHolder.FloatVars["PFPTrackdEdxEnd"] = pid->dEdxEnd;
-  fVarHolder.FloatVars["PFPTrackdEdxEndRatio"] = pid->dEdxEndRatio;
-  std::map<std::string,double> mvaOutMap = pid->mvaOutput;
-  fVarHolder.FloatVars["PFPTrackMuonMVA"] = mvaOutMap["muon"];
-  fVarHolder.FloatVars["PFPTrackProtonMVA"] = mvaOutMap["proton"];
-  fVarHolder.FloatVars["PFPTrackPionMVA"] = mvaOutMap["pion"];
-  fVarHolder.FloatVars["PFPTrackPhotonMVA"] = mvaOutMap["photon"];
-  fVarHolder.FloatVars["PFPTrackElectronMVA"] = mvaOutMap["electron"];
+  if (pid.isAvailable())
+  {
+    fVarHolder.FloatVars["PFPTrackEvalRatio"] = pid->evalRatio;
+    fVarHolder.FloatVars["PFPTrackConcentration"] = pid->concentration;
+    fVarHolder.FloatVars["PFPTrackCoreHaloRatio"] = pid->coreHaloRatio;
+    fVarHolder.FloatVars["PFPTrackConicalness"] = pid->conicalness;
+    fVarHolder.FloatVars["PFPTrackdEdxStart"] = pid->dEdxStart;
+    fVarHolder.FloatVars["PFPTrackdEdxEnd"] = pid->dEdxEnd;
+    fVarHolder.FloatVars["PFPTrackdEdxEndRatio"] = pid->dEdxEndRatio;
+    std::map<std::string,double> mvaOutMap = pid->mvaOutput;  
+    fVarHolder.FloatVars["PFPTrackMuonMVA"] = mvaOutMap["muon"];
+    fVarHolder.FloatVars["PFPTrackProtonMVA"] = mvaOutMap["proton"];
+    fVarHolder.FloatVars["PFPTrackPionMVA"] = mvaOutMap["pion"];
+    fVarHolder.FloatVars["PFPTrackPhotonMVA"] = mvaOutMap["photon"];
+    fVarHolder.FloatVars["PFPTrackElectronMVA"] = mvaOutMap["electron"];
+  }
 
   return;
 }

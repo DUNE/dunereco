@@ -206,7 +206,7 @@ art::Ptr<recob::Shower> FDSelectionTools::HighestPandrizzleScoreRecoVertexShower
             continue;
     }
 
-    FDSelection::PandrizzleAlg::Record pandrizzleRecord(fPandrizzleAlg.RunPID(shower, TVector3(fRecoNuVtxX, fRecoNuVtxY, fRecoNuVtxZ), evt));
+    FDSelection::PandrizzleAlg::Record pandrizzleRecord(fPandrizzleAlg.RunPID(shower, evt));
     float pandrizzleBDTMethod = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kBDTMethod);
     double pandrizzleScore = pandrizzleRecord.GetMVAScore();
 

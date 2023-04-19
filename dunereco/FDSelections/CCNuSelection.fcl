@@ -19,6 +19,7 @@ CCNuSelection:
    SpacePointModuleLabel:       "pandora"
    ClusterModuleLabel:          "pandora"
    PIDModuleLabel:              "pid"
+   PFPMetadataLabel:            "pandora"
    ParticleIDModuleLabel:       "pandorapid"
    HitsModuleLabel:             "linecluster"
    POTModuleLabel:              "generator"
