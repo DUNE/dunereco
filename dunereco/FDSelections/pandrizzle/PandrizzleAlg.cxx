@@ -34,29 +34,29 @@
 
 namespace
 {
-    constexpr Float_t kDefValue(std::numeric_limits<Float_t>::lowest());
+  constexpr Float_t kDefValue(std::numeric_limits<Float_t>::lowest());
 
-    using namespace FDSelection;
+  using namespace FDSelection;
 
-    void Reset(PandrizzleAlg::InputVarsToReader &inputVarsToReader)
+  void Reset(PandrizzleAlg::InputVarsToReader &inputVarsToReader)
+  {
+    for (PandrizzleAlg::Vars var = PandrizzleAlg::kEvalRatio; var < PandrizzleAlg::kTerminatingValue; var=static_cast<PandrizzleAlg::Vars>(static_cast<int>(var)+1)) 
     {
-        for (PandrizzleAlg::Vars var = PandrizzleAlg::kEvalRatio; var < PandrizzleAlg::kTerminatingValue; var=static_cast<PandrizzleAlg::Vars>(static_cast<int>(var)+1)) 
-        {
-            auto [itr, inserted] = inputVarsToReader.try_emplace(var, std::make_unique<Float_t>(kDefValue));
-            if (!inserted)
-                *(itr->second.get()) = kDefValue;
-        }
+      auto [itr, inserted] = inputVarsToReader.try_emplace(var, std::make_unique<Float_t>(kDefValue));
+      if (!inserted)
+       *(itr->second.get()) = kDefValue;
     }
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 FDSelection::PandrizzleAlg::Record::Record(const InputVarsToReader &inputVarsToReader, const Float_t mvaScore, const bool isFilled) :
-    fMVAScore(mvaScore),
-    fIsFilled(isFilled)
+  fMVAScore(mvaScore),
+  fIsFilled(isFilled)
 {
-    for (PandrizzleAlg::Vars var = PandrizzleAlg::kEvalRatio; var < PandrizzleAlg::kTerminatingValue; var=static_cast<PandrizzleAlg::Vars>(static_cast<int>(var)+1)) 
-        fInputs.try_emplace(var, *(inputVarsToReader.at(var)));
+  for (PandrizzleAlg::Vars var = PandrizzleAlg::kEvalRatio; var < PandrizzleAlg::kTerminatingValue; var=static_cast<PandrizzleAlg::Vars>(static_cast<int>(var)+1)) 
+    fInputs.try_emplace(var, *(inputVarsToReader.at(var)));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -80,31 +80,33 @@ FDSelection::PandrizzleAlg::PandrizzleAlg(const fhicl::ParameterSet& pset) :
     fEnhancedPandrizzleHitCut(pset.get<int>("EnhancedPandrizzleHitCut", 100)),
     fModularShowerPandrizzleHitCut(pset.get<int>("ModularShowerPandrizzleHitCut", 25))
 {
+std::cout << "setting up pandrizzle... "<< std::endl;
+
     Reset(fInputsToReader);
 
-    fReader.AddVariable("EvalRatio",GetVarPtr(kEvalRatio));
+    fReader.AddVariable("EvalRatio", GetVarPtr(kEvalRatio));
 
     if (fUseConcentration)
-      fReader.AddVariable("Concentration",GetVarPtr(kConcentration));
+      fReader.AddVariable("Concentration", GetVarPtr(kConcentration));
 
-    fReader.AddVariable("CoreHaloRatio",GetVarPtr(kCoreHaloRatio));
-    fReader.AddVariable("Conicalness",GetVarPtr(kConicalness));
-    fReader.AddVariable("dEdxBestPlane",GetVarPtr(kdEdxBestPlane));
+    fReader.AddVariable("CoreHaloRatio", GetVarPtr(kCoreHaloRatio));
+    fReader.AddVariable("Conicalness", GetVarPtr(kConicalness));
+    fReader.AddVariable("dEdxBestPlane", GetVarPtr(kdEdxBestPlane));
 
     if (fUseDisplacement)
-      fReader.AddVariable("Displacement",GetVarPtr(kDisplacement));
+      fReader.AddVariable("Displacement", GetVarPtr(kDisplacement));
 
     if (fUseDCA)
-      fReader.AddVariable("DCA",GetVarPtr(kDCA));
+      fReader.AddVariable("DCA", GetVarPtr(kDCA));
 
-    fReader.AddVariable("Wideness",GetVarPtr(kWideness));
-    fReader.AddVariable("EnergyDensity",GetVarPtr(kEnergyDensity));
+    fReader.AddVariable("Wideness", GetVarPtr(kWideness));
+    fReader.AddVariable("EnergyDensity", GetVarPtr(kEnergyDensity));
 
     if (fUseModularShowerVariables)
     {
-        fReader.AddVariable("ModularShowerPathwayLengthMin",GetVarPtr(kModularShowerPathwayLengthMin));
-        fReader.AddVariable("ModularShowerMaxNShowerHits",GetVarPtr(kModularShowerMaxNShowerHits));
-        fReader.AddVariable("ModularShowerMaxNuVertexChargeWeightedMeanRadialDistance",GetVarPtr(kModularShowerMaxNuVertexChargeWeightedMeanRadialDistance));
+        fReader.AddVariable("ModularShowerPathwayLengthMin", GetVarPtr(kModularShowerPathwayLengthMin));
+        fReader.AddVariable("ModularShowerMaxNShowerHits", GetVarPtr(kModularShowerMaxNShowerHits));
+        fReader.AddVariable("ModularShowerMaxNuVertexChargeWeightedMeanRadialDistance", GetVarPtr(kModularShowerMaxNuVertexChargeWeightedMeanRadialDistance));
     }
 
     const std::string weightFileName(fPandrizzleWeightFileName);
@@ -115,18 +117,18 @@ FDSelection::PandrizzleAlg::PandrizzleAlg(const fhicl::ParameterSet& pset) :
 
     if (fUseBDTVariables)
     {
-      fEnhancedReader.AddVariable("EvalRatio",GetVarPtr(kEvalRatio));
-      fEnhancedReader.AddVariable("Concentration",GetVarPtr(kConcentration));
-      fEnhancedReader.AddVariable("CoreHaloRatio",GetVarPtr(kCoreHaloRatio));
-      fEnhancedReader.AddVariable("Conicalness",GetVarPtr(kConicalness));
-      fEnhancedReader.AddVariable("dEdxBestPlane",GetVarPtr(kdEdxBestPlane));
-      fEnhancedReader.AddVariable("Displacement",GetVarPtr(kDisplacement));
+      fEnhancedReader.AddVariable("EvalRatio", GetVarPtr(kEvalRatio));
+      fEnhancedReader.AddVariable("Concentration", GetVarPtr(kConcentration));
+      fEnhancedReader.AddVariable("CoreHaloRatio", GetVarPtr(kCoreHaloRatio));
+      fEnhancedReader.AddVariable("Conicalness", GetVarPtr(kConicalness));
+      fEnhancedReader.AddVariable("dEdxBestPlane", GetVarPtr(kdEdxBestPlane));
+      fEnhancedReader.AddVariable("Displacement", GetVarPtr(kDisplacement));
 
       if (fUseDCA)
-        fEnhancedReader.AddVariable("DCA",GetVarPtr(kDCA));
+        fEnhancedReader.AddVariable("DCA", GetVarPtr(kDCA));
 
-      fEnhancedReader.AddVariable("Wideness",GetVarPtr(kWideness));
-      fEnhancedReader.AddVariable("EnergyDensity",GetVarPtr(kEnergyDensity));
+      fEnhancedReader.AddVariable("Wideness", GetVarPtr(kWideness));
+      fEnhancedReader.AddVariable("EnergyDensity", GetVarPtr(kEnergyDensity));
       fEnhancedReader.AddVariable("PathwayLengthMin", GetVarPtr(kPathwayLengthMin));
       fEnhancedReader.AddVariable("MaxShowerStartPathwayScatteringAngle2D", GetVarPtr(kMaxShowerStartPathwayScatteringAngle2D));
       fEnhancedReader.AddVariable("MaxNPostShowerStartHits", GetVarPtr(kMaxNPostShowerStartHits));
@@ -1223,7 +1225,7 @@ FDSelection::PandrizzleAlg::Record FDSelection::PandrizzleAlg::RunPID(const art:
   }
   else
   {
-    ReturnEmptyRecord();
+    return ReturnEmptyRecord();
   }
 
   if (fVarHolder.BoolVars["PandrizzleVarsFilled"])
@@ -1236,7 +1238,7 @@ FDSelection::PandrizzleAlg::Record FDSelection::PandrizzleAlg::RunPID(const art:
   }
   else
   {
-    ReturnEmptyRecord();
+    return ReturnEmptyRecord();
   }
 
   std::vector<art::Ptr<recob::Hit>> allShowerHits(dune_ana::DUNEAnaPFParticleUtils::GetHits(pfp, evt, fClusterModuleLabel));
@@ -1266,7 +1268,7 @@ FDSelection::PandrizzleAlg::Record FDSelection::PandrizzleAlg::RunPID(const art:
   if (fUseModularShowerVariables && (nShowerHits > fModularShowerPandrizzleHitCut))
   {
     if (!fVarHolder.BoolVars["BackupPandrizzleVarsFilled"])
-      ReturnEmptyRecord();
+      return ReturnEmptyRecord();
 
     SetVar(kModularShowerPathwayLengthMin, fVarHolder.FloatVars["ModularShowerPathwayLengthMin"]);
     SetVar(kModularShowerMaxNuVertexChargeWeightedMeanRadialDistance, fVarHolder.FloatVars["ModularShowerMaxNuVertexChargeWeightedMeanRadialDistance"]);

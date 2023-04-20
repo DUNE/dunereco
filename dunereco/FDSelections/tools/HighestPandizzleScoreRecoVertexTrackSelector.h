@@ -31,24 +31,8 @@ namespace FDSelectionTools{
 
       std::string fTrackModuleLabel;
       std::string fPFParticleModuleLabel;
-      std::string fPandizzleWeightFileName;
 
       FDSelection::PandizzleAlg fPandizzleAlg;
-      TMVA::Reader fPandizzleReader;
-
-      float fTMVAPFPMichelNHits;
-      float fTMVAPFPMichelElectronMVA;
-      float fTMVAPFPMichelRecoEnergyPlane2;
-      float fTMVAPFPTrackDeflecAngleSD;
-      float fTMVAPFPTrackLength;
-      float fTMVAPFPTrackEvalRatio;
-      float fTMVAPFPTrackConcentration;
-      float fTMVAPFPTrackCoreHaloRatio;
-      float fTMVAPFPTrackConicalness;
-      float fTMVAPFPTrackdEdxStart;
-      float fTMVAPFPTrackdEdxEnd;
-      float fTMVAPFPTrackdEdxEndRatio;
-      float fTMVAPFPTrackPIDA;
   };
 }
 

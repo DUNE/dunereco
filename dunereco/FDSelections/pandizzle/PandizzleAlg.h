@@ -42,6 +42,7 @@
 
 // ROOT
 #include "TTree.h"
+#include "TMVA/Reader.h"
 
 namespace FDSelection {
   class PandizzleAlg;
@@ -50,28 +51,66 @@ namespace FDSelection {
 class FDSelection::PandizzleAlg {
 
  public:
+  enum Vars{
+    kMichelNHits = 0,
+    kMichelElectronMVA,
+    kMichelRecoEnergyPlane2,
+    kTrackDeflecAngleSD,
+    kTrackLength,
+    kEvalRatio,
+    kConcentration,
+    kCoreHaloRatio,
+    kConicalness,
+    kdEdxStart,
+    kdEdxEnd,
+    kdEdxEndRatio,
+    kTerminatingValue //terminates the enum and not an actual variable
+  };
+
+  using InputVarsToReader = std::map<Vars, std::unique_ptr<Float_t>>;
+
+  class Record {
+    public:
+      Record(const InputVarsToReader &inputVars, const Float_t mvaScore, const bool isFilled);
+
+      Float_t GetVar(const FDSelection::PandizzleAlg::Vars var);
+      bool IsFilled();
+      Float_t GetMVAScore();
+
+    private:
+      using InputVars = std::map<Vars, Float_t>;
+      InputVars fInputs;
+      Float_t fMVAScore;
+      bool fIsFilled;
+  };
+
   PandizzleAlg(const fhicl::ParameterSet& pset);
 
   void Run(const art::Event& evt);
-  void ProcessPFParticle(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt);
-
-  int GetIntVar(std::string name) { return fVarHolder.IntVars[name]; };
-  float GetFloatVar(std::string name) { return fVarHolder.FloatVars[name]; };
-  bool GetBoolVar(std::string name) { return fVarHolder.BoolVars[name]; };
+  Record RunPID(const art::Ptr<recob::Track> pTrack, const art::Event& evt);
 
  private:
   void InitialiseTrees();
   void BookTreeInt(TTree *tree, std::string branch_name);
   void BookTreeFloat(TTree *tree, std::string branch_name);
   void BookTreeBool(TTree *tree, std::string branch_name);
-  void FillTruthInfo(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt);
+  void ProcessPFParticle(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt);
   int CountPFPWithPDG(const std::vector<art::Ptr<recob::PFParticle> > & pfps, int pdg);
+  void FillTruthInfo(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt);
+  void FillMVAVariables(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt);
   void FillMichelElectronVariables(const art::Ptr<recob::PFParticle> mu_pfp, const art::Event& evt);
   void FillTrackVariables(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt);
   void CalculateTrackDeflection(const art::Ptr<recob::Track> track);
   void CalculateTrackLengthVariables(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt);
   void FillTree();
   void ResetTreeVariables();
+
+  Float_t* GetVarPtr(const FDSelection::PandizzleAlg::Vars var);
+  void SetVar(const FDSelection::PandizzleAlg::Vars var, const Float_t value);
+  Record ReturnEmptyRecord();
+
+  //Algs
+  shower::ShowerEnergyAlg fShowerEnergyAlg;
 
   // module labels
   std::string fTrackModuleLabel;
@@ -81,16 +120,17 @@ class FDSelection::PandizzleAlg {
   std::string fSpacePointModuleLabel;
   std::string fClusterModuleLabel;
 
+  //Input params
+  double fIPMichelCandidateDistance;
+
   // tree
   bool fMakeTree;
   TTree* fSignalTrackTree;
   TTree *fBackgroundTrackTree;
 
-  //Input params
-  double fIPMichelCandidateDistance;
-
-  //Algs
-  shower::ShowerEnergyAlg fShowerEnergyAlg;
+  std::string fPandizzleWeightFileName;
+  TMVA::Reader fPandizzleReader;
+  InputVarsToReader fInputsToReader;
 
   struct VarHolder
   {
@@ -105,5 +145,35 @@ class FDSelection::PandizzleAlg {
   art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
   art::ServiceHandle<art::TFileService> tfs;
 };
+
+Float_t FDSelection::PandizzleAlg::Record::GetVar(const FDSelection::PandizzleAlg::Vars var)
+{
+  return (fInputs.at(var));
+}
+
+bool FDSelection::PandizzleAlg::Record::IsFilled()
+{
+  return fIsFilled;
+}
+
+Float_t FDSelection::PandizzleAlg::Record::GetMVAScore()
+{
+  return fMVAScore;
+}
+
+Float_t* FDSelection::PandizzleAlg::GetVarPtr(const FDSelection::PandizzleAlg::Vars var)
+{
+  return fInputsToReader.at(var).get();
+}
+
+void FDSelection::PandizzleAlg::SetVar(const FDSelection::PandizzleAlg::Vars var, const Float_t value)
+{
+  std::map<Vars, std::unique_ptr<Float_t> >::iterator itr(fInputsToReader.find(var));
+
+  if (itr != fInputsToReader.end())
+    *(itr->second.get()) = value;
+
+  return;
+}
 
 #endif

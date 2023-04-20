@@ -1,3 +1,4 @@
+
 ///////////////////////////////////////////////
 // PandizzleAlg.cxx
 //
@@ -12,18 +13,70 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "dunereco/AnaUtils/DUNEAnaEventUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaPFParticleUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaTrackUtils.h"
+
+namespace
+{
+  constexpr Float_t kDefValue(std::numeric_limits<Float_t>::lowest());
+
+  using namespace FDSelection;
+
+  void Reset(PandizzleAlg::InputVarsToReader &inputVarsToReader)
+  {
+    for (PandizzleAlg::Vars var = PandizzleAlg::kMichelNHits; var < PandizzleAlg::kTerminatingValue; var=static_cast<PandizzleAlg::Vars>(static_cast<int>(var)+1))
+    {
+      auto [itr, inserted] = inputVarsToReader.try_emplace(var, std::make_unique<Float_t>(kDefValue));
+      if (!inserted)
+        *(itr->second.get()) = kDefValue;
+    }
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FDSelection::PandizzleAlg::Record::Record(const InputVarsToReader &inputVarsToReader, const Float_t mvaScore, const bool isFilled) :
+  fMVAScore(mvaScore),
+  fIsFilled(isFilled)
+{
+  for (PandizzleAlg::Vars var = PandizzleAlg::kMichelNHits; var < PandizzleAlg::kTerminatingValue; var=static_cast<PandizzleAlg::Vars>(static_cast<int>(var)+1)) 
+    fInputs.try_emplace(var, *(inputVarsToReader.at(var)));
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 FDSelection::PandizzleAlg::PandizzleAlg(const fhicl::ParameterSet& pset) :
-  fShowerEnergyAlg(pset.get<fhicl::ParameterSet>("ShowerEnergyAlg"))
+  fShowerEnergyAlg(pset.get<fhicl::ParameterSet>("ShowerEnergyAlg")),
+  fTrackModuleLabel(pset.get<std::string>("ModuleLabels.TrackModuleLabel")),
+  fShowerModuleLabel(pset.get<std::string>("ModuleLabels.ShowerModuleLabel")),
+  fPIDModuleLabel(pset.get<std::string>("ModuleLabels.PIDModuleLabel")),
+  fPFParticleModuleLabel(pset.get<std::string>("ModuleLabels.PFParticleModuleLabel")),
+  fSpacePointModuleLabel( pset.get<std::string>("ModuleLabels.SpacePointModuleLabel")),
+  fClusterModuleLabel(pset.get<std::string>("ModuleLabels.ClusterModuleLabel")),
+  fIPMichelCandidateDistance(pset.get<double>("MichelCandidateDistance")),
+  fMakeTree(pset.get<bool>("MakeTree", false)),
+  fPandizzleWeightFileName(pset.get< std::string > ("PandizzleWeightFileName")),
+  fPandizzleReader("", 0)
 {
-  fTrackModuleLabel  = pset.get<std::string>("ModuleLabels.TrackModuleLabel");
-  fShowerModuleLabel = pset.get<std::string>("ModuleLabels.ShowerModuleLabel");
-  fPIDModuleLabel    = pset.get<std::string>("ModuleLabels.PIDModuleLabel");
-  fPFParticleModuleLabel = pset.get<std::string>("ModuleLabels.PFParticleModuleLabel");
-  fSpacePointModuleLabel = pset.get<std::string>("ModuleLabels.SpacePointModuleLabel");
-  fClusterModuleLabel = pset.get<std::string>("ModuleLabels.ClusterModuleLabel");
-  fIPMichelCandidateDistance = pset.get<double>("MichelCandidateDistance");
-  fMakeTree = pset.get<bool>("MakeTree", false);
+  Reset(fInputsToReader);
+
+  fPandizzleReader.AddVariable("PFPMichelNHits", GetVarPtr(kMichelNHits));
+  fPandizzleReader.AddVariable("PFPMichelElectronMVA", GetVarPtr(kMichelElectronMVA)); 
+  fPandizzleReader.AddVariable("PFPMichelRecoEnergyPlane2", GetVarPtr(kMichelRecoEnergyPlane2));
+  fPandizzleReader.AddVariable("PFPTrackDeflecAngleSD", GetVarPtr(kTrackDeflecAngleSD));
+  fPandizzleReader.AddVariable("PFPTrackLength", GetVarPtr(kTrackLength));
+  fPandizzleReader.AddVariable("PFPTrackEvalRatio", GetVarPtr(kEvalRatio));
+  fPandizzleReader.AddVariable("PFPTrackConcentration", GetVarPtr(kConcentration));
+  fPandizzleReader.AddVariable("PFPTrackCoreHaloRatio", GetVarPtr(kCoreHaloRatio));
+  fPandizzleReader.AddVariable("PFPTrackConicalness", GetVarPtr(kConicalness));
+  fPandizzleReader.AddVariable("PFPTrackdEdxStart", GetVarPtr(kdEdxStart));
+  fPandizzleReader.AddVariable("PFPTrackdEdxEnd", GetVarPtr(kdEdxEnd));
+  fPandizzleReader.AddVariable("PFPTrackdEdxEndRatio", GetVarPtr(kdEdxEndRatio));
+
+  const std::string weightFileName(fPandizzleWeightFileName);
+  std::string weightFilePath;
+  cet::search_path sP("FW_SEARCH_PATH");
+  sP.find_file(weightFileName, weightFilePath);
+  fPandizzleReader.BookMVA("BDTG", weightFilePath);
 
   if (fMakeTree)
   {
@@ -68,6 +121,7 @@ void FDSelection::PandizzleAlg::InitialiseTrees() {
     BookTreeFloat(tree,"PFPTrackDeflecAngleVar");
     BookTreeFloat(tree,"PFPTrackDeflecAngleSD");
     BookTreeInt(tree,"PFPTrackDeflecNAngles");
+    BookTreeBool(tree, "MVAVarsFilled");
     BookTreeFloat(tree,"PFPTrackEvalRatio");
     BookTreeFloat(tree,"PFPTrackConcentration");
     BookTreeFloat(tree,"PFPTrackCoreHaloRatio");
@@ -154,12 +208,30 @@ void FDSelection::PandizzleAlg::ProcessPFParticle(const art::Ptr<recob::PFPartic
   
   FillTruthInfo(pfp, evt);
 
+  FillMVAVariables(pfp, evt);
+
   if (child_pfps.size() != 0)
     FillMichelElectronVariables(pfp, evt);
 
   FillTrackVariables(pfp, evt);
 
   return;
+}
+
+
+///////////////////////////////////////////////////////
+
+int FDSelection::PandizzleAlg::CountPFPWithPDG(const std::vector<art::Ptr<recob::PFParticle> > & pfps, int pdg)
+{
+  int NPFP = 0;
+
+  for (art::Ptr<recob::PFParticle> pfp : pfps)
+  {
+    int pfp_pdg = pfp->PdgCode();
+    if (pfp_pdg == pdg) NPFP++;
+  }
+
+  return NPFP;
 }
 
 ///////////////////////////////////////////////////////
@@ -207,17 +279,33 @@ void FDSelection::PandizzleAlg::FillTruthInfo(const art::Ptr<recob::PFParticle> 
 
 ///////////////////////////////////////////////////////
 
-int FDSelection::PandizzleAlg::CountPFPWithPDG(const std::vector<art::Ptr<recob::PFParticle> > & pfps, int pdg)
+void FDSelection::PandizzleAlg::FillMVAVariables(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt)
 {
-  int NPFP = 0;
 
-  for (art::Ptr<recob::PFParticle> pfp : pfps)
+  if (!dune_ana::DUNEAnaPFParticleUtils::IsTrack(pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel))
+    return;
+
+  art::Ptr<recob::Track> pfp_track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel);
+  art::FindOneP<anab::MVAPIDResult> findPIDResult(std::vector<art::Ptr<recob::Track> >{pfp_track}, evt, fPIDModuleLabel);
+  art::Ptr<anab::MVAPIDResult> pid(findPIDResult.at(0));
+
+  if (pid.isAvailable())
   {
-    int pfp_pdg = pfp->PdgCode();
-    if (pfp_pdg == pdg) NPFP++;
+    fVarHolder.FloatVars["PFPTrackEvalRatio"] = pid->evalRatio;
+    fVarHolder.FloatVars["PFPTrackConcentration"] = pid->concentration;
+    fVarHolder.FloatVars["PFPTrackCoreHaloRatio"] = pid->coreHaloRatio;
+    fVarHolder.FloatVars["PFPTrackConicalness"] = pid->conicalness;
+    fVarHolder.FloatVars["PFPTrackdEdxStart"] = pid->dEdxStart;
+    fVarHolder.FloatVars["PFPTrackdEdxEnd"] = pid->dEdxEnd;
+    fVarHolder.FloatVars["PFPTrackdEdxEndRatio"] = pid->dEdxEndRatio;
+    std::map<std::string,double> mvaOutMap = pid->mvaOutput;  
+    fVarHolder.FloatVars["PFPTrackMuonMVA"] = mvaOutMap["muon"];
+    fVarHolder.FloatVars["PFPTrackProtonMVA"] = mvaOutMap["proton"];
+    fVarHolder.FloatVars["PFPTrackPionMVA"] = mvaOutMap["pion"];
+    fVarHolder.FloatVars["PFPTrackPhotonMVA"] = mvaOutMap["photon"];
+    fVarHolder.FloatVars["PFPTrackElectronMVA"] = mvaOutMap["electron"];
+    fVarHolder.BoolVars["MVAVarsFilled"] = true;
   }
-
-  return NPFP;
 }
 
 ///////////////////////////////////////////////////////
@@ -336,27 +424,6 @@ void FDSelection::PandizzleAlg::FillTrackVariables(const art::Ptr<recob::PFParti
 
   CalculateTrackDeflection(pfp_track);
   CalculateTrackLengthVariables(pfp, evt);
-
-  //PID
-  art::FindOneP<anab::MVAPIDResult> findPIDResult(std::vector<art::Ptr<recob::Track> >{pfp_track}, evt, fPIDModuleLabel);
-  art::Ptr<anab::MVAPIDResult> pid(findPIDResult.at(0));
-
-  if (pid.isAvailable())
-  {
-    fVarHolder.FloatVars["PFPTrackEvalRatio"] = pid->evalRatio;
-    fVarHolder.FloatVars["PFPTrackConcentration"] = pid->concentration;
-    fVarHolder.FloatVars["PFPTrackCoreHaloRatio"] = pid->coreHaloRatio;
-    fVarHolder.FloatVars["PFPTrackConicalness"] = pid->conicalness;
-    fVarHolder.FloatVars["PFPTrackdEdxStart"] = pid->dEdxStart;
-    fVarHolder.FloatVars["PFPTrackdEdxEnd"] = pid->dEdxEnd;
-    fVarHolder.FloatVars["PFPTrackdEdxEndRatio"] = pid->dEdxEndRatio;
-    std::map<std::string,double> mvaOutMap = pid->mvaOutput;  
-    fVarHolder.FloatVars["PFPTrackMuonMVA"] = mvaOutMap["muon"];
-    fVarHolder.FloatVars["PFPTrackProtonMVA"] = mvaOutMap["proton"];
-    fVarHolder.FloatVars["PFPTrackPionMVA"] = mvaOutMap["pion"];
-    fVarHolder.FloatVars["PFPTrackPhotonMVA"] = mvaOutMap["photon"];
-    fVarHolder.FloatVars["PFPTrackElectronMVA"] = mvaOutMap["electron"];
-  }
 
   return;
 }
@@ -516,7 +583,47 @@ void FDSelection::PandizzleAlg::ResetTreeVariables()
   return;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FDSelection::PandizzleAlg::Record FDSelection::PandizzleAlg::RunPID(const art::Ptr<recob::Track> pTrack, const art::Event& evt) 
+{
+  std::cout << "yo yo yo yo " << std::endl;
+  art::Ptr<recob::PFParticle> pfp = dune_ana::DUNEAnaTrackUtils::GetPFParticle(pTrack, evt, fTrackModuleLabel);
+
+  fVarHolder.BoolVars["MVAVarsFilled"] = false;
+
+  ResetTreeVariables();
+  ProcessPFParticle(pfp, evt);
+
+  if (fVarHolder.BoolVars["MVAVarsFilled"])
+  {
+    SetVar(kMichelNHits, (float)fVarHolder.IntVars["PFPMichelNHits"]);
+    SetVar(kMichelElectronMVA, fVarHolder.FloatVars["PFPMichelElectronMVA"]);
+    SetVar(kMichelRecoEnergyPlane2, fVarHolder.FloatVars["PFPMichelRecoEnergyPlane2"]);
+    SetVar(kTrackDeflecAngleSD, fVarHolder.FloatVars["PFPTrackDeflecAngleSD"]);
+    SetVar(kTrackLength, fVarHolder.FloatVars["PFPTrackLength"]);
+    SetVar(kEvalRatio, fVarHolder.FloatVars["PFPTrackEvalRatio"]);
+    SetVar(kConcentration, fVarHolder.FloatVars["PFPTrackConcentration"]);
+    SetVar(kCoreHaloRatio, fVarHolder.FloatVars["PFPTrackCoreHaloRatio"]);
+    SetVar(kConicalness, fVarHolder.FloatVars["PFPTrackConicalness"]);
+    SetVar(kdEdxStart, fVarHolder.FloatVars["PFPTrackdEdxStart"]);
+    SetVar(kdEdxEnd, fVarHolder.FloatVars["PFPTrackdEdxEnd"]);
+    SetVar(kdEdxEndRatio, fVarHolder.FloatVars["PFPTrackdEdxEndRatio"]);
+
+  std::cout << "yo yo yo yo 2" << std::endl;
+    return Record(fInputsToReader, fPandizzleReader.EvaluateMVA("BDTG"), true);
+  }
+  std::cout << "yo yo yo yo 3" << std::endl;
+  return ReturnEmptyRecord();
+}
+
 ////////////////////////
 
+FDSelection::PandizzleAlg::Record FDSelection::PandizzleAlg::ReturnEmptyRecord()
+{
+    Reset(fInputsToReader);
+    return Record(fInputsToReader, kDefValue, false);
+}
 
+////////////////////////////////////////////////////////////////////////////////////////////////
 
