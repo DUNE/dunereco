@@ -401,8 +401,8 @@ private:
   double fSelShowerPandrizzleWideness;
   double fSelShowerPandrizzleEnergyDensity;
   double fSelShowerPandrizzleBDTMethod;
-  double fSelShowerJamPandrizzleMVAScore;
-  double fSelShowerPandrizzleMVAScore;
+  double fSelShowerEnhancedPandrizzleScore;
+  double fSelShowerBackupPandrizzleScore;
   bool   fSelShowerPandrizzleIsFilled;
   ////////////////////////////////////////
   // All showers info
@@ -479,8 +479,8 @@ private:
   double fRecoShowerPandrizzleWideness[kDefMaxNRecoShowers];
   double fRecoShowerPandrizzleEnergyDensity[kDefMaxNRecoShowers];
   double fRecoShowerPandrizzleBDTMethod[kDefMaxNRecoShowers];
-  double fRecoShowerJamPandrizzleMVAScore[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleMVAScore[kDefMaxNRecoShowers];
+  double fRecoShowerEnhancedPandrizzleScore[kDefMaxNRecoShowers];
+  double fRecoShowerBackupPandrizzleScore[kDefMaxNRecoShowers];
   bool   fRecoShowerPandrizzleIsFilled[kDefMaxNRecoShowers];
   ////////////////////////////////////////
   //Event-level
@@ -514,7 +514,6 @@ private:
   std::string fCVNProductInstance;
   std::string fNumuEnergyRecoModuleLabel;
   std::string fNueEnergyRecoModuleLabel;
-  std::string fPandizzleWeightFileName;
   ////////////////////////////////////////
   //Algs
   bool fMakeSelectionTrainingTrees;
@@ -555,7 +554,6 @@ FDSelection::CCNuSelection::CCNuSelection(fhicl::ParameterSet const & pset) :
   fCVNProductInstance(pset.get<std::string>("ModuleLabels.CVNProductInstance")),
   fNumuEnergyRecoModuleLabel(pset.get<std::string>("ModuleLabels.NumuEnergyRecoModuleLabel")),
   fNueEnergyRecoModuleLabel(pset.get<std::string>("ModuleLabels.NueEnergyRecoModuleLabel")),
-  fPandizzleWeightFileName(pset.get<std::string>("PandizzleWeightFileName")),
   fMakeSelectionTrainingTrees(pset.get<bool>("MakeSelectionTrainingTrees")),
   fPandizzleAlg(pset),
   fPandrizzleAlg(pset),
@@ -860,8 +858,8 @@ void FDSelection::CCNuSelection::beginJob()
     fTree->Branch("SelShowerPandrizzleWideness",&fSelShowerPandrizzleWideness);
     fTree->Branch("SelShowerPandrizzleEnergyDensity",&fSelShowerPandrizzleEnergyDensity);
     fTree->Branch("SelShowerPandrizzleBDTMethod", &fSelShowerPandrizzleBDTMethod);
-    fTree->Branch("SelShowerJamPandrizzleMVAScore",&fSelShowerJamPandrizzleMVAScore);
-    fTree->Branch("SelShowerPandrizzleMVAScore",&fSelShowerPandrizzleMVAScore);
+    fTree->Branch("SelShowerEnhancedPandrizzleScore",&fSelShowerEnhancedPandrizzleScore);
+    fTree->Branch("SelShowerBackupPandrizzleScore",&fSelShowerBackupPandrizzleScore);
     fTree->Branch("SelShowerPandrizzleIsFilled",&fSelShowerPandrizzleIsFilled);
 
     fTree->Branch("NRecoShowers",&fNRecoShowers);
@@ -938,8 +936,8 @@ void FDSelection::CCNuSelection::beginJob()
     fTree->Branch("RecoShowerPandrizzleWideness",&fRecoShowerPandrizzleWideness, "RecoShowerPandrizzleWideness[NRecoShowers]/D");
     fTree->Branch("RecoShowerPandrizzleEnergyDensity",&fRecoShowerPandrizzleEnergyDensity, "RecoShowerPandrizzleEnergyDensity[NRecoShowers]/D");
     fTree->Branch("RecoShowerPandrizzleBDTMethod", &fRecoShowerPandrizzleBDTMethod, "RecoShowerPandrizzleBDTMethod[NRecoShowers]/D");
-    fTree->Branch("RecoShowerJamPandrizzleMVAScore",&fRecoShowerJamPandrizzleMVAScore, "RecoShowerJamPandrizzleMVAScore[NRecoShowers]/D"); 
-    fTree->Branch("RecoShowerPandrizzleMVAScore",&fRecoShowerPandrizzleMVAScore, "RecoShowerPandrizzleMVAScore[NRecoShowers]/D");
+    fTree->Branch("RecoShowerEnhancedPandrizzleScore",&fRecoShowerEnhancedPandrizzleScore, "RecoShowerEnhancedPandrizzleScore[NRecoShowers]/D"); 
+    fTree->Branch("RecoShowerBackupPandrizzleScore",&fRecoShowerBackupPandrizzleScore, "RecoShowerBackupPandrizzleScore[NRecoShowers]/D");
     fTree->Branch("RecoShowerPandrizzleIsFilled",&fRecoShowerPandrizzleIsFilled, "RecoShowerPandrizzleIsFilled[NRecoShowers]/O");
 
     fTree->Branch("CVNResultNue", &fCVNResultNue);
@@ -1270,8 +1268,8 @@ void FDSelection::CCNuSelection::Reset()
   fSelShowerPandrizzleWideness      = kDefDoub;
   fSelShowerPandrizzleEnergyDensity = kDefDoub;
   fSelShowerPandrizzleBDTMethod = kDefDoub;
-  fSelShowerJamPandrizzleMVAScore = kDefDoub;
-  fSelShowerPandrizzleMVAScore      = kDefDoub;
+  fSelShowerEnhancedPandrizzleScore = kDefDoub;
+  fSelShowerBackupPandrizzleScore      = kDefDoub;
 
   fSelShowerPandrizzleIsFilled      = 0;
 
@@ -1370,8 +1368,8 @@ void FDSelection::CCNuSelection::Reset()
     fRecoShowerPandrizzleWideness[i_shower]      = kDefDoub;
     fRecoShowerPandrizzleEnergyDensity[i_shower] = kDefDoub;
     fRecoShowerPandrizzleBDTMethod[i_shower]     = kDefDoub;
-    fRecoShowerJamPandrizzleMVAScore[i_shower]   = kDefDoub;
-    fRecoShowerPandrizzleMVAScore[i_shower]      = kDefDoub;
+    fRecoShowerEnhancedPandrizzleScore[i_shower]   = kDefDoub;
+    fRecoShowerBackupPandrizzleScore[i_shower]      = kDefDoub;
     fRecoShowerPandrizzleIsFilled[i_shower]      = 0;
 
   }
@@ -2189,8 +2187,8 @@ void FDSelection::CCNuSelection::GetRecoShowerInfo(art::Event const & evt)
 
     fRecoShowerPandrizzleBDTMethod[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kBDTMethod);
     float pandrizzleScore(pandrizzleRecord.GetMVAScore());
-    fRecoShowerPandrizzleMVAScore[showerCounter] = (std::fabs(fRecoShowerPandrizzleBDTMethod[showerCounter] - 1.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
-    fRecoShowerJamPandrizzleMVAScore[showerCounter] = (std::fabs(fRecoShowerPandrizzleBDTMethod[showerCounter] - 2.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
+    fRecoShowerBackupPandrizzleScore[showerCounter] = (std::fabs(fRecoShowerPandrizzleBDTMethod[showerCounter] - 1.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
+    fRecoShowerEnhancedPandrizzleScore[showerCounter] = (std::fabs(fRecoShowerPandrizzleBDTMethod[showerCounter] - 2.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
     fRecoShowerPandrizzleIsFilled[showerCounter] = pandrizzleRecord.IsFilled();
 
     ++showerCounter;
@@ -2354,8 +2352,8 @@ void FDSelection::CCNuSelection::RunShowerSelection(art::Event const & evt)
   fSelShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kAmbiguousHitMaxUnaccountedEnergy);
   fSelShowerPandrizzleBDTMethod = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kBDTMethod);
   float pandrizzleScore(pandrizzleRecord.GetMVAScore());
-  fSelShowerPandrizzleMVAScore = (std::fabs(fSelShowerPandrizzleBDTMethod - 1.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
-  fSelShowerJamPandrizzleMVAScore = (std::fabs(fSelShowerPandrizzleBDTMethod - 2.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
+  fSelShowerBackupPandrizzleScore = (std::fabs(fSelShowerPandrizzleBDTMethod - 1.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
+  fSelShowerEnhancedPandrizzleScore = (std::fabs(fSelShowerPandrizzleBDTMethod - 2.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
   fSelShowerPandrizzleIsFilled = pandrizzleRecord.IsFilled();
   fSelShowerPandrizzleIsFilled      = pandrizzleRecord.IsFilled();
 

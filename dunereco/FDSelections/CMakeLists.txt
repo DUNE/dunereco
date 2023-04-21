@@ -1,5 +1,6 @@
 add_subdirectory(pandrizzle)
 add_subdirectory(pandizzle)
+add_subdirectory(FDSelectionData)
 
 art_make( LIBRARY_NAME FDSelection
 	  LIB_LIBRARIES larcorealg_Geometry

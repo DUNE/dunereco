@@ -161,7 +161,7 @@ namespace FDSelection
       bool fUseBDTVariables;
       bool fUseModularShowerVariables;
       int fEnhancedPandrizzleHitCut;
-      int fModularShowerPandrizzleHitCut;
+      int fBackupPandrizzleHitCut;
 
       //Hold all variables to be handed to the trees
       struct VarHolder

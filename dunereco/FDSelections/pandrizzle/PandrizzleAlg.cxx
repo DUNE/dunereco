@@ -79,10 +79,8 @@ FDSelection::PandrizzleAlg::PandrizzleAlg(const fhicl::ParameterSet& pset) :
     fUseBDTVariables(pset.get<bool>("UseBDTVariables", false)),
     fUseModularShowerVariables(pset.get<bool>("UseModularShowerVariables", false)),
     fEnhancedPandrizzleHitCut(pset.get<int>("EnhancedPandrizzleHitCut", 100)),
-    fModularShowerPandrizzleHitCut(pset.get<int>("ModularShowerPandrizzleHitCut", 25))
+    fBackupPandrizzleHitCut(pset.get<int>("BackupPandrizzleHitCut", 25))
 {
-std::cout << "setting up pandrizzle... "<< std::endl;
-
     Reset(fInputsToReader);
 
     fReader.AddVariable("EvalRatio", GetVarPtr(kEvalRatio));
@@ -1266,7 +1264,7 @@ FDSelection::PandrizzleAlg::Record FDSelection::PandrizzleAlg::RunPID(const art:
     return Record(fInputsToReader, fEnhancedReader.EvaluateMVA("BDTG"), true);
   }
 
-  if (fUseModularShowerVariables && (nShowerHits > fModularShowerPandrizzleHitCut))
+  if (fUseModularShowerVariables && (nShowerHits > fBackupPandrizzleHitCut))
   {
     if (!fVarHolder.BoolVars["BackupPandrizzleVarsFilled"])
       return ReturnEmptyRecord();
