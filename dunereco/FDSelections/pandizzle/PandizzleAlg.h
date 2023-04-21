@@ -124,7 +124,7 @@ class FDSelection::PandizzleAlg {
   double fIPMichelCandidateDistance;
 
   // tree
-  bool fMakeTree;
+  bool fMakeSelectionTrainingTrees;
   TTree* fSignalTrackTree;
   TTree *fBackgroundTrackTree;
 

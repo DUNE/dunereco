@@ -1,4 +1,3 @@
-
 ///////////////////////////////////////////////
 // PandizzleAlg.cxx
 //
@@ -53,7 +52,7 @@ FDSelection::PandizzleAlg::PandizzleAlg(const fhicl::ParameterSet& pset) :
   fSpacePointModuleLabel( pset.get<std::string>("ModuleLabels.SpacePointModuleLabel")),
   fClusterModuleLabel(pset.get<std::string>("ModuleLabels.ClusterModuleLabel")),
   fIPMichelCandidateDistance(pset.get<double>("MichelCandidateDistance")),
-  fMakeTree(pset.get<bool>("MakeTree", false)),
+  fMakeSelectionTrainingTrees(pset.get<bool>("MakeSelectionTrainingTrees")),
   fPandizzleWeightFileName(pset.get< std::string > ("PandizzleWeightFileName")),
   fPandizzleReader("", 0)
 {
@@ -78,7 +77,7 @@ FDSelection::PandizzleAlg::PandizzleAlg(const fhicl::ParameterSet& pset) :
   sP.find_file(weightFileName, weightFilePath);
   fPandizzleReader.BookMVA("BDTG", weightFilePath);
 
-  if (fMakeTree)
+  if (fMakeSelectionTrainingTrees)
   {
       InitialiseTrees();
       ResetTreeVariables();
@@ -88,8 +87,8 @@ FDSelection::PandizzleAlg::PandizzleAlg(const fhicl::ParameterSet& pset) :
 ////////////////////////
 
 void FDSelection::PandizzleAlg::InitialiseTrees() {
-  fSignalTrackTree = tfs->make<TTree>("DizzleSigTrackTree","Pandizzle Signal Track Tree");
-  fBackgroundTrackTree = tfs->make<TTree>("DizzleBgTrackTree","Pandizzle Background Track Tree");
+  fSignalTrackTree = tfs->make<TTree>("DizzleSigTrackTree", "Pandizzle Signal Track Tree");
+  fBackgroundTrackTree = tfs->make<TTree>("DizzleBgTrackTree", "Pandizzle Background Track Tree");
 
   for (TTree* tree : {fSignalTrackTree, fBackgroundTrackTree})
   {

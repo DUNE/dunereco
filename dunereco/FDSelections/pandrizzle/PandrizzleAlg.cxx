@@ -1,7 +1,8 @@
 ///////////////////////////////////////////////
 // PandrizzleAlg.cxx
 //
-// D Brailsford
+// Electron PID
+// I Mawby, D Brailsford May 2023
 ///////////////////////////////////////////////
 
 //STL
@@ -71,7 +72,7 @@ FDSelection::PandrizzleAlg::PandrizzleAlg(const fhicl::ParameterSet& pset) :
     fEnhancedPandrizzleWeightFileName(pset.get< std::string > ("EnhancedPandrizzleWeightFileName", "")),
     fReader("", 0),
     fEnhancedReader("", 0),
-    fMakeTree(pset.get<bool>("MakeTree", false)),
+    fMakeSelectionTrainingTrees(pset.get<bool>("MakeSelectionTrainingTrees")),
     fUseConcentration(pset.get<bool>("UseConcentration", true)),
     fUseDisplacement(pset.get<bool>("UseDisplacement", true)),
     fUseDCA(pset.get<bool>("UseDCA", true)),
@@ -151,7 +152,7 @@ std::cout << "setting up pandrizzle... "<< std::endl;
       fEnhancedReader.BookMVA("BDTG", enhancedWeightFilePath);
     }
 
-    if (fMakeTree)
+    if (fMakeSelectionTrainingTrees)
     {
         InitialiseTrees();
         ResetTreeVariables();
