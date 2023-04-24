@@ -32,6 +32,7 @@
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 
+#include "Pandora/PandoraInternal.h"
 // c++
 #include <map>
 #include <memory>
@@ -40,8 +41,6 @@
 // ROOT
 #include "TMVA/Reader.h"
 #include "TTree.h"
-
-#include "larpandoracontent/LArObjects/LArTwoDSlidingFitResult.h"
 
 namespace FDSelection
 {
@@ -136,7 +135,6 @@ namespace FDSelection
       void SetVar(const FDSelection::PandrizzleAlg::Vars var, const Float_t value);
       Record ReturnEmptyRecord();
 
-      std::string fNuGenModuleLabel;
       std::string fPFParticleModuleLabel;
       std::string fShowerModuleLabel;
       std::string fClusterModuleLabel;

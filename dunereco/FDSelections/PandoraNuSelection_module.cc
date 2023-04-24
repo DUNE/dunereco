@@ -100,6 +100,10 @@ void PandoraNuSelection::produce(art::Event& evt)
     pandoraNuSelection->selShowerEnhancedPandrizzleScore = kDefDoub;
   }
 
+  std::cout << "pandoraNuSelection->selTrackPandizzleScore: " << pandoraNuSelection->selTrackPandizzleScore << std::endl;
+  std::cout << "pandoraNuSelection->selShowerBackupPandrizzleScore: " << pandoraNuSelection->selShowerBackupPandrizzleScore << std::endl;
+  std::cout << "pandoraNuSelection->selShowerEnhancedPandrizzleScore: " << pandoraNuSelection->selShowerEnhancedPandrizzleScore << std::endl;
+
   evt.put(std::move(pandoraNuSelection));
 }
 
