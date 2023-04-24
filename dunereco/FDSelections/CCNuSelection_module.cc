@@ -1616,7 +1616,7 @@ void FDSelection::CCNuSelection::GetTruthInfo(art::Event const & evt)
 
 void FDSelection::CCNuSelection::FillVertexInfo(art::Event const & evt)
 {
-  if(!dune_ana::DUNEAnaEventUtils::HasNeutrino(evt, fPFParticleModuleLabel))
+  if (!dune_ana::DUNEAnaEventUtils::HasNeutrino(evt, fPFParticleModuleLabel))
     return;
 
   art::Ptr<recob::PFParticle> nu_pfp = dune_ana::DUNEAnaEventUtils::GetNeutrino(evt, fPFParticleModuleLabel);

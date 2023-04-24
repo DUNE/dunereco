@@ -586,7 +586,6 @@ void FDSelection::PandizzleAlg::ResetTreeVariables()
 
 FDSelection::PandizzleAlg::Record FDSelection::PandizzleAlg::RunPID(const art::Ptr<recob::Track> pTrack, const art::Event& evt) 
 {
-  std::cout << "yo yo yo yo " << std::endl;
   art::Ptr<recob::PFParticle> pfp = dune_ana::DUNEAnaTrackUtils::GetPFParticle(pTrack, evt, fTrackModuleLabel);
 
   fVarHolder.BoolVars["MVAVarsFilled"] = false;
@@ -609,10 +608,9 @@ FDSelection::PandizzleAlg::Record FDSelection::PandizzleAlg::RunPID(const art::P
     SetVar(kdEdxEnd, fVarHolder.FloatVars["PFPTrackdEdxEnd"]);
     SetVar(kdEdxEndRatio, fVarHolder.FloatVars["PFPTrackdEdxEndRatio"]);
 
-  std::cout << "yo yo yo yo 2" << std::endl;
     return Record(fInputsToReader, fPandizzleReader.EvaluateMVA("BDTG"), true);
   }
-  std::cout << "yo yo yo yo 3" << std::endl;
+
   return ReturnEmptyRecord();
 }
 

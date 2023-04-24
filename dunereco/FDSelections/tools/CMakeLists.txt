@@ -1,4 +1,5 @@
 simple_plugin(LongestRecoVertexTrackSelector "tool"
+dunereco_AnaUtils
     	  	        lardataobj_RecoBase
     	  	        larpandora_LArPandoraInterface
                 ${ROOT_BASIC_LIB_LIST}
