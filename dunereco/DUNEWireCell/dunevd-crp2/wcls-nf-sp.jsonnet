@@ -116,6 +116,8 @@ local wcls_output = {
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
       frame_scale: [0.005, 0.005],
+      summary_tags: ['threshold'],
+      summary_operator: {'threshold': 'set'}, 
       // nticks: params.daq.nticks,
       chanmaskmaps: [],
       nticks: -1,
@@ -228,6 +230,7 @@ local retagger = g.pnode({
       merge: {
         'gauss\\d\\d\\d': 'gauss',
         'wiener\\d\\d\\d': 'wiener',
+        'threshold\\d\\d\\d': 'threshold',
       },
     }],
   },
