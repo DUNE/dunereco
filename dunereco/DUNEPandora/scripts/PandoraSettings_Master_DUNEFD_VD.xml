@@ -30,7 +30,7 @@
         <ShowDetector>true</ShowDetector>
     </algorithm-->
 
-    <algorithm type = "LArMaster">
+    <algorithm type = "LArDLMaster">
         <LArCaloHitVersion>2</LArCaloHitVersion>
         <CRSettingsFile>PandoraSettings_Cosmic_DUNEFD_VD.xml</CRSettingsFile>
         <NuSettingsFile>PandoraSettings_Neutrino_DUNEFD_VD.xml</NuSettingsFile>

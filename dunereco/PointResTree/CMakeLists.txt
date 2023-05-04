@@ -22,10 +22,13 @@ simple_plugin(PointResTree "module"
 		${MF_UTILITIES}
 		${CETLIB}
 		${ROOT_BASIC_LIB_LIST}
-        dunereco_AnaUtils
+    dunereco_SNpointing
+    dunereco_AnaUtils
+
 )
 
 install_headers()
 install_fhicl()
 install_source()
-install_scripts()  
+dunereco_SNpointing
+ 

@@ -38,7 +38,7 @@ art_make(BASENAME_ONLY
   gsl
   hep_hpc_hdf5
   hep_hpc_Utilities
-  ${HDF5_LIBRARIES}
+  HDF5::HDF5
   MVAAlg
   Boost::filesystem
   MODULE_LIBRARIES 

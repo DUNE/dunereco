@@ -181,6 +181,42 @@ wirecell_dunevd_coldbox_mc:
     }
 }
 
+
+wirecell_dunevd_coldboxcrp2_mc:
+{
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["Pgrapher"]
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"]
+        // needs to be found via your WIRECELL_PATH 
+        configs: ["pgrapher/experiment/dunevd-crp2/wcls-sim-drift-simchannel.jsonnet"]
+        inputers: ["wclsSimDepoSource:electron"]
+        outputers: [
+            "wclsSimChannelSink:postdrift",
+            "wclsFrameSaver:simdigits"
+        ]
+
+        // Make available parameters via Jsonnet's std.extVar()
+//        params: {
+//            active_cru: 'tde' // 'bde'
+//        }
+	structs: {
+           # number of time samples
+           nticks: @local::vdcb_crp2_services.DetectorPropertiesService.NumberTimeSamples
+           clock_speed: @local::vdcb_crp2_services.DetectorClocksService.ClockSpeedTPC
+	   lifetime: @local::vdcb_crp2_services.DetectorPropertiesService.Electronlifetime
+	   DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+	   DT: @local::dunefd_largeantparameters.TransverseDiffusion
+           efield: @local::vdcb_crp2_services.DetectorPropertiesService.Efield[0] # kV/cm
+           temperature: @local::vdcb_services.DetectorPropertiesService.Temperature # K
+	}
+    }
+}
+
+
+
+
 wirecell_protodunevd_mc:
 {
     module_type : WireCellToolkit
@@ -242,6 +278,56 @@ dune10kt_1x2x6_mc_nfsp:
         # configuration for the Wire-Cell Toolkit components.  It is
         # take as relative to entries in WIRECELL_PATH.
         configs: ["pgrapher/experiment/dune10kt-1x2x6/wcls-nf-sp.jsonnet"]
+
+        # Set the "external variables" required by the Jsonnet.
+        params : {
+            # This locates the input raw::RawDigit collection in the art::Event 
+            raw_input_label: "tpcrawdecoder:daq"
+
+            # Set "data" vs. "sim".  The epoch below probably should follow suit.
+            reality: "data"
+            # reality: "sim"
+
+            # if epoch is "dynamic" you MUST add
+            # "wclsMultiChannelNoiseDB" to "inputers" and must NOT
+            # add it if not "dynamic"
+            # epoch: "dynamic"
+            # epoch: "perfect"
+            epoch: "after"
+
+            # Save output signal waveforms (recob::Wire) in "sparse" or "dense" form
+            signal_output_form: "sparse"
+        }
+    }
+}
+
+dune10kt_1x2x2_mc_nfsp: 
+{
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["Pgrapher"]
+        
+        # Libraries in which to look for WCT components
+        plugins: ["WireCellGen", "WireCellSigProc", "WireCellSio", "WireCellPgraph", "WireCellLarsoft"]
+        
+        # The tool marshals the art::Event to these visitors before.
+        # See notes below in params.
+        inputers: ["wclsRawFrameSource"
+                   # To use wclsMultiChannelNoiseDB you must also put epoch:dynamic below
+                   # and you must have geo::Geometry service in your environment.
+                   # ,"wclsMultiChannelNoiseDB"  
+               ]
+        
+        # or after the WCT app is run.  These names MUST be used identically in the Jsonnet
+        # fixme: https:#github.com/WireCell/larwirecell/issues/3
+        #outputers: ["wclsFrameSaver:nfsaver", "wclsFrameSaver:spsaver"]
+        outputers: ["wclsFrameSaver:spsaver"]
+
+        # This sets the "main" Jsonnet file which provides the 
+        # configuration for the Wire-Cell Toolkit components.  It is
+        # take as relative to entries in WIRECELL_PATH.
+        configs: ["pgrapher/experiment/dune10kt-1x2x2/wcls-nf-sp.jsonnet"]
 
         # Set the "external variables" required by the Jsonnet.
         params : {
@@ -342,6 +428,86 @@ tpcrawdecoder_dunefd_horizdrift_1x2x6 : {
 
    }
 }
+
+dunefd_horizdrift_1x2x6_sim_nfsp : {
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["Pgrapher"] # TbbFlow, Pgrapher
+        logsinks: ["stdout:info", "wcls-sim-drift-simchannel-nf-sp.log:debug"]
+        loglevels: ["debug"]
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
+        # needs to be found via your WIRECELL_PATH
+        configs: ["pgrapher/experiment/dune10kt-1x2x6/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
+        # Contract note: these exact "type:name" must be used to identify
+        # the configuration data structures for these components in the Jsonnet.
+        inputers: ["wclsSimDepoSource:"]
+        outputers: [
+            "wclsSimChannelSink:postdrift",
+            "wclsFrameSaver:spsignals"
+        ]
+        # Make available parameters via Jsonnet's std.extVar()
+        params: {
+        }
+        structs: {
+          # Longitudinal diffusion constant [cm2/s]
+          DL: 4.0
+          # Transverse diffusion constant [cm2/s]
+          DT: 8.8
+          # Electron lifetime [ms]
+          lifetime: 10
+          # Electron drift speed, assumes a certain applied E-field [mm/us]
+          driftSpeed: 1.60563
+          # G4RefTime [us]
+          G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+        }
+    }
+}
+
+tpcrawdecoder_dunefd_horizdrift_1x2x2 : {
+
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+
+      logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
+      loglevels: ["debug"]
+
+      plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
+
+      // needs to be found via your WIRECELL_PATH
+      configs: ["pgrapher/experiment/dune10kt-1x2x2/wcls-sim-drift-simchannel-splusn.jsonnet"]
+
+
+      // Contract note: these exact "type:name" must be used to identify
+      // the configuration data structures for these components in the Jsonnet.
+
+      inputers: ["wclsSimDepoSource:"]
+      outputers: [
+         "wclsSimChannelSink:postdrift",
+         "wclsFrameSaver:simdigits"
+      ]
+
+      // Make available parameters via Jsonnet's std.extVar()
+      params: {
+      }
+      structs: {
+        # Longitudinal diffusion constant [cm2/s]
+        DL: 4.0
+        # Transverse diffusion constant [cm2/s]
+        DT: 8.8
+        # Electron lifetime [ms]
+        lifetime: 10
+        # Electron drift speed, assumes a certain applied E-field [mm/us]
+        driftSpeed: 1.60563
+        # G4RefTime [us]
+        G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+      }
+
+   }
+}
+
 
 tpcrawdecoder_dunefd_vertdrift_2view : {
    module_type : WireCellToolkit
@@ -1218,6 +1384,35 @@ dune_vd_crp2_nfsp : {
          signal_output_form: "sparse"
          use_magnify: "false"
       }
+      structs: {
+         clock_speed: @local::vdcb_crp2_services.DetectorClocksService.ClockSpeedTPC
+      }
+
+   }
+}
+
+dune_vd_crp2_sp : {
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+      logsinks: ["stdout"]
+      loglevels: ["debug", "pgraph:info"]
+      plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
+      inputers: ["wclsCookedFrameSource"]
+      outputers: ["wclsFrameSaver:spsaver"]
+      configs: ["pgrapher/experiment/dunevd-crp2/wcls-sp.jsonnet"]
+      params : {
+         raw_input_label: "caldata:dataprep"
+         reality: "data"
+         epoch: "after"
+         signal_output_form: "sparse"
+         use_magnify: "false"
+      }
+      structs: {
+         clock_speed: @local::vdcb_crp2_services.DetectorClocksService.ClockSpeedTPC
+      }
+
    }
 }
 
