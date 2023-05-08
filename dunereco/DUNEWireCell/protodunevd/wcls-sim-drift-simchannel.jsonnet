@@ -24,7 +24,7 @@ local params = base {
     // Transverse diffusion constant
     DT: std.extVar('DT') * wc.cm2 / wc.s,
     // Electron lifetime
-    lifetime: std.extVar('lifetime') * wc.ms,
+    lifetime: std.extVar('lifetime') * wc.us,
     // Electron drift speed
     // drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
     drift_speed: util.drift_velocity(std.extVar('efield'), std.extVar('temperature')) * wc.mm / wc.us,
