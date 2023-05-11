@@ -33,8 +33,12 @@ local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
 
 local data_params = import 'params.jsonnet';
 local simu_params = import 'simparams.jsonnet';
-local params = if reality == 'data' then data_params else simu_params;
-
+local base = if reality == 'data' then data_params else simu_params;
+local params = base {
+    daq: super.daq {
+      tick: 1.0/std.extVar('clock_speed') * wc.us,
+    },
+};
 
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local tools = tools_maker(params);
@@ -57,12 +61,13 @@ local sp_maker = import 'pgrapher/experiment/dunevd-crp2/sp.jsonnet';
 // must be the emtpy string.
 local wcls_input = {
   adc_digits: g.pnode({
-    type: 'wclsCookedFrameSource',
+    type: 'wclsRawFrameSource',
     name: '',
     data: {
       art_tag: raw_input_label,
       frame_tags: ['orig'],  // this is a WCT designator
       // nticks: params.daq.nticks,
+      tick: params.daq.tick,
     },
   }, nin=0, nout=1),
 
@@ -111,6 +116,8 @@ local wcls_output = {
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
       frame_scale: [0.005, 0.005],
+      summary_tags: ['threshold'],
+      summary_operator: {'threshold': 'set'}, 
       // nticks: params.daq.nticks,
       chanmaskmaps: [],
       nticks: -1,
@@ -158,7 +165,7 @@ local nfsp_pipes = [
              [
                chsel_pipes[n],
                sinks.orig_pipe[n],
-               // nf_pipes[n],
+               nf_pipes[n],
                // sinks.raw_pipe[n],
                sp_pipes[n],
                sinks.decon_pipe[n],
@@ -167,7 +174,7 @@ local nfsp_pipes = [
              ]
              else [
                chsel_pipes[n],
-               // nf_pipes[n],
+               nf_pipes[n],
                sp_pipes[n],
              ],
              'nfsp_pipe_%d' % n)
@@ -223,6 +230,7 @@ local retagger = g.pnode({
       merge: {
         'gauss\\d\\d\\d': 'gauss',
         'wiener\\d\\d\\d': 'wiener',
+        'threshold\\d\\d\\d': 'threshold',
       },
     }],
   },
