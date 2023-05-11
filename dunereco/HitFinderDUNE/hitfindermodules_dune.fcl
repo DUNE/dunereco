@@ -183,7 +183,6 @@ dune35t_clustercrawlerhit.CCHitFinderAlg.MinRMS:             [ 2.3, 2.3, 2.1 ]
 dune35t_clustercrawlerhit.CCHitFinderAlg.AllowNoHitWire:     2
 
 dunefd_disambigcheat:     @local::standard_disambigcheat
-dunefd_gaushitfinder:     @local::dune35t_gaushitfinder
 dunefd_apahitfinder:      @local::apa_hitfinder
 dunefd_hitcheater:	  @local::standard_hitcheater
 dunefd_fasthitfinder:     @local::dune35t_fasthitfinder
@@ -192,19 +191,25 @@ dunefd_hitfinderfd:       @local::dune35t_hitfinder35t
 dunefd_hitfinderfd.DisambigAlg.DoCleanUpHits:  false
 dunefd_hitfinderfd.DisambigAlg.DistanceCutClu: 100
 
+
+dunefd_gaushitfinder:     @local::dune35t_gaushitfinder
+dunefd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane0.RoiThreshold: 2.0 
+dunefd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane1.RoiThreshold: 2.0 
+dunefd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane2.RoiThreshold: 2.0 
+dunefd_gaushitfinder.InitWidth: [6.0, 6.0, 6.0]
+dunefd_gaushitfinder.AreaNorms: [13.25, 13.25, 13.25]
+dunefd_gaushitfinder.MaxMultiHit: 4
+dunefd_gaushitfinder.Chi2NDF: 50
+#dunefd_gaushitfinder.LongMaxHits: [ 25, 25, 25 ]
+#dunefd_gaushitfinder.LongPulseWidth: [ 10, 10, 10 ]
+dunefd_gaushitfinder.PeakFitter:	@local::peakfitter_mrqdt
+dunefd_gaushitfinder.CalDataModuleLabel: "tpcrawdecoder:gauss"
+
 # gauss hit finder for VD module
-dunevdfd_gaushitfinder: @local::gaus_hitfinder
+dunevdfd_gaushitfinder: @local::dunefd_gaushitfinder
 dunevdfd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane0.RoiThreshold: 2.0 
 dunevdfd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane1.RoiThreshold: 2.0 
 dunevdfd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane2.RoiThreshold: 2.0 
-dunevdfd_gaushitfinder.InitWidth: [6.0, 6.0, 6.0]
-dunevdfd_gaushitfinder.AreaNorms: [13.25, 13.25, 13.25]
-dunevdfd_gaushitfinder.MaxMultiHit: 4
-dunevdfd_gaushitfinder.Chi2NDF: 50
-#dunevdfd_gaushitfinder.LongMaxHits: [ 25, 25, 25 ]
-#dunevdfd_gaushitfinder.LongPulseWidth: [ 10, 10, 10 ]
-dunevdfd_gaushitfinder.PeakFitter:	@local::peakfitter_mrqdt
-dunevdfd_gaushitfinder.CalDataModuleLabel: "tpcrawdecoder:gauss"
 
 protodunespmc_gaushitfinder: @local::gaus_hitfinder
 protodunespmc_gaushitfinder.HitFinderToolVec.CandidateHitsPlane0.RoiThreshold: 0.6
