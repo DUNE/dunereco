@@ -208,7 +208,7 @@ local add_noise = function(model) g.pnode({
         dft: wc.tn(tools.dft),
         model: wc.tn(model),
         nsamples: params.daq.nticks,
-        replacement_percentage: 0.02, // random optimization
+        replacement_percentage: 1.0, // random optimization
     }}, nin=1, nout=1, uses=[tools.random, tools.dft, model]);
 local noises = [add_noise(model) for model in noise_models];
 local digitizers_noise = [
@@ -222,6 +222,7 @@ local chsel_pipes = [
     data: {
       channels: std.range(2560 * n, 2560 * (n + 1) - 1),
       //tags: ['orig%d' % n], // traces tag
+      tags: ['sig'],  // traces tag
     },
   }, nin=1, nout=1)
   for n in std.range(0, std.length(tools.anodes) - 1)

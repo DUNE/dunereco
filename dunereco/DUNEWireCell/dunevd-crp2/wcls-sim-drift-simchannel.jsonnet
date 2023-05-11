@@ -17,6 +17,7 @@ local base = import 'pgrapher/experiment/dunevd-crp2/simparams.jsonnet';
 local params = base {
   daq: super.daq {
     nticks: std.extVar('nticks'),
+    tick: 1.0/std.extVar('clock_speed') * wc.us,
   },
   lar: super.lar {
     // Longitudinal diffusion constant
@@ -24,7 +25,7 @@ local params = base {
     // Transverse diffusion constant
     DT: std.extVar('DT') * wc.cm2 / wc.s,
     // Electron lifetime
-    lifetime: std.extVar('lifetime') * wc.ms,
+    lifetime: std.extVar('lifetime') * wc.us,
     // Electron drift speed
     // drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
     drift_speed: util.drift_velocity(std.extVar('efield'), std.extVar('temperature')) * wc.mm / wc.us,
