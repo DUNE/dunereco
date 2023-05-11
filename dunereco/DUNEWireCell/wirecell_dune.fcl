@@ -567,9 +567,9 @@ tpcrawdecoder_dunefd_vertdrift_2view : {
         # number of time samples
         nticks: @local::dunefdvd_detproperties.NumberTimeSamples
         # Longitudinal diffusion constant [cm2/ns] 4.0e-9
-        DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+        DL: @local::dunefdvd_largeantparameters.LongitudinalDiffusion
         # Transverse diffusion constant [cm2/ns] 8.8e-9
-        DT: @local::dunefd_largeantparameters.TransverseDiffusion
+        DT: @local::dunefdvd_largeantparameters.TransverseDiffusion
         # Electron lifetime [us] #10.4e3
         lifetime: @local::dunefdvd_detproperties.Electronlifetime
         # Electron drift speed, assumes a certain applied E-field [mm/us]
@@ -599,9 +599,9 @@ tpcrawdecoder_dunefd_vertdrift_3view: {
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
-          DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+          DL: @local::dunefdvd_largeantparameters.LongitudinalDiffusion
           # Transverse diffusion constant [cm2/ns] 8.8e-9
-          DT: @local::dunefd_largeantparameters.TransverseDiffusion
+          DT: @local::dunefdvd_largeantparameters.TransverseDiffusion
           # Electron lifetime [us] #10.4e3
           lifetime: @local::dunefdvd_detproperties.Electronlifetime
           # Electron drift speed, assumes a certain applied E-field [mm/us]
@@ -629,9 +629,9 @@ tpcrawdecoder_dunefd_vertdrift_1x8x6_3view: {
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
-          DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+          DL: @local::dunefdvd_largeantparameters.LongitudinalDiffusion
           # Transverse diffusion constant [cm2/ns] 8.8e-9
-          DT: @local::dunefd_largeantparameters.TransverseDiffusion
+          DT: @local::dunefdvd_largeantparameters.TransverseDiffusion
           # Electron lifetime [us] #10.4e3
           lifetime: @local::dunefdvd_detproperties.Electronlifetime
           # Electron drift speed, assumes a certain applied E-field [mm/us]
@@ -659,9 +659,9 @@ tpcrawdecoder_dunefd_vertdrift_1x8x14_3view: {
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
-          DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+          DL: @local::dunefdvd_largeantparameters.LongitudinalDiffusion
           # Transverse diffusion constant [cm2/ns] 8.8e-9
-          DT: @local::dunefd_largeantparameters.TransverseDiffusion
+          DT: @local::dunefdvd_largeantparameters.TransverseDiffusion
           # Electron lifetime [us] #10.4e3
           lifetime: @local::dunefdvd_detproperties.Electronlifetime
           # Electron drift speed, assumes a certain applied E-field [mm/us]
@@ -690,9 +690,9 @@ tpcrawdecoder_dunefd_vertdrift_3view_30deg: {
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
-          DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+          DL: @local::dunefdvd_largeantparameters.LongitudinalDiffusion
           # Transverse diffusion constant [cm2/ns] 8.8e-9
-          DT: @local::dunefd_largeantparameters.TransverseDiffusion
+          DT: @local::dunefdvd_largeantparameters.TransverseDiffusion
           # Electron lifetime [us] #10.4e3
           lifetime: @local::dunefdvd_detproperties.Electronlifetime
           # Electron drift speed, assumes a certain applied E-field [mm/us]
@@ -720,9 +720,9 @@ tpcrawdecoder_dunefd_vertdrift_1x8x6_3view_30deg: {
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
-          DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+          DL: @local::dunefdvd_largeantparameters.LongitudinalDiffusion
           # Transverse diffusion constant [cm2/ns] 8.8e-9
-          DT: @local::dunefd_largeantparameters.TransverseDiffusion
+          DT: @local::dunefdvd_largeantparameters.TransverseDiffusion
           # Electron lifetime [us] #10.4e3
           lifetime: @local::dunefdvd_detproperties.Electronlifetime
           # Electron drift speed, assumes a certain applied E-field [mm/us]
