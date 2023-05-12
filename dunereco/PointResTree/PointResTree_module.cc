@@ -27,6 +27,7 @@
 #include "art_root_io/TFileDirectory.h"
 #include "art_root_io/TFileService.h"
 #include "canvas/Persistency/Common/FindMany.h"
+#include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "canvas/Persistency/Common/FindOne.h"
 #include "canvas/Persistency/Common/FindOneP.h"

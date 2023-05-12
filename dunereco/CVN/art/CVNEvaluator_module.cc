@@ -20,6 +20,7 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "canvas/Persistency/Common/Assns.h"
+#include "canvas/Persistency/Common/Ptr.h"
 
 #include "dunereco/CVN/func/Result.h"
 #include "dunereco/CVN/func/PixelMap.h"

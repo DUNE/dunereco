@@ -16,6 +16,7 @@
 #include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
+#include "canvas/Persistency/Common/Ptr.h"
 
 // CVN includes
 #include "dunereco/CVN/func/SparsePixelMap.h"

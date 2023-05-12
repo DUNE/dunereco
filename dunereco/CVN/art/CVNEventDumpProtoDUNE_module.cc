@@ -25,6 +25,8 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Core/ModuleMacros.h"
 
+#include "canvas/Persistency/Common/Ptr.h"
+
 #include "dunereco/CVN/func/TrainingData.h"
 #include "dunereco/CVN/func/InteractionType.h"
 #include "dunereco/CVN/func/PixelMap.h"

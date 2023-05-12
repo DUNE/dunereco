@@ -19,6 +19,7 @@
 #include "art_root_io/TFileService.h"
 #include "art_root_io/TFileDirectory.h"
 #include "art/Framework/Core/EDAnalyzer.h"
+#include "canvas/Persistency/Common/Ptr.h"
 
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"

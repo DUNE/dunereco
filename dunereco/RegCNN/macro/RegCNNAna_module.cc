@@ -28,6 +28,7 @@
 #include "art_root_io/TFileService.h"
 #include "art_root_io/TFileDirectory.h"
 #include "art/Framework/Core/EDAnalyzer.h"
+#include "canvas/Persistency/Common/Ptr.h"
 //LArSoft
 #include "larcore/Geometry/Geometry.h"
 #include "larsim/MCCheater/BackTrackerService.h"

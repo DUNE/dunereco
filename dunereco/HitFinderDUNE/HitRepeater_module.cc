@@ -24,6 +24,7 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Core/EDProducer.h"
+#include "canvas/Persistency/Common/Ptr.h"
 
 // LArSoft Includes
 #include "larcore/Geometry/Geometry.h"

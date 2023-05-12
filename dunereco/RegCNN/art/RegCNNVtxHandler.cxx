@@ -10,6 +10,7 @@
 #include <algorithm>
 
 #include "canvas/Persistency/Common/FindManyP.h" 
+#include "canvas/Persistency/Common/Ptr.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 

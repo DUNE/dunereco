@@ -27,6 +27,7 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "canvas/Persistency/Common/Assns.h"
 #include "canvas/Persistency/Common/FindManyP.h"
+#include "canvas/Persistency/Common/Ptr.h"
 
 // LArSoft includes
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
