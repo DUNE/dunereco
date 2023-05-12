@@ -103,7 +103,7 @@ namespace cvn {
     std::vector<art::Ptr<cvn::GCNGraph>> graphs;
     auto h_graphs = evt.getHandle<std::vector<cvn::GCNGraph>>(fGraphLabel);
     if (h_graphs)
-      graphs= *h_graphs;
+      art::fill_ptr_vector(graphs, h_graphs);
 
     // If no graphs, quit
     if (graphs.size() == 0) return;

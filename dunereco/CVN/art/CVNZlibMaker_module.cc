@@ -236,7 +236,7 @@ namespace cvn {
     art::InputTag itag1(fPixelMapInput, fPixelMapInput);
     auto h_pixelmaps = evt.getHandle<std::vector<cvn::PixelMap>>(itag1);
     if (h_pixelmaps)
-      pixelmaps= *h_pixelmaps;
+      art::fill_ptr_vector(pixelmaps, h_pixelmaps);
 
     // If no pixel maps, quit
     if (pixelmaps.size() == 0) return;
@@ -247,7 +247,7 @@ namespace cvn {
     std::vector<art::Ptr<simb::MCTruth>> mctruth_list;
     auto h_mctruth = evt.getHandle<std::vector<simb::MCTruth>>(fGenieGenModuleLabel);
     if (h_mctruth)
-      mctruth_list= *h_mctruth;
+      art::fill_ptr_vector(mctruth_list, h_mctruth);
 
     art::Ptr<simb::MCTruth> mctruth = mctruth_list[0];
     simb::MCNeutrino true_neutrino = mctruth->GetNeutrino();

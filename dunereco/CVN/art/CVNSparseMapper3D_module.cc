@@ -83,7 +83,7 @@ namespace cvn {
     std::vector< art::Ptr< recob::SpacePoint > > splist;
     auto spListHandle = evt.getHandle< std::vector< recob::SpacePoint > >(fSPModuleLabel);
     if (spListHandle)
-      splist = *spListHandle;
+      art::fill_ptr_vector(splist, spListHandle);
     unsigned short nsp = splist.size();
 
     // Get assocations from spacepoints to hits

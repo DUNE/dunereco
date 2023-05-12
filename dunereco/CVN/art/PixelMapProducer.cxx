@@ -50,11 +50,11 @@ namespace cvn
   }
 
   PixelMap PixelMapProducer::CreateMap(detinfo::DetectorPropertiesData const& detProp,
-                                       const std::vector<recob::Hit>& cluster)
+                                       const std::vector< art::Ptr< recob::Hit > >& cluster)
   {
     std::vector<const recob::Hit*> newCluster;
-    for(const auto & hit : cluster){
-      newCluster.push_back(hit);
+    for(const art::Ptr<recob::Hit> hit : cluster){
+      newCluster.push_back(hit.get());
     }
     return CreateMap(detProp, newCluster);
   }
@@ -600,7 +600,7 @@ namespace cvn
   }
 
   void PixelMapProducer::GetHitTruth(detinfo::DetectorClocksData const& clockData,
-                                     const recob::Hit& hit, std::vector<int>& pdgs,
+                                     art::Ptr<recob::Hit>& hit, std::vector<int>& pdgs,
     std::vector<int>& tracks, std::vector<float>& energy, std::vector<std::string>& process) {
 
     // BackTracker and ParticleInventory

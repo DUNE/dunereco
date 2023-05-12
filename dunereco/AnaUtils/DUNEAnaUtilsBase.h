@@ -25,13 +25,13 @@ namespace dune_ana
 class DUNEAnaUtilsBase
 {
 protected:
-    template <typename T> static std::vector<T> GetProductVector(const art::Event &evt, const std::string &label);
+    template <typename T> static std::vector<art::Ptr<T>> GetProductVector(const art::Event &evt, const std::string &label);
     template <typename T, typename U> static std::vector<art::Ptr<T>> GetAssocProductVector(const art::Ptr<U> &part, const art::Event &evt, const std::string &label, const std::string &assocLabel);
     template <typename T, typename U> static art::Ptr<T> GetAssocProduct(const art::Ptr<U> &part, const art::Event &evt, const std::string &label, const std::string &assocLabel); 
 };
 
 // Implementation of the template function to get the products from the event
-template <typename T> std::vector<T> DUNEAnaUtilsBase::GetProductVector(const art::Event &evt, const std::string &label)
+template <typename T> std::vector<art::Ptr<T>> DUNEAnaUtilsBase::GetProductVector(const art::Event &evt, const std::string &label)
 {
     auto theseProds = evt.getHandle<std::vector<T>>(label);
     bool success = theseProds.isValid();
@@ -39,11 +39,12 @@ template <typename T> std::vector<T> DUNEAnaUtilsBase::GetProductVector(const ar
     if (!success)
     {
         mf::LogError("DUNEAna") << " Failed to find product with label " << label << " ... returning empty vector" << std::endl;
-        return std::vector<T>();
+        return std::vector<art::Ptr<T>>();
     }
 
     // We need to convert these to art pointers
-    std::vector<T> productVector = *theseProds;
+    std::vector<art::Ptr<T>> productVector;
+    art::fill_ptr_vector(productVector,theseProds);
 
     return productVector;
 }

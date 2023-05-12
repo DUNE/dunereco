@@ -99,7 +99,7 @@ namespace cvn {
         << fMapModuleLabel << " and instance label "
         << fMapInstanceLabel << "!" << std::endl;
     }
-    maps = *hMaps;
+    art::fill_ptr_vector(maps, hMaps);
 
     if (maps.size() > 1) throw art::Exception(art::errors::LogicError)
       << "There shouldn't be more than one SparsePixelMap per producer per event,"

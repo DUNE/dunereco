@@ -98,12 +98,11 @@ namespace cvn {
   {
 
     // Get the pixel maps
-
+    std::vector< art::Ptr< cvn::PixelMap > > pixelmaplist;
     art::InputTag itag1(fPixelMapInput, fPixelMapInput);
     auto pixelmapListHandle = evt.getHandle< std::vector< cvn::PixelMap > >(itag1);
-    if (!pixelmapListHandle) return;
-
-    const & std::vector<cvn::PixelMap> pixelmaplist = *pixelmapListHandle;
+    if (pixelmapListHandle)
+      art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
 
     std::cout << "Found " << pixelmaplist.size() << " pixel maps in event" << std::endl;
 
