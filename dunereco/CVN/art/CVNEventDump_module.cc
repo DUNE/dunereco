@@ -129,11 +129,11 @@ namespace cvn {
   {
 
     // Get the pixel maps
-    std::vector< art::Ptr< cvn::PixelMap > > pixelmaplist;
+    std::vector< cvn::PixelMap > pixelmaplist;
     art::InputTag itag1(fPixelMapInput, fPixelMapInput);
     auto pixelmapListHandle = evt.getHandle< std::vector< cvn::PixelMap > >(itag1);
     if (pixelmapListHandle)
-      art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
+      pixelmaplist = *pixelmapListHandle;
 
     // If we have no pixel map then return
     if(pixelmaplist.size() == 0) return;
@@ -141,17 +141,17 @@ namespace cvn {
     InteractionType interaction = kOther;
 
     // * monte carlo
-    std::vector<art::Ptr<simb::MCTruth> > mclist;
+    std::vector<simb::MCTruth> mclist;
     auto mctruthListHandle = evt.getHandle< std::vector<simb::MCTruth> >(fGenieGenModuleLabel);
     if (mctruthListHandle)
-      art::fill_ptr_vector(mclist, mctruthListHandle);
+      mclist = *mctruthListHandle;
 
     //unsigned short nmclist=  mclist.size();
 
     //std::cout<<"mctruth: "<<nmclist<<std::endl;
 
-    art::Ptr<simb::MCTruth> truth = mclist[0];
-    simb::MCNeutrino truthN=truth->GetNeutrino();
+    simb::MCTruth truth = mclist[0];
+    simb::MCNeutrino truthN=truth.GetNeutrino();
     //truth = mclist[0];
 
     AssignLabels labels;

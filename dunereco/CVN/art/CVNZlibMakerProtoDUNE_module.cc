@@ -136,7 +136,7 @@ namespace cvn {
     art::InputTag itag1(fPixelMapInput, fPixelMapInput);
     auto h_pixelmaps = evt.getHandle<std::vector<cvn::PixelMap>>(itag1);
     if (h_pixelmaps)
-      art::fill_ptr_vector(pixelmaps, h_pixelmaps);
+      pixelmaps = *h_pixelmaps;
 
     // If no pixel maps, quit
     if (pixelmaps.size() == 0) return;

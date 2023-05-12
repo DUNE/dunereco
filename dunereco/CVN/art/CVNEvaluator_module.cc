@@ -139,11 +139,11 @@ namespace cvn {
                                   resultCol(new std::vector<Result>);
 
     /// Load in the pixel maps
-    std::vector< art::Ptr< cvn::PixelMap > > pixelmaplist;
+    std::vector<cvn::PixelMap > pixelmaplist;
     art::InputTag itag1(fPixelMapInput, fPixelMapInput);
     auto pixelmapListHandle = evt.getHandle< std::vector< cvn::PixelMap > >(itag1);
     if (pixelmapListHandle)
-      art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
+      pixelmaplist = *pixelmapListHandle;
 
     /// Make sure we have a valid name for the CVN type
     /*
@@ -219,102 +219,6 @@ namespace cvn {
       mf::LogError("CVNEvaluator::produce") << "Exiting without processing events" << std::endl;
       return;
     }
-/*
-// Truth level debug code
-//    mf::LogInfo("CVNEvaluator::produce") << " Predicted: " << (*resultCol)[0].PredictedInteractionType() << std::endl; 
-
-    // Leigh: temporary testing code for performance
-
-    InteractionType interaction = kOther;
-
-    // * monte carlo
-    std::vector<art::Ptr<simb::MCTruth> > mclist;
-    auto mctruthListHandle = evt.getHandle< std::vector<simb::MCTruth> >("generator");
-    if (mctruthListHandle)
-      art::fill_ptr_vector(mclist, mctruthListHandle);
-
-    //unsigned short nmclist=  mclist.size();
-
-    //std::cout<<"mctruth: "<<nmclist<<std::endl;
-
-    art::Ptr<simb::MCTruth> truth = mclist[0];
-    simb::MCNeutrino truthN=truth->GetNeutrino();
-    //truth = mclist[0];
-
-    interaction = GetInteractionType(truthN);
-
-    // Get the interaction vertex from the end point of the neutrino. This is 
-    // because the start point of the lepton doesn't make sense for taus as they
-    // are decayed by the generator and not GEANT
-    TVector3 vtx = truthN.Nu().EndPosition().Vect();
-    bool isFid = (fabs(vtx.X())<310 && fabs(vtx.Y())<550 && vtx.Z()>50 && vtx.Z()<1244);
-
-
-//    if(isFid && pixelmaplist.size() > 0){
-    
-      unsigned int correctedInt = static_cast<unsigned int>(interaction);
-      if(correctedInt == 13) correctedInt = 12;
-
-    if(isFid){
-      std::cout << "This fiducial event is a true " << truthN.Nu().PdgCode() << " and is it CC? " << (truthN.CCNC()==0) << " (" << correctedInt << ")" << std::endl;
-      float nueProb = (*resultCol)[0].GetNueProbability();
-      float numuProb = (*resultCol)[0].GetNumuProbability();
-      float nutauProb = (*resultCol)[0].GetNutauProbability();
-      float ncProb = (*resultCol)[0].GetNCProbability();
-      std::cout << "Summed probabilities " << numuProb << ", " << nueProb << ", " << nutauProb << ", " << ncProb << std::endl;
-    }
-
-      unsigned int predInt = static_cast<unsigned int>((*resultCol)[0].PredictedInteractionType());
-
-      ++fTotal;
-//      std::cout << " Truth :: Predicted = " << correctedInt << " :: " << predInt << " (" << numuProb << ", " << nueProb << ", " << nutauProb << ", " << ncProb  << ")" << std::endl; 
-      if((correctedInt >= 0 && correctedInt <=3) && (predInt >= 0 && predInt <= 3)){
-        ++fCorrect;
-      }
-      if((correctedInt >= 4 && correctedInt <= 7) && (predInt >= 4 && predInt <= 7)){
-        ++fCorrect;
-      }
-      if((correctedInt >= 8 && correctedInt <=11) && (predInt >= 8 && predInt <= 11)){
-        ++fCorrect;
-      }
-      if(correctedInt == 12 && predInt == 12){
-        ++fCorrect;
-      }
-
-      if(correctedInt == predInt){
-        ++fFullyCorrect;
-      }
-
-      if(abs(truthN.Nu().PdgCode()) == 12 && truthN.CCNC()==0){
-        ++fTotNue;
-        if(truthN.Nu().E() < 2.0) ++fTotNueBins[0];
-        if(truthN.Nu().E() >= 2.0 && truthN.Nu().E() <= 6.0) ++fTotNueBins[1];
-        if(truthN.Nu().E() > 6.0) ++fTotNueBins[2];
-
-        if(nueProb > 0.7){
-          ++fSelNue;
-          if(truthN.Nu().E() < 2.0) ++fSelNueBins[0];
-          if(truthN.Nu().E() >= 2.0 && truthN.Nu().E() <= 6.0) ++fSelNueBins[1];
-          if(truthN.Nu().E() > 6.0) ++fSelNueBins[2];
-        }
-      }
-      if(abs(truthN.Nu().PdgCode()) == 14 && truthN.CCNC()==0){
-        ++fTotNumu;
-        if(truthN.Nu().E() < 2.0) ++fTotNumuBins[0];
-        if(truthN.Nu().E() >= 2.0 && truthN.Nu().E() <= 6.0) ++fTotNumuBins[1];
-        if(truthN.Nu().E() > 6.0) ++fTotNumuBins[2];
-
-        if(numuProb > 0.5){
-          ++fSelNumu;
-        if(truthN.Nu().E() < 2.0) ++fSelNumuBins[0];
-        if(truthN.Nu().E() >= 2.0 && truthN.Nu().E() <= 6.0) ++fSelNumuBins[1];
-        if(truthN.Nu().E() > 6.0) ++fSelNumuBins[2];
-        }
-      } 
-  
-    }
-*/ // End of truth level debug code
-
     evt.put(std::move(resultCol), fResultLabel);
 
   }

@@ -111,7 +111,7 @@ namespace cvn
     vector<Ptr<SpacePoint>> spacePoints;
     auto spacePointHandle = evt.getHandle<vector<SpacePoint>>(spLabel);
     if (spacePointHandle) {
-      art::fill_ptr_vector(spacePoints, spacePointHandle);
+      spacePoints = *spacePointHandle;
     }
     return GetAllNeighbours(evt, rangeCut, spacePoints);
   }
@@ -152,7 +152,7 @@ namespace cvn
     vector<Ptr<SpacePoint>> allSpacePoints;
     auto spacePointHandle = evt.getHandle<vector<SpacePoint>>(spLabel);
     if (spacePointHandle) {
-      art::fill_ptr_vector(allSpacePoints, spacePointHandle);
+      allSpacePoints = *spacePointHandle;
     }
     return GetNeighboursForRadii(evt,rangeCuts,allSpacePoints);
   }
@@ -204,7 +204,7 @@ namespace cvn
     std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
     auto spacePointHandle = evt.getHandle<std::vector<recob::SpacePoint>>(spLabel);
     if (spacePointHandle) {
-      art::fill_ptr_vector(allSpacePoints, spacePointHandle);
+      allSpacePoints = *spacePointHandle;
     }
     return GetNearestNeighbours(evt,allSpacePoints);
   }
@@ -244,7 +244,7 @@ namespace cvn
     std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
     auto spacePointHandle = evt.getHandle<std::vector<recob::SpacePoint>>(spLabel);
     if (spacePointHandle) {
-      art::fill_ptr_vector(allSpacePoints, spacePointHandle);
+      allSpacePoints = *spacePointHandle;
     }
     return GetTwoNearestNeighbours(evt,allSpacePoints);
   }
@@ -345,7 +345,7 @@ namespace cvn
         << "Could not find spacepoints with module label "
         << spLabel << "!";
     }
-    art::fill_ptr_vector(spacePoints, spacePointHandle);
+    spacePoints = *spacePointHandle;
     art::FindManyP<Hit> fmp(spacePointHandle, evt, spLabel);
     vector<vector<Ptr<Hit>>> sp2Hit(spacePoints.size());
     for (size_t spIdx = 0; spIdx < sp2Hit.size(); ++spIdx) {
@@ -418,7 +418,7 @@ namespace cvn
         << "Could not find spacepoints with module label "
         << spLabel << "!";
     }
-    art::fill_ptr_vector(spacePoints, spacePointHandle);
+    spacePoints = *spacePointHandle;
     art::FindManyP<Hit> fmp(spacePointHandle, evt, spLabel);
     vector<vector<Ptr<Hit>>> sp2Hit(spacePoints.size());
     for (size_t spIdx = 0; spIdx < sp2Hit.size(); ++spIdx) {
@@ -466,7 +466,7 @@ namespace cvn
         << "Could not find spacepoints with module label "
         << spLabel << "!";
     }
-    art::fill_ptr_vector(spacePoints, spacePointHandle);
+    spacePoints = *spacePointHandle;
     art::FindManyP<Hit> fmp(spacePointHandle, evt, spLabel);
     vector<vector<Ptr<Hit>>> sp2Hit(spacePoints.size());
     for (size_t spIdx = 0; spIdx < sp2Hit.size(); ++spIdx) {

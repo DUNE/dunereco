@@ -124,7 +124,7 @@ namespace cvn {
     std::vector< art::Ptr< recob::Wire > > hitlist;
     auto hitListHandle = evt.getHandle< std::vector< recob::Wire > >(fHitsModuleLabel);
     if (hitListHandle)
-      art::fill_ptr_vector(hitlist, hitListHandle);
+      hitlist = *hitListHandle;
     // unsigned short nhits = hitlist.size();
 
     //Declaring containers for things to be stored in event

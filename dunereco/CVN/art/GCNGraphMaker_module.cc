@@ -119,7 +119,7 @@ namespace cvn {
         << fSpacePointModuleLabel << " and instance label "
         << fSpacePointInstanceLabel << "!";
     }
-    art::fill_ptr_vector(spacePoints, spacePointHandle);
+    spacePoints = *spacePointHandle;
     art::FindManyP<recob::Hit> fmp(spacePointHandle, evt, fSpacePointModuleLabel);
     std::vector<std::vector<art::Ptr<recob::Hit>>> sp2Hit(spacePoints.size());
     for (size_t spIdx = 0; spIdx < sp2Hit.size(); ++spIdx) {

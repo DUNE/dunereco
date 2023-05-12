@@ -115,7 +115,7 @@ namespace cvn {
     std::vector<art::Ptr<recob::SpacePoint>> allSpacePoints;
     auto spacePointHandle = evt.getHandle<std::vector<recob::SpacePoint>>(fSpacePointLabel);
     if (spacePointHandle){
-      art::fill_ptr_vector(allSpacePoints, spacePointHandle);
+      allSpacePoints= *spacePointHandle;
     }
 
     // Graph space points for each slice we want to consider
@@ -166,7 +166,7 @@ namespace cvn {
       std::vector<art::Ptr<recob::SpacePoint>> eventSpacePoints;
       spacePointHandle = evt.getHandle<std::vector<recob::SpacePoint>>(fSpacePointLabel);
       if (spacePointHandle){
-        art::fill_ptr_vector(eventSpacePoints, spacePointHandle);
+        eventSpacePoints= *spacePointHandle;
       }
       //Convert this vector to a map
       std::map<unsigned int,art::Ptr<recob::SpacePoint>> mapVec;

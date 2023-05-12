@@ -69,7 +69,7 @@ namespace cvn {
       throw art::Exception(art::errors::LogicError)
         << "Could not find hits with module label " << fHitModuleLabel;
     }
-    art::fill_ptr_vector(hits, hitHandle);
+    hits= *hitHandle;
 
     // Create output
     std::unique_ptr<std::vector<cvn::GCNGraph>> graphs(new std::vector<cvn::GCNGraph>(1));

@@ -135,7 +135,7 @@ namespace cvn {
         << fGraphModuleLabel << " and instance label "
         << fGraphInstanceLabel << "!" << endl;
     }
-    art::fill_ptr_vector(graphVector, graphHandle);
+    graphVector= *graphHandle;
 
     if (graphVector.size() > 1) throw art::Exception(art::errors::LogicError)
       << "There shouldn't be more than one GCNGraph per producer per event,"
