@@ -1,5 +1,6 @@
 <lcgdict>
-  <class name="pandoranusel::PandoraNuSelection" ClassVersion="14" >
+  <class name="pandoranusel::PandoraNuSelection" ClassVersion="15" >
+   <version ClassVersion="15" checksum="1096881837"/>
    <version ClassVersion="14" checksum="3944387787"/>
    <version ClassVersion="13" checksum="2166729678"/>
    <version ClassVersion="12" checksum="3725459704"/>

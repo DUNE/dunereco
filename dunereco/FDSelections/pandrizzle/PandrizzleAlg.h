@@ -75,6 +75,8 @@ namespace FDSelection
         kModularShowerMaxNShowerHits,
         kModularShowerMaxNuVertexChargeWeightedMeanRadialDistance,
         kBDTMethod,
+        kEnhancedPandrizzleScore,
+        kBackupPandrizzleScore,
         kTerminatingValue //terminates the enum and not an actual variable
       };
 

@@ -72,8 +72,10 @@ FDSelection::PandizzleAlg::PandizzleAlg(const fhicl::ParameterSet& pset) :
   fPandizzleReader.AddVariable("PFPTrackdEdxEndRatio", GetVarPtr(kdEdxEndRatio));
 
   const std::string weightFileName(fPandizzleWeightFileName);
+  std::cout << "fPandizzleWeightFileName: " << fPandizzleWeightFileName << std::endl;
   std::string weightFilePath;
   cet::search_path sP("FW_SEARCH_PATH");
+  std::cout << "sP: " << sP << std::endl;
   sP.find_file(weightFileName, weightFilePath);
   fPandizzleReader.BookMVA("BDTG", weightFilePath);
 

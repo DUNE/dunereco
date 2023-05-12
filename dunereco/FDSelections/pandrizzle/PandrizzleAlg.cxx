@@ -68,18 +68,18 @@ FDSelection::PandrizzleAlg::PandrizzleAlg(const fhicl::ParameterSet& pset) :
     fClusterModuleLabel(pset.get<std::string>("ModuleLabels.ClusterModuleLabel")),
     fPIDModuleLabel(pset.get<std::string>("ModuleLabels.PIDModuleLabel")),
     fPFPMetadataLabel(pset.get<std::string>("ModuleLabels.PFPMetadataLabel")),
-    fPandrizzleWeightFileName(pset.get< std::string > ("PandrizzleWeightFileName")),
-    fEnhancedPandrizzleWeightFileName(pset.get< std::string > ("EnhancedPandrizzleWeightFileName", "")),
+    fPandrizzleWeightFileName(pset.get< std::string>("PandrizzleWeightFileName")),
+    fEnhancedPandrizzleWeightFileName(pset.get< std::string>("EnhancedPandrizzleWeightFileName")),
     fReader("", 0),
     fEnhancedReader("", 0),
     fMakeSelectionTrainingTrees(pset.get<bool>("MakeSelectionTrainingTrees")),
-    fUseConcentration(pset.get<bool>("UseConcentration", true)),
-    fUseDisplacement(pset.get<bool>("UseDisplacement", true)),
-    fUseDCA(pset.get<bool>("UseDCA", true)),
-    fUseBDTVariables(pset.get<bool>("UseBDTVariables", false)),
-    fUseModularShowerVariables(pset.get<bool>("UseModularShowerVariables", false)),
-    fEnhancedPandrizzleHitCut(pset.get<int>("EnhancedPandrizzleHitCut", 100)),
-    fBackupPandrizzleHitCut(pset.get<int>("BackupPandrizzleHitCut", 25))
+    fUseConcentration(pset.get<bool>("UseConcentration")),
+    fUseDisplacement(pset.get<bool>("UseDisplacement")),
+    fUseDCA(pset.get<bool>("UseDCA")),
+    fUseBDTVariables(pset.get<bool>("UseBDTVariables")),
+    fUseModularShowerVariables(pset.get<bool>("UseModularShowerVariables")),
+    fEnhancedPandrizzleHitCut(pset.get<int>("EnhancedPandrizzleHitCut")),
+    fBackupPandrizzleHitCut(pset.get<int>("BackupPandrizzleHitCut"))
 {
     Reset(fInputsToReader);
 
@@ -112,6 +112,7 @@ FDSelection::PandrizzleAlg::PandrizzleAlg(const fhicl::ParameterSet& pset) :
     std::string weightFilePath;
     cet::search_path sP("FW_SEARCH_PATH");
     sP.find_file(weightFileName, weightFilePath);
+
     fReader.BookMVA("BDTG",weightFilePath);
 
     if (fUseBDTVariables)
@@ -147,6 +148,7 @@ FDSelection::PandrizzleAlg::PandrizzleAlg(const fhicl::ParameterSet& pset) :
       std::string enhancedWeightFilePath;
       cet::search_path eSP("FW_SEARCH_PATH");
       eSP.find_file(enhancedWeightFileName, enhancedWeightFilePath);
+
       fEnhancedReader.BookMVA("BDTG", enhancedWeightFilePath);
     }
 
@@ -419,9 +421,6 @@ void FDSelection::PandrizzleAlg::FillEnhancedPandrizzleInfo(const art::Ptr<recob
   if (pfpMetadata.size() == 1)
   {
     larpandoraobj::PFParticleMetadata::PropertiesMap propertiesMap(pfpMetadata[0]->GetPropertiesMap());
-
-    if (propertiesMap.find("ElectronConnectionPathwayScore") == propertiesMap.end())
-      return;
 
     fVarHolder.FloatVars["FoundConnectionPathway"] = propertiesMap.find("ElectronConnectionPathwayScore") != propertiesMap.end() ? 1.0 : 0.0;
     fVarHolder.FloatVars["ConnectionBDTScore"] = propertiesMap.find("ElectronConnectionPathwayScore") != propertiesMap.end() ? propertiesMap.at("ElectronConnectionPathwayScore") : -100.0;
@@ -1243,6 +1242,7 @@ FDSelection::PandrizzleAlg::Record FDSelection::PandrizzleAlg::RunPID(const art:
   std::vector<art::Ptr<recob::Hit>> allShowerHits(dune_ana::DUNEAnaPFParticleUtils::GetHits(pfp, evt, fClusterModuleLabel));
   const int nShowerHits = allShowerHits.size();
 
+  // Fill enhanced Pandrizzle scores...
   if (fUseBDTVariables && (nShowerHits > fEnhancedPandrizzleHitCut) && fVarHolder.BoolVars["EnhancedPandrizzleVarsFilled"])
   {
     SetVar(kPathwayLengthMin, fVarHolder.FloatVars["PathwayLengthMin"]);
@@ -1259,23 +1259,34 @@ FDSelection::PandrizzleAlg::Record FDSelection::PandrizzleAlg::RunPID(const art:
     SetVar(kMinLargestProjectedGapSize, fVarHolder.FloatVars["MinLargestProjectedGapSize"]);
     SetVar(kNViewsWithAmbiguousHits, fVarHolder.FloatVars["NViewsWithAmbiguousHits"]);
     SetVar(kAmbiguousHitMaxUnaccountedEnergy, fVarHolder.FloatVars["AmbiguousHitMaxUnaccountedEnergy"]);
+    SetVar(kEnhancedPandrizzleScore, fEnhancedReader.EvaluateMVA("BDTG"));
     SetVar(kBDTMethod, 2);
-
-    return Record(fInputsToReader, fEnhancedReader.EvaluateMVA("BDTG"), true);
   }
 
+  // Fill backup Pandrizzle scores...
   if (fUseModularShowerVariables && (nShowerHits > fBackupPandrizzleHitCut))
   {
     if (!fVarHolder.BoolVars["BackupPandrizzleVarsFilled"])
-      return ReturnEmptyRecord();
+    {
+      // If cannot be calculated, return the correct reader
+      return (std::fabs(*fInputsToReader.at(kBDTMethod) - 2.f) < std::numeric_limits<float>::epsilon()) ? 
+        Record(fInputsToReader, *fInputsToReader.at(kEnhancedPandrizzleScore), true) : ReturnEmptyRecord();
+    }
 
     SetVar(kModularShowerPathwayLengthMin, fVarHolder.FloatVars["ModularShowerPathwayLengthMin"]);
     SetVar(kModularShowerMaxNuVertexChargeWeightedMeanRadialDistance, fVarHolder.FloatVars["ModularShowerMaxNuVertexChargeWeightedMeanRadialDistance"]);
     SetVar(kModularShowerMaxNShowerHits, fVarHolder.FloatVars["ModularShowerMaxNShowerHits"]);
   }
+ 
+  if (std::fabs(*fInputsToReader.at(kBDTMethod) - 2.f) > std::numeric_limits<float>::epsilon())
+      SetVar(kBDTMethod, 1);
 
-  SetVar(kBDTMethod, 1);
-  return Record(fInputsToReader, fReader.EvaluateMVA("BDTG"), true);
+  SetVar(kBackupPandrizzleScore, fReader.EvaluateMVA("BDTG"));
+
+  // Make sure the correct score is returned...
+  // If enhanced is filled could be calculated return that, if not return backup...
+  return (std::fabs(*fInputsToReader.at(kBDTMethod) - 2.f) < std::numeric_limits<float>::epsilon()) ? 
+    Record(fInputsToReader, *fInputsToReader.at(kEnhancedPandrizzleScore), true) : Record(fInputsToReader, *fInputsToReader.at(kBackupPandrizzleScore), true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
