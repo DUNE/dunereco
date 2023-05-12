@@ -15,6 +15,7 @@
 #include "TVectorD.h"
 #include "TF1.h"
 #include "canvas/Persistency/Common/FindManyP.h"
+#include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/FindOneP.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "lardata/Utilities/AssociationUtil.h"

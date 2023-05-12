@@ -26,6 +26,7 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Core/ModuleMacros.h"
+#include "canvas/Persistency/Common/Ptr.h"
 //#include "art/Framework/Core/FindManyP.h"
 
 // LArSoft includes

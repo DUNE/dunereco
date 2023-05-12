@@ -29,6 +29,7 @@ extern "C" {
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "fhiclcpp/ParameterSet.h"
+#include "canvas/Persistency/Common/Ptr.h"
 
 // LArSoft Includes
 #include "larcore/Geometry/Geometry.h"

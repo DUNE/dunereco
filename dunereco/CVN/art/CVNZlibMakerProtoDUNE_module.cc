@@ -15,6 +15,7 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "canvas/Utilities/Exception.h"
+#include "canvas/Persistency/Common/Ptr.h"
 
 #include "larsim/MCCheater/ParticleInventoryService.h"
 // Data products
