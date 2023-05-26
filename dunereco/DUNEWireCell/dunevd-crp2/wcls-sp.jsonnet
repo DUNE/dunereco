@@ -61,7 +61,7 @@ local sp_maker = import 'pgrapher/experiment/dunevd-crp2/sp.jsonnet';
 // must be the emtpy string.
 local wcls_input = {
   adc_digits: g.pnode({
-    type: 'wclsRawFrameSource',
+    type: 'wclsCookedFrameSource',
     name: '',
     data: {
       art_tag: raw_input_label,
@@ -165,7 +165,7 @@ local nfsp_pipes = [
              [
                chsel_pipes[n],
                sinks.orig_pipe[n],
-               nf_pipes[n],
+               // nf_pipes[n],
                // sinks.raw_pipe[n],
                sp_pipes[n],
                sinks.decon_pipe[n],
@@ -174,7 +174,7 @@ local nfsp_pipes = [
              ]
              else [
                chsel_pipes[n],
-               nf_pipes[n],
+               // nf_pipes[n],
                sp_pipes[n],
              ],
              'nfsp_pipe_%d' % n)

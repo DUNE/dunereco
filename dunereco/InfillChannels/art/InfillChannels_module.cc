@@ -32,6 +32,8 @@
 #include <iterator>
 #include <array>
 
+#undef ClassDef // Because ROOT's ClassDef macro conflicts with libtorch's class of the same name.
+
 #include <torch/script.h>
 #include <torch/torch.h>
 

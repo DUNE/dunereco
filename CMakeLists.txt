@@ -7,7 +7,7 @@
 cmake_minimum_required (VERSION 3.12...3.14 FATAL_ERROR)
 
 project(dunereco LANGUAGES CXX)
-set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.72.01d00)
+set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.75.00d00)
 
 # cetbuildtools contains our cmake modules
 find_package(cetbuildtools REQUIRED)
@@ -66,8 +66,12 @@ endif()
 find_package(TRITON QUIET EXPORT)
 find_ups_product( larrecodnn )
 find_package(TensorFlow 2.6.0 QUIET EXPORT)
-find_ups_product( libtorch )
-find_package(Torch REQUIRED)
+
+if ( DEFINED ENV{LIBTORCH_DIR})
+  find_ups_product( libtorch )
+  find_package(Torch REQUIRED)
+endif()
+
 find_package(HDF5 REQUIRED EXPORT)
 
 # macros for artdaq_dictionary and simple_plugin

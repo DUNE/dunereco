@@ -119,7 +119,7 @@ void EnergyReco::produce(art::Event& evt)
 
 art::Ptr<recob::Track> EnergyReco::GetLongestTrack(const art::Event &event)
 {
-    art::Ptr<recob::Track> pTrack(art::Ptr<recob::Track>(art::ProductID("nullTrack")));
+    art::Ptr<recob::Track> pTrack{};
     const std::vector<art::Ptr<recob::Track> > tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
     if (0 == tracks.size())
         return pTrack;
@@ -143,7 +143,7 @@ art::Ptr<recob::Shower> EnergyReco::GetHighestChargeShower(detinfo::DetectorCloc
                                                            detinfo::DetectorPropertiesData const& detProp,
                                                            const art::Event &event)
 {
-    art::Ptr<recob::Shower> pShower(art::Ptr<recob::Shower>(art::ProductID("nullShower")));
+    art::Ptr<recob::Shower> pShower{};
     const std::vector<art::Ptr<recob::Shower> > showers(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerLabel));
     if (0 == showers.size())
         return pShower;

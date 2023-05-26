@@ -4,6 +4,7 @@
 
 #include "dunereco/CVN/func/GCNFeatureUtils.h"
 #include "canvas/Persistency/Common/Assns.h"
+#include "canvas/Persistency/Common/Ptr.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "lardataobj/RecoBase/SpacePoint.h"

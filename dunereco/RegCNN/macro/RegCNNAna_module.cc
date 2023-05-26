@@ -28,6 +28,7 @@
 #include "art_root_io/TFileService.h"
 #include "art_root_io/TFileDirectory.h"
 #include "art/Framework/Core/EDAnalyzer.h"
+#include "canvas/Persistency/Common/Ptr.h"
 //LArSoft
 #include "larcore/Geometry/Geometry.h"
 #include "larsim/MCCheater/BackTrackerService.h"
@@ -700,7 +701,7 @@ void myana::RegCNNAna::reset()
 
 art::Ptr<recob::Track> myana::RegCNNAna::GetLongestTrack(const art::Event &event)
 {
-  art::Ptr<recob::Track> pTrack(art::Ptr<recob::Track>(art::ProductID("nullTrack")));
+  art::Ptr<recob::Track> pTrack{};
   const std::vector<art::Ptr<recob::Track> > tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
   if (0 == tracks.size())
     return pTrack;
@@ -747,7 +748,7 @@ art::Ptr<recob::Shower> myana::RegCNNAna::GetHighestChargeShower(detinfo::Detect
     detinfo::DetectorPropertiesData const& detProp,
     const art::Event &event)
 {
-  art::Ptr<recob::Shower> pShower(art::Ptr<recob::Shower>(art::ProductID("nullShower")));
+  art::Ptr<recob::Shower> pShower{};
   const std::vector<art::Ptr<recob::Shower> > showers(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerLabel));
   if (0 == showers.size())
     return pShower;
@@ -767,7 +768,7 @@ art::Ptr<recob::Shower> myana::RegCNNAna::GetHighestChargeShower(detinfo::Detect
 
   /*************************
   // get all PFParticles first, and then get tracks by looping all the PFParticles
-  art::Ptr<recob::Shower> pShower(art::Ptr<recob::Shower>(art::ProductID("nullShower")));
+  art::Ptr<recob::Shower> pShower{};
   // Get all PFParticles
   const std::vector<art::Ptr<recob::PFParticle>> particles = dune_ana::DUNEAnaEventUtils::GetPFParticles(event, fParticleLabel);
   if (0 == particles.size())

@@ -19,19 +19,17 @@ EventMCVarExtractor::EventMCVarExtractor(
 
 void EventMCVarExtractor::extractVars(const art::Event &evt, VarDict &vars)
 {
-    std::vector<art::Ptr<simb::MCTruth>> mcTruth;
-
     auto mcTruth_h = evt.getHandle<std::vector<simb::MCTruth>>(labelGenerator);
     if (!mcTruth_h) {
         return;
     }
 
-    art::fill_ptr_vector(mcTruth, mcTruth_h);
+    std::vector<simb::MCTruth> const& mcTruth = *mcTruth_h;
     if (mcTruth.empty()) {
         return;
     }
 
-    const auto &nuInt = mcTruth[0]->GetNeutrino();
+    const auto &nuInt = mcTruth[0].GetNeutrino();
 
     setScalarVar(vars, "isCC",   (nuInt.CCNC() == 0));
     setScalarVar(vars, "pdg",    nuInt.Nu().PdgCode());
@@ -47,4 +45,3 @@ void EventMCVarExtractor::extractVars(const art::Event &evt, VarDict &vars)
 }
 
 }
-

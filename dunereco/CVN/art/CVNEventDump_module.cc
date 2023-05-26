@@ -25,6 +25,7 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "art/Framework/Core/ModuleMacros.h"
+#include "canvas/Persistency/Common/Ptr.h"
 
 // LArSoft includes
 #include "nusimdata/SimulationBase/MCNeutrino.h"
