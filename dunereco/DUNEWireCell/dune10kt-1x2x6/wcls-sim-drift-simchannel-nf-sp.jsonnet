@@ -19,11 +19,11 @@ local fcl_params = {
 local params = params_maker(fcl_params) {
   lar: super.lar {
     // Longitudinal diffusion constant
-    DL: std.extVar('DL') * wc.cm2 / wc.ns,
+    DL: std.extVar('DL') * wc.cm2 / wc.s,
     // Transverse diffusion constant
-    DT: std.extVar('DT') * wc.cm2 / wc.ns,
+    DT: std.extVar('DT') * wc.cm2 / wc.s,
     // Electron lifetime
-    lifetime: std.extVar('lifetime') * wc.us,
+    lifetime: std.extVar('lifetime') * wc.ms,
     // Electron drift speed, assumes a certain applied E-field
     drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
   },
