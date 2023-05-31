@@ -467,7 +467,7 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
           # Transverse diffusion constant [cm2/s]
           DT: 8.8
           # Electron lifetime [ms]
-          lifetime: 10
+          lifetime: 10.4
           # Electron drift speed, assumes a certain applied E-field [mm/us]
           driftSpeed: 1.60563
           # G4RefTime [us]
