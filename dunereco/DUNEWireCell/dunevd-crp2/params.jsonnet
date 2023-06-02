@@ -117,7 +117,8 @@ base {
         wires: "dunevdcrp2-wires-larsoft-v1.json.bz2",
 
         fields: [
-            "dunevdcrp2-resp-high-setting.json.bz2",
+            // "dunevdcrp2-resp-high-setting.json.bz2",
+            "dunevdcrp2-FR-fixcoll-adjustind.json.bz2",
         ],
 
         noise: "protodune-noise-spectra-v1.json.bz2",
