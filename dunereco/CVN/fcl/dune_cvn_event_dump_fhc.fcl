@@ -33,8 +33,8 @@ physics:
   # Declare the modules
   producers:
   { 
-    energynue:  @local::dunefd_nuenergyreco
-    energynumu: @local::dunefd_nuenergyreco
+    energynue:  @local::dunefd_nuenergyreco_pmtrack
+    energynumu: @local::dunefd_nuenergyreco_pmtrack
     cvnmap:     @local::standard_cvnmapper
   }
 
