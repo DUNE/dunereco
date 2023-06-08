@@ -22,7 +22,6 @@ simple_plugin(PointResTree "module"
 		${MF_UTILITIES}
 		${CETLIB}
 		${ROOT_BASIC_LIB_LIST}
-    dunereco_SNpointing
     dunereco_AnaUtils
 
 )
@@ -30,5 +29,4 @@ simple_plugin(PointResTree "module"
 install_headers()
 install_fhicl()
 install_source()
-dunereco_SNpointing
  

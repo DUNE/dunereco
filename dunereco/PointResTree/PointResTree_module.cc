@@ -36,7 +36,6 @@
 
 // LArSoft includes
 
-#include "dune/AnaUtils/DUNEAnaHitUtils.h"
  
 #include <fstream>
 #include <iostream>
@@ -780,7 +779,7 @@ Bool_t dune::PointResTree::distance_cut(
             event);
     auto wireID = hit.WireID();
     auto plane = geom.Plane(wireID);
-    auto pos = plane.Wire(wireID).GetCenter<geo::Point_t>();
+    auto pos = plane.Wire(wireID).GetCenter();
     plane.DriftPoint(pos,
                      -abs(detProperties.ConvertTicksToX(
                          hit.PeakTime(), wireID))); // drift away from plane
@@ -815,7 +814,7 @@ void dune::PointResTree::write_multi_distance(
             event);
     auto wireID = hit.WireID();
     auto plane = geom.Plane(wireID);
-    auto pos = plane.Wire(wireID).GetCenter<geo::Point_t>();
+    auto pos = plane.Wire(wireID).GetCenter();
     plane.DriftPoint(pos,
                      -abs(detProperties.ConvertTicksToX(
                          hit.PeakTime(), wireID))); // drift away from plane
