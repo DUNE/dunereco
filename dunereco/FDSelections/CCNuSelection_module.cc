@@ -347,9 +347,10 @@ private:
   double fSelShowerRecoStartX;
   double fSelShowerRecoStartY;
   double fSelShowerRecoStartZ;
-  double fSelShowerRecoEndX;
-  double fSelShowerRecoEndY;
-  double fSelShowerRecoEndZ;
+  // trj -- comment out unused variables to make clang succeed
+  //double fSelShowerRecoEndX;
+  //double fSelShowerRecoEndY;
+  //double fSelShowerRecoEndZ;
   double fSelShowerRecoVertexX;
   double fSelShowerRecoVertexY;
   double fSelShowerRecoVertexZ;
