@@ -1,0 +1,16 @@
+<lcgdict>
+  <class name="pandoranusel::PandoraNuSelection" ClassVersion="15" >
+   <version ClassVersion="15" checksum="1096881837"/>
+   <version ClassVersion="14" checksum="3944387787"/>
+   <version ClassVersion="13" checksum="2166729678"/>
+   <version ClassVersion="12" checksum="3725459704"/>
+   <version ClassVersion="11" checksum="1377908932"/>
+   <version ClassVersion="10" checksum="3450341997"/>
+  </class>
+
+
+  <class name="art::Ptr<pandnusel::PandoraNuSelection>" />
+  <class name="art::Wrapper<pandoranusel::PandoraNuSelection>" />  
+</lcgdict>
+
+
