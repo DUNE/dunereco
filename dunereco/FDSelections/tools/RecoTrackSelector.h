@@ -7,6 +7,7 @@
 //ART
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Principal/Event.h"
+#include "canvas/Persistency/Common/Ptr.h"
 
 //LARSOFT
 #include "lardataobj/RecoBase/Track.h"
