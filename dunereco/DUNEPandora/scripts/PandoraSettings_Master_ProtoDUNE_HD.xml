@@ -38,7 +38,7 @@
 -->
         <!-- Fall back to the old cuts method for now -->
             <tool type = "LArBeamParticleId">
-                <BeamTPCIntersection>-66.06 400.3 0.0</BeamTPCIntersection>
+                <BeamTPCIntersection>-53.6 401.1 0.0</BeamTPCIntersection>
                 <BeamDirection>-0.201890 -0.192850 0.960234</BeamDirection> 
             </tool>
         </SliceIdTools>
