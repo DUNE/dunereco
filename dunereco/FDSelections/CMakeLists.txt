@@ -2,6 +2,8 @@ add_subdirectory(pandrizzle)
 add_subdirectory(pandizzle)
 add_subdirectory(FDSelectionData)
 
+if(( DEFINED ENV{TENSORFLOW_DIR} ) AND ( DEFINED ENV{TRITON_DIR} ))
+  
 art_make( LIBRARY_NAME FDSelection
 	  LIB_LIBRARIES larcorealg_Geometry
 	  	        larcore_Geometry_Geometry_service
@@ -43,10 +45,11 @@ MODULE_LIBRARIES FDSelection
 	  	           art_Persistency_Common canvas
 	  	           art_Persistency_Provenance canvas
 	  	           art_Utilities canvas
-
                    dunereco_TrackPID_algorithms
         )
 
+    endif ()
+    
 add_subdirectory(tools)
 add_subdirectory(weights)
 
