@@ -25,7 +25,7 @@ physics:
   producers:
   {
     mvaselectnumu:    @local::dunefd_mvaselect
-    energyreconumu:   @local::dunefd_nuenergyreco
+    energyreconumu:   @local::dunefd_nuenergyreco_pmtrack
   }
   analyzers:   
   {
