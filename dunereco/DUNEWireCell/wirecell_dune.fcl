@@ -470,7 +470,7 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
           # Electron lifetime [us]
           lifetime: @local::dunefd_detproperties.Electronlifetime
           # Electron drift speed, assumes a certain applied E-field [mm/us]
-          driftSpeed: 1.60563
+          driftSpeed: 1.565
           # G4RefTime [us]
           G4RefTime: @local::dunefd_detectorclocks.G4RefTime
 
