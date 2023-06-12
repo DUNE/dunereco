@@ -193,13 +193,13 @@ dunefd_hitfinderfd.DisambigAlg.DistanceCutClu: 100
 
 
 dunefd_gaushitfinder:     @local::dune35t_gaushitfinder
-dunefd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane0.RoiThreshold: 6.0 
-dunefd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane1.RoiThreshold: 6.0 
-dunefd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane2.RoiThreshold: 6.0 
+dunefd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane0.RoiThreshold: 2.0 
+dunefd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane1.RoiThreshold: 2.0 
+dunefd_gaushitfinder.HitFinderToolVec.CandidateHitsPlane2.RoiThreshold: 2.0 
 dunefd_gaushitfinder.InitWidth: [6.0, 6.0, 6.0]
 dunefd_gaushitfinder.AreaNorms: [13.25, 13.25, 13.25]
 dunefd_gaushitfinder.MaxMultiHit: 4
-dunefd_gaushitfinder.Chi2NDF: 2000
+dunefd_gaushitfinder.Chi2NDF: 50
 #dunefd_gaushitfinder.LongMaxHits: [ 25, 25, 25 ]
 #dunefd_gaushitfinder.LongPulseWidth: [ 10, 10, 10 ]
 dunefd_gaushitfinder.PeakFitter:	@local::peakfitter_mrqdt
