@@ -21,7 +21,7 @@ source:
 
 physics:
 {
-    producers: { energyreconumu: @local::dunefd_nuenergyreco }
+    producers: { energyreconumu: @local::dunefd_nuenergyreco_pmtrack }
     analyzers: { vlnenergydatagen: @local::dunefd_vlnenergydatagen_numu }
 
     ana:  [ vlnenergydatagen ]

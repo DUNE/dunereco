@@ -36,7 +36,7 @@
 
 // LArSoft includes
 
-// #include "dune/AnaUtils/DUNEAnaHitUtils.h"
+ 
 #include <fstream>
 #include <iostream>
 #include <queue>
@@ -77,6 +77,10 @@
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
+#include "larcore/CoreUtils/ServiceUtil.h"
+#include "dunereco/AnaUtils/DUNEAnaUtilsBase.h"
+#include "dunereco/AnaUtils/DUNEAnaHitUtils.h"
+ 
 
 using XYZVector = TVector3;
 using track_loc =
@@ -350,7 +354,9 @@ void dune::PointResTree::analyze(art::Event const &event) {
   // ... Create a map of track IDs to generator labels
   // Get a list of generator names.
   std::vector<art::Handle<std::vector<simb::MCTruth>>> mcHandles;
-  event.getManyByType(mcHandles);
+ 
+  mcHandles=event.getMany<std::vector<simb::MCTruth>>();
+ 
   std::vector<std::pair<int, std::string>> track_id_to_label;
   for (auto const &mcHandle : mcHandles) {
     const std::string &sModuleLabel = mcHandle.provenance()->moduleLabel();
@@ -773,7 +779,7 @@ Bool_t dune::PointResTree::distance_cut(
             event);
     auto wireID = hit.WireID();
     auto plane = geom.Plane(wireID);
-    auto pos = plane.Wire(wireID).GetCenter<geo::Point_t>();
+    auto pos = plane.Wire(wireID).GetCenter();
     plane.DriftPoint(pos,
                      -abs(detProperties.ConvertTicksToX(
                          hit.PeakTime(), wireID))); // drift away from plane
@@ -808,7 +814,7 @@ void dune::PointResTree::write_multi_distance(
             event);
     auto wireID = hit.WireID();
     auto plane = geom.Plane(wireID);
-    auto pos = plane.Wire(wireID).GetCenter<geo::Point_t>();
+    auto pos = plane.Wire(wireID).GetCenter();
     plane.DriftPoint(pos,
                      -abs(detProperties.ConvertTicksToX(
                          hit.PeakTime(), wireID))); // drift away from plane
@@ -875,7 +881,9 @@ XYZVector dune::PointResTree::find_vertex_sp(art::Event const &event) {
         continue;
       auto dist = (p1 - p2).Mag();
       nearest = std::min(dist, nearest);
-      nearest += dist;
+ 
+     // nearest += dist;//shoulc be commented out according to James
+ 
     }
     if (nearest < min_nearest) {
       min_nearest = nearest;

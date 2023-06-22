@@ -1,0 +1,119 @@
+#include "services_dune.fcl"
+#include "hitfindermodules_dune.fcl"
+#include "calorimetry_dune10kt.fcl"
+#include "cluster_dune.fcl"
+#include "pandoramodules_dune.fcl"
+#include "pandoranuselection.fcl"
+#include "mvamodule.fcl"
+#include "CVNMapper.fcl"
+#include "CVNEvaluator.fcl"
+#include "neutrinoenergyrecoalg_dune.fcl"
+
+#include "tools_dune.fcl"
+
+process_name: PandoraNuSelectionReco
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "reco_hist.root" }
+  MemoryTracker:     {}
+  TimeTracker:       {}
+  RandomNumberGenerator: {} #ART native random number generator
+  message:              @local::dune_message_services_prod
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+                        @table::dunefd_reco_services
+}
+
+# For MCC11 
+services.Geometry: @local::dune10kt_geo
+services.Geometry.Name: "dune10kt_v2_1x2x6"
+services.Geometry.ROOT: "dune10kt_v2_1x2x6.gdml"
+services.Geometry.GDML: "dune10kt_v2_1x2x6.gdml"
+
+source:
+{
+  module_type:                 RootInput
+  maxEvents:                   10 
+  saveMemoryObjectThreshold:   0
+}
+
+physics:
+{
+ producers:
+ {
+   caldata:                @local::producer_adcprep
+   gaushit:                @local::dunefd_gaushitfinder
+   hitfd:                  @local::dunefd_hitfinderfd
+   linecluster:            @local::dunefd_linecluster
+
+   pandoraSel:             @local::dunefd_pandora
+   pandoraTrackSel:        @local::dune_pandoraTrackCreation
+   pandoraShowerSel:       @local::dune_pandoraModularShowerCreation
+
+   warwickPIDSel: {
+        
+     module_type:		       "MVAPID"
+     HitLabel:		         "linecluster"
+     TrackLabel:		       "pandoraTrackSel"
+     ShowerLabel:          "pandoraShowerSel"
+     SpacePointLabel:	     "pandoraSel"
+
+     CalorimetryAlg:       @local::dune10kt_calorimetryalgmc
+     MVAMethods:		       ["electron", "muon", "photon", "pich", "proton"]
+     WeightFiles:		       ["mvapid_weights/electron_all_BDT.weights.xml",
+                            "mvapid_weights/muon_all_BDT.weights.xml",
+                            "mvapid_weights/photon_all_BDT.weights.xml",
+                            "mvapid_weights/pich_all_BDT.weights.xml",
+                            "mvapid_weights/proton_all_BDT.weights.xml"]
+   }
+
+   pandoraNuSelection:       @local::pandoranuselection
+   cvnmapSel:                @local::standard_cvnmapper
+   cvnevalSel:               @local::standard_cvnevaluator
+ }
+
+ prod:     [caldata, gaushit, hitfd, linecluster, pandoraSel, pandoraShowerSel, pandoraTrackSel, warwickPIDSel, pandoraNuSelection, cvnmapSel, cvnevalSel]  
+ stream1:  [out1]
+
+ trigger_paths: [prod] 
+ end_paths: [stream1]  
+}
+
+outputs:
+{
+  out1:
+  {
+    module_type:      RootOutput
+    fileName:         "outfile_%#.root"
+    dataTier:         "full-reconstructed"
+    fileProperties:
+    {
+      maxInputFiles:  1
+      granularity:    "InputFile"
+    }
+  }
+}
+
+# Line cluster
+physics.producers.linecluster.HitFinderModuleLabel:                          "hitfd"
+
+# Pandora
+physics.producers.pandoraSel.GeantModuleLabel:                               "largeant"
+physics.producers.pandoraSel.HitFinderModuleLabel:                           "linecluster"
+
+# PandoraTrack
+physics.producers.pandoraTrackSel.PFParticleLabel:                           "pandoraSel"
+
+# PandoraShower
+physics.producers.pandoraShowerSel.PFParticleLabel:                          "pandoraSel"
+
+# Dune CVN
+physics.producers.cvnmapSel.HitsModuleLabel: "hitfd"
+physics.producers.cvnmapSel.TimeResolution: 1600
+physics.producers.cvnmapSel.TdcWidth: 500
+physics.producers.cvnmapSel.ClusterPMLabel: "cvnmapSel"
+physics.producers.cvnmapSel.WireLength: 2880
+
+physics.producers.cvnevalSel.PixelMapInput: "cvnmapSel"
+physics.producers.cvnevalSel.ResultLabel: "cvnresultSel"

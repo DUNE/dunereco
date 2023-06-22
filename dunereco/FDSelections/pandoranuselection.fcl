@@ -1,0 +1,59 @@
+#include "showeralgorithms.fcl"
+#include "energyreco.fcl"
+#include "calorimetry_dune10kt.fcl"
+
+BEGIN_PROLOG
+
+pandoranuselection:
+{
+  module_type:      "PandoraNuSelection"
+
+  ModuleLabels: 
+  {
+    PFParticleModuleLabel:                 "pandoraSel"
+    ShowerModuleLabel:                     "pandoraShowerSel"
+    ClusterModuleLabel:                    "pandoraSel"
+    PIDModuleLabel:                        "warwickPIDSel"
+    PFPMetadataLabel:                      "pandoraSel"
+    TrackModuleLabel:                      "pandoraTrackSel"
+    SpacePointModuleLabel:                 "pandoraSel"
+  }
+
+  MakeSelectionTrainingTrees:              true
+  PandizzleWeightFileName:                 "MCC11_FHC_Pandizzle_TMVAClassification_BDTG_standard.weights.xml"
+  PandrizzleWeightFileName:                "MCC11_FHC_Pandrizzle_TMVAClassification_BDTG_standard.weights.xml"
+  EnhancedPandrizzleWeightFileName:        ""
+  UseConcentration:                        true
+  UseDisplacement:                         true
+  UseDCA:                                  true
+  UseBDTVariables:                         false
+  UseModularShowerVariables:               false
+  EnhancedPandrizzleHitCut:                100
+  BackupPandrizzleHitCut:                  25
+
+  ShowerEnergyAlg:                         @local::dune10kt_showerenergy
+  MichelCandidateDistance:                 4                            
+}
+
+pandoranuselection.RecoTrackSelectorTool.tool_type:                           "HighestPandizzleScoreRecoVertexTrackSelector"
+pandoranuselection.RecoTrackSelectorTool.ModuleLabels:                        @local::pandoranuselection.ModuleLabels
+pandoranuselection.RecoTrackSelectorTool.MakeSelectionTrainingTrees:          false
+pandoranuselection.RecoTrackSelectorTool.PandizzleWeightFileName:             "MCC11_FHC_Pandizzle_TMVAClassification_BDTG_standard.weights.xml"
+pandoranuselection.RecoTrackSelectorTool.MichelCandidateDistance:             4
+pandoranuselection.RecoTrackSelectorTool.ShowerEnergyAlg:                     @local::pandoranuselection.ShowerEnergyAlg
+
+pandoranuselection.RecoShowerSelectorTool.tool_type:                          "HighestPandrizzleScoreRecoVertexShowerSelector"
+pandoranuselection.RecoShowerSelectorTool.ModuleLabels:                       @local::pandoranuselection.ModuleLabels
+pandoranuselection.RecoShowerSelectorTool.ShowerEnergyAlg:                    @local::pandoranuselection.ShowerEnergyAlg
+pandoranuselection.RecoShowerSelectorTool.MakeSelectionTrainingTrees:         false
+pandoranuselection.RecoShowerSelectorTool.PandrizzleWeightFileName:           "MCC11_FHC_Pandrizzle_TMVAClassification_BDTG_standard.weights.xml"
+pandoranuselection.RecoShowerSelectorTool.EnhancedPandrizzleWeightFileName:   ""
+pandoranuselection.RecoShowerSelectorTool.UseConcentration:                   true
+pandoranuselection.RecoShowerSelectorTool.UseDisplacement:                    true
+pandoranuselection.RecoShowerSelectorTool.UseDCA:                             true 
+pandoranuselection.RecoShowerSelectorTool.UseBDTVariables:                    false
+pandoranuselection.RecoShowerSelectorTool.UseModularShowerVariables:          false
+pandoranuselection.RecoShowerSelectorTool.EnhancedPandrizzleHitCut:           100
+pandoranuselection.RecoShowerSelectorTool.BackupPandrizzleHitCut:             25
+
+END_PROLOG

@@ -6,11 +6,13 @@ add_subdirectory(DUNEWireCell)
 add_subdirectory(FDSensOpt)
 add_subdirectory(HitFinderDUNE)
 add_subdirectory(InfillChannels)
+add_subdirectory(FDSelections)
 add_subdirectory(RecoAlgDUNE)
 add_subdirectory(RegCNN)
 add_subdirectory(TrackFinderDUNE)
 add_subdirectory(TrackPID)
 add_subdirectory(VLNets)
+add_subdirectory(PointResTree)
 
 # these two were not built in dunetpc at the time of the split
 # add_subdirectory(SNSlicer)
