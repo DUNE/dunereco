@@ -10,7 +10,7 @@
   </class>
 
 
-  <class name="art::Ptr<pandnusel::PandoraNuSelection>" />
+  <class name="art::Ptr<pandoranusel::PandoraNuSelection>" />
   <class name="art::Wrapper<pandoranusel::PandoraNuSelection>" />  
 </lcgdict>
 
