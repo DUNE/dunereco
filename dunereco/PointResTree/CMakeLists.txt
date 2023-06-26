@@ -22,10 +22,11 @@ simple_plugin(PointResTree "module"
 		${MF_UTILITIES}
 		${CETLIB}
 		${ROOT_BASIC_LIB_LIST}
-        dune_AnaUtils
+    dunereco_AnaUtils
+
 )
 
 install_headers()
 install_fhicl()
 install_source()
-install_scripts()CMakeLists.cc 
+ 

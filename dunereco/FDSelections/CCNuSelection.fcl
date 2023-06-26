@@ -1,0 +1,55 @@
+
+#include "calorimetry_dune10kt.fcl"
+#include "showeralgorithms.fcl"
+#include "ctphelper.fcl"
+#include "neutrinoenergyrecoalg_dune.fcl"
+
+BEGIN_PROLOG
+
+CCNuSelection:
+{ 
+ module_type:                 "dunereco/FDSelections/CCNuSelection"
+ ModuleLabels: {
+   NuGenModuleLabel:            "generator" 
+   LargeantModuleLabel:         "largeant"
+   WireModuleLabel:             "caldata"
+   TrackModuleLabel:            "pandoraTrack"
+   ShowerModuleLabel:           "pandoraShower"
+   PFParticleModuleLabel:       "pandora"
+   VertexModuleLabel:           "pandora"
+   SpacePointModuleLabel:       "pandora"
+   ClusterModuleLabel:          "pandora"
+   PIDModuleLabel:              "pid"
+   PFPMetadataLabel:            "pandora"
+   ParticleIDModuleLabel:       "pandorapid"
+   HitsModuleLabel:             "linecluster"
+   POTModuleLabel:              "generator"
+   NumuEnergyRecoModuleLabel:   "energyreconumu"
+   NueEnergyRecoModuleLabel:    "energyreconue"
+ }                                
+ PandizzleWeightFileName:  "Pandizzle_TMVAClassification_BDTG.weights.xml"
+ PandrizzleWeightFileName: "Pandrizzle_TMVAClassification_BDTG.weights.xml"
+
+   CVNModuleLabel: "cvnevalSel"
+
+ CalorimetryAlg:              @local::dune10kt_calorimetryalgmc
+ ShowerEnergyAlg:             @local::dune10kt_showerenergy
+ ctpHelper:                   @local::standard_ctphelper
+ NeutrinoEnergyRecoAlg:       @local::dune10kt_neutrinoenergyrecoalg
+ UsePandoraVertex: true
+
+ MichelCandidateDistance: 4
+
+}
+CCNuSelection.RecoTrackSelectorTool.tool_type: "LongestRecoVertexTrackSelector"
+CCNuSelection.RecoTrackSelectorTool.ctpHelper: @local::CCNuSelection.ctpHelper
+CCNuSelection.RecoTrackSelectorTool.ModuleLabels: @local::CCNuSelection.ModuleLabels
+
+CCNuSelection.RecoShowerSelectorTool.tool_type: "HighestEnergyRecoVertexShowerSelector"
+CCNuSelection.RecoShowerSelectorTool.ModuleLabels: @local::CCNuSelection.ModuleLabels
+CCNuSelection.RecoShowerSelectorTool.ShowerEnergyAlg: @local::CCNuSelection.ShowerEnergyAlg
+
+#CCNuSelection.ctpHelper.NetworkName: "convolutional_track_pid_April2020_new.pb"
+
+
+END_PROLOG
