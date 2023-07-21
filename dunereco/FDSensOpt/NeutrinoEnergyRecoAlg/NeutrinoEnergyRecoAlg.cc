@@ -235,7 +235,8 @@ NeutrinoEnergyRecoAlg::Momentum4_t NeutrinoEnergyRecoAlg::CalculateParticle4Mome
 
 double NeutrinoEnergyRecoAlg::CalculateMuonMomentumByRange(const art::Ptr<recob::Track> pMuonTrack)
 {
-    return this->CalculateLinearlyCorrectedValue(pMuonTrack->Length(), fGradTrkMomRange, fIntTrkMomRange);
+    const double uncorrectedMomentum(this->CalculateUncorrectedMuonMomentumByRange(pMuonTrack));
+    return this->CalculateLinearlyCorrectedValue(uncorrectedMomentum, fGradTrkMomRange, fIntTrkMomRange);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -290,6 +291,14 @@ double NeutrinoEnergyRecoAlg::CalculateLinearlyCorrectedValue(const double value
     const double correctionIntercept)
 {
     return (value - correctionIntercept) / correctionGradient;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+double NeutrinoEnergyRecoAlg::CalculateUncorrectedMuonMomentumByRange(const art::Ptr<recob::Track> &pMuonTrack)
+{
+    trkf::TrackMomentumCalculator TrackMomCalc;
+    return (TrackMomCalc.GetTrackMomentum(pMuonTrack->Length(), 13));
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
