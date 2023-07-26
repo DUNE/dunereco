@@ -20,9 +20,26 @@ local stubby_top = {
   head: wc.point(100, -75, 300, wc.cm),
 };
 
+// local stubby_bottom = {
+//   tail: wc.point(-100, -75,   0, wc.cm),
+//   head: wc.point(-100, -75, 300, wc.cm),
+// };
+
+// wire pitch dir (bottom drift):
+// plane: 0 pitch dir: (0 -0.866025 0.5)
+// plane: 1 pitch dir: (0 0.866025 0.5)
+// plane: 2 pitch dir: (0 0 1)
+
+// wire pitch dir (top drift):
+// plane: 0 pitch dir: (0 0.866026 0.5)
+// plane: 1 pitch dir: (0 -0.866026 0.5)
+// plane: 2 pitch dir: (0 0 1)
+
+local thetaXZ = 45*wc.deg;
 local stubby_bottom = {
-  tail: wc.point(-100, -75,   0, wc.cm),
-  head: wc.point(-100, -75, 300, wc.cm),
+  tail: wc.point(-100, 100, 100, wc.cm),
+  head: wc.point(-100*(1 + std.tan(thetaXZ)), 100, 100*(1+1), wc.cm),
+  // head: wc.point(-136.377, 100, 200, wc.cm), // tan(20deg) = 0.364
 };
 
 local tracklist = [
