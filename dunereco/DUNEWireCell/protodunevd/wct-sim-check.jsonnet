@@ -29,19 +29,20 @@ local tracklist = [
 
   {
     time: 0 * wc.us,
-    charge: -5000, // 5000 e/mm
+    charge: -500, // 5000 e/mm
     ray: stubby_top, // params.det.bounds,
   },
 
   {
     time: 0 * wc.us,
-    charge: -5000,
+    charge: -500,
     ray: stubby_bottom,
   },
 
 ];
 
-local depos = sim.tracks(tracklist, step=1.0 * wc.mm);
+// local depos = sim.tracks(tracklist, step=1.0 * wc.mm);
+local depos = sim.tracks(tracklist, step=0.1 * wc.mm);
 
 local nanodes = std.length(tools.anodes);
 local anode_iota = std.range(0, nanodes-1);
@@ -164,7 +165,7 @@ local chsel = [
 local pipelines = [
     g.pipeline([
         chsel[n],
-        magnifyio.orig_pipe[n],
+        // magnifyio.orig_pipe[n],
 
         // nf_pipes[n],
         // magnifyio.raw_pipe[n],
