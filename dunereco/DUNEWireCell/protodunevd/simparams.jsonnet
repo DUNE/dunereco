@@ -7,9 +7,9 @@ base {
   lar: super.lar {
       lifetime: 1000.0*wc.ms,
       // Longitudinal diffusion constant
-      DL :  7.2 * wc.cm2/wc.s,
+      DL :  4.0 * wc.cm2/wc.s,
       // Transverse diffusion constant
-      DT : 12.0 * wc.cm2/wc.s,
+      DT :  8.8 * wc.cm2/wc.s,
   },
 
   daq: super.daq {
