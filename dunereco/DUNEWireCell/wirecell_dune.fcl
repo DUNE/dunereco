@@ -1393,7 +1393,7 @@ dune_vd_crp2_nfsp : {
       logsinks: ["stdout"]
       loglevels: ["debug", "pgraph:info"]
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
-      inputers: ["wclsCookedFrameSource"]
+      inputers: ["wclsRawFrameSource"]
       outputers: ["wclsFrameSaver:spsaver"]
       configs: ["pgrapher/experiment/dunevd-crp2/wcls-nf-sp.jsonnet"]
       params : {
