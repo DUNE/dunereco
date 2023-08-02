@@ -53,6 +53,7 @@ FDSelection::PandizzleAlg::PandizzleAlg(const fhicl::ParameterSet& pset) :
   fClusterModuleLabel(pset.get<std::string>("ModuleLabels.ClusterModuleLabel")),
   fIPMichelCandidateDistance(pset.get<double>("MichelCandidateDistance")),
   fMakeSelectionTrainingTrees(pset.get<bool>("MakeSelectionTrainingTrees")),
+  fReducedTreeMode(pset.get<bool>("ReducedTreeMode", true)),
   fPandizzleWeightFileName(pset.get< std::string > ("PandizzleWeightFileName")),
   fPandizzleReader("", 0)
 {
@@ -93,35 +94,10 @@ void FDSelection::PandizzleAlg::InitialiseTrees() {
 
   for (TTree* tree : {fSignalTrackTree, fBackgroundTrackTree})
   {
-    BookTreeInt(tree, "Event");
-    BookTreeInt(tree, "Run");
-    BookTreeInt(tree, "SubRun");
-    BookTreeInt(tree, "PFPPDG");
-    BookTreeInt(tree, "PFPNHits");
-    BookTreeInt(tree, "PFPTruePDG");
-    BookTreeInt(tree, "PFPTrueMotherID");
-    BookTreeFloat(tree, "PFPTrueMomT");
-    BookTreeFloat(tree, "PFPTrueMomX");
-    BookTreeFloat(tree, "PFPTrueMomY");
-    BookTreeFloat(tree, "PFPTrueMomZ");
-    BookTreeBool(tree,"PFPTrueIsMichelDecay");
-    BookTreeInt(tree, "PFPNChildren");
-    BookTreeInt(tree, "PFPNShowerChildren");
-    BookTreeInt(tree, "PFPNTrackChildren");
-    BookTreeFloat(tree, "PFPMichelDist");
     BookTreeInt(tree, "PFPMichelNHits");
-    BookTreeInt(tree, "PFPMichelTrueID");
-    BookTreeInt(tree, "PFPMichelTrueMotherID");
-    BookTreeInt(tree, "PFPMichelTruePDG");
     BookTreeFloat(tree, "PFPMichelElectronMVA");
-    BookTreeFloat(tree, "PFPMichelRecoEnergyPlane0");
-    BookTreeFloat(tree, "PFPMichelRecoEnergyPlane1");
     BookTreeFloat(tree, "PFPMichelRecoEnergyPlane2");
-    BookTreeFloat(tree,"PFPTrackDeflecAngleMean");
-    BookTreeFloat(tree,"PFPTrackDeflecAngleVar");
     BookTreeFloat(tree,"PFPTrackDeflecAngleSD");
-    BookTreeInt(tree,"PFPTrackDeflecNAngles");
-    BookTreeBool(tree, "MVAVarsFilled");
     BookTreeFloat(tree,"PFPTrackEvalRatio");
     BookTreeFloat(tree,"PFPTrackConcentration");
     BookTreeFloat(tree,"PFPTrackCoreHaloRatio");
@@ -129,15 +105,44 @@ void FDSelection::PandizzleAlg::InitialiseTrees() {
     BookTreeFloat(tree,"PFPTrackdEdxStart");
     BookTreeFloat(tree,"PFPTrackdEdxEnd");
     BookTreeFloat(tree,"PFPTrackdEdxEndRatio");
-    BookTreeFloat(tree,"PFPTrackMuonMVA");
-    BookTreeFloat(tree,"PFPTrackProtonMVA");
-    BookTreeFloat(tree,"PFPTrackPionMVA");
-    BookTreeFloat(tree,"PFPTrackPhotonMVA");
-    BookTreeFloat(tree,"PFPTrackElectronMVA");
-    BookTreeFloat(tree,"PFPTrackLengthRatio");
     BookTreeFloat(tree,"PFPTrackLength");
-    BookTreeFloat(tree,"PFPTrackOtherLengths");
-    BookTreeInt(tree,"PFPTrackIsLongest");
+
+    if(!fReducedTreeMode)
+    {
+      BookTreeInt(tree, "Event");
+      BookTreeInt(tree, "Run");
+      BookTreeInt(tree, "SubRun");
+      BookTreeInt(tree, "PFPPDG");
+      BookTreeInt(tree, "PFPNHits");
+      BookTreeInt(tree, "PFPTruePDG");
+      BookTreeInt(tree, "PFPTrueMotherID");
+      BookTreeFloat(tree, "PFPTrueMomT");
+      BookTreeFloat(tree, "PFPTrueMomX");
+      BookTreeFloat(tree, "PFPTrueMomY");
+      BookTreeFloat(tree, "PFPTrueMomZ");
+      BookTreeBool(tree,"PFPTrueIsMichelDecay");
+      BookTreeInt(tree, "PFPNChildren");
+      BookTreeInt(tree, "PFPNShowerChildren");
+      BookTreeInt(tree, "PFPNTrackChildren");
+      BookTreeFloat(tree, "PFPMichelDist");
+      BookTreeInt(tree, "PFPMichelTrueID");
+      BookTreeInt(tree, "PFPMichelTrueMotherID");
+      BookTreeInt(tree, "PFPMichelTruePDG");
+      BookTreeFloat(tree, "PFPMichelRecoEnergyPlane0");
+      BookTreeFloat(tree, "PFPMichelRecoEnergyPlane1");
+      BookTreeFloat(tree,"PFPTrackDeflecAngleMean");
+      BookTreeFloat(tree,"PFPTrackDeflecAngleVar");
+      BookTreeInt(tree,"PFPTrackDeflecNAngles");
+      BookTreeBool(tree, "MVAVarsFilled");
+      BookTreeFloat(tree,"PFPTrackMuonMVA");
+      BookTreeFloat(tree,"PFPTrackProtonMVA");
+      BookTreeFloat(tree,"PFPTrackPionMVA");
+      BookTreeFloat(tree,"PFPTrackPhotonMVA");
+      BookTreeFloat(tree,"PFPTrackElectronMVA");
+      BookTreeFloat(tree,"PFPTrackLengthRatio");
+      BookTreeFloat(tree,"PFPTrackOtherLengths");
+      BookTreeInt(tree,"PFPTrackIsLongest");
+    }
   }
 }
 
