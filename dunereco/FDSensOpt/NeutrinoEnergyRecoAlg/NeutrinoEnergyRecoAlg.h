@@ -237,6 +237,15 @@ class NeutrinoEnergyRecoAlg
             const double correctionIntercept);
 
         /**
+        * @brief  Calculates the raw muon momentum by continuous-slowing-down approximation (CSDA) table
+        *
+        * @param  trkrange the muon track range (in cm)
+        *
+        * @return the uncorrected reconstructed muon momentum (in GeV)
+        */
+        double CalculateUncorrectedMuonMomentumByRange(const art::Ptr<recob::Track> &pMuonTrack);
+
+        /**
         * @brief  Calculates the raw muon momentum by multiple coulomb scattering
         *
         * @param  pMuonTrack the muon track

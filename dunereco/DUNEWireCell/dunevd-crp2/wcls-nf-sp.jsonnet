@@ -46,11 +46,10 @@ local tools = tools_maker(params);
 local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 
-//local nf_maker = import "pgrapher/experiment/pdsp/nf.jsonnet";
-//local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
 
 local sp_maker = import 'pgrapher/experiment/dunevd-crp2/sp.jsonnet';
 
+//local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
 //local chndbm = chndb_maker(params, tools);
 //local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
 
@@ -166,7 +165,7 @@ local nfsp_pipes = [
                chsel_pipes[n],
                sinks.orig_pipe[n],
                nf_pipes[n],
-               // sinks.raw_pipe[n],
+               sinks.raw_pipe[n],
                sp_pipes[n],
                sinks.decon_pipe[n],
                // sinks.threshold_pipe[n],

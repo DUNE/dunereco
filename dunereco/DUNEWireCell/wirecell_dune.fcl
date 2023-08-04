@@ -250,8 +250,8 @@ wirecell_protodunevd_mc:
 	structs: {
            nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
            lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
-           DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
-           DT: @local::dunefd_largeantparameters.TransverseDiffusion
+           DL: @local::dunefd_largeantparameters.LongitudinalDiffusion #4.0e-9
+           DT: @local::dunefd_largeantparameters.TransverseDiffusion #8.8e-9
            efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
            temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
 	}
@@ -1393,7 +1393,7 @@ dune_vd_crp2_nfsp : {
       logsinks: ["stdout"]
       loglevels: ["debug", "pgraph:info"]
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
-      inputers: ["wclsCookedFrameSource"]
+      inputers: ["wclsRawFrameSource"]
       outputers: ["wclsFrameSaver:spsaver"]
       configs: ["pgrapher/experiment/dunevd-crp2/wcls-nf-sp.jsonnet"]
       params : {

@@ -20,28 +20,46 @@ local stubby_top = {
   head: wc.point(100, -75, 300, wc.cm),
 };
 
+// local stubby_bottom = {
+//   tail: wc.point(-100, -75,   0, wc.cm),
+//   head: wc.point(-100, -75, 300, wc.cm),
+// };
+
+// wire pitch dir (bottom drift):
+// plane: 0 pitch dir: (0 -0.866025 0.5)
+// plane: 1 pitch dir: (0 0.866025 0.5)
+// plane: 2 pitch dir: (0 0 1)
+
+// wire pitch dir (top drift):
+// plane: 0 pitch dir: (0 0.866026 0.5)
+// plane: 1 pitch dir: (0 -0.866026 0.5)
+// plane: 2 pitch dir: (0 0 1)
+
+local thetaXZ = 45*wc.deg;
 local stubby_bottom = {
-  tail: wc.point(-100, -75,   0, wc.cm),
-  head: wc.point(-100, -75, 300, wc.cm),
+  tail: wc.point(-100, 100, 100, wc.cm),
+  head: wc.point(-100*(1 + std.tan(thetaXZ)), 100, 100*(1+1), wc.cm),
+  // head: wc.point(-136.377, 100, 200, wc.cm), // tan(20deg) = 0.364
 };
 
 local tracklist = [
 
   {
     time: 0 * wc.us,
-    charge: -5000, // 5000 e/mm
+    charge: -500, // 5000 e/mm
     ray: stubby_top, // params.det.bounds,
   },
 
   {
     time: 0 * wc.us,
-    charge: -5000,
+    charge: -500,
     ray: stubby_bottom,
   },
 
 ];
 
-local depos = sim.tracks(tracklist, step=1.0 * wc.mm);
+// local depos = sim.tracks(tracklist, step=1.0 * wc.mm);
+local depos = sim.tracks(tracklist, step=0.1 * wc.mm);
 
 local nanodes = std.length(tools.anodes);
 local anode_iota = std.range(0, nanodes-1);
@@ -164,7 +182,7 @@ local chsel = [
 local pipelines = [
     g.pipeline([
         chsel[n],
-        magnifyio.orig_pipe[n],
+        // magnifyio.orig_pipe[n],
 
         // nf_pipes[n],
         // magnifyio.raw_pipe[n],
