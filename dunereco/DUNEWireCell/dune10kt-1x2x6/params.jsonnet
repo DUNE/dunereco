@@ -1,6 +1,3 @@
-// ProtoDUNE-SP specific parameters.  This file inerets from the
-// generic set of parameters and overrides things specific to PDSP.
-
 local wc = import "wirecell.jsonnet";
 local base = import "pgrapher/common/params.jsonnet";
 
@@ -8,31 +5,19 @@ function(params) base {
     // This section will be overwritten in simparams.jsonnet
     det : {
 
-        // define the 6 APAs.  This must use the coordinate system
-        // defined by the wire geometry file.
-        // A full drift is a box: xyz=[3.594*wc.m, 5.9*wc.m, 2.2944*wc.m].
-        //
         // The "faces" is consumed by, at least, the Drifter and
         // AnodePlane.  The "wires" number is used to set
         // AnodePlane.ident used to lookup the anode in WireSchema.
         // It corresponds to the anode number.
-        //
-        // Also see:
-        //   wirecell-util wire-volumes protodune-wires-larsoft-v3.json.bz2
-        // to help with defining these parameters.
-
-        // from DocDB 203 and assuming wires are symmetric across x=0
 
         // between center lines
         local apa_cpa = 3.637*wc.m,
         local cpa_thick = 50.8*wc.mm,
-        local apa_w2w = 85.725*wc.mm, // DocDB 203 calls "W" as "X"
+        // X positions from dune10kt gdml:
+        // U: 39.5355 mm, V: 34.7755 mm, W: 30.0155 mm
+        local apa_w2w = 60.031*wc.mm,
         local plane_gap = 4.76*wc.mm,
-        local apa_g2g = 114.3*wc.mm, // note that grid plane must have
-                                     // gap 4.7675mm for this number
-                                     // to be consistent with above.
-                                     // There's probably round-off
-                                     // error in DocDB 203.
+        local apa_g2g = apa_w2w + 6*plane_gap, // 88.591*wc.mm,
 
         // The "anode" cut off plane, here measured from APA
         // centerline, determines how close to the wires do we
