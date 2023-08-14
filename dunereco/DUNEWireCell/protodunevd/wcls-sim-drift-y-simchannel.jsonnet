@@ -54,7 +54,17 @@ local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 local wcls_input = {
   // depos: wcls.input.depos(name="", art_tag="IonAndScint"),
-  depos: wcls.input.depos(name='electron', art_tag='IonAndScint'),  // default art_tag="blopper"
+  // depos: wcls.input.depos(name='electron', art_tag='IonAndScint'),  // default art_tag="blopper"
+  deposet: g.pnode({
+    type: 'wclsSimDepoSetSource',
+    name: "",
+    data: {
+      model: "",
+      scale: -1, //scale is -1 to correct a sign error in the SimDepoSource converter.
+      art_tag: "IonAndScint", //name of upstream art producer of depos "label:instance:processName"
+      assn_art_tag: "",
+    },
+  }, nin=0, nout=1),
 };
 
 // Collect all the wc/ls output converters for use below.  Note the
@@ -151,7 +161,7 @@ local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
 local rng = tools.random;
 local wcls_simchannel_sink = g.pnode({
-  type: 'wclsSimChannelSink',
+  type: 'wclsDepoSetSimChannelSink',
   name: 'postdrift',
   data: {
     artlabel: 'simpleSC',  // where to save in art::Event
@@ -290,7 +300,10 @@ local deposet_rotate_rev = g.pnode({
 
 // local graph = g.pipeline([wcls_input.depos, plainbagger, /*deposet_rotate,*/  setdrifter, /*deposet_rotate_rev, wcls_simchannel_sink, bagger,*/ pipe_reducer, retagger, wcls_output.sim_digits, sink]);
 // local graph = g.pipeline([wcls_input.depos, plainbagger, deposet_rotate, setdrifter, deposet_rotate_rev,  pipe_reducer, retagger, wcls_output.sim_digits, sink]);
-local graph = g.pipeline([wcls_input.depos, plainbagger, deposet_rotate_rev, setdrifter,  pipe_reducer, retagger, wcls_output.sim_digits, sink]);
+// local graph = g.pipeline([wcls_input.depos, plainbagger, deposet_rotate_rev, setdrifter,  pipe_reducer, retagger, wcls_output.sim_digits, sink]);
+
+// FIXME: need a "bagger" to gate depos
+local graph = g.pipeline([wcls_input.deposet, deposet_rotate_rev, setdrifter, wcls_simchannel_sink, pipe_reducer, retagger, wcls_output.sim_digits, sink]);
 
 local app = {
   type: 'Pgrapher',
