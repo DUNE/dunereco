@@ -11,8 +11,11 @@ function(params) base {
         // It corresponds to the anode number.
 
         // between center lines
-        local apa_cpa = 3.637*wc.m,
-        local cpa_thick = 50.8*wc.mm,
+        // local apa_cpa = 3.637*wc.m, // DocDB 203
+        local apa_cpa = 3.63075*wc.m, // LArSoft
+        // local cpa_thick = 50.8*wc.mm, // DocDB 203
+        local cpa_thick = 3.175*wc.mm, // 1/8", from Bo Yu (BNL) and confirmed with LArSoft
+
         // X positions from dune10kt gdml:
         // U: 39.5355 mm, V: 34.7755 mm, W: 30.0155 mm
         local apa_w2w = 60.031*wc.mm,
@@ -27,7 +30,8 @@ function(params) base {
         // Placing it w/in the response plane means any depos that are
         // "backed up" won't have proper field response.  But, the
         // tighter this is made, the less volume is simulated.
-        local apa_plane = 0.5*apa_g2g, // pick it to be at the grid wires
+        // local apa_plane = 0.5*apa_g2g, // pick it to be at the grid wires
+        local apa_plane = 0.5*apa_g2g - plane_gap, // pick it to be at the first induction wires
 
         // The "response" plane is where the field response functions
         // start.  Garfield calcualtions start somewhere relative to
@@ -60,7 +64,11 @@ function(params) base {
                 // top, front face is against cryo wall
                 if sign > 0
                 then [
-                    null,
+                    {
+                        anode: centerline + apa_plane,
+                        response: centerline + res_plane,
+                        cathode: centerline + cpa_plane, 
+                    },
                     {
                         anode: centerline - apa_plane,
                         response: centerline - res_plane,
@@ -74,7 +82,11 @@ function(params) base {
                         response: centerline + res_plane,
                         cathode: centerline + cpa_plane, 
                     },
-                    null
+                    {
+                        anode: centerline - apa_plane,
+                        response: centerline - res_plane,
+                        cathode: centerline - cpa_plane, 
+                    }
                 ],
             } for n in std.range(0,11)], // twelve anodes
 
@@ -85,8 +97,8 @@ function(params) base {
         // rectangular solid.  Again "wirecell-util wires-info" helps
         // to choose something.
         bounds : {
-            tail: wc.point(-4.0, 0.0, 0.0, wc.m),
-            head: wc.point(+4.0, 6.1, 7.0, wc.m),
+          tail: wc.point(-363.376, -600.019, -0.87625, wc.cm),
+          head: wc.point( 363.376,  600.019, 1393.46, wc.cm),
         }
     },
 
