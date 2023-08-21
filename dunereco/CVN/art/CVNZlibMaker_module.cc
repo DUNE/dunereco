@@ -277,6 +277,9 @@ namespace cvn {
     // True lepton and neutrino energies
     float nu_energy = true_neutrino.Nu().E();
     float lep_energy = true_neutrino.Lepton().E();
+    TVector3 nu_mom = true_neutrino.Nu().Momentum().Vect();
+    TVector3 lep_mom = true_neutrino.Lepton().Momentum().Vect();
+    float lepangle = nu_mom.Angle(lep_mom);
 
     // Put a containment cut here
     bool fApplyFidVol = true;
@@ -317,7 +320,7 @@ namespace cvn {
     }
 
 
-    TrainingData train(interaction, nu_energy, lep_energy,
+    TrainingData train(interaction, nu_energy, lep_energy, lepangle,
       reco_nue_energy, reco_numu_energy, reco_nutau_energy,
       event_weight, *pixelmaps[0]);
 
@@ -407,6 +410,7 @@ namespace cvn {
         info_file << td.fTopologyType << std::endl;
         info_file << td.fTopologyTypeAlt << std::endl;
         info_file << td.fPMap.GetTotHits() << std::endl;        
+        info_file << td.fLepAngle << std::endl; 
 
         info_file.close(); // close file
       }

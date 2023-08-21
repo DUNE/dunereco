@@ -13,13 +13,14 @@ namespace cvn
 {
 
   TrainingData::TrainingData(const InteractionType& interaction,
-                             float nuEnergy, float lepEnergy,
+                             float nuEnergy, float lepEnergy, float lepAngle,
                              float nueEnergy, float numuEnergy,
                              float nutauEnergy, float weight,
                              const PixelMap& pMap):
   fInt(interaction),
   fNuEnergy(nuEnergy),
   fLepEnergy(lepEnergy),
+  fLepAngle(lepAngle),
   fRecoNueEnergy(nueEnergy),
   fRecoNumuEnergy(numuEnergy),
   fRecoNutauEnergy(nutauEnergy),
