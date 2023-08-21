@@ -165,8 +165,11 @@ namespace cvn {
     float nuEnergy = 0;
     float lepEnergy = 0;
 //    if(truth.NeutrinoSet()){
-      nuEnergy = truthN.Nu().E();
-      lepEnergy = truthN.Lepton().E();
+    nuEnergy = truthN.Nu().E();
+    lepEnergy = truthN.Lepton().E();
+    TVector3 nu_mom = truthN.Nu().Momentum().Vect();
+    TVector3 lep_mom = truthN.Lepton().Momentum().Vect();
+    float lepangle = nu_mom.Angle(lep_mom);
 //    }
 
     // If outside the fiducial volume don't waste any time filling other variables
@@ -209,7 +212,7 @@ namespace cvn {
     }
 
     // Create the training data and add it to the tree
-    TrainingData train(interaction, nuEnergy, lepEnergy, recoNueEnergy,
+    TrainingData train(interaction, nuEnergy, lepEnergy, lepangle, recoNueEnergy,
       recoNumuEnergy, recoNutauEnergy, eventWeight, *pixelmaplist[0]);
     // Set the topology information
     int topPDG     = labels.GetPDG();

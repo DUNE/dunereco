@@ -1,4 +1,3 @@
-
 #include "calorimetry_dune10kt.fcl"
 #include "showeralgorithms.fcl"
 #include "ctphelper.fcl"
@@ -27,29 +26,52 @@ CCNuSelection:
    NumuEnergyRecoModuleLabel:   "energyreconumu"
    NueEnergyRecoModuleLabel:    "energyreconue"
  }                                
- PandizzleWeightFileName:  "Pandizzle_TMVAClassification_BDTG.weights.xml"
- PandrizzleWeightFileName: "Pandrizzle_TMVAClassification_BDTG.weights.xml"
 
-   CVNModuleLabel: "cvnevalSel"
+ MakeSelectionTrainingTrees:              true
+ PandizzleWeightFileName:                "MCC11_FHC_Pandizzle_TMVAClassification_BDTG_standard.weights.xml"
+ PandrizzleWeightFileName:               "MCC11_FHC_Pandrizzle_TMVAClassification_BDTG_standard.weights.xml"
+ EnhancedPandrizzleWeightFileName:       ""
+ UseConcentration:                       true
+ UseDisplacement:                        true
+ UseDCA:                                 true
+ UseBDTVariables:                        false
+ UseModularShowerVariables:              false
+ EnhancedPandrizzleHitCut:               100
+ BackupPandrizzleHitCut:                 25
+
+ CVNModuleLabel: "cvnevalSel"
 
  CalorimetryAlg:              @local::dune10kt_calorimetryalgmc
  ShowerEnergyAlg:             @local::dune10kt_showerenergy
  ctpHelper:                   @local::standard_ctphelper
+
  NeutrinoEnergyRecoAlg:       @local::dune10kt_neutrinoenergyrecoalg
  UsePandoraVertex: true
 
  MichelCandidateDistance: 4
-
 }
-CCNuSelection.RecoTrackSelectorTool.tool_type: "LongestRecoVertexTrackSelector"
-CCNuSelection.RecoTrackSelectorTool.ctpHelper: @local::CCNuSelection.ctpHelper
-CCNuSelection.RecoTrackSelectorTool.ModuleLabels: @local::CCNuSelection.ModuleLabels
 
-CCNuSelection.RecoShowerSelectorTool.tool_type: "HighestEnergyRecoVertexShowerSelector"
-CCNuSelection.RecoShowerSelectorTool.ModuleLabels: @local::CCNuSelection.ModuleLabels
-CCNuSelection.RecoShowerSelectorTool.ShowerEnergyAlg: @local::CCNuSelection.ShowerEnergyAlg
+# Pandizzle track selector tool
+CCNuSelection.RecoTrackSelectorTool.tool_type:                                 "HighestPandizzleScoreRecoVertexTrackSelector"
+CCNuSelection.RecoTrackSelectorTool.PandizzleWeightFileName:                   "MCC11_FHC_Pandizzle_TMVAClassification_BDTG_standard.weights.xml"
+CCNuSelection.RecoTrackSelectorTool.MichelCandidateDistance:                    4
+CCNuSelection.RecoTrackSelectorTool.ShowerEnergyAlg:                            @local::CCNuSelection.ShowerEnergyAlg
+CCNuSelection.RecoTrackSelectorTool.ModuleLabels:                               @local::CCNuSelection.ModuleLabels
+CCNuSelection.RecoTrackSelectorTool.MakeSelectionTrainingTrees:                 false
 
-#CCNuSelection.ctpHelper.NetworkName: "convolutional_track_pid_April2020_new.pb"
-
+# Pandrizzle shower selector tool
+CCNuSelection.RecoShowerSelectorTool.tool_type:                                "HighestPandrizzleScoreRecoVertexShowerSelector"
+CCNuSelection.RecoShowerSelectorTool.EnhancedPandrizzleWeightFileName:         ""
+CCNuSelection.RecoShowerSelectorTool.PandrizzleWeightFileName:                 "MCC11_FHC_Pandrizzle_TMVAClassification_BDTG_standard.weights.xml"
+CCNuSelection.RecoShowerSelectorTool.ModuleLabels:                              @local::CCNuSelection.ModuleLabels
+CCNuSelection.RecoShowerSelectorTool.ShowerEnergyAlg:                           @local::CCNuSelection.ShowerEnergyAlg
+CCNuSelection.RecoShowerSelectorTool.MakeSelectionTrainingTrees:                false
+CCNuSelection.RecoShowerSelectorTool.BackupPandrizzleHitCut:                    25
+CCNuSelection.RecoShowerSelectorTool.EnhancedPandrizzleHitCut:                  100
+CCNuSelection.RecoShowerSelectorTool.UseBDTVariables:                           false
+CCNuSelection.RecoShowerSelectorTool.UseConcentration:                          true
+CCNuSelection.RecoShowerSelectorTool.UseDisplacement:                           true
+CCNuSelection.RecoShowerSelectorTool.UseDCA:                                    true
+CCNuSelection.RecoShowerSelectorTool.UseModularShowerVariables:                 false
 
 END_PROLOG

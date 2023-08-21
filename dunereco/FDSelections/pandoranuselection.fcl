@@ -19,7 +19,7 @@ pandoranuselection:
     SpacePointModuleLabel:                 "pandoraSel"
   }
 
-  MakeSelectionTrainingTrees:              true
+  MakeSelectionTrainingTrees:              false
   PandizzleWeightFileName:                 "MCC11_FHC_Pandizzle_TMVAClassification_BDTG_standard.weights.xml"
   PandrizzleWeightFileName:                "MCC11_FHC_Pandrizzle_TMVAClassification_BDTG_standard.weights.xml"
   EnhancedPandrizzleWeightFileName:        ""

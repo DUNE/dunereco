@@ -125,6 +125,7 @@ class FDSelection::PandizzleAlg {
 
   // tree
   bool fMakeSelectionTrainingTrees;
+  bool fReducedTreeMode;
   TTree* fSignalTrackTree;
   TTree *fBackgroundTrackTree;
 
