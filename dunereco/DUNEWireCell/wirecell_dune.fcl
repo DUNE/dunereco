@@ -250,8 +250,8 @@ wirecell_protodunevd_mc:
 	structs: {
            nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
            lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
-           DL: @local::dunefd_largeantparameters.LongitudinalDiffusion #4.0e-9
-           DT: @local::dunefd_largeantparameters.TransverseDiffusion #8.8e-9
+           DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+           DT: @local::dunefd_largeantparameters.TransverseDiffusion
            efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
            temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
 	}
@@ -1409,6 +1409,32 @@ dune_vd_crp2_nfsp : {
 
    }
 }
+
+dune_vd_crp2_nf : {
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+      logsinks: ["stdout"]
+      loglevels: ["debug", "pgraph:info"]
+      plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
+      inputers: ["wclsRawFrameSource"]
+      outputers: ["wclsFrameSaver:nfsaver"]
+      configs: ["pgrapher/experiment/dunevd-crp2/wcls-nf.jsonnet"]
+      params : {
+         raw_input_label: "caldata:dataprep"
+         reality: "data"
+         epoch: "after"
+         signal_output_form: "sparse"
+         use_magnify: "false"
+      }
+      structs: {
+         clock_speed: @local::vdcb_crp2_services.DetectorClocksService.ClockSpeedTPC
+      }
+
+   }
+}
+
 
 dune_vd_crp2_sp : {
    module_type : WireCellToolkit
