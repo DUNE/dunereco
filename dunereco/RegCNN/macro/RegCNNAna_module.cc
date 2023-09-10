@@ -803,7 +803,7 @@ std::vector<std::pair<const simb::MCParticle*, double> >
 myana::RegCNNAna::get_sortedMCParticle(std::unordered_map<const simb::MCParticle*, double> mcEMap) {
   std::vector<std::pair<const simb::MCParticle*, double> > outVec;
   double total_E = 0;
-  for (std::pair<const simb::MCParticle*, double> const& p: mcEMap) {
+  for (std::pair<const simb::MCParticle*, double> const p: mcEMap) {
     outVec.push_back(p);
     total_E += p.second;
   }
