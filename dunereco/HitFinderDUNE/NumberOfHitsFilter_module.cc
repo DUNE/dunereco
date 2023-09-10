@@ -82,7 +82,7 @@ bool hit::NumberOfHitsFilter::filter(art::Event& evt){
     // Find the number of hits per TPC and then filter based on a large value
     std::map<unsigned int,unsigned int> hitsPerTPC;
 
-    for(auto const hit : *allHits){
+    for(auto const &hit : *allHits){
       hitsPerTPC[hit.WireID().TPC]++;
     }
     
