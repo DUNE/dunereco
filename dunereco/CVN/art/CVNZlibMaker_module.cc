@@ -298,7 +298,7 @@ namespace cvn {
     }
 
     float reco_nue_energy = 0;
-    float reco_numu_energy = 0;
+    float reco_numu_energy = true_neutrino.Lepton().Trajectory().TotalLength();
     float reco_nutau_energy = 0;
 
     // Get nue info
