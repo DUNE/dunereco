@@ -78,6 +78,7 @@ namespace cvn {
     unsigned int fTopologyHitsCut;
 
     std::string fGenieGenModuleLabel;
+    std::string fLArG4ModuleLabel;
     std::string fEnergyNueLabel;
     std::string fEnergyNumuLabel;
     std::string fEnergyNutauLabel;
@@ -118,6 +119,7 @@ namespace cvn {
     fTopologyHitsCut = pset.get<unsigned int>("TopologyHitsCut");
 
     fGenieGenModuleLabel = pset.get<std::string>("GenieGenModuleLabel");
+    fLArG4ModuleLabel = pset.get<std::string>("LArG4ModuleLabel");
     fEnergyNueLabel = pset.get<std::string>("EnergyNueLabel");
     fEnergyNumuLabel = pset.get<std::string>("EnergyNumuLabel");
     fEnergyNutauLabel = pset.get<std::string>("EnergyNutauLabel");
@@ -246,12 +248,17 @@ namespace cvn {
 
     // MC information
     std::vector<art::Ptr<simb::MCTruth>> mctruth_list;
+    std::vector<art::Ptr<simb::MCParticle>> g4par_list;
     auto h_mctruth = evt.getHandle<std::vector<simb::MCTruth>>(fGenieGenModuleLabel);
     if (h_mctruth)
       art::fill_ptr_vector(mctruth_list, h_mctruth);
+    auto h_g4par = evt.getHandle<std::vector<simb::MCParticle>>(fLArG4ModuleLabel);
+    if (h_g4par)
+      art::fill_ptr_vector(g4par_list, h_g4par);
 
     art::Ptr<simb::MCTruth> mctruth = mctruth_list[0];
     simb::MCNeutrino true_neutrino = mctruth->GetNeutrino();
+
 
     // Hard-coding event weight for now
     // Should probably fix this at some point
@@ -297,15 +304,23 @@ namespace cvn {
       if(!isFid) return;
     }
 
-    TVector3 muon_start = true_neutrino.Nu().EndPosition().Vect(); 
-    TVector3 muon_end = true_neutrino.Lepton().EndPosition().Vect();
-    TVector3 muon = muon_end - muon_start;
-    muon.Print();
+    // TVector3 muon_start = true_neutrino.Nu().EndPosition().Vect();
+    //
+    // TVector3 v_muon_length = muon_start;
+    double muon_lentraj = 0.;
+    for(auto const p : g4par_list){
+      if((p->Process().compare("primary") == 0) && (abs(p->PdgCode()) == 13)){
+        // TVector3 muon_end = p->EndPosition().Vect();
+        // v_muon_length = muon_start - muon_end;
+        muon_lentraj = (p->Trajectory()).TotalLength();
+        break;
+      }
+    }
+    // double muon_length = v_muon_length.Mag();
 
-    float reco_nue_energy = 0;
-    float reco_numu_energy =  muon.Mag();
+    float reco_nue_energy = true_neutrino.Target();
+    float reco_numu_energy =  muon_lentraj;
     float reco_nutau_energy = 0;
-    std::cout << "Numu Length : " << reco_numu_energy << std::endl;
 
     // Get nue info
     if (fEnergyNueLabel != "") {
