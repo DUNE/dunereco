@@ -67,7 +67,7 @@ namespace cvn {
     void reconfigure(const fhicl::ParameterSet& pset);
 
     double SimpleOscProb(const simb::MCFlux& flux, const simb::MCNeutrino& nu) const;
-  
+
   private:
 
     std::string fOutputDir;
@@ -92,7 +92,7 @@ namespace cvn {
     TH1D* hPOT;
     double fPOT;
     int fRun;
-    int fSubRun; 
+    int fSubRun;
 
   };
 
@@ -146,7 +146,7 @@ namespace cvn {
 
     if( nu.CCNC() == 1 && nu.Nu().PdgCode() == flux.fntype) return 1;
     if( nu.CCNC() == 1 && nu.Nu().PdgCode() != flux.fntype) return 0;
-    
+
     double E = nu.Nu().E();
     int flavAfter = nu.Nu().PdgCode();
     int flavBefore = flux.fntype;
@@ -192,7 +192,7 @@ namespace cvn {
     return 0;
 
   }
-  
+
   //......................................................................
   void CVNZlibMaker::beginJob()
   {
@@ -297,9 +297,15 @@ namespace cvn {
       if(!isFid) return;
     }
 
+    TVector3 muon_start = true_neutrino.Nu().EndPosition().Vect(); 
+    TVector3 muon_end = true_neutrino.Lepton().EndPosition().Vect();
+    TVector3 muon = muon_end - muon_start;
+    muon.Print();
+
     float reco_nue_energy = 0;
-    float reco_numu_energy = true_neutrino.Lepton().Trajectory().TotalLength();
+    float reco_numu_energy =  muon.Mag();
     float reco_nutau_energy = 0;
+    std::cout << "Numu Length : " << reco_numu_energy << std::endl;
 
     // Get nue info
     if (fEnergyNueLabel != "") {
@@ -342,9 +348,9 @@ namespace cvn {
   //......................................................................
   void CVNZlibMaker::write_files(TrainingData td, unsigned int n, std::string evtid)
   {
-    // cropped from 2880 x 500 to 500 x 500 here 
+    // cropped from 2880 x 500 to 500 x 500 here
     std::vector<unsigned char> pixel_array(3 * fPlaneLimit * fTDCLimit);
-   
+
     CVNImageUtils image_utils(fPlaneLimit, fTDCLimit, 3);
     image_utils.SetPixelMapSize(td.fPMap.NWire(), td.fPMap.NTdc());
     image_utils.SetLogScale(fSetLog);
@@ -352,7 +358,7 @@ namespace cvn {
     image_utils.ConvertPixelMapToPixelArray(td.fPMap, pixel_array);
 
     ulong src_len = 3 * fPlaneLimit * fTDCLimit; // pixelArray length
-    ulong dest_len = compressBound(src_len);     // calculate size of the compressed data               
+    ulong dest_len = compressBound(src_len);     // calculate size of the compressed data
     char* ostream = (char *) malloc(dest_len);  // allocate memory for the compressed data
 
     int res = compress((Bytef *) ostream, &dest_len, (Bytef *) &pixel_array[0], src_len);
@@ -366,10 +372,10 @@ namespace cvn {
     else if (res ==  Z_MEM_ERROR)
       std::cout << "Not enough memory for compression!" << std::endl;
 
-    // Compression ok 
+    // Compression ok
     else {
 
-      // Create output files 
+      // Create output files
       std::string image_file_name = out_dir + "/event_" + evtid + ".gz";
       std::string info_file_name = out_dir + "/event_" +  evtid + ".info";
 
@@ -404,13 +410,13 @@ namespace cvn {
         info_file << td.fNuPDG << std::endl;
         info_file << td.fNProton << std::endl;
         info_file << td.fNPion << std::endl;
-        info_file << td.fNPizero << std::endl;         
+        info_file << td.fNPizero << std::endl;
         info_file << td.fNNeutron << std::endl;
 
         info_file << td.fTopologyType << std::endl;
         info_file << td.fTopologyTypeAlt << std::endl;
-        info_file << td.fPMap.GetTotHits() << std::endl;        
-        info_file << td.fLepAngle << std::endl; 
+        info_file << td.fPMap.GetTotHits() << std::endl;
+        info_file << td.fLepAngle << std::endl;
 
         info_file.close(); // close file
       }
@@ -418,7 +424,7 @@ namespace cvn {
 
         if (image_file.is_open())
           image_file.close();
-        else 
+        else
           throw art::Exception(art::errors::FileOpenError)
             << "Unable to open file " << image_file_name << "!" << std::endl;
 
@@ -429,7 +435,7 @@ namespace cvn {
             << "Unable to open file " << info_file_name << "!" << std::endl;
       }
     }
-    
+
     free(ostream);  // free allocated memory
 
   } // cvn::CVNZlibMaker::write_files
