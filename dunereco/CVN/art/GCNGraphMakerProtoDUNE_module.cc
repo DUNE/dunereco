@@ -191,7 +191,7 @@ namespace cvn {
     std::map<unsigned int,int> trueIDMap = graphUtil.GetTruePDG(clockData, evt, fSpacePointLabel, !fUseEM, fUseHitsForTruthMatching);
 
     // Now we want to produce a graph for each one of the slices
-    for(const std::pair<unsigned int,std::map<unsigned int,art::Ptr<recob::SpacePoint>>> &sps : allGraphSpacePoints){
+    for(const std::pair<unsigned int,std::map<unsigned int,art::Ptr<recob::SpacePoint>>> sps : allGraphSpacePoints){
       if(sps.second.size() >= fMinClusterHits){
        
         cvn::GCNGraph newGraph;
@@ -199,7 +199,7 @@ namespace cvn {
         std::map<int,std::pair<int,int>> twoNearest = graphUtil.GetTwoNearestNeighbours(evt,sps.second);
 
         std::cout << "Constructing graph for slice " << sps.first << " with " << sps.second.size() << " nodes." << std::endl;
-        for(const std::pair<unsigned int,art::Ptr<recob::SpacePoint>> &sp : sps.second){
+        for(const std::pair<unsigned int,art::Ptr<recob::SpacePoint>> sp : sps.second){
   
           // Get the position
           std::vector<float> position;
