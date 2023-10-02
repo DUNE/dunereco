@@ -135,6 +135,7 @@ cet_build_plugin(EnergyReco   art::module
                         larcore::Geometry_Geometry_service
                         larreco::Calorimetry
                         larreco::RecoAlg
+                        larpandora::LArPandoraInterface
                         lardataalg::DetectorInfo
                         lardataobj::RecoBase
                         larsim::MCCheater_BackTrackerService_service
