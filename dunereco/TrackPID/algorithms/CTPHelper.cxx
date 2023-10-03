@@ -172,7 +172,7 @@ namespace ctp
       }
     }
 
-    for (weightedMCPair const &p : mcHitMap) outVecHits.push_back(p);
+    for (weightedMCPair const p : mcHitMap) outVecHits.push_back(p);
     // Can't continue without a truth match
     if(outVecHits.size() == 0) assert(0);
 

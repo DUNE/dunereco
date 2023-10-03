@@ -29,6 +29,7 @@
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 //DUNE
 #include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 #include "dunereco/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.h"
@@ -121,12 +122,19 @@ art::Ptr<recob::Track> EnergyReco::GetLongestTrack(const art::Event &event)
 {
     art::Ptr<recob::Track> pTrack{};
     const std::vector<art::Ptr<recob::Track> > tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
+    art::FindManyP<recob::PFParticle> fmPFParticle(tracks, event, fTrackLabel);
+    
     if (0 == tracks.size())
         return pTrack;
 
     double longestLength(std::numeric_limits<double>::lowest());
     for (unsigned int iTrack = 0; iTrack < tracks.size(); ++iTrack)
     {
+        if (fmPFParticle.isValid()){
+            std::vector<art::Ptr<recob::PFParticle>> pfp = fmPFParticle.at(iTrack);
+            if (!lar_pandora::LArPandoraHelper::IsTrack(pfp[0]))
+                continue;
+        }
         const double length(tracks[iTrack]->Length());
         if (length-longestLength > std::numeric_limits<double>::epsilon())
         {

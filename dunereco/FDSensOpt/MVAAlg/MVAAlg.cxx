@@ -1318,9 +1318,9 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
       }
       // Work out which IDE despoited the most charge in the hit if there was more than one.
       double maxe = -1;
-      double tote = 0;
+      // double tote = 0; // unused
       for (std::map<int,double>::iterator ii = trkide.begin(); ii!=trkide.end(); ++ii){
-        tote += ii->second;
+        // tote += ii->second; // unused
         if ((ii->second)>maxe){
           maxe = ii->second;
           TrackID = ii->first;
@@ -1466,9 +1466,9 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
         }
         // Work out which IDE despoited the most charge in the hit if there was more than one.
         double maxe = -1;
-        double tote = 0;
+        // double tote = 0; // unused
         for (std::map<int,double>::iterator ii = trkide.begin(); ii!=trkide.end(); ++ii){
-          tote += ii->second;
+          // tote += ii->second; // unused
           if ((ii->second)>maxe){
             maxe = ii->second;
             TrackID = ii->first;

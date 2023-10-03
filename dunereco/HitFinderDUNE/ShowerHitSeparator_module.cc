@@ -228,7 +228,7 @@ namespace shs {
 
     // Event, Run and Subrun set outside of this function. Take care of everything else here.
 
-    for(auto const shwHit : shwHits){
+    for(auto const &shwHit : shwHits){
       fOutTPC = shwHit.WireID().TPC;
       fOutCryo = shwHit.WireID().Cryostat;
       fOutPlane = shwHit.WireID().planeID().Plane;
@@ -240,7 +240,7 @@ namespace shs {
       fOutTree->Fill();
     }
 
-    for(auto const trkHit : trkHits){
+    for(auto const &trkHit : trkHits){
       fOutTPC = trkHit.WireID().TPC;
       fOutCryo = trkHit.WireID().Cryostat;
       fOutPlane = trkHit.WireID().planeID().Plane;
