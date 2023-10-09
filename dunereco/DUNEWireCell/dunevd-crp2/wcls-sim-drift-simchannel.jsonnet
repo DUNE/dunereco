@@ -21,9 +21,9 @@ local params = base {
   },
   lar: super.lar {
     // Longitudinal diffusion constant
-    DL: std.extVar('DL') * wc.cm2 / wc.s,
+    DL: std.extVar('DL') * wc.cm2 / wc.ns,
     // Transverse diffusion constant
-    DT: std.extVar('DT') * wc.cm2 / wc.s,
+    DT: std.extVar('DT') * wc.cm2 / wc.ns,
     // Electron lifetime
     lifetime: std.extVar('lifetime') * wc.us,
     // Electron drift speed

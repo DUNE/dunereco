@@ -5,8 +5,11 @@ local wc = import 'wirecell.jsonnet';
 
 base {
   lar: super.lar {
-      // be sure you really want to have this. default value: 8 ms
-      // lifetime: 35.0*wc.ms,
+      lifetime: 1000.0*wc.ms,
+      // Longitudinal diffusion constant
+      DL :  4.0 * wc.cm2/wc.s,
+      // Transverse diffusion constant
+      DT :  8.8 * wc.cm2/wc.s,
   },
 
   daq: super.daq {

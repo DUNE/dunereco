@@ -227,25 +227,25 @@ void FDSelection::PandrizzleAlg::InitialiseTrees() {
     BookTreeFloat(tree, "ModularShowerLargestProjectedGapSize");
 
     // For drawing purposes
-    BookTreeFloat(tree, "StartX");
-    BookTreeFloat(tree, "StartY");
-    BookTreeFloat(tree, "StartZ");
-    BookTreeFloat(tree, "EndX");
-    BookTreeFloat(tree, "EndY");
-    BookTreeFloat(tree, "EndZ");
-    BookTreeFloat(tree, "StartPX");
-    BookTreeFloat(tree, "StartPY");
-    BookTreeFloat(tree, "StartPZ");
-    BookTreeFloat(tree, "EndPX");
-    BookTreeFloat(tree, "EndPY");
-    BookTreeFloat(tree, "EndPZ");
+    //BookTreeFloat(tree, "StartX");
+    //BookTreeFloat(tree, "StartY");
+    //BookTreeFloat(tree, "StartZ");
+    //BookTreeFloat(tree, "EndX");
+    //BookTreeFloat(tree, "EndY");
+    //BookTreeFloat(tree, "EndZ");
+    //BookTreeFloat(tree, "StartPX");
+    //BookTreeFloat(tree, "StartPY");
+    //BookTreeFloat(tree, "StartPZ");
+    //BookTreeFloat(tree, "EndPX");
+    //BookTreeFloat(tree, "EndPY");
+    //BookTreeFloat(tree, "EndPZ");
 
-    fVarHolder.m_trajPositionX = std::vector<float>();
-    fVarHolder.m_trajPositionY = std::vector<float>();
-    fVarHolder.m_trajPositionZ = std::vector<float>();
-    tree->Branch("TrajPositionX", &fVarHolder.m_trajPositionX);
-    tree->Branch("TrajPositionY", &fVarHolder.m_trajPositionY);
-    tree->Branch("TrajPositionZ", &fVarHolder.m_trajPositionZ);
+    //fVarHolder.m_trajPositionX = std::vector<float>();
+    //fVarHolder.m_trajPositionY = std::vector<float>();
+    //fVarHolder.m_trajPositionZ = std::vector<float>();
+    //tree->Branch("TrajPositionX", &fVarHolder.m_trajPositionX);
+    //tree->Branch("TrajPositionY", &fVarHolder.m_trajPositionY);
+    //tree->Branch("TrajPositionZ", &fVarHolder.m_trajPositionZ);
   }
 }
 
@@ -371,8 +371,19 @@ void FDSelection::PandrizzleAlg::FillPandrizzleInfo(const art::Ptr<recob::Shower
     return;
   
   art::Ptr<recob::PFParticle> nu_pfp = dune_ana::DUNEAnaEventUtils::GetNeutrino(evt, fPFParticleModuleLabel);
-  art::Ptr<recob::Vertex> pNuVertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(nu_pfp, evt, fPFParticleModuleLabel);
-  TVector3 nuVertex = TVector3(pNuVertex->position().X(), pNuVertex->position().Y(), pNuVertex->position().Z());
+
+  TVector3 nuVertex = TVector3(0.f, 0.f, 0.f);
+
+  try
+  {
+    art::Ptr<recob::Vertex> pNuVertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(nu_pfp, evt, fPFParticleModuleLabel);
+    nuVertex = TVector3(pNuVertex->position().X(), pNuVertex->position().Y(), pNuVertex->position().Z());
+  }
+  catch(...)
+  {
+      return;
+  }
+
   TVector3 showerVertex = pShower->ShowerStart();
 
   fVarHolder.FloatVars["Displacement"] = std::min(static_cast<Float_t>((showerVertex - nuVertex).Mag()), 100.f);
@@ -418,11 +429,11 @@ void FDSelection::PandrizzleAlg::FillEnhancedPandrizzleInfo(const art::Ptr<recob
   art::FindManyP<larpandoraobj::PFParticleMetadata> metadataAssn(pfparticleListHandle, evt, fPFPMetadataLabel);
   std::vector<art::Ptr<larpandoraobj::PFParticleMetadata>> pfpMetadata = metadataAssn.at(pfp.key());
 
-  if (pfpMetadata.size() == 1)
+  if ((pfpMetadata.size() == 1) && (pfpMetadata[0]->GetPropertiesMap().find("PathwayLengthMin") != pfpMetadata[0]->GetPropertiesMap().end()))
   {
     larpandoraobj::PFParticleMetadata::PropertiesMap propertiesMap(pfpMetadata[0]->GetPropertiesMap());
 
-    fVarHolder.FloatVars["FoundConnectionPathway"] = propertiesMap.find("ElectronConnectionPathwayScore") != propertiesMap.end() ? 1.0 : 0.0;
+    fVarHolder.FloatVars["FoundConnectionPathway"] = propertiesMap.find("FoundConnectionPathway") != propertiesMap.end() ? 1.0 : 0.0;
     fVarHolder.FloatVars["ConnectionBDTScore"] = propertiesMap.find("ElectronConnectionPathwayScore") != propertiesMap.end() ? propertiesMap.at("ElectronConnectionPathwayScore") : -100.0;
     fVarHolder.FloatVars["PathwayLengthMin"] = propertiesMap.find("PathwayLengthMin") != propertiesMap.end() ? propertiesMap.at("PathwayLengthMin") : -100.0;
     fVarHolder.FloatVars["MaxShowerStartPathwayScatteringAngle2D"] = propertiesMap.find("MaxShowerStartPathwayScatteringAngle2D") != propertiesMap.end() ?
@@ -512,8 +523,18 @@ void FDSelection::PandrizzleAlg::FillBackupPandrizzleInfo(const art::Ptr<recob::
     fVarHolder.FloatVars["ModularShowerPathwayKink3D"] = std::min(modularShowerPathwayKink3D, 20.f);
 
     art::Ptr<recob::PFParticle> nu_pfp = dune_ana::DUNEAnaEventUtils::GetNeutrino(evt, fPFParticleModuleLabel);
-    art::Ptr<recob::Vertex> pNuVertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(nu_pfp, evt, fPFParticleModuleLabel);
-    TVector3 nuVertex = TVector3(pNuVertex->position().X(), pNuVertex->position().Y(), pNuVertex->position().Z());
+
+    TVector3 nuVertex = TVector3(0.f, 0.f, 0.f);
+
+    try
+    {
+        art::Ptr<recob::Vertex> pNuVertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(nu_pfp, evt, fPFParticleModuleLabel);
+        nuVertex = TVector3(pNuVertex->position().X(), pNuVertex->position().Y(), pNuVertex->position().Z());
+    }
+    catch(...)
+    {
+        return;
+    }
 
     SetInitialRegionVariables(nuVertex, trackStub);
 
@@ -1211,6 +1232,7 @@ FDSelection::PandrizzleAlg::Record FDSelection::PandrizzleAlg::RunPID(const art:
   fVarHolder.BoolVars["EnhancedPandrizzleVarsFilled"] = false;
   fVarHolder.BoolVars["BackupPandrizzleVarsFilled"] = false;
 
+  Reset(fInputsToReader);
   ResetTreeVariables();
   ProcessPFParticle(pfp, evt);
 
@@ -1278,7 +1300,7 @@ FDSelection::PandrizzleAlg::Record FDSelection::PandrizzleAlg::RunPID(const art:
     SetVar(kModularShowerMaxNShowerHits, fVarHolder.FloatVars["ModularShowerMaxNShowerHits"]);
   }
  
-  if (std::fabs(*fInputsToReader.at(kBDTMethod) - 2.f) > std::numeric_limits<float>::epsilon())
+  if (!(std::fabs(*fInputsToReader.at(kBDTMethod) - 2.f) < std::numeric_limits<float>::epsilon()))
       SetVar(kBDTMethod, 1);
 
   SetVar(kBackupPandrizzleScore, fReader.EvaluateMVA("BDTG"));
