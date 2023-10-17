@@ -1,6 +1,3 @@
-// ProtoDUNE-SP specific parameters.  This file inerets from the
-// generic set of parameters and overrides things specific to PDSP.
-
 local wc = import "wirecell.jsonnet";
 local base = import "pgrapher/common/params.jsonnet";
 
@@ -8,31 +5,22 @@ function(params) base {
     // This section will be overwritten in simparams.jsonnet
     det : {
 
-        // define the 6 APAs.  This must use the coordinate system
-        // defined by the wire geometry file.
-        // A full drift is a box: xyz=[3.594*wc.m, 5.9*wc.m, 2.2944*wc.m].
-        //
         // The "faces" is consumed by, at least, the Drifter and
         // AnodePlane.  The "wires" number is used to set
         // AnodePlane.ident used to lookup the anode in WireSchema.
         // It corresponds to the anode number.
-        //
-        // Also see:
-        //   wirecell-util wire-volumes protodune-wires-larsoft-v3.json.bz2
-        // to help with defining these parameters.
-
-        // from DocDB 203 and assuming wires are symmetric across x=0
 
         // between center lines
-        local apa_cpa = 3.637*wc.m,
-        local cpa_thick = 50.8*wc.mm,
-        local apa_w2w = 85.725*wc.mm, // DocDB 203 calls "W" as "X"
+        // local apa_cpa = 3.637*wc.m, // DocDB 203
+        local apa_cpa = 3.63075*wc.m, // LArSoft
+        // local cpa_thick = 50.8*wc.mm, // DocDB 203
+        local cpa_thick = 3.175*wc.mm, // 1/8", from Bo Yu (BNL) and confirmed with LArSoft
+
+        // X positions from dune10kt gdml:
+        // U: 39.5355 mm, V: 34.7755 mm, W: 30.0155 mm
+        local apa_w2w = 60.031*wc.mm,
         local plane_gap = 4.76*wc.mm,
-        local apa_g2g = 114.3*wc.mm, // note that grid plane must have
-                                     // gap 4.7675mm for this number
-                                     // to be consistent with above.
-                                     // There's probably round-off
-                                     // error in DocDB 203.
+        local apa_g2g = apa_w2w + 6*plane_gap, // 88.591*wc.mm,
 
         // The "anode" cut off plane, here measured from APA
         // centerline, determines how close to the wires do we
@@ -42,7 +30,8 @@ function(params) base {
         // Placing it w/in the response plane means any depos that are
         // "backed up" won't have proper field response.  But, the
         // tighter this is made, the less volume is simulated.
-        local apa_plane = 0.5*apa_g2g, // pick it to be at the grid wires
+        // local apa_plane = 0.5*apa_g2g, // pick it to be at the grid wires
+        local apa_plane = 0.5*apa_g2g - plane_gap, // pick it to be at the first induction wires
 
         // The "response" plane is where the field response functions
         // start.  Garfield calcualtions start somewhere relative to
@@ -75,7 +64,11 @@ function(params) base {
                 // top, front face is against cryo wall
                 if sign > 0
                 then [
-                    null,
+                    {
+                        anode: centerline + apa_plane,
+                        response: centerline + res_plane,
+                        cathode: centerline + cpa_plane, 
+                    },
                     {
                         anode: centerline - apa_plane,
                         response: centerline - res_plane,
@@ -89,7 +82,11 @@ function(params) base {
                         response: centerline + res_plane,
                         cathode: centerline + cpa_plane, 
                     },
-                    null
+                    {
+                        anode: centerline - apa_plane,
+                        response: centerline - res_plane,
+                        cathode: centerline - cpa_plane, 
+                    }
                 ],
             } for n in std.range(0,11)], // twelve anodes
 
@@ -100,8 +97,8 @@ function(params) base {
         // rectangular solid.  Again "wirecell-util wires-info" helps
         // to choose something.
         bounds : {
-            tail: wc.point(-4.0, 0.0, 0.0, wc.m),
-            head: wc.point(+4.0, 6.1, 7.0, wc.m),
+          tail: wc.point(-363.376, -600.019, -0.87625, wc.cm),
+          head: wc.point( 363.376,  600.019, 1393.46, wc.cm),
         }
     },
 

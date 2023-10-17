@@ -70,9 +70,9 @@
 constexpr int kDefInt = -9999;
 constexpr int kDefDoub = (double)(kDefInt);
 
-constexpr int kDefMaxNTrueVertexParticles = 500;
-constexpr int kDefMaxNRecoTracks = 1000;
-constexpr int kDefMaxNRecoShowers = 1000;
+constexpr int kDefMaxNTrueVertexParticles = 150;
+constexpr int kDefMaxNRecoTracks = 50;
+constexpr int kDefMaxNRecoShowers = 50;
 
 namespace FDSelection {
   class CCNuSelection;
@@ -518,6 +518,7 @@ private:
   ////////////////////////////////////////
   //Algs
   bool fMakeSelectionTrainingTrees;
+  double fReducedTreeMode;
   PandizzleAlg fPandizzleAlg;
   PandrizzleAlg fPandrizzleAlg;
   calo::CalorimetryAlg fCalorimetryAlg;
@@ -556,6 +557,7 @@ FDSelection::CCNuSelection::CCNuSelection(fhicl::ParameterSet const & pset) :
   fNumuEnergyRecoModuleLabel(pset.get<std::string>("ModuleLabels.NumuEnergyRecoModuleLabel")),
   fNueEnergyRecoModuleLabel(pset.get<std::string>("ModuleLabels.NueEnergyRecoModuleLabel")),
   fMakeSelectionTrainingTrees(pset.get<bool>("MakeSelectionTrainingTrees")),
+  fReducedTreeMode(pset.get<bool>("ReducedTreeMode", true)),
   fPandizzleAlg(pset),
   fPandrizzleAlg(pset),
   fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
@@ -601,370 +603,386 @@ void FDSelection::CCNuSelection::beginJob()
   // Implementation of optional member function here.
     art::ServiceHandle<art::TFileService> tfs;
     fTree = tfs->make<TTree>("ccnusel","CC nu selection");
+
+    // Event info
     fTree->Branch("Run",&fRun);
     fTree->Branch("SubRun",&fSubRun);
     fTree->Branch("Event",&fEvent);
-    fTree->Branch("IsMC",&fIsMC);
-    fTree->Branch("T0",&fT0);
+
+    // True info
     fTree->Branch("NuPdg",&fNuPdg);
     fTree->Branch("BeamPdg",&fBeamPdg);
     fTree->Branch("NC",&fNC);
     fTree->Branch("Mode",&fMode);
     fTree->Branch("TargetZ",&fTargetZ);
-    fTree->Branch("Q2",&fQ2);
     fTree->Branch("Enu",&fENu);
-    fTree->Branch("W",&fW);
-    fTree->Branch("X",&fX);
-    fTree->Branch("Y",&fY);
-    fTree->Branch("NuMomX",&fNuMomX);
-    fTree->Branch("NuMomY",&fNuMomY);
-    fTree->Branch("NuMomZ",&fNuMomZ);
-    fTree->Branch("NuMomT",&fNuMomT);
     fTree->Branch("NuX",&fNuX);
     fTree->Branch("NuY",&fNuY);
     fTree->Branch("NuZ",&fNuZ);
-    fTree->Branch("NuT",&fNuT);
-    fTree->Branch("NPiP",&fNPiP);
-    fTree->Branch("NPim",&fNPim);
-    fTree->Branch("NPi0",&fNPi0);
-    fTree->Branch("NPhotons",&fNPhotons);
-    fTree->Branch("NProton",&fNProtons);
-    fTree->Branch("NNeutrons",&fNNeutrons);
-    fTree->Branch("NOther",&fNOther);
-    fTree->Branch("NVertexParticles",&fNVertexParticles);
-    fTree->Branch("VertexParticleIsGHEP",fVertexParticleIsGHEP,"VertexParticleIsGHEP[NVertexParticles]/O");
-    fTree->Branch("VertexParticlePDG",fVertexParticlePDG,"VertexParticlePDG[NVertexParticles]/I");
-    fTree->Branch("VertexParticleStatus",fVertexParticleStatus,"VertexParticleStatus[NVertexParticles]/I");
-    fTree->Branch("VertexParticleNChildren",fVertexParticleNChildren,"VertexParticleNChildren[NVertexParticles]/I");
-    fTree->Branch("VertexParticleMomX",fVertexParticleMomX,"VertexParticleMomX[NVertexParticles]/D");
-    fTree->Branch("VertexParticleMomY",fVertexParticleMomY,"VertexParticleMomY[NVertexParticles]/D");
-    fTree->Branch("VertexParticleMomZ",fVertexParticleMomZ,"VertexParticleMomZ[NVertexParticles]/D");
-    fTree->Branch("VertexParticleMomT",fVertexParticleMomT,"VertexParticleMomT[NVertexParticles]/D");
-    fTree->Branch("VertexParticleEndX",fVertexParticleEndX,"VertexParticleEndX[NVertexParticles]/D");
-    fTree->Branch("VertexParticleEndY",fVertexParticleEndY,"VertexParticleEndY[NVertexParticles]/D");
-    fTree->Branch("VertexParticleEndZ",fVertexParticleEndZ,"VertexParticleEndZ[NVertexParticles]/D");
-    fTree->Branch("VertexParticleEndT",fVertexParticleEndT,"VertexParticleEndT[NVertexParticles]/D");
-    fTree->Branch("LepPDG",&fLepPDG);
-    fTree->Branch("MomLepX",&fMomLepX);
-    fTree->Branch("MomLepY",&fMomLepY);
-    fTree->Branch("MomLepZ",&fMomLepZ);
-    fTree->Branch("MomLepT",&fMomLepT);
-    fTree->Branch("LepEndX",&fLepEndX);
-    fTree->Branch("LepEndY",&fLepEndY);
-    fTree->Branch("LepEndZ",&fLepEndZ);
-    fTree->Branch("LepEndT",&fLepEndT);
-    fTree->Branch("LepNuAngle",&fLepNuAngle);
-    fTree->Branch("NuMomTranMag",&fNuMomTranMag);
-    fTree->Branch("TargNuclMomTranMag",&fTargNuclMomTranMag);
-    fTree->Branch("InitalMomTranMag",&fInitalMomTranMag);
-    fTree->Branch("LepMomTranMag",&fLepMomTranMag);
-    fTree->Branch("NuclRemMomTranMag",&fNuclRemMomTranMag);
-    fTree->Branch("FinalMomTranMagNoLepNoRem",&fFinalMomTranMagNoLepNoRem);
-    fTree->Branch("FinalMomTranMagNoLepWithRem",&fFinalMomTranMagNoLepWithRem);
-    fTree->Branch("FinalMomTranMagWithLepNoRem",&fFinalMomTranMagWithLepNoRem);
-    fTree->Branch("FinalMomTranMagWithLepWithRem",&fFinalMomTranMagWithLepWithRem);
-    fTree->Branch("SelTrackTruePDG",&fSelTrackTruePDG);
-    fTree->Branch("SelTrackTruePrimary",&fSelTrackTruePrimary);
-    fTree->Branch("SelTrackTrueMomX",&fSelTrackTrueMomX);
-    fTree->Branch("SelTrackTrueMomY",&fSelTrackTrueMomY);
-    fTree->Branch("SelTrackTrueMomZ",&fSelTrackTrueMomZ);
-    fTree->Branch("SelTrackTrueMomT",&fSelTrackTrueMomT);
-    fTree->Branch("SelTrackTrueStartX",&fSelTrackTrueStartX);
-    fTree->Branch("SelTrackTrueStartY",&fSelTrackTrueStartY);
-    fTree->Branch("SelTrackTrueStartZ",&fSelTrackTrueStartZ);
-    fTree->Branch("SelTrackTrueEndX",&fSelTrackTrueEndX);
-    fTree->Branch("SelTrackTrueEndY",&fSelTrackTrueEndY);
-    fTree->Branch("SelTrackTrueEndZ",&fSelTrackTrueEndZ);
-    fTree->Branch("SelTrackRecoNHits",&fSelTrackRecoNHits);
-    fTree->Branch("SelTrackRecoCompleteness",&fSelTrackRecoCompleteness);
-    fTree->Branch("SelTrackRecoHitPurity",&fSelTrackRecoHitPurity);
-    fTree->Branch("SelTrackRecoStartX",&fSelTrackRecoStartX);
-    fTree->Branch("SelTrackRecoStartY",&fSelTrackRecoStartY);
-    fTree->Branch("SelTrackRecoStartZ",&fSelTrackRecoStartZ);
-    fTree->Branch("SelTrackRecoEndX",&fSelTrackRecoEndX);
-    fTree->Branch("SelTrackRecoEndY",&fSelTrackRecoEndY);
-    fTree->Branch("SelTrackRecoEndZ",&fSelTrackRecoEndZ);
-    fTree->Branch("SelTrackRecoUpstreamX",&fSelTrackRecoUpstreamX);
-    fTree->Branch("SelTrackRecoUpstreamY",&fSelTrackRecoUpstreamY);
-    fTree->Branch("SelTrackRecoUpstreamZ",&fSelTrackRecoUpstreamZ);
-    fTree->Branch("SelTrackRecoDownstreamX",&fSelTrackRecoDownstreamX);
-    fTree->Branch("SelTrackRecoDownstreamY",&fSelTrackRecoDownstreamY);
-    fTree->Branch("SelTrackRecoDownstreamZ",&fSelTrackRecoDownstreamZ);
-    fTree->Branch("SelTrackRecoEndClosestToVertexX",&fSelTrackRecoEndClosestToVertexX);
-    fTree->Branch("SelTrackRecoEndClosestToVertexY",&fSelTrackRecoEndClosestToVertexY);
-    fTree->Branch("SelTrackRecoEndClosestToVertexZ",&fSelTrackRecoEndClosestToVertexZ);
-    fTree->Branch("SelTrackRecoLength",&fSelTrackRecoLength);
-    fTree->Branch("SelTrackRecoContained",&fSelTrackRecoContained);
-    fTree->Branch("SelTrackRecoMomMethod",&fSelTrackRecoMomMethod);
-    fTree->Branch("SelTrackRecoCharge",&fSelTrackRecoCharge);
-    fTree->Branch("SelTrackRecoMomMCS",&fSelTrackRecoMomMCS);
-    fTree->Branch("SelTrackRecoMomContained",&fSelTrackRecoMomContained);
-    fTree->Branch("SelTrackRecoVertexX",&fSelTrackRecoVertexX);
-    fTree->Branch("SelTrackRecoVertexY",&fSelTrackRecoVertexY);
-    fTree->Branch("SelTrackRecoVertexZ",&fSelTrackRecoVertexZ);
-    fTree->Branch("SelTrackRecoNChildPFP",&fSelTrackRecoNChildPFP);
-    fTree->Branch("SelTrackRecoNChildTrackPFP",&fSelTrackRecoNChildTrackPFP);
-    fTree->Branch("SelTrackRecoNChildShowerPFP",&fSelTrackRecoNChildShowerPFP);
-    fTree->Branch("SelTrackMVAElectron",&fSelTrackMVAElectron);
-    fTree->Branch("SelTrackMVAPion",&fSelTrackMVAPion);
-    fTree->Branch("SelTrackMVAMuon",&fSelTrackMVAMuon);
-    fTree->Branch("SelTrackMVAProton",&fSelTrackMVAProton);
-    fTree->Branch("SelTrackMVAPhoton",&fSelTrackMVAPhoton);
-    fTree->Branch("SelTrackDeepPanMuVar",&fSelTrackDeepPanMuVar);
-    fTree->Branch("SelTrackDeepPanPiVar",&fSelTrackDeepPanPiVar);
-    fTree->Branch("SelTrackDeepPanProtonVar",&fSelTrackDeepPanProtonVar);
-    fTree->Branch("SelTrackMichelNHits", &fSelTrackMichelNHits);
-    fTree->Branch("SelTrackMichelElectronMVA", &fSelTrackMichelElectronMVA);
-    fTree->Branch("SelTrackMichelRecoEnergyPlane2", &fSelTrackMichelRecoEnergyPlane2);
-    fTree->Branch("SelTrackDeflecAngleSD", &fSelTrackDeflecAngleSD);
-    fTree->Branch("SelTrackLength", &fSelTrackLength);
-    fTree->Branch("SelTrackEvalRatio", &fSelTrackEvalRatio);
-    fTree->Branch("SelTrackConcentration", &fSelTrackConcentration);
-    fTree->Branch("SelTrackCoreHaloRatio", &fSelTrackCoreHaloRatio);
-    fTree->Branch("SelTrackConicalness", &fSelTrackConicalness);
-    fTree->Branch("SelTrackdEdxStart", &fSelTrackdEdxStart);
-    fTree->Branch("SelTrackdEdxEnd", &fSelTrackdEdxEnd);
-    fTree->Branch("SelTrackdEdxEndRatio", &fSelTrackdEdxEndRatio);
-    fTree->Branch("SelTrackPandizzleVar", &fSelTrackPandizzleVar);
-    fTree->Branch("NRecoTracks",&fNRecoTracks);
-    fTree->Branch("RecoTrackIsPrimary",fRecoTrackIsPrimary,"RecoTrackIsPrimary[NRecoTracks]/O");
-    fTree->Branch("RecoTrackTruePDG",fRecoTrackTruePDG,"RecoTrackTruePDG[NRecoTracks]/I");
-    fTree->Branch("RecoTrackTruePrimary",fRecoTrackTruePrimary,"RecoTrackTruePrimary[NRecoTracks]/O");
-    fTree->Branch("RecoTrackTrueMomX",fRecoTrackTrueMomX,"RecoTrackTrueMomX[NRecoTracks]/D");
-    fTree->Branch("RecoTrackTrueMomY",fRecoTrackTrueMomY,"RecoTrackTrueMomY[NRecoTracks]/D");
-    fTree->Branch("RecoTrackTrueMomZ",fRecoTrackTrueMomZ,"RecoTrackTrueMomZ[NRecoTracks]/D");
-    fTree->Branch("RecoTrackTrueMomT",fRecoTrackTrueMomT,"RecoTrackTrueMomT[NRecoTracks]/D");
-    fTree->Branch("RecoTrackTrueStartX",fRecoTrackTrueStartX,"RecoTrackTrueStartX[NRecoTracks]/D");
-    fTree->Branch("RecoTrackTrueStartY",fRecoTrackTrueStartY,"RecoTrackTrueStartY[NRecoTracks]/D");
-    fTree->Branch("RecoTrackTrueStartZ",fRecoTrackTrueStartZ,"RecoTrackTrueStartZ[NRecoTracks]/D");
-    fTree->Branch("RecoTrackTrueEndX",fRecoTrackTrueEndX,"RecoTrackTrueEndX[NRecoTracks]/D");
-    fTree->Branch("RecoTrackTrueEndY",fRecoTrackTrueEndY,"RecoTrackTrueEndY[NRecoTracks]/D");
-    fTree->Branch("RecoTrackTrueEndZ",fRecoTrackTrueEndZ,"RecoTrackTrueEndZ[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoNHits",fRecoTrackRecoNHits,"RecoTrackRecoNHits[NRecoTracks]/I");
-    fTree->Branch("RecoTrackRecoCompleteness",fRecoTrackRecoCompleteness,"RecoTrackRecoCompleteness[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoHitPurity",fRecoTrackRecoHitPurity,"RecoTrackRecoHitPurity[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoStartX",fRecoTrackRecoStartX,"RecoTrackRecoStartX[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoStartY",fRecoTrackRecoStartY,"RecoTrackRecoStartY[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoStartZ",fRecoTrackRecoStartZ,"RecoTrackRecoStartZ[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoEndX",fRecoTrackRecoEndX,"RecoTrackRecoEndX[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoEndY",fRecoTrackRecoEndY,"RecoTrackRecoEndY[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoEndZ",fRecoTrackRecoEndZ,"RecoTrackRecoEndZ[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoUpstreamX",fRecoTrackRecoUpstreamX,"RecoTrackRecoUpstreamX[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoUpstreamY",fRecoTrackRecoUpstreamY,"RecoTrackRecoUpstreamY[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoUpstreamZ",fRecoTrackRecoUpstreamZ,"RecoTrackRecoUpstreamZ[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoDownstreamX",fRecoTrackRecoDownstreamX,"RecoTrackRecoDownstreamX[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoDownstreamY",fRecoTrackRecoDownstreamY,"RecoTrackRecoDownstreamY[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoDownstreamZ",fRecoTrackRecoDownstreamZ,"RecoTrackRecoDownstreamZ[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoEndClosestToVertexX",fRecoTrackRecoEndClosestToVertexX,"RecoTrackRecoEndClosestToVertexX[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoEndClosestToVertexY",fRecoTrackRecoEndClosestToVertexY,"RecoTrackRecoEndClosestToVertexY[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoEndClosestToVertexZ",fRecoTrackRecoEndClosestToVertexZ,"RecoTrackRecoEndClosestToVertexZ[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoLength",fRecoTrackRecoLength,"RecoTrackRecoLength[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoContained",fRecoTrackRecoContained,"RecoTrackRecoContained[NRecoTracks]/I");
-    fTree->Branch("RecoTrackRecoMomMethod",fRecoTrackRecoMomMethod,"RecoTrackRecoMomMethod[NRecoTracks]/I");
-    fTree->Branch("RecoTrackRecoCharge",fRecoTrackRecoCharge,"RecoTrackRecoCharge[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoMomMCS",fRecoTrackRecoMomMCS,"RecoTrackRecoMomMCS[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoMomContained",fRecoTrackRecoMomContained,"RecoTrackRecoMomContained[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoVertexX",fRecoTrackRecoVertexX,"RecoTrackRecoVertexX[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoVertexY",fRecoTrackRecoVertexY,"RecoTrackRecoVertexY[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoVertexZ",fRecoTrackRecoVertexZ,"RecoTrackRecoVertexZ[NRecoTracks]/D");
-    fTree->Branch("RecoTrackRecoNChildPFP",fRecoTrackRecoNChildPFP,"RecoTrackRecoNChildPFP[NRecoTracks]/I");
-    fTree->Branch("RecoTrackRecoNChildTrackPFP",fRecoTrackRecoNChildTrackPFP,"RecoTrackRecoNChildTrackPFP[NRecoTracks]/I");
-    fTree->Branch("RecoTrackRecoNChildShowerPFP",fRecoTrackRecoNChildShowerPFP,"RecoTrackRecoNChildShowerPFP[NRecoTracks]/I");
-    fTree->Branch("RecoTrackMVAElectron",fRecoTrackMVAElectron,"RecoTrackMVAElectron[NRecoTracks]/D");
-    fTree->Branch("RecoTrackMVAPion",fRecoTrackMVAPion,"RecoTrackMVAPion[NRecoTracks]/D");
-    fTree->Branch("RecoTrackMVAMuon",fRecoTrackMVAMuon,"RecoTrackMVAMuon[NRecoTracks]/D");
-    fTree->Branch("RecoTrackMVAProton",fRecoTrackMVAProton,"RecoTrackMVAProton[NRecoTracks]/D");
-    fTree->Branch("RecoTrackMVAPhoton",fRecoTrackMVAPhoton,"RecoTrackMVAPhoton[NRecoTracks]/D");
-    fTree->Branch("RecoTrackDeepPanMuVar",fRecoTrackDeepPanMuVar,"RecoTrackDeepPanMuVar[NRecoTracks]/D");
-    fTree->Branch("RecoTrackDeepPanPiVar",fRecoTrackDeepPanPiVar,"RecoTrackDeepPanPiVar[NRecoTracks]/D");
-    fTree->Branch("RecoTrackDeepPanProtonVar",fRecoTrackDeepPanProtonVar,"RecoTrackDeepPanProtonVar[NRecoTracks]/D");
-    fTree->Branch("RecoTrackMichelNHits", fRecoTrackMichelNHits, "RecoTrackMichelNHits/D");
-    fTree->Branch("RecoTrackMichelElectronMVA", fRecoTrackMichelElectronMVA, "RecoTrackMichelElectronMVA/D");
-    fTree->Branch("RecoTrackMichelRecoEnergyPlane2", fRecoTrackMichelRecoEnergyPlane2, "RecoTrackMichelRecoEnergyPlane2/D");
-    fTree->Branch("RecoTrackDeflecAngleSD", fRecoTrackDeflecAngleSD, "RecoTrackDeflecAngleSD/D");
-    fTree->Branch("RecoTrackLength", fRecoTrackLength, "RecoTrackLength/D");
-    fTree->Branch("RecoTrackEvalRatio", fRecoTrackEvalRatio, "RecoTrackEvalRatio/D");
-    fTree->Branch("RecoTrackConcentration", fRecoTrackConcentration, "RecoTrackConcentration/D");
-    fTree->Branch("RecoTrackCoreHaloRatio", fRecoTrackCoreHaloRatio, "RecoTrackCoreHaloRatio/D");
-    fTree->Branch("RecoTrackConicalness", fRecoTrackConicalness, "RecoTrackConicalness/D");
-    fTree->Branch("RecoTrackdEdxStart", fRecoTrackdEdxStart, "RecoTrackdEdxStart/D");
-    fTree->Branch("RecoTrackdEdxEnd", fRecoTrackdEdxEnd, "RecoTrackdEdxEnd/D");
-    fTree->Branch("RecoTrackdEdxEndRatio", fRecoTrackdEdxEndRatio, "RecoTrackdEdxEndRatio/D");
-    fTree->Branch("RecoTrackPandizzleVar",fRecoTrackPandizzleVar,"RecoTrackPandizzleVar[NRecoTracks]/D");
 
-    fTree->Branch("SelShowerTruePDG",&fSelShowerTruePDG);
-    fTree->Branch("SelShowerTruePrimary",&fSelShowerTruePrimary);
-    fTree->Branch("SelShowerTrueMomX",&fSelShowerTrueMomX);
-    fTree->Branch("SelShowerTrueMomY",&fSelShowerTrueMomY);
-    fTree->Branch("SelShowerTrueMomZ",&fSelShowerTrueMomZ);
-    fTree->Branch("SelShowerTrueMomT",&fSelShowerTrueMomT);
-    fTree->Branch("SelShowerTrueStartX",&fSelShowerTrueStartX);
-    fTree->Branch("SelShowerTrueStartY",&fSelShowerTrueStartY);
-    fTree->Branch("SelShowerTrueStartZ",&fSelShowerTrueStartZ);
-    fTree->Branch("SelShowerTrueEndX",&fSelShowerTrueEndX);
-    fTree->Branch("SelShowerTrueEndY",&fSelShowerTrueEndY);
-    fTree->Branch("SelShowerTrueEndZ",&fSelShowerTrueEndZ);
-    fTree->Branch("SelShowerRecoNHits",&fSelShowerRecoNHits);
-    fTree->Branch("SelShowerRecoCompleteness",&fSelShowerRecoCompleteness);
-    fTree->Branch("SelShowerRecoHitPurity",&fSelShowerRecoHitPurity);
-    fTree->Branch("SelShowerRecoStartX",&fSelShowerRecoStartX);
-    fTree->Branch("SelShowerRecoStartY",&fSelShowerRecoStartY);
-    fTree->Branch("SelShowerRecoStartZ",&fSelShowerRecoStartZ);
-    fTree->Branch("SelShowerRecoCharge",&fSelShowerRecoCharge);
-    fTree->Branch("SelShowerRecoMom",&fSelShowerRecoMom);
-    fTree->Branch("SelShowerRecoVertexX",&fSelShowerRecoVertexX);
-    fTree->Branch("SelShowerRecoVertexY",&fSelShowerRecoVertexY);
-    fTree->Branch("SelShowerRecoVertexZ",&fSelShowerRecoVertexZ);
-    fTree->Branch("SelShowerDistanceToNuVertexU", &fSelShowerDistanceToNuVertexU);
-    fTree->Branch("SelShowerDistanceToNuVertexV", &fSelShowerDistanceToNuVertexV);
-    fTree->Branch("SelShowerDistanceToNuVertexW", &fSelShowerDistanceToNuVertexW);
-    fTree->Branch("SelShowerRecoNChildPFP",&fSelShowerRecoNChildPFP);
-    fTree->Branch("SelShowerRecoNChildTrackPFP",&fSelShowerRecoNChildTrackPFP);
-    fTree->Branch("SelShowerRecoNChildShowerPFP",&fSelShowerRecoNChildShowerPFP);
-    fTree->Branch("SelShowerRecoDirX",&fSelShowerRecoDirX);
-    fTree->Branch("SelShowerRecoDirY",&fSelShowerRecoDirY);
-    fTree->Branch("SelShowerRecoDirZ",&fSelShowerRecoDirZ);
-    fTree->Branch("SelShowerRecodEdx",&fSelShowerRecodEdx,"SelShowerRecodEdx[3]/D");
-    fTree->Branch("SelShowerRecoEnergy",&fSelShowerRecoEnergy,"SelShowerRecoEnergy[3]/D");
-    fTree->Branch("SelShowerRecoBestPlane",&fSelShowerRecoBestPlane);
-    fTree->Branch("SelShowerRecoLength",&fSelShowerRecoLength);
-    fTree->Branch("SelShowerRecoOpeningAngle",&fSelShowerRecoOpeningAngle);
-    fTree->Branch("SelShowerMVAElectron",&fSelShowerMVAElectron);
-    fTree->Branch("SelShowerMVAPion",&fSelShowerMVAPion);
-    fTree->Branch("SelShowerMVAMuon",&fSelShowerMVAMuon);
-    fTree->Branch("SelShowerMVAProton",&fSelShowerMVAProton);
-    fTree->Branch("SelShowerMVAPhoton",&fSelShowerMVAPhoton);
-    fTree->Branch("SelShowerPandrizzleConnectionBDTScore", &fSelShowerPandrizzleConnectionBDTScore);
-    fTree->Branch("SelShowerPandrizzlePathwayLengthMin", &fSelShowerPandrizzlePathwayLengthMin);
-    fTree->Branch("SelShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D", &fSelShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D);
-    fTree->Branch("SelShowerPandrizzleMaxNPostShowerStartHits", &fSelShowerPandrizzleMaxNPostShowerStartHits);
-    fTree->Branch("SelShowerPandrizzleMaxPostShowerStartScatterAngle", &fSelShowerPandrizzleMaxPostShowerStartScatterAngle);
-    fTree->Branch("SelShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry", &fSelShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry);
-    fTree->Branch("SelShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry", &fSelShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry);
-    fTree->Branch("SelShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance", &fSelShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance);
-    fTree->Branch("SelShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius", &fSelShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius);
-    fTree->Branch("SelShowerPandrizzleMaxPostShowerStartOpeningAngle", &fSelShowerPandrizzleMaxPostShowerStartOpeningAngle);
-    fTree->Branch("SelShowerPandrizzleMaxFoundHitRatio", &fSelShowerPandrizzleMaxFoundHitRatio);
-    fTree->Branch("SelShowerPandrizzleMaxInitialGapSize", &fSelShowerPandrizzleMaxInitialGapSize);
-    fTree->Branch("SelShowerPandrizzleMinLargestProjectedGapSize", &fSelShowerPandrizzleMinLargestProjectedGapSize);
-    fTree->Branch("SelShowerPandrizzleNViewsWithAmbiguousHits", &fSelShowerPandrizzleNViewsWithAmbiguousHits);
-    fTree->Branch("SelShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy", &fSelShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy);
-    fTree->Branch("SelShowerPandrizzleEvalRatio",&fSelShowerPandrizzleEvalRatio);
-    fTree->Branch("SelShowerPandrizzleConcentration",&fSelShowerPandrizzleConcentration);
-    fTree->Branch("SelShowerPandrizzleCoreHaloRatio",&fSelShowerPandrizzleCoreHaloRatio);
-    fTree->Branch("SelShowerPandrizzleConicalness",&fSelShowerPandrizzleConicalness);
-    fTree->Branch("SelShowerPandrizzledEdxBestPlane",&fSelShowerPandrizzledEdxBestPlane);
-    fTree->Branch("SelShowerPandrizzleDisplacement",&fSelShowerPandrizzleDisplacement);
-    fTree->Branch("SelShowerPandrizzleDCA",&fSelShowerPandrizzleDCA);
-    fTree->Branch("SelShowerPandrizzleWideness",&fSelShowerPandrizzleWideness);
-    fTree->Branch("SelShowerPandrizzleEnergyDensity",&fSelShowerPandrizzleEnergyDensity);
-    fTree->Branch("SelShowerPandrizzleBDTMethod", &fSelShowerPandrizzleBDTMethod);
-    fTree->Branch("SelShowerEnhancedPandrizzleScore",&fSelShowerEnhancedPandrizzleScore);
-    fTree->Branch("SelShowerBackupPandrizzleScore",&fSelShowerBackupPandrizzleScore);
-    fTree->Branch("SelShowerPandrizzleIsFilled",&fSelShowerPandrizzleIsFilled);
+    // Reco info 
+    fTree->Branch("RecoNuVtxX",&fRecoNuVtxX);
+    fTree->Branch("RecoNuVtxY",&fRecoNuVtxY);
+    fTree->Branch("RecoNuVtxZ",&fRecoNuVtxZ);
+    fTree->Branch("NueRecoENu",&fNueRecoENu);
+    fTree->Branch("NumuRecoENu",&fNumuRecoENu);
 
-    fTree->Branch("NRecoShowers",&fNRecoShowers);
-    fTree->Branch("RecoShowerTruePDG",fRecoShowerTruePDG,"RecoShowerTruePDG[NRecoShowers]/I");
-    fTree->Branch("RecoShowerTruePrimary",fRecoShowerTruePrimary,"RecoShowerTruePrimary[NRecoShowers]/O");
-    fTree->Branch("RecoShowerTrueMomX",fRecoShowerTrueMomX,"RecoShowerTrueMomX[NRecoShowers]/D");
-    fTree->Branch("RecoShowerTrueMomY",fRecoShowerTrueMomY,"RecoShowerTrueMomY[NRecoShowers]/D");
-    fTree->Branch("RecoShowerTrueMomZ",fRecoShowerTrueMomZ,"RecoShowerTrueMomZ[NRecoShowers]/D");
-    fTree->Branch("RecoShowerTrueMomT",fRecoShowerTrueMomT,"RecoShowerTrueMomT[NRecoShowers]/D");
-    fTree->Branch("RecoShowerTrueStartX",fRecoShowerTrueStartX,"RecoShowerTrueStartX[NRecoShowers]/D");
-    fTree->Branch("RecoShowerTrueStartY",fRecoShowerTrueStartY,"RecoShowerTrueStartY[NRecoShowers]/D");
-    fTree->Branch("RecoShowerTrueStartZ",fRecoShowerTrueStartZ,"RecoShowerTrueStartZ[NRecoShowers]/D");
-    fTree->Branch("RecoShowerTrueEndX",fRecoShowerTrueEndX,"RecoShowerTrueEndX[NRecoShowers]/D");
-    fTree->Branch("RecoShowerTrueEndY",fRecoShowerTrueEndY,"RecoShowerTrueEndY[NRecoShowers]/D");
-    fTree->Branch("RecoShowerTrueEndZ",fRecoShowerTrueEndZ,"RecoShowerTrueEndZ[NRecoShowers]/D");
-    fTree->Branch("RecoShowerRecoNHits",fRecoShowerRecoNHits,"RecoShowerRecoNHits[NRecoShowers]/I");
-    fTree->Branch("RecoShowerRecoCompleteness",fRecoShowerRecoCompleteness,"RecoShowerRecoCompleteness[NRecoShowers]/D");
-    fTree->Branch("RecoShowerRecoHitPurity",fRecoShowerRecoHitPurity,"RecoShowerRecoHitPurity[NRecoShowers]/D");
-    fTree->Branch("RecoShowerRecoStartX",fRecoShowerRecoStartX,"RecoShowerRecoStartX[NRecoShowers]/D");
-    fTree->Branch("RecoShowerRecoStartY",fRecoShowerRecoStartY,"RecoShowerRecoStartY[NRecoShowers]/D");
-    fTree->Branch("RecoShowerRecoStartZ",fRecoShowerRecoStartZ,"RecoShowerRecoStartZ[NRecoShowers]/D");
-    fTree->Branch("RecoShowerRecoCharge",fRecoShowerRecoCharge,"RecoShowerRecoCharge[NRecoShowers]/D");
-    fTree->Branch("RecoShowerRecoMom",fRecoShowerRecoMom,"RecoShowerRecoMom[NRecoShowers]/D");
-    fTree->Branch("RecoShowerRecoVertexX",fRecoShowerRecoVertexX,"RecoShowerRecoVertexX[NRecoShowers]/D");
-    fTree->Branch("RecoShowerRecoVertexY",fRecoShowerRecoVertexY,"RecoShowerRecoVertexY[NRecoShowers]/D");
-    fTree->Branch("RecoShowerRecoVertexZ",fRecoShowerRecoVertexZ,"RecoShowerRecoVertexZ[NRecoShowers]/D");
-    fTree->Branch("RecoShowerDistanceToNuVertexU", &fRecoShowerDistanceToNuVertexU, "RecoShowerDistanceToNuVertexU[NRecoShowers]/D");
-    fTree->Branch("RecoShowerDistanceToNuVertexV", &fRecoShowerDistanceToNuVertexV, "RecoShowerDistanceToNuVertexV[NRecoShowers]/D");
-    fTree->Branch("RecoShowerDistanceToNuVertexW", &fRecoShowerDistanceToNuVertexW, "RecoShowerDistanceToNuVertexW[NRecoShowers]/D");
-    fTree->Branch("RecoShowerRecoNChildPFP",fRecoShowerRecoNChildPFP,"RecoShowerRecoNChildPFP[NRecoShowers]/I");
-    fTree->Branch("RecoShowerRecoNChildTrackPFP",fRecoShowerRecoNChildTrackPFP,"RecoShowerRecoNChildTrackPFP[NRecoShowers]/I");
-    fTree->Branch("RecoShowerRecoNChildShowerPFP",fRecoShowerRecoNChildShowerPFP,"RecoShowerRecoNChildShowerPFP[NRecoShowers]/I");
-    fTree->Branch("RecoShowerRecoDirX",fRecoShowerRecoDirX,"RecoShowerRecoDirX[NRecoShowers]/D");
-    fTree->Branch("RecoShowerRecoDirY",fRecoShowerRecoDirY,"RecoShowerRecoDirY[NRecoShowers]/D");
-    fTree->Branch("RecoShowerRecoDirZ",fRecoShowerRecoDirZ,"RecoShowerRecoDirZ[NRecoShowers]/D");
-    fTree->Branch("RecoShowerRecodEdx",fRecoShowerRecodEdx,"RecoShowerRecodEdx[NRecoShowers][3]/D");
-    fTree->Branch("RecoShowerRecoEnergy",fRecoShowerRecoEnergy,"RecoShowerRecoEnergy[NRecoShowers][3]/D");
-    fTree->Branch("RecoShowerRecoBestPlane",&fRecoShowerRecoBestPlane,"RecoShowerRecoBestPlane[3]/I");
-    fTree->Branch("RecoShowerRecoLength",&fRecoShowerRecoLength,"RecoShowerRecoLength[3]/D");
-    fTree->Branch("RecoShowerRecoOpeningAngle",&fRecoShowerRecoOpeningAngle,"RecoShowerRecoOpeningAngle[3]/D");
-    fTree->Branch("RecoShowerRecoIsPrimaryPFPDaughter",fRecoShowerRecoIsPrimaryPFPDaughter,"RecoShowerRecoIsPrimaryPFPDaughter[NRecoShowers]/O");
-    fTree->Branch("RecoShowerMVAElectron",fRecoShowerMVAElectron,"RecoShowerMVAElectron[NRecoShowers]/D");
-    fTree->Branch("RecoShowerMVAPion",fRecoShowerMVAPion,"RecoShowerMVAPion[NRecoShowers]/D");
-    fTree->Branch("RecoShowerMVAMuon",fRecoShowerMVAMuon,"RecoShowerMVAMuon[NRecoShowers]/D");
-    fTree->Branch("RecoShowerMVAProton",fRecoShowerMVAProton,"RecoShowerMVAProton[NRecoShowers]/D");
-    fTree->Branch("RecoShowerMVAPhoton",fRecoShowerMVAPhoton,"RecoShowerMVAPhoton[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleConnectionBDTScore", &fRecoShowerPandrizzleConnectionBDTScore, "RecoShowerPandrizzleConnectionBDTScore[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzlePathwayLengthMin", &fRecoShowerPandrizzlePathwayLengthMin, "RecoShowerPandrizzlePathwayLengthMin[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D", &fRecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D, 
-      "RecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleMaxNPostShowerStartHits", &fRecoShowerPandrizzleMaxNPostShowerStartHits, "RecoShowerPandrizzleMaxNPostShowerStartHits[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartScatterAngle", &fRecoShowerPandrizzleMaxPostShowerStartScatterAngle, "RecoShowerPandrizzleMaxPostShowerStartScatterAngle[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry", &fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry, 
-      "RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry", &fRecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry, 
-      "RecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance", &fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance, 
-      "RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius", &fRecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius, 
-      "RecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartOpeningAngle", &fRecoShowerPandrizzleMaxPostShowerStartOpeningAngle, "RecoShowerPandrizzleMaxPostShowerStartOpeningAngle[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleMaxFoundHitRatio", &fRecoShowerPandrizzleMaxFoundHitRatio, "RecoShowerPandrizzleMaxFoundHitRatio[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleMaxInitialGapSize", &fRecoShowerPandrizzleMaxInitialGapSize, "RecoShowerPandrizzleMaxInitialGapSize[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleMinLargestProjectedGapSize", &fRecoShowerPandrizzleMinLargestProjectedGapSize, "RecoShowerPandrizzleMinLargestProjectedGapSize[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleNViewsWithAmbiguousHits", &fRecoShowerPandrizzleNViewsWithAmbiguousHits, "RecoShowerPandrizzleNViewsWithAmbiguousHits[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy", &fRecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy, "RecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleEvalRatio",&fRecoShowerPandrizzleEvalRatio,"RecoShowerPandrizzleEvalRatio[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleConcentration",&fRecoShowerPandrizzleConcentration,"RecoShowerPandrizzleConcentration[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleCoreHaloRatio",&fRecoShowerPandrizzleCoreHaloRatio, "RecoShowerPandrizzleCoreHaloRatio[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleConicalness",&fRecoShowerPandrizzleConicalness, "RecoShowerPandrizzleConicalness[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzledEdxBestPlane",&fRecoShowerPandrizzledEdxBestPlane, "RecoShowerPandrizzledEdxBestPlane[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleDisplacement",&fRecoShowerPandrizzleDisplacement, "RecoShowerPandrizzleDisplacement[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleDCA",&fRecoShowerPandrizzleDCA, "RecoShowerPandrizzleDCA[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleWideness",&fRecoShowerPandrizzleWideness, "RecoShowerPandrizzleWideness[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleEnergyDensity",&fRecoShowerPandrizzleEnergyDensity, "RecoShowerPandrizzleEnergyDensity[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleBDTMethod", &fRecoShowerPandrizzleBDTMethod, "RecoShowerPandrizzleBDTMethod[NRecoShowers]/D");
-    fTree->Branch("RecoShowerEnhancedPandrizzleScore",&fRecoShowerEnhancedPandrizzleScore, "RecoShowerEnhancedPandrizzleScore[NRecoShowers]/D"); 
-    fTree->Branch("RecoShowerBackupPandrizzleScore",&fRecoShowerBackupPandrizzleScore, "RecoShowerBackupPandrizzleScore[NRecoShowers]/D");
-    fTree->Branch("RecoShowerPandrizzleIsFilled",&fRecoShowerPandrizzleIsFilled, "RecoShowerPandrizzleIsFilled[NRecoShowers]/O");
-
+    // CVN info
     fTree->Branch("CVNResultNue", &fCVNResultNue);
     fTree->Branch("CVNResultNumu", &fCVNResultNumu);
     fTree->Branch("CVNResultNutau", &fCVNResultNutau);
     fTree->Branch("CVNResultNC", &fCVNResultNC);
 
-    fTree->Branch("RecoNuVtxX",&fRecoNuVtxX);
-    fTree->Branch("RecoNuVtxY",&fRecoNuVtxY);
-    fTree->Branch("RecoNuVtxZ",&fRecoNuVtxZ);
-    fTree->Branch("RecoNuVtxNShowers",&fRecoNuVtxNShowers);
-    fTree->Branch("RecoNuVtxNTracks",&fRecoNuVtxNTracks);
-    fTree->Branch("RecoNuVtxNChildren",&fRecoNuVtxNChildren);
+    // Selected track things...
+    fTree->Branch("SelTrackTruePDG",&fSelTrackTruePDG);
+    fTree->Branch("SelTrackRecoContained",&fSelTrackRecoContained);
+    fTree->Branch("SelTrackRecoMomMethod",&fSelTrackRecoMomMethod);
+    fTree->Branch("SelTrackPandizzleVar", &fSelTrackPandizzleVar);
 
-    fTree->Branch("RecoEventCharge",&fRecoEventCharge);
-    fTree->Branch("NumuRecoMomLep",&fNumuRecoMomLep);
-    fTree->Branch("NumuRecoEHad",&fNumuRecoEHad);
-    fTree->Branch("NumuRecoENu",&fNumuRecoENu);
-    fTree->Branch("NueRecoMomLep",&fNueRecoMomLep);
-    fTree->Branch("NueRecoEHad",&fNueRecoEHad);
-    fTree->Branch("NueRecoENu",&fNueRecoENu);
+    // Selected shower things
+    fTree->Branch("SelShowerTruePDG",&fSelShowerTruePDG);
+    fTree->Branch("SelShowerEnhancedPandrizzleScore",&fSelShowerEnhancedPandrizzleScore);
+    fTree->Branch("SelShowerBackupPandrizzleScore",&fSelShowerBackupPandrizzleScore);
 
+    // POT tree
     fPOTTree = tfs->make<TTree>("pottree","pot tree");
     fPOTTree->Branch("POT",&fPOT);
     fPOTTree->Branch("Run",&fRun);
     fPOTTree->Branch("SubRun",&fSubRun);
+
+    if (!fReducedTreeMode)
+    {
+        fTree->Branch("IsMC",&fIsMC);
+        fTree->Branch("T0",&fT0);
+        fTree->Branch("Q2",&fQ2);
+        fTree->Branch("W",&fW);
+        fTree->Branch("X",&fX);
+        fTree->Branch("Y",&fY);
+        fTree->Branch("NuMomX",&fNuMomX);
+        fTree->Branch("NuMomY",&fNuMomY);
+        fTree->Branch("NuMomZ",&fNuMomZ);
+        fTree->Branch("NuMomT",&fNuMomT);
+        fTree->Branch("NuT",&fNuT);
+        fTree->Branch("NPiP",&fNPiP);
+        fTree->Branch("NPim",&fNPim);
+        fTree->Branch("NPi0",&fNPi0);
+        fTree->Branch("NPhotons",&fNPhotons);
+        fTree->Branch("NProton",&fNProtons);
+        fTree->Branch("NNeutrons",&fNNeutrons);
+        fTree->Branch("NOther",&fNOther);
+        fTree->Branch("NVertexParticles",&fNVertexParticles);
+        fTree->Branch("VertexParticleIsGHEP",fVertexParticleIsGHEP,"VertexParticleIsGHEP[NVertexParticles]/O");
+        fTree->Branch("VertexParticlePDG",fVertexParticlePDG,"VertexParticlePDG[NVertexParticles]/I");
+        fTree->Branch("VertexParticleStatus",fVertexParticleStatus,"VertexParticleStatus[NVertexParticles]/I");
+        fTree->Branch("VertexParticleNChildren",fVertexParticleNChildren,"VertexParticleNChildren[NVertexParticles]/I");
+        fTree->Branch("VertexParticleMomX",fVertexParticleMomX,"VertexParticleMomX[NVertexParticles]/D");
+        fTree->Branch("VertexParticleMomY",fVertexParticleMomY,"VertexParticleMomY[NVertexParticles]/D");
+        fTree->Branch("VertexParticleMomZ",fVertexParticleMomZ,"VertexParticleMomZ[NVertexParticles]/D");
+        fTree->Branch("VertexParticleMomT",fVertexParticleMomT,"VertexParticleMomT[NVertexParticles]/D");
+        fTree->Branch("VertexParticleEndX",fVertexParticleEndX,"VertexParticleEndX[NVertexParticles]/D");
+        fTree->Branch("VertexParticleEndY",fVertexParticleEndY,"VertexParticleEndY[NVertexParticles]/D");
+        fTree->Branch("VertexParticleEndZ",fVertexParticleEndZ,"VertexParticleEndZ[NVertexParticles]/D");
+        fTree->Branch("VertexParticleEndT",fVertexParticleEndT,"VertexParticleEndT[NVertexParticles]/D");
+        fTree->Branch("LepPDG",&fLepPDG);
+        fTree->Branch("MomLepX",&fMomLepX);
+        fTree->Branch("MomLepY",&fMomLepY);
+        fTree->Branch("MomLepZ",&fMomLepZ);
+        fTree->Branch("MomLepT",&fMomLepT);
+        fTree->Branch("LepEndX",&fLepEndX);
+        fTree->Branch("LepEndY",&fLepEndY);
+        fTree->Branch("LepEndZ",&fLepEndZ);
+        fTree->Branch("LepEndT",&fLepEndT);
+        fTree->Branch("LepNuAngle",&fLepNuAngle);
+        fTree->Branch("NuMomTranMag",&fNuMomTranMag);
+        fTree->Branch("TargNuclMomTranMag",&fTargNuclMomTranMag);
+        fTree->Branch("InitalMomTranMag",&fInitalMomTranMag);
+        fTree->Branch("LepMomTranMag",&fLepMomTranMag);
+        fTree->Branch("NuclRemMomTranMag",&fNuclRemMomTranMag);
+        fTree->Branch("FinalMomTranMagNoLepNoRem",&fFinalMomTranMagNoLepNoRem);
+        fTree->Branch("FinalMomTranMagNoLepWithRem",&fFinalMomTranMagNoLepWithRem);
+        fTree->Branch("FinalMomTranMagWithLepNoRem",&fFinalMomTranMagWithLepNoRem);
+        fTree->Branch("FinalMomTranMagWithLepWithRem",&fFinalMomTranMagWithLepWithRem);
+
+        fTree->Branch("SelTrackTruePrimary",&fSelTrackTruePrimary);
+        fTree->Branch("SelTrackTrueMomX",&fSelTrackTrueMomX);
+        fTree->Branch("SelTrackTrueMomY",&fSelTrackTrueMomY);
+        fTree->Branch("SelTrackTrueMomZ",&fSelTrackTrueMomZ);
+        fTree->Branch("SelTrackTrueMomT",&fSelTrackTrueMomT);
+        fTree->Branch("SelTrackTrueStartX",&fSelTrackTrueStartX);
+        fTree->Branch("SelTrackTrueStartY",&fSelTrackTrueStartY);
+        fTree->Branch("SelTrackTrueStartZ",&fSelTrackTrueStartZ);
+        fTree->Branch("SelTrackTrueEndX",&fSelTrackTrueEndX);
+        fTree->Branch("SelTrackTrueEndY",&fSelTrackTrueEndY);
+        fTree->Branch("SelTrackTrueEndZ",&fSelTrackTrueEndZ);
+        fTree->Branch("SelTrackRecoNHits",&fSelTrackRecoNHits);
+        fTree->Branch("SelTrackRecoCompleteness",&fSelTrackRecoCompleteness);
+        fTree->Branch("SelTrackRecoHitPurity",&fSelTrackRecoHitPurity);
+        fTree->Branch("SelTrackRecoStartX",&fSelTrackRecoStartX);
+        fTree->Branch("SelTrackRecoStartY",&fSelTrackRecoStartY);
+        fTree->Branch("SelTrackRecoStartZ",&fSelTrackRecoStartZ);
+        fTree->Branch("SelTrackRecoEndX",&fSelTrackRecoEndX);
+        fTree->Branch("SelTrackRecoEndY",&fSelTrackRecoEndY);
+        fTree->Branch("SelTrackRecoEndZ",&fSelTrackRecoEndZ);
+        fTree->Branch("SelTrackRecoUpstreamX",&fSelTrackRecoUpstreamX);
+        fTree->Branch("SelTrackRecoUpstreamY",&fSelTrackRecoUpstreamY);
+        fTree->Branch("SelTrackRecoUpstreamZ",&fSelTrackRecoUpstreamZ);
+        fTree->Branch("SelTrackRecoDownstreamX",&fSelTrackRecoDownstreamX);
+        fTree->Branch("SelTrackRecoDownstreamY",&fSelTrackRecoDownstreamY);
+        fTree->Branch("SelTrackRecoDownstreamZ",&fSelTrackRecoDownstreamZ);
+        fTree->Branch("SelTrackRecoEndClosestToVertexX",&fSelTrackRecoEndClosestToVertexX);
+        fTree->Branch("SelTrackRecoEndClosestToVertexY",&fSelTrackRecoEndClosestToVertexY);
+        fTree->Branch("SelTrackRecoEndClosestToVertexZ",&fSelTrackRecoEndClosestToVertexZ);
+        fTree->Branch("SelTrackRecoLength",&fSelTrackRecoLength);
+        fTree->Branch("SelTrackRecoCharge",&fSelTrackRecoCharge);
+        fTree->Branch("SelTrackRecoMomMCS",&fSelTrackRecoMomMCS);
+        fTree->Branch("SelTrackRecoMomContained",&fSelTrackRecoMomContained);
+        fTree->Branch("SelTrackRecoVertexX",&fSelTrackRecoVertexX);
+        fTree->Branch("SelTrackRecoVertexY",&fSelTrackRecoVertexY);
+        fTree->Branch("SelTrackRecoVertexZ",&fSelTrackRecoVertexZ);
+        fTree->Branch("SelTrackRecoNChildPFP",&fSelTrackRecoNChildPFP);
+        fTree->Branch("SelTrackRecoNChildTrackPFP",&fSelTrackRecoNChildTrackPFP);
+        fTree->Branch("SelTrackRecoNChildShowerPFP",&fSelTrackRecoNChildShowerPFP);
+        fTree->Branch("SelTrackMVAElectron",&fSelTrackMVAElectron);
+        fTree->Branch("SelTrackMVAPion",&fSelTrackMVAPion);
+        fTree->Branch("SelTrackMVAMuon",&fSelTrackMVAMuon);
+        fTree->Branch("SelTrackMVAProton",&fSelTrackMVAProton);
+        fTree->Branch("SelTrackMVAPhoton",&fSelTrackMVAPhoton);
+        fTree->Branch("SelTrackDeepPanMuVar",&fSelTrackDeepPanMuVar);
+        fTree->Branch("SelTrackDeepPanPiVar",&fSelTrackDeepPanPiVar);
+        fTree->Branch("SelTrackDeepPanProtonVar",&fSelTrackDeepPanProtonVar);
+        fTree->Branch("SelTrackMichelNHits", &fSelTrackMichelNHits);
+        fTree->Branch("SelTrackMichelElectronMVA", &fSelTrackMichelElectronMVA);
+        fTree->Branch("SelTrackMichelRecoEnergyPlane2", &fSelTrackMichelRecoEnergyPlane2);
+        fTree->Branch("SelTrackDeflecAngleSD", &fSelTrackDeflecAngleSD);
+        fTree->Branch("SelTrackLength", &fSelTrackLength);
+        fTree->Branch("SelTrackEvalRatio", &fSelTrackEvalRatio);
+        fTree->Branch("SelTrackConcentration", &fSelTrackConcentration);
+        fTree->Branch("SelTrackCoreHaloRatio", &fSelTrackCoreHaloRatio);
+        fTree->Branch("SelTrackConicalness", &fSelTrackConicalness);
+        fTree->Branch("SelTrackdEdxStart", &fSelTrackdEdxStart);
+        fTree->Branch("SelTrackdEdxEnd", &fSelTrackdEdxEnd);
+        fTree->Branch("SelTrackdEdxEndRatio", &fSelTrackdEdxEndRatio);
+        fTree->Branch("NRecoTracks",&fNRecoTracks);
+        fTree->Branch("RecoTrackIsPrimary",fRecoTrackIsPrimary,"RecoTrackIsPrimary[NRecoTracks]/O");
+        fTree->Branch("RecoTrackTruePDG",fRecoTrackTruePDG,"RecoTrackTruePDG[NRecoTracks]/I");
+        fTree->Branch("RecoTrackTruePrimary",fRecoTrackTruePrimary,"RecoTrackTruePrimary[NRecoTracks]/O");
+        fTree->Branch("RecoTrackTrueMomX",fRecoTrackTrueMomX,"RecoTrackTrueMomX[NRecoTracks]/D");
+        fTree->Branch("RecoTrackTrueMomY",fRecoTrackTrueMomY,"RecoTrackTrueMomY[NRecoTracks]/D");
+        fTree->Branch("RecoTrackTrueMomZ",fRecoTrackTrueMomZ,"RecoTrackTrueMomZ[NRecoTracks]/D");
+        fTree->Branch("RecoTrackTrueMomT",fRecoTrackTrueMomT,"RecoTrackTrueMomT[NRecoTracks]/D");
+        fTree->Branch("RecoTrackTrueStartX",fRecoTrackTrueStartX,"RecoTrackTrueStartX[NRecoTracks]/D");
+        fTree->Branch("RecoTrackTrueStartY",fRecoTrackTrueStartY,"RecoTrackTrueStartY[NRecoTracks]/D");
+        fTree->Branch("RecoTrackTrueStartZ",fRecoTrackTrueStartZ,"RecoTrackTrueStartZ[NRecoTracks]/D");
+        fTree->Branch("RecoTrackTrueEndX",fRecoTrackTrueEndX,"RecoTrackTrueEndX[NRecoTracks]/D");
+        fTree->Branch("RecoTrackTrueEndY",fRecoTrackTrueEndY,"RecoTrackTrueEndY[NRecoTracks]/D");
+        fTree->Branch("RecoTrackTrueEndZ",fRecoTrackTrueEndZ,"RecoTrackTrueEndZ[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoNHits",fRecoTrackRecoNHits,"RecoTrackRecoNHits[NRecoTracks]/I");
+        fTree->Branch("RecoTrackRecoCompleteness",fRecoTrackRecoCompleteness,"RecoTrackRecoCompleteness[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoHitPurity",fRecoTrackRecoHitPurity,"RecoTrackRecoHitPurity[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoStartX",fRecoTrackRecoStartX,"RecoTrackRecoStartX[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoStartY",fRecoTrackRecoStartY,"RecoTrackRecoStartY[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoStartZ",fRecoTrackRecoStartZ,"RecoTrackRecoStartZ[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoEndX",fRecoTrackRecoEndX,"RecoTrackRecoEndX[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoEndY",fRecoTrackRecoEndY,"RecoTrackRecoEndY[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoEndZ",fRecoTrackRecoEndZ,"RecoTrackRecoEndZ[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoUpstreamX",fRecoTrackRecoUpstreamX,"RecoTrackRecoUpstreamX[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoUpstreamY",fRecoTrackRecoUpstreamY,"RecoTrackRecoUpstreamY[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoUpstreamZ",fRecoTrackRecoUpstreamZ,"RecoTrackRecoUpstreamZ[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoDownstreamX",fRecoTrackRecoDownstreamX,"RecoTrackRecoDownstreamX[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoDownstreamY",fRecoTrackRecoDownstreamY,"RecoTrackRecoDownstreamY[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoDownstreamZ",fRecoTrackRecoDownstreamZ,"RecoTrackRecoDownstreamZ[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoEndClosestToVertexX",fRecoTrackRecoEndClosestToVertexX,"RecoTrackRecoEndClosestToVertexX[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoEndClosestToVertexY",fRecoTrackRecoEndClosestToVertexY,"RecoTrackRecoEndClosestToVertexY[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoEndClosestToVertexZ",fRecoTrackRecoEndClosestToVertexZ,"RecoTrackRecoEndClosestToVertexZ[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoLength",fRecoTrackRecoLength,"RecoTrackRecoLength[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoContained",fRecoTrackRecoContained,"RecoTrackRecoContained[NRecoTracks]/I");
+        fTree->Branch("RecoTrackRecoMomMethod",fRecoTrackRecoMomMethod,"RecoTrackRecoMomMethod[NRecoTracks]/I");
+        fTree->Branch("RecoTrackRecoCharge",fRecoTrackRecoCharge,"RecoTrackRecoCharge[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoMomMCS",fRecoTrackRecoMomMCS,"RecoTrackRecoMomMCS[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoMomContained",fRecoTrackRecoMomContained,"RecoTrackRecoMomContained[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoVertexX",fRecoTrackRecoVertexX,"RecoTrackRecoVertexX[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoVertexY",fRecoTrackRecoVertexY,"RecoTrackRecoVertexY[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoVertexZ",fRecoTrackRecoVertexZ,"RecoTrackRecoVertexZ[NRecoTracks]/D");
+        fTree->Branch("RecoTrackRecoNChildPFP",fRecoTrackRecoNChildPFP,"RecoTrackRecoNChildPFP[NRecoTracks]/I");
+        fTree->Branch("RecoTrackRecoNChildTrackPFP",fRecoTrackRecoNChildTrackPFP,"RecoTrackRecoNChildTrackPFP[NRecoTracks]/I");
+        fTree->Branch("RecoTrackRecoNChildShowerPFP",fRecoTrackRecoNChildShowerPFP,"RecoTrackRecoNChildShowerPFP[NRecoTracks]/I");
+        fTree->Branch("RecoTrackMVAElectron",fRecoTrackMVAElectron,"RecoTrackMVAElectron[NRecoTracks]/D");
+        fTree->Branch("RecoTrackMVAPion",fRecoTrackMVAPion,"RecoTrackMVAPion[NRecoTracks]/D");
+        fTree->Branch("RecoTrackMVAMuon",fRecoTrackMVAMuon,"RecoTrackMVAMuon[NRecoTracks]/D");
+        fTree->Branch("RecoTrackMVAProton",fRecoTrackMVAProton,"RecoTrackMVAProton[NRecoTracks]/D");
+        fTree->Branch("RecoTrackMVAPhoton",fRecoTrackMVAPhoton,"RecoTrackMVAPhoton[NRecoTracks]/D");
+        fTree->Branch("RecoTrackDeepPanMuVar",fRecoTrackDeepPanMuVar,"RecoTrackDeepPanMuVar[NRecoTracks]/D");
+        fTree->Branch("RecoTrackDeepPanPiVar",fRecoTrackDeepPanPiVar,"RecoTrackDeepPanPiVar[NRecoTracks]/D");
+        fTree->Branch("RecoTrackDeepPanProtonVar",fRecoTrackDeepPanProtonVar,"RecoTrackDeepPanProtonVar[NRecoTracks]/D");
+        fTree->Branch("RecoTrackMichelNHits", fRecoTrackMichelNHits, "RecoTrackMichelNHits/D");
+        fTree->Branch("RecoTrackMichelElectronMVA", fRecoTrackMichelElectronMVA, "RecoTrackMichelElectronMVA/D");
+        fTree->Branch("RecoTrackMichelRecoEnergyPlane2", fRecoTrackMichelRecoEnergyPlane2, "RecoTrackMichelRecoEnergyPlane2/D");
+        fTree->Branch("RecoTrackDeflecAngleSD", fRecoTrackDeflecAngleSD, "RecoTrackDeflecAngleSD/D");
+        fTree->Branch("RecoTrackLength", fRecoTrackLength, "RecoTrackLength/D");
+        fTree->Branch("RecoTrackEvalRatio", fRecoTrackEvalRatio, "RecoTrackEvalRatio/D");
+        fTree->Branch("RecoTrackConcentration", fRecoTrackConcentration, "RecoTrackConcentration/D");
+        fTree->Branch("RecoTrackCoreHaloRatio", fRecoTrackCoreHaloRatio, "RecoTrackCoreHaloRatio/D");
+        fTree->Branch("RecoTrackConicalness", fRecoTrackConicalness, "RecoTrackConicalness/D");
+        fTree->Branch("RecoTrackdEdxStart", fRecoTrackdEdxStart, "RecoTrackdEdxStart/D");
+        fTree->Branch("RecoTrackdEdxEnd", fRecoTrackdEdxEnd, "RecoTrackdEdxEnd/D");
+        fTree->Branch("RecoTrackdEdxEndRatio", fRecoTrackdEdxEndRatio, "RecoTrackdEdxEndRatio/D");
+        fTree->Branch("RecoTrackPandizzleVar",fRecoTrackPandizzleVar,"RecoTrackPandizzleVar[NRecoTracks]/D");
+        fTree->Branch("SelShowerTruePrimary",&fSelShowerTruePrimary);
+        fTree->Branch("SelShowerTrueMomX",&fSelShowerTrueMomX);
+        fTree->Branch("SelShowerTrueMomY",&fSelShowerTrueMomY);
+        fTree->Branch("SelShowerTrueMomZ",&fSelShowerTrueMomZ);
+        fTree->Branch("SelShowerTrueMomT",&fSelShowerTrueMomT);
+        fTree->Branch("SelShowerTrueStartX",&fSelShowerTrueStartX);
+        fTree->Branch("SelShowerTrueStartY",&fSelShowerTrueStartY);
+        fTree->Branch("SelShowerTrueStartZ",&fSelShowerTrueStartZ);
+        fTree->Branch("SelShowerTrueEndX",&fSelShowerTrueEndX);
+        fTree->Branch("SelShowerTrueEndY",&fSelShowerTrueEndY);
+        fTree->Branch("SelShowerTrueEndZ",&fSelShowerTrueEndZ);
+        fTree->Branch("SelShowerRecoNHits",&fSelShowerRecoNHits);
+        fTree->Branch("SelShowerRecoCompleteness",&fSelShowerRecoCompleteness);
+        fTree->Branch("SelShowerRecoHitPurity",&fSelShowerRecoHitPurity);
+        fTree->Branch("SelShowerRecoStartX",&fSelShowerRecoStartX);
+        fTree->Branch("SelShowerRecoStartY",&fSelShowerRecoStartY);
+        fTree->Branch("SelShowerRecoStartZ",&fSelShowerRecoStartZ);
+        fTree->Branch("SelShowerRecoCharge",&fSelShowerRecoCharge);
+        fTree->Branch("SelShowerRecoMom",&fSelShowerRecoMom);
+        fTree->Branch("SelShowerRecoVertexX",&fSelShowerRecoVertexX);
+        fTree->Branch("SelShowerRecoVertexY",&fSelShowerRecoVertexY);
+        fTree->Branch("SelShowerRecoVertexZ",&fSelShowerRecoVertexZ);
+        fTree->Branch("SelShowerDistanceToNuVertexU", &fSelShowerDistanceToNuVertexU);
+        fTree->Branch("SelShowerDistanceToNuVertexV", &fSelShowerDistanceToNuVertexV);
+        fTree->Branch("SelShowerDistanceToNuVertexW", &fSelShowerDistanceToNuVertexW);
+        fTree->Branch("SelShowerRecoNChildPFP",&fSelShowerRecoNChildPFP);
+        fTree->Branch("SelShowerRecoNChildTrackPFP",&fSelShowerRecoNChildTrackPFP);
+        fTree->Branch("SelShowerRecoNChildShowerPFP",&fSelShowerRecoNChildShowerPFP);
+        fTree->Branch("SelShowerRecoDirX",&fSelShowerRecoDirX);
+        fTree->Branch("SelShowerRecoDirY",&fSelShowerRecoDirY);
+        fTree->Branch("SelShowerRecoDirZ",&fSelShowerRecoDirZ);
+        fTree->Branch("SelShowerRecodEdx",&fSelShowerRecodEdx,"SelShowerRecodEdx[3]/D");
+        fTree->Branch("SelShowerRecoEnergy",&fSelShowerRecoEnergy,"SelShowerRecoEnergy[3]/D");
+        fTree->Branch("SelShowerRecoBestPlane",&fSelShowerRecoBestPlane);
+        fTree->Branch("SelShowerRecoLength",&fSelShowerRecoLength);
+        fTree->Branch("SelShowerRecoOpeningAngle",&fSelShowerRecoOpeningAngle);
+        fTree->Branch("SelShowerMVAElectron",&fSelShowerMVAElectron);
+        fTree->Branch("SelShowerMVAPion",&fSelShowerMVAPion);
+        fTree->Branch("SelShowerMVAMuon",&fSelShowerMVAMuon);
+        fTree->Branch("SelShowerMVAProton",&fSelShowerMVAProton);
+        fTree->Branch("SelShowerMVAPhoton",&fSelShowerMVAPhoton);
+        fTree->Branch("SelShowerPandrizzleConnectionBDTScore", &fSelShowerPandrizzleConnectionBDTScore);
+        fTree->Branch("SelShowerPandrizzlePathwayLengthMin", &fSelShowerPandrizzlePathwayLengthMin);
+        fTree->Branch("SelShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D", &fSelShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D);
+        fTree->Branch("SelShowerPandrizzleMaxNPostShowerStartHits", &fSelShowerPandrizzleMaxNPostShowerStartHits);
+        fTree->Branch("SelShowerPandrizzleMaxPostShowerStartScatterAngle", &fSelShowerPandrizzleMaxPostShowerStartScatterAngle);
+        fTree->Branch("SelShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry", &fSelShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry);
+        fTree->Branch("SelShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry", &fSelShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry);
+        fTree->Branch("SelShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance", &fSelShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance);
+        fTree->Branch("SelShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius", &fSelShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius);
+        fTree->Branch("SelShowerPandrizzleMaxPostShowerStartOpeningAngle", &fSelShowerPandrizzleMaxPostShowerStartOpeningAngle);
+        fTree->Branch("SelShowerPandrizzleMaxFoundHitRatio", &fSelShowerPandrizzleMaxFoundHitRatio);
+        fTree->Branch("SelShowerPandrizzleMaxInitialGapSize", &fSelShowerPandrizzleMaxInitialGapSize);
+        fTree->Branch("SelShowerPandrizzleMinLargestProjectedGapSize", &fSelShowerPandrizzleMinLargestProjectedGapSize);
+        fTree->Branch("SelShowerPandrizzleNViewsWithAmbiguousHits", &fSelShowerPandrizzleNViewsWithAmbiguousHits);
+        fTree->Branch("SelShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy", &fSelShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy);
+        fTree->Branch("SelShowerPandrizzleEvalRatio",&fSelShowerPandrizzleEvalRatio);
+        fTree->Branch("SelShowerPandrizzleConcentration",&fSelShowerPandrizzleConcentration);
+        fTree->Branch("SelShowerPandrizzleCoreHaloRatio",&fSelShowerPandrizzleCoreHaloRatio);
+        fTree->Branch("SelShowerPandrizzleConicalness",&fSelShowerPandrizzleConicalness);
+        fTree->Branch("SelShowerPandrizzledEdxBestPlane",&fSelShowerPandrizzledEdxBestPlane);
+        fTree->Branch("SelShowerPandrizzleDisplacement",&fSelShowerPandrizzleDisplacement);
+        fTree->Branch("SelShowerPandrizzleDCA",&fSelShowerPandrizzleDCA);
+        fTree->Branch("SelShowerPandrizzleWideness",&fSelShowerPandrizzleWideness);
+        fTree->Branch("SelShowerPandrizzleEnergyDensity",&fSelShowerPandrizzleEnergyDensity);
+        fTree->Branch("SelShowerPandrizzleBDTMethod", &fSelShowerPandrizzleBDTMethod);
+        fTree->Branch("SelShowerPandrizzleIsFilled",&fSelShowerPandrizzleIsFilled);
+
+        fTree->Branch("NRecoShowers",&fNRecoShowers);
+        fTree->Branch("RecoShowerTruePDG",fRecoShowerTruePDG,"RecoShowerTruePDG[NRecoShowers]/I");
+        fTree->Branch("RecoShowerTruePrimary",fRecoShowerTruePrimary,"RecoShowerTruePrimary[NRecoShowers]/O");
+        fTree->Branch("RecoShowerTrueMomX",fRecoShowerTrueMomX,"RecoShowerTrueMomX[NRecoShowers]/D");
+        fTree->Branch("RecoShowerTrueMomY",fRecoShowerTrueMomY,"RecoShowerTrueMomY[NRecoShowers]/D");
+        fTree->Branch("RecoShowerTrueMomZ",fRecoShowerTrueMomZ,"RecoShowerTrueMomZ[NRecoShowers]/D");
+        fTree->Branch("RecoShowerTrueMomT",fRecoShowerTrueMomT,"RecoShowerTrueMomT[NRecoShowers]/D");
+        fTree->Branch("RecoShowerTrueStartX",fRecoShowerTrueStartX,"RecoShowerTrueStartX[NRecoShowers]/D");
+        fTree->Branch("RecoShowerTrueStartY",fRecoShowerTrueStartY,"RecoShowerTrueStartY[NRecoShowers]/D");
+        fTree->Branch("RecoShowerTrueStartZ",fRecoShowerTrueStartZ,"RecoShowerTrueStartZ[NRecoShowers]/D");
+        fTree->Branch("RecoShowerTrueEndX",fRecoShowerTrueEndX,"RecoShowerTrueEndX[NRecoShowers]/D");
+        fTree->Branch("RecoShowerTrueEndY",fRecoShowerTrueEndY,"RecoShowerTrueEndY[NRecoShowers]/D");
+        fTree->Branch("RecoShowerTrueEndZ",fRecoShowerTrueEndZ,"RecoShowerTrueEndZ[NRecoShowers]/D");
+        fTree->Branch("RecoShowerRecoNHits",fRecoShowerRecoNHits,"RecoShowerRecoNHits[NRecoShowers]/I");
+        fTree->Branch("RecoShowerRecoCompleteness",fRecoShowerRecoCompleteness,"RecoShowerRecoCompleteness[NRecoShowers]/D");
+        fTree->Branch("RecoShowerRecoHitPurity",fRecoShowerRecoHitPurity,"RecoShowerRecoHitPurity[NRecoShowers]/D");
+        fTree->Branch("RecoShowerRecoStartX",fRecoShowerRecoStartX,"RecoShowerRecoStartX[NRecoShowers]/D");
+        fTree->Branch("RecoShowerRecoStartY",fRecoShowerRecoStartY,"RecoShowerRecoStartY[NRecoShowers]/D");
+        fTree->Branch("RecoShowerRecoStartZ",fRecoShowerRecoStartZ,"RecoShowerRecoStartZ[NRecoShowers]/D");
+        fTree->Branch("RecoShowerRecoCharge",fRecoShowerRecoCharge,"RecoShowerRecoCharge[NRecoShowers]/D");
+        fTree->Branch("RecoShowerRecoMom",fRecoShowerRecoMom,"RecoShowerRecoMom[NRecoShowers]/D");
+        fTree->Branch("RecoShowerRecoVertexX",fRecoShowerRecoVertexX,"RecoShowerRecoVertexX[NRecoShowers]/D");
+        fTree->Branch("RecoShowerRecoVertexY",fRecoShowerRecoVertexY,"RecoShowerRecoVertexY[NRecoShowers]/D");
+        fTree->Branch("RecoShowerRecoVertexZ",fRecoShowerRecoVertexZ,"RecoShowerRecoVertexZ[NRecoShowers]/D");
+        fTree->Branch("RecoShowerDistanceToNuVertexU", &fRecoShowerDistanceToNuVertexU, "RecoShowerDistanceToNuVertexU[NRecoShowers]/D");
+        fTree->Branch("RecoShowerDistanceToNuVertexV", &fRecoShowerDistanceToNuVertexV, "RecoShowerDistanceToNuVertexV[NRecoShowers]/D");
+        fTree->Branch("RecoShowerDistanceToNuVertexW", &fRecoShowerDistanceToNuVertexW, "RecoShowerDistanceToNuVertexW[NRecoShowers]/D");
+        fTree->Branch("RecoShowerRecoNChildPFP",fRecoShowerRecoNChildPFP,"RecoShowerRecoNChildPFP[NRecoShowers]/I");
+        fTree->Branch("RecoShowerRecoNChildTrackPFP",fRecoShowerRecoNChildTrackPFP,"RecoShowerRecoNChildTrackPFP[NRecoShowers]/I");
+        fTree->Branch("RecoShowerRecoNChildShowerPFP",fRecoShowerRecoNChildShowerPFP,"RecoShowerRecoNChildShowerPFP[NRecoShowers]/I");
+        fTree->Branch("RecoShowerRecoDirX",fRecoShowerRecoDirX,"RecoShowerRecoDirX[NRecoShowers]/D");
+        fTree->Branch("RecoShowerRecoDirY",fRecoShowerRecoDirY,"RecoShowerRecoDirY[NRecoShowers]/D");
+        fTree->Branch("RecoShowerRecoDirZ",fRecoShowerRecoDirZ,"RecoShowerRecoDirZ[NRecoShowers]/D");
+        fTree->Branch("RecoShowerRecodEdx",fRecoShowerRecodEdx,"RecoShowerRecodEdx[NRecoShowers][3]/D");
+        fTree->Branch("RecoShowerRecoEnergy",fRecoShowerRecoEnergy,"RecoShowerRecoEnergy[NRecoShowers][3]/D");
+        fTree->Branch("RecoShowerRecoBestPlane",&fRecoShowerRecoBestPlane,"RecoShowerRecoBestPlane[3]/I");
+        fTree->Branch("RecoShowerRecoLength",&fRecoShowerRecoLength,"RecoShowerRecoLength[3]/D");
+        fTree->Branch("RecoShowerRecoOpeningAngle",&fRecoShowerRecoOpeningAngle,"RecoShowerRecoOpeningAngle[3]/D");
+        fTree->Branch("RecoShowerRecoIsPrimaryPFPDaughter",fRecoShowerRecoIsPrimaryPFPDaughter,"RecoShowerRecoIsPrimaryPFPDaughter[NRecoShowers]/O");
+        fTree->Branch("RecoShowerMVAElectron",fRecoShowerMVAElectron,"RecoShowerMVAElectron[NRecoShowers]/D");
+        fTree->Branch("RecoShowerMVAPion",fRecoShowerMVAPion,"RecoShowerMVAPion[NRecoShowers]/D");
+        fTree->Branch("RecoShowerMVAMuon",fRecoShowerMVAMuon,"RecoShowerMVAMuon[NRecoShowers]/D");
+        fTree->Branch("RecoShowerMVAProton",fRecoShowerMVAProton,"RecoShowerMVAProton[NRecoShowers]/D");
+        fTree->Branch("RecoShowerMVAPhoton",fRecoShowerMVAPhoton,"RecoShowerMVAPhoton[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleConnectionBDTScore", &fRecoShowerPandrizzleConnectionBDTScore, "RecoShowerPandrizzleConnectionBDTScore[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzlePathwayLengthMin", &fRecoShowerPandrizzlePathwayLengthMin, "RecoShowerPandrizzlePathwayLengthMin[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D", &fRecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D, 
+                      "RecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleMaxNPostShowerStartHits", &fRecoShowerPandrizzleMaxNPostShowerStartHits, "RecoShowerPandrizzleMaxNPostShowerStartHits[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartScatterAngle", &fRecoShowerPandrizzleMaxPostShowerStartScatterAngle, "RecoShowerPandrizzleMaxPostShowerStartScatterAngle[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry", &fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry, 
+                      "RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry", &fRecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry, 
+                      "RecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance", &fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance, 
+                      "RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius", &fRecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius, 
+                      "RecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartOpeningAngle", &fRecoShowerPandrizzleMaxPostShowerStartOpeningAngle, "RecoShowerPandrizzleMaxPostShowerStartOpeningAngle[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleMaxFoundHitRatio", &fRecoShowerPandrizzleMaxFoundHitRatio, "RecoShowerPandrizzleMaxFoundHitRatio[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleMaxInitialGapSize", &fRecoShowerPandrizzleMaxInitialGapSize, "RecoShowerPandrizzleMaxInitialGapSize[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleMinLargestProjectedGapSize", &fRecoShowerPandrizzleMinLargestProjectedGapSize, "RecoShowerPandrizzleMinLargestProjectedGapSize[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleNViewsWithAmbiguousHits", &fRecoShowerPandrizzleNViewsWithAmbiguousHits, "RecoShowerPandrizzleNViewsWithAmbiguousHits[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy", &fRecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy, "RecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleEvalRatio",&fRecoShowerPandrizzleEvalRatio,"RecoShowerPandrizzleEvalRatio[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleConcentration",&fRecoShowerPandrizzleConcentration,"RecoShowerPandrizzleConcentration[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleCoreHaloRatio",&fRecoShowerPandrizzleCoreHaloRatio, "RecoShowerPandrizzleCoreHaloRatio[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleConicalness",&fRecoShowerPandrizzleConicalness, "RecoShowerPandrizzleConicalness[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzledEdxBestPlane",&fRecoShowerPandrizzledEdxBestPlane, "RecoShowerPandrizzledEdxBestPlane[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleDisplacement",&fRecoShowerPandrizzleDisplacement, "RecoShowerPandrizzleDisplacement[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleDCA",&fRecoShowerPandrizzleDCA, "RecoShowerPandrizzleDCA[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleWideness",&fRecoShowerPandrizzleWideness, "RecoShowerPandrizzleWideness[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleEnergyDensity",&fRecoShowerPandrizzleEnergyDensity, "RecoShowerPandrizzleEnergyDensity[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleBDTMethod", &fRecoShowerPandrizzleBDTMethod, "RecoShowerPandrizzleBDTMethod[NRecoShowers]/D");
+        fTree->Branch("RecoShowerEnhancedPandrizzleScore",&fRecoShowerEnhancedPandrizzleScore, "RecoShowerEnhancedPandrizzleScore[NRecoShowers]/D"); 
+        fTree->Branch("RecoShowerBackupPandrizzleScore",&fRecoShowerBackupPandrizzleScore, "RecoShowerBackupPandrizzleScore[NRecoShowers]/D");
+        fTree->Branch("RecoShowerPandrizzleIsFilled",&fRecoShowerPandrizzleIsFilled, "RecoShowerPandrizzleIsFilled[NRecoShowers]/O");
+
+        fTree->Branch("RecoNuVtxNShowers",&fRecoNuVtxNShowers);
+        fTree->Branch("RecoNuVtxNTracks",&fRecoNuVtxNTracks);
+        fTree->Branch("RecoNuVtxNChildren",&fRecoNuVtxNChildren);
+
+        fTree->Branch("RecoEventCharge",&fRecoEventCharge);
+        fTree->Branch("NumuRecoMomLep",&fNumuRecoMomLep);
+        fTree->Branch("NumuRecoEHad",&fNumuRecoEHad);
+        fTree->Branch("NueRecoMomLep",&fNueRecoMomLep);
+        fTree->Branch("NueRecoEHad",&fNueRecoEHad);
+    }
 
     Reset();  //Default value all variables now
 }
@@ -1406,8 +1424,15 @@ void FDSelection::CCNuSelection::GetEventInfo(art::Event const & evt)
   fT0 = trigger_offset(clockData);
 
   // Get total event charge
-  std::vector<art::Ptr<recob::Hit>> hitList = dune_ana::DUNEAnaEventUtils::GetHits(evt, fHitsModuleLabel);
-  fRecoEventCharge = dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, hitList); 
+  try
+  {
+      std::vector<art::Ptr<recob::Hit>> hitList = dune_ana::DUNEAnaEventUtils::GetHits(evt, fHitsModuleLabel);
+      fRecoEventCharge = dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, hitList);
+  }
+  catch(...)
+  {
+      return;
+  }
 
   // Get CVN results
   art::Handle<std::vector<cvn::Result>> cvnResult;
@@ -1635,11 +1660,18 @@ void FDSelection::CCNuSelection::FillVertexInfo(art::Event const & evt)
       fRecoNuVtxNTracks++;
   }
 
-  art::Ptr<recob::Vertex> nuVertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(nu_pfp, evt, fPFParticleModuleLabel);
+  try
+  {
+      art::Ptr<recob::Vertex> nuVertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(nu_pfp, evt, fPFParticleModuleLabel);
 
-  fRecoNuVtxX = nuVertex->position().X();
-  fRecoNuVtxY = nuVertex->position().Y();
-  fRecoNuVtxZ = nuVertex->position().Z();
+      fRecoNuVtxX = nuVertex->position().X();
+      fRecoNuVtxY = nuVertex->position().Y();
+      fRecoNuVtxZ = nuVertex->position().Z();
+  }
+  catch(...)
+  {
+      return;
+  }
 
   return;
 }
@@ -1714,12 +1746,17 @@ void FDSelection::CCNuSelection::GetRecoTrackInfo(art::Event const & evt)
 
     fRecoTrackRecoLength[trackCounter] = current_track->Length();
 
+    try
+    {
+      art::Ptr<recob::Vertex> track_reco_vertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(pfp, evt, fPFParticleModuleLabel);
 
-    art::Ptr<recob::Vertex> track_reco_vertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(pfp, evt, fPFParticleModuleLabel);
-
-    fRecoTrackRecoVertexX[trackCounter] = track_reco_vertex->position().X();
-    fRecoTrackRecoVertexY[trackCounter] = track_reco_vertex->position().Y();
-    fRecoTrackRecoVertexZ[trackCounter] = track_reco_vertex->position().Z();
+      fRecoTrackRecoVertexX[trackCounter] = track_reco_vertex->position().X();
+      fRecoTrackRecoVertexY[trackCounter] = track_reco_vertex->position().Y();
+      fRecoTrackRecoVertexZ[trackCounter] = track_reco_vertex->position().Z();
+    }
+    catch(...)
+    {
+    }
 
     TVector3 upstream_end(fRecoTrackRecoUpstreamX[trackCounter], fRecoTrackRecoUpstreamY[trackCounter], fRecoTrackRecoUpstreamZ[trackCounter]);
     TVector3 downstream_end(fRecoTrackRecoDownstreamX[trackCounter], fRecoTrackRecoDownstreamY[trackCounter], fRecoTrackRecoDownstreamZ[trackCounter]);
@@ -1842,11 +1879,11 @@ void FDSelection::CCNuSelection::FillChildPFPInformation(art::Ptr<recob::PFParti
   {
     int pdg = childPFP->PdgCode();
 
-    if (pdg == 13) 
+    if (pdg == 13)
       n_child_track_pfp++;
-    else if (pdg == 11) 
+   else if (pdg == 11)
       n_child_shower_pfp++;
-    else 
+   else 
       std::cout << "FillChildPFPInformation: found a child PFP with an unexpected pdg code: " << pdg << std::endl;
   }
 
@@ -1905,11 +1942,18 @@ void FDSelection::CCNuSelection::RunTrackSelection(art::Event const & evt)
   fSelTrackRecoLength = sel_track->Length();
 
   art::Ptr<recob::PFParticle> sel_track_pfp = dune_ana::DUNEAnaTrackUtils::GetPFParticle(sel_track, evt, fTrackModuleLabel);
-  art::Ptr<recob::Vertex> track_reco_vertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(sel_track_pfp, evt, fPFParticleModuleLabel);
 
-  fSelTrackRecoVertexX = track_reco_vertex->position().X();
-  fSelTrackRecoVertexY = track_reco_vertex->position().Y();
-  fSelTrackRecoVertexZ = track_reco_vertex->position().Z();
+  try
+  {
+      art::Ptr<recob::Vertex> track_reco_vertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(sel_track_pfp, evt, fPFParticleModuleLabel);
+
+      fSelTrackRecoVertexX = track_reco_vertex->position().X();
+      fSelTrackRecoVertexY = track_reco_vertex->position().Y();
+      fSelTrackRecoVertexZ = track_reco_vertex->position().Z();
+  }
+  catch(...)
+  {
+  }
 
   TVector3 upstream_end(fSelTrackRecoUpstreamX, fSelTrackRecoUpstreamY, fSelTrackRecoUpstreamZ);
   TVector3 downstream_end(fSelTrackRecoDownstreamX, fSelTrackRecoDownstreamY, fSelTrackRecoDownstreamZ);
@@ -2076,19 +2120,44 @@ void FDSelection::CCNuSelection::GetRecoShowerInfo(art::Event const & evt)
     fRecoShowerRecoOpeningAngle[showerCounter] = current_shower->OpenAngle();
 
     // Vertex info
-    art::Ptr<recob::Vertex> shower_reco_vertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(pfp, evt, fPFParticleModuleLabel);
+    try
+    {
+        art::Ptr<recob::Vertex> shower_reco_vertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(pfp, evt, fPFParticleModuleLabel);
 
-    fRecoShowerRecoVertexX[showerCounter] = shower_reco_vertex->position().X();
-    fRecoShowerRecoVertexY[showerCounter] = shower_reco_vertex->position().Y();
-    fRecoShowerRecoVertexZ[showerCounter] = shower_reco_vertex->position().Z();
+        fRecoShowerRecoVertexX[showerCounter] = shower_reco_vertex->position().X();
+        fRecoShowerRecoVertexY[showerCounter] = shower_reco_vertex->position().Y();
+        fRecoShowerRecoVertexZ[showerCounter] = shower_reco_vertex->position().Z();
+    }
+    catch(...)
+    {
+    }
 
-    std::vector<art::Ptr<recob::Hit>> hitListU = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(current_shower_hits, 0);
-    std::vector<art::Ptr<recob::Hit>> hitListV = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(current_shower_hits, 1);
-    std::vector<art::Ptr<recob::Hit>> hitListW = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(current_shower_hits, 2);
+    try
+    {
+        std::vector<art::Ptr<recob::Hit>> hitListU = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(current_shower_hits, 0);
+        fRecoShowerDistanceToNuVertexU[showerCounter] = DistanceToNuVertex(evt, hitListU, TVector3(fNuX, fNuY, fNuZ));
+    }
+    catch(...)
+    {
+    } 
 
-    fRecoShowerDistanceToNuVertexU[showerCounter] = DistanceToNuVertex(evt, hitListU, TVector3(fNuX, fNuY, fNuZ));
-    fRecoShowerDistanceToNuVertexV[showerCounter] = DistanceToNuVertex(evt, hitListV, TVector3(fNuX, fNuY, fNuZ));
-    fRecoShowerDistanceToNuVertexW[showerCounter] = DistanceToNuVertex(evt, hitListW, TVector3(fNuX, fNuY, fNuZ));
+    try
+    {
+        std::vector<art::Ptr<recob::Hit>> hitListV = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(current_shower_hits, 1);
+        fRecoShowerDistanceToNuVertexV[showerCounter] = DistanceToNuVertex(evt, hitListV, TVector3(fNuX, fNuY, fNuZ));
+    }
+    catch(...)
+    {
+    }
+
+    try
+    {
+        std::vector<art::Ptr<recob::Hit>> hitListW = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(current_shower_hits, 2);
+        fRecoShowerDistanceToNuVertexW[showerCounter] = DistanceToNuVertex(evt, hitListW, TVector3(fNuX, fNuY, fNuZ));
+    }
+    catch(...)
+    {
+    }
 
     // Momentum and energy
     auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
@@ -2230,19 +2299,44 @@ void FDSelection::CCNuSelection::RunShowerSelection(art::Event const & evt)
   fSelShowerRecoOpeningAngle = sel_shower->OpenAngle();
 
   // Vertex info
-  art::Ptr<recob::Vertex> shower_reco_vertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(sel_pfp, evt, fPFParticleModuleLabel);
+  try
+  {
+    art::Ptr<recob::Vertex> shower_reco_vertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(sel_pfp, evt, fPFParticleModuleLabel);
 
-  fSelShowerRecoVertexX = shower_reco_vertex->position().X();
-  fSelShowerRecoVertexY = shower_reco_vertex->position().Y();
-  fSelShowerRecoVertexZ = shower_reco_vertex->position().Z();
+    fSelShowerRecoVertexX = shower_reco_vertex->position().X();
+    fSelShowerRecoVertexY = shower_reco_vertex->position().Y();
+    fSelShowerRecoVertexZ = shower_reco_vertex->position().Z();
+  }
+  catch(...)
+  {
+  }
 
-  std::vector<art::Ptr<recob::Hit>> hitListU = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(sel_shower_hits, 0);
-  std::vector<art::Ptr<recob::Hit>> hitListV = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(sel_shower_hits, 1);
-  std::vector<art::Ptr<recob::Hit>> hitListW = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(sel_shower_hits, 2);
+  try
+  {
+    std::vector<art::Ptr<recob::Hit>> hitListU = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(sel_shower_hits, 0);
+    fSelShowerDistanceToNuVertexU = DistanceToNuVertex(evt, hitListU, TVector3(fNuX, fNuY, fNuZ));
+  }
+  catch(...)
+  {
+  }
 
-  fSelShowerDistanceToNuVertexU = DistanceToNuVertex(evt, hitListU, TVector3(fNuX, fNuY, fNuZ));
-  fSelShowerDistanceToNuVertexV = DistanceToNuVertex(evt, hitListV, TVector3(fNuX, fNuY, fNuZ));
-  fSelShowerDistanceToNuVertexW = DistanceToNuVertex(evt, hitListW, TVector3(fNuX, fNuY, fNuZ));
+  try
+  {
+    std::vector<art::Ptr<recob::Hit>> hitListV = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(sel_shower_hits, 1);
+    fSelShowerDistanceToNuVertexV = DistanceToNuVertex(evt, hitListV, TVector3(fNuX, fNuY, fNuZ));
+  }
+  catch(...)
+  {
+  }
+
+  try
+  {
+    std::vector<art::Ptr<recob::Hit>> hitListW = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(sel_shower_hits, 2);
+    fSelShowerDistanceToNuVertexW = DistanceToNuVertex(evt, hitListW, TVector3(fNuX, fNuY, fNuZ));
+  }
+  catch(...)
+  {
+  }
 
   // Momentum and energy
   auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
@@ -2327,15 +2421,6 @@ void FDSelection::CCNuSelection::RunShowerSelection(art::Event const & evt)
   fSelShowerPandrizzleDCA = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kDCA);
   fSelShowerPandrizzleWideness = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kWideness);
   fSelShowerPandrizzleEnergyDensity = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kEnergyDensity);
-  fSelShowerPandrizzleEvalRatio = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kEvalRatio);
-  fSelShowerPandrizzleConcentration = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kConcentration);
-  fSelShowerPandrizzleCoreHaloRatio = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kCoreHaloRatio);
-  fSelShowerPandrizzleConicalness = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kConicalness);
-  fSelShowerPandrizzledEdxBestPlane = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kdEdxBestPlane);
-  fSelShowerPandrizzleDisplacement = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kDisplacement);
-  fSelShowerPandrizzleDCA = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kDCA);
-  fSelShowerPandrizzleWideness = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kWideness);
-  fSelShowerPandrizzleEnergyDensity = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kEnergyDensity);
   fSelShowerPandrizzlePathwayLengthMin = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kPathwayLengthMin);
   fSelShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxShowerStartPathwayScatteringAngle2D);
   fSelShowerPandrizzleMaxNPostShowerStartHits = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxNPostShowerStartHits);
@@ -2356,8 +2441,6 @@ void FDSelection::CCNuSelection::RunShowerSelection(art::Event const & evt)
   fSelShowerBackupPandrizzleScore = (std::fabs(fSelShowerPandrizzleBDTMethod - 1.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
   fSelShowerEnhancedPandrizzleScore = (std::fabs(fSelShowerPandrizzleBDTMethod - 2.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
   fSelShowerPandrizzleIsFilled = pandrizzleRecord.IsFilled();
-  fSelShowerPandrizzleIsFilled      = pandrizzleRecord.IsFilled();
-
 }
 
 //////////////////////////////////////////////////////////////////

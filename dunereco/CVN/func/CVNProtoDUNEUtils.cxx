@@ -45,7 +45,7 @@ const std::map<unsigned int, std::vector<const recob::Hit*>> cvn::CVNProtoDUNEUt
   auto recoSlices = evt.getValidHandle<std::vector<recob::Slice> >(sliceModule);
   std::map<unsigned int, std::vector<const recob::Hit*>> hitMap;
 
-  for(auto const slice : *recoSlices){
+  for(auto const &slice : *recoSlices){
 
     const std::vector<const recob::Hit*> constvec = GetRecoSliceHits(slice.ID(),evt,sliceModule);
     for(auto const h : constvec){

@@ -133,9 +133,9 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
 
     const std::vector<art::Ptr<recob::Hit> > electronHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(pElectronShower, event, fShowerToHitLabel),2));
     const double electronEnergy(this->CalculateElectronEnergy(pElectronShower, event));
-    //ATTN yep this line is bugged.  It's deliberately bugged to maintain how the original code functioned
-    //Because of the small electron mass vs total energy deposition, this bug will have a very very small effect on the 4vector
-    const Momentum4_t electron4Momentum(this->CalculateParticle4Momentum(kElectronMass, electronEnergy, 
+    const double electronMomentum = std::sqrt(electronEnergy*(electronEnergy + 2*kElectronMass));
+
+    const Momentum4_t electron4Momentum(this->CalculateParticle4Momentum(kElectronMass, electronMomentum,
         pElectronShower->Direction().X(), pElectronShower->Direction().Y(), pElectronShower->Direction().Z()));
 
     EnergyRecoInputHolder energyRecoInputHolder(vertex, electron4Momentum, 

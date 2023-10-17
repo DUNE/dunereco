@@ -9,6 +9,9 @@ local wc = import 'wirecell.jsonnet';
 local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local params = import 'pgrapher/experiment/protodunevd/simparams.jsonnet';
+local fcl_params = {
+    use_dnnroi: true,
+};
 
 local tools = tools_maker(params);
 
@@ -80,10 +83,29 @@ local analog_pipes = sim.analog_pipelines;
 // local nf_maker = import 'pgrapher/experiment/protodunevd/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
+local sp_override = if fcl_params.use_dnnroi then
+{
+    sparse: true,
+    use_roi_debug_mode: true,
+    use_multi_plane_protection: true,
+    process_planes: [0, 1, 2]
+} else {
+    sparse: true,
+};
+
 local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
-local sp = sp_maker(params, tools);
+local sp = sp_maker(params, tools, sp_override);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
+local ts = {
+    type: "TorchService",
+    name: "dnnroi",
+    data: {
+        model: "ts-model/unet-l23-cosmic500-e50.ts",
+        device: "cpu", // "gpucpu",
+        concurrency: 1,
+    },
+};
 
 // fixme: see https://github.com/WireCell/wire-cell-gen/issues/29
 local mega_anode = {
@@ -146,7 +168,7 @@ local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
 local pipe_reducer = util.fansummer('DepoSetFanout', analog_pipes, frame_summers, actpipes, 'FrameFanin');
 
 
-local magoutput = 'protodunevd-sim-check.root';
+local magoutput = 'protodunevd-sim-check-dnnsp.root';
 local magnify = import 'pgrapher/experiment/protodunevd/magnify-sinks.jsonnet';
 local magnifyio = magnify(tools, magoutput);
 
@@ -175,6 +197,9 @@ local chsel = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
+// Note: better switch to layers
+local dnnroi = import 'pgrapher/experiment/protodunevd/dnnroi.jsonnet';
+
 local pipelines = [
     g.pipeline([
         chsel[n],
@@ -184,10 +209,13 @@ local pipelines = [
         // magnifyio.raw_pipe[n],
 
         sp_pipes[n],
-        magnifyio.decon_pipe[n],
+        // magnifyio.decon_pipe[n],
         // magnifyio.threshold_pipe[n],
         // magnifyio.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
-    ],
+    ] + if fcl_params.use_dnnroi then [
+      dnnroi(tools.anodes[n], ts, output_scale=1.2),
+      magnifyio.dnndecon_pipe[n],
+    ] else [],
                'nfsp_pipe_%d' % n)
     for n in anode_iota
     ];
@@ -218,6 +246,7 @@ local fanin_tag_rules = [
               ['gauss%d'%ind]:'gauss%d'%ind,
               ['wiener%d'%ind]:'wiener%d'%ind,
               ['threshold%d'%ind]:'threshold%d'%ind,
+              ['dnnsp%d'%ind]:'dnnsp%d'%ind,
             },
 
           }
@@ -256,6 +285,7 @@ local retagger = g.pnode({
             merge: {
                 'gauss\\d': 'gauss',
                 'wiener\\d': 'wiener',
+                'dnnsp\\d': 'dnnsp',
             },
         }],
     },
@@ -285,7 +315,7 @@ local app = {
 local cmdline = {
     type: "wire-cell",
     data: {
-        plugins: ["WireCellGen", "WireCellPgraph", "WireCellSio", "WireCellSigProc", "WireCellRoot"],
+        plugins: ["WireCellGen", "WireCellPgraph", "WireCellSio", "WireCellSigProc", "WireCellRoot", "WireCellPytorch"],
         apps: ["Pgrapher"]
     }
 };

@@ -268,9 +268,11 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 	//}
 
 	//save timeoffset corrected peaktime
+	/*  PeakTime is not used
 	double PeakTime=hitsUV[uv0]->PeakTime();
 	if (hitsUV[uv0]->View()==geo::kU) PeakTime+=timeoffset[0];
 	if (hitsUV[uv0]->View()==geo::kV) PeakTime+=timeoffset[1];
+        */
 
 	//save hit information in a struct of a vector including positions returned in the disambiguation module
 	//and simulated hit information
