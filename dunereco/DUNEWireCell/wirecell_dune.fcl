@@ -1257,7 +1257,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
             # 3view-30deg: default, 3view: dunevd_3view
             geo_planeid_labels: "dunevd_3view"
             # process pratial or all CRMs: all or partial
-            process_crm: "partial"
+            process_crm: "full"
         }
         structs: {
             # number of time samples
@@ -1308,7 +1308,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp : {
             files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
             files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
             geo_planeid_labels: "default"
-            process_crm: "partial"
+            process_crm: "full"
         }
         structs: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main.structs
