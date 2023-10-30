@@ -21,6 +21,14 @@ dune_neutrinoenergyrecoalg:
     DistanceToWallThreshold: 20.0 
     MuonRangeToMCSThreshold: 0.7
     RecombFactor:            0.63
+
+    MCSMethod:              "Chi2"     # Chi2 or "LLHD"
+    MinTrackLengthMCS:      100.       # cm
+    MaxTrackLengthMCS:      1350.      # cm
+    SegmentSizeMCS:         10.        # cm
+    MaxMomentumMCS:         7500       # MeV (integer)
+    StepsMomentumMCS:       10         # MeV (integer)
+    MaxResolutionMCS:       0          # mrad (integer), set zero fixes at 2 mrad
 }
 
 dunevd_neutrinoenergyrecoalg:
