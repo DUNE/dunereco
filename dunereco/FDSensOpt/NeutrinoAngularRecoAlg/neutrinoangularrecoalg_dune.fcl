@@ -1,0 +1,29 @@
+#include "calorimetry_dune10kt.fcl"
+
+BEGIN_PROLOG
+
+dune_neutrinoangularrecoalg:
+{
+    CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
+}
+
+
+dunevd_neutrinoangularrecoalg:
+{
+    @table::dune_neutrinoangularrecoalg
+    CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
+}
+
+dunevd_30deg_neutrinoangularrecoalg:
+{
+    @table::dune_neutrinoangularrecoalg
+    CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
+}
+
+dune10kt_neutrinoangularrecoalg: @local::dune_neutrinoangularrecoalg
+
+dunevd10kt_neutrinoangularrecoalg: @local::dunevd_neutrinoangularrecoalg
+
+dunevd10kt_30deg_neutrinoangularrecoalg: @local::dunevd_30deg_neutrinoangularrecoalg
+
+END_PROLOG
