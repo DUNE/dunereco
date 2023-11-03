@@ -73,7 +73,7 @@ function (anode, ts, prefix="dnnroi", output_scale=1.0)
             multiplicity: 3,
             tag_rules: [{
                 frame: {".*": "dnnsp%d" % apaid},
-                trace: {".*": "dnnsp%d" % apaid},
+                // trace: {".*": "dnnsp%d" % apaid},
             } for plane in ["u", "v", "w"]]
         },
     }, nin=3, nout=1);

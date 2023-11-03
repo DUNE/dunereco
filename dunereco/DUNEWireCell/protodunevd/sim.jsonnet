@@ -13,19 +13,28 @@ function(params, tools) {
     // I rue the day that we must have an (anode) X (field) cross product!
     // local ductors = sim.make_detector_ductors("nominal", tools.anodes, tools.pirs[0]),
 
-    local bottom_anodes = [110,120, 111,121, 112,122, 113,123],
     // local zippers = [sim.make_depozipper("depozipper-"+tools.anodes[n].name, tools.anodes[n], tools.pirs[0])
     //                 for n in std.range(0, nanodes-1)],
     local transforms = [sim.make_depotransform("depotransform-"+tools.anodes[n].name, tools.anodes[n],
-                        if std.count(bottom_anodes, tools.anodes[n].data.ident)>0
+                        if tools.anodes[n].data.ident < 4
                         then tools.pirs[0] // bottom drift
                         else tools.pirs[1] )
                         for n in std.range(0, nanodes-1)],
     local depos2traces = transforms,
     //local depos2traces = zippers,
 
+    local digitizer(anode, name="", tag="") = g.pnode({
+        type: "Digitizer",
+        name: name,
+        data : params.adc {
+            anode: wc.tn(anode),
+            frame_tag: tag,
+            resolution: if anode.data.ident<4 then 14 else 12, 
+        }
+    }, nin=1, nout=1, uses=[anode]),
+
     local digitizers = [
-        sim.digitizer(tools.anodes[n], name="digitizer-" + tools.anodes[n].name, tag="orig%d"%n)
+        digitizer(tools.anodes[n], name="digitizer-" + tools.anodes[n].name, tag="orig%d"%n)
         for n in std.range(0,nanodes-1)],
 
     local reframers = [
