@@ -61,6 +61,7 @@ namespace dune {
             std::string fHitToSpacePointLabel;
 
             int fRecoMethod;
+            int fLongestTrackMethod;
 
 
             NeutrinoEnergyRecoAlg fNeutrinoEnergyRecoAlg;
@@ -78,6 +79,7 @@ EnergyReco::EnergyReco(fhicl::ParameterSet const& pset) :
     fShowerToHitLabel(pset.get<std::string>("ShowerToHitLabel")),
     fHitToSpacePointLabel(pset.get<std::string>("HitToSpacePointLabel")),
     fRecoMethod(pset.get<int>("RecoMethod")),
+    fLongestTrackMethod(pset.get<int>("LongestTrackMethod")),
     fNeutrinoEnergyRecoAlg(pset.get<fhicl::ParameterSet>("NeutrinoEnergyRecoAlg"),fTrackLabel,fShowerLabel,
         fHitLabel,fWireLabel,fTrackToHitLabel,fShowerToHitLabel,fHitToSpacePointLabel)
 {
@@ -100,7 +102,16 @@ void EnergyReco::produce(art::Event& evt)
     art::Ptr<recob::Shower> highestChargeShower(this->GetHighestChargeShower(clockData, detProp, evt));
 
     if (fRecoMethod == 1)
-        energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(longestTrack, evt));
+    {
+        if (fLongestTrackMethod == 0 || !longestTrack.isAvailable() || longestTrack.isNull())
+            energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(longestTrack, evt));
+        else if (fLongestTrackMethod == 1)
+            energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergyViaMuonRanging(longestTrack, evt));
+        else if (fLongestTrackMethod == 2)
+        {
+            energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergyViaMuonMCS(longestTrack, evt));
+        }
+    }
     else if (fRecoMethod == 2)
         energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(highestChargeShower, evt));
     else if (fRecoMethod == 3)

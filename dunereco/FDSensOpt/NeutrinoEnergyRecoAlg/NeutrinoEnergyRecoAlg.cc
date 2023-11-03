@@ -48,6 +48,13 @@ NeutrinoEnergyRecoAlg::NeutrinoEnergyRecoAlg(fhicl::ParameterSet const& pset, co
     fIntNuEHadEn(pset.get<double>("IntNuEHadEn")),
     fDistanceToWallThreshold(pset.get<double>("DistanceToWallThreshold")),
     fMuonRangeToMCSThreshold(pset.get<double>("MuonRangeToMCSThreshold")),
+    fMCSMethod(pset.get<std::string>("MCSMethod")),
+    fMinTrackLengthMCS(pset.get<double>("MinTrackLengthMCS")),
+    fMaxTrackLengthMCS(pset.get<double>("MaxTrackLengthMCS")),
+    fSegmentSizeMCS(pset.get<double>("SegmentSizeMCS")),
+    fMaxMomentumMCS(pset.get<int>("MaxMomentumMCS")),
+    fStepsMomentumMCS(pset.get<int>("StepsMomentumMCS")),
+    fMaxResolutionMCS(pset.get<int>("MaxResolutionMCS")),
     fRecombFactor(pset.get<double>("RecombFactor")),
     fTrackLabel(trackLabel),
     fShowerLabel(showerLabel),
@@ -212,11 +219,18 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergyViaMuonMCS(
     bool isContained(this->IsContained(muonHits, event));
     const double muonMomentumMCS(this->CalculateMuonMomentumByMCS(pMuonTrack));
 
-    EnergyRecoInputHolder energyRecoInputHolder(vertex, 
-        this->CalculateParticle4Momentum(kMuonMass, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
-        kMuonAndHadronic, kMCS, static_cast<MuonContainmentStatus>(isContained), fGradNuMuHadEnExit, fIntNuMuHadEnExit);
+    if (muonMomentumMCS > std::numeric_limits<double>::epsilon())
+    {
+        EnergyRecoInputHolder energyRecoInputHolder(vertex, 
+                this->CalculateParticle4Momentum(kMuonMass, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
+                kMuonAndHadronic, kMCS, static_cast<MuonContainmentStatus>(isContained), fGradNuMuHadEnExit, fIntNuMuHadEnExit);
 
-    return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
+        return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
+    }
+    else 
+        return this->CalculateNeutrinoEnergy(event);
+
+
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -305,8 +319,18 @@ double NeutrinoEnergyRecoAlg::CalculateUncorrectedMuonMomentumByRange(const art:
 
 double NeutrinoEnergyRecoAlg::CalculateUncorrectedMuonMomentumByMCS(const art::Ptr<recob::Track> &pMuonTrack)
 {
-    trkf::TrackMomentumCalculator TrackMomCalc;
-    return (TrackMomCalc.GetMomentumMultiScatterChi2(pMuonTrack, true));
+    trkf::TrackMomentumCalculator TrackMomCalc(fMinTrackLengthMCS,fMaxTrackLengthMCS, fSegmentSizeMCS);
+    if (fMCSMethod == "Chi2")
+        return (TrackMomCalc.GetMomentumMultiScatterChi2(pMuonTrack, true, fMaxMomentumMCS));
+    else if (fMCSMethod == "LLHD")
+        return (TrackMomCalc.GetMomentumMultiScatterLLHD(pMuonTrack, true, fMaxMomentumMCS, fStepsMomentumMCS, fMaxResolutionMCS));
+    else
+    {
+        mf::LogWarning("NeutrinoEnergyRecoAlg") << " Method " << fMCSMethod << " not found. Use `Chi2` or `LLHD` for MCS. Using `Chi2` for now." << std::endl;
+        return (TrackMomCalc.GetMomentumMultiScatterChi2(pMuonTrack, true, fMaxMomentumMCS));
+    }
+        
+        
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
