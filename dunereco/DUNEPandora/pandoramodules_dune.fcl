@@ -32,6 +32,8 @@ dune35t_pandora.ShouldRunStitching:                                 true
 dunefd_pandora_neutrino:                                            @local::dune_pandora
 dunefd_pandora_neutrino.ConfigFile:                                 "PandoraSettings_Master_DUNEFD.xml"
 dunefd_pandora_neutrino.ShouldRunNeutrinoRecoOption:                true
+dunefd_pandora_neutrino.EnableMCParticles:                          true
+dunefd_pandora_neutrino.SimChannelModuleLabel:                      "tpcrawdecoder:simpleSC"
 
 dunefd_pandora_cosmic:                                              @local::dune_pandora
 dunefd_pandora_cosmic.ConfigFile:                                   "PandoraSettings_Master_DUNEFD.xml"
