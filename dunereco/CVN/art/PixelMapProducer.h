@@ -20,7 +20,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 
-#include "larcorealg/Geometry/GeometryCore.h"
+#include "larcorealg/Geometry/fwd.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 
@@ -87,6 +87,7 @@ namespace cvn
     bool              fProtoDUNE; ///< Do we want to use this for particle extraction from protoDUNE?
 
     geo::GeometryCore const* fGeometry;
+    geo::WireReadoutGeom const* fWireReadoutGeom;
     std::vector<double> fVDPlane0;
     std::vector<double> fVDPlane1;
     double fSpacing0, fSpacing1;
