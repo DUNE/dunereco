@@ -293,6 +293,14 @@ class NeutrinoEnergyRecoAlg
         double fIntNuEHadEn;                                     ///< the hadronic energy correction intercept for nue
         double fDistanceToWallThreshold;                         ///< the min distance from a detector wall to be considered contained
         double fMuonRangeToMCSThreshold;                         ///< the ratio threshold at which MCS is used for contained muons
+
+        std::string fMCSMethod;                                  ///< Method os MCS, Chi2 or Log Likelihood (LLHD)
+        double fMinTrackLengthMCS;                               ///< the minimum track length in cm to compute MCS
+        double fMaxTrackLengthMCS;                               ///< the maximum track length in cm to compute MCS
+        double fSegmentSizeMCS;                                  ///< the segment length in cm to compute scattered angle MCS
+        int fMaxMomentumMCS;                                     ///< the maximum momentum to be fitted
+        int fStepsMomentumMCS;                                   ///< for LLHD, energy steps to minimize
+        int fMaxResolutionMCS;                                   ///< for LLHD, angle resolution is fitted, set 0 to keep at 2 mrad
         double fRecombFactor;                                    ///< the average reccombination factor
 
         std::string fTrackLabel;                                 ///< the track label

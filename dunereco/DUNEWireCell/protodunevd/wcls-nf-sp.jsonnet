@@ -42,7 +42,6 @@ local tools = tools_maker(params);
 local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 
-//local nf_maker = import "pgrapher/experiment/pdsp/nf.jsonnet";
 //local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
 
 local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
@@ -57,7 +56,7 @@ local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
 // must be the emtpy string.
 local wcls_input = {
   adc_digits: g.pnode({
-    type: 'wclsCookedFrameSource',
+    type: 'wclsRawFrameSource',
     name: '',
     data: {
       art_tag: raw_input_label,
@@ -221,8 +220,8 @@ local retagger = g.pnode({
         '.*': 'retagger',
       },
       merge: {
-        'gauss\\d\\d\\d': 'gauss',
-        'wiener\\d\\d\\d': 'wiener',
+        'gauss\\d': 'gauss',
+        'wiener\\d': 'wiener',
       },
     }],
   },

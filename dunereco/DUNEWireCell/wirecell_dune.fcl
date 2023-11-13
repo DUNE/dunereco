@@ -1490,11 +1490,11 @@ protodunevd_nfsp : {
       logsinks: ["stdout"]
       loglevels: ["debug", "pgraph:info"]
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
-      inputers: ["wclsCookedFrameSource"]
+      inputers: ["wclsRawFrameSource"]
       outputers: ["wclsFrameSaver:spsaver"]
       configs: ["pgrapher/experiment/protodunevd/wcls-nf-sp.jsonnet"]
       params : {
-         raw_input_label: "caldata:dataprep"
+         raw_input_label: "tpcrawdecoder:daq"
          reality: "data"
          epoch: "after"
          signal_output_form: "sparse"

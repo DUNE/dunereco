@@ -33,11 +33,13 @@ base {
 
         volumes: [
             {
-                local world = 100,
-                local split = s*10, // 1: left, 2: right
+                // local world = 100,
+                // local split = s*10, // 1: left, 2: right
                 local anode = a, // physical anode number
-                wires: world + split + anode,
-                name: "anode%d"%(world + split + anode),
+                // wires: world + split + anode,
+                // name: "anode%d"%(world + split + anode),
+                wires: anode,
+                name: "anode%d" %a,
 
                 local sign = if a>3 then 1 else -1,
                 local centerline = sign * apa_cpa,
@@ -50,6 +52,12 @@ base {
                         response: centerline - res_plane,
                         cathode: centerline - cpa_plane, 
                     },
+
+                    {
+                        anode: centerline - apa_plane,
+                        response: centerline - res_plane,
+                        cathode: centerline - cpa_plane, 
+                    }
                 ]
                 // bottom drift volume
                 else [
@@ -58,8 +66,14 @@ base {
                         response: centerline + res_plane,
                         cathode: centerline + cpa_plane, 
                     },
+
+                    {
+                        anode: centerline + apa_plane,
+                        response: centerline + res_plane,
+                        cathode: centerline + cpa_plane, 
+                    }
                 ],
-            } for a in std.range(0,7) for s in std.range(1,2)
+            } for a in std.range(0,7)
         ],
 
         // This describes some rough, overall bounding box.  It's not
@@ -100,6 +114,11 @@ base {
         postgain: 1.1365, 
         shaping: 2.2 * wc.us,
       },
+      // super.elec { // top
+      //   type: "JsonElecResponse",
+      //   filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
+      //   postgain: 1.0,
+      // },
       super.elec { // top
         type: "JsonElecResponse",
         filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
@@ -138,11 +157,11 @@ base {
     },
 
     files: {
-        wires: "protodunevd-wires-larsoft-v2.json.bz2",
+        wires: "protodunevd-wires-larsoft-v3.json.bz2",
 
         fields: [
-            "dunevd-resp-isoc3views-18d92.json.bz2",
-            "dunevd-resp-isoc3views-18d92.json.bz2", // repeat for top drifter
+            "dunevdcrp2-FR-fixcoll-adjustind.json.bz2",
+            "dunevdcrp2-FR-fixcoll-adjustind.json.bz2", // repeat for top drifter
         ],
 
         noise: "protodune-noise-spectra-v1.json.bz2",

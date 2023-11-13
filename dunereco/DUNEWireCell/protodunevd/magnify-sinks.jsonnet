@@ -68,7 +68,7 @@ function(tools, outputfile) {
         output_filename: outputfile,
         root_file_mode: 'UPDATE',
         frames: ['dnnsp%d' % tools.anodes[n].data.ident],
-        trace_has_tag: true,
+        trace_has_tag: false,
         anode: wc.tn(tools.anodes[n]),
       },
     }, nin=1, nout=1)
@@ -84,13 +84,34 @@ function(tools, outputfile) {
         root_file_mode: 'UPDATE',
         frames: ['tight_lf%d' % tools.anodes[n].data.ident, 'loose_lf%d' % tools.anodes[n].data.ident, 'cleanup_roi%d' % tools.anodes[n].data.ident,
                  'break_roi_1st%d' % tools.anodes[n].data.ident, 'break_roi_2nd%d' % tools.anodes[n].data.ident,
-                 'shrink_roi%d' % tools.anodes[n].data.ident, 'extend_roi%d' % tools.anodes[n].data.ident],
+                 'shrink_roi%d' % tools.anodes[n].data.ident, 'extend_roi%d' % tools.anodes[n].data.ident,
+                 'gauss%d' % tools.anodes[n].data.ident, 'mp2_roi%d' % tools.anodes[n].data.ident, 'mp3_roi%d' % tools.anodes[n].data.ident],
+        // frames: ['gauss%d' % tools.anodes[n].data.ident,
+        //          'loose_lf%d' % tools.anodes[n].data.ident,
+        //          'mp2_roi%d' % tools.anodes[n].data.ident,
+        //          'mp3_roi%d' % tools.anodes[n].data.ident],
         trace_has_tag: true,
         anode: wc.tn(tools.anodes[n]),
       },
     }, nin=1, nout=1)
     for n in std.range(0, nanodes - 1)
   ],
+
+  local magtruth = [
+    g.pnode({
+      type: 'MagnifySink',
+      name: 'magtruth%d' % n,
+      data: {
+        output_filename: outputfile,
+        root_file_mode: 'UPDATE',
+        frames: ['ductor%d' % tools.anodes[n].data.ident],
+        trace_has_tag: true,
+        anode: wc.tn(tools.anodes[n]),
+      },
+    }, nin=1, nout=1)
+    for n in std.range(0, nanodes - 1)
+  ],
+
 
   local magthr = [
     g.pnode({
@@ -109,6 +130,7 @@ function(tools, outputfile) {
 
 
   return: {
+    truth_pipe: [g.pipeline([magtruth[n]], name='magtruthpipe%d' % n) for n in std.range(0, nanodes - 1)],
     orig_pipe: [g.pipeline([magorig[n]], name='magorigpipe%d' % n) for n in std.range(0, nanodes - 1)],
     raw_pipe: [g.pipeline([magraw[n]], name='magrawpipe%d' % n) for n in std.range(0, nanodes - 1)],
     decon_pipe: [g.pipeline([magdecon[n]], name='magdeconpipe%d' % n) for n in std.range(0, nanodes - 1)],
