@@ -12,7 +12,7 @@ base {
         // to help with defining these parameters.
 
         // between center lines
-        local apa_cpa = 313.03*wc.cm,
+        local apa_cpa = 341.55*wc.cm,
         local cpa_thick = 50.8*wc.mm,
         local apa_w2w = 85.725*wc.mm,
         local plane_gap = 4.76*wc.mm,
@@ -24,7 +24,8 @@ base {
         // start.  Garfield calcualtions start somewhere relative to
         // something, here's where that is made concrete.  This MUST
         // match what field response functions also used.
-        response_plane: 18.92*wc.cm, // relative to collection wires
+        // response_plane: 18.92*wc.cm, // relative to collection wires
+        response_plane: 18.1*wc.cm, // relative to collection wires
         local res_plane = 0.5*apa_w2w + self.response_plane,
 
         // The cathode plane is like the anode cut off plane.  Any

@@ -1503,4 +1503,25 @@ protodunevd_nfsp : {
    }
 }
 
+protodunevd_nfspimg : {
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+      logsinks: ["stdout"]
+      loglevels: ["debug", "pgraph:info"]
+      plugins: ["WireCellGen", "WireCellSigProc", "WireCellImg", "WireCellSio", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
+      inputers: ["wclsRawFrameSource"]
+      outputers: [ ]
+      configs: ["pgrapher/experiment/protodunevd/wcls-nf-sp-img.jsonnet"]
+      params : {
+         raw_input_label: "tpcrawdecoder:daq"
+         reality: "data"
+         signal_output_form: "dense"
+         use_magnify: "false"
+      }
+   }
+}
+
+
 END_PROLOG
