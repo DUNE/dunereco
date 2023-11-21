@@ -1218,14 +1218,14 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
     module_type : WireCellToolkit
     wcls_main: {
         tool_type: WCLS
-        apps: ["Pgrapher"]
-        # apps: ["TbbFlow"]
+        # apps: ["Pgrapher"]
+        apps: ["TbbFlow"]
 
         logsinks: ["stdout:info", "wcls-sim-drift-simchannel-nf-sp.log:debug"]
         loglevels: ["debug"]
 
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"
-        # ,"WireCellTbb"
+        ,"WireCellTbb"
         # , "WireCellPytorch"
         ]
 
@@ -1244,6 +1244,8 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
 
         // Make available parameters via Jsonnet's std.extVar()
         params: {
+            # Pgrapher, TbbFlow
+            engine: "TbbFlow"
             # file: wires
             files_wires: "dunevd10kt_3view_v2_refactored_1x8x14ref.json.bz2"
             # file: fields

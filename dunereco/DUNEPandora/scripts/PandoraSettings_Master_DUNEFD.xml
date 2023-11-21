@@ -32,6 +32,8 @@
             <tool type = "LArSimpleNeutrinoId"/>
         </SliceIdTools>
         <InputHitListName>CaloHitList2D</InputHitListName>
+        <InputMCParticleListName>Input</InputMCParticleListName>
+        <PassMCParticlesToWorkerInstances>false</PassMCParticlesToWorkerInstances>
         <RecreatedPfoListName>RecreatedPfos</RecreatedPfoListName>
         <RecreatedClusterListName>RecreatedClusters</RecreatedClusterListName>
         <RecreatedVertexListName>RecreatedVertices</RecreatedVertexListName>
