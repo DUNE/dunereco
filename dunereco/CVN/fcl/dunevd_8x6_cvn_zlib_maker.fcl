@@ -29,7 +29,7 @@ physics:
 {
   producers:
   {
-    cvnmap:      @local::dunevd10kt_cvnmapper
+    cvnmap:      @local::dunevd_8x6_cvnmapper
   }
   analyzers:
   {
@@ -38,7 +38,7 @@ physics:
 
   map:           [ cvnmap ]
   ana:           [ zlib ]
-  end_paths:     [ ana ]  
+  end_paths:     [ ana ]
 }
 
 # Use calorimetric energy reconstruction
