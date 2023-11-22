@@ -1,31 +1,10 @@
-// This is a main entry point to configure a WC/LS job that applies
-// noise filtering and signal processing to existing RawDigits.  The
-// FHiCL is expected to provide the following parameters as attributes
-// in the "params" structure.
-//
-// epoch: the hardware noise fix expoch: "before", "after", "dynamic" or "perfect"
-// reality: whether we are running on "data" or "sim"ulation.
-// raw_input_label: the art::Event inputTag for the input RawDigit
-//
-// see the .fcl of the same name for an example
-//
-// Manual testing, eg:
-//
-// jsonnet -V reality=data -V epoch=dynamic -V raw_input_label=daq \\
-//         -V signal_output_form=sparse \\
-//         -J cfg cfg/pgrapher/experiment/uboone/wcls-nf-sp.jsonnet
-//
-// jsonnet -V reality=sim -V epoch=perfect -V raw_input_label=daq \\
-//         -V signal_output_form=sparse \\
-//         -J cfg cfg/pgrapher/experiment/uboone/wcls-nf-sp.jsonnet
 
-
-local epoch = std.extVar('epoch');  // eg "dynamic", "after", "before", "perfect"
 local reality = std.extVar('reality');
 local sigoutform = std.extVar('signal_output_form');  // eg "sparse" or "dense"
 
 
 local wc = import 'wirecell.jsonnet';
+local f = import "pgrapher/common/funcs.jsonnet";
 local g = import 'pgraph.jsonnet';
 
 local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
@@ -45,9 +24,6 @@ local wcls = wcls_maker(params, tools);
 //local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
 
 local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
-
-//local chndbm = chndb_maker(params, tools);
-//local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
 
 
 // Collect the WC/LS input converters for use below.  Make sure the
@@ -133,6 +109,10 @@ local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
+local img = import 'pgrapher/experiment/protodunevd/img.jsonnet';
+local img_maker = img();
+local img_pipes = [img_maker.per_anode(a) for a in tools.anodes];
+
 local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
 local chsel_pipes = [
   g.pnode({
@@ -163,11 +143,13 @@ local nfsp_pipes = [
                sinks.decon_pipe[n],
                // sinks.threshold_pipe[n],
                // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
+               img_pipes[n],
              ]
              else [
                chsel_pipes[n],
                // nf_pipes[n],
                sp_pipes[n],
+               img_pipes[n],
              ],
              'nfsp_pipe_%d' % n)
   for n in std.range(0, std.length(tools.anodes) - 1)
@@ -206,8 +188,10 @@ local fanin_tag_rules = [
           }
           for ind in anode_ident
         ];
-local fanpipe = util.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'nfsp', [], fanout_tag_rules, fanin_tag_rules);
+// local fanpipe = util.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'nfsp', [], fanout_tag_rules, fanin_tag_rules);
 
+local nanodes = std.length(tools.anodes);
+local fanpipe = f.multifanout('FrameFanout', nfsp_pipes, [1,nanodes], [nanodes,1], 'sn_mag', fanin_tag_rules);
 
 local retagger = g.pnode({
   type: 'Retagger',
@@ -228,7 +212,8 @@ local retagger = g.pnode({
 }, nin=1, nout=1);
 
 local sink = g.pnode({ type: 'DumpFrames' }, nin=1, nout=0);
-local graph = g.pipeline([wcls_input.adc_digits, fanpipe, retagger, wcls_output.sp_signals, sink]);
+// local graph = g.pipeline([wcls_input.adc_digits, fanpipe, retagger, wcls_output.sp_signals, sink]);
+local graph = g.pipeline([wcls_input.adc_digits, fanpipe]);
 
 local app = {
   type: 'Pgrapher',

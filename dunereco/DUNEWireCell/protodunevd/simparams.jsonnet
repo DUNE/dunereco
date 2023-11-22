@@ -10,6 +10,7 @@ base {
       DL :  4.0 * wc.cm2/wc.s,
       // Transverse diffusion constant
       DT :  8.8 * wc.cm2/wc.s,
+      drift_speed: 1.473 * wc.mm/wc.us,
   },
 
   daq: super.daq {

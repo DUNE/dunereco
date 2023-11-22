@@ -12,7 +12,7 @@ base {
         // to help with defining these parameters.
 
         // between center lines
-        local apa_cpa = 313.03*wc.cm,
+        local apa_cpa = 341.55*wc.cm,
         local cpa_thick = 50.8*wc.mm,
         local apa_w2w = 85.725*wc.mm,
         local plane_gap = 4.76*wc.mm,
@@ -24,7 +24,8 @@ base {
         // start.  Garfield calcualtions start somewhere relative to
         // something, here's where that is made concrete.  This MUST
         // match what field response functions also used.
-        response_plane: 18.92*wc.cm, // relative to collection wires
+        // response_plane: 18.92*wc.cm, // relative to collection wires
+        response_plane: 18.1*wc.cm, // relative to collection wires
         local res_plane = 0.5*apa_w2w + self.response_plane,
 
         // The cathode plane is like the anode cut off plane.  Any
@@ -33,11 +34,13 @@ base {
 
         volumes: [
             {
-                local world = 100,
-                local split = s*10, // 1: left, 2: right
+                // local world = 100,
+                // local split = s*10, // 1: left, 2: right
                 local anode = a, // physical anode number
-                wires: world + split + anode,
-                name: "anode%d"%(world + split + anode),
+                // wires: world + split + anode,
+                // name: "anode%d"%(world + split + anode),
+                wires: anode,
+                name: "anode%d" %a,
 
                 local sign = if a>3 then 1 else -1,
                 local centerline = sign * apa_cpa,
@@ -50,6 +53,12 @@ base {
                         response: centerline - res_plane,
                         cathode: centerline - cpa_plane, 
                     },
+
+                    {
+                        anode: centerline - apa_plane,
+                        response: centerline - res_plane,
+                        cathode: centerline - cpa_plane, 
+                    }
                 ]
                 // bottom drift volume
                 else [
@@ -58,8 +67,14 @@ base {
                         response: centerline + res_plane,
                         cathode: centerline + cpa_plane, 
                     },
+
+                    {
+                        anode: centerline + apa_plane,
+                        response: centerline + res_plane,
+                        cathode: centerline + cpa_plane, 
+                    }
                 ],
-            } for a in std.range(0,7) for s in std.range(1,2)
+            } for a in std.range(0,7)
         ],
 
         // This describes some rough, overall bounding box.  It's not
@@ -100,6 +115,11 @@ base {
         postgain: 1.1365, 
         shaping: 2.2 * wc.us,
       },
+      // super.elec { // top
+      //   type: "JsonElecResponse",
+      //   filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
+      //   postgain: 1.0,
+      // },
       super.elec { // top
         type: "JsonElecResponse",
         filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
@@ -138,11 +158,11 @@ base {
     },
 
     files: {
-        wires: "protodunevd-wires-larsoft-v2.json.bz2",
+        wires: "protodunevd-wires-larsoft-v3.json.bz2",
 
         fields: [
-            "dunevd-resp-isoc3views-18d92.json.bz2",
-            "dunevd-resp-isoc3views-18d92.json.bz2", // repeat for top drifter
+            "dunevdcrp2-FR-fixcoll-adjustind.json.bz2",
+            "dunevdcrp2-FR-fixcoll-adjustind.json.bz2", // repeat for top drifter
         ],
 
         noise: "protodune-noise-spectra-v1.json.bz2",

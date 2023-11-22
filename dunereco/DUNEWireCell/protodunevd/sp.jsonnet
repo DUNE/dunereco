@@ -3,20 +3,11 @@
 local g = import 'pgraph.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-// BIG FAT FIXME: we are taking from uboone.  If PDSP needs tuning do
-// four things: 0) read this comment, 1) cp this file into pdsp/, 2)
-// fix the import and 3) delete this comment.
 local spfilt = import 'pgrapher/experiment/protodunevd/sp-filters.jsonnet';
 
 function(params, tools, override = {}) {
 
   local pc = tools.perchanresp_nameuses,
-
-  local resolution = params.adc.resolution,
-  local fullscale = params.adc.fullscale[1] - params.adc.fullscale[0],
-  local ADC_mV_ratio = ((1 << resolution) - 1 ) / fullscale,
-
-  local bottom_anodes = [110,120, 111,121, 112,122, 113,123],
 
   // pDSP needs a per-anode sigproc
   make_sigproc(anode, name=null):: g.pnode({
@@ -48,11 +39,16 @@ function(params, tools, override = {}) {
        *  Optimized SP parameters (May 2019)
        *  Associated tuning in sp-filters.jsonnet
        */
+
+      local resolution = if anode.data.ident<4 then 14 else 12,
+      local fullscale = params.adc.fullscale[1] - params.adc.fullscale[0],
+      local ADC_mV_ratio = ((1 << resolution) - 1 ) / fullscale,
+
       anode: wc.tn(anode),
       dft: wc.tn(tools.dft),
       field_response: wc.tn(tools.field),
       // elecresponse: wc.tn(tools.elec_resp),
-      elecresponse: if std.count(bottom_anodes, anode.data.ident)>0
+      elecresponse: if anode.data.ident < 4
                     then wc.tn(tools.elec_resps[0])
                     else wc.tn(tools.elec_resps[1]),
       ftoffset: 0.0, // default 0.0

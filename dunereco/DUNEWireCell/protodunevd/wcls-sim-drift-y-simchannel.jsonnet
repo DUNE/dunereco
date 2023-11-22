@@ -1,11 +1,3 @@
-// This is a main entry point for configuring a wire-cell CLI job to
-// simulate protoDUNE-SP.  It is simplest signal-only simulation with
-// one set of nominal field response function.  It excludes noise.
-// The kinematics are a mixture of Ar39 "blips" and some ideal,
-// straight-line MIP tracks.
-//
-// Output is a Python numpy .npz file.
-
 local g = import 'pgraph.jsonnet';
 local f = import 'pgrapher/common/funcs.jsonnet';
 local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
@@ -29,9 +21,6 @@ local params = base {
     // drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
     drift_speed: util.drift_velocity(std.extVar('efield'), std.extVar('temperature')) * wc.mm / wc.us,
   },
-  files: super.files {
-    wires: std.extVar("wires"),
-  }
 };
 
 local tools = tools_maker(params);
@@ -78,15 +67,6 @@ local mega_anode = {
   },
 };
 
-// local mega_anode_active = {
-//   type: 'MegaAnodePlane',
-//   name: 'meganodesact',
-//   data: {
-//     anodes_tn: if std.extVar('active_cru')=='tde'
-//                then [wc.tn(tools.anodes[0]), wc.tn(tools.anodes[1])]
-//                else [wc.tn(tools.anodes[2]), wc.tn(tools.anodes[3])],
-//   },
-// };
 
 local wcls_output = {
   // ADC output from simulation
@@ -139,8 +119,7 @@ local bagger = sim.make_bagger();
 
 // signal plus noise pipelines
 //local sn_pipes = sim.signal_pipelines;
-// local sn_pipes = sim.splusn_pipelines;
-local analog_pipes = sim.analog_pipelines;
+local sn_pipes = sim.splusn_pipelines;
 
 local perfect = import 'pgrapher/experiment/protodunevd/chndb-base.jsonnet';
 local chndb = [{
@@ -166,9 +145,6 @@ local wcls_simchannel_sink = g.pnode({
   data: {
     artlabel: 'simpleSC',  // where to save in art::Event
     anodes_tn: [wc.tn(anode) for anode in tools.anodes],
-    // anodes_tn: if std.extVar('active_cru')=='tde'
-    //            then [wc.tn(tools.anodes[0]), wc.tn(tools.anodes[1])]
-    //            else [wc.tn(tools.anodes[2]), wc.tn(tools.anodes[3])],
     rng: wc.tn(rng),
     tick: params.daq.tick,
     start_time: -0.25 * wc.ms, 
@@ -186,57 +162,24 @@ local wcls_simchannel_sink = g.pnode({
   },
 }, nin=1, nout=1, uses=tools.anodes);
 
-local make_noise_model = function(anode, csdb=null) {
-    type: "EmpiricalNoiseModel",
-    name: "empericalnoise-" + anode.name,
-    data: {
-        anode: wc.tn(anode),
-        // dft: wc.tn(tools.dft),
-        chanstat: if std.type(csdb) == "null" then "" else wc.tn(csdb),
-        spectra_file: params.files.noise,
-        nsamples: params.daq.nticks,
-        period: params.daq.tick,
-        wire_length_scale: 1.0*wc.cm, // optimization binning
-    },
-    // uses: [anode, tools.dft] + if std.type(csdb) == "null" then [] else [csdb],
-    uses: [anode] + if std.type(csdb) == "null" then [] else [csdb],
-};
-local noise_model = make_noise_model(mega_anode);
-local add_noise = function(model, n) g.pnode({
-    type: "AddNoise",
-    name: "addnoise%d-" %n + model.name,
-    data: {
-        rng: wc.tn(tools.random),
-        // dft: wc.tn(tools.dft),
-        model: wc.tn(model),
-  nsamples: params.daq.nticks,
-        replacement_percentage: 0.02, // random optimization
-    // }}, nin=1, nout=1, uses=[tools.random, tools.dft, model]);
-    }}, nin=1, nout=1, uses=[tools.random, model]);
-local noises = [add_noise(noise_model, n) for n in std.range(0,7)];
+// local magoutput = 'protodune-data-check.root';
+// local magnify = import 'pgrapher/experiment/protodunevd/magnify-sinks.jsonnet';
+// local magio = magnify(tools, magoutput);
 
-// local digitizer = sim.digitizer(mega_anode, name="digitizer", tag="orig");
-// "AnodePlane:anode110"
-// "AnodePlane:anode120"
-// "AnodePlane:anode111"
-// "AnodePlane:anode121"
-local digitizers = [
-    sim.digitizer(mega_anode, name="digitizer%d-" %n + mega_anode.name, tag="orig%d"%n)
-    for n in std.range(0,7)];
+local multipass = [
+  g.pipeline([
+               sn_pipes[n],
+               // magio.orig_pipe[n],
+               // nf_pipes[n],
+               // sp_pipes[n],
+             ],
+             'multipass%d' % n)
+  for n in anode_iota
+];
+local outtags = ['orig%d' % n for n in anode_iota];
+local bi_manifold = f.fanpipe('DepoSetFanout', multipass, 'FrameFanin', 'sn_mag_nf', outtags);
+// local bi_manifold = f.fanpipe('DepoFanout', multipass, 'FrameFanin', 'sn_mag_nf', outtags);
 
-local frame_summers = [
-    g.pnode({
-        type: 'FrameSummer',
-        name: 'framesummer%d' %n,
-        data: {
-            align: true,
-            offset: 0.0*wc.s,
-        },
-    }, nin=2, nout=1) for n in std.range(0, 7)];
-
-local actpipes = [g.pipeline([noises[n], digitizers[n]], name="noise-digitizer%d" %n) for n in std.range(0,7)];
-local outtags = ['orig%d' % n for n in std.range(0, 7)];
-local pipe_reducer = util.fansummer('DepoSetFanout', analog_pipes, frame_summers, actpipes, 'FrameFanin', 'fansummer', outtags);
 
 local retagger = g.pnode({
   type: 'Retagger',
@@ -257,18 +200,6 @@ local retagger = g.pnode({
 
 //local frameio = io.numpy.frames(output);
 local sink = sim.frame_sink;
-
-// local magnifio = g.pnode({
-//     type: 'MagnifySink',
-//     name: 'magnifio',
-//     data: {
-//       output_filename: 'icarus-sim-drift.root',
-//       root_file_mode: 'UPDATE',
-//       frames: ['daq'],
-//       trace_has_tag: false,   // traces from source have NO tag
-//       anode: wc.tn(mega_anode),
-//     },
-//   }, nin=1, nout=1);
 
 local plainbagger = g.pnode({
         type:'DepoBagger',
@@ -297,13 +228,8 @@ local deposet_rotate_rev = g.pnode({
         },
     }, nin=1, nout=1);
 
-
-// local graph = g.pipeline([wcls_input.depos, plainbagger, /*deposet_rotate,*/  setdrifter, /*deposet_rotate_rev, wcls_simchannel_sink, bagger,*/ pipe_reducer, retagger, wcls_output.sim_digits, sink]);
-// local graph = g.pipeline([wcls_input.depos, plainbagger, deposet_rotate, setdrifter, deposet_rotate_rev,  pipe_reducer, retagger, wcls_output.sim_digits, sink]);
-// local graph = g.pipeline([wcls_input.depos, plainbagger, deposet_rotate_rev, setdrifter,  pipe_reducer, retagger, wcls_output.sim_digits, sink]);
-
 // FIXME: need a "bagger" to gate depos
-local graph = g.pipeline([wcls_input.deposet, deposet_rotate_rev, setdrifter, wcls_simchannel_sink, pipe_reducer, retagger, wcls_output.sim_digits, sink]);
+local graph = g.pipeline([wcls_input.deposet, deposet_rotate_rev, setdrifter, wcls_simchannel_sink, bi_manifold, retagger, wcls_output.sim_digits, sink]);
 
 local app = {
   type: 'Pgrapher',
