@@ -16,7 +16,6 @@ services:
   message:      @local::dune_message_services_prod
   FileCatalogMetadata:  @local::art_file_catalog_mc
                         @table::dunefdvd_1x8x6_3view_30deg_simulation_services
-                        Geometry: @local::dunevd10kt_1x8x6_3view_30deg_geo
 }
 
 source:
@@ -29,7 +28,7 @@ physics:
 {
   producers:
   {
-    cvnmap:      @local::dunevd10kt_cvnmapper
+    cvnmap:      @local::dunevd_8x6_cvnmapper
   }
   analyzers:
   {
@@ -38,7 +37,7 @@ physics:
 
   map:           [ cvnmap ]
   ana:           [ zlib ]
-  end_paths:     [ ana ]  
+  end_paths:     [ ana ]
 }
 
 # Use calorimetric energy reconstruction

@@ -4,11 +4,11 @@ standard_cvnvalidation:
 {
   module_type:        CVNValidation
   #==================
-  CVNResultLabel: "cvnresult"
+  # CVNResultLabel: "cvnresult"
   TruthLabel: "generator"
   # Use the following to add the reco energy to the output tree
-  NueEnergyLabel: "energynue"
-  NumuEnergyLabel: "energynumu"
+  # NueEnergyLabel: "energynue"
+  # NumuEnergyLabel: "energynumu"
 }
 
 END_PROLOG

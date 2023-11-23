@@ -14,8 +14,7 @@ services:
   MemoryTracker:         { } # default is one
   message:      @local::dune_message_services_prod
   FileCatalogMetadata:  @local::art_file_catalog_mc
-                        @table::dunefd_simulation_services
-  Geometry:             @local::dune10kt_1x2x6_v4_geo
+                        @table::dunefd_1x2x6_simulation_services
 }
 
 source:
@@ -28,7 +27,7 @@ physics:
 {
   producers:
   {
-    cvnmap:      @local::standard_cvnmapper
+    cvnmap:      @local::dunehd_1x2x6_cvnmapper
   }
   analyzers:
   {
@@ -46,10 +45,10 @@ physics:
 # physics.producers.energynutau.RecoMethod: 3
 
 # CVNMapper configuration
-physics.producers.cvnmap.HitsModuleLabel: "hitfd"
-physics.producers.cvnmap.TimeResolution: 1500
-physics.producers.cvnmap.WireLength: 2880
-physics.producers.cvnmap.TdcWidth: 500
+# physics.producers.cvnmap.HitsModuleLabel: "hitfd"
+# physics.producers.cvnmap.TimeResolution: 1500
+# physics.producers.cvnmap.WireLength: 2880
+# physics.producers.cvnmap.TdcWidth: 500
 
 physics.analyzers.zlib.EnergyNueLabel: ""
 physics.analyzers.zlib.EnergyNumuLabel: ""

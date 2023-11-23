@@ -3,7 +3,7 @@
 ===============================================================================
 
 ===============================================================================
- Producing event dump files for DUNE 
+ Producing event dump files for DUNE
 ===============================================================================
 
   - This is the basis of the image generation
@@ -25,6 +25,10 @@
 
   dune_cvn_eval.fcl
    - This is the standard configuration to evaluate DUNE events with the CVN
+
+  dunevd_3view is an older version of VD trainings for the deprecated 3view VD geometry
+  Use dunehd_1x2x6_<zlib_maker, eval_fhc (rhc)> for processing/running over latest HD geometry/trainings
+  Use dunevd_8x6_<zlib_maker, eval_fhc (rhc)> for processing/running over latest VD geometry/trainings
 
 ===============================================================================
   ProtoDUNE specific configurations

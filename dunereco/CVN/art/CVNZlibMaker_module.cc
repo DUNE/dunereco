@@ -67,7 +67,7 @@ namespace cvn {
     void reconfigure(const fhicl::ParameterSet& pset);
 
     double SimpleOscProb(const simb::MCFlux& flux, const simb::MCNeutrino& nu) const;
-  
+
   private:
 
     std::string fOutputDir;
@@ -78,6 +78,7 @@ namespace cvn {
     unsigned int fTopologyHitsCut;
 
     std::string fGenieGenModuleLabel;
+    std::string fLArG4ModuleLabel;
     std::string fEnergyNueLabel;
     std::string fEnergyNumuLabel;
     std::string fEnergyNutauLabel;
@@ -92,7 +93,7 @@ namespace cvn {
     TH1D* hPOT;
     double fPOT;
     int fRun;
-    int fSubRun; 
+    int fSubRun;
 
   };
 
@@ -118,6 +119,7 @@ namespace cvn {
     fTopologyHitsCut = pset.get<unsigned int>("TopologyHitsCut");
 
     fGenieGenModuleLabel = pset.get<std::string>("GenieGenModuleLabel");
+    fLArG4ModuleLabel = pset.get<std::string>("LArG4ModuleLabel");
     fEnergyNueLabel = pset.get<std::string>("EnergyNueLabel");
     fEnergyNumuLabel = pset.get<std::string>("EnergyNumuLabel");
     fEnergyNutauLabel = pset.get<std::string>("EnergyNutauLabel");
@@ -146,7 +148,7 @@ namespace cvn {
 
     if( nu.CCNC() == 1 && nu.Nu().PdgCode() == flux.fntype) return 1;
     if( nu.CCNC() == 1 && nu.Nu().PdgCode() != flux.fntype) return 0;
-    
+
     double E = nu.Nu().E();
     int flavAfter = nu.Nu().PdgCode();
     int flavBefore = flux.fntype;
@@ -192,7 +194,7 @@ namespace cvn {
     return 0;
 
   }
-  
+
   //......................................................................
   void CVNZlibMaker::beginJob()
   {
@@ -246,12 +248,17 @@ namespace cvn {
 
     // MC information
     std::vector<art::Ptr<simb::MCTruth>> mctruth_list;
+    std::vector<art::Ptr<simb::MCParticle>> g4par_list;
     auto h_mctruth = evt.getHandle<std::vector<simb::MCTruth>>(fGenieGenModuleLabel);
     if (h_mctruth)
       art::fill_ptr_vector(mctruth_list, h_mctruth);
+    auto h_g4par = evt.getHandle<std::vector<simb::MCParticle>>(fLArG4ModuleLabel);
+    if (h_g4par)
+      art::fill_ptr_vector(g4par_list, h_g4par);
 
     art::Ptr<simb::MCTruth> mctruth = mctruth_list[0];
     simb::MCNeutrino true_neutrino = mctruth->GetNeutrino();
+
 
     // Hard-coding event weight for now
     // Should probably fix this at some point
@@ -297,8 +304,22 @@ namespace cvn {
       if(!isFid) return;
     }
 
-    float reco_nue_energy = 0;
-    float reco_numu_energy = 0;
+    // TVector3 muon_start = true_neutrino.Nu().EndPosition().Vect();
+    //
+    // TVector3 v_muon_length = muon_start;
+    double muon_lentraj = 0.;
+    for(auto const p : g4par_list){
+      if((p->Process().compare("primary") == 0) && (abs(p->PdgCode()) == 13)){
+        // TVector3 muon_end = p->EndPosition().Vect();
+        // v_muon_length = muon_start - muon_end;
+        muon_lentraj = (p->Trajectory()).TotalLength();
+        break;
+      }
+    }
+    // double muon_length = v_muon_length.Mag();
+
+    float reco_nue_energy = true_neutrino.Target();
+    float reco_numu_energy =  muon_lentraj;
     float reco_nutau_energy = 0;
 
     // Get nue info
@@ -342,9 +363,9 @@ namespace cvn {
   //......................................................................
   void CVNZlibMaker::write_files(TrainingData td, unsigned int n, std::string evtid)
   {
-    // cropped from 2880 x 500 to 500 x 500 here 
+    // cropped from 2880 x 500 to 500 x 500 here
     std::vector<unsigned char> pixel_array(3 * fPlaneLimit * fTDCLimit);
-   
+
     CVNImageUtils image_utils(fPlaneLimit, fTDCLimit, 3);
     image_utils.SetPixelMapSize(td.fPMap.NWire(), td.fPMap.NTdc());
     image_utils.SetLogScale(fSetLog);
@@ -352,7 +373,7 @@ namespace cvn {
     image_utils.ConvertPixelMapToPixelArray(td.fPMap, pixel_array);
 
     ulong src_len = 3 * fPlaneLimit * fTDCLimit; // pixelArray length
-    ulong dest_len = compressBound(src_len);     // calculate size of the compressed data               
+    ulong dest_len = compressBound(src_len);     // calculate size of the compressed data
     char* ostream = (char *) malloc(dest_len);  // allocate memory for the compressed data
 
     int res = compress((Bytef *) ostream, &dest_len, (Bytef *) &pixel_array[0], src_len);
@@ -366,10 +387,10 @@ namespace cvn {
     else if (res ==  Z_MEM_ERROR)
       std::cout << "Not enough memory for compression!" << std::endl;
 
-    // Compression ok 
+    // Compression ok
     else {
 
-      // Create output files 
+      // Create output files
       std::string image_file_name = out_dir + "/event_" + evtid + ".gz";
       std::string info_file_name = out_dir + "/event_" +  evtid + ".info";
 
@@ -404,13 +425,13 @@ namespace cvn {
         info_file << td.fNuPDG << std::endl;
         info_file << td.fNProton << std::endl;
         info_file << td.fNPion << std::endl;
-        info_file << td.fNPizero << std::endl;         
+        info_file << td.fNPizero << std::endl;
         info_file << td.fNNeutron << std::endl;
 
         info_file << td.fTopologyType << std::endl;
         info_file << td.fTopologyTypeAlt << std::endl;
-        info_file << td.fPMap.GetTotHits() << std::endl;        
-        info_file << td.fLepAngle << std::endl; 
+        info_file << td.fPMap.GetTotHits() << std::endl;
+        info_file << td.fLepAngle << std::endl;
 
         info_file.close(); // close file
       }
@@ -418,7 +439,7 @@ namespace cvn {
 
         if (image_file.is_open())
           image_file.close();
-        else 
+        else
           throw art::Exception(art::errors::FileOpenError)
             << "Unable to open file " << image_file_name << "!" << std::endl;
 
@@ -429,7 +450,7 @@ namespace cvn {
             << "Unable to open file " << info_file_name << "!" << std::endl;
       }
     }
-    
+
     free(ostream);  // free allocated memory
 
   } // cvn::CVNZlibMaker::write_files
