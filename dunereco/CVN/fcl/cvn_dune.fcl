@@ -70,7 +70,7 @@ dunehd_1x2x6_FHC_cvnevaluator:
     TFNetHandler:
     {
         @table::standard_cvnevaluator.TFNetHandler
-        TFProtoBuf: cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/CVN/beam/v03_00_00/dune_cvn_hd_2x6_nu_2023_tf26_v03_00_00.pb"
+        TFProtoBuf: "cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/CVN/beam/v03_00_00/dune_cvn_hd_2x6_nu_2023_tf26_v03_00_00.pb"
         LibPath: ""
         ReverseViews: [false, true, false]
     }
@@ -83,7 +83,7 @@ dunehd_1x2x6_RHC_cvnevaluator:
     TFNetHandler:
     {
         @table::standard_cvnevaluator.TFNetHandler
-        TFProtoBuf: cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/CVN/beam/v03_00_00/dune_cvn_hd_2x6_anu_2023_tf26_v03_00_00.pb"
+        TFProtoBuf: "cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/CVN/beam/v03_00_00/dune_cvn_hd_2x6_anu_2023_tf26_v03_00_00.pb"
         LibPath: ""
         ReverseViews: [false, true, false]
     }
@@ -95,7 +95,7 @@ dunevd_8x6_FHC_cvnevaluator:
     TFNetHandler:
     {
         @table::standard_cvnevaluator.TFNetHandler
-        TFProtoBuf: cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/CVN/beam/v03_00_00/dune_cvn_vd_8x6_nu_2023_tf26_v03_00_00.pb"
+        TFProtoBuf: "cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/CVN/beam/v03_00_00/dune_cvn_vd_8x6_nu_2023_tf26_v03_00_00.pb"
         LibPath: ""
         ReverseViews: [false, false, false]
     }
@@ -108,7 +108,7 @@ dunevd_8x6_RHC_cvnevaluator:
     TFNetHandler:
     {
         @table::standard_cvnevaluator.TFNetHandler
-        TFProtoBuf: cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/CVN/beam/v03_00_00/dune_cvn_vd_8x6_anu_2023_tf26_v03_00_00.pb"
+        TFProtoBuf: "cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/CVN/beam/v03_00_00/dune_cvn_vd_8x6_anu_2023_tf26_v03_00_00.pb"
         LibPath: ""
         ReverseViews: [false, false, false]
     }
