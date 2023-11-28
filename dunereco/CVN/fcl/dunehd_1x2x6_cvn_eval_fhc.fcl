@@ -1,0 +1,31 @@
+#include "services_dune.fcl"
+#include "CVNMapper.fcl"
+#include "cvn_dune.fcl"
+
+process_name: ZlibMaker
+
+services:
+{
+  TimeTracker:       {}
+  RandomNumberGenerator: {}
+  MemoryTracker:         { } # default is one
+  message:      @local::dune_message_services_prod
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+                        @table::dunefd_1x2x6_simulation_services
+}
+
+source:
+{
+  module_type: RootInput
+  maxEvents: -1
+}
+
+physics:
+{
+  producers:
+  {
+    cvnmap:      @local::dunehd_1x2x6_cvnmapper
+    cvneva:      @local::dunehd_1x2x6_FHC_cvnevaluator
+  }
+  map:           [ cvnmap, cvneva ]
+}

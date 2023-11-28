@@ -3,6 +3,8 @@
 #include "CVNEvaluator.fcl"
 
 BEGIN_PROLOG
+
+# older configurations (~2018 or so)
 dunefd_horizdrift_cvnmapper:
 {
     @table::standard_cvnmapper
@@ -24,12 +26,30 @@ dunefd_horizdrift_cvnevaluator:
     }
 }
 
+# newer configurations (2023 onwards)
+
 dunevd10kt_cvnmapper:
 {
    @table::standard_cvnmapper
    HitsModuleLabel: "gaushit"
    TdcWidth: 500
-   TimeResolution: 1500 
+   TimeResolution: 1500
+}
+
+# HD final trainings
+dunehd_1x2x6_cvnmapper:{
+   @table::standard_cvnmapper
+   HitsModuleLabel: "hitfd"
+   TdcWidth: 500
+   TimeResolution: 1500
+}
+
+# VD final trainings
+dunevd_8x6_cvnmapper:{
+   @table::standard_cvnmapper
+   HitsModuleLabel: "gaushit"
+   TdcWidth: 500
+   TimeResolution: 1500
 }
 
 dunevd10kt_3view_cvnevaluator:
@@ -43,6 +63,55 @@ dunevd10kt_3view_cvnevaluator:
         ReverseViews: [false, false, false]
     }
 }
-  
+
+dunehd_1x2x6_FHC_cvnevaluator:
+{
+    @table::standard_cvnevaluator
+    TFNetHandler:
+    {
+        @table::standard_cvnevaluator.TFNetHandler
+        TFProtoBuf: "cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/CVN/beam/v03_00_00/dune_cvn_hd_2x6_nu_2023_tf26_v03_00_00.pb"
+        LibPath: ""
+        ReverseViews: [false, true, false]
+    }
+
+}
+
+dunehd_1x2x6_RHC_cvnevaluator:
+{
+    @table::standard_cvnevaluator
+    TFNetHandler:
+    {
+        @table::standard_cvnevaluator.TFNetHandler
+        TFProtoBuf: "cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/CVN/beam/v03_00_00/dune_cvn_hd_2x6_anu_2023_tf26_v03_00_00.pb"
+        LibPath: ""
+        ReverseViews: [false, true, false]
+    }
+}
+
+dunevd_8x6_FHC_cvnevaluator:
+{
+    @table::standard_cvnevaluator
+    TFNetHandler:
+    {
+        @table::standard_cvnevaluator.TFNetHandler
+        TFProtoBuf: "cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/CVN/beam/v03_00_00/dune_cvn_vd_8x6_nu_2023_tf26_v03_00_00.pb"
+        LibPath: ""
+        ReverseViews: [false, false, false]
+    }
+
+}
+
+dunevd_8x6_RHC_cvnevaluator:
+{
+    @table::standard_cvnevaluator
+    TFNetHandler:
+    {
+        @table::standard_cvnevaluator.TFNetHandler
+        TFProtoBuf: "cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/CVN/beam/v03_00_00/dune_cvn_vd_8x6_anu_2023_tf26_v03_00_00.pb"
+        LibPath: ""
+        ReverseViews: [false, false, false]
+    }
+}
 
 END_PROLOG

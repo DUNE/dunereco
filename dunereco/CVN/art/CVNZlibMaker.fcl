@@ -10,6 +10,7 @@ standard_cvnzlibmaker:
   ReverseViews: [false,true,false]
   TopologyHitsCut: 100
   GenieGenModuleLabel: "generator"
+  LArG4ModuleLabel: "largeant"
   EnergyNueLabel: "energynue"
   EnergyNumuLabel: "energynumu"
   EnergyNutauLabel: "energynutau"

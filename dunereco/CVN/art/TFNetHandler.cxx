@@ -20,7 +20,7 @@ namespace cvn
 {
 
   TFNetHandler::TFNetHandler(const fhicl::ParameterSet& pset):
-    fLibPath(cet::getenv(pset.get<std::string>("LibPath", ""))),
+    fLibPath(cet::getenv(pset.get<std::string>("LibPath", ""), std::nothrow)),
     fTFProtoBuf  (fLibPath+"/"+pset.get<std::string>("TFProtoBuf")),
     fUseLogChargeScale(pset.get<bool>("ChargeLogScale")),
     fImageWires(pset.get<unsigned int>("NImageWires")),
@@ -37,14 +37,14 @@ namespace cvn
     }
 
   }
- 
+
   // Check the network outputs
   bool check(const std::vector< std::vector< float > > & outputs)
   {
     if (outputs.size() == 1) return true;
     size_t aux = 0;
     for (size_t o = 0; o < outputs.size(); ++o)
-    {   
+    {
         size_t aux2 = 0;
 
         for (size_t i = 0; i < outputs[o].size(); ++i)
@@ -52,7 +52,7 @@ namespace cvn
                 aux2++;
         if (aux2 == outputs[o].size()) aux++;
     }
-    return aux == outputs.size() ? false : true;        
+    return aux == outputs.size() ? false : true;
   }
 
   // Fill outputs with value -3
@@ -68,9 +68,9 @@ namespace cvn
 
   std::vector< std::vector<float> > TFNetHandler::Predict(const PixelMap& pm)
   {
-   
+
     CVNImageUtils imageUtils(fImageWires,fImageTDCs, 3);
-    // Configure the image utility  
+    // Configure the image utility
     imageUtils.SetViewReversal(fReverseViews);
     imageUtils.SetImageSize(fImageWires,fImageTDCs,3);
     imageUtils.SetLogScale(fUseLogChargeScale);
@@ -116,8 +116,8 @@ namespace cvn
     return cvnResults[0];
   }
 
-  /* 
-  // The standard output has 13 elements, this function sums the convenient ones 
+  /*
+  // The standard output has 13 elements, this function sums the convenient ones
   std::vector<float> TFNetHandler::PredictFlavour(const PixelMap& pm){
 
     std::vector<float> fullResults = this->Predict(pm);

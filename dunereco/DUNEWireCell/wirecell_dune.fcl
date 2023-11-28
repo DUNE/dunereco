@@ -1218,14 +1218,14 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
     module_type : WireCellToolkit
     wcls_main: {
         tool_type: WCLS
-        apps: ["Pgrapher"]
-        # apps: ["TbbFlow"]
+        # apps: ["Pgrapher"]
+        apps: ["TbbFlow"]
 
         logsinks: ["stdout:info", "wcls-sim-drift-simchannel-nf-sp.log:debug"]
         loglevels: ["debug"]
 
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"
-        # ,"WireCellTbb"
+        ,"WireCellTbb"
         # , "WireCellPytorch"
         ]
 
@@ -1244,6 +1244,8 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
 
         // Make available parameters via Jsonnet's std.extVar()
         params: {
+            # Pgrapher, TbbFlow
+            engine: "TbbFlow"
             # file: wires
             files_wires: "dunevd10kt_3view_v2_refactored_1x8x14ref.json.bz2"
             # file: fields
@@ -1257,7 +1259,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
             # 3view-30deg: default, 3view: dunevd_3view
             geo_planeid_labels: "dunevd_3view"
             # process pratial or all CRMs: all or partial
-            process_crm: "partial"
+            process_crm: "full"
         }
         structs: {
             # number of time samples
@@ -1308,7 +1310,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp : {
             files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
             files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
             geo_planeid_labels: "default"
-            process_crm: "partial"
+            process_crm: "full"
         }
         structs: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main.structs
@@ -1502,5 +1504,26 @@ protodunevd_nfsp : {
       }
    }
 }
+
+protodunevd_nfspimg : {
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+      logsinks: ["stdout"]
+      loglevels: ["debug", "pgraph:info"]
+      plugins: ["WireCellGen", "WireCellSigProc", "WireCellImg", "WireCellSio", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
+      inputers: ["wclsRawFrameSource"]
+      outputers: [ ]
+      configs: ["pgrapher/experiment/protodunevd/wcls-nf-sp-img.jsonnet"]
+      params : {
+         raw_input_label: "tpcrawdecoder:daq"
+         reality: "data"
+         signal_output_form: "dense"
+         use_magnify: "false"
+      }
+   }
+}
+
 
 END_PROLOG
