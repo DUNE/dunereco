@@ -3,7 +3,7 @@
 local base = import 'pgrapher/experiment/iceberg/params.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-base {
+function(params) base(params) {
   // lar: super.lar {
   //     // Longitudinal diffusion constant
   //     DL : 4.0 * wc.cm2/wc.s,

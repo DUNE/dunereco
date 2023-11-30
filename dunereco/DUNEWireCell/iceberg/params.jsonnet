@@ -1,47 +1,16 @@
-// ProtoDUNE-SP specific parameters.  This file inerets from the
-// generic set of parameters and overrides things specific to PDSP.
-
 local base = import 'pgrapher/common/params.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-base {
+function(params) base {
   det: {
 
-    // define the 6 APAs.  This must use the coordinate system
-    // defined by the wire geometry file.
-    // A full drift is a box: xyz=[3.594*wc.m, 5.9*wc.m, 2.2944*wc.m].
-    //
-    // The "faces" is consumed by, at least, the Drifter and
-    // AnodePlane.  The "wires" number is used to set
-    // AnodePlane.ident used to lookup the anode in WireSchema.
-    // It corresponds to the anode number.
-    //
-    // Also see:
-    //   wirecell-util wire-volumes protodune-wires-larsoft-v3.json.bz2
-    // to help with defining these parameters.
-
-    // from DocDB 203 and assuming wires are symmetric across x=0
-
-    // between center lines
-    local apa_cpa = 3.637 * wc.m,
-    local cpa_thick = 50.8 * wc.mm,
-    local apa_w2w = 85.725 * wc.mm,  // DocDB 203 calls "W" as "X"
+    local apa_cpa = 30 * wc.cm, // FIXME: between center lines
+    local cpa_thick = 50.8 * wc.mm, // FIXME
+    local apa_w2w = 3.00155 * 2 * wc.cm,
     local plane_gap = 4.76 * wc.mm,
-    local apa_g2g = 114.3 * wc.mm,  // note that grid plane must have
-    // gap 4.7675mm for this number
-    // to be consistent with above.
-    // There's probably round-off
-    // error in DocDB 203.
+    local apa_g2g = apa_w2w + 6*plane_gap,
 
-    // The "anode" cut off plane, here measured from APA
-    // centerline, determines how close to the wires do we
-    // consider any depo.  Anything closer will simply be
-    // discarded, else it will either be drifted or "backed up" to
-    // the response plane.  This is somewhat arbitrary choice.
-    // Placing it w/in the response plane means any depos that are
-    // "backed up" won't have proper field response.  But, the
-    // tighter this is made, the less volume is simulated.
-    local apa_plane = 0.5 * apa_g2g,  // pick it to be at the grid wires
+    local apa_plane = 0.5 * apa_g2g - plane_gap,  // pick it to be at the fist induction wires
 
     // The "response" plane is where the field response functions
     // start.  Garfield calcualtions start somewhere relative to
@@ -55,44 +24,25 @@ base {
     local cpa_plane = apa_cpa - 0.5 * cpa_thick,
 
 
-    // The volumes are then defined in terms of these above
-    // numbers.  You can use "wirecell-util wires-info" or
-    // "wirecell-util wires-volumes" or others to understand the
-    // mapping of anode number to the 6 locations in X and Z.  For
-    // Larsoft wires the numbering is column major starting at
-    // small X and Z so the centerline is -/+/-/+/-/+.  Also
-    // important is that the faces are listed "front" first.
-    // Front is the one with the more positive X coordinates and
-    // if we want to ignore a face it is made null.
     volumes: [
       {
-        local sign = 2 * (n % 2) - 1,
-        local centerline = sign * apa_cpa,
-        wires: n,  // anode number
-        name: 'apa%d' % n,
+        wires: 0,  // anode number
+        name: 'apa0',
+        // face 0 receives +x depos
         faces:
-          // top, front face is against cryo wall
-          if sign > 0
-          then [
-            null,
+          [
             {
-              anode: centerline - apa_plane,
-              response: centerline - res_plane,
-              cathode: centerline - cpa_plane,
+              anode:    apa_plane,
+              response: res_plane,
+              cathode:  cpa_plane,
             },
-          ]
-          // bottom, back face is against cryo wall
-          else [
             {
-              anode: centerline + apa_plane,
-              response: centerline + res_plane,
-              cathode: centerline + cpa_plane,
-            },
-            null,
+              anode:    -apa_plane,
+              response: -res_plane,
+              cathode:  -cpa_plane,
+            }
           ],
       }
-      // for n in std.range(0, 5)
-      for n in [0] // only one TPC
     ],
 
     // This describes some rough, overall bounding box.  It's not
@@ -102,8 +52,8 @@ base {
     // rectangular solid.  Again "wirecell-util wires-info" helps
     // to choose something.
     bounds: {
-      tail: wc.point(-4.0, 0.0, 0.0, wc.m),
-      head: wc.point(+4.0, 6.1, 7.0, wc.m),
+      tail: wc.point(-30,  0.0,   0.0, wc.cm),
+      head: wc.point( 30, 93.8, 115.3, wc.cm),
     },
   },
 
@@ -136,7 +86,7 @@ base {
     // The "absolute" time (ie, in G4 time) that the lower edge of
     // of final readout tick #0 should correspond to.  This is a
     // "fixed" notion.
-    local tick0_time = -250 * wc.us,
+    local tick0_time = if std.objectHas(params, 'G4RefTime') then params.G4RefTime else 0,
 
     // Open the ductor's gate a bit early.
     local response_time_offset = $.det.response_plane / $.lar.drift_speed,
@@ -158,11 +108,9 @@ base {
   },
 
   files: {
-    wires: 'iceberg-wires-larsoft-beta.json.bz2',
+    wires: 'iceberg-wires-larsoft-v2.json.bz2',
 
     fields: [
-      // "garfield-1d-3planes-21wires-6impacts-dune-v1.json.bz2",
-      // "garfield-1d-boundary-path-rev-dune.json.bz2",
       'dune-garfield-1d565.json.bz2',
     ],
 
