@@ -43,46 +43,5 @@ dunefd_nuangularreco_pandora_nue:
     RecoMethod: 2
 }
 
-# dunefd_nuenergyreco_pandora_nc:
-# {
-#     @table::dunefd_nuenergyreco_pandora_numu
-#     RecoMethod: 3
-# }
-
-dunefdvd_nuangularreco_pandora_numu: @local::dunefd_nuangularreco_pandora_numu
-# dunefdvd_nuangularreco_pandora_numu.NeutrinoangularrecoAlg: @local::dunevd10kt_neutrinoangularrecoalg
-dunefdvd_nuangularreco_pandora_numu.WireLabel: "tpcrawdecoder:gauss"
-
-dunefdvd_nuangularreco_pandora_nue:  @local::dunefd_nuangularreco_pandora_nue
-# dunefdvd_nuangularreco_pandora_nue.NeutrinoangularrecoAlg: @local::dunevd10kt_neutrinoangularrecoalg
-dunefdvd_nuangularreco_pandora_nue.WireLabel:  "tpcrawdecoder:gauss"
-
-# dunefdvd_nuenergyreco_pandora_nc:   @local::dunefd_nuenergyreco_pandora_nc
-# dunefdvd_nuenergyreco_pandora_nc.NeutrinoEnergyRecoAlg: @local::dunevd10kt_neutrinoenergyrecoalg
-# dunefdvd_nuenergyreco_pandora_nc.WireLabel:  "tpcrawdecoder:gauss"
-
-# dunefdvd_30deg_nuenergyreco_pandora_numu: @local::dunefd_nuenergyreco_pandora_numu
-# dunefdvd_30deg_nuenergyreco_pandora_numu.NeutrinoEnergyRecoAlg: @local::dunevd10kt_30deg_neutrinoenergyrecoalg
-# dunefdvd_30deg_nuenergyreco_pandora_numu.WireLabel: "tpcrawdecoder:gauss"
-
-# dunefdvd_30deg_nuenergyreco_pandora_nue:  @local::dunefd_nuenergyreco_pandora_nue
-# dunefdvd_30deg_nuenergyreco_pandora_nue.NeutrinoEnergyRecoAlg: @local::dunevd10kt_30deg_neutrinoenergyrecoalg
-# dunefdvd_30deg_nuenergyreco_pandora_nue.WireLabel:  "tpcrawdecoder:gauss"
-
-# dunefdvd_30deg_nuenergyreco_pandora_nc:   @local::dunefd_nuenergyreco_pandora_nc
-# dunefdvd_30deg_nuenergyreco_pandora_nc.NeutrinoEnergyRecoAlg: @local::dunevd10kt_30deg_neutrinoenergyrecoalg
-# dunefdvd_30deg_nuenergyreco_pandora_nc.WireLabel:  "tpcrawdecoder:gauss"
-
-# dunefdvd_nuenergyreco_pmtracktc:   @local::dunefdvd_nuenergyreco_pandora_nc
-# dunefdvd_nuenergyreco_pmtracktc.HitLabel:              "linecluster"
-# dunefdvd_nuenergyreco_pmtracktc.TrackLabel:            "pmtracktc"
-# dunefdvd_nuenergyreco_pmtracktc.TrackToHitLabel:       "pmtracktc"
-# dunefdvd_nuenergyreco_pmtracktc.HitToSpacePointLabel:  "pmtracktc"
-
-# dunefdvd_30deg_nuenergyreco_pmtracktc:   @local::dunefdvd_30deg_nuenergyreco_pandora_nc
-# dunefdvd_30deg_nuenergyreco_pmtracktc.HitLabel:              "linecluster"
-# dunefdvd_30deg_nuenergyreco_pmtracktc.TrackLabel:            "pmtracktc"
-# dunefdvd_30deg_nuenergyreco_pmtracktc.TrackToHitLabel:       "pmtracktc"
-# dunefdvd_30deg_nuenergyreco_pmtracktc.HitToSpacePointLabel:  "pmtracktc"
 
 END_PROLOG
