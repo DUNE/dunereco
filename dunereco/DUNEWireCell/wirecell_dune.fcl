@@ -469,7 +469,7 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
     module_type : WireCellToolkit
     wcls_main: {
         tool_type: WCLS
-        apps: ["Pgrapher"] # TbbFlow, Pgrapher
+        apps: ["TbbFlow"] # TbbFlow, Pgrapher
         logsinks: ["stdout:info", "wcls-sim-drift-simchannel-nf-sp.log:debug"]
         loglevels: ["debug"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
@@ -484,6 +484,8 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
         ]
         # Make available parameters via Jsonnet's std.extVar()
         params: {
+            # Pgrapher, TbbFlow
+            engine: "TbbFlow"
         }
         structs: {
           # number of time samples
