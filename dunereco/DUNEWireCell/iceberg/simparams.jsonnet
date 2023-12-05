@@ -20,7 +20,7 @@ function(params) base(params) {
     // Number of readout ticks.  See also sim.response.nticks.
     // In MB LArSoft simulation, they expect a different number of
     // ticks than acutal data.
-    nticks: 2000,
+    nticks: 8256,
   },
 
   // These parameters only make sense for running WCT simulation on

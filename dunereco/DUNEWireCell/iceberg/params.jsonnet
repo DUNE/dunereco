@@ -4,13 +4,13 @@ local wc = import 'wirecell.jsonnet';
 function(params) base {
   det: {
 
-    local apa_cpa = 30 * wc.cm, // FIXME: between center lines
-    local cpa_thick = 50.8 * wc.mm, // FIXME
+    local apa_cpa = 360.299 * wc.mm, // between center lines, from Shekar Mishra
+    local cpa_thick = 3.175 * wc.mm, // 1/8 inch
     local apa_w2w = 3.00155 * 2 * wc.cm,
     local plane_gap = 4.76 * wc.mm,
-    local apa_g2g = apa_w2w + 6*plane_gap,
+    local apa_u2u = apa_w2w + 4*plane_gap,
 
-    local apa_plane = 0.5 * apa_g2g - plane_gap,  // pick it to be at the fist induction wires
+    local apa_plane = 0.5 * apa_u2u,  // pick it to be at the fist induction wires
 
     // The "response" plane is where the field response functions
     // start.  Garfield calcualtions start somewhere relative to
@@ -58,23 +58,23 @@ function(params) base {
   },
 
   daq: super.daq {
-    nticks: 2000,
+    nticks: 8256,
   },
 
   adc: super.adc {
-    // per tdr, chapter 2
-    baselines: [1003 * wc.millivolt, 1003 * wc.millivolt, 508 * wc.millivolt],
+    baselines: [900 * wc.millivolt, 900 * wc.millivolt, 200 * wc.millivolt],
 
-    // check this.  The tdr says, "The ADC ASIC has an input
-    // buffer with offset compensation to match the output of the
-    // FE ASIC.  The input buffer first samples the input signal
-    // (with a range of 0.2 V to 1.6 V)..."
-    fullscale: [0.2 * wc.volt, 1.6 * wc.volt],
+    // The resolution (bits) of the ADC
+    resolution: 14,
+
+    // The voltage range as [min,max] of the ADC, eg min voltage
+    // counts 0 ADC, max counts 2^resolution-1.
+    fullscale: [0.0 * wc.volt, 1.4 * wc.volt],
   },
 
   elec: super.elec {
-    postgain: 1.131,
-    shaping: 2.2 * wc.us,
+    postgain: 1.0,
+    shaping: 2.0 * wc.us,
   },
 
 
