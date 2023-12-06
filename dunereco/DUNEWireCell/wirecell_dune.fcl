@@ -794,6 +794,37 @@ tpcrawdecoder_iceberg : {
    }
 }
 
+tpcrawdecoder_iceberg_splusn : {
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+      logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
+      loglevels: ["debug"]
+      plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
+      configs: ["pgrapher/experiment/iceberg/wcls-sim-drift-simchannel-splusn.jsonnet"]
+      inputers: ["wclsSimDepoSource:"]
+      outputers: [
+         "wclsSimChannelSink:postdrift",
+         "wclsFrameSaver:simsignals",
+         "wclsFrameSaver:simdigits"
+      ]
+      params: {
+      }
+      structs: {
+        # Longitudinal diffusion constant [cm2/s]
+        DL: 4.0
+        # Transverse diffusion constant [cm2/s]
+        DT: 8.8
+        # Electron lifetime [ms]
+        lifetime: 10
+        # Electron drift speed, assumes a certain applied E-field [mm/us]
+        driftSpeed: 1.60563
+        # G4RefTime [us]
+        G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+      }
+   }
+}
 
 dune10kt_dunefd_vertdrift_data_nfsp : {
 #empty for now

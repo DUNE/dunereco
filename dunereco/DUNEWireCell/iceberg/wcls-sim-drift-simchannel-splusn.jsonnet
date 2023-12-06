@@ -56,6 +56,11 @@ local mega_anode = {
     anodes_tn: [wc.tn(anode) for anode in tools.anodes],
   },
 };
+
+local resolution = params.adc.resolution;
+local fullscale = params.adc.fullscale[1] - params.adc.fullscale[0];
+local ADC_mV_ratio = ((1 << resolution) - 1 ) / fullscale;
+
 local wcls_output = {
   // signal waveform from simulation
   sim_signals: g.pnode({
@@ -65,7 +70,7 @@ local wcls_output = {
       anode: wc.tn(mega_anode),
       digitize: true,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['sig'],
-      frame_scale: [2.925e9], // convert mV to ADC: 1e9 * 4095 / 1400
+      frame_scale: [ADC_mV_ratio], // convert mV to ADC
     },
   }, nin=1, nout=1, uses=[mega_anode]),
 
