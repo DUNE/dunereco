@@ -273,6 +273,6 @@ base {
 
   rc_resp: {
     width: 1.1*wc.ms,
-    rc_layers: 1, // 1
+    rc_layers: 0,
   }
 }
