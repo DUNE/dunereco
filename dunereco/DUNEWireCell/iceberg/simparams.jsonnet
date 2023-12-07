@@ -162,4 +162,9 @@ function(params) base(params) {
     magnitude: 1.0,
     time_smear: 1.0 * wc.us,
   },
+
+  rc_resp: {
+    rc_layers: 0,
+    width: 1.1*wc.ms,
+  }
 }
