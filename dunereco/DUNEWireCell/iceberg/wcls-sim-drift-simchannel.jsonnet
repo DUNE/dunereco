@@ -7,23 +7,23 @@
 // Output is a Python numpy .npz file.
 
 local g = import 'pgraph.jsonnet';
-local f = import 'pgrapher/experiment/dune-vd/funcs.jsonnet';
+local f = import 'pgrapher/common/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
 local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
-local params_maker = import 'pgrapher/experiment/dune10kt-1x2x6/simparams.jsonnet';
+local params_maker = import 'pgrapher/experiment/iceberg/simparams.jsonnet';
 local fcl_params = {
     G4RefTime: std.extVar('G4RefTime') * wc.us,
 };
 local params = params_maker(fcl_params) {
   lar: super.lar {
     // Longitudinal diffusion constant
-    DL: std.extVar('DL') * wc.cm2 / wc.ns,
+    DL: std.extVar('DL') * wc.cm2 / wc.s,
     // Transverse diffusion constant
-    DT: std.extVar('DT') * wc.cm2 / wc.ns,
+    DT: std.extVar('DT') * wc.cm2 / wc.s,
     // Electron lifetime
-    lifetime: std.extVar('lifetime') * wc.us,
+    lifetime: std.extVar('lifetime') * wc.ms,
     // Electron drift speed, assumes a certain applied E-field
     drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
   },
@@ -32,7 +32,7 @@ local params = params_maker(fcl_params) {
 
 local tools = tools_maker(params);
 
-local sim_maker = import 'pgrapher/experiment/dune10kt-1x2x6/sim.jsonnet';
+local sim_maker = import 'pgrapher/experiment/iceberg/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local nanodes = std.length(tools.anodes);
@@ -49,7 +49,7 @@ local output = 'wct-sim-ideal-sig.npz';
 local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 local wcls_input = {
-  depos: wcls.input.depos(name='', art_tag='IonAndScint'),
+  depos: wcls.input.depos(name='', art_tag='largeant:LArG4DetectorServicevolTPCActive'),
   // depos: wcls.input.depos(name='electron'),  // default art_tag="blopper"
 };
 
@@ -86,20 +86,11 @@ local wcls_output = {
   // "raw data".
   nf_digits: wcls.output.digits(name='nfdigits', tags=['raw']),
 
-  // this wcls.output.signals one only use one APA?
-  // sp_signals: wcls.output.signals(name='spsignals', tags=['gauss', 'wiener']),
-  sp_signals: g.pnode({
-  type: 'wclsFrameSaver',
-  name: 'spsignals',
-  data: {
-    anode: wc.tn(mega_anode),
-    digitize: false,  // true means save as RawDigit, else recob::Wire
-    frame_tags: ['gauss', 'wiener','dnnsp'],
-    frame_scale: [0.005, 0.005, 0.005],
-    chanmaskmaps: [],
-    nticks: params.daq.nticks,
-  },
-  }, nin=1, nout=1, uses=[mega_anode]),
+  // The output of signal processing.  Note, there are two signal
+  // sets each created with its own filter.  The "gauss" one is best
+  // for charge reconstruction, the "wiener" is best for S/N
+  // separation.  Both are used in downstream WC code.
+  sp_signals: wcls.output.signals(name='spsignals', tags=['gauss', 'wiener']),
 
   // save "threshold" from normal decon for each channel noise
   // used in imaging
@@ -121,12 +112,12 @@ local bagger = sim.make_bagger();
 //local sn_pipes = sim.signal_pipelines;
 local sn_pipes = sim.splusn_pipelines;
 
-local perfect = import 'pgrapher/experiment/dune10kt-1x2x6/chndb-perfect.jsonnet';
+local perfect = import 'pgrapher/experiment/iceberg/chndb-perfect.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
-  data: perfect(params, tools.anodes[n], tools.field, n),
-  uses: [tools.anodes[n], tools.field],  // pnode extension
+  data: perfect(params, tools.anodes[n], tools.field, n){dft:wc.tn(tools.dft)},
+  uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in anode_iota];
 
 //local chndb_maker = import 'pgrapher/experiment/pdsp/chndb.jsonnet';
@@ -134,13 +125,12 @@ local chndb = [{
 //local noise_epoch = "after";
 //local chndb_pipes = [chndb_maker(params, tools.anodes[n], tools.fields[n]).wct(noise_epoch)
 //                for n in std.range(0, std.length(tools.anodes)-1)];
-local nf_maker = import 'pgrapher/experiment/dune10kt-1x2x6/nf.jsonnet';
+local nf_maker = import 'pgrapher/experiment/iceberg/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb_pipes[n]) for n in std.range(0, std.length(tools.anodes)-1)];
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in anode_iota];
 
-// local sigoutform = std.extVar('signal_output_form');  // eg "sparse" or "dense"
-local sp_maker = import 'pgrapher/experiment/dune10kt-1x2x6/sp.jsonnet';
-local sp = sp_maker(params, tools, { sparse: true });
+local sp_maker = import 'pgrapher/experiment/iceberg/sp.jsonnet';
+local sp = sp_maker(params, tools);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
 local rng = tools.random;
@@ -177,24 +167,14 @@ local multipass = [
                sn_pipes[n],
                // sinks.orig_pipe[n],
                // nf_pipes[n],
-               sp_pipes[n],
+               // sp_pipes[n],
              ],
              'multipass%d' % n)
   for n in anode_iota
 ];
-local outtags = [];
-local tag_rules = {
-    frame: {
-        '.*': 'framefanin',
-    },
-    trace: {['gauss%d' % anode.data.ident]: ['gauss%d' % anode.data.ident] for anode in tools.anodes}
-        + {['wiener%d' % anode.data.ident]: ['wiener%d' % anode.data.ident] for anode in tools.anodes}
-        + {['threshold%d' % anode.data.ident]: ['threshold%d' % anode.data.ident] for anode in tools.anodes}
-        + {['dnnsp%d' % anode.data.ident]: ['dnnsp%d' % anode.data.ident] for anode in tools.anodes},
-};
-local bi_manifold = f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,2], [2,6], [1,2], [2,6], 'sn_mag_nf', outtags, tag_rules);
-// local bi_manifold = f.fanpipe('DepoSetFanout', multipass, 'FrameFanin', 'sn_mag_nf', outtags, tag_rules);
-// local bi_manifold = f.fanpipe('DepoFanout', multipass, 'FrameFanin', 'sn_mag_nf', outtags, tag_rules);
+local outtags = ['orig%d' % n for n in anode_iota];
+local bi_manifold = f.fanpipe('DepoSetFanout', multipass, 'FrameFanin', 'sn_mag_nf', outtags);
+// local bi_manifold = f.fanpipe('DepoFanout', multipass, 'FrameFanin', 'sn_mag_nf', outtags);
 
 local retagger = g.pnode({
   type: 'Retagger',
@@ -204,11 +184,10 @@ local retagger = g.pnode({
       // Retagger also handles "frame" and "trace" like fanin/fanout
       // merge separately all traces like gaussN to gauss.
       frame: {
-        '.*': 'retagger',
+        '.*': 'orig',
       },
       merge: {
-        'gauss\\d+': 'gauss',
-        'wiener\\d+': 'wiener',
+        'orig\\d+': 'daq',
       },
     }],
   },
@@ -217,10 +196,10 @@ local retagger = g.pnode({
 //local frameio = io.numpy.frames(output);
 local sink = sim.frame_sink;
 
-local graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, bi_manifold, retagger, wcls_output.sp_signals, sink]);
+local graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, bi_manifold, retagger, wcls_output.sim_digits, sink]);
 
 local app = {
-  type: std.extVar('engine'), //Pgrapher, TbbFlow
+  type: 'Pgrapher',
   data: {
     edges: g.edges(graph),
   },
