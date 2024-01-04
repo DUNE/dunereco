@@ -1,0 +1,15 @@
+<lcgdict>
+
+  <class name="cnn::TransformerPixelMap" ClassVersion="10" >
+   <version ClassVersion="10" checksum="2279138595"/>
+  </class>
+
+  <class name="std::vector<cnn::TransformerPixelMap>"          />
+  <class name="art::Ptr<cnn::TransformerPixelMap>"             />
+  <class name="art::Wrapper< std::vector<cnn::TransformerPixelMap> >"    />
+
+  <class name="std::vector<cnn::HType>"      />
+</lcgdict>
+
+
+
