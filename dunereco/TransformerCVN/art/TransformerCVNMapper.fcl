@@ -8,14 +8,14 @@ standard_transformercvnmapper:
   #==================
   HitsModuleLabel: "linecluster"
   ClusterPMLabel: "transformercvnmap"
-  GlobalWireMethod: 1   # 1 = nue energy, 2 for others???
+  GlobalWireMethod: 2   # 1 = nue energy, 2 for others???
   MinClusterHits: 1
   TdcWidth:       280   # time width of pixel map
   WireLength:     400   # wire width of pixel map
   TimeResolution: 6 
   WireResolution: 1 
-  UseRecoVertex:  0     # 0 = not use vertex, 1 = use regcnn vertex, 2 = use pandora vertex
-  ProngTagMethod: 1     # 0 = use shower, 1 = use track
+  UseRecoVertex:  2     # 0 = not use vertex, 1 = use regcnn vertex, 2 = use pandora vertex
+  ProngTagMethod: 0     # 0 = use shower, 1 = use track
   ProngOnly:      false
   ByHit:          true  # generate pixel map by raw charge or by reco. hit
   ShowerModuleLabel: "emshowernew"
