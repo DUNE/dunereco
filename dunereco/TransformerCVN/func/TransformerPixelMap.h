@@ -22,7 +22,7 @@ namespace cnn
     class TransformerPixelMap
     {
         public:
-            TransformerPixelMap(unsigned int nWire, unsigned int nWRes, unsigned int nTdc, unsigned int nTRes, const RegCNNBoundary& bound, const bool& prongOnly);
+            TransformerPixelMap(unsigned int nWire, unsigned int nWRes, unsigned int nTdc, unsigned int nTRes, const RegCNNBoundary& bound, int prongID);
             TransformerPixelMap(){};
 
             /// Length in wires
@@ -102,7 +102,7 @@ namespace cnn
             std::vector<HitType> fLabZ; ///< Vector of Y Truth labels for pixels
 
             RegCNNBoundary          fBound;    //< RegCNNBoundary of pixel map
-            bool fProngOnly;                   //< whether to use prong only pixel map
+            int fProngID;                   //< whether to use prong only pixel map
             std::vector<int> fProngTagX;
             std::vector<int> fProngTagY;
             std::vector<int> fProngTagZ;

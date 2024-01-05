@@ -1,6 +1,7 @@
 <lcgdict>
 
-  <class name="cnn::TransformerPixelMap" ClassVersion="10" >
+  <class name="cnn::TransformerPixelMap" ClassVersion="11" >
+   <version ClassVersion="11" checksum="192649125"/>
    <version ClassVersion="10" checksum="2279138595"/>
   </class>
 

@@ -14,7 +14,7 @@ namespace cnn
 {
 
   TransformerPixelMap::TransformerPixelMap(unsigned int nWire, unsigned int nWRes,
-          unsigned int nTdc, unsigned int nTRes, const RegCNNBoundary& bound, const bool& prongOnly):
+          unsigned int nTdc, unsigned int nTRes, const RegCNNBoundary& bound, int prongID):
   fNWire(nWire),
   fNWRes(nWRes),
   fNTdc(nTdc),
@@ -35,7 +35,7 @@ namespace cnn
   fLabY(nWire*nTdc),
   fLabZ(nWire*nTdc),
   fBound(bound),
-  fProngOnly(prongOnly),
+  fProngID(prongID),
   fProngTagX(nWire*nTdc),
   fProngTagY(nWire*nTdc),
   fProngTagZ(nWire*nTdc)
@@ -94,29 +94,35 @@ namespace cnn
   }
 
   void TransformerPixelMap::Finish() {
-      // fProngOnly=True means only the primary prong is selected to creat pixel maps 
-      //            and that prong needs to be either a muon or antimuon (FIXIT)?
+      // fProngID>0 means only hits with prong tag matching fProngID are selected to create
+      //         the prong pixel map
       // Caveat 1: the prong tag of that pixel is determined by the track id of the track 
       //         associlated with the last hit that associated with that pixel. It means
       //         if this pixel-associated hits belong to different prongs, we could 
       //         either add deposited energy from other prongs (if other prongs' hit is
-      //         in the front), or throw the energy from primary prong away (if there is
+      //         in the front), or throw the energy from the selected prong prong away (if there is
       //         one or more hits from other prongs in the last). A better way could be 
       //         determining the prong tag by looping the hits, instead of the pixels. 
       //         That means we should create a new pixel map only with the spacepoints 
-      //         associated with the primary prong, instead of using the prong tag
+      //         associated with the selected prong, instead of using the prong tag
       //         (little effect on the results, ignored for now)
-      if (fProngOnly) {
-          std::cout<<"Do Prong Only selection ......"<<std::endl;
+      if (fProngID>0) {
+          std::cout<<"Select hits for prong ......"<< fProngID << std::endl;
           for (unsigned int i_p= 0; i_p< fPE.size(); ++i_p) {
-              if (fProngTagX[i_p] != 0)
+              if (fProngTagX[i_p] != fProngID) {
+                  fPE[i_p] -= fPEX[i_p];
                   fPEX[i_p] = 0;
-              if (fProngTagY[i_p] != 0)
+              }
+              if (fProngTagY[i_p] != fProngID) {
+                  fPE[i_p] -= fPEY[i_p];
                   fPEY[i_p] = 0;
-              if (fProngTagZ[i_p] != 0)
+              }
+              if (fProngTagZ[i_p] != fProngID) {
+                  fPE[i_p] -= fPEZ[i_p];
                   fPEZ[i_p] = 0;
+              }
           } // end of i_p
-      } // end of fProngOnly
+      } // end of fProngID>0
   }
 
   unsigned int  TransformerPixelMap::GlobalToIndex(const int& wire,

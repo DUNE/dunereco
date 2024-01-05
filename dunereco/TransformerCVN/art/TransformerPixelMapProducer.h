@@ -46,8 +46,7 @@ namespace cnn
   class TransformerPixelMapProducer
   {
   public:
-    TransformerPixelMapProducer(unsigned int nWire, unsigned int wRes, unsigned int nTdc, double tRes, int Global,
-            bool ProngOnly, bool ByHit);
+    TransformerPixelMapProducer(unsigned int nWire, unsigned int wRes, unsigned int nTdc, double tRes, int Global);
 
     /// Get boundaries for pixel map representation of cluster
     RegCNNBoundary DefineBoundary(detinfo::DetectorPropertiesData const& detProp,
@@ -69,37 +68,21 @@ namespace cnn
     double TRes() const {return fTRes;};
     double WRes() const {return fWRes;};
 
-    TransformerPixelMap CreateMap(detinfo::DetectorClocksData const& clockData,
-                          detinfo::DetectorPropertiesData const& detProp,
-                          std::vector< art::Ptr< recob::Hit > > const& cluster,
-                          art::FindManyP<recob::Wire> const& fmwire);
-
-    TransformerPixelMap CreateMap(detinfo::DetectorClocksData const& clockData,
-                          detinfo::DetectorPropertiesData const& detProp,
-                          std::vector< art::Ptr< recob::Hit > > const& cluster,
-                          art::FindManyP<recob::Wire> const& fmwire,
-                          const std::vector<float> &vtx);
-
-    TransformerPixelMap CreateMapGivenBoundary(detinfo::DetectorClocksData const& clockData,
-                                       detinfo::DetectorPropertiesData const& detProp,
-                                       std::vector< art::Ptr< recob::Hit > > const& cluster,
-                                       const RegCNNBoundary& bound,
-                                       art::FindManyP<recob::Wire> const& fmwire);
-
     // tag prong by track
     TransformerPixelMap CreateMap(detinfo::DetectorClocksData const& clockData,
                           detinfo::DetectorPropertiesData const& detProp,
                           std::vector< art::Ptr< recob::Hit > > const& cluster,
                           art::FindManyP<recob::Wire> const& fmwire,
                           art::FindManyP<recob::Track> const& fmtrkhit,
-                          const std::vector<float> &vtx);
+                          const std::vector<float> &vtx,
+                          int ProngID);
     TransformerPixelMap CreateMapGivenBoundaryByHit(detinfo::DetectorClocksData const& clockData,
                                        detinfo::DetectorPropertiesData const& detProp,
                                        std::vector< art::Ptr< recob::Hit > > const& cluster,
                                        const RegCNNBoundary& bound,
                                        art::FindManyP<recob::Wire> const& fmwire,
                                        art::FindManyP<recob::Track> const& fmtrkhit,
-                                       const bool& ProngOnly);
+                                       int ProngID);
 
     // tag prong by shower
     TransformerPixelMap CreateMap(detinfo::DetectorClocksData const& clockData,
@@ -107,14 +90,15 @@ namespace cnn
                           std::vector< art::Ptr< recob::Hit > > const& cluster,
                           art::FindManyP<recob::Wire> const& fmwire,
                           art::FindManyP<recob::Shower> const& fmshwhit,
-                          const std::vector<float> &vtx);
+                          const std::vector<float> &vtx,
+                          int ProngID);
     TransformerPixelMap CreateMapGivenBoundaryByHit(detinfo::DetectorClocksData const& clockData,
                                        detinfo::DetectorPropertiesData const& detProp,
                                        std::vector< art::Ptr< recob::Hit > > const& cluster,
                                        const RegCNNBoundary& bound,
                                        art::FindManyP<recob::Wire> const& fmwire,
                                        art::FindManyP<recob::Shower> const& fmshwhit,
-                                       const bool& ProngOnly);
+                                       int ProngID);
 
     void ShiftGlobalWire(std::vector< art::Ptr< recob::Hit > > const& cluster);
 
@@ -125,8 +109,6 @@ namespace cnn
     unsigned int      fNTdc;   ///< Number of tdcs, width of pixel map
     unsigned int      fTRes;
     int               fGlobalWireMethod;
-    bool              fProngOnly;
-    bool              fByHit;
     double            fOffset[2];
     std::vector<int> hitwireidx; // collect hit wire
     std::vector<int> tmin_each_wire;

@@ -45,7 +45,6 @@
 
 #include "dunereco/TransformerCVN/art/TransformerPixelMapProducer.h"
 #include "dunereco/TransformerCVN/func/TransformerPixelMap.h"
-//#include "dunereco/TransformerCVN/func/TransformerPixelMap3D.h"
 #include "dunereco/RegCNN/func/RegCNNResult.h"
 
 namespace lar_pandora{class LArPandoraHelper;}
@@ -65,8 +64,9 @@ namespace cnn {
     /// Module lablel for input clusters
     std::string    fHitsModuleLabel;
 
-    /// Instance lablel for cluster pixelmaps
+    /// Instance lablel for cluster event and prongs pixelmaps
     std::string    fClusterPMLabel;
+    std::string    fClusterPMProngLabel;
 
     /// Minimum number of hits for cluster to be converted to pixel map
     unsigned short fMinClusterHits;
@@ -90,14 +90,8 @@ namespace cnn {
 
     /// select which global wire method
     int fGlobalWireMethod;
-    /// select how to choose center of pixel map
-    int fUseRecoVertex;
-    /// select how to tag prong
+    /// select how to tag prongs in event map
     int fProngTagMethod;
-    // Use Prong only pixel maps
-    bool fProngOnly;
-    // generate pixel map by raw charge or by reco. hit
-    bool fByHit;
 
     std::string fShowerModuleLabel;
     std::string fTrackModuleLabel;
@@ -116,16 +110,14 @@ namespace cnn {
   EDProducer(pset),
   fHitsModuleLabel  (pset.get<std::string>         ("HitsModuleLabel")),
   fClusterPMLabel   (pset.get<std::string>         ("ClusterPMLabel")),
+  fClusterPMProngLabel   (pset.get<std::string>         ("ClusterPMProngLabel")),
   fMinClusterHits   (pset.get<unsigned short>      ("MinClusterHits")),
   fTdcWidth         (pset.get<unsigned short>      ("TdcWidth")),
   fWireLength       (pset.get<unsigned short>      ("WireLength")),
   fTimeResolution   (pset.get<unsigned short>      ("TimeResolution")),
   fWireResolution   (pset.get<unsigned short>      ("WireResolution")),
   fGlobalWireMethod (pset.get<int>                 ("GlobalWireMethod")),
-  fUseRecoVertex    (pset.get<int>                 ("UseRecoVertex")),
   fProngTagMethod   (pset.get<int>                 ("ProngTagMethod")),
-  fProngOnly        (pset.get<bool>                ("ProngOnly")),
-  fByHit            (pset.get<bool>                ("ByHit")),
   fShowerModuleLabel(pset.get<std::string>         ("ShowerModuleLabel")),
   fTrackModuleLabel (pset.get<std::string>         ("TrackModuleLabel")),
   fVertexModuleLabel(pset.get<std::string>         ("VertexModuleLabel")),
@@ -133,9 +125,10 @@ namespace cnn {
   fPandoraNuVertexModuleLabel(pset.get<std::string>("PandoraNuVertexModuleLabel")),
   fRegCNNResultLabel (pset.get<std::string>        ("RegCNNResultLabel")),
   fRegCNNModuleLabel (pset.get<std::string>        ("RegCNNModuleLabel")),
-  fProducer(TransformerPixelMapProducer(fWireLength, fWireResolution, fTdcWidth, fTimeResolution, fGlobalWireMethod, fProngOnly, fByHit))
+  fProducer(TransformerPixelMapProducer(fWireLength, fWireResolution, fTdcWidth, fTimeResolution, fGlobalWireMethod))
   { 
       produces< std::vector<cnn::TransformerPixelMap> >(fClusterPMLabel);
+      produces< std::vector<cnn::TransformerPixelMap> >(fClusterPMProngLabel);
   }
   
   //......................................................................
@@ -183,39 +176,12 @@ namespace cnn {
     //Declaring containers for things to be stored in event
     std::unique_ptr< std::vector<cnn::TransformerPixelMap> >
       pmCol(new std::vector<cnn::TransformerPixelMap>);
+    std::unique_ptr< std::vector<cnn::TransformerPixelMap> >
+      prong_pmCol(new std::vector<cnn::TransformerPixelMap>);
 
     auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
     if(nhits>fMinClusterHits){
-            TransformerPixelMap pm;
-            if (fUseRecoVertex==0){
-                // create pixel map based on mean of wire and ticks
-                pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire);
-            } 
-            else if (fUseRecoVertex==1) {
-                // create pixel map based on the reconstructed vertex
-                // Get RegCNN Results
-	        art::InputTag itag1(fRegCNNModuleLabel, fRegCNNResultLabel);
-	        auto cnnresultListHandle = evt.getHandle<std::vector<cnn::RegCNNResult>>(itag1);
-                std::vector<float> vtx(3, -99999);
-                if (!cnnresultListHandle.failedToGet())
-                {
-                    if (!cnnresultListHandle->empty())
-                    {
-                        const std::vector<float>& v = (*cnnresultListHandle)[0].fOutput;
-                        for (unsigned int ii = 0; ii < 3; ii++){
-                            vtx[ii] = v[ii];
-                            std::cout<<"vertex "<<ii<<" : "<<vtx[ii]<<std::endl;
-                        }
-                    }
-                }
-                if (fProngTagMethod==1) {
-                    pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, fmtrkhit, vtx);
-                } else {
-                    pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, fmshwhit, vtx);
-                }
-            }
-            else if (fUseRecoVertex==2) {
                 // create pixel map based on pandora vertex
                 lar_pandora::PFParticleVector particleVector;
                 lar_pandora::LArPandoraHelper::CollectPFParticles(evt, fPandoraNuVertexModuleLabel, particleVector);
@@ -249,42 +215,61 @@ namespace cnn {
                         }
                     }
                 } 
+
+                // Create event pixel map
+                TransformerPixelMap pm;
                 if (fProngTagMethod==1) {
-                    pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, fmtrkhit, vtx);
-                } else {
-                    std::cout<<"FIXME: CreateMap from fmshwhit and pandora vtx"<<std::endl;
-                    pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, fmshwhit, vtx);
+                    pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, fmtrkhit, vtx, -1);
                 }
-            }
-            else {
-                // create pixel map based on the reconstructed vertex on wire and tick coordinate
-                // Get RegCNN Results
-	        art::InputTag itag2(fRegCNNModuleLabel, fRegCNNResultLabel);
-                auto cnnresultListHandle = evt.getHandle<std::vector<cnn::RegCNNResult>>(itag2);
-                std::vector<float> vtx(6, -99999);
-                if (!cnnresultListHandle.failedToGet())
-                {
-                    if (!cnnresultListHandle->empty())
-                    {
-                        const std::vector<float>& v = (*cnnresultListHandle)[0].fOutput;
-                        for (unsigned int ii = 0; ii < 6; ii++){
-                            vtx[ii] = v[ii];
+                else {
+                    std::cout<<"FIXME: CreateMap from fmshwhit and pandora vtx"<<std::endl;
+                    pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, fmshwhit, vtx, -1);
+                }
+                std::cout<<"Event Map Complete!"<<std::endl;
+
+                if (pm.fInPM) { // skip if PixelMap is empty
+                    pmCol->push_back(pm);
+                    pm.Print();
+                    RegCNNBoundary bound = pm.Bound();
+
+                    TransformerPixelMap pm_prong;
+
+                    // Get number of tracks and showers
+                    int nTracks = 0;
+                    for (int ihit=0; ihit<(int)fmtrkhit.size(); ihit++) {
+                        if (fmtrkhit.isValid() && fmtrkhit.at(ihit).size()!=0) {
+                            if (fmtrkhit.at(ihit)[0]->ID() > nTracks) nTracks = fmtrkhit.at(ihit)[0]->ID();
                         }
                     }
+                    int nShowers = 0;
+                    for (int ihit=0; ihit<(int)fmshwhit.size(); ihit++) {
+                        if (fmshwhit.isValid() && fmshwhit.at(ihit).size()!=0) {
+                            if (fmshwhit.at(ihit)[0]->ID() > nShowers) nShowers = fmshwhit.at(ihit)[0]->ID();
+                        }
+                    }
+
+                    // Create track pixel maps
+                    for( int iTrack = 0; iTrack < nTracks; ++iTrack ) {
+                        pm_prong = fProducer.CreateMapGivenBoundaryByHit(clockData, detProp, hitlist, bound, fmwire, fmtrkhit, iTrack);
+                        std::cout<<"Track " << iTrack << " Map Complete!"<<std::endl;
+                        prong_pmCol->push_back(pm);
+                        pm_prong.Print();
+                    }
+
+                    // Create shower pixel maps
+                    for( int iShower = 0; iShower < nShowers; ++iShower ) {
+                        std::cout<<"FIXME: CreateMap from fmshwhit and pandora vtx"<<std::endl;
+                        pm_prong = fProducer.CreateMapGivenBoundaryByHit(clockData, detProp, hitlist, bound, fmwire, fmshwhit, iShower);
+                        std::cout<<"Shower " << iShower << " Map Complete!"<<std::endl;
+                        prong_pmCol->push_back(pm);
+                        pm_prong.Print();
+                    }
                 }
-                if (fProngTagMethod==1) {
-                    pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, fmtrkhit, vtx);
-                } else {
-                    pm = fProducer.CreateMap(clockData, detProp, hitlist, fmwire, fmshwhit, vtx);
-                }
-            }
-            // skip if PixelMap is empty
-            if (pm.fInPM) pmCol->push_back(pm);
-            pm.Print();
     }
-    
+
     evt.put(std::move(pmCol), fClusterPMLabel);
-    
+    evt.put(std::move(prong_pmCol), fClusterPMProngLabel);
+
     std::cout<<"Map Complete!"<<std::endl;
 }
 

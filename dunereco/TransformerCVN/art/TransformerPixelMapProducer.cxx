@@ -17,60 +17,22 @@
 namespace cnn
 {
 
-  TransformerPixelMapProducer::TransformerPixelMapProducer(unsigned int nWire, unsigned int wRes, unsigned int nTdc, double tRes, int Global, bool ProngOnly, bool ByHit):
+  TransformerPixelMapProducer::TransformerPixelMapProducer(unsigned int nWire, unsigned int wRes, unsigned int nTdc, double tRes, int Global):
   fNWire(nWire),
   fWRes(wRes),
   fNTdc(nTdc),
   fTRes(tRes),
   fGlobalWireMethod(Global),
-  fProngOnly(ProngOnly),
-  fByHit(ByHit),
   fOffset{0,0}
   {}
-
-  TransformerPixelMap TransformerPixelMapProducer::CreateMap(detinfo::DetectorClocksData const& clockData,
-                                             detinfo::DetectorPropertiesData const& detProp,
-                                             std::vector< art::Ptr< recob::Hit > > const& cluster, 
-                                             art::FindManyP<recob::Wire> const& fmwire)
-  {
-
-    hitwireidx.clear();
-    tmin_each_wire.clear();
-    tmax_each_wire.clear();
-    trms_max_each_wire.clear();
-    fOffset[0] = 0; fOffset[1] = 0;
-
-    RegCNNBoundary bound = DefineBoundary(detProp, cluster);
-
-    //return CreateMapGivenBoundaryByHit(clockData, detProp, cluster, bound, fmwire, fProngOnly);
-    return CreateMapGivenBoundary(clockData, detProp, cluster, bound, fmwire);
-
-  }
-
-  TransformerPixelMap TransformerPixelMapProducer::CreateMap(detinfo::DetectorClocksData const& clockData,
-                                             detinfo::DetectorPropertiesData const& detProp,
-                                             std::vector< art::Ptr< recob::Hit > > const& cluster,
-                                             art::FindManyP<recob::Wire> const& fmwire,
-                                             const std::vector<float> &vtx)
-  {
-      // Create pixel maps around the vertex
-      hitwireidx.clear();
-      tmin_each_wire.clear();
-      tmax_each_wire.clear();
-      trms_max_each_wire.clear();
-      fOffset[0] = 0; fOffset[1] = 0;
-
-      RegCNNBoundary bound = DefineBoundary(detProp, cluster, vtx);
-
-      return CreateMapGivenBoundary(clockData, detProp, cluster, bound, fmwire);
-  }
 
   TransformerPixelMap TransformerPixelMapProducer::CreateMap(detinfo::DetectorClocksData const& clockData,
                                              detinfo::DetectorPropertiesData const& detProp,
                                              std::vector< art::Ptr< recob::Hit > > const& cluster,
                                              art::FindManyP<recob::Wire> const& fmwire,
                                              art::FindManyP<recob::Track> const& fmtrkhit,
-                                             const std::vector<float> &vtx)
+                                             const std::vector<float> &vtx,
+                                             int ProngID)
   {
       // tag prong by track
       // Create pixel maps around the vertex
@@ -82,11 +44,7 @@ namespace cnn
 
       RegCNNBoundary bound = DefineBoundary(detProp, cluster, vtx);
 
-      if (fByHit) {
-        return CreateMapGivenBoundaryByHit(clockData, detProp, cluster, bound, fmwire, fmtrkhit, fProngOnly);
-      } else {
-        return CreateMapGivenBoundary(clockData, detProp, cluster, bound, fmwire);
-      }
+      return CreateMapGivenBoundaryByHit(clockData, detProp, cluster, bound, fmwire, fmtrkhit, ProngID);
   }
 
   TransformerPixelMap TransformerPixelMapProducer::CreateMap(detinfo::DetectorClocksData const& clockData,
@@ -94,7 +52,8 @@ namespace cnn
                                              std::vector< art::Ptr< recob::Hit > > const& cluster,
                                              art::FindManyP<recob::Wire> const& fmwire,
                                              art::FindManyP<recob::Shower> const& fmshwhit,
-                                             const std::vector<float> &vtx)
+                                             const std::vector<float> &vtx,
+                                             int ProngID)
   {
       // tag prong by shower
       // Create pixel maps around the vertex
@@ -106,87 +65,7 @@ namespace cnn
 
       RegCNNBoundary bound = DefineBoundary(detProp, cluster, vtx);
 
-      if (fByHit) {
-        return CreateMapGivenBoundaryByHit(clockData, detProp, cluster, bound, fmwire, fmshwhit, fProngOnly);
-      } else {
-        return CreateMapGivenBoundary(clockData, detProp, cluster, bound, fmwire);
-      }
-  }
-
-
-  TransformerPixelMap TransformerPixelMapProducer::CreateMapGivenBoundary(detinfo::DetectorClocksData const& clockData,
-          detinfo::DetectorPropertiesData const& detProp,
-          std::vector< art::Ptr< recob::Hit > > const& cluster,
-          const RegCNNBoundary& bound,
-          art::FindManyP<recob::Wire> const& fmwire)
-  {
-      TransformerPixelMap pm(fNWire, fWRes, fNTdc, fTRes, bound, 0);
-
-      if (!fmwire.isValid()) return pm;
-
-      // get all raw adc of every hit wire
-      for (size_t iwire = 0; iwire < hitwireidx.size(); ++iwire)
-      {
-          unsigned int iHit = hitwireidx[iwire];
-          std::vector< art::Ptr<recob::Wire> > wireptr = fmwire.at(iHit);
-          geo::WireID wireid = cluster[iHit]->WireID();
-
-          for (size_t iwireptr = 0; iwireptr < wireptr.size(); ++iwireptr){
-              std::vector<geo::WireID> wireids = geom->ChannelToWire(wireptr[iwireptr]->Channel());
-              bool goodWID = false; 
-              for (auto const & wid:wireids){ 
-                  if (wid.Plane == wireid.Plane &&   
-                          wid.Wire  == wireid.Wire &&
-                          wid.TPC   == wireid.TPC &&
-                          wid.Cryostat == wireid.Cryostat) goodWID = true;
-              }
-              if (!goodWID) continue;
-
-
-              //int t0_hit = (int)( tmin_each_wire[iwire] - 3 * (trms_max_each_wire[iwire]) );
-              //int t1_hit = (int)( tmax_each_wire[iwire] + 3 * (trms_max_each_wire[iwire]) );
-              float hit_first_time = tmin_each_wire[iwire] - 3 * (trms_max_each_wire[iwire]);
-              float hit_end_time = tmax_each_wire[iwire] + 3 * (trms_max_each_wire[iwire]);
-              int t0_hit = (hit_first_time < 0) ? 0 : (int)hit_first_time; 
-              int t1_hit = (hit_end_time > 4491) ? 4491 : (int)hit_end_time;
-
-              const std::vector<float>& signal = wireptr[0]->Signal();
-              unsigned int globalWire = 0;
-              if (fGlobalWireMethod == 1){
-                  globalWire = (unsigned int)GetGlobalWire(wireid);
-                  if (wireid.TPC%2 == 1) {
-                      if (wireid.Plane == 0) globalWire += fOffset[0];
-                      if (wireid.Plane == 1) globalWire += fOffset[1];
-                  }
-              }
-
-              unsigned int globalplane = wireid.Plane;
-              for (int tt = t0_hit; tt <= t1_hit; ++tt)
-              {
-                  //double correctedadc = (double) signal[tt];
-                  double correctedadc = ( signal[tt] * TMath::Exp( (sampling_rate(clockData) * tt) / (detProp.ElectronLifetime()*1.e3) ) );
-                  int tdc = tt;
-                  if (wireid.TPC%2 == 0) tdc = -tdc;
-                  if (fGlobalWireMethod == 2){
-                      double globaltick = double(tt);
-                      GetDUNEGlobalWireTDC(detProp, wireid, (double)tt, globalWire, globalplane, globaltick);
-                      //tdc = (int)round(globaltick);
-                      tdc = (int)globaltick;
-                      // FIXIT
-                      //if (globalplane==0 && correctedadc) {
-                      //  std::cout<<tt<<", "<<globalplane<<" | ";
-                      //  std::cout<<globalWire<<", "<<globaltick<<", "<<tdc<<", "<<correctedadc<<std::endl;
-                      //}
-                  }
-                  pm.Add((int)globalWire, tdc, globalplane, correctedadc, wireid.TPC, 0);
-
-              } // end of tt
-          } // end of iwireptr
-      } // end of iwire
-
-      //std::cout<< "===============> Offsets: " << fOffset[0] << " " << fOffset[1] << std::endl;
-      return pm;
-
+    return CreateMapGivenBoundaryByHit(clockData, detProp, cluster, bound, fmwire, fmshwhit, ProngID);
   }
 
   TransformerPixelMap TransformerPixelMapProducer::CreateMapGivenBoundaryByHit(detinfo::DetectorClocksData const& clockData,
@@ -195,10 +74,10 @@ namespace cnn
                                                           const RegCNNBoundary& bound,
                                                           art::FindManyP<recob::Wire> const& fmwire,
                                                           art::FindManyP<recob::Track> const& fmtrkhit,
-                                                          const bool& ProngOnly)
+                                                          int ProngID)
   {
 
-      TransformerPixelMap pm(fNWire, fWRes, fNTdc, fTRes, bound, ProngOnly);
+      TransformerPixelMap pm(fNWire, fWRes, fNTdc, fTRes, bound, ProngID);
 
       if (!fmwire.isValid()) return pm;
 
@@ -251,10 +130,10 @@ namespace cnn
                                                           const RegCNNBoundary& bound,
                                                           art::FindManyP<recob::Wire> const& fmwire,
                                                           art::FindManyP<recob::Shower> const& fmshwhit,
-                                                          const bool& ProngOnly)
+                                                          int ProngID)
   {
 
-      TransformerPixelMap pm(fNWire, fWRes, fNTdc, fTRes, bound, ProngOnly);
+      TransformerPixelMap pm(fNWire, fWRes, fNTdc, fTRes, bound, ProngID);
 
       if (!fmwire.isValid()) return pm;
 
@@ -295,7 +174,7 @@ namespace cnn
           pm.Add((int)globalWire, (int)round(peaktime), globalplane, correctedHitCharge, wireid.TPC, hit_prong_tag);
       }
 
-      std::cout<<"FIXME: Produce pixelmap from fmshwhit and prongonly = "<<ProngOnly<<std::endl;
+      std::cout<<"FIXME: Produce prong pixelmap from fmshwhit" << std::endl;
       pm.Finish();
 
       return pm;
@@ -308,125 +187,6 @@ namespace cnn
     os << "TransformerPixelMapProducer: "
        << p.NTdc()  <<" tdcs X  " <<  p.NWire() << " wires";
     return os;
-  }
-
-
-
-  RegCNNBoundary TransformerPixelMapProducer::DefineBoundary(detinfo::DetectorPropertiesData const& detProp,
-                                                     std::vector< art::Ptr< recob::Hit > > const& cluster)
-  {
-    if (fGlobalWireMethod == 1) { ShiftGlobalWire(cluster); }
-
-    std::vector<float> time_0;
-    std::vector<float> time_1;
-    std::vector<float> time_2;
-
-    std::vector<int> wire_0;
-    std::vector<int> wire_1;
-    std::vector<int> wire_2;
-
-    unsigned int temp_wire = cluster[0]->WireID().Wire;
-    float temp_time_min = 1e5; //99999;
-    float temp_time_max = 0;   //-99999;
-    float temp_trms_max = 0;   //-99999;
-    for(size_t iHit = 0; iHit < cluster.size(); ++iHit)
-    {
-        geo::WireID wireid = cluster[iHit]->WireID();
-	//if (temp_wire != wireid.Wire || iHit == cluster.size()-1){ // lost last hit info
-	if (temp_wire != wireid.Wire ){ // lost last hit info
-		temp_wire = wireid.Wire;
-		hitwireidx.push_back(iHit-1);
-		tmin_each_wire.push_back(int(temp_time_min));
-		tmax_each_wire.push_back(int(temp_time_max));
-		trms_max_each_wire.push_back(temp_trms_max);
-		//temp_time_min = 99999; temp_time_max = -99999, temp_trms_max = -99999;
-		temp_time_min = 1e5; temp_time_max = 0; temp_trms_max = 0;
-	}
-	if (temp_time_min > cluster[iHit]->PeakTime()) temp_time_min = cluster[iHit]->PeakTime();
-	if (temp_time_max < cluster[iHit]->PeakTime()) temp_time_max = cluster[iHit]->PeakTime();
-	if (temp_trms_max < cluster[iHit]->RMS()) temp_trms_max = (float)cluster[iHit]->RMS();
-
-	unsigned int planeid = wireid.Plane;
-	double peaktime = cluster[iHit]->PeakTime() ;
-	if (wireid.TPC%2 == 0) peaktime = -peaktime;
-
-        unsigned int globalWire = 0;
-        unsigned int globalplane = planeid;
-        if (fGlobalWireMethod == 1){
-            globalWire = GetGlobalWire(wireid);
-        } else if (fGlobalWireMethod == 2 ){
-            GetDUNEGlobalWireTDC(detProp, wireid, cluster[iHit]->PeakTime(), globalWire, globalplane, peaktime);
-        } else {
-            std::cout << "Wrong GlobalWireMethod" << std::endl;
-            abort();
-        }
-
-	if (wireid.TPC%2 == 1 && fGlobalWireMethod == 1) {
-	  if (wireid.Plane == 0) globalWire += fOffset[0];
-	  if (wireid.Plane == 1) globalWire += fOffset[1];
-	}
-
-        if(globalplane==0){
-          time_0.push_back(peaktime);
-          wire_0.push_back((int)globalWire);
-        }
-        if(globalplane==1){
-          time_1.push_back(peaktime);
-          wire_1.push_back((int)globalWire);
-        }
-        if(globalplane==2){
-          time_2.push_back(peaktime);
-          wire_2.push_back((int)globalWire);
-        }
-    }
-  
-
-    double tsum_0 = std::accumulate(time_0.begin(), time_0.end(), 0.0);
-    double tmean_0 = tsum_0 / time_0.size();
-
-    double tsum_1 = std::accumulate(time_1.begin(), time_1.end(), 0.0);
-    double tmean_1 = tsum_1 / time_1.size();
-
-    double tsum_2 = std::accumulate(time_2.begin(), time_2.end(), 0.0);
-    double tmean_2 = tsum_2 / time_2.size();
-
-
-    double wiresum_0 = std::accumulate(wire_0.begin(), wire_0.end(), 0.0);
-    double wiremean_0 = wiresum_0 / wire_0.size();
-
-    double wiresum_1 = std::accumulate(wire_1.begin(), wire_1.end(), 0.0);
-    double wiremean_1 = wiresum_1 / wire_1.size();
-
-    double wiresum_2 = std::accumulate(wire_2.begin(), wire_2.end(), 0.0);
-    double wiremean_2 = wiresum_2 / wire_2.size();
-
-    //std::cout << "TDC ===> " << round(tmean_0) << " " <<   round(tmean_1) << " " << round(tmean_2) << std::endl;
-    //std::cout << "Wire ==> " << round(wiremean_0) << " " << round(wiremean_1) << " " << round(wiremean_2) << std::endl;
-    //std::cout << "Offset ==> " << fOffset[0] << " " << fOffset[1] << std::endl;
-
-    //auto minwireelement_0= std::min_element(wire_0.begin(), wire_0.end());
-    //std::cout<<"minwire 0: "<<*minwireelement_0<<std::endl;
-    //auto minwireelement_1= std::min_element(wire_1.begin(), wire_1.end());
-    //std::cout<<"minwire 1: "<<*minwireelement_1<<std::endl;
-    //auto minwireelement_2= std::min_element(wire_2.begin(), wire_2.end());
-    //std::cout<<"minwire 2: "<<*minwireelement_2<<std::endl;
-
-    //auto maxwireelement_0= std::max_element(wire_0.begin(), wire_0.end());
-    //std::cout<<"maxwire 0: "<<*maxwireelement_0<<std::endl;
-    //auto maxwireelement_1= std::max_element(wire_1.begin(), wire_1.end());
-    //std::cout<<"maxwire 1: "<<*maxwireelement_1<<std::endl;
-    //auto maxwireelement_2= std::max_element(wire_2.begin(), wire_2.end());
-    //std::cout<<"maxwire 2: "<<*maxwireelement_2<<std::endl;
-
-
-    //int minwire_0 = *minwireelement_0-1;
-    //int minwire_1 = *minwireelement_1-1;
-    //int minwire_2 = *minwireelement_2-1;
-
-    RegCNNBoundary bound(fNWire,fNTdc,fWRes,fTRes,round(wiremean_0),round(wiremean_1),round(wiremean_2),round(tmean_0),round(tmean_1),round(tmean_2));
-    std::cout<<bound<<std::endl;
-
-    return bound;
   }
 
   RegCNNBoundary TransformerPixelMapProducer::DefineBoundary(detinfo::DetectorPropertiesData const& detProp,
