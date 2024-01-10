@@ -1,9 +1,3 @@
-////////////////////////////////////////////////////////////////////////
-/// \file    TransformerPixelMap.cxx
-/// \brief   TransformerPixelMap for TransformerCVN modifed from RegPixelMap.cxx
-/// \author  Alejandro Yankelevich - ayankele@uci.edu
-////////////////////////////////////////////////////////////////////////
-
 #include <cassert>
 #include <iostream>
 #include <ostream>

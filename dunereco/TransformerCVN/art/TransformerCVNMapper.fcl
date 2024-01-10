@@ -8,7 +8,7 @@ standard_transformercvnmapper:
   #==================
   HitsModuleLabel: "linecluster"
   ClusterPMLabel: "transformercvneventmap"
-  ClusterPMProngLabel: "transformercvnprongmaps"
+  ClusterPMProngLabel: "transformercvnprongmap"
   GlobalWireMethod: 2   # 1 = nue energy, 2 for others???
   MinClusterHits: 1
   TdcWidth:       280   # time width of pixel map

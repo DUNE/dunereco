@@ -1,0 +1,21 @@
+BEGIN_PROLOG
+
+# This file defines the configuration for the TransformerCVNEvaluator module
+
+# Evaluator for TransformerCVN network
+standard_transformercvnevaluator:
+{
+  module_type:         TransformerCVNEvaluator
+  #==================
+
+  LibPath:             "DUNE_PARDATA_DIR"
+  Network:             "TransformerCVN/dune_network_traced_pad_20_last_pid.torchscript"
+  MaxProngs:           20
+  PixelMapInput:       "transformercvnmap"
+  EventPixelMapInput:  "transformercvneventmap"
+  EventResultLabel:    "transformercvneventresult"
+  ProngPixelMapInput:  "transformercvnprongmap"
+  ProngPIDLabel:       "transformercvnprongpid"
+}
+
+END_PROLOG

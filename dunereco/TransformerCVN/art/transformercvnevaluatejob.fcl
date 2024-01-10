@@ -1,6 +1,6 @@
 #include "services_dune.fcl"
 #include "TransformerCVNMapper.fcl"
-##include "TransformerCVNEvaluator.fcl"
+#include "TransformerCVNEvaluator.fcl"
 #include "tools_dune.fcl"
 
 process_name: TransformerCVNEvaluator
@@ -51,11 +51,11 @@ physics:
   producers:
   { 
     transformercvnmap:     @local::standard_transformercvnmapper
-    #transformercvneval:    @local::standard_transformercvnevaluator
+    transformercvneval:    @local::standard_transformercvnevaluator
   }
 
   # Build the paths
-  map: [ transformercvnmap] #, transformercvneval ]
+  map: [ transformercvnmap,  transformercvneval ]
   
   out: [out1]
 
