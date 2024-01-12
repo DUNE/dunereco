@@ -21,8 +21,6 @@
 #include "canvas/Persistency/Common/Ptr.h"
 
 #include "dunereco/TransformerCVN/func/TransformerCVNResult.h"
-#include "dunereco/TransformerCVN/func/TransformerCVNPID.h"
-#include "dunereco/TransformerCVN/func/TransformerCVNPType.h"
 #include "dunereco/TransformerCVN/func/TransformerPixelMap.h"
 
 namespace cnn {
@@ -45,7 +43,7 @@ namespace cnn {
             std::string fEventPixelMapInput;
             std::string fEventResultLabel;
             std::string fProngPixelMapInput;
-            std::string fProngPIDLabel;
+            std::string fProngResultLabel;
             std::vector<int> fOutputPtypes;
             int fMaxProngs;
 
@@ -62,11 +60,11 @@ namespace cnn {
         fEventPixelMapInput (pset.get<std::string>               ("EventPixelMapInput")),
         fEventResultLabel   (pset.get<std::string>               ("EventResultLabel")),
         fProngPixelMapInput (pset.get<std::string>               ("ProngPixelMapInput")),
-        fProngPIDLabel      (pset.get<std::string>               ("ProngPIDLabel")),
+        fProngResultLabel      (pset.get<std::string>            ("ProngResultLabel")),
         fMaxProngs          (pset.get<int>                       ("MaxProngs"))
     {
         produces<std::vector<cnn::TransformerCVNResult> >(fEventResultLabel);
-        produces<std::vector<cnn::TransformerCVNPID   > >(fProngPIDLabel);
+        produces<std::vector<cnn::TransformerCVNResult   > >(fProngResultLabel);
 
         for(auto i = 0u; i < 8; i++)
 	   fOutputPtypes.push_back(i);
@@ -97,8 +95,8 @@ namespace cnn {
         /// Define containers for the things we're going to produce
         std::unique_ptr< std::vector<TransformerCVNResult> >
                                       eventResultCol(new std::vector<TransformerCVNResult>);
-        std::unique_ptr< std::vector<TransformerCVNPID> >
-                                      prongPIDCol(new std::vector<TransformerCVNPID>);
+        std::unique_ptr< std::vector<TransformerCVNResult> >
+                                      prongResultCol(new std::vector<TransformerCVNResult>);
 
         /// Load event pixel map.
         std::vector< art::Ptr< cnn::TransformerPixelMap > > event_pixelmaplist;
@@ -134,6 +132,7 @@ namespace cnn {
                 pm = *prong_pixelmaplist[iProng];
                 flatvector = PixelMapToFlatVector(pm);
             }
+            std::cout << valid_prongs << " prongs in event\n";
 
             // Convert vector inputs to at::Tensor, which is the actual input of the network
             at::Tensor t_pm = torch::from_blob(inputs.data(), {3*400*280*(valid_prongs+1)}, torch::TensorOptions().dtype(torch::kFloat32));
@@ -142,39 +141,31 @@ namespace cnn {
             inputs_pm.push_back(t_pm);
             torch::jit::IValue torchOutput = module.forward(inputs_pm);
 
-            at::Tensor slice_preds = torchOutput.toTuple()->elements()[0].toTensor();
+            at::Tensor event_preds = torchOutput.toTuple()->elements()[0].toTensor();
             at::Tensor prong_preds = torchOutput.toTuple()->elements()[1].toTensor();
 
-            std::vector<float> slice_preds_vec;
+            std::vector<float> event_preds_vec;
             for (int i = 0; i<4; i++)
             {
-                slice_preds_vec.push_back(slice_preds.select(0, i).item().to<float>());
+                event_preds_vec.push_back(event_preds.select(0, i).item().to<float>());
             }
-            eventResultCol->emplace_back(slice_preds_vec);
+            eventResultCol->emplace_back(event_preds_vec);
 
+            std::vector<float> prong_preds_vec;
             for( int iProng = 0; iProng<valid_prongs; ++iProng )
             {
                 if (iProng >= fMaxProngs) break;
-                std::vector<std::pair<int, float>> outputwithpdg;
 
-                for(int i = 0; i < 7; i++)
+                for(int i = 0; i < 8; i++)
                 {
-                    float prong_pred = prong_preds.select(0, iProng).select(0, i).item().to<float>();
-                    if(i==7)
-                    {
-                        // Combine "other" and "unknown" scores into one score.
-                        prong_pred+=prong_preds.select(0, iProng).select(0, i+1).item().to<float>();
-                    }
-
-                    outputwithpdg.push_back(std::make_pair(GetPDGByPType((cnn::PType)fOutputPtypes[i]), prong_pred));
-
-                    prongPIDCol->emplace_back(outputwithpdg[i].first, outputwithpdg[i].second);
+                    prong_preds_vec.push_back(prong_preds.select(0, iProng).select(0, i).item().to<float>());
                 }
-            } 
+            }
+            prongResultCol->emplace_back(prong_preds_vec);
         }
 
         evt.put(std::move(eventResultCol), fEventResultLabel);
-        evt.put(std::move(prongPIDCol),    fProngPIDLabel);
+        evt.put(std::move(prongResultCol), fProngResultLabel);
     }
 
     std::vector<float> TransformerCVNEvaluator::PixelMapToFlatVector(const TransformerPixelMap pm) {

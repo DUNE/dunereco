@@ -229,7 +229,7 @@ namespace cnn {
 
                 if (pm.fInPM) { // skip if PixelMap is empty
                     pmCol->push_back(pm);
-                    pm.Print();
+                    //pm.Print();
                     RegCNNBoundary bound = pm.Bound();
 
                     TransformerPixelMap pm_prong;
@@ -253,7 +253,7 @@ namespace cnn {
                         pm_prong = fProducer.CreateMapGivenBoundaryByHit(clockData, detProp, hitlist, bound, fmwire, fmtrkhit, iTrack);
                         std::cout<<"Track " << iTrack << " Map Complete!"<<std::endl;
                         prong_pmCol->push_back(pm);
-                        pm_prong.Print();
+                        //pm_prong.Print();
                     }
 
                     // Create shower pixel maps
@@ -262,7 +262,7 @@ namespace cnn {
                         pm_prong = fProducer.CreateMapGivenBoundaryByHit(clockData, detProp, hitlist, bound, fmwire, fmshwhit, iShower);
                         std::cout<<"Shower " << iShower << " Map Complete!"<<std::endl;
                         prong_pmCol->push_back(pm);
-                        pm_prong.Print();
+                        //pm_prong.Print();
                     }
                 }
     }

@@ -15,7 +15,7 @@ standard_transformercvnevaluator:
   EventPixelMapInput:  "transformercvneventmap"
   EventResultLabel:    "transformercvneventresult"
   ProngPixelMapInput:  "transformercvnprongmap"
-  ProngPIDLabel:       "transformercvnprongpid"
+  ProngResultLabel:    "transformercvnprongresult"
 }
 
 END_PROLOG
