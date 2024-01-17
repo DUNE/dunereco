@@ -44,7 +44,6 @@ namespace cnn {
             std::string fEventResultLabel;
             std::string fProngPixelMapInput;
             std::string fProngResultLabel;
-            std::vector<int> fOutputPtypes;
             int fMaxProngs;
 
             torch::jit::script::Module module;
@@ -65,9 +64,6 @@ namespace cnn {
     {
         produces<std::vector<cnn::TransformerCVNResult> >(fEventResultLabel);
         produces<std::vector<cnn::TransformerCVNResult   > >(fProngResultLabel);
-
-        for(auto i = 0u; i < 8; i++)
-	   fOutputPtypes.push_back(i);
     }
 
     TransformerCVNEvaluator::~TransformerCVNEvaluator() {
@@ -127,13 +123,15 @@ namespace cnn {
             inputs.insert(inputs.end(), flatvector.begin(), flatvector.end());
 
             int valid_prongs = prong_pixelmaplist.size();
+            if (valid_prongs > fMaxProngs) valid_prongs = fMaxProngs;
+
             // Prepare prong inputs
             for( int iProng = 0; iProng < valid_prongs; ++iProng ) {
                 pm = *prong_pixelmaplist[iProng];
                 flatvector = PixelMapToFlatVector(pm);
                 inputs.insert(inputs.end(), flatvector.begin(), flatvector.end());
             }
-            std::cout << valid_prongs << " prongs in event\n";
+            std::cout << "Loaded event and " << valid_prongs << " prong pixel maps\n";
 
             // Convert vector inputs to at::Tensor, which is the actual input of the network
             at::Tensor t_pm = torch::from_blob(inputs.data(), {3*400*280*(valid_prongs+1)}, torch::TensorOptions().dtype(torch::kFloat32));
@@ -155,8 +153,6 @@ namespace cnn {
             std::vector<float> prong_preds_vec;
             for( int iProng = 0; iProng<valid_prongs; ++iProng )
             {
-                if (iProng >= fMaxProngs) break;
-
                 for(int i = 0; i < 8; i++)
                 {
                     prong_preds_vec.push_back(prong_preds.select(0, iProng).select(0, i).item().to<float>());

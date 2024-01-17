@@ -16,14 +16,11 @@ standard_transformercvnmapper:
   TimeResolution: 6 
   WireResolution: 1 
   ProngTagMethod: 0     # 0 = use shower, 1 = use track (for event map only)
-  ProngOnly:      false
   ShowerModuleLabel: "emshower" #"pandoraShower" #"emshowernew"
   TrackModuleLabel:  "pandoraTrack"
   VertexModuleLabel: "pandora"
   PFParticleModuleLabel: "pandora"
   PandoraNuVertexModuleLabel: "pandora"
-  RegCNNModuleLabel: "regcnneval"
-  RegCNNResultLabel: "regcnnresult"
 }
 
 END_PROLOG

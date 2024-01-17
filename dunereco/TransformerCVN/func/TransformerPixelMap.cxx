@@ -34,7 +34,6 @@ namespace cnn
   fProngTagY(nWire*nTdc),
   fProngTagZ(nWire*nTdc)
   {
-      std::cout<<"here :"<<fNWire<<", "<<fNTdc<<", "<<fNWRes<<", "<<fNTRes<<std::endl;
   }
 
   void TransformerPixelMap::FillInputVector(float* input) const
@@ -101,7 +100,6 @@ namespace cnn
       //         associated with the selected prong, instead of using the prong tag
       //         (little effect on the results, ignored for now)
       if (fProngID>=0) {
-          std::cout<<"Select hits for prong ......"<< fProngID << std::endl;
           for (unsigned int i_p= 0; i_p< fPE.size(); ++i_p) {
               if (fProngTagX[i_p] != fProngID) {
                   fPE[i_p] -= fPEX[i_p];

@@ -99,9 +99,6 @@ namespace cnn {
     std::string fPFParticleModuleLabel;
     std::string fPandoraNuVertexModuleLabel;
 
-    std::string fRegCNNResultLabel;
-    std::string fRegCNNModuleLabel;
-
     TransformerPixelMapProducer fProducer;
   };
   
@@ -123,8 +120,6 @@ namespace cnn {
   fVertexModuleLabel(pset.get<std::string>         ("VertexModuleLabel")),
   fPFParticleModuleLabel(pset.get<std::string>     ("PFParticleModuleLabel")),
   fPandoraNuVertexModuleLabel(pset.get<std::string>("PandoraNuVertexModuleLabel")),
-  fRegCNNResultLabel (pset.get<std::string>        ("RegCNNResultLabel")),
-  fRegCNNModuleLabel (pset.get<std::string>        ("RegCNNModuleLabel")),
   fProducer(TransformerPixelMapProducer(fWireLength, fWireResolution, fTdcWidth, fTimeResolution, fGlobalWireMethod))
   { 
       produces< std::vector<cnn::TransformerPixelMap> >(fClusterPMLabel);
@@ -270,7 +265,6 @@ namespace cnn {
     evt.put(std::move(pmCol), fClusterPMLabel);
     evt.put(std::move(prong_pmCol), fClusterPMProngLabel);
 
-    std::cout<<"Map Complete!"<<std::endl;
 }
 
   //----------------------------------------------------------------------
