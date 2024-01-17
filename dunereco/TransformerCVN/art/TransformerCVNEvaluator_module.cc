@@ -131,6 +131,7 @@ namespace cnn {
             for( int iProng = 0; iProng < valid_prongs; ++iProng ) {
                 pm = *prong_pixelmaplist[iProng];
                 flatvector = PixelMapToFlatVector(pm);
+                inputs.insert(inputs.end(), flatvector.begin(), flatvector.end());
             }
             std::cout << valid_prongs << " prongs in event\n";
 
