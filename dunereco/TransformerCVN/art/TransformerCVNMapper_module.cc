@@ -252,7 +252,7 @@ namespace cnn {
                     for( int iTrack = 0; iTrack < nTracks; ++iTrack ) {
                         pm_prong = fProducer.CreateMapGivenBoundaryByHit(clockData, detProp, hitlist, bound, fmwire, fmtrkhit, iTrack);
                         std::cout<<"Track " << iTrack << " Map Complete!"<<std::endl;
-                        prong_pmCol->push_back(pm);
+                        prong_pmCol->push_back(pm_prong);
                         //pm_prong.Print();
                     }
 
@@ -261,7 +261,7 @@ namespace cnn {
                         std::cout<<"FIXME: CreateMap from fmshwhit and pandora vtx"<<std::endl;
                         pm_prong = fProducer.CreateMapGivenBoundaryByHit(clockData, detProp, hitlist, bound, fmwire, fmshwhit, iShower);
                         std::cout<<"Shower " << iShower << " Map Complete!"<<std::endl;
-                        prong_pmCol->push_back(pm);
+                        prong_pmCol->push_back(pm_prong);
                         //pm_prong.Print();
                     }
                 }

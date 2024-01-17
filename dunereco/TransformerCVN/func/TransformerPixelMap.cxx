@@ -88,7 +88,7 @@ namespace cnn
   }
 
   void TransformerPixelMap::Finish() {
-      // fProngID>0 means only hits with prong tag matching fProngID are selected to create
+      // fProngID>=0 means only hits with prong tag matching fProngID are selected to create
       //         the prong pixel map
       // Caveat 1: the prong tag of that pixel is determined by the track id of the track 
       //         associlated with the last hit that associated with that pixel. It means
@@ -100,7 +100,7 @@ namespace cnn
       //         That means we should create a new pixel map only with the spacepoints 
       //         associated with the selected prong, instead of using the prong tag
       //         (little effect on the results, ignored for now)
-      if (fProngID>0) {
+      if (fProngID>=0) {
           std::cout<<"Select hits for prong ......"<< fProngID << std::endl;
           for (unsigned int i_p= 0; i_p< fPE.size(); ++i_p) {
               if (fProngTagX[i_p] != fProngID) {
