@@ -20,8 +20,17 @@ dunefd_nuangularreco_pmtrack:
     TrackToHitLabel:      "pmtrack"
     ShowerToHitLabel:     "emshower"
     HitToSpacePointLabel: "pmtrack"
+    PFPLabel:             "pmtrack"
+    PFPTrackLabel:        "pmtrack"
+    PFPShowerLabel:       "trajcluster"
+    ParticleIDLabel:      "pmtrackpid"
+    PIDACut:              10.0
 
-    NeutrinoAngularRecoAlg:   @local::dune10kt_neutrinoangularrecoalg
+    NeutrinoAngularRecoAlg:
+    {
+        @table::dune_neutrinoangularrecoalg
+        CalorimetryLabel: "pmtrackcalo"
+    }
 }
 
 dunefd_nuangularreco_pandora_numu:
@@ -35,12 +44,29 @@ dunefd_nuangularreco_pandora_numu:
     TrackToHitLabel:        "pandoraTrack"
     ShowerToHitLabel:       "pandoraShower"
     HitToSpacePointLabel:   "pandora"
+    PFPLabel:               "pandora"
+    PFPTrackLabel:          "pandoraTrack"
+    PFPShowerLabel:         "pandoraShower"
+    ParticleIDLabel:        "pandorapid"
+    NeutrinoAngularRecoAlg: @local::dune_neutrinoangularrecoalg
 }
 
 dunefd_nuangularreco_pandora_nue:
 {
     @table::dunefd_nuangularreco_pandora_numu
     RecoMethod: 2
+}
+
+dunefd_nuangularreco_pandora_nue_allpfps:
+{
+    @table::dunefd_nuangularreco_pandora_numu
+    RecoMethod: 3
+}
+
+dunefd_nuangularreco_pandora_numu_allpfps:
+{
+    @table::dunefd_nuangularreco_pandora_numu
+    RecoMethod: 4
 }
 
 

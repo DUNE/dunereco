@@ -25,6 +25,7 @@
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Shower.h"
+#include "lardataobj/AnalysisBase/ParticleID.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
@@ -65,15 +66,24 @@ namespace dune {
             art::Ptr<recob::Shower> GetHighestChargeShower(detinfo::DetectorClocksData const& clockData,
                                                            detinfo::DetectorPropertiesData const& detProp,
                                                            const art::Event& event);
+            void GetTracksShowersFromPFP(const art::Event& event, std::vector<art::Ptr<recob::Shower>> &pShowers,
+                                  std::vector<art::Ptr<recob::Track>> &pTracks);
+            std::map<art::Ptr<recob::Track>, int> GetTracksPID(const art::Event& event,
+                                                               const std::vector<art::Ptr<recob::Track>> &pTracks);
       std::string fWireLabel;
       std::string fHitLabel;
       std::string fTrackLabel;
       std::string fShowerLabel;
+      std::string fPFPLabel;
+      std::string fPFPTrackLabel;
+      std::string fPFPShowerLabel;
       std::string fTrackToHitLabel;
       std::string fShowerToHitLabel;
       std::string fHitToSpacePointLabel;
+      std::string fParticleIDLabel;
 
       int fRecoMethod;
+      float fPIDACut;
 
       NeutrinoAngularRecoAlg fNeutrinoAngularRecoAlg;
   }; // class NuAngularReco
@@ -87,10 +97,15 @@ NuAngularReco::NuAngularReco(fhicl::ParameterSet const& pset) :
     fHitLabel(pset.get<std::string>("HitLabel")),
     fTrackLabel(pset.get<std::string>("TrackLabel")),
     fShowerLabel(pset.get<std::string>("ShowerLabel")),
+    fPFPLabel(pset.get<std::string>("PFPLabel")),
+    fPFPTrackLabel(pset.get<std::string>("PFPTrackLabel")),
+    fPFPShowerLabel(pset.get<std::string>("PFPShowerLabel")),
     fTrackToHitLabel(pset.get<std::string>("TrackToHitLabel")),
     fShowerToHitLabel(pset.get<std::string>("ShowerToHitLabel")),
     fHitToSpacePointLabel(pset.get<std::string>("HitToSpacePointLabel")),
+    fParticleIDLabel(pset.get<std::string>("ParticleIDLabel")),
     fRecoMethod(pset.get<int>("RecoMethod")),
+    fPIDACut(pset.get<float>("PIDACut")),
     fNeutrinoAngularRecoAlg(pset.get<fhicl::ParameterSet>("NeutrinoAngularRecoAlg"),fTrackLabel,fShowerLabel,
         fHitLabel,fWireLabel,fTrackToHitLabel,fShowerToHitLabel,fHitToSpacePointLabel)
 {
@@ -116,6 +131,21 @@ void NuAngularReco::produce(art::Event& evt)
       angularRecoOutput = std::make_unique<dune::AngularRecoOutput>(fNeutrinoAngularRecoAlg.CalculateNeutrinoAngle(longestTrack, evt));
   else if (fRecoMethod == 2)
       angularRecoOutput = std::make_unique<dune::AngularRecoOutput>(fNeutrinoAngularRecoAlg.CalculateNeutrinoAngle(highestChargeShower, evt));
+  else if (fRecoMethod == 3){
+      std::vector<art::Ptr<recob::Shower>> pShowers;
+      std::vector<art::Ptr<recob::Track>> pTracks;
+      GetTracksShowersFromPFP(evt, pShowers, pTracks);
+      std::map<art::Ptr<recob::Track>, int> tracksPID = GetTracksPID(evt, pTracks);
+      angularRecoOutput = std::make_unique<dune::AngularRecoOutput>(fNeutrinoAngularRecoAlg.CalculateNeutrinoAngle(pTracks, tracksPID, pShowers, evt));
+  }
+  else if (fRecoMethod == 4){
+      std::vector<art::Ptr<recob::Shower>> pShowers;
+      std::vector<art::Ptr<recob::Track>> pTracks;
+      GetTracksShowersFromPFP(evt, pShowers, pTracks);
+      std::map<art::Ptr<recob::Track>, int> tracksPID = GetTracksPID(evt, pTracks);
+      art::Ptr<recob::Track> longestTrack(this->GetLongestTrack(evt));
+      angularRecoOutput = std::make_unique<dune::AngularRecoOutput>(fNeutrinoAngularRecoAlg.CalculateNeutrinoAngle(longestTrack, pTracks, tracksPID, pShowers, evt));
+  }
 
   art::ProductID const prodId = evt.getProductID<dune::AngularRecoOutput>();
   art::EDProductGetter const* prodGetter = evt.productGetter(prodId);
@@ -195,6 +225,66 @@ art::Ptr<recob::Shower> NuAngularReco::GetHighestChargeShower(detinfo::DetectorC
         }
     }
     return pShower;
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
+void NuAngularReco::GetTracksShowersFromPFP(const art::Event& event, std::vector<art::Ptr<recob::Shower>> &pShowers,
+                                     std::vector<art::Ptr<recob::Track>> &pTracks)
+{
+  const std::vector<art::Ptr<recob::PFParticle>> pfps(dune_ana::DUNEAnaEventUtils::GetPFParticles (event, fPFPLabel));
+  art::FindManyP<recob::Track> fmTracks(pfps, event, fPFPTrackLabel);
+  art::FindManyP<recob::Shower> fmShowers(pfps, event, fPFPShowerLabel);
+
+  for(uint ipfp = 0; ipfp < pfps.size(); ipfp++){
+    const art::Ptr<recob::PFParticle> &pfp = pfps[ipfp];
+    if(lar_pandora::LArPandoraHelper::IsTrack(pfp)){
+      if(!fmTracks.at(ipfp).empty()){
+        pTracks.emplace_back(fmTracks.at(ipfp)[0]);
+      }
+      
+    }
+    else if (lar_pandora::LArPandoraHelper::IsShower(pfp))
+    {
+      if(!fmShowers.at(ipfp).empty()){
+        pShowers.emplace_back(fmShowers.at(ipfp)[0]);
+      }
+    }
+    
+  }
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
+std::map<art::Ptr<recob::Track>, int> NuAngularReco::GetTracksPID(const art::Event& event, const std::vector<art::Ptr<recob::Track>> &pTracks){
+  //For now applying a basic PIDA cut to separate protons from pions. Should me modified when proper PID is available.
+  art::FindManyP<anab::ParticleID> fmPID(pTracks, event, fParticleIDLabel);
+  std::map<art::Ptr<recob::Track>, int> trackPID;
+  if(! fmPID.isValid()){
+    return trackPID;
+  }
+
+  for(uint iTrack = 0; iTrack < pTracks.size(); iTrack++){
+    int pid = 0;
+    const art::Ptr<recob::Track> &pTrack = pTracks[iTrack];
+    const std::vector<anab::sParticleIDAlgScores> pScores = fmPID.at(iTrack)[0]->ParticleIDAlgScores();
+    //The PIDA one should be the last one but let's still iterate on all if ever something changes
+    for(const anab::sParticleIDAlgScores &pScore : pScores){
+      if(pScore.fAssumedPdg == 0){
+        if(pScore.fValue < fPIDACut){
+          pid = 211;
+        }
+        else{
+          pid = 2212;
+        }
+        break;
+      }
+    }
+    trackPID[pTrack] = pid;
+  }
+
+  return trackPID;
+
 }
 
 DEFINE_ART_MODULE(NuAngularReco)
