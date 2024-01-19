@@ -1,0 +1,14 @@
+#include "calorimetry_dune10kt.fcl"
+
+BEGIN_PROLOG
+
+dune_neutrinoangularrecoalg:
+{
+    CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
+    CalorimetryLabel:        "pandoracalo"
+    DistanceToWallThreshold: 20.0      
+}
+
+
+
+END_PROLOG
