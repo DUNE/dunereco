@@ -11,11 +11,16 @@
    <version ClassVersion="10" checksum="2518891177"/>
   </class>
 
+  <class name="dune::AngularRecoOutput" />
+
   <class name="art::Ptr<dunemva::MVASelectPID>" />
   <class name="art::Wrapper<dunemva::MVASelectPID >" />
 
   <class name="art::Ptr<dune::EnergyRecoOutput>" />
   <class name="art::Wrapper<dune::EnergyRecoOutput>" />
+
+  <class name="art::Ptr<dune::AngularRecoOutput>" />
+  <class name="art::Wrapper<dune::AngularRecoOutput>" />
 
   <class name="std::pair< art::Ptr<dune::EnergyRecoOutput>, art::Ptr<recob::Track>      >"    />
   <class name="std::pair< art::Ptr<dune::EnergyRecoOutput>, art::Ptr<recob::Shower>      >"    />
@@ -30,6 +35,11 @@
   <class name="art::Wrapper< art::Assns<dune::EnergyRecoOutput, recob::Shower, void> >" />
   <class name="art::Wrapper< art::Assns<recob::Track, dune::EnergyRecoOutput, void> >" />
   <class name="art::Wrapper< art::Assns<recob::Shower, dune::EnergyRecoOutput, void> >" />
+
+  <class name="art::Wrapper< art::Assns<dune::AngularRecoOutput, recob::Track, void> >" />
+  <class name="art::Wrapper< art::Assns<dune::AngularRecoOutput, recob::Shower, void> >" />
+  <class name="art::Wrapper< art::Assns<recob::Track, dune::AngularRecoOutput, void> >" />
+  <class name="art::Wrapper< art::Assns<recob::Shower, dune::AngularRecoOutput, void> >" />
 </lcgdict>
 
 
