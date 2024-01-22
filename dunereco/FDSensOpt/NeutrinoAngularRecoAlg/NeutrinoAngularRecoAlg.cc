@@ -55,13 +55,13 @@ dune::AngularRecoOutput NeutrinoAngularRecoAlg::CalculateNeutrinoAngle(const art
         mf::LogWarning("NeutrinoAngularRecoAlg") << " Cannot access the muon track which is needed for this angular reconstruction method.\n"
         << "Not able to calculate neutrino direction" << std::endl;
 
-        Point_t vertex(0,0,0);
+        Point3D_t vertex(0,0,0);
         Direction_t direction(0,0,0);
         AngularRecoInputHolder angularRecoInputHolder(vertex, direction, kRecoMethodNotSet);
         return this->ReturnNeutrinoAngle(angularRecoInputHolder);
     }
 
-    Point_t vertex(pMuonTrack->Start().X(), pMuonTrack->Start().Y(), pMuonTrack->Start().Z());
+    Point3D_t vertex(pMuonTrack->Start().X(), pMuonTrack->Start().Y(), pMuonTrack->Start().Z());
 
     TVector3 dir_start;
     dir_start = pMuonTrack->VertexDirection<TVector3>();
@@ -82,14 +82,14 @@ dune::AngularRecoOutput NeutrinoAngularRecoAlg::CalculateNeutrinoAngle(const art
         mf::LogWarning("NeutrinoAngularRecoAlg") 
         << " Cannot access the electron shower which is needed for this angular reconstruction method.\n"
         << "Not able to calculate neutrino direction" << std::endl;
-        Point_t vertex(0,0,0);
+        Point3D_t vertex(0,0,0);
         Direction_t direction(0,0,0);
         AngularRecoInputHolder angularRecoInputHolder(vertex, direction, kRecoMethodNotSet);
         return this->ReturnNeutrinoAngle(angularRecoInputHolder);
     }
 
 
-    Point_t vertex(pElectronShower->ShowerStart().X(), pElectronShower->ShowerStart().Y(), pElectronShower->ShowerStart().Z());
+    Point3D_t vertex(pElectronShower->ShowerStart().X(), pElectronShower->ShowerStart().Y(), pElectronShower->ShowerStart().Z());
 
     TVector3 const& dir_start = pElectronShower->Direction();
     Direction_t direction(dir_start.X(), dir_start.Y(), dir_start.Z());
@@ -105,7 +105,7 @@ dune::AngularRecoOutput NeutrinoAngularRecoAlg::CalculateNeutrinoAngle(const std
                                                                        const art::Event &event)
 {
     //Using all the reco particles to determine the angle
-    Point_t vertex(0,0,0); //No meaning vertex value is filled with this method
+    Point3D_t vertex(0,0,0); //No meaning vertex value is filled with this method
 
     if (pTracks.size() == 0 && pShowers.size() == 0)
     {
@@ -137,7 +137,7 @@ dune::AngularRecoOutput NeutrinoAngularRecoAlg::CalculateNeutrinoAngle(const art
                                                                        const art::Event &event)
 {
     //Using all the reco particles to determine the angle, but using the longest track as muon
-    Point_t vertex(0,0,0); //No meaning vertex value is filled with this method
+    Point3D_t vertex(0,0,0); //No meaning vertex value is filled with this method
 
     if (!pMuonTrack.isAvailable() || pMuonTrack.isNull())
     {

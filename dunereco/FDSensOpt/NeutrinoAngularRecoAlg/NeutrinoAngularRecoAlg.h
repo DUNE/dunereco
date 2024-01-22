@@ -126,12 +126,12 @@ class NeutrinoAngularRecoAlg
             * @param  nuDirection the reconstructed nu direction
             * @param  angularRecoMethod the neutrino direction reconstruction method
             */
-            AngularRecoInputHolder(const Point_t &vertex, const Direction_t &nuDirection, const AngularRecoMethod angularRecoMethod) :
+            AngularRecoInputHolder(const Point3D_t &vertex, const Direction_t &nuDirection, const AngularRecoMethod angularRecoMethod) :
                 fVertex(vertex),
                 fNuDirection(nuDirection),
                 fAngularRecoMethod(angularRecoMethod) {};
 
-            const Point_t fVertex;                                   ///< the reconstructed vertex
+            const Point3D_t fVertex;                                   ///< the reconstructed vertex
             const Direction_t fNuDirection;                       ///< the reconstructed neutrino direction
             const AngularRecoMethod fAngularRecoMethod;                ///< the neutrino angle reconstruction method
         };
