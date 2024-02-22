@@ -13,7 +13,7 @@ art_make_library(
         utils.cxx
     LIBRARIES
         dunereco_AnaUtils
-        larreco_Calorimetry
+        larreco::Calorimetry
 )
 
 install_headers()

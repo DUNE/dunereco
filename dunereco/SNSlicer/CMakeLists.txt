@@ -1,5 +1,5 @@
 # for classes_def.xml!!
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR} ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - avoid directory-scope functions: use target_link_libraries() with target semantics or target_include_directories() whenever possible
 
 cet_build_plugin(SNSlicer art::module
                         larcore_Geometry_Geometry_service
@@ -13,19 +13,11 @@ cet_build_plugin(SNSlicer art::module
 			nusimdata::SimulationBase
                         nug4::ParticleNavigation
                         lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
-                        ART_FRAMEWORK_CORE
-                        ART_FRAMEWORK_PRINCIPAL
-                        ART_FRAMEWORK_SERVICES_REGISTRY
-                        ART_ROOT_IO_TFILE_SUPPORT
                         ROOT::Core
-                        ART_ROOT_IO_TFILESERVICE_SERVICE
                         art::Persistency_Common canvas_Persistency_Common
                         art::Persistency_Provenance canvas_Persistency_Provenance
                         art::Utilities canvas_Utilities
                         messagefacility::MF_MessageLogger
-                        
-                        CETLIB
-                        ROOT_BASIC_LIB_LIST
 )
 
 cet_make( LIBRARIES lardataobj_RawData
@@ -33,10 +25,8 @@ cet_make( LIBRARIES lardataobj_RawData
                     canvas_Persistency_Provenance
                     canvas_Utilities
                     messagefacility::MF_MessageLogger
-                    
                     cetlib::cetlib
-                    ROOT_BASIC_LIB_LIST
-                    NO_DICTIONARY )
+                    NO_DICTIONARY ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use cet_make_library(), build_dictonary(), cet_plugin() with explicit source lists and plugin base types
 
 
 art_dictionary( DICTIONARY_LIBRARIES ) # dunereco_SNSlicer )

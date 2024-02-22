@@ -1,4 +1,4 @@
-art_make_exec( cvnCreateZlibImages       
+cet_make_exec( cvnCreateZlibImages       
                SOURCE    cvnCreateZlibImages.cc
                LIBRARIES art::Framework_Core
                          art::Framework_Principal
@@ -6,6 +6,7 @@ art_make_exec( cvnCreateZlibImages
                          art_root_io::tfile_support
                          art_root_io::TFileService_service
                          ROOT::Core
+			 ROOT::Tree
                          art::Persistency_Common
                          canvas::canvas
                          art::Persistency_Provenance
@@ -13,10 +14,8 @@ art_make_exec( cvnCreateZlibImages
                          art::Utilities
                          Boost::program_options
                          fhiclcpp::fhiclcpp
-                         CETLIB
-                         ROOT_BASIC_LIB_LIST
                          dunereco::CVN_func
-               )
+               ) ### MIGRATE-CHANGED (migrate-3.22.02) - art_make_exec() -> cet_make_exec()
 
 
 install_source()

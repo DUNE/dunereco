@@ -1,63 +1,45 @@
 simple_plugin(LongestRecoVertexTrackSelector "tool"
-dunereco_AnaUtils
-    	  	        lardataobj_RecoBase
-    	  	        larpandora_LArPandoraInterface
-                ${ROOT_BASIC_LIB_LIST}
-                ${ART_FRAMEWORK_PRINCIPAL}
-                ${ART_FRAMEWORK_CORE}
-		       	   ${ART_FRAMEWORK_SERVICES_REGISTRY}
- 	  	           art_Persistency_Common canvas
- 	  	           art_Persistency_Provenance canvas
+                      dunereco_AnaUtils
+                      lardataobj::RecoBase
+                      larpandora::LArPandoraInterface
+                      art::Persistency_Common 
+                      art::Persistency_Provenance 
 
- 	  	           art_Utilities canvas
-             )
+                       
+             ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use cet_build_plugin() with explicit source lists and plugin base types
 
 simple_plugin(HighestPandrizzleScoreRecoVertexShowerSelector "tool"
-    	  	        lardataobj_RecoBase
-    	  	        larpandora_LArPandoraInterface
-                ${ROOT_BASIC_LIB_LIST}
-                ${ART_FRAMEWORK_PRINCIPAL}
-                ${ART_FRAMEWORK_CORE}
-		       	   ${ART_FRAMEWORK_SERVICES_REGISTRY}
- 	  	           art_Persistency_Common canvas
- 	  	           art_Persistency_Provenance canvas
+                      lardataobj::RecoBase
+                      larpandora::LArPandoraInterface
+                      art::Persistency_Common 
+                      art::Persistency_Provenance 
 
- 	  	           art_Utilities canvas
+                       
 
-                   PandrizzleAlg    
-                #dune_FDSelections_pandizzle
-             )
+                      PandrizzleAlg    
+                      #dune_FDSelections_pandizzle
+             ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use cet_build_plugin() with explicit source lists and plugin base types
 
 
 simple_plugin(HighestPandizzleScoreRecoVertexTrackSelector "tool"
-    	  	        lardataobj_RecoBase
-    	  	        larpandora_LArPandoraInterface
-                ${ROOT_BASIC_LIB_LIST}
-                ${ART_FRAMEWORK_PRINCIPAL}
-                ${ART_FRAMEWORK_CORE}
-		       	   ${ART_FRAMEWORK_SERVICES_REGISTRY}
- 	  	           art_Persistency_Common canvas
- 	  	           art_Persistency_Provenance canvas
+                      lardataobj::RecoBase
+                      larpandora::LArPandoraInterface
+                      art::Persistency_Common 
+                      art::Persistency_Provenance 
 
- 	  	           art_Utilities canvas
-                   PandizzleAlg
-             )
+                       
+                      PandizzleAlg
+             ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use cet_build_plugin() with explicit source lists and plugin base types
 
 simple_plugin(HighestEnergyRecoVertexShowerSelector "tool"
-    	  	        lardataobj_RecoBase
-                larcorealg_Geometry
-                larcore_Geometry_Geometry_service
-                larreco_RecoAlg
-    	  	        larpandora_LArPandoraInterface
-dunereco_AnaUtils
-                ${ROOT_BASIC_LIB_LIST}
-                ${ART_FRAMEWORK_PRINCIPAL}
-                ${ART_FRAMEWORK_CORE}
-		       	${ART_FRAMEWORK_SERVICES_REGISTRY}
-	  	       	${ART_FRAMEWORK_SERVICES_OPTIONAL}
-			    ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
- 	  	           art_Persistency_Common canvas
- 	  	           art_Persistency_Provenance canvas
+                      lardataobj::RecoBase
+                      larcorealg::Geometry
+                      larcore::Geometry_Geometry_service
+                      larreco::RecoAlg
+                      larpandora::LArPandoraInterface
+                      dunereco_AnaUtils
+                      art::Persistency_Common 
+                      art::Persistency_Provenance 
 
- 	  	           art_Utilities canvas
-             )
+                       
+             ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use cet_build_plugin() with explicit source lists and plugin base types

@@ -1,40 +1,32 @@
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - avoid directory-scope functions: use target_link_libraries() with target semantics or target_include_directories() whenever possible
 
 art_make( BASENAME_ONLY
   LIBRARY_NAME  MVAAlg
-  LIB_LIBRARIES larcorealg_Geometry
-  larcore_Geometry_Geometry_service
-  larsim_Simulation nug4::ParticleNavigation lardataobj_Simulation
-  lardataalg_DetectorInfo
-  lardataobj_RawData
-  lardataobj_RecoBase
-  lardata_ArtDataHelper
-  larreco_RecoAlg
-  larreco_RecoAlg_PMAlg
-  lardata_Utilities
-  larreco_Calorimetry
+  LIB_LIBRARIES larcorealg::Geometry
+  larcore::Geometry_Geometry_service
+  larsim::Simulation nug4::ParticleNavigation lardataobj::Simulation
+  lardataalg::DetectorInfo
+  lardataobj::RawData
+  lardataobj::RecoBase
+  lardata::ArtDataHelper
+  larreco::RecoAlg
+  larreco::RecoAlg_PMAlg
+  lardata::Utilities
+  larreco::Calorimetry
   IniSegAlg
-  larsim_MCCheater_BackTrackerService_service
-  larsim_MCCheater_ParticleInventoryService_service
+  larsim::MCCheater_BackTrackerService_service
+  larsim::MCCheater_ParticleInventoryService_service
   nusimdata::SimulationBase
-  ART_FRAMEWORK_CORE
-  ART_FRAMEWORK_PRINCIPAL
-  art::Persistency_Common canvas
-  ART_FRAMEWORK_SERVICES_REGISTRY
-  ART_ROOT_IO_TFILE_SUPPORT
+  art::Persistency_Common
   ROOT::Core
-  ART_ROOT_IO_TFILESERVICE_SERVICE
-  art::Persistency_Common canvas
-  art::Persistency_Provenance canvas
-  art::Utilities canvas
+  art::Persistency_Common
+  art::Persistency_Provenance
+  art::Utilities
+  art::Framework_Principal
   fhiclcpp::fhiclcpp
   messagefacility::MF_MessageLogger
-  
-  cetlib::cetlib cetlib_except
-  ROOT_BASIC_LIB_LIST
-  
-  ROOT_TMVA
-  )
+  cetlib::cetlib
+  ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use art_make_library(), art_dictonary(), and cet_build_plugin() with explicit source lists and plugin base types
 
 
 install_headers()

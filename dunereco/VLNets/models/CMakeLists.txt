@@ -1,5 +1,5 @@
 
-include_directories( $ENV{TENSORFLOW_INC}/absl )
+include_directories( $ENV{TENSORFLOW_INC}/absl ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - avoid directory-scope functions: use target_link_libraries() with target semantics or target_include_directories() whenever possible
 
 cet_add_compiler_flags(CXX -Wno-pedantic)
 

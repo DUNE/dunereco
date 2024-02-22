@@ -1,30 +1,23 @@
 
 simple_plugin(PointResTree "module"
-		larcore_Geometry_Geometry_service
-		larcorealg_Geometry
-		larsim_Simulation
-		lardataobj_RawData
-		lardataobj_RecoBase
-		lardataalg_DetectorInfo
-		larreco_Calorimetry
-		larsim_MCCheater_BackTrackerService_service
-		larsim_MCCheater_ParticleInventoryService_service
-		nusimdata_SimulationBase
-		${ART_FRAMEWORK_CORE}
-		${ART_FRAMEWORK_PRINCIPAL}
-		${ART_FRAMEWORK_SERVICES_REGISTRY}
-		${ART_ROOT_IO_TFILE_SUPPORT} ${ROOT_CORE}
-		${ART_ROOT_IO_TFILESERVICE_SERVICE}
-		art_Persistency_Common canvas
-		art_Persistency_Provenance canvas
-		art_Utilities canvas
-		${MF_MESSAGELOGGER}
-		${MF_UTILITIES}
-		${CETLIB}
-		${ROOT_BASIC_LIB_LIST}
-    dunereco_AnaUtils
+		larcore::Geometry_Geometry_service
+		larcorealg::Geometry
+		larsim::Simulation
+		lardataobj::RawData
+		lardataobj::RecoBase
+		lardataalg::DetectorInfo
+		larreco::Calorimetry
+		larsim::MCCheater_BackTrackerService_service
+		larsim::MCCheater_ParticleInventoryService_service
+		nusimdata::SimulationBase
+		art::Persistency_Common
+		art::Persistency_Provenance
+		art::Utilities
+		art_root_io::tfile_support
+		ROOT::Tree
+		dunereco_AnaUtils
 
-)
+) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use cet_build_plugin() with explicit source lists and plugin base types
 
 install_headers()
 install_fhicl()

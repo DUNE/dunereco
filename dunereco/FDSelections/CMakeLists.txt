@@ -20,33 +20,17 @@ art_make( LIBRARY_NAME FDSelection
          			larreco_Calorimetry
 	  	        larpandora_LArPandoraInterface
           	        nusimdata_SimulationBase
-          	        ${LARRECO_LIB}
-          	        ${LARDATA_LIB}
-	  	        ${MF_MESSAGELOGGER}
-	  	        ${MF_UTILITIES}
-	  	        ${FHICLCPP}
-	  	        cetlib cetlib_except
-          	        ${ROOT_GEOM}
-          	        ${ROOT_XMLIO}
-          	        ${ROOT_GDML}
-	  	        ${ROOT_BASIC_LIB_LIST}
-            ${ROOT_TMVA}
             larsim_Utils
             NeutrinoEnergyRecoAlg
             PandrizzleAlg
             PandizzleAlg
 
 MODULE_LIBRARIES FDSelection
-          	           ${ART_FRAMEWORK_CORE}
-	  	           ${ART_FRAMEWORK_PRINCIPAL}
-		       	   ${ART_FRAMEWORK_SERVICES_REGISTRY}
-	  	       	   ${ART_FRAMEWORK_SERVICES_OPTIONAL}
-			   ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
 	  	           art_Persistency_Common canvas
 	  	           art_Persistency_Provenance canvas
 	  	           art_Utilities canvas
                    dunereco_TrackPID_algorithms
-        )
+        ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use art_make_library(), art_dictonary(), and cet_build_plugin() with explicit source lists and plugin base types
 
     endif ()
     

@@ -1,61 +1,45 @@
 
 art_make( BASENAME_ONLY
           LIBRARY_NAME     HitFinderDUNE
-          LIB_LIBRARIES    lardataobj_RecoBase
-                           lardataalg_DetectorInfo
-	  		   larreco_RecoAlg
-			   larreco_RecoAlg_PMAlg
-			   larevt_Filters
-                           larcorealg_Geometry
-                           larcore_Geometry_Geometry_service
-                           lardata_RecoObjects
-			   larsim_MCCheater_BackTrackerService_service
-           larsim_MCCheater_ParticleInventoryService_service
-                           lardata_Utilities
-			   nusimdata::SimulationBase
-                           ART_FRAMEWORK_CORE
-   			   ART_FRAMEWORK_PRINCIPAL
-			   ART_FRAMEWORK_SERVICES_REGISTRY
-			   ART_ROOT_IO_TFILE_SUPPORT
-			   ROOT::Core
-			   ART_ROOT_IO_TFILESERVICE_SERVICE
-                           ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE
-			   art::Persistency_Common canvas
-		       	   art::Persistency_Provenance canvas
-			   art::Utilities canvas
-			   messagefacility::MF_MessageLogger
-			   
-	                   fhiclcpp::fhiclcpp
-			   cetlib::cetlib cetlib_except
-                           CLHEP
-			   
-			   ROOT_BASIC_LIB_LIST
-                           ROOT_GEOM
-         MODULE_LIBRARIES HitFinderDUNE
-                           lardataobj_RecoBase
-                           lardata_ArtDataHelper
-                           larcorealg_Geometry
-                           larcore_Geometry_Geometry_service
-			   larsim_MCCheater_BackTrackerService_service
-           larsim_MCCheater_ParticleInventoryService_service
-                           lardata_Utilities
-			   nurandom::RandomUtils_NuRandomService_service
-			   nusimdata::SimulationBase
- 			   ART_FRAMEWORK_CORE
-			   ART_FRAMEWORK_PRINCIPAL
-			   ART_FRAMEWORK_SERVICES_REGISTRY
-			   ART_ROOT_IO_TFILE_SUPPORT
-			   ROOT::Core
-			   ART_ROOT_IO_TFILESERVICE_SERVICE
-			   art::Persistency_Common canvas
-			   art::Utilities canvas
-			   messagefacility::MF_MessageLogger
-			   
-	                   fhiclcpp::fhiclcpp
-			   cetlib::cetlib cetlib_except
-                           ROOT_BASIC_LIB_LIST
-                           ROOT_GEOM
-         )
+          LIB_LIBRARIES    lardataobj::RecoBase
+                           lardataalg::DetectorInfo
+                           larreco::RecoAlg
+                           larreco::RecoAlg_PMAlg
+                           larevt::Filters
+                           larcorealg::Geometry
+                           larcore::Geometry_Geometry_service
+                           lardata::RecoObjects
+                           larsim::MCCheater_BackTrackerService_service
+                           larsim::MCCheater_ParticleInventoryService_service
+                           lardata::Utilities
+                           nusimdata::SimulationBase
+                           ROOT::Core
+			   ROOT::Hist
+                           art::Persistency_Common
+                           art::Persistency_Provenance
+                           art::Utilities
+			   art::Framework_Services_Registry
+                           messagefacility::MF_MessageLogger
+                           fhiclcpp::fhiclcpp
+                           cetlib::cetlib
+                           CLHEP::CLHEP
+         MODULE_LIBRARIES  HitFinderDUNE
+                           lardataobj::RecoBase
+                           lardata::ArtDataHelper
+                           larcorealg::Geometry
+                           larcore::Geometry_Geometry_service
+                           larsim::MCCheater_BackTrackerService_service
+                           larsim::MCCheater_ParticleInventoryService_service
+                           lardata::Utilities
+                           nurandom::RandomUtils_NuRandomService_service
+                           nusimdata::SimulationBase
+                           ROOT::Core
+                           art::Persistency_Common 
+                           art::Utilities 
+                           messagefacility::MF_MessageLogger
+                           fhiclcpp::fhiclcpp
+                           cetlib::cetlib
+         ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use art_make_library(), art_dictonary(), and cet_build_plugin() with explicit source lists and plugin base types
 
 install_headers()
 install_fhicl()

@@ -20,13 +20,7 @@ art_make(BASENAME_ONLY
   LIBRARY_NAME      RegCNNArt
   EXCLUDE ${EXCLUDE_TF}
   LIB_LIBRARIES RegCNNFunc
-  ART_FRAMEWORK_CORE
-  ART_FRAMEWORK_PRINCIPAL
-  ART_FRAMEWORK_SERVICES_REGISTRY
-  ART_ROOT_IO_TFILE_SUPPORT
   ROOT::Core
-  ART_ROOT_IO_TFILESERVICE_SERVICE
-  ART_PERSISTENCY_COMMON
   canvas::canvas
   art::Persistency_Provenance
   art::Utilities
@@ -36,7 +30,6 @@ art_make(BASENAME_ONLY
   messagefacility::MF_MessageLogger
   fhiclcpp::fhiclcpp
   cetlib::cetlib cetlib_except
-  ROOT_BASIC_LIB_LIST
   lardataobj_RecoBase
   lardata_Utilities
   larpandora_LArPandoraInterface
@@ -49,7 +42,7 @@ art_make(BASENAME_ONLY
   larcore_Geometry_Geometry_service
   MODULE_LIBRARIES  RegCNNFunc
   RegCNNArt
-  )
+  ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use art_make_library(), art_dictonary(), and cet_build_plugin() with explicit source lists and plugin base types
 
 # use add or remove
 ##cet_set_compiler_flags(DIAGS CAUTIOUS
