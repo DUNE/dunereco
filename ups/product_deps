@@ -247,7 +247,7 @@ wpdir	product_dir	wire-cell-cfg
 #
 ####################################
 product		version		qual	flags		<table_format=2>
-dunecore	v09_82_02d01	-
+dunecore	v09_83_01d00	-
 cetmodules	v3_22_02	-	only_for_build
 end_product_list
 ####################################
