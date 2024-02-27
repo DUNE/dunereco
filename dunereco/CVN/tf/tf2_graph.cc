@@ -118,7 +118,28 @@ void my_prediction(std::vector<std::vector<std::vector<std::vector<float> > > > 
     std::cout << "Pions output shape: " << pions_output.shape().DebugString() << std::endl;
     //std::vector<std::vector<std::vector<float> > > test;
     //return test;
-   
+    std::vector< std::vector< std::vector< float > > > result;
+    result.resize(1, std::vector< std::vector< float > >(outputs.size()));
+
+        for (size_t s = 0; s < 1; ++s) 
+        {
+            for (size_t o = 0; o < outputs.size(); ++o)
+            {
+                size_t n = outputs[o].dim_size(1);                
+                auto output_map = outputs[o].tensor<float, 2>();
+
+                result[s][o].resize(outputs[o].dim_size(1));
+                
+                std::vector< float > & vs = result[s][o];
+                for (size_t i = 0; i < n; ++i) 
+                {
+                    vs[i] = output_map(s, i);
+                    std::cout<<vs[i]<<std::endl;
+                }            
+            }
+        }
+
+
 }
 
 
