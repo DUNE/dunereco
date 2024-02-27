@@ -82,6 +82,7 @@ dunehd_1x2x6_FHC_cvnevaluator:
         LibPath: ""
         ReverseViews: [false, true, false]
         UseBundle: false
+        TFBundle: ""
     }
 
 }
@@ -96,6 +97,7 @@ dunehd_1x2x6_RHC_cvnevaluator:
         LibPath: ""
         ReverseViews: [false, true, false]
         UseBundle: false
+        TFBundle: ""
     }
 }
 
