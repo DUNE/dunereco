@@ -1,17 +1,21 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//// Class:       Bundle
+//// Authors:     A. Higuera, 			from DUNE, Rice U, Feb, 2024
+//// 
+//// Iterface to run Tensorflow saved model bundle to a file.
+////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #include "tf_bundle.h"
 #include "tensorflow/core/public/session_options.h"
 #include "tensorflow/cc/saved_model/loader.h"
 #include "tensorflow/cc/saved_model/tag_constants.h"
-Bundle::~Bundle()
-{
 
-}
 
 Bundle::Bundle(const char* bundle_file_name, const std::vector<std::string> & outputs, bool & success, int ninputs, int noutputs)
 {
 
     success = false;
-    std::cout << "loading bundle..."<<std::endl;
     tensorflow::SavedModelBundle bundle;
     tensorflow::SessionOptions session_options;
     tensorflow::RunOptions run_options;
@@ -19,18 +23,16 @@ Bundle::Bundle(const char* bundle_file_name, const std::vector<std::string> & ou
     if(!status.ok()) {
         std::cout << "Failed to load saved model: " << status.ToString() << std::endl;
     }
-
     success = true;
 
 }
-
- 
 tensorflow::Tensor Bundle::to_tensor( std::vector< std::vector< std::vector< std::vector<float> > > > x){
 
     long long int
               rows = x.front().size(),
               cols = x.front().front().size(),
               depth = x.front().front().front().size();
+
     auto input_tensor = tensorflow::Tensor(tensorflow::DT_FLOAT, tensorflow::TensorShape({ 1, rows, cols, depth })); 
     auto input_map = input_tensor.tensor<float, 4>();
     for (long long int s = 0; s < 1; ++s) {
@@ -45,11 +47,8 @@ tensorflow::Tensor Bundle::to_tensor( std::vector< std::vector< std::vector< std
             }
         }
     }
-    std::cout<<"done with to_tensor"<<std::endl;
     return input_tensor;
 }
-
-
 std::vector<std::vector<std::vector<float> > >  Bundle::run(const char* bundle_file_name, std::vector<std::vector<std::vector<std::vector<float> > > >  x)
 {
     tensorflow::SavedModelBundle bundle;
@@ -72,7 +71,6 @@ std::vector<std::vector<std::vector<float> > >  Bundle::run(const char* bundle_f
         output_names.push_back(p.second.name().c_str());
     }
 
-
     tensorflow::Tensor tensor = Bundle::to_tensor(x); 
     std::vector< std::pair<std::string, tensorflow::Tensor> > inputs;
 
@@ -89,28 +87,23 @@ std::vector<std::vector<std::vector<float> > >  Bundle::run(const char* bundle_f
     if(!tf_status.ok()) {
         std::cout << "Failed to run model: " << status.ToString() << std::endl;
     }
-    
-    std::cout << "out size " << outputs.size() << std::endl;
+    // samples = 1, one map at the time 
     result.resize(1, std::vector< std::vector< float > >(outputs.size()));
-
-        for (size_t s = 0; s < 1; ++s) 
-        {
-            for (size_t o = 0; o < outputs.size(); ++o)
-            {
+    for (size_t s = 0; s < 1; ++s){
+            for (size_t o = 0; o < outputs.size(); ++o){
                 size_t n = outputs[o].dim_size(1);                
                 auto output_map = outputs[o].tensor<float, 2>();
-
                 result[s][o].resize(outputs[o].dim_size(1));
-                
                 std::vector< float > & vs = result[s][o];
-                for (size_t i = 0; i < n; ++i) 
-                {
+                for (size_t i = 0; i < n; ++i){
                     vs[i] = output_map(s, i);
-                    std::cout<<vs[i]<<std::endl;
                 }            
             }
         }
 
     return result;
 }
+Bundle::~Bundle()
+{
 
+}
