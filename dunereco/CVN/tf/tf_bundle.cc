@@ -79,7 +79,6 @@ std::vector<std::vector<std::vector<float> > >  Bundle::run(const char* bundle_f
        inputs.push_back({input_names[0], tensor});
     }
 
-    std::vector< std::vector< std::vector< float > > > result;
     std::vector<tensorflow::Tensor> outputs;
     tensorflow::Status tf_status;
  
@@ -87,13 +86,45 @@ std::vector<std::vector<std::vector<float> > >  Bundle::run(const char* bundle_f
     if(!tf_status.ok()) {
         std::cout << "Failed to run model: " << status.ToString() << std::endl;
     }
-    // samples = 1, one map at the time 
-    result.resize(1, std::vector< std::vector< float > >(outputs.size()));
+    //NOTE:
+    //For some reason, TensorFlow decided to change the order of the outputs
+    //Therefore, we need to rearrange them accordingly
+    tensorflow::Tensor flavour;
+    tensorflow::Tensor protons;
+    tensorflow::Tensor pions;
+    for (size_t i = 0; i < outputs.size(); ++i) {
+        if (outputs[i].shape().dims() == 2 && 
+            outputs[i].shape().dim_size(0) == 1 && 
+            outputs[i].shape().dim_size(1) == 3) {
+            flavour = outputs[i];
+        } 
+        else if (outputs[i].shape().dims() == 2 && 
+            outputs[i].shape().dim_size(0) == 1 && 
+            outputs[i].shape().dim_size(1) == 4) {
+            protons = outputs[i];
+        } 
+        else if (outputs[i].shape().dims() == 2 && 
+            outputs[i].shape().dim_size(0) == 1 && 
+            outputs[i].shape().dim_size(1) == 2) { 
+            pions = outputs[i];
+        } 
+        else{
+            std::cout << "Output with wrong shape!" << std::endl;
+        }
+    }
+    
+    std::vector<tensorflow::Tensor> final_outputs;
+    final_outputs.push_back(flavour); 
+    final_outputs.push_back(protons); 
+    final_outputs.push_back(pions); 
+
+    std::vector< std::vector< std::vector< float > > > result;
+    result.resize(1, std::vector< std::vector< float > >(final_outputs.size()));
     for (size_t s = 0; s < 1; ++s){
-            for (size_t o = 0; o < outputs.size(); ++o){
-                size_t n = outputs[o].dim_size(1);                
-                auto output_map = outputs[o].tensor<float, 2>();
-                result[s][o].resize(outputs[o].dim_size(1));
+            for (size_t o = 0; o < final_outputs.size(); ++o){
+                size_t n = final_outputs[o].dim_size(1);                
+                auto output_map = final_outputs[o].tensor<float, 2>();
+                result[s][o].resize(final_outputs[o].dim_size(1));
                 std::vector< float > & vs = result[s][o];
                 for (size_t i = 0; i < n; ++i){
                     vs[i] = output_map(s, i);
@@ -107,3 +138,5 @@ Bundle::~Bundle()
 {
 
 }
+
+
