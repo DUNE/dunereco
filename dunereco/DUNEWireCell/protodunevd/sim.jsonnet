@@ -29,7 +29,7 @@ function(params, tools) {
         data : params.adc {
             anode: wc.tn(anode),
             frame_tag: tag,
-            resolution: if anode.data.ident<4 then 14 else 12, 
+            resolution: 14, // if anode.data.ident<4 then 14 else 12, 
         }
     }, nin=1, nout=1, uses=[anode]),
 
@@ -60,7 +60,7 @@ function(params, tools) {
             anode: wc.tn(anode),
             dft: wc.tn(tools.dft),
             chanstat: if std.type(csdb) == "null" then "" else wc.tn(csdb),
-            spectra_file: params.files.noise,
+            spectra_file: params.files.noises[ if anode.data.ident<4 then 0 else 1 ],
             nsamples: params.daq.nticks,
             period: params.daq.tick,
             wire_length_scale: 1.0*wc.cm, // optimization binning
