@@ -1,4 +1,4 @@
-find_package(libtorch REQUIRED) ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(libtorch ...) -> find_package(libtorch REQUIRED ...)
+#find_package(libtorch REQUIRED) ### MIGRATE-CHANGED (migrate-3.22.02) - find_ups_product(libtorch ...) -> find_package(libtorch REQUIRED ...)
 find_package(Torch REQUIRED)
 
 # using SYSTEM to prevent multiple "error: extra ‘;’ [-Werror=pedantic]" errors 
@@ -19,7 +19,7 @@ art_make(
                 ROOT::Core
                 messagefacility::MF_MessageLogger
                 fhiclcpp::fhiclcpp
-                CLHEP::CHLEP
+                CLHEP::CLHEP
                 torch
                 torch_cpu
                 c10
