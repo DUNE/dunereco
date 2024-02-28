@@ -5,11 +5,12 @@
 #include "Math/GenVector/PxPyPzE4D.h" 
 #include "Math/GenVector/LorentzVector.h" 
 
-using Point_t = ROOT::Math::PositionVector3D<ROOT::Math::Cartesian3D<double>>;
-using Position4_t = ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double>>;
 
 namespace dune
 {
+  using Point_t = ROOT::Math::PositionVector3D<ROOT::Math::Cartesian3D<double>>;
+  using Position4_t = ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double>>;
+
   class EnergyRecoOutput
   {
   public:
