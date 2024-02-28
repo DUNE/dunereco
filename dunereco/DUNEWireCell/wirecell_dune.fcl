@@ -279,6 +279,33 @@ wirecell_protodunevd_mc:
     }
 }
 
+wirecell_protodunevd_sim_deposplat:
+{
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["Pgrapher"]
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellRoot","WireCellLarsoft","WireCellHio","WireCellTbb","WireCellImg","WireCellPytorch"]
+        configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-deposplat.jsonnet"]
+        inputers: ["wclsSimDepoSource:"]
+        outputers: [
+            // "wclsSimChannelSink:postdrift",
+            // "wclsFrameSaver:simdigits"
+        ]
+        params: {
+        }
+	structs: {
+           nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
+           lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
+           DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+           DT: @local::dunefd_largeantparameters.TransverseDiffusion
+           efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
+           temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
+	}
+    }
+}
+
+
 dune10kt_mc_nfsp:
 {
 #empty for now

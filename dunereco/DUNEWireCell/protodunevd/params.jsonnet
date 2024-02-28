@@ -165,8 +165,10 @@ base {
             "dunevdcrp2-FR-fixcoll-adjustind.json.bz2", // repeat for top drifter
         ],
 
-        noise: "protodune-noise-spectra-v1.json.bz2",
-
+        noises: [
+            "protodune-noise-spectra-v1.json.bz2",
+            "pdvd-top-noise-spectra-v1.json.bz2",
+        ],
 
         chresp: null,
     },

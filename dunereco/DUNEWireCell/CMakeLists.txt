@@ -9,5 +9,6 @@ add_subdirectory(protodunevd)
 add_subdirectory(dunevd-crp2)
 add_subdirectory(ui)
 add_subdirectory(common)
+add_subdirectory(fhicl)
 
 install_fhicl()
