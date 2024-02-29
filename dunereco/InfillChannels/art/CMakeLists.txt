@@ -6,16 +6,19 @@ include_directories(SYSTEM ${TORCH_INCLUDE_DIRS}) ### MIGRATE-ACTION-RECOMMENDED
 
 art_make(
         MODULE_LIBRARIES
-
-                lardataobj_RecoBase
-                lardataobj_RawData
-                larcorealg_Geometry
-                lardataalg_DetectorInfo
-                dunepdlegacy_Overlays
-                art::Persistency_Common canvas
-                art::Persistency_Provenance canvas
-                art::Utilities canvas
-                cetlib::cetlib cetlib_except
+                larcore::headers
+                lardataobj::RecoBase
+                lardataobj::RawData
+                larcorealg::Geometry
+                lardataalg::DetectorInfo
+                larevt::CalibrationDBI_Providers
+                lardata::headers
+                dunepdlegacy::Overlays
+                art_root_io::tfile_support
+                art::Persistency_Common
+                art::Persistency_Provenance
+                art::Utilities canvas::canvas
+                cetlib::cetlib cetlib_except::cetlib_except
                 ROOT::Core
                 messagefacility::MF_MessageLogger
                 fhiclcpp::fhiclcpp

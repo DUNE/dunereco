@@ -5,30 +5,30 @@ add_subdirectory(FDSelectionData)
 if(( DEFINED ENV{TENSORFLOW_DIR} ) AND ( DEFINED ENV{TRITON_DIR} ))
   
 art_make( LIBRARY_NAME FDSelection
-	  LIB_LIBRARIES larcorealg_Geometry
-	  	        larcore_Geometry_Geometry_service
-		          larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
- 	  	       larsim_MCCheater_BackTrackerService_service
-         	  larsim_MCCheater_ParticleInventoryService_service
-	  	        lardata_Utilities
-	  	        larevt_Filters
-	  	        lardataobj_RawData
-	  	        lardataobj_RecoBase
-	  	        lardata_RecoObjects 
+	  LIB_LIBRARIES larcorealg::Geometry
+	  	        larcore::Geometry_Geometry_service
+		          larsim::Simulation nug4::ParticleNavigation lardataobj::Simulation
+ 	  	       larsim::MCCheater_BackTrackerService_service
+         	  larsim::MCCheater_ParticleInventoryService_service
+	  	        lardata::Utilities
+	  	        larevt::Filters
+	  	        lardataobj::RawData
+	  	        lardataobj::RecoBase
+	  	        lardata::RecoObjects 
 #larreco_Deprecated
-	  	        larreco_RecoAlg
-         			larreco_Calorimetry
-	  	        larpandora_LArPandoraInterface
-          	        nusimdata_SimulationBase
-            larsim_Utils
+	  	        larreco::RecoAlg
+         			larreco::Calorimetry
+	  	        larpandora::LArPandoraInterface
+          	        nusimdata::SimulationBase
+            larsim::Utils
             NeutrinoEnergyRecoAlg
             PandrizzleAlg
             PandizzleAlg
 
 MODULE_LIBRARIES FDSelection
-	  	           art_Persistency_Common canvas
-	  	           art_Persistency_Provenance canvas
-	  	           art_Utilities canvas
+	  	           art::Persistency_Common
+	  	           art::Persistency_Provenance 
+	  	           art::Utilities canvas::canvas
                    dunereco_TrackPID_algorithms
         ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use art_make_library(), art_dictonary(), and cet_build_plugin() with explicit source lists and plugin base types
 

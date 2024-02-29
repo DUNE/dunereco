@@ -9,7 +9,7 @@ if (DEFINED ENV{TENSORFLOW_DIR})
 else(DEFINED ENV{TENSORFLOW_DIR})
 set (EXCLUDE_TF TFNetHandler.cxx)
 endif (DEFINED ENV{TENSORFLOW_DIR})
-
+include_directories(${HEP_HPC_INCLUDE_DIRS})
 art_make(BASENAME_ONLY
 #  LIBRARY_NAME      CVNArt
   EXCLUDE ${EXCLUDE_TF}
@@ -29,12 +29,12 @@ art_make(BASENAME_ONLY
   messagefacility::MF_MessageLogger
   z
   fhiclcpp::fhiclcpp
-  cetlib::cetlib cetlib_except
-  ROOT_BASIC_LIB_LIST
+  cetlib::cetlib cetlib_except::cetlib_except
+  ROOT::Core
   lardataobj::RecoBase
   lardata::Utilities
   nusimdata::SimulationBase
-  larsim_MCCheater_ParticleInventoryService_service
+  larsim::MCCheater_ParticleInventoryService_service
   GSL::gsl
   hep_hpc_hdf5
   hep_hpc_Utilities

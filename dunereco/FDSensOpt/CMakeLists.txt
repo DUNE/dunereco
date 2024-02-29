@@ -4,7 +4,7 @@ add_subdirectory(FDSensOptData)
 add_subdirectory(NeutrinoEnergyRecoAlg)
 add_subdirectory(NeutrinoAngularRecoAlg)
 
-cet_build_plugin(NueAna   art::module
+cet_build_plugin(NueAna   art::module LIBRARIES
                         lardataalg::DetectorInfo
                         lardataobj::RawData
                         lardataobj::RecoBase
@@ -38,7 +38,7 @@ cet_build_plugin(NueAna   art::module
               BASENAME_ONLY
 )
 
-cet_build_plugin(MVASelect   art::module
+cet_build_plugin(MVASelect   art::module LIBRARIES
                         MVAAlg
                         nugen::NuReweight
                         nugen::NuReweight_art
@@ -59,7 +59,7 @@ cet_build_plugin(MVASelect   art::module
               BASENAME_ONLY
 )
 
-cet_build_plugin(IniSegReco art::module
+cet_build_plugin(IniSegReco art::module LIBRARIES
                       lardataalg::DetectorInfo
                       lardataobj::RawData
                       lardataobj::RecoBase
@@ -91,7 +91,7 @@ cet_build_plugin(IniSegReco art::module
               BASENAME_ONLY
 )
 
-cet_build_plugin(ShSeg   art::module
+cet_build_plugin(ShSeg   art::module LIBRARIES
                         lardataalg::DetectorInfo
                         lardataobj::RawData
                         lardataobj::RecoBase
@@ -124,7 +124,7 @@ cet_build_plugin(ShSeg   art::module
                         BASENAME_ONLY
 )
 
-cet_build_plugin(EnergyReco   art::module
+cet_build_plugin(EnergyReco   art::module LIBRARIES
                         MVAAlg
                         NeutrinoEnergyRecoAlg
                         nugen::NuReweight
@@ -152,7 +152,7 @@ cet_build_plugin(EnergyReco   art::module
               BASENAME_ONLY
 )
 
-cet_build_plugin(CheckRecoEnergy   art::module
+cet_build_plugin(CheckRecoEnergy   art::module LIBRARIES
                         nugen::NuReweight
                         nugen::NuReweight_art
                         nusimdata::SimulationBase
@@ -174,7 +174,7 @@ cet_build_plugin(CheckRecoEnergy   art::module
               BASENAME_ONLY
 )
 
-cet_build_plugin(NuAngularReco   art::module
+cet_build_plugin(NuAngularReco   art::module LIBRARIES
                         MVAAlg
                         NeutrinoAngularRecoAlg
                         nugen::NuReweight
@@ -198,8 +198,6 @@ cet_build_plugin(NuAngularReco   art::module
                         art::Utilities 
                         canvas::canvas
                         messagefacility::MF_MessageLogger
-                        CETLIB
-                        ROOT_BASIC_LIB_LIST
                          ${GENIE_LIB_LIST}
               BASENAME_ONLY
 )

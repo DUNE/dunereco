@@ -1,29 +1,29 @@
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - avoid directory-scope functions: use target_link_libraries() with target semantics or target_include_directories() whenever possible
 
 art_make( 
-    LIB_LIBRARIES larcorealg_Geometry
-    larcore_Geometry_Geometry_service
-    larsim_Simulation lardataobj_Simulation
-    lardataobj_RawData
-    lardataobj_RecoBase
-    lardataobj_AnalysisBase
-    lardata_Utilities
+    LIB_LIBRARIES larcorealg::Geometry
+    larcore::Geometry_Geometry_service
+    larsim::Simulation lardataobj::Simulation
+    lardataobj::RawData
+    lardataobj::RecoBase
+    lardataobj::AnalysisBase
+    lardata::Utilities
     nusimdata::SimulationBase
-    larsim_MCCheater_BackTrackerService_service           
-    larsim_MCCheater_ParticleInventoryService_service
-    ART_FRAMEWORK_CORE
-    ART_FRAMEWORK_PRINCIPAL
-    ART_FRAMEWORK_SERVICES_REGISTRY
-    ART_ROOT_IO_TFILE_SUPPORT
+    larsim::MCCheater_BackTrackerService_service           
+    larsim::MCCheater_ParticleInventoryService_service
+    art::Framework_Core
+    art::Framework_Principal
+    art::Framework_Services_Registry
+    art_root_io::tfile_support
     ROOT::Core
-    ART_ROOT_IO_TFILESERVICE_SERVICE
+    art_root_io::TFileService_service
     art::Persistency_Common
     art::Persistency_Provenance
     art::Utilities
     canvas::canvas
     messagefacility::MF_MessageLogger
     fhiclcpp::fhiclcpp
-    cetlib::cetlib cetlib_except
+    cetlib::cetlib cetlib_except::cetlib_except
     dunereco_AnaUtils
     dunereco_TrackPID_tf
     dunereco_TrackPID_products

@@ -29,17 +29,17 @@ art_make(BASENAME_ONLY
   c10
   messagefacility::MF_MessageLogger
   fhiclcpp::fhiclcpp
-  cetlib::cetlib cetlib_except
-  lardataobj_RecoBase
-  lardata_Utilities
-  larpandora_LArPandoraInterface
+  cetlib::cetlib cetlib_except::cetlib_except
+  lardataobj::RecoBase
+  lardata::Utilities
+  larpandora::LArPandoraInterface
   nusimdata::SimulationBase
-  larsim_MCCheater_BackTrackerService_service           
-  larsim_MCCheater_ParticleInventoryService_service
+  larsim::MCCheater_BackTrackerService_service           
+  larsim::MCCheater_ParticleInventoryService_service
   MVAAlg
-  larreco_RecoAlg
-  larcorealg_Geometry
-  larcore_Geometry_Geometry_service
+  larreco::RecoAlg
+  larcorealg::Geometry
+  larcore::Geometry_Geometry_service
   MODULE_LIBRARIES  RegCNNFunc
   RegCNNArt
   ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use art_make_library(), art_dictonary(), and cet_build_plugin() with explicit source lists and plugin base types
