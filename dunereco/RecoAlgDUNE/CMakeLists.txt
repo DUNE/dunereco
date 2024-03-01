@@ -21,24 +21,14 @@ art_make(
 			larreco_RecoAlg_CMTool_CMToolApp
 			larreco_RecoAlg_PMAlg
                         nusimdata::SimulationBase
-                        ART_FRAMEWORK_CORE
-			ART_FRAMEWORK_PRINCIPAL
-			ART_FRAMEWORK_SERVICES_REGISTRY
-			ART_ROOT_IO_TFILE_SUPPORT
 			ROOT::Core
-			ART_ROOT_IO_TFILESERVICE_SERVICE
-                        ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE
 			art::Persistency_Common canvas
 			art::Persistency_Provenance canvas
 			art::Utilities canvas
 			messagefacility::MF_MessageLogger
-			
 	                fhiclcpp::fhiclcpp
 			cetlib::cetlib cetlib_except
-                        CLHEP
-			ROOT_BASIC_LIB_LIST
-                        ROOT_MINUIT
-			ROOT_MINUIT2	
+			CLHEP::CLHEP
                         Boost::filesystem
                         
         )

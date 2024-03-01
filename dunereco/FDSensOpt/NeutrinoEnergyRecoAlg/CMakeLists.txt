@@ -3,39 +3,28 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 art_make( BASENAME_ONLY
   LIBRARY_NAME  NeutrinoEnergyRecoAlg
   LIB_LIBRARIES 
-  larcorealg_Geometry
+  larcorealg::Geometry
   dunereco_AnaUtils
-  larcore_Geometry_Geometry_service
-  larsim_Simulation nug4::ParticleNavigation lardataobj_Simulation
-  lardataobj_RawData
-  lardataobj_RecoBase
-  lardata_ArtDataHelper
-  larreco_RecoAlg
-  larreco_RecoAlg_PMAlg
-  lardata_Utilities
-  larreco_Calorimetry
+  larcore::Geometry_Geometry_service
+  larsim::Simulation nug4::ParticleNavigation lardataobj::Simulation
+  lardataobj::RawData
+  lardataobj::RecoBase
+  lardata::ArtDataHelper
+  larreco::RecoAlg
+  larreco::RecoAlg_PMAlg
+  lardata::Utilities
+  larreco::Calorimetry
   IniSegAlg
-  larsim_MCCheater_BackTrackerService_service
-  larsim_MCCheater_ParticleInventoryService_service
+  larsim::MCCheater_BackTrackerService_service
+  larsim::MCCheater_ParticleInventoryService_service
   nusimdata::SimulationBase
-  ART_FRAMEWORK_CORE
-  ART_FRAMEWORK_PRINCIPAL
-  art::Persistency_Common canvas
-  ART_FRAMEWORK_SERVICES_REGISTRY
-  ART_ROOT_IO_TFILE_SUPPORT
   ROOT::Core
-  ART_ROOT_IO_TFILESERVICE_SERVICE
-  art::Persistency_Common canvas
-  art::Persistency_Provenance canvas
-  art::Utilities canvas
+  art::Persistency_Common
+  art::Persistency_Provenance
+  art::Utilities
   fhiclcpp::fhiclcpp
   messagefacility::MF_MessageLogger
-  
-  ROOT_EG
-  cetlib::cetlib cetlib_except
-  ROOT_BASIC_LIB_LIST
-  
-  ROOT_TMVA
+  cetlib::cetlib 
   )
 
 
