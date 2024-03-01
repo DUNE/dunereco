@@ -1,5 +1,5 @@
 # for classes_def.xml!!
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR} ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - avoid directory-scope functions: use target_link_libraries() with target semantics or target_include_directories() whenever possible
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 cet_build_plugin(SNSlicer art::module LIBRARIES
                         larcore_Geometry_Geometry_service
@@ -26,7 +26,7 @@ cet_make( LIBRARIES lardataobj_RawData
                     canvas_Utilities
                     messagefacility::MF_MessageLogger
                     cetlib::cetlib
-                    NO_DICTIONARY ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use cet_make_library(), build_dictonary(), cet_plugin() with explicit source lists and plugin base types
+                    NO_DICTIONARY )
 
 
 art_dictionary( DICTIONARY_LIBRARIES ) # dunereco_SNSlicer )

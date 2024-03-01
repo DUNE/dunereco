@@ -6,7 +6,7 @@ simple_plugin(LongestRecoVertexTrackSelector "tool"
                       art::Persistency_Provenance 
 
                        
-             ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use cet_build_plugin() with explicit source lists and plugin base types
+             )
 
 simple_plugin(HighestPandrizzleScoreRecoVertexShowerSelector "tool"
                       lardataobj::RecoBase
@@ -18,7 +18,7 @@ simple_plugin(HighestPandrizzleScoreRecoVertexShowerSelector "tool"
 
                       PandrizzleAlg    
                       #dune_FDSelections_pandizzle
-             ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use cet_build_plugin() with explicit source lists and plugin base types
+             )
 
 
 simple_plugin(HighestPandizzleScoreRecoVertexTrackSelector "tool"
@@ -29,7 +29,7 @@ simple_plugin(HighestPandizzleScoreRecoVertexTrackSelector "tool"
 
                        
                       PandizzleAlg
-             ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use cet_build_plugin() with explicit source lists and plugin base types
+             )
 
 simple_plugin(HighestEnergyRecoVertexShowerSelector "tool"
                       lardataobj::RecoBase
@@ -42,4 +42,4 @@ simple_plugin(HighestEnergyRecoVertexShowerSelector "tool"
                       art::Persistency_Provenance 
 
                        
-             ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use cet_build_plugin() with explicit source lists and plugin base types
+             )

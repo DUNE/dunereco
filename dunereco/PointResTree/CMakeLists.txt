@@ -17,7 +17,7 @@ simple_plugin(PointResTree "module"
 		ROOT::Tree
 		dunereco_AnaUtils
 
-) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use cet_build_plugin() with explicit source lists and plugin base types
+)
 
 install_headers()
 install_fhicl()

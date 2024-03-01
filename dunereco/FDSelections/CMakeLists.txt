@@ -30,7 +30,7 @@ MODULE_LIBRARIES FDSelection
 	  	           art::Persistency_Provenance 
 	  	           art::Utilities canvas::canvas
                    dunereco_TrackPID_algorithms
-        ) ### MIGRATE-ACTION-RECOMMENDED (migrate-3.22.02) - deprecated: use art_make_library(), art_dictonary(), and cet_build_plugin() with explicit source lists and plugin base types
+        )
 
     endif ()
     
