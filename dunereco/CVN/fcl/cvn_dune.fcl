@@ -114,7 +114,7 @@ dunehd_1x2x6_atmo_cvnevaluator:
         NImageWires: 200
         NInputs: 1
         NOutputs: 3
-        TFBundle: "/exp/dune/data/users/higuera/CNN/atmo_model_tf_2_11/ResNet_20240204/"
+        TFBundle: "/cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/CVN/atmos/v04_00_00/dune_cvn_hd_1x2x6_nu_2024_tf211_v04_00_00/"
         UseBundle: true
     }
 
