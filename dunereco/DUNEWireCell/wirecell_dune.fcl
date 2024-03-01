@@ -305,6 +305,27 @@ wirecell_protodunevd_sim_deposplat:
     }
 }
 
+wirecell_pdhd_sim_deposplat:
+{
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["Pgrapher"]
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellRoot","WireCellLarsoft","WireCellHio","WireCellTbb","WireCellImg","WireCellPytorch"]
+        configs: ["pgrapher/experiment/pdhd/wcls-sim-drift-deposplat.jsonnet"]
+        inputers: ["wclsSimDepoSource:"]
+        outputers: [
+            // "wclsSimChannelSink:postdrift",
+            // "wclsFrameSaver:simdigits"
+        ]
+        params: {
+        }
+	structs: {
+	}
+    }
+}
+
+
 
 dune10kt_mc_nfsp:
 {

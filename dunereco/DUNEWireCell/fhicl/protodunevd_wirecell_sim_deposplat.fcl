@@ -34,7 +34,7 @@ physics: {
     wirecell:         @local::wirecell_protodunevd_sim_deposplat
   }
 
-reco: [ rns,
+  reco: [ rns,
         wirecell
         ]
 
@@ -42,7 +42,7 @@ reco: [ rns,
 
   trigger_paths: [reco]
 
-  end_paths:     [stream1]
+  end_paths:     [ ] # [stream1]
 }
 
 outputs:

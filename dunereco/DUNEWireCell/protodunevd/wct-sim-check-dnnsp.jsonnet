@@ -134,16 +134,16 @@ local bagger = sim.make_bagger();
 local sn_pipes = sim.splusn_pipelines;
 // local analog_pipes = sim.analog_pipelines;
 
-// local perfect = import 'pgrapher/experiment/protodunevd/chndb-base.jsonnet';
-// local chndb = [{
-//   type: 'OmniChannelNoiseDB',
-//   name: 'ocndbperfect%d' % n,
-//   data: perfect(params, tools.anodes[n], tools.field, n){dft:wc.tn(tools.dft)},
-//   uses: [tools.anodes[n], tools.field, tools.dft],
-// } for n in anode_iota];
-// 
-// local nf_maker = import 'pgrapher/experiment/protodunevd/nf.jsonnet';
-// local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
+local perfect = import 'pgrapher/experiment/protodunevd/chndb-base.jsonnet';
+local chndb = [{
+  type: 'OmniChannelNoiseDB',
+  name: 'ocndbperfect%d' % n,
+  data: perfect(params, tools.anodes[n], tools.field, n){dft:wc.tn(tools.dft)},
+  uses: [tools.anodes[n], tools.field, tools.dft],
+} for n in anode_iota];
+
+local nf_maker = import 'pgrapher/experiment/protodunevd/nf.jsonnet';
+local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp_override = if fcl_params.use_dnnroi then
 {
@@ -154,6 +154,8 @@ local sp_override = if fcl_params.use_dnnroi then
     mp_tick_resolution: 4,
 } else {
     sparse: true,
+    use_multi_plane_protection: true,
+    mp_tick_resolution: 4,
 };
 
 local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
@@ -201,8 +203,9 @@ local dnnroi = import 'pgrapher/experiment/protodunevd/dnnroi.jsonnet';
 local parallel_pipes = [
   g.pipeline([
                sn_pipes[n],
-               magnifyio.orig_pipe[n],
-               // nf_pipes[n],
+               // magnifyio.orig_pipe[n],
+               nf_pipes[n],
+               magnifyio.raw_pipe[n],
                sp_pipes[n],
                // magnifyio.decon_pipe[n],
                magnifyio.debug_pipe[n],
