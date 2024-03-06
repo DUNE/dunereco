@@ -22,8 +22,8 @@ namespace cvn
   TFNetHandler::TFNetHandler(const fhicl::ParameterSet& pset):
     fLibPath(cet::getenv(pset.get<std::string>("LibPath", ""), std::nothrow)),
     fTFProtoBuf  (fLibPath+"/"+pset.get<std::string>("TFProtoBuf")),
-    fTFBundleFile(pset.get<std::string>("TFBundle")),
-    fUseBundle(pset.get<bool>("UseBundle")),
+    fTFBundleFile(pset.get<std::string>("TFBundle", "")),
+    fUseBundle(pset.get<bool>("UseBundle", false)),
     fUseLogChargeScale(pset.get<bool>("ChargeLogScale")),
     fImageWires(pset.get<unsigned int>("NImageWires")),
     fImageTDCs(pset.get<unsigned int>("NImageTDCs")),
