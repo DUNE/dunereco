@@ -97,7 +97,7 @@ local sp_maker = import 'pgrapher/experiment/pdhd/sp.jsonnet';
 local sp = sp_maker(params, tools, { sparse: true, use_roi_debug_mode: true, use_multi_plane_protection: true, mp_tick_resolution: 4, });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
-// local deposplats = [sim.make_ductor('splat%d'%n, tools.anodes[n], tools.pirs[0], 'DepoSplat', 'ductor%d'%n) for n in anode_iota] ;
+// local deposplats = [sim.make_ductor('splat%d'%n, tools.anodes[n], tools.pirs[0], 'DepoSplat', 'deposplat%d'%n) for n in anode_iota] ;
 local deposplats = [util.splat(params, tools, tools.anodes[n]) for n in anode_iota] ;
 
 local rng = tools.random;
@@ -132,7 +132,7 @@ local hio_truth = [g.pnode({
       name: 'hio_truth%d' % n,
       data: {
         anode: wc.tn(tools.anodes[n]),
-        trace_tags: ['ductor%d'%n],
+        trace_tags: ['deposplat%d'%n],
         filename: "g4-tru-%d.h5" % n,
         chunk: [0, 0], // ncol, nrow
         gzip: 2,
