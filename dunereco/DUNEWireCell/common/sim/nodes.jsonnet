@@ -43,7 +43,7 @@ function(params, tools)
     // anodes and all PIR trios.  For one element of that product this
     // function is called.  The name should be unique across all
     // anodes X PIR trios.
-    make_ductor:: function(name, anode, pir_trio, type='Ductor') g.pnode({
+    make_ductor:: function(name, anode, pir_trio, type='Ductor', frame_tag='') g.pnode({
         type: type,
         name: name,
         data: {
@@ -61,6 +61,8 @@ function(params, tools)
             start_time: params.sim.ductor.start_time,
             tick: params.daq.tick,
             nsigma: 3,
+
+            frame_tag: frame_tag,
         },
     }, nin=1,nout=1,uses=[tools.random, anode] + pir_trio),
     

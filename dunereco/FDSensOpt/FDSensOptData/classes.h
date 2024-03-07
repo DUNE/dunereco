@@ -1,5 +1,6 @@
 #include "dunereco/FDSensOpt/FDSensOptData/MVASelectPID.h"
 #include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
+#include "dunereco/FDSensOpt/FDSensOptData/AngularRecoOutput.h"
 
 #include "canvas/Persistency/Common/Assns.h"
 #include "canvas/Persistency/Common/Wrapper.h"
