@@ -32,8 +32,6 @@ namespace cvn
 
     // Construct the TF Graph object. The empty vector {} is used since the protobuf
     // file gives the names of the output layer nodes
-    std::unique_ptr<tf::Graph> fTFGraph = nullptr;
-    std::unique_ptr<Bundle> fTFBundle = nullptr;
     if (!fUseBundle){ 
         mf::LogInfo("TFNetHandler") << "Loading network: " << fTFProtoBuf << std::endl;
         fTFGraph = tf::Graph::create(fTFProtoBuf.c_str(),{},pset.get<int>("NInputs"),pset.get<int>("NOutputs"));
@@ -41,13 +39,14 @@ namespace cvn
             art::Exception(art::errors::Unknown) << "Tensorflow model not found or incorrect";
         }
     }
+    
     else {
 	fTFBundle = Bundle::create(fTFBundleFile.c_str(),{},pset.get<int>("NInputs"),pset.get<int>("NOutputs")); 
         if (!fTFBundle){
             art::Exception(art::errors::Unknown) << "Tensorflow model not found or incorrect";
         }
     }
-
+   
   }
 
   // Check the network outputs
@@ -101,21 +100,20 @@ namespace cvn
         cvnResults = fTFBundle->run(fTFBundleFile.c_str(),vecForTF);
     }
     else {
-        cvnResults = fTFGraph->run(vecForTF);
-    }
-    do{ // do until it gets a correct result
-        // std::cout << "Number of CVN result vectors " << cvnResults.size() << " with " << cvnResults[0].size() << " categories" << std::endl;
-        status = check(cvnResults[0]);
-        //std::cout << "Status: " << status << std::endl;
-        counter++;
-        if(counter==10){
-            std::cout << "Error, CVN never outputing a correct result. Filling result with zeros.";
-            std::cout << std::endl;
-            fillEmpty(cvnResults[0]);
-            break;
-        }
-    }while(status == false);
-     
+        do{ // do until it gets a correct result
+            // std::cout << "Number of CVN result vectors " << cvnResults.size() << " with " << cvnResults[0].size() << " categories" << std::endl;
+            cvnResults = fTFGraph->run(vecForTF);
+            status = check(cvnResults[0]);
+            //std::cout << "Status: " << status << std::endl;
+            counter++;
+            if(counter==10){
+                std::cout << "Error, CVN never outputing a correct result. Filling result with zeros.";
+                std::cout << std::endl;
+                fillEmpty(cvnResults[0]);
+                break;
+            }
+        }while(status == false);
+    } 
     std::cout << "Classifier summary: ";
     std::cout << std::endl;
     int output_index = 0;
