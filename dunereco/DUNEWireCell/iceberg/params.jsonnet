@@ -114,7 +114,9 @@ function(params) base {
       'dune-garfield-1d565.json.bz2',
     ],
 
-    noise: 'protodune-noise-spectra-v1.json.bz2',
+    wiregroups: "iceberg_group_to_channel_map_incoh.json.bz2",
+    noise: "iceberg_noise_model_incoh.json.bz2",
+    // noise: 'protodune-noise-spectra-v1.json.bz2',
 
 
     chresp: null,
