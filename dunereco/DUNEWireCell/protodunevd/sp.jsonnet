@@ -89,7 +89,7 @@ function(params, tools, override = {}) {
       shrink_roi_tag: 'shrink_roi%d' % anode.data.ident,
       extend_roi_tag: 'extend_roi%d' % anode.data.ident,
 
-      use_multi_plane_protection: false,
+      use_multi_plane_protection: true,
       mp3_roi_tag: 'mp3_roi%d' % anode.data.ident,
       mp2_roi_tag: 'mp2_roi%d' % anode.data.ident,
       
