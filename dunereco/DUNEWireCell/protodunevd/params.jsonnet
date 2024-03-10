@@ -121,7 +121,7 @@ base {
       super.elec { // top
         type: "JsonElecResponse",
         filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
-        postgain: 1.0,
+        postgain: 1.94, // 1.94 <-> 14mV/fC
       },
     ],
     elec: $.elecs[0], // nominal 
