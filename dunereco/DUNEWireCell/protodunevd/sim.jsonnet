@@ -29,7 +29,12 @@ function(params, tools) {
         data : params.adc {
             anode: wc.tn(anode),
             frame_tag: tag,
-            resolution: 14, // if anode.data.ident<4 then 14 else 12, 
+            baselines: if anode.data.ident < 4
+                       then [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt]
+                       else [1.0*wc.volt, 1.0*wc.volt, 1.0*wc.volt],
+            fullscale: if anode.data.ident < 4
+                       then [0.2*wc.volt, 1.6*wc.volt]
+                       else [0.0*wc.volt, 2.0*wc.volt],
         }
     }, nin=1, nout=1, uses=[anode]),
 
