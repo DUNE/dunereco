@@ -97,15 +97,12 @@ base {
 
         resolution: 14,
 
-        // per tdr, chapter 2
-        // induction plane: 2350 ADC, collection plane: 900 ADC
+        // reuse ProtoDUNE SP values for bottom drift
         baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
-
-        // check this.  The tdr says, "The ADC ASIC has an input
-        // buffer with offset compensation to match the output of the
-        // FE ASIC.  The input buffer first samples the input signal
-        // (with a range of 0.2 V to 1.6 V)..."
         fullscale: [0.2*wc.volt, 1.6*wc.volt],
+        // will rewrite top drift values in sim/digitizer and sigproc
+        // FIXME: need a more elegant way
+        // top drift: ~1 volt baselines, 0-2volt full scale
     },
 
     // This sets a relative gain at the input to the ADC.  Note, if
@@ -165,7 +162,7 @@ base {
 
         noises: [
             "protodune-noise-spectra-v1.json.bz2",
-            "pdvd-top-noise-spectra-v1.json.bz2",
+            "pdvd-top-noise-spectra-v1d3.json.bz2",
         ],
 
         chresp: null,

@@ -40,8 +40,10 @@ function(params, tools, override = {}) {
        *  Associated tuning in sp-filters.jsonnet
        */
 
-      local resolution = 14, // if anode.data.ident<4 then 14 else 12,
-      local fullscale = params.adc.fullscale[1] - params.adc.fullscale[0],
+      local resolution = params.adc.resolution,
+      local fullscale = if anode.data.ident < 4
+                        then params.adc.fullscale[1] - params.adc.fullscale[0]
+                        else 2.0*wc.volt,
       local ADC_mV_ratio = ((1 << resolution) - 1 ) / fullscale,
 
       anode: wc.tn(anode),
