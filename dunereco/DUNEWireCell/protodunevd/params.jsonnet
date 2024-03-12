@@ -24,8 +24,8 @@ base {
         // start.  Garfield calcualtions start somewhere relative to
         // something, here's where that is made concrete.  This MUST
         // match what field response functions also used.
-        // response_plane: 18.92*wc.cm, // relative to collection wires
         response_plane: 18.1*wc.cm, // relative to collection wires
+                                    // synced to params.files.fields
         local res_plane = 0.5*apa_w2w + self.response_plane,
 
         // The cathode plane is like the anode cut off plane.  Any
@@ -156,8 +156,10 @@ base {
         wires: "protodunevd-wires-larsoft-v3.json.bz2",
 
         fields: [
-            "dunevdcrp2-FR-fixcoll-adjustind.json.bz2",
-            "dunevdcrp2-FR-fixcoll-adjustind.json.bz2", // repeat for top drifter
+            // "dunevdcrp2-FR-fixcoll-adjustind.json.bz2",
+            // "dunevdcrp2-FR-fixcoll-adjustind.json.bz2", // repeat for top drifter
+            "protodunevd_FR_3view_speed1d55.json.bz2", // remember to sync response plane position above
+            "protodunevd_FR_3view_speed1d55.json.bz2",
         ],
 
         noises: [
