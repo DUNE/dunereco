@@ -161,7 +161,7 @@ base {
         ],
 
         noises: [
-            "protodune-noise-spectra-v1.json.bz2",
+            "pdvd-bottom-noise-spectra-v1.json.bz2",
             "pdvd-top-noise-spectra-v1d3.json.bz2",
         ],
 
