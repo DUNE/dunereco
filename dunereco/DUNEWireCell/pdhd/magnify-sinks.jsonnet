@@ -76,6 +76,22 @@ function(tools, outputfile) {
     for n in std.range(0, nanodes - 1)
   ],
 
+  local magtruth = [
+    g.pnode({
+      type: 'MagnifySink',
+      name: 'magtruth%d' % n,
+      data: {
+        output_filename: outputfile,
+        root_file_mode: 'UPDATE',
+        frames: ['deposplat%d' % n],
+        trace_has_tag: true,
+        anode: wc.tn(tools.anodes[n]),
+      },
+    }, nin=1, nout=1)
+    for n in std.range(0, nanodes - 1)
+  ],
+
+
   local magthr = [
     g.pnode({
       type: 'MagnifySink',
@@ -108,6 +124,7 @@ function(tools, outputfile) {
 
 
   return: {
+    truth_pipe: [g.pipeline([magtruth[n]], name='magtruthpipe%d' % n) for n in std.range(0, nanodes - 1)],
     orig_pipe: [g.pipeline([magorig[n]], name='magorigpipe%d' % n) for n in std.range(0, nanodes - 1)],
     raw_pipe: [g.pipeline([magraw[n]], name='magrawpipe%d' % n) for n in std.range(0, nanodes - 1)],
     decon_pipe: [g.pipeline([magdecon[n]], name='magdeconpipe%d' % n) for n in std.range(0, nanodes - 1)],
