@@ -167,6 +167,7 @@ base {
             "pdvd-top-noise-spectra-v1d3.json.bz2",
         ],
 
+        // chresp: "protodunevd-params-channel-responses-v0.json.bz2",
         chresp: null,
     },
 

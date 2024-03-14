@@ -50,6 +50,7 @@ local wc = import 'wirecell.jsonnet';
             trace: {
               //gauss: 'gauss%d' % n,
               //wiener: 'wiener%d' % n,
+              ['raw%d' % n]: ['raw%d' % n],
               ['gauss%d' % n]: ['gauss%d' % n],
               ['wiener%d' % n]: ['wiener%d' % n],
               ['threshold%d' % n]: ['threshold%d' % n],
