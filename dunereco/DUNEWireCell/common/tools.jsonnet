@@ -51,7 +51,8 @@ function(params)
     },
 
     perchanresp : {
-        type: "ParamsPerChannelResponse",
+        // type: "ParamsPerChannelResponse",
+        type: "PerChannelResponse",
         data: {
             filename: params.files.chresp,
         }
