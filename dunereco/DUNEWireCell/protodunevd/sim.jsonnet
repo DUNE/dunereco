@@ -29,7 +29,12 @@ function(params, tools) {
         data : params.adc {
             anode: wc.tn(anode),
             frame_tag: tag,
-            resolution: if anode.data.ident<4 then 14 else 12, 
+            baselines: if anode.data.ident < 4
+                       then [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt]
+                       else [1.0*wc.volt, 1.0*wc.volt, 1.0*wc.volt],
+            fullscale: if anode.data.ident < 4
+                       then [0.2*wc.volt, 1.6*wc.volt]
+                       else [0.0*wc.volt, 2.0*wc.volt],
         }
     }, nin=1, nout=1, uses=[anode]),
 
@@ -60,7 +65,7 @@ function(params, tools) {
             anode: wc.tn(anode),
             dft: wc.tn(tools.dft),
             chanstat: if std.type(csdb) == "null" then "" else wc.tn(csdb),
-            spectra_file: params.files.noise,
+            spectra_file: params.files.noises[ if anode.data.ident<4 then 0 else 1 ],
             nsamples: params.daq.nticks,
             period: params.daq.tick,
             wire_length_scale: 1.0*wc.cm, // optimization binning

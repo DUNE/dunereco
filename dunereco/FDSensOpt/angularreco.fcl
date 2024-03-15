@@ -1,0 +1,73 @@
+#include "calorimetry_dune10kt.fcl"
+#include "trackfinderalgorithms.fcl"
+#include "neutrinoangularrecoalg_dune.fcl"
+
+BEGIN_PROLOG
+
+dunefd_nuangularreco_pmtrack:
+{
+    module_type:             "NuAngularReco"
+
+    # RecoMethod is method of neutrino angular reconstruction
+    # 1 Assume longest track direction as neutrino direction
+    # 2 Assume shower with most charge deposited as the neutrino direction
+    RecoMethod:              1
+
+    WireLabel:            "wclsmcnfsp:gauss"
+    HitLabel:             "gaushit"
+    TrackLabel:           "pmtrack"
+    ShowerLabel:          "emshower"
+    TrackToHitLabel:      "pmtrack"
+    ShowerToHitLabel:     "emshower"
+    HitToSpacePointLabel: "pmtrack"
+    PFPLabel:             "pmtrack"
+    PFPTrackLabel:        "pmtrack"
+    PFPShowerLabel:       "trajcluster"
+    ParticleIDLabel:      "pmtrackpid"
+    PIDACut:              10.0
+
+    NeutrinoAngularRecoAlg:
+    {
+        @table::dune_neutrinoangularrecoalg
+        CalorimetryLabel: "pmtrackcalo"
+    }
+}
+
+dunefd_nuangularreco_pandora_numu:
+{
+    @table::dunefd_nuangularreco_pmtrack
+    RecoMethod:             1
+    WireLabel:              "wclsmcnfsp:gauss"
+    HitLabel:               "gaushit"
+    TrackLabel:             "pandoraTrack"
+    ShowerLabel:            "pandoraShower"
+    TrackToHitLabel:        "pandoraTrack"
+    ShowerToHitLabel:       "pandoraShower"
+    HitToSpacePointLabel:   "pandora"
+    PFPLabel:               "pandora"
+    PFPTrackLabel:          "pandoraTrack"
+    PFPShowerLabel:         "pandoraShower"
+    ParticleIDLabel:        "pandorapid"
+    NeutrinoAngularRecoAlg: @local::dune_neutrinoangularrecoalg
+}
+
+dunefd_nuangularreco_pandora_nue:
+{
+    @table::dunefd_nuangularreco_pandora_numu
+    RecoMethod: 2
+}
+
+dunefd_nuangularreco_pandora_nue_allpfps:
+{
+    @table::dunefd_nuangularreco_pandora_numu
+    RecoMethod: 3
+}
+
+dunefd_nuangularreco_pandora_numu_allpfps:
+{
+    @table::dunefd_nuangularreco_pandora_numu
+    RecoMethod: 4
+}
+
+
+END_PROLOG

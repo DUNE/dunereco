@@ -188,24 +188,21 @@ local retagger = g.pnode({
 }, nin=1, nout=1);
 
 
-local make_noise_model = function(anode, csdb=null) {
-    type: "EmpiricalNoiseModel",
-    name: "empericalnoise%s"% anode.name,
+local make_noise_model = function(anode) {
+    type: "GroupNoiseModel",
+    name: "groupnoise%s"% anode.name,
     data: {
-        anode: wc.tn(anode),
-        dft: wc.tn(tools.dft),
-        chanstat: if std.type(csdb) == "null" then "" else wc.tn(csdb),
-        spectra_file: params.files.noise,
+        spectra: params.files.noise,
+        groups:  params.files.wiregroups,
         nsamples: params.daq.nticks,
-        period: params.daq.tick,
-        wire_length_scale: 1.0*wc.cm, // optimization binning
+        tick:    params.daq.tick,
     },
-    uses: [anode, tools.dft] + if std.type(csdb) == "null" then [] else [csdb],
+    uses: [anode],
 };
 local noise_models = [make_noise_model(anode) for anode in tools.anodes];
 
 local add_noise = function(model) g.pnode({
-    type: "AddNoise",
+    type: "IncoherentAddNoise",
     name: "addnoise%s"%[model.name],
     data: {
         rng: wc.tn(tools.random),

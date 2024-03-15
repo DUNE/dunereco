@@ -29,17 +29,12 @@
             <tool type = "LArCosmicRayTagging"/>
         </CosmicRayTaggingTools>
         <SliceIdTools>
-<!--
             <tool type = "LArBdtBeamParticleId">
                 <BdtName>ProtoDUNESP_BeamParticleId</BdtName>
                 <BdtFileName>PandoraMVAData/PandoraBdt_BeamParticleId_ProtoDUNESP_v03_26_00.xml</BdtFileName>
                 <MinAdaBDTScore>-0.225</MinAdaBDTScore>
-            </tool>
--->
-        <!-- Fall back to the old cuts method for now -->
-            <tool type = "LArBeamParticleId">
                 <BeamTPCIntersection>-53.6 401.1 0.0</BeamTPCIntersection>
-                <BeamDirection>-0.201890 -0.192850 0.960234</BeamDirection> 
+                <BeamDirection>-0.201890 -0.192850 0.960234</BeamDirection>
             </tool>
         </SliceIdTools>
         <InputHitListName>CaloHitList2D</InputHitListName>

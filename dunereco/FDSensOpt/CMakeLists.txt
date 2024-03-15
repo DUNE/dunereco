@@ -2,6 +2,7 @@ add_subdirectory(IniSegAlg)
 add_subdirectory(MVAAlg)
 add_subdirectory(FDSensOptData)
 add_subdirectory(NeutrinoEnergyRecoAlg)
+add_subdirectory(NeutrinoAngularRecoAlg)
 
 cet_build_plugin(NueAna   art::module
                         lardataalg::DetectorInfo
@@ -175,6 +176,36 @@ cet_build_plugin(CheckRecoEnergy   art::module
                         cetlib_except::cetlib_except
                         ROOT_BASIC_LIB_LIST
                         ${GENIE_LIB_LIST}
+              BASENAME_ONLY
+)
+
+cet_build_plugin(NuAngularReco   art::module
+                        MVAAlg
+                        NeutrinoAngularRecoAlg
+                        nugen::NuReweight
+                        nugen::NuReweight_art
+                        nusimdata::SimulationBase
+                        larcore::Geometry_Geometry_service
+                        larreco::Calorimetry
+                        larreco::RecoAlg
+                        larpandora::LArPandoraInterface
+                        lardataalg::DetectorInfo
+                        lardataobj::RecoBase
+                        larsim::MCCheater_BackTrackerService_service
+                        art::Framework_Core
+                        art::Framework_Principal
+                        art::Framework_Services_Registry
+                        art_root_io::tfile_support
+                        art_root_io::TFileService_service
+                        ROOT::Core
+                        art::Persistency_Common
+                        art::Persistency_Provenance
+                        art::Utilities 
+                        canvas::canvas
+                        messagefacility::MF_MessageLogger
+                        CETLIB
+                        ROOT_BASIC_LIB_LIST
+                         ${GENIE_LIB_LIST}
               BASENAME_ONLY
 )
 

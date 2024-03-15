@@ -56,7 +56,7 @@ function(params, anode, field, n, rms_cuts=[])
 
         // parameter used to make "rcrc" spectrum
         rcrc: 1.1 * wc.millisecond, // 1.1 for collection, 3.3 for induction
-        rc_layers: 1, // default 2
+        rc_layers: 0, // default 2
 
         // parameters used to make "config" spectrum
         reconfig: {},
