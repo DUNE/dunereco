@@ -13,8 +13,8 @@ standard_transformercvnmapper:
   MinClusterHits: 1
   TdcWidth:       280   # time width of pixel map
   WireLength:     400   # wire width of pixel map
-  TimeResolution: 6 
-  WireResolution: 1 
+  TimeResolution:  24   # TransformerCVN uses the RegCNN numu energy size maps
+  WireResolution:   7 
   ProngTagMethod: 0     # 0 = use shower, 1 = use track (for event map only)
   ShowerModuleLabel: "emshower" #"pandoraShower" #"emshowernew"
   TrackModuleLabel:  "pandoraTrack"
