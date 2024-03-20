@@ -7,7 +7,7 @@ local default_dft = { type: 'FftwDFT' };
 
 function(params, anode, chndbobj, n, name='', dft=default_dft) {
     local single = {
-        type: 'pdOneChannelNoise',
+        type: 'duneCrpOneChannelNoise',
         name: name,
         uses: [dft, chndbobj, anode],
         data: {
@@ -40,7 +40,7 @@ function(params, anode, chndbobj, n, name='', dft=default_dft) {
             // only when the channelmask is merged to `bad`
             // maskmap: {sticky: "bad", ledge: "bad", noisy: "bad"},
             channel_filters: [
-                // wc.tn(single),
+                wc.tn(single),
             ],
             grouped_filters: [
                 wc.tn(grouped),
