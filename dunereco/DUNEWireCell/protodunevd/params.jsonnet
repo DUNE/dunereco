@@ -118,7 +118,7 @@ base {
       super.elec { // top
         type: "JsonElecResponse",
         filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
-        postgain: 1.94, // 1.94 <-> 14mV/fC
+        postgain: 1.52, // 11mV/fC, 1.94 -> 14mV/fC
       },
     ],
     elec: $.elecs[0], // nominal 
@@ -164,7 +164,7 @@ base {
 
         noises: [
             "pdvd-bottom-noise-spectra-v1.json.bz2",
-            "pdvd-top-noise-spectra-v1d3.json.bz2",
+            "pdvd-top-noise-spectra-v2.json.bz2",
         ],
 
         // chresp: "protodunevd-params-channel-responses-v0.json.bz2",
