@@ -7,7 +7,7 @@
 cmake_minimum_required (VERSION 3.20 FATAL_ERROR)
 # cmake_policy(VERSION 3.14)
 
-find_package(cetmodules REQUIRED)
+find_package(cetmodules 3.12.00 REQUIRED)
 project(dunereco LANGUAGES CXX)
 set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 09.89.01d00)
 
@@ -38,9 +38,10 @@ add_subdirectory(Modules)
 find_package( Eigen3 REQUIRED )
 # testing use of rstartree ups product
 #find_package( rstartree REQUIRED )
-find_package( art REQUIRED )
+find_package( art REQUIRED EXPORT )
 find_package( art_root_io REQUIRED )
 find_package( canvas_root_io REQUIRED )
+find_package( canvas REQUIRED EXPORT)
 find_package(ROOT REQUIRED)
 find_package( dunecore REQUIRED )
 find_package( dunepdlegacy REQUIRED )
