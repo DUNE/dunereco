@@ -12,6 +12,7 @@ art_make_library(
     LIBRARIES
         TensorFlow::cc
         TensorFlow::framework
+	Boost::boost
 )
 
 install_headers(SUBDIRS tf_model zoo)

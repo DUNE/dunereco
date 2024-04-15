@@ -24,8 +24,8 @@ base {
         // start.  Garfield calcualtions start somewhere relative to
         // something, here's where that is made concrete.  This MUST
         // match what field response functions also used.
-        // response_plane: 18.92*wc.cm, // relative to collection wires
         response_plane: 18.1*wc.cm, // relative to collection wires
+                                    // synced to params.files.fields
         local res_plane = 0.5*apa_w2w + self.response_plane,
 
         // The cathode plane is like the anode cut off plane.  Any
@@ -94,15 +94,15 @@ base {
     },
 
     adc: super.adc {
-        // per tdr, chapter 2
-        // induction plane: 2350 ADC, collection plane: 900 ADC
-        baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
 
-        // check this.  The tdr says, "The ADC ASIC has an input
-        // buffer with offset compensation to match the output of the
-        // FE ASIC.  The input buffer first samples the input signal
-        // (with a range of 0.2 V to 1.6 V)..."
+        resolution: 14,
+
+        // reuse ProtoDUNE SP values for bottom drift
+        baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
         fullscale: [0.2*wc.volt, 1.6*wc.volt],
+        // will rewrite top drift values in sim/digitizer and sigproc
+        // FIXME: need a more elegant way
+        // top drift: ~1 volt baselines, 0-2volt full scale
     },
 
     // This sets a relative gain at the input to the ADC.  Note, if
@@ -115,15 +115,10 @@ base {
         postgain: 1.1365, 
         shaping: 2.2 * wc.us,
       },
-      // super.elec { // top
-      //   type: "JsonElecResponse",
-      //   filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
-      //   postgain: 1.0,
-      // },
       super.elec { // top
         type: "JsonElecResponse",
         filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
-        postgain: 1.0,
+        postgain: 1.52, // 11mV/fC, 1.94 -> 14mV/fC
       },
     ],
     elec: $.elecs[0], // nominal 
@@ -161,13 +156,18 @@ base {
         wires: "protodunevd-wires-larsoft-v3.json.bz2",
 
         fields: [
-            "dunevdcrp2-FR-fixcoll-adjustind.json.bz2",
-            "dunevdcrp2-FR-fixcoll-adjustind.json.bz2", // repeat for top drifter
+            // "dunevdcrp2-FR-fixcoll-adjustind.json.bz2",
+            // "dunevdcrp2-FR-fixcoll-adjustind.json.bz2", // repeat for top drifter
+            "protodunevd_FR_3view_speed1d55.json.bz2", // remember to sync response plane position above
+            "protodunevd_FR_3view_speed1d55.json.bz2",
         ],
 
-        noise: "protodune-noise-spectra-v1.json.bz2",
+        noises: [
+            "pdvd-bottom-noise-spectra-v1.json.bz2",
+            "pdvd-top-noise-spectra-v2.json.bz2",
+        ],
 
-
+        // chresp: "protodunevd-params-channel-responses-v0.json.bz2",
         chresp: null,
     },
 

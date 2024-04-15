@@ -140,6 +140,28 @@ protodunehd_nfsp:
     }
 }
 
+protodunehd_nf : {
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+      logsinks: ["stdout"]
+      loglevels: ["debug", "pgraph:info"]
+      plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
+      inputers: ["wclsRawFrameSource"]
+      outputers: ["wclsFrameSaver:nfsaver"]
+      configs: ["pgrapher/experiment/pdhd/wcls-nf.jsonnet"]
+      params : {
+         raw_input_label: "caldata:dataprep"
+         reality: "data"
+         signal_output_form: "sparse"
+      }
+      structs: {
+         clock_speed: @local::protodunehd_services.DetectorClocksService.ClockSpeedTPC
+      }
+
+   }
+}
 
 wirecell_protodunespmc:
 {
@@ -257,6 +279,10 @@ wirecell_protodunevd_mc:
         tool_type: WCLS
         apps: ["Pgrapher"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"]
+
+        logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
+        loglevels: ["debug"]
+
         // needs to be found via your WIRECELL_PATH 
         configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-simchannel.jsonnet"]
         inputers: ["wclsSimDepoSource:electron"]
@@ -278,6 +304,54 @@ wirecell_protodunevd_mc:
 	}
     }
 }
+
+wirecell_protodunevd_sim_deposplat:
+{
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["Pgrapher"]
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellRoot","WireCellLarsoft","WireCellHio","WireCellTbb","WireCellImg","WireCellPytorch"]
+        configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-deposplat.jsonnet"]
+        inputers: ["wclsSimDepoSource:"]
+        outputers: [
+            // "wclsSimChannelSink:postdrift",
+            // "wclsFrameSaver:simdigits"
+        ]
+        params: {
+        }
+	structs: {
+           nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
+           lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
+           DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+           DT: @local::dunefd_largeantparameters.TransverseDiffusion
+           efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
+           temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
+	}
+    }
+}
+
+wirecell_pdhd_sim_deposplat:
+{
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["Pgrapher"]
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellRoot","WireCellLarsoft","WireCellHio","WireCellTbb","WireCellImg","WireCellPytorch"]
+        configs: ["pgrapher/experiment/pdhd/wcls-sim-drift-deposplat.jsonnet"]
+        inputers: ["wclsSimDepoSource:"]
+        outputers: [
+            // "wclsSimChannelSink:postdrift",
+            // "wclsFrameSaver:simdigits"
+        ]
+        params: {
+        }
+	structs: {
+	}
+    }
+}
+
+
 
 dune10kt_mc_nfsp:
 {
@@ -826,6 +900,46 @@ tpcrawdecoder_iceberg_splusn : {
         G4RefTime: @local::dunefd_detectorclocks.G4RefTime
       }
    }
+}
+
+iceberg_wctnfsp: 
+{
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["Pgrapher"]
+        plugins: ["WireCellGen", "WireCellSigProc", "WireCellSio", "WireCellPgraph", "WireCellLarsoft"]
+        inputers: ["wclsRawFrameSource"
+                   # To use wclsMultiChannelNoiseDB you must also put epoch:dynamic below
+                   # and you must have geo::Geometry service in your environment.
+                   # ,"wclsMultiChannelNoiseDB"  
+               ]
+        outputers: ["wclsFrameSaver:spsaver"]
+        
+        configs: ["pgrapher/experiment/iceberg/wcls-nf-sp.jsonnet"]
+    
+        params : {
+            raw_input_label: "tpcrawdecoder:daq"
+            # raw_input_label: "caldata:dataprep"
+            
+            # Set "data" vs. "sim".  The epoch below probably should follow suit.
+            # reality: "data"
+            reality: "sim"
+
+            # if epoch is "dynamic" you MUST add
+            # "wclsMultiChannelNoiseDB" to "inputers" and must NOT
+            # add it if not "dynamic"
+            # epoch: "dynamic"
+            # epoch: "perfect"
+            epoch: "after"
+            
+            # Save output signal waveforms (recob::Wire) in "sparse" or "dense" form
+            signal_output_form: "sparse"
+
+            # G4RefTime [us]
+            G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+        }
+    }
 }
 
 dune10kt_dunefd_vertdrift_data_nfsp : {

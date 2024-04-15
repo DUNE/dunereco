@@ -176,81 +176,13 @@ defaultqual	e26
 wpdir	product_dir	wire-cell-cfg
 ####################################
 
-####################################
-# Product table.
-#
-# Table defining *all* direct UPS package dependencies.
-#
-##################
-# Format:
-#
-#>  product		version		qual	["<table_format=#>"]
-#>  <ups-product_name>	<ups-version>	[<qual-trigger>]	[<flag>]
-#>...
-#>  end_product_list
-#
-# <ups-version> may be a UPS version, a chain option (-c, -t, etc.) or a
-# chain name with a preceding `-'.
-#
-# Valid <qual-trigger> values:
-#
-# * [!]<single-qual>
-#
-#   A single qualifier whose presence in the parent's qualifier will
-#   trigger the setup of the specified version of the product. A prefix
-#   of `!' will negate the match.
-#
-# * <empty>|-
-#
-#   The specified version of the product will always be set up
-#   regardless of the parent's qualifiers. Use `-' as a placeholder if
-#   <flag> is to be specified.
-#
-# * -nq-
-#
-#   Specify explicitly that this product should be set up when the
-#   parent is unqualified.
-#
-# * -default-
-#
-#   The specified version of the product will be set up if no other
-#   product table entry for this product is applicable to the parent's
-#   qualifiers.
-#
-# Valid <flag> values:
-#
-# * only_for_build
-#
-#   The specified product will be set up for building only, and will not
-#   be added to the table file.
-#
-# * optional
-#
-#   It will not be an error if the specified product is not available to
-#   be set up.
-#
-##################
-# Notes.
-#
-# * Under older versions of the product table format ("<table_format=1>"
-#   or unspecified), -nq- had the same meaning as `-' above. When
-#   updating a product_deps file these entries should be reviewed when
-#   <table_format=2> is selected.
-#
-# * "<format>" is a valid alias for "<table_format>".
-#
-# * Under most circumstances (the parent is anything other than
-#   cetmodules), an entry for cetmodules is required.
-#
-# * It is an error for more than one non-(<qual-trigger> == "-default-")
-#   entry to match for a given product.
-#
-####################################
-product		version		qual	flags		<table_format=2>
-dunecore	v09_83_01d00	-
-cetmodules	v3_22_02	-	only_for_build
+# Add the dependent product and version
+
+product          version
+cetbuildtools	 v8_20_00	-	only_for_build
+dunecore         v09_89_01d00
 end_product_list
-####################################
+
 
 ####################################
 # Qualifier table.
@@ -323,10 +255,6 @@ table_fragment_begin
 table_fragment_end
 ####################################
 
-####################################
-# Backmatter.
-#
-# Comments and editor-specific metadata.
 
 # Preserve tabs and formatting in emacs and vi / vim:
 

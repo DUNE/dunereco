@@ -64,7 +64,7 @@ local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
 local sp_override = {
     sparse: false,
     use_roi_debug_mode: false,
-    use_multi_plane_protection: false,
+    use_multi_plane_protection: true,
     mp_tick_resolution: 4,
 };
 local sp = sp_maker(params, tools, sp_override);
