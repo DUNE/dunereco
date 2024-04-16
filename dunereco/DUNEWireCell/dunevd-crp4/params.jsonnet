@@ -67,7 +67,9 @@ base {
     },
 
     adc: super.adc {
-        // per tdr, chapter 2
+
+        resolution: 14,
+
         // induction plane: 2350 ADC, collection plane: 900 ADC
         baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
 
@@ -79,9 +81,8 @@ base {
     },
 
     elec: super.elec {
-      type: "JsonElecResponse",
-      filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
       postgain: 1.0,
+      shaping: 2.2 * wc.us,
     },
 
     sim: super.sim {
@@ -121,7 +122,7 @@ base {
             "dunevdcrp2-FR-fixcoll-adjustind.json.bz2",
         ],
 
-        noise: "pdvd-top-noise-spectra-v2.json.bz2",
+        noise: "pdvd-bottom-noise-spectra-v1.json.bz2",
 
 
         chresp: null,

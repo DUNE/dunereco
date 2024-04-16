@@ -252,10 +252,6 @@ wirecell_dunevd_coldboxcrp2_mc:
             "wclsFrameSaver:simdigits"
         ]
 
-        // Make available parameters via Jsonnet's std.extVar()
-//        params: {
-//            active_cru: 'tde' // 'bde'
-//        }
 	structs: {
            # number of time samples
            nticks: @local::vdcb_crp2_services.DetectorPropertiesService.NumberTimeSamples
@@ -269,6 +265,33 @@ wirecell_dunevd_coldboxcrp2_mc:
     }
 }
 
+wirecell_dunevd_coldboxcrp4_mc:
+{
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["Pgrapher"]
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"]
+        // needs to be found via your WIRECELL_PATH 
+        configs: ["pgrapher/experiment/dunevd-crp4/wcls-sim-drift-simchannel.jsonnet"]
+        inputers: ["wclsSimDepoSource:electron"]
+        outputers: [
+            "wclsSimChannelSink:postdrift",
+            "wclsFrameSaver:simdigits"
+        ]
+
+	structs: {
+           # number of time samples
+           nticks: @local::vdcb_crp4_services.DetectorPropertiesService.NumberTimeSamples
+           clock_speed: @local::vdcb_crp4_services.DetectorClocksService.ClockSpeedTPC
+	   lifetime: @local::vdcb_crp4_services.DetectorPropertiesService.Electronlifetime
+	   DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+	   DT: @local::dunefd_largeantparameters.TransverseDiffusion
+           efield: @local::vdcb_crp4_services.DetectorPropertiesService.Efield[0] # kV/cm
+           temperature: @local::vdcb_services.DetectorPropertiesService.Temperature # K
+	}
+    }
+}
 
 
 
@@ -1611,6 +1634,32 @@ dune_vd_crp2_nfsp : {
 
    }
 }
+
+dune_vd_crp4_nfsp : {
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+      logsinks: ["stdout"]
+      loglevels: ["debug", "pgraph:info"]
+      plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
+      inputers: ["wclsRawFrameSource"]
+      outputers: ["wclsFrameSaver:spsaver"]
+      configs: ["pgrapher/experiment/dunevd-crp4/wcls-nf-sp.jsonnet"]
+      params : {
+         raw_input_label: "caldata:dataprep"
+         reality: "data"
+         epoch: "after"
+         signal_output_form: "sparse"
+         use_magnify: "false"
+      }
+      structs: {
+         clock_speed: @local::vdcb_crp4_services.DetectorClocksService.ClockSpeedTPC
+      }
+
+   }
+}
+
 
 dune_vd_crp2_nf : {
    module_type : WireCellToolkit
