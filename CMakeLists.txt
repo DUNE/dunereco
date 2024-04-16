@@ -74,6 +74,8 @@ if ( DEFINED ENV{LIBTORCH_DIR})
   find_package(Torch REQUIRED)
 endif()
 
+find_ups_product( dunepdlegacy )
+
 find_package(HDF5 REQUIRED EXPORT)
 
 # macros for artdaq_dictionary and simple_plugin
