@@ -20,13 +20,7 @@ art_make(BASENAME_ONLY
   LIBRARY_NAME      RegCNNArt
   EXCLUDE ${EXCLUDE_TF}
   LIB_LIBRARIES RegCNNFunc
-  ART_FRAMEWORK_CORE
-  ART_FRAMEWORK_PRINCIPAL
-  ART_FRAMEWORK_SERVICES_REGISTRY
-  ART_ROOT_IO_TFILE_SUPPORT
   ROOT::Core
-  ART_ROOT_IO_TFILESERVICE_SERVICE
-  ART_PERSISTENCY_COMMON
   canvas::canvas
   art::Persistency_Provenance
   art::Utilities
@@ -35,18 +29,17 @@ art_make(BASENAME_ONLY
   c10
   messagefacility::MF_MessageLogger
   fhiclcpp::fhiclcpp
-  cetlib::cetlib cetlib_except
-  ROOT_BASIC_LIB_LIST
-  lardataobj_RecoBase
-  lardata_Utilities
-  larpandora_LArPandoraInterface
+  cetlib::cetlib cetlib_except::cetlib_except
+  lardataobj::RecoBase
+  lardata::Utilities
+  larpandora::LArPandoraInterface
   nusimdata::SimulationBase
-  larsim_MCCheater_BackTrackerService_service           
-  larsim_MCCheater_ParticleInventoryService_service
+  larsim::MCCheater_BackTrackerService_service           
+  larsim::MCCheater_ParticleInventoryService_service
   MVAAlg
-  larreco_RecoAlg
-  larcorealg_Geometry
-  larcore_Geometry_Geometry_service
+  larreco::RecoAlg
+  larcorealg::Geometry
+  larcore::Geometry_Geometry_service
   MODULE_LIBRARIES  RegCNNFunc
   RegCNNArt
   )
