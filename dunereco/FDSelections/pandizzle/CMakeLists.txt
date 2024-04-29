@@ -1,44 +1,27 @@
-art_make( LIBRARY_NAME PandizzleAlg
-	  LIB_LIBRARIES larcorealg_Geometry
-	  	        larcore_Geometry_Geometry_service
-		          larsim_Simulation nug4_ParticleNavigation lardataobj_Simulation
- 	  	       larsim_MCCheater_BackTrackerService_service
-         	  larsim_MCCheater_ParticleInventoryService_service
-	  	        lardata_Utilities
-	  	        larevt_Filters
-	  	        lardataobj_RawData
-	  	        lardataobj_RecoBase
-	  	        lardata_RecoObjects 
-	  	        larreco_RecoAlg
-         			larreco_Calorimetry
-	  	        larpandora_LArPandoraInterface
-          	        nusimdata_SimulationBase
-          	        ${LARRECO_LIB}
-          	        ${LARDATA_LIB}
-	  	        ${MF_MESSAGELOGGER}
-	  	        ${MF_UTILITIES}
-	  	        ${FHICLCPP}
-	  	        cetlib cetlib_except
-          	        ${ROOT_GEOM}
-          	        ${ROOT_XMLIO}
-          	        ${ROOT_GDML}
-	  	        ${ROOT_BASIC_LIB_LIST}
-            ${ROOT_TMVA}
-            larsim_Utils
-            NeutrinoEnergyRecoAlg
-MODULE_LIBRARIES PandizzleAlg
-#dune_TrackPID
-dune_TrackPID_algorithms
-dune_TrackPID_products
-
-          	           ${ART_FRAMEWORK_CORE}
-	  	           ${ART_FRAMEWORK_PRINCIPAL}
-		       	   ${ART_FRAMEWORK_SERVICES_REGISTRY}
-	  	       	   ${ART_FRAMEWORK_SERVICES_OPTIONAL}
-			   ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
-	  	           art_Persistency_Common canvas
-	  	           art_Persistency_Provenance canvas
-	  	           art_Utilities canvas
+art_make(LIBRARY_NAME     PandizzleAlg
+         LIB_LIBRARIES    larcorealg::Geometry
+                          larcore::Geometry_Geometry_service
+                          larsim::Simulation nug4::ParticleNavigation lardataobj::Simulation
+                          larsim::MCCheater_BackTrackerService_service
+                          larsim::MCCheater_ParticleInventoryService_service
+                          lardata::Utilities
+                          larevt::Filters
+                          lardataobj::RawData
+                          lardataobj::RecoBase
+                          lardata::RecoObjects 
+                          larreco::RecoAlg
+                          larreco::Calorimetry
+                          larpandora::LArPandoraInterface
+                          nusimdata::SimulationBase
+                          larsim::Utils
+                          NeutrinoEnergyRecoAlg
+         MODULE_LIBRARIES PandizzleAlg
+                          #dune_TrackPID
+                          dune_TrackPID_algorithms
+                          dune_TrackPID_products
+                          art::Persistency_Common
+                          art::Persistency_Provenance
+                          art::Utilities
         )
 
 install_headers()

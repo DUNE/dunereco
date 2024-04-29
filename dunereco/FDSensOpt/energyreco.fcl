@@ -44,6 +44,18 @@ dunefd_nuenergyreco_pandora_numu:
     HitToSpacePointLabel:   "pandora"
 }
 
+dunefd_nuenergyreco_pandora_numu_range:
+{
+    @table::dunefd_nuenergyreco_pandora_numu
+    LongestTrackMethod: 1
+}
+
+dunefd_nuenergyreco_pandora_numu_mcs:
+{
+    @table::dunefd_nuenergyreco_pandora_numu
+    LongestTrackMethod: 2
+}
+
 dunefd_nuenergyreco_pandora_nue:
 {
     @table::dunefd_nuenergyreco_pandora_numu
