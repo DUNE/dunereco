@@ -6,7 +6,7 @@ art_make(
 #    larcore_Geometry_Geometry_service
 #    larsim_Simulation lardataobj_Simulation
 #    lardataobj_RawData
-#    lardataobj_RecoBase
+    lardataobj::RecoBase
 #    lardataobj_AnalysisBase
 #    lardata_Utilities
 #    nusimdata::SimulationBase
@@ -15,7 +15,6 @@ art_make(
 #    art::Framework_Core
 #    art::Framework_Principal
 #    art::Framework_Services_Registry
-#    ${ART_FRAMEWORK_SERVICES_BASIC}
 #    art_root_io::tfile_support ROOT::Core
 #    art_root_io::TFileService_service
 #    art::Persistency_Common
@@ -25,8 +24,6 @@ art_make(
 #    messagefacility::MF_MessageLogger
 #    fhiclcpp::fhiclcpp
 #    cetlib::cetlib cetlib_except
-#    
-#    ROOT_BASIC_LIB_LIST
 )
 
 install_headers()
