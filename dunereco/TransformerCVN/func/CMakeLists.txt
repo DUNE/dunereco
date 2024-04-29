@@ -8,15 +8,13 @@ art_make( BASENAME_ONLY
   LIB_LIBRARIES
       nusimdata::SimulationBase
       RegCNNFunc
-  lardataobj_RecoBase
-  larsim_MCCheater_BackTrackerService_service
-  larsim_MCCheater_ParticleInventoryService_service
-  ART_FRAMEWORK_SERVICES_REGISTRY
+  lardataobj::RecoBase
+  larsim::MCCheater_BackTrackerService_service
+  larsim::MCCheater_ParticleInventoryService_service
   messagefacility::MF_MessageLogger
-  cetlib::cetlib cetlib_except
+  cetlib::cetlib cetlib_except::cetlib_except
   Boost::filesystem
-  ROOT_BASIC_LIB_LIST
-  DICT_LIBRARIES   lardataobj_RecoBase
+  DICT_LIBRARIES   lardataobj::RecoBase
   TransformerCVNFunc
   )
 
