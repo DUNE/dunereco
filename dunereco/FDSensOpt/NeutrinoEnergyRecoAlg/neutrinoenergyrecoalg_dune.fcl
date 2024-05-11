@@ -27,8 +27,12 @@ dune_neutrinoenergyrecoalg:
     MaxTrackLengthMCS:      1350.      # cm
     SegmentSizeMCS:         10.        # cm
     MaxMomentumMCS:         7500       # MeV (integer)
-    StepsMomentumMCS:       10         # MeV (integer)
-    MaxResolutionMCS:       0          # mrad (integer), set zero fixes at 2 mrad
+    NStepsChi2:             6          # NDF of chi2 fit (integer)
+    MinResolutionMCSChi2:   0          # mrad (double) 
+    MaxResolutionMCSChi2:   45         # mrad (double), set zero fixes at minimum
+    MinResolutionMCSLLHD:   0.001      # mrad (double) 
+    MaxResolutionMCSLLHD:   800        # mrad (double), set zero fixes at minimum
+    MCSAngleMethod:         1          # scatter angle to use: 0 (xz), 1(yz) or 2 (space angle)
 }
 
 dunevd_neutrinoenergyrecoalg:
