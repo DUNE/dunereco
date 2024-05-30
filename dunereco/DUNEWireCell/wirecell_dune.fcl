@@ -152,7 +152,7 @@ protodunehd_nf : {
       outputers: ["wclsFrameSaver:nfsaver"]
       configs: ["pgrapher/experiment/pdhd/wcls-nf.jsonnet"]
       params : {
-         raw_input_label: "caldata:dataprep"
+         raw_input_label: "tpcrawdecoder:daq" # "caldata:dataprep"
          reality: "data"
          signal_output_form: "sparse"
       }

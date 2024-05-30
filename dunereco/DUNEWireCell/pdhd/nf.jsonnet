@@ -7,7 +7,7 @@ local default_dft = { type: 'FftwDFT' };
 
 function(params, anode, chndbobj, n, name='', dft=default_dft) {
     local single = {
-        type: 'duneCrpOneChannelNoise',
+        type: 'PDHDOneChannelNoise',
         name: name,
         uses: [dft, chndbobj, anode],
         data: {
@@ -17,7 +17,7 @@ function(params, anode, chndbobj, n, name='', dft=default_dft) {
         },
     },
     local grouped = {
-        type: 'mbCoherentNoiseSub',
+        type: 'PDHDCoherentNoiseSub',
         name: name,
         uses: [dft, chndbobj, anode],
         data: {
