@@ -14,6 +14,7 @@
 #include "canvas/Utilities/Exception.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 //LArSoft
+#include "larcore/Geometry/WireReadout.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
@@ -155,7 +156,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
 
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Event &event)
 {
-    art::ServiceHandle<geo::Geometry> fGeometry;
+    auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
     auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
     const double triggerTme(clockData.TriggerTime());
@@ -165,7 +166,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
 
     for (unsigned int iWire = 0; iWire < wires.size(); ++iWire)
     {
-        if (fGeometry->SignalType(wires[iWire]->Channel()) != geo::kCollection)
+        if (wireReadout.SignalType(wires[iWire]->Channel()) != geo::kCollection)
             continue;
 
         const recob::Wire::RegionsOfInterest_t& signalROI(wires[iWire]->SignalROI());
