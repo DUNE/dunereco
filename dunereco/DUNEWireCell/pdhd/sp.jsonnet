@@ -93,7 +93,7 @@ function(params, tools, override = {}) {
       mp2_roi_tag: 'mp2_roi%d' % anode.data.ident,
       
       isWrapped: false,
-      process_planes: if anode.data.ident==0 then [0, 1] else [0, 1, 2],
+      // process_planes: if anode.data.ident==0 then [0, 1] else [0, 1, 2],
 
     } + override,
   }, nin=1, nout=1, uses=[anode, tools.dft, tools.field, tools.fields[1], tools.fields[2], tools.fields[3], tools.elec_resp] + pc.uses + spfilt),
