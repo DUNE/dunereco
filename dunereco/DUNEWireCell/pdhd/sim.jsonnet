@@ -22,7 +22,7 @@ function(params, tools) {
     //local depos2traces = zippers,
 
     local digitizers = [
-        sim.digitizer(tools.anodes[n], name="digitizer-" + tools.anodes[n].name, tag="orig%d"%n)
+        sim.digitizer(tools.anodes[n], name="digitizer-" + tools.anodes[n].name, tag="orig") // tag for frames
         for n in std.range(0,nanodes-1)],
 
     local reframers = [

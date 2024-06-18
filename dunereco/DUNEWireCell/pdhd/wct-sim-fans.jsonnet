@@ -62,7 +62,7 @@ local img = import 'pgrapher/experiment/pdhd/img.jsonnet';
 local img_maker = img();
 local img_pipes = [img_maker.per_anode(a) for a in tools.anodes];
 
-local magoutput = 'mag-sim-sp.root';
+local magoutput = 'protodunehd-sim-fans.root';
 local magnify = import 'pgrapher/experiment/pdhd/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 local frame_tap = function(name, outname, tags, digitize) {
