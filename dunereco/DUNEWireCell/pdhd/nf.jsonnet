@@ -48,7 +48,8 @@ function(params, anode, chndbobj, n, name='', dft=default_dft) {
             channel_status_filters: [
             ],
             noisedb: wc.tn(chndbobj),
-            intraces: 'orig%d' % n,  // frame tag get all traces
+            // intraces: 'orig%d' % n,  // frame tag get all traces
+            intraces: 'orig',  // frame tag get all traces
             outtraces: 'raw%d' % n,
         },
     }, uses=[chndbobj, anode, single, grouped], nin=1, nout=1),
