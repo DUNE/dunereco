@@ -145,8 +145,8 @@ protodunehd_nf : {
    wcls_main: {
       tool_type: WCLS
       apps: ["Pgrapher"]
-      logsinks: ["stdout"]
-      loglevels: ["debug", "pgraph:info"]
+      # logsinks: ["stdout"]
+      # loglevels: ["debug", "pgraph:info"]
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsRawFrameSource"]
       outputers: ["wclsFrameSaver:nfsaver"]
