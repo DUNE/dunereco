@@ -11,12 +11,12 @@ function(params, tools) {
     local nanodes = std.length(tools.anodes),
 
     // I rue the day that we must have an (anode) X (field) cross product!
-    local ductors = sim.make_detector_ductors("nominal", tools.anodes, tools.pirs[0]),
+    // local ductors = sim.make_detector_ductors("nominal", tools.anodes, tools.pirs[0]),
 
 
-    local zippers = [sim.make_depozipper("depozipper-"+tools.anodes[n].name, tools.anodes[n], tools.pirs[0])
+    local zippers = [sim.make_depozipper("depozipper-"+tools.anodes[n].name, tools.anodes[n], tools.pirs[n])
                      for n in std.range(0, nanodes-1)],
-    local transforms = [sim.make_depotransform("depotransform-"+tools.anodes[n].name, tools.anodes[n], tools.pirs[0])
+    local transforms = [sim.make_depotransform("depotransform-"+tools.anodes[n].name, tools.anodes[n], tools.pirs[n])
                         for n in std.range(0, nanodes-1)],
     local depos2traces = transforms,
     //local depos2traces = zippers,
