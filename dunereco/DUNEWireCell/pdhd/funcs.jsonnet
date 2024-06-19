@@ -22,7 +22,8 @@ local wc = import 'wirecell.jsonnet';
               //'.*': 'number%d' % n,
               //'.*': 'gauss%d' % n,
               //'.*': 'framefanout%d ' % n,
-              '.*': 'orig%d' % n,
+              // '.*': 'orig%d' % n,
+              '.*': 'orig',
             },
             trace: {
               // fake doing Nmult SP pipelines
