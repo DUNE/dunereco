@@ -59,7 +59,7 @@ local sp_maker = import 'pgrapher/experiment/pdhd/sp.jsonnet';
 local sp = sp_maker(params, tools, sp_override);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
-local magoutput = 'pdhd-sim-check.root';
+local magoutput = 'porotdunehd-sim-check.root';
 local magnify = import 'pgrapher/experiment/pdhd/magnify-sinks.jsonnet';
 local magnifyio = magnify(tools, magoutput);
 

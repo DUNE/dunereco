@@ -92,6 +92,7 @@ function(params)
         type: if std.objectHas(elec, "type")
               then elec.type
               else "ColdElecResponse",
+        name: "elecresp%d" %n,
         data: sim_response_binning {
             shaping: elec.shaping,
             gain: elec.gain,
