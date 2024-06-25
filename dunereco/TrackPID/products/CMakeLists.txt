@@ -1,7 +1,7 @@
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
-art_make( 
-    LIB_LIBRARIES 
+art_make(
+    DICT_LIBRARIES lardataobj::TrackingTypes
 #    larcorealg_Geometry
 #    larcore_Geometry_Geometry_service
 #    larsim_Simulation lardataobj_Simulation
@@ -10,7 +10,7 @@ art_make(
 #    lardataobj_AnalysisBase
 #    lardata_Utilities
 #    nusimdata::SimulationBase
-#    larsim_MCCheater_BackTrackerService_service           
+#    larsim_MCCheater_BackTrackerService_service
 #    larsim_MCCheater_ParticleInventoryService_service
 #    art::Framework_Core
 #    art::Framework_Principal
@@ -29,4 +29,3 @@ art_make(
 install_headers()
 install_fhicl()
 install_source()
-

@@ -10,6 +10,7 @@ services:
                   closeFileFast: false }
   FileCatalogMetadata:  @local::art_file_catalog_mc
                         @table::dunefdvd_1x8x6_3view_simulation_services
+AuxDetGeometry: @local::dunevd10kt_1x8x6_3view_auxdet_geo
                         Geometry: @local::dunevd10kt_1x8x6_3view_geo
   #@table::standard_services
 }

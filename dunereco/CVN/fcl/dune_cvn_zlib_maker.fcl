@@ -15,6 +15,7 @@ services:
   message:      @local::dune_message_services_prod
   FileCatalogMetadata:  @local::art_file_catalog_mc
                         @table::dunefd_simulation_services
+AuxDetGeometry: @local::dune10kt_workspace_auxdet_geo
   Geometry:             @local::dune10kt_workspace_geo
 }
 
