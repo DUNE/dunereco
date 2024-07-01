@@ -179,7 +179,7 @@ local multipass = [
                // sinks.orig_pipe[n],
                // nf_pipes[n],
                sp_pipes[n],
-               sinks.decon_pipe[n],
+               // sinks.decon_pipe[n],
              ],
              'multipass%d' % n)
   for n in anode_iota
