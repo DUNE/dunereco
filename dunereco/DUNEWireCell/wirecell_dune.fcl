@@ -1797,4 +1797,48 @@ protodunehd_nfspimg : {
    }
 }
 
+
+
+dune10kt_hd_sim_nfsp : {
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        # TbbFlow, Pgrapher, but only TbbFlow supports hydra
+        apps: ["TbbFlow"]
+        logsinks: ["stdout:info", "wcls-sim-drift-simchannel-nf-sp.log:debug"]
+        loglevels: ["debug"]
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
+        # needs to be found via your WIRECELL_PATH
+        configs: ["pgrapher/experiment/dune10kt-hd/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
+        # Contract note: these exact "type:name" must be used to identify
+        # the configuration data structures for these components in the Jsonnet.
+        inputers: ["wclsSimDepoSource:"]
+        outputers: [
+            "wclsSimChannelSink:postdrift",
+            "wclsFrameSaver:spsignals"
+        ]
+        # Make available parameters via Jsonnet's std.extVar()
+        params: {
+            # Pgrapher, TbbFlow
+            engine: "TbbFlow"
+        }
+        structs: {
+          # number of time samples
+          #nticks: @local::dunefd_detproperties.NumberTimeSamples
+          # Longitudinal diffusion constant [cm2/ns]
+          DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+          # Transverse diffusion constant [cm2/ns]
+          DT: @local::dunefd_largeantparameters.TransverseDiffusion
+          # Electron lifetime [us]
+          lifetime: @local::dunefd_detproperties.Electronlifetime
+          # Electron drift speed, assumes a certain applied E-field [mm/us]
+          driftSpeed: 1.60563
+          # G4RefTime [us]
+          G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+          # use_hydra / skip processing
+          use_hydra: true
+        }
+    }
+}
+
 END_PROLOG
