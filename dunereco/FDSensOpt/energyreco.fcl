@@ -35,8 +35,8 @@ dunefd_nuenergyreco_pandora_numu:
 {
     @table::dunefd_nuenergyreco_pmtrack
     RecoMethod:             1
-    WireLabel:              "wclsmcnfsp:gauss"
-    HitLabel:               "gaushit"
+    WireLabel:              "tpcrawdecoder:gauss"
+    HitLabel:               "hitfd"
     TrackLabel:             "pandoraTrack"
     ShowerLabel:            "pandoraShower"
     TrackToHitLabel:        "pandoraTrack"
@@ -70,27 +70,43 @@ dunefd_nuenergyreco_pandora_nc:
 
 dunefdvd_nuenergyreco_pandora_numu: @local::dunefd_nuenergyreco_pandora_numu
 dunefdvd_nuenergyreco_pandora_numu.NeutrinoEnergyRecoAlg: @local::dunevd10kt_neutrinoenergyrecoalg
-dunefdvd_nuenergyreco_pandora_numu.WireLabel: "tpcrawdecoder:gauss"
+dunefdvd_nuenergyreco_pandora_numu.HitLabel: "gaushit"
+
+dunefdvd_nuenergyreco_pandora_numu_range: @local::dunefd_nuenergyreco_pandora_numu_range
+dunefdvd_nuenergyreco_pandora_numu_range.NeutrinoEnergyRecoAlg: @local::dunevd10kt_neutrinoenergyrecoalg
+dunefdvd_nuenergyreco_pandora_numu_range.HitLabel: "gaushit"
+
+dunefdvd_nuenergyreco_pandora_numu_mcs: @local::dunefd_nuenergyreco_pandora_numu_mcs
+dunefdvd_nuenergyreco_pandora_numu_mcs.NeutrinoEnergyRecoAlg: @local::dunevd10kt_neutrinoenergyrecoalg
+dunefdvd_nuenergyreco_pandora_numu_mcs.HitLabel: "gaushit"
 
 dunefdvd_nuenergyreco_pandora_nue:  @local::dunefd_nuenergyreco_pandora_nue
 dunefdvd_nuenergyreco_pandora_nue.NeutrinoEnergyRecoAlg: @local::dunevd10kt_neutrinoenergyrecoalg
-dunefdvd_nuenergyreco_pandora_nue.WireLabel:  "tpcrawdecoder:gauss"
+dunefdvd_nuenergyreco_pandora_nue.HitLabel: "gaushit"
 
 dunefdvd_nuenergyreco_pandora_nc:   @local::dunefd_nuenergyreco_pandora_nc
 dunefdvd_nuenergyreco_pandora_nc.NeutrinoEnergyRecoAlg: @local::dunevd10kt_neutrinoenergyrecoalg
-dunefdvd_nuenergyreco_pandora_nc.WireLabel:  "tpcrawdecoder:gauss"
+dunefdvd_nuenergyreco_pandora_nc.HitLabel: "gaushit"
 
 dunefdvd_30deg_nuenergyreco_pandora_numu: @local::dunefd_nuenergyreco_pandora_numu
 dunefdvd_30deg_nuenergyreco_pandora_numu.NeutrinoEnergyRecoAlg: @local::dunevd10kt_30deg_neutrinoenergyrecoalg
-dunefdvd_30deg_nuenergyreco_pandora_numu.WireLabel: "tpcrawdecoder:gauss"
+dunefdvd_30deg_nuenergyreco_pandora_numu.HitLabel: "gaushit"
+
+dunefdvd_30deg_nuenergyreco_pandora_numu_range: @local::dunefd_nuenergyreco_pandora_numu_range
+dunefdvd_30deg_nuenergyreco_pandora_numu_range.NeutrinoEnergyRecoAlg: @local::dunevd10kt_30deg_neutrinoenergyrecoalg
+dunefdvd_30deg_nuenergyreco_pandora_numu_range.HitLabel: "gaushit"
+
+dunefdvd_30deg_nuenergyreco_pandora_numu_mcs: @local::dunefd_nuenergyreco_pandora_numu_mcs
+dunefdvd_30deg_nuenergyreco_pandora_numu_mcs.NeutrinoEnergyRecoAlg: @local::dunevd10kt_30deg_neutrinoenergyrecoalg
+dunefdvd_30deg_nuenergyreco_pandora_numu_mcs.HitLabel: "gaushit"
 
 dunefdvd_30deg_nuenergyreco_pandora_nue:  @local::dunefd_nuenergyreco_pandora_nue
 dunefdvd_30deg_nuenergyreco_pandora_nue.NeutrinoEnergyRecoAlg: @local::dunevd10kt_30deg_neutrinoenergyrecoalg
-dunefdvd_30deg_nuenergyreco_pandora_nue.WireLabel:  "tpcrawdecoder:gauss"
+dunefdvd_30deg_nuenergyreco_pandora_nue.HitLabel: "gaushit"
 
 dunefdvd_30deg_nuenergyreco_pandora_nc:   @local::dunefd_nuenergyreco_pandora_nc
 dunefdvd_30deg_nuenergyreco_pandora_nc.NeutrinoEnergyRecoAlg: @local::dunevd10kt_30deg_neutrinoenergyrecoalg
-dunefdvd_30deg_nuenergyreco_pandora_nc.WireLabel:  "tpcrawdecoder:gauss"
+dunefdvd_30deg_nuenergyreco_pandora_nc.HitLabel: "gaushit"
 
 dunefdvd_nuenergyreco_pmtracktc:   @local::dunefdvd_nuenergyreco_pandora_nc
 dunefdvd_nuenergyreco_pmtracktc.HitLabel:              "linecluster"
