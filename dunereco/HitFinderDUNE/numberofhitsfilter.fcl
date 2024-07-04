@@ -8,6 +8,10 @@ standard_numberofhitsfilter:
  HitModule:   "gaushit"
  HitLimit:    40000
  ScaleThresholdForReadoutWindow: true
+ Verbose: false
 }
+
+pdhd_nhitsfilter: @local::standard_numberofhitsfilter
+pdhd_nhitsfilter.HitLimit: 20000
 
 END_PROLOG
