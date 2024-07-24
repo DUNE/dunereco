@@ -58,13 +58,14 @@ services:
   # - Geometry service helper:
   #   used internally by Geometry to set up the channel mappings.
   #   Needed by Geometry service; from larcore/Geometry/geometry_dune.fcl .
-  ExptGeoHelperInterface: @local::dune_geometry_helper
+  WireReadout: @local::dune_wire_readout
   #
   # - Geant4 simulation parameters for liquid argon
   #   Needed by PointResTree module; from larsim/Simulation/services_dune.fcl .
   LArG4Parameters:        @local::dunefd_largeantparameters
         @table::dunefd_simulation_services_legacy
 
+AuxDetGeometry: @local::dune10kt_1x2x6_auxdet_geo
   Geometry:		  @local::dune10kt_1x2x6_geo
 } # services
 

@@ -136,7 +136,7 @@ namespace cnn
           geo::WireID wireid = cluster[iHit]->WireID();
 
           for (size_t iwireptr = 0; iwireptr < wireptr.size(); ++iwireptr){
-              std::vector<geo::WireID> wireids = geom->ChannelToWire(wireptr[iwireptr]->Channel());
+              std::vector<geo::WireID> wireids = wireReadout->ChannelToWire(wireptr[iwireptr]->Channel());
               bool goodWID = false; 
               for (auto const & wid:wireids){ 
                   if (wid.Plane == wireid.Plane &&   
@@ -470,11 +470,11 @@ namespace cnn
           if (inTPC){
               for (int iplane = 0; iplane<3; iplane++){
                   int rawtpc = (int) (geom->FindTPCAtPosition(regvtx_loc)).TPC;
-                  geo::PlaneGeo const& planegeo_temp = geom->Plane(geo::PlaneID(0, 0, iplane));
+                  geo::PlaneGeo const& planegeo_temp = wireReadout->Plane(geo::PlaneID(0, 0, iplane));
                   geo::PlaneID const planeID(rawcrys, rawtpc, iplane);
                   geo::WireID w1;
                   try { 
-                      w1 = geom->NearestWireID(regvtx_loc, planeID);
+                    w1 = wireReadout->Plane(planeID).NearestWireID(regvtx_loc);
                   }
                   catch (geo::InvalidWireError const& e){
                       if (!e.hasSuggestedWire()) throw;
@@ -522,16 +522,15 @@ namespace cnn
   double RegPixelMapProducer::GetGlobalWire(const geo::WireID& wireID){
     // Get Global Wire Coordinate for RegCNN
     double globalWire = -9999;
-    unsigned int nwires = geom->Nwires(geo::PlaneID(wireID.Cryostat, 0, wireID.Plane));
+    unsigned int nwires = wireReadout->Nwires(geo::PlaneID(wireID.Cryostat, 0, wireID.Plane));
     // Induction
-    if (geom->SignalType(wireID) == geo::kInduction) {
-      auto const WireCentre = geom->WireIDToWireGeo(wireID).GetCenter();
-      geo::PlaneID p1;
+    if (wireReadout->SignalType(wireID) == geo::kInduction) {
+      auto const WireCentre = wireReadout->Wire(wireID).GetCenter();
       int temp_tpc = 0;
       if (wireID.TPC % 2 == 0) { temp_tpc = 0; }
       else { temp_tpc = 1;  }
-      p1 = geo::PlaneID(wireID.Cryostat, temp_tpc, wireID.Plane);
-      globalWire = geom->WireCoordinate(WireCentre, p1);
+      geo::PlaneID const p1(wireID.Cryostat, temp_tpc, wireID.Plane);
+      globalWire = wireReadout->Plane(p1).WireCoordinate(WireCentre);
     }
     // Collection
     else {

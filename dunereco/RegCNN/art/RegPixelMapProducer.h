@@ -37,7 +37,8 @@ namespace detinfo {
   class DetectorPropertiesData;
 }
 
-//#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "larcore/Geometry/WireReadout.h"
 #include "larcore/Geometry/Geometry.h"
 
 namespace cnn
@@ -134,6 +135,7 @@ namespace cnn
     std::vector<float> trms_max_each_wire;
 
     art::ServiceHandle<geo::Geometry> geom;
+    geo::WireReadoutGeom const* wireReadout = &art::ServiceHandle<geo::WireReadout>()->Get();
   };
 
 }

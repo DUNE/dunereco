@@ -18,6 +18,7 @@
 
 #include "lardataobj/RawData/RawDigit.h"
 #include "larcorealg/Geometry/GeometryCore.h"
+#include "larcore/Geometry/WireReadout.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RawData/raw.h"
 #include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
@@ -62,7 +63,8 @@ public:
 
 private:
   // Declare member data here.
-  const geo::GeometryCore* fGeom;
+  const geo::GeometryCore* fGeom = art::ServiceHandle<geo::Geometry>().get();
+  const geo::WireReadoutGeom* fWireReadoutGeom = &art::ServiceHandle<geo::WireReadout>()->Get();
 
   std::set<raw::ChannelID_t> fBadChannels; 
   std::set<raw::ChannelID_t> fNoisyChannels;
@@ -109,17 +111,17 @@ void Infill::InfillChannels::produce(art::Event& e)
   // Get infilled adc ROP by ROP
   for (const readout::ROPID& currentRop : fActiveRops) {
     maskedRopTensor = torch::zeros(
-      {1, 1 ,6000, fGeom->Nchannels(currentRop)}, torch::dtype(torch::kFloat32).device(torch::kCPU).requires_grad(false)
+      {1, 1 ,6000, fWireReadoutGeom->Nchannels(currentRop)}, torch::dtype(torch::kFloat32).device(torch::kCPU).requires_grad(false)
     );
     auto maskedRopTensorAccess = maskedRopTensor.accessor<float, 4>();
 
-    const raw::ChannelID_t firstCh = fGeom->FirstChannelInROP(currentRop);
+    const raw::ChannelID_t firstCh = fWireReadoutGeom->FirstChannelInROP(currentRop);
 
     // Fill ROP image
     for (const raw::RawDigit& dig : *digs) {
       if (fDeadChannels.count(dig.Channel())) continue;
 
-      readout::ROPID rop = fGeom->ChannelToROP(dig.Channel());
+      readout::ROPID rop = fWireReadoutGeom->ChannelToROP(dig.Channel());
       if (rop != currentRop) continue;
 
       raw::RawDigit::ADCvector_t adcs(dig.Samples());
@@ -135,11 +137,11 @@ void Infill::InfillChannels::produce(art::Event& e)
     // Do the Infill
     std::vector<torch::jit::IValue> inputs;
     inputs.push_back(maskedRopTensor);
-    if (fGeom->SignalType(currentRop) == geo::kInduction) {
+    if (fWireReadoutGeom->SignalType(currentRop) == geo::kInduction) {
       torch::NoGradGuard no_grad_guard; 
       infilledRopTensor = fInductionModule.forward(inputs).toTensor().detach();
     }
-    else if (fGeom->SignalType(currentRop) == geo::kCollection) {
+    else if (fWireReadoutGeom->SignalType(currentRop) == geo::kCollection) {
       torch::NoGradGuard no_grad_guard; 
       infilledRopTensor = fCollectionModule.forward(inputs).toTensor().detach();
     }
@@ -147,7 +149,7 @@ void Infill::InfillChannels::produce(art::Event& e)
     // Store infilled ADC of dead channels
     auto infilledRopTensorAccess = infilledRopTensor.accessor<float, 4>();
     for (const raw::ChannelID_t ch : fDeadChannels) {
-      if (fGeom->ChannelToROP(ch) == currentRop) {
+      if (fWireReadoutGeom->ChannelToROP(ch) == currentRop) {
         for (unsigned int tick = 0; tick < detProp.NumberTimeSamples(); ++tick) {
           infilledAdcs[ch][tick] = (short)std::round(infilledRopTensorAccess[0][0][tick][ch - firstCh]);
         }
@@ -179,8 +181,6 @@ void Infill::InfillChannels::produce(art::Event& e)
 
 void Infill::InfillChannels::beginJob()
 {
-  fGeom = art::ServiceHandle<geo::Geometry>()->provider();
-
   // Dead channels = bad channels + noisy channels
   fBadChannels = art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider().BadChannels();
   fNoisyChannels = art::ServiceHandle<lariov::ChannelStatusService const>()->GetProvider().NoisyChannels();
@@ -191,27 +191,27 @@ void Infill::InfillChannels::beginJob()
   );
 
   // Get active ROPs (not facing a wall and has dead channels)
-  for (auto const& ropID : fGeom->Iterate<readout::ROPID>()) { // Iterate over ROPs in the detector
+  for (auto const& ropID : fWireReadoutGeom->Iterate<readout::ROPID>()) { // Iterate over ROPs in the detector
     bool hasDeadCh = false;
     for (raw::ChannelID_t ch : fDeadChannels) {
-      if (fGeom->ChannelToROP(ch) == ropID) {
+      if (fWireReadoutGeom->ChannelToROP(ch) == ropID) {
         hasDeadCh = true;
         break;
       }
     }
     if (!hasDeadCh) continue; // Don't need to infill ROPs without dead channels
 
-    for (const geo::TPCID tpcId : fGeom->ROPtoTPCs(ropID)) {
+    for (const geo::TPCID tpcId : fWireReadoutGeom->ROPtoTPCs(ropID)) {
       const geo::TPCGeo tpc = fGeom->TPC(tpcId);
       const TGeoVolume* tpcVol = tpc.ActiveVolume();
       
       if (tpcVol->Capacity() > 1000000) { // At least one of the ROP's TPCIDs needs to be active
         // Networks expect a fixed image size
-        if(fGeom->SignalType(ropID) == geo::kInduction && fGeom->Nchannels(ropID) > 800) {
+        if(fWireReadoutGeom->SignalType(ropID) == geo::kInduction && fWireReadoutGeom->Nchannels(ropID) > 800) {
 	  std::cerr << "InfillChannels_module.cc: Induction view network cannot handle more then 800 channels\n";
 	  std::abort();
         }
-        if(fGeom->SignalType(ropID) == geo::kCollection && fGeom->Nchannels(ropID) > 480) {
+        if(fWireReadoutGeom->SignalType(ropID) == geo::kCollection && fWireReadoutGeom->Nchannels(ropID) > 480) {
 	  std::cerr << "InfillChannels_module.cc: Collection view network cannot handle more then 400 channels\n";
 	  std::abort();
         }
@@ -229,12 +229,12 @@ void Infill::InfillChannels::beginJob()
       ++chGap;
       continue;
     }
-    if (fGeom->ChannelToROP(ch - chGap) == fGeom->ChannelToROP(ch + 1)) {
-      if (fGeom->SignalType(ch) == geo::kCollection && chGap > 3) {
+    if (fWireReadoutGeom->ChannelToROP(ch - chGap) == fWireReadoutGeom->ChannelToROP(ch + 1)) {
+      if (fWireReadoutGeom->SignalType(ch) == geo::kCollection && chGap > 3) {
         std::cerr << "There are dead channel gap larger than what was seen in training --- ";
         std::cerr << "**Consider retraining collection plane infill network**" << std::endl;
       }
-      else if (fGeom->SignalType(ch) == geo::kInduction && chGap > 2) {
+      else if (fWireReadoutGeom->SignalType(ch) == geo::kInduction && chGap > 2) {
         std::cerr << "There are dead channel gap larger than what was seen in training --- ";
         std::cerr << "**Consider retraining induction plane infill network**" << std::endl;
       }

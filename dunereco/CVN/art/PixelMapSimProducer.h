@@ -19,7 +19,7 @@
 #include "dunereco/CVN/func/Boundary.h"
 #include "lardataobj/Simulation/SimChannel.h"
 
-#include "larcorealg/Geometry/GeometryCore.h"
+#include "larcorealg/Geometry/fwd.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 
@@ -82,6 +82,7 @@ namespace cvn
     unsigned int fTotHits;  ///<How many ROIs above threshold?
 
     geo::GeometryCore const* fGeometry;
+    geo::WireReadoutGeom const* fWireReadoutGeom;
     std::vector<double> fVDPlane0;
     std::vector<double> fVDPlane1;
     double fSpacing0, fSpacing1;

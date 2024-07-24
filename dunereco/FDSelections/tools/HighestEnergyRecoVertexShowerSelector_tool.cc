@@ -3,6 +3,7 @@
 #include "dunereco/AnaUtils/DUNEAnaEventUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaPFParticleUtils.h"
 
+#include "larcore/Geometry/WireReadout.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
@@ -28,6 +29,7 @@ art::Ptr<recob::Shower> FDSelectionTools::HighestEnergyRecoVertexShowerSelector:
   std::vector<art::Ptr<recob::PFParticle>> nuChildren = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(nuPFP, evt, fPFParticleModuleLabel);
 
   art::ServiceHandle<geo::Geometry> geom;
+  auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
   auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(evt);
   auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataForJob(clockData);
   double highestEnergy = -999.0;
@@ -43,14 +45,14 @@ art::Ptr<recob::Shower> FDSelectionTools::HighestEnergyRecoVertexShowerSelector:
 
     if (childShower->Energy().size() > 0)
     {
-        for (unsigned int plane = 0; plane < geom->MaxPlanes(); ++plane)
+        for (unsigned int plane = 0; plane < wireReadout.MaxPlanes(); ++plane)
           showerEnergy[plane] = childShower->Energy()[plane];
     }
     else 
     {
       std::vector<art::Ptr<recob::Hit>> childHits = dune_ana::DUNEAnaPFParticleUtils::GetHits(childPFP, evt, fPFParticleModuleLabel);
 
-      for (unsigned int plane = 0; plane < geom->MaxPlanes(); ++plane)
+      for (unsigned int plane = 0; plane < wireReadout.MaxPlanes(); ++plane)
         showerEnergy[plane] = fShowerEnergyAlg.ShowerEnergy(clockData, detProp, childHits, plane);
     }
 
