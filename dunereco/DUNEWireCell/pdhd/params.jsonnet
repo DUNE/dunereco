@@ -157,7 +157,7 @@ base {
         wires: "protodunehd-wires-larsoft-v1.json.bz2",
 
         fields: [
-            "dune-garfield-1d565-col-v-view.json.bz2",
+            "np04hd-garfield-6paths.json.bz2",
             "dune-garfield-1d565.json.bz2",
             "dune-garfield-1d565.json.bz2",
             "dune-garfield-1d565.json.bz2",
