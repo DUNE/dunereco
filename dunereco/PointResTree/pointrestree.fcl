@@ -65,7 +65,7 @@ services:
   LArG4Parameters:        @local::dunefd_largeantparameters
   @table::dunefd_simulation_services
 
-  Geometry:		  @local::dune10kt_1x2x6_geo
+  Geometry:		  @local::dune10kt_1x2x6_v6_refactored_geo
 } # services
 
 services.BackTrackerService.BackTracker.SimChannelModuleLabel: "elecDrift"
@@ -118,7 +118,7 @@ physics:
       HitsModuleLabel:	   "hitfd"
       #TrackModuleLabel:	   ["pandoraShower", "pandoraTrack"]
       TrackModuleLabel:	   ["pmtracktc"]
-      OpFlashLabel:        "opslicerDEF35QENonRefl2PE"
+      OpFlashLabel:        "opflash"
 	  HitToSpacePointLabel:"hitfd"
       SpacePointModuleLabel:    "spsolve"
       CollectTracks:        true
