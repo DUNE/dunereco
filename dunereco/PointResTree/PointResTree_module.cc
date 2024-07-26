@@ -517,7 +517,7 @@ void dune::PointResTree::analyze(art::Event const &event) {
         continue;
       } else
         charge_Z += hit->Integral();
-      charge_Z += hit->Integral();
+      //charge_Z += hit->Integral();
     }
   } // end loop through hits
 
