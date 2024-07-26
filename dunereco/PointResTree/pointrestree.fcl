@@ -112,7 +112,7 @@ physics:
       # the names you see here with the reconfigure method in
       # PointResTree.cxx. You will want to add/remove/rename the
       # example parameters below to suit your task.
-      GeneratorLabel:      "NuEScatter"
+      GeneratorLabel:      "marley"
       SimulationLabel:	   "largeant" 
       SimChannelModuleLabel: "elecDrift"
       HitsModuleLabel:	   "hitfd"
