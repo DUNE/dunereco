@@ -5,6 +5,7 @@
  * Save all information in a tree.
  * @version 2.1
  * @date 2021-11-29
+ * Tree is meant for use in supernova burst pointing resolution studies
  * Specifically, this module does the following:
  *      - Retrieve relevant MC information for the neutrino and the electron.
  *      - Resolve track directional ambiguity via daughter flipping.
