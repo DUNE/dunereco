@@ -1,7 +1,7 @@
-# A script to run an analysis module: PointResTree. You may want to
-# compare this script with ${LARSIM_DIR}/job/prodsingle.fcl; in
-# particular, in this script there are no output streams because the
-# module doesn't write any events, just histograms or n-tuples.
+# A job configuration fcl to run an analyzer module: PointResTree.
+# Compare with ${LARSIM_DIR}/job/prodsingle.fcl; in
+# particular, here there are no output streams because the
+# module doesn't produce any data products, it just makes histograms and n-tuples.
 
 # See <https://cdcvs.fnal.gov/redmine/projects/larsoftsvn/wiki/Running_Jobs> for 
 # more information on the structure of .fcl files. 
@@ -69,9 +69,9 @@ services:
 } # services
 
 services.BackTrackerService.BackTracker.SimChannelModuleLabel: "elecDrift"
-# The 'source' section tells the script to expect an input file with art::Event records.
+# The 'source' section tells the job to expect an input file with art::Event records.
 # Note that the name of the input file is not included here. You specify that on the
-# command line when you run this script; e.g.,
+# command line when you run art with this job fcl; e.g.,
 #    lar -c pointrestree.fcl -s myinput.root
 # The file "myinput.root" is assumed to have been created by a previous LArSoft job.
 
@@ -84,7 +84,7 @@ source:
   maxEvents:  -1 
 
   # I've commented this out, but if you really want to include the name of
-  # an input file in this script, here's how you do it.
+  # an input file in this job configuration, here's how you do it.
   # fileNames: ["myinput.root"]
 }
 
