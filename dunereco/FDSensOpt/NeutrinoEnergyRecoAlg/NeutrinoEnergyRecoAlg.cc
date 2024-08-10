@@ -323,11 +323,12 @@ double NeutrinoEnergyRecoAlg::CalculateUncorrectedMuonMomentumByRange(const art:
 
 double NeutrinoEnergyRecoAlg::CalculateUncorrectedMuonMomentumByMCS(const art::Ptr<recob::Track> &pMuonTrack)
 {
+    const bool kCheckValidPoints = true; // There is no sense setting it to false.
     trkf::TrackMomentumCalculator TrackMomCalc(fMinTrackLengthMCS,fMaxTrackLengthMCS, fSegmentSizeMCS, fMCSAngleMethod, fNStepsChi2);
     if (fMCSMethod == "Chi2")
-        return (TrackMomCalc.GetMomentumMultiScatterChi2(pMuonTrack, true, fMaxMomentumMCS, fMinResolutionMCSChi2, fMaxResolutionMCSChi2));
+        return (TrackMomCalc.GetMomentumMultiScatterChi2(pMuonTrack, kCheckValidPoints, fMaxMomentumMCS, fMinResolutionMCSChi2, fMaxResolutionMCSChi2));
     else if (fMCSMethod == "LLHD")
-        return (TrackMomCalc.GetMomentumMultiScatterLLHD(pMuonTrack, true, fMaxMomentumMCS, fMinResolutionMCSLLHD, fMaxResolutionMCSLLHD));
+        return (TrackMomCalc.GetMomentumMultiScatterLLHD(pMuonTrack, kCheckValidPoints, fMaxMomentumMCS, fMinResolutionMCSLLHD, fMaxResolutionMCSLLHD));
     else
     {
         mf::LogWarning("NeutrinoEnergyRecoAlg") << " Method " << fMCSMethod << " not found. Use `Chi2` or `LLHD` for MCS. Using `Chi2` for now." << std::endl;
