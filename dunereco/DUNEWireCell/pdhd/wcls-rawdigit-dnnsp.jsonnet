@@ -115,8 +115,8 @@ local wcls_output = {
       // anode: wc.tn(tools.anode),
       anode: wc.tn(mega_anode),
       digitize: false,  // true means save as RawDigit, else recob::Wire
-      frame_tags: ['gauss', 'wiener'],
-      frame_scale: [0.001, 0.001],
+      frame_tags: ['gauss', 'wiener','dnnsp'],
+      frame_scale: [0.001, 0.001,0.001],
       //nticks: params.daq.nticks,
       // nticks: nsample,
       chanmaskmaps: [],
@@ -168,7 +168,28 @@ local chndb = [{
 // ];
 // local nf_pipes = [g.pipeline([obnf[n]], name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
+local sp_override = { // assume all tages sets in base sp.jsonnet
+    sparse: sigoutform == 'sparse',
+    // wiener_tag: "",
+    // gauss_tag: "",
+    use_roi_refinement: true,
+    use_roi_debug_mode: true,
+    troi_col_th_factor: 5,
+    //tight_lf_tag: "",
+    // loose_lf_tag: "",
+    //cleanup_roi_tag: "",
+    break_roi_loop1_tag: "",
+    break_roi_loop2_tag: "",
+    shrink_roi_tag: "",
+    extend_roi_tag: "",
+    //m_decon_charge_tag: "",
+    use_multi_plane_protection: true,
+    mp_tick_resolution: 10,
+};
+
+
+//local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
+local sp = sp_maker(params, tools, sp_override);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
 local chsel_pipes = [
@@ -183,6 +204,85 @@ local chsel_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
+local hio_orig = [g.pnode({
+      type: 'HDF5FrameTap',
+      name: 'hio_orig%d' % n,
+      data: {
+        anode: wc.tn(tools.anodes[n]),
+        trace_tags: ['orig%d'%n],
+        filename: "g4-rec-%d.h5" % n,
+        chunk: [0, 0], // ncol, nrow
+        gzip: 2,
+        high_throughput: true,
+      },
+    }, nin=1, nout=1),
+    for n in std.range(0, std.length(tools.anodes) - 1)
+    ];
+
+local hio_sp = [g.pnode({
+      type: 'HDF5FrameTap',
+      name: 'hio_sp%d' % n,
+      data: {
+        anode: wc.tn(tools.anodes[n]),
+        trace_tags: ['loose_lf%d' % n
+        , 'tight_lf%d' % n
+        , 'cleanup_roi%d' % n
+        , 'break_roi_1st%d' % n
+        , 'break_roi_2nd%d' % n
+        , 'shrink_roi%d' % n
+        , 'extend_roi%d' % n
+        , 'mp3_roi%d' % n
+        , 'mp2_roi%d' % n
+        , 'decon_charge%d' % n
+        , 'gauss%d' % n],
+        filename: "g4-rec-%d.h5" % n,
+        chunk: [0, 0], // ncol, nrow
+        gzip: 2,
+        high_throughput: true,
+      },
+    }, nin=1, nout=1),
+    for n in std.range(0, std.length(tools.anodes) - 1)
+    ];
+
+
+local hio_dnn = [g.pnode({
+      type: 'HDF5FrameTap',
+      name: 'hio_dnn%d' % n,
+      data: {
+        anode: wc.tn(tools.anodes[n]),
+        // trace_tags: ['dnn_sp%d' % n],
+        trace_tags: ['dnnsp%d' % n],
+        filename: "g4-rec-%d.h5" % n,
+        chunk: [0, 0], // ncol, nrow
+        gzip: 2,
+        high_throughput: true,
+      },
+    }, nin=1, nout=1),
+    for n in std.range(0, std.length(tools.anodes) - 1)
+    ];
+
+
+local dnnroi = import 'pgrapher/experiment/pdhd/dnnroi.jsonnet';
+local ts = {
+    type: "TorchService",
+    name: "dnnroi",
+    data: {
+        // model: "ts-model/unet-l23-cosmic500-e50.ts",
+        // model: "ts-model/CP49.ts",
+        //model: "ts-model/unet-cosmic390-newwc-depofluxsplat-pdhd.ts",
+       // model: "ts-model/unet-cosmic300-depofluxsplat-pdhd.ts",
+       model : "ts-model/cosmic390andshower200.ts",
+        device: "cpu", // "gpucpu",
+        concurrency: 1,
+    },
+};
+
+
+
+
+
+
+
 local magoutput = 'protodunehd-data-check.root';
 local magnify = import 'pgrapher/experiment/pdhd/magnify-sinks.jsonnet';
 local magio = magnify(tools, magoutput);
@@ -194,6 +294,11 @@ local nfsp_pipes = [
                // nf_pipes[n],
                // magio.raw_pipe[n],
                sp_pipes[n],
+
+             // hio_sp[n],
+              dnnroi(tools.anodes[n], ts, output_scale=1.0),
+             // hio_dnn[n],
+
                // magio.decon_pipe[n],
                // magio.threshold_pipe[n],
                // magio.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
@@ -222,6 +327,7 @@ local retagger = g.pnode({
         'gauss\\d': 'gauss',
         'wiener\\d': 'wiener',
         'threshold\\d': 'threshold',
+	'dnnsp\\d': 'dnnsp',
       },
     }],
   },
