@@ -287,6 +287,19 @@ local magoutput = 'protodunehd-data-check.root';
 local magnify = import 'pgrapher/experiment/pdhd/magnify-sinks.jsonnet';
 local magio = magnify(tools, magoutput);
 
+local dnn_trace_mergers = [ g.pnode({
+  type: 'Retagger',
+  name: 'dnnmerger%d' %n,
+  data: {
+    tag_rules: [{
+      // frame: {'.*': 'dnnsp',},
+      // merge: {'dnnsp\\d': 'dnnsp%d' %n,},
+      merge: {'dnnsp\\d[uvw]' : 'dnnsp%d' %n,},
+    }],
+  },
+}, nin=1, nout=1)
+for n in std.range(0, std.length(tools.anodes) - 1) ];
+
 local nfsp_pipes = [
   g.pipeline([
                chsel_pipes[n],
@@ -295,9 +308,10 @@ local nfsp_pipes = [
                // magio.raw_pipe[n],
                sp_pipes[n],
 
-             // hio_sp[n],
-              dnnroi(tools.anodes[n], ts, output_scale=1.0),
-             // hio_dnn[n],
+               // hio_sp[n],
+               dnnroi(tools.anodes[n], ts, output_scale=1.0),
+               dnn_trace_mergers[n],
+               // hio_dnn[n],
 
                // magio.decon_pipe[n],
                // magio.threshold_pipe[n],
