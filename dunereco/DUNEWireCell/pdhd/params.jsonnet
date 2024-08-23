@@ -118,6 +118,11 @@ base {
 
     elecs: [
       super.elec {
+        // The FE amplifier gain in units of Voltage/Charge.
+        gain : 14.0*wc.mV/wc.fC,
+
+        // The shaping (aka peaking) time of the amplifier shaper.
+        shaping : 2.2*wc.us,
       }
       for n in std.range(0,3)
     ],
@@ -163,10 +168,10 @@ base {
             "dune-garfield-1d565.json.bz2",
         ],
 
-        // fixme: this is for microboone and probably bogus for
-        // protodune because (at least) the span of MB wire lengths do
-        // not cover pdsp's.
-        noise: "protodune-noise-spectra-v1.json.bz2",
+        // Noise models for different FE amplifier gains
+        // Note: set gain value accordingly in the field of elecs
+        noise: "protodunehd-noise-spectra-14mVfC-v1.json.bz2",
+        // noise: "protodunehd-noise-spectra-7d8mVfC-v1.json.bz2",
 
 
         chresp: null,
