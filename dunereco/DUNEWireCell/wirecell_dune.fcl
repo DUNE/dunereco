@@ -1799,7 +1799,7 @@ protodunehd_nfspimg : {
 
 
 
-dune10kt_hd_sim_nfsp : {
+dune10kt_horizdrift_sim_nfsp : {
     module_type : WireCellToolkit
     wcls_main: {
         tool_type: WCLS
