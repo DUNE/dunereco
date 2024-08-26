@@ -58,6 +58,8 @@ NeutrinoEnergyRecoAlg::NeutrinoEnergyRecoAlg(fhicl::ParameterSet const& pset, co
     fMaxResolutionMCSChi2(pset.get<double>("MaxResolutionMCSChi2")),
     fMinResolutionMCSLLHD(pset.get<double>("MinResolutionMCSLLHD")),
     fMaxResolutionMCSLLHD(pset.get<double>("MaxResolutionMCSLLHD")),
+    fCheckValidScattered(pset.get<bool>("CheckValidScattered")),
+    fAngleCorrection(pset.get<double>("AngleCorrection")),
     fMCSAngleMethod(pset.get<int>("MCSAngleMethod")),
     fRecombFactor(pset.get<double>("RecombFactor")),
     fTrackLabel(trackLabel),
