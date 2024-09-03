@@ -1227,7 +1227,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
     hit_tpc[i]     = hitlist[i]->WireID().TPC;
     hit_peakT[i]   = hitlist[i]->PeakTime();
     hit_charge[i]  = hitlist[i]->Integral();
-    hit_summedADC[i] = hitlist[i]->SummedADC();
+    hit_summedADC[i] = hitlist[i]->ROISummedADC();
     hit_startT[i] = hitlist[i]->PeakTimeMinusRMS();
     hit_endT[i] = hitlist[i]->PeakTimePlusRMS();
 
