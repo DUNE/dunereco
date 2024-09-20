@@ -284,7 +284,7 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 	h.RMS=hitsUV[uv0]->RMS();
 	h.PeakAmplitude=hitsUV[uv0]->PeakAmplitude();
 	h.SigmaPeakAmplitude=hitsUV[uv0]->SigmaPeakAmplitude();
-	h.SummedADC=hitsUV[uv0]->SummedADC();
+	h.SummedADC=hitsUV[uv0]->ROISummedADC();
 	h.Integral=hitsUV[uv0]->Integral();
 	h.SigmaIntegral=hitsUV[uv0]->SigmaIntegral();
 	h.Multiplicity=hitsUV[uv0]->Multiplicity();
@@ -470,7 +470,8 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 		       InductionAll[uv0].RMS,
 		       InductionAll[uv0].PeakAmplitude,
 		       InductionAll[uv0].SigmaPeakAmplitude,
-		       InductionAll[uv0].SummedADC,
+		       InductionAll[uv0].SummedADC,//ROI
+		       InductionAll[uv0].SummedADC,//HIT TO BE FIXED
 		       InductionAll[uv0].Integral,
 		       InductionAll[uv0].SigmaIntegral,
 		       InductionAll[uv0].Multiplicity,
