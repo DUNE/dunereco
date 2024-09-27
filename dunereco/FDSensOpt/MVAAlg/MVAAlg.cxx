@@ -665,7 +665,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
         if (hit_shwkey[i]==ishw){
           //if (lastwire == -1) lastwire = hit_wire[i];
           //if (hit_wire[i]<lastwire) offset = 479;
-          offset = (hit_tpc[i]/4)*fGeom->Nwires(geo::PlaneID{0, 0, 2});
+          offset = (hit_tpc[i]/4)*fWireReadoutGeom->Nwires(geo::PlaneID{0, 0, 2});
           if (hit_wire[i]+offset<shwwire0){
             shwwire0 = hit_wire[i]+offset;
           }
@@ -832,7 +832,7 @@ void dunemva::MVAAlg::CalculateInputs( ){
         frshower+=hit_charge[i]*exp(hit_peakT[i]*0.5/taulife);
         shwwires[hit_wire[i]] = 1;
         ++totalshwhits;
-        offset = (hit_tpc[i]/4)*fGeom->Nwires(geo::PlaneID{0, 0, 2});
+        offset = (hit_tpc[i]/4)*fWireReadoutGeom->Nwires(geo::PlaneID{0, 0, 2});
         //if (lastwire ==-1) lastwire = hit_wire[i];
         //if (hit_wire[i]<lastwire) offset = 479;
         shwph[hit_wire[i]+offset-shwwire0] += hit_charge[i]*exp(hit_peakT[i]*0.5/taulife);
@@ -1205,7 +1205,7 @@ void dunemva::MVAAlg::PrepareEvent(const art::Event& evt){
   //charge from wires
   wirecharge = 0;
   for (size_t i = 0; i<wirelist.size(); ++i){
-    if (fGeom->SignalType(wirelist[i]->Channel()) == geo::kCollection){
+    if (fWireReadoutGeom->SignalType(wirelist[i]->Channel()) == geo::kCollection){
       const recob::Wire::RegionsOfInterest_t& signalROI = wirelist[i]->SignalROI();
       for(const auto& range : signalROI.get_ranges()){
         const std::vector<float>& signal = range.data();
