@@ -1,0 +1,51 @@
+BEGIN_PROLOG
+
+# Main BlipAlg settings
+dune_blipalg:
+{
+  HitProducer:          "hitfd"       #// input recob::Hits to use for blip reconstruction
+  TrkProducer:          "pandoraTrack"  #// input recob::Tracks to use for blip reconstruction
+  GeantProducer:        "largeant"      #// input sim::MCParticles (getting true particle info)
+  SimEDepProducer:      "IonAndScint"   #// input sim::SimEnergyDeposits (getting energy/electrons deposited)
+  SimChanProducer:      "tpcrawdecoder:simpleSC"      #// label for sim::SimChannels (getting drifted charge; optional)
+  MaxHitTrkLength:      5.0             #// hits in trks > this length will be vetoed [cm]
+  DoHitFiltering:       false           #// filter hits based on amp, width, RMS
+  MaxWiresInCluster:    10              #// max allowable wires in a cluster
+  MaxClusterSpan:       50              #// max allowable time-ticks of a cluster
+  ClustMatchMinOverlap: 0.5             #// minimum fractional overlap to be eligible for matching
+  ClustMatchMaxTicks:   2.0             #// max extent for matching start/end time of clusters [ticks]
+  ClustMatchSigmaFact:  0.8             #// max extent for matching charge-weighted time [xRMS]
+  ClustMatchMinQRatio:  0.25            #// min allowed charge ratio of two clusters to be matched
+  ClustMatchQDiffLimit: 10e3            #// if charge-diff >, clusters are subject to QRatio cut above [e-]
+  MinMatchedPlanes:     2               #// minimum number of planes matched for 3D blip
+  PickyBlips:           false           #// require 3 planes that all intersect at ~same point
+  ApplyTrkCylinderCut:  false           #// reject blips in track cone-cylinder regions
+  CylinderRadius:       15.0            #// 3D cylinder cut radius [cm]
+  CaloPlane:            2               #// plane used for calorimetry (2=collection)
+  CalodEdx:             2.8             #// assumed dE/dx for MeV-scale recombination corrections
+  LifetimeCorrection:   false           #// correct blips for lifetime (assumes T0 = 0)
+  SCECorrection:        false           #// correct blips for space charge (requires known XYZ)
+  CaloAlg:             @local::dune10kt_calorimetryalgmc
+  
+  VetoBadChannels:      false            #// don't cluster hits from "bad" channels
+  BadChanProducer:      "nfspl1:badchannels" #// label for vector of bad channel IDs from signal processing
+  #BadChanFile:          "blipreco_badchannels.txt"
+  MinDeadWireGap:       0               #// min wire gap size separating cluster from a dead region
+
+}
+
+# ===============================================
+# Main BlipAna settings (TTree + diagnostic hists)
+dune_blipana:
+{
+  module_type:        "BlipAna"
+  BlipAlg:            @local::dune_blipalg
+  SaveTruthInfo:      true
+  SaveTrkInfo:        true
+  SaveHitInfo:        false
+  SaveClustInfo:      true
+  DebugMode:          false
+}
+
+
+END_PROLOG

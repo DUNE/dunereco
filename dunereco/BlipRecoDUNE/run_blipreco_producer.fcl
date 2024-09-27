@@ -1,0 +1,80 @@
+#include "geometry_dune.fcl"
+#include "messageservice.fcl"
+#include "services_dune.fcl"
+#include "calorimetry_dune10kt.fcl"
+#include "blipreco_configs.fcl"
+
+process_name: BlipReco
+
+services:
+{
+  TFileService:           { fileName: "BlipRecoProducer_hist.root" }
+  TimeTracker:            {}
+  message:                @local::standard_info
+  ExptGeoHelperInterface: @local::dune_geometry_helper
+  LArG4Parameters:        @local::dunefd_largeantparameters
+  @table::dunefd_simulation_services
+
+  Geometry:		  @local::dune10kt_1x2x6_geo
+} # services
+
+# Enable SCE service; corrections to blip calorimetry enabled by 
+# switch in BlipRecoAlg ("SCECorrection", turned off by default)
+services.SpaceCharge.EnableCorrSCE:       true
+services.SpaceCharge.EnableCalEfieldSCE:  true
+services.SpaceCharge.EnableCalSpatialSCE: true
+
+# Suppress common warning messages
+services.message.destinations.STDCOUT: {
+  categories: {
+    SIOVChannelStatusProvider: { limit: 0 reportEvery: 0 }
+    DetPedestalRetrievalAlg: { limit: 0 reportEvery: 0 }
+    BackTrackerService: { limit: 0 reportEvery: 0 }
+  }
+  threshold: "WARNING"
+  type: "cout"
+}
+
+# Source is an art-ROOT file
+source: {
+  module_type: RootInput
+}
+
+# Define and schedule filter/producer/analyzers
+physics:
+{
+
+  producers: {
+    blipreco: {
+      module_type: "BlipRecoProducer"
+      BlipAlg:     @local::dune_blipalg
+    }
+  }
+  
+  analyzers:{
+    blipana:          @local::dune_blipana
+  }
+  
+  reco:           [ blipreco ]
+  #ana:            [ blipana ]
+  trigger_paths:  [ reco ] 
+  stream1:        [ out1 ] 
+  end_paths:      [ stream1 ]
+
+} # physics
+
+
+
+outputs:
+{
+  out1:
+  {
+    module_type: RootOutput
+    fileName:    "%ifb_blipreco.root"
+    dataTier:    "reconstructed"
+    fastCloning: false
+    compressionLevel: 1
+    #SelectEvents: [reco]
+  }
+}
+
