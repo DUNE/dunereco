@@ -5,6 +5,7 @@
  * Save all information in a tree.
  * @version 2.1
  * @date 2021-11-29
+ * Tree is meant for use in supernova burst pointing resolution studies
  * Specifically, this module does the following:
  *      - Retrieve relevant MC information for the neutrino and the electron.
  *      - Resolve track directional ambiguity via daughter flipping.
@@ -518,7 +519,7 @@ void dune::PointResTree::analyze(art::Event const &event) {
         continue;
       } else
         charge_Z += hit->Integral();
-      charge_Z += hit->Integral();
+      //charge_Z += hit->Integral();
     }
   } // end loop through hits
 
@@ -599,7 +600,7 @@ void dune::PointResTree::writeMCTruths(art::Event const &event) {
         }
         nu_pdg = part.PdgCode();
         truth_nu_dir.SetXYZ(part.Px(), part.Py(), part.Pz());
-        truth_nu_dir.SetMag(1.0);
+        //truth_nu_dir.SetMag(1.0);
         truth_nu_en = part.E() * 1000;
         wrote_nu = kTRUE;
         continue;
@@ -610,7 +611,7 @@ void dune::PointResTree::writeMCTruths(art::Event const &event) {
           std::cout << "WARNING: More than one electron is found" << std::endl;
         }
         truth_e_dir.SetXYZ(part.Px(), part.Py(), part.Pz());
-        truth_e_dir.SetMag(1);
+        //truth_e_dir.SetMag(1);
         truth_e_en = (part.E() - part.Mass()) * 1000;
         truth_e_position = part.Position().Vect();
         wrote_e = kTRUE;

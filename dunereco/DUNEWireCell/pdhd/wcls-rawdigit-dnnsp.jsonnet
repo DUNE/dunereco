@@ -34,7 +34,12 @@ local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
 
 local data_params = import 'pgrapher/experiment/pdhd/params.jsonnet';
 local simu_params = import 'pgrapher/experiment/pdhd/simparams.jsonnet';
-local params = if reality == 'data' then data_params else simu_params;
+local base = if reality == 'data' then data_params else simu_params;
+local params = base {
+    daq: super.daq {
+      tick: 1.0/std.extVar('clock_speed') * wc.us,
+    },
+};
 
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local tools = tools_maker(params);
@@ -57,13 +62,14 @@ local sp_maker = import 'pgrapher/experiment/pdhd/sp.jsonnet';
 // must be the emtpy string.
 local wcls_input = {
   adc_digits: g.pnode({
-    type: 'wclsCookedFrameSource',
+    type: 'wclsRawFrameSource',
     name: '',
     data: {
       art_tag: raw_input_label,
       frame_tags: ['orig'],  // this is a WCT designator
       //nticks: params.daq.nticks,
       // nticks: nsample,
+      tick: params.daq.tick,
     },
   }, nin=0, nout=1),
 
@@ -109,8 +115,8 @@ local wcls_output = {
       // anode: wc.tn(tools.anode),
       anode: wc.tn(mega_anode),
       digitize: false,  // true means save as RawDigit, else recob::Wire
-      frame_tags: ['gauss', 'wiener'],
-      frame_scale: [0.001, 0.001],
+      frame_tags: ['gauss', 'wiener','dnnsp'],
+      frame_scale: [0.001, 0.001,0.001],
       //nticks: params.daq.nticks,
       // nticks: nsample,
       chanmaskmaps: [],
@@ -138,31 +144,52 @@ local chndb = [{
 
 // an empty omnibus noise filter
 // for suppressing bad channels stored in the noise db
-local obnf = [
-  g.pnode(
-    {
-      type: 'OmnibusNoiseFilter',
-      name: 'nf%d' % n,
-      data: {
+// local obnf = [
+//   g.pnode(
+//     {
+//       type: 'OmnibusNoiseFilter',
+//       name: 'nf%d' % n,
+//       data: {
+// 
+//         // This is the number of bins in various filters
+//         // nsamples: params.nf.nsamples,
+// 
+//         channel_filters: [],
+//         grouped_filters: [],
+//         channel_status_filters: [],
+//         noisedb: wc.tn(chndb[n]),
+//         // intraces: 'orig%d' % n,  // frame tag get all traces
+//         intraces: 'orig',  // frame tag get all traces
+//         outtraces: 'raw%d' % n,
+//       },
+//     }, uses=[chndb[n], tools.anodes[n]], nin=1, nout=1
+//   )
+//   for n in std.range(0, std.length(tools.anodes) - 1)
+// ];
+// local nf_pipes = [g.pipeline([obnf[n]], name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
-        // This is the number of bins in various filters
-        // nsamples: params.nf.nsamples,
+local sp_override = { // assume all tages sets in base sp.jsonnet
+    sparse: sigoutform == 'sparse',
+    // wiener_tag: "",
+    // gauss_tag: "",
+    use_roi_refinement: true,
+    use_roi_debug_mode: true,
+    troi_col_th_factor: 5,
+    //tight_lf_tag: "",
+    // loose_lf_tag: "",
+    //cleanup_roi_tag: "",
+    break_roi_loop1_tag: "",
+    break_roi_loop2_tag: "",
+    shrink_roi_tag: "",
+    extend_roi_tag: "",
+    //m_decon_charge_tag: "",
+    use_multi_plane_protection: true,
+    mp_tick_resolution: 10,
+};
 
-        channel_filters: [],
-        grouped_filters: [],
-        channel_status_filters: [],
-        noisedb: wc.tn(chndb[n]),
-        // intraces: 'orig%d' % n,  // frame tag get all traces
-        intraces: 'orig',  // frame tag get all traces
-        outtraces: 'raw%d' % n,
-      },
-    }, uses=[chndb[n], tools.anodes[n]], nin=1, nout=1
-  )
-  for n in std.range(0, std.length(tools.anodes) - 1)
-];
-local nf_pipes = [g.pipeline([obnf[n]], name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
+//local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
+local sp = sp_maker(params, tools, sp_override);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
 local chsel_pipes = [
@@ -177,17 +204,115 @@ local chsel_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
+local hio_orig = [g.pnode({
+      type: 'HDF5FrameTap',
+      name: 'hio_orig%d' % n,
+      data: {
+        anode: wc.tn(tools.anodes[n]),
+        trace_tags: ['orig%d'%n],
+        filename: "g4-rec-%d.h5" % n,
+        chunk: [0, 0], // ncol, nrow
+        gzip: 2,
+        high_throughput: true,
+      },
+    }, nin=1, nout=1),
+    for n in std.range(0, std.length(tools.anodes) - 1)
+    ];
+
+local hio_sp = [g.pnode({
+      type: 'HDF5FrameTap',
+      name: 'hio_sp%d' % n,
+      data: {
+        anode: wc.tn(tools.anodes[n]),
+        trace_tags: ['loose_lf%d' % n
+        , 'tight_lf%d' % n
+        , 'cleanup_roi%d' % n
+        , 'break_roi_1st%d' % n
+        , 'break_roi_2nd%d' % n
+        , 'shrink_roi%d' % n
+        , 'extend_roi%d' % n
+        , 'mp3_roi%d' % n
+        , 'mp2_roi%d' % n
+        , 'decon_charge%d' % n
+        , 'gauss%d' % n],
+        filename: "g4-rec-%d.h5" % n,
+        chunk: [0, 0], // ncol, nrow
+        gzip: 2,
+        high_throughput: true,
+      },
+    }, nin=1, nout=1),
+    for n in std.range(0, std.length(tools.anodes) - 1)
+    ];
+
+
+local hio_dnn = [g.pnode({
+      type: 'HDF5FrameTap',
+      name: 'hio_dnn%d' % n,
+      data: {
+        anode: wc.tn(tools.anodes[n]),
+        // trace_tags: ['dnn_sp%d' % n],
+        trace_tags: ['dnnsp%d' % n],
+        filename: "g4-rec-%d.h5" % n,
+        chunk: [0, 0], // ncol, nrow
+        gzip: 2,
+        high_throughput: true,
+      },
+    }, nin=1, nout=1),
+    for n in std.range(0, std.length(tools.anodes) - 1)
+    ];
+
+
+local dnnroi = import 'pgrapher/experiment/pdhd/dnnroi.jsonnet';
+local ts = {
+    type: "TorchService",
+    name: "dnnroi",
+    data: {
+        // model: "ts-model/unet-l23-cosmic500-e50.ts",
+        // model: "ts-model/CP49.ts",
+        //model: "ts-model/unet-cosmic390-newwc-depofluxsplat-pdhd.ts",
+       // model: "ts-model/unet-cosmic300-depofluxsplat-pdhd.ts",
+       model : "ts-model/cosmic390andshower200.ts",
+        device: "cpu", // "gpucpu",
+        concurrency: 1,
+    },
+};
+
+
+
+
+
+
+
 local magoutput = 'protodunehd-data-check.root';
 local magnify = import 'pgrapher/experiment/pdhd/magnify-sinks.jsonnet';
 local magio = magnify(tools, magoutput);
+
+local dnn_trace_mergers = [ g.pnode({
+  type: 'Retagger',
+  name: 'dnnmerger%d' %n,
+  data: {
+    tag_rules: [{
+      // frame: {'.*': 'dnnsp',},
+      // merge: {'dnnsp\\d': 'dnnsp%d' %n,},
+      merge: {'dnnsp\\d[uvw]' : 'dnnsp%d' %n,},
+    }],
+  },
+}, nin=1, nout=1)
+for n in std.range(0, std.length(tools.anodes) - 1) ];
 
 local nfsp_pipes = [
   g.pipeline([
                chsel_pipes[n],
                // magio.orig_pipe[n],
-               nf_pipes[n],
+               // nf_pipes[n],
                // magio.raw_pipe[n],
                sp_pipes[n],
+
+               // hio_sp[n],
+               dnnroi(tools.anodes[n], ts, output_scale=1.0),
+               dnn_trace_mergers[n],
+               // hio_dnn[n],
+
                // magio.decon_pipe[n],
                // magio.threshold_pipe[n],
                // magio.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
@@ -215,7 +340,8 @@ local retagger = g.pnode({
       merge: {
         'gauss\\d': 'gauss',
         'wiener\\d': 'wiener',
-        'theshold\\d': 'theshold',
+        'threshold\\d': 'threshold',
+	'dnnsp\\d': 'dnnsp',
       },
     }],
   },

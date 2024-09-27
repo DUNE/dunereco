@@ -43,6 +43,7 @@ private:
   unsigned int fHitLimit;
   std::string fHitModule;
   bool fScaleThresholdForReadoutWindow;
+  bool fVerbose;
 };
   
 //-----------------------------------------------------------------------
@@ -52,6 +53,7 @@ hit::NumberOfHitsFilter::NumberOfHitsFilter(fhicl::ParameterSet const& pset):
   fLimitPerTPC = pset.get<bool>("LimitPerTPC");
   fHitLimit = pset.get<unsigned int>("HitLimit");
   fHitModule = pset.get<std::string>("HitModule");
+  fVerbose = pset.get<bool>("Verbose");
   fScaleThresholdForReadoutWindow = pset.get<bool>("ScaleThresholdForReadoutWindow");
 }
 
@@ -87,6 +89,11 @@ bool hit::NumberOfHitsFilter::filter(art::Event& evt){
     }
     
     for(auto const m:  hitsPerTPC){
+
+      if (fVerbose) {
+        std::cout << m.second << " hits in TPC " << m.first << std::endl;
+      }
+
       if(m.second > fHitLimit){
         result = false;
         break;
@@ -94,6 +101,11 @@ bool hit::NumberOfHitsFilter::filter(art::Event& evt){
     }
   }
   else{
+    if (fVerbose) {
+      std::cout << allHits->size() << " hits in all TPCs" << std::endl;
+    }
+
+
     // This is the simplest thing we can do, just cut on the total number of hits
     if (allHits->size() > fHitLimit){
       result = false;
