@@ -106,33 +106,33 @@ class BlipAnaTreeDataStruct
   int           longtrks;             // tracks > 5 cm
 
   // --- G4 information ---
-  int   nparticles;               // number of G4 particles
-  bool  part_isPrimary[kMaxG4];        // is primary particle
-  int   part_trackID[kMaxG4];          // G4 track ID
-  int   part_pdg[kMaxG4];              // PDG
-  int   part_nDaughters[kMaxG4];       // number of daughters
-  int   part_mother[kMaxG4];           // mother particle
-  float part_E[kMaxG4];                // initial energy (MeV)
-  float part_KE[kMaxG4];               // initial kinetic energy (MeV)
-  float part_endE[kMaxG4];             // final energy (MeV)
-  float part_endKE[kMaxG4];             // final energy (MeV)
-  float part_mass[kMaxG4];             // mass (MeV)
-  float part_P[kMaxG4];                // momentum (MeV)
-  float part_Px[kMaxG4];               // momentum x (MeV)
-  float part_Py[kMaxG4];               // momentum y (MeV)
-  float part_Pz[kMaxG4];               // momentum z (MeV)
-  float part_startPointx[kMaxG4];      // starting x (cm)
-  float part_startPointy[kMaxG4];      // starting y (cm)
-  float part_startPointz[kMaxG4];      // starting y (cm)
-  float part_endPointx[kMaxG4];        // ending x (cm)
-  float part_endPointy[kMaxG4];        // ending y (cm)
-  float part_endPointz[kMaxG4];        // ending y (cm)
-  float part_startT[kMaxG4];           // starting time (us)
-  float part_endT[kMaxG4];             // ending time (us)
-  float part_pathlen[kMaxG4];          // path length (cm)
-  int   part_numTrajPts[kMaxG4];       // number traj points
-  float part_depEnergy[kMaxG4];        // energy deposited in AV (MeV)
-  int   part_depElectrons[kMaxG4];     // electrons deposited
+  int   nparticles;                   // number of G4 particles
+  bool  part_isPrimary[kMaxG4];       // is primary particle
+  int   part_trackID[kMaxG4];         // G4 track ID
+  int   part_pdg[kMaxG4];             // PDG
+  int   part_nDaughters[kMaxG4];      // number of daughters
+  int   part_mother[kMaxG4];          // mother particle
+  float part_E[kMaxG4];               // initial energy (MeV)
+  float part_KE[kMaxG4];              // initial kinetic energy (MeV)
+  float part_endE[kMaxG4];            // final energy (MeV)
+  float part_endKE[kMaxG4];           // final energy (MeV)
+  float part_mass[kMaxG4];            // mass (MeV)
+  float part_P[kMaxG4];               // momentum (MeV)
+  float part_Px[kMaxG4];              // momentum x (MeV)
+  float part_Py[kMaxG4];              // momentum y (MeV)
+  float part_Pz[kMaxG4];              // momentum z (MeV)
+  float part_startPointx[kMaxG4];     // starting x (cm)
+  float part_startPointy[kMaxG4];     // starting y (cm)
+  float part_startPointz[kMaxG4];     // starting y (cm)
+  float part_endPointx[kMaxG4];       // ending x (cm)
+  float part_endPointy[kMaxG4];       // ending y (cm)
+  float part_endPointz[kMaxG4];       // ending y (cm)
+  float part_startT[kMaxG4];          // starting time (us)
+  float part_endT[kMaxG4];            // ending time (us)
+  float part_pathlen[kMaxG4];         // path length (cm)
+  int   part_numTrajPts[kMaxG4];      // number traj points
+  float part_depEnergy[kMaxG4];       // energy deposited in AV (MeV)
+  int   part_depElectrons[kMaxG4];    // electrons deposited
   std::vector<std::string> part_process;// process name
 
   // --- True energy deposit info (derived from SimChannels and SimEnergyDeposits) ---
@@ -160,11 +160,6 @@ class BlipAnaTreeDataStruct
                                   //  3 = e+e- pair production ("conv")
                                   //  4 = other
   
-  // --- keep track of particles that made hits/clusters on collection plane
-  // note: find better way to do this ...
-  bool  part_madeClustCol[kMaxG4];
-  bool  edep_madeClustCol[kMaxEDeps];  // did this deposition end up in a 2D cluster? (post track-mask)
-
   // --- Hit information ---
   int	  nhits;                    // number of hits
   int   hit_cryo[kMaxHits];       // cryostat
@@ -267,7 +262,6 @@ class BlipAnaTreeDataStruct
     timestamp             = -999;
     nparticles            = 0;    // --- G4 particles ---
     FillWith(part_isPrimary,   false);
-    FillWith(part_madeClustCol,      false);
     FillWith(part_trackID,     -999);
     FillWith(part_pdg,         -99999);
     FillWith(part_nDaughters,  -999);
@@ -311,7 +305,6 @@ class BlipAnaTreeDataStruct
     FillWith(edep_pdg,   -999);
     FillWith(edep_proc,   -9);
     FillWith(edep_isPrimary, false);
-    FillWith(edep_madeClustCol,  false);
     FillWith(edep_blipid, -9);
     nhits                 = 0;    // --- TPC hits ---
     if( saveHitInfo ) {
@@ -499,7 +492,6 @@ class BlipAnaTreeDataStruct
     if( saveTruthInfo ) {
       evtTree->Branch("nparticles",&nparticles,"nparticles/I");
       evtTree->Branch("part_isPrimary",part_isPrimary,"part_isPrimary[nparticles]/O");
-      //evtTree->Branch("part_madeHitCol",part_madeHitCol,"part_madeHitCol[nparticles]/O");
       evtTree->Branch("part_trackID",part_trackID,"part_trackID[nparticles]/I");
       evtTree->Branch("part_pdg",part_pdg,"part_pdg[nparticles]/I");
       evtTree->Branch("part_nDaughters",part_nDaughters,"part_nDaughters[nparticles]/I");
@@ -530,7 +522,6 @@ class BlipAnaTreeDataStruct
       evtTree->Branch("edep_g4trkid",edep_g4trkid,"edep_g4trkid[nedeps]/I"); 
       evtTree->Branch("edep_g4qfrac",edep_g4qfrac,"edep_g4qfrac[nedeps]/F"); 
       evtTree->Branch("edep_isPrimary",edep_isPrimary,"edep_isPrimary[nedeps]/O"); 
-      //evtTree->Branch("edep_madeHitCol",edep_madeHitCol,"edep_madeHitCol[nedeps]/O"); 
       evtTree->Branch("edep_pdg",edep_pdg,"edep_pdg[nedeps]/I"); 
       evtTree->Branch("edep_proc",edep_proc,"edep_proc[nedeps]/I"); 
       evtTree->Branch("edep_blipid",edep_blipid,"edep_blipid[nedeps]/I"); 

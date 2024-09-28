@@ -44,7 +44,7 @@ dune_blipana:
   SaveTrkInfo:        true
   SaveHitInfo:        false
   SaveClustInfo:      true
-  DebugMode:          false
+  DebugMode:          true
 }
 
 

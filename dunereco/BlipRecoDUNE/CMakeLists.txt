@@ -37,6 +37,7 @@ cet_build_plugin(BlipRecoProducer art::Module SOURCE BlipRecoProducer_module.cc 
 
 add_subdirectory(Utils)
 add_subdirectory(Alg)
+add_subdirectory(job)
 
 install_headers()
 install_fhicl()
