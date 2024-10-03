@@ -2,7 +2,7 @@
 *  @file   dunereco/FDSensOpt/NeutrinoAngularRecoAlg/NeutrinoAngularRecoAlg.h
 *
 *  @brief  Header file for the neutrino angular reconstruction algorithm.
-*  Written by Henrique Souza (hvsouza@apc.in2p3.fr)
+*  Written by Pierre Granger (pierre.granger@cern.ch) & Henrique Souza (hvsouza@apc.in2p3.fr)
 *  $Log: $
 */
 #ifndef DUNE_NEUTRINO_ANGULAR_RECO_ALG_H
@@ -30,6 +30,37 @@ namespace dune
  * @brief NeutrinoAngularRecoAlg class
  *
 */
+
+struct PolarFitOutput
+{
+    bool success;
+    float pdrift;
+    float pview;
+    int nhits;
+    int view;
+};
+
+class CalorimetricDirectionFitter {
+    public:
+        CalorimetricDirectionFitter(std::vector<PolarFitOutput>& observed_data, double thetaU, double thetaV);
+        double Chi2(double const* x) const;
+        int NViews() const;
+    private:
+        double const _thetaU;
+        double const _thetaV;
+        double _pU = 0, _pV = 0, _pW = 0;
+        double _pxU = 0, _pxV = 0, _pxW = 0;
+        int _nhitsU = 0, _nhitsV = 0, _nhitsW = 0;
+        const std::vector<double> _calib_consts = {
+            1.5e-5, //pxU
+            1.5e-5, //pxV
+            1e-5,   //pxW
+            1.3e-5, //pU
+            1.3e-5, //pV
+            1e-5    //pW
+        }; //TODO: Not ideal at all... I guess these could be obtained from calculations
+};
+
 class NeutrinoAngularRecoAlg 
 {
     public:
@@ -95,8 +126,16 @@ class NeutrinoAngularRecoAlg
                                                        const std::map<art::Ptr<recob::Track>, int> &tracksPID,
                                                        const std::vector<art::Ptr<recob::Shower>> &pShowers,
                                                        const art::Event &event);
-
-
+                                                    
+        /**
+        * @brief  Calculates neutrino angle using only the hits information
+        *
+        * @param  event the art event
+        * @param  vertex the reconstructed interaction vertex
+        *
+        * @return the neutrino direction summary object
+        */
+        dune::AngularRecoOutput CalculateNeutrinoAngle(const art::Event &event, const Point_t& vertex);
 
 
     private:
@@ -109,7 +148,8 @@ class NeutrinoAngularRecoAlg
             kMuon = 1,                                 ///< muon momentum direction method
             kElectron,                                 ///< electron direction method
             kRecoParticles,                            ///< using all the reco particles       
-            kMuonRecoParticles                         ///< using all the reco particles nut assuming longest track is muon       
+            kMuonRecoParticles,                        ///< using all the reco particles nut assuming longest track is muon
+            kHits                                      ///< using only the hits information      
         };
 
         /**
@@ -151,6 +191,11 @@ class NeutrinoAngularRecoAlg
         float GetTrackKE(const std::vector<art::Ptr<anab::Calorimetry>> &calos) const;
         bool IsTrackContained(const art::Ptr<recob::Track> &pTrack) const;
 
+        PolarFitOutput FitViewHits(const art::Event &event, const geo::View_t &view, const std::vector<art::Ptr<recob::Hit>> &hits, const Point_t &vertex) const;
+        PolarFitOutput PolarFit(const std::vector<float> &xvec, const std::vector<float> &yvec, const std::vector<float> &weights) const;
+        geo::View_t GetTargetView(const art::Ptr<recob::Hit> &hit) const;
+        float GetViewTheta(geo::View_t view) const;
+        
         calo::CalorimetryAlg fCalorimetryAlg;                    ///< the calorimetry algorithm
 
         std::string fTrackLabel;                                 ///< the track label
@@ -162,6 +207,7 @@ class NeutrinoAngularRecoAlg
         std::string fHitToSpacePointLabel;                       ///< the associated hit-to-space point label
         std::string fCalorimetryLabel;                           ///< the calorimetry label
         float fDistanceToWallThreshold;                          ///< margin to consider wether a track is contained
+        art::ServiceHandle<geo::Geometry const> fGeometry;       ///< handle to the geometry service
 
         const float fPION_MASS = 139.57; //MeV
 };

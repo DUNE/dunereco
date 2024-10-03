@@ -2,14 +2,17 @@
 *  @file   dunereco/FDSensOpt/NeutrinoAngularRecoAlg/NeutrinoAngularRecoAlg.cc
 
 *  @brief  Implementation file for the neutrino angle reconstruction algorithm.
-*  Written by Henrique Souza (hvsouza@apc.in2p3.fr)
+*  Written by Pierre Granger (pierre.granger@cern.ch) & Henrique Souza (hvsouza@apc.in2p3.fr)
 *  $Log: $
 */
 
 //STL
 #include <limits>
 #include <algorithm>
+#include <complex>
 //ROOT
+#include "Math/Functor.h"
+#include "Minuit2/Minuit2Minimizer.h"
 //ART
 #include "canvas/Utilities/Exception.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -174,6 +177,172 @@ dune::AngularRecoOutput NeutrinoAngularRecoAlg::CalculateNeutrinoAngle(const art
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
+dune::AngularRecoOutput NeutrinoAngularRecoAlg::CalculateNeutrinoAngle(const art::Event &event, const Point_t &vertex){
+    std::vector<PolarFitOutput> output_vec;
+    //Getting all the reconstructed 2D hits
+    const std::vector<art::Ptr<recob::Hit>> hits(dune_ana::DUNEAnaEventUtils::GetHits(event, fHitLabel));
+    //Sorting all the hits per view
+    //Taking as reference the views for positive drift -> U- == V+ and V- == U+
+    std::map<geo::View_t, std::vector<art::Ptr<recob::Hit>>> hits_per_view;
+    for(art::Ptr<recob::Hit> const& hit: hits){
+        geo::View_t view = GetTargetView(hit);
+
+        if(hits_per_view.count(view) == 0){
+            hits_per_view[view] = {};
+        }
+        hits_per_view[view].push_back(hit);
+    }
+
+    for(auto const& [view, hits] : hits_per_view){
+        PolarFitOutput output = FitViewHits(event, view, hits, vertex);
+        output_vec.push_back(output);
+    }
+
+    //Combining together the infos from the views
+    CalorimetricDirectionFitter const caloFitter{output_vec, GetViewTheta(geo::kU), GetViewTheta(geo::kV)};
+    ROOT::Math::Functor fitFunc([&caloFitter](double const* xs){return caloFitter.Chi2(xs);}, 3);
+    ROOT::Minuit2::Minuit2Minimizer minimizer{ROOT::Minuit2::kMigrad};
+    minimizer.SetFunction(fitFunc);
+    minimizer.SetLimitedVariable(0, "px", 1, 0.01, -100, 100);
+    minimizer.SetLimitedVariable(1, "py", 1, 0.01, -100, 100);
+    minimizer.SetLimitedVariable(2, "pz", 1, 0.01, -100, 100);
+    minimizer.SetMaxFunctionCalls(1e9);
+    minimizer.SetMaxIterations(1e9);
+    minimizer.SetTolerance(0.01);
+    minimizer.SetStrategy(2);
+    minimizer.SetErrorDef(1);
+
+    const bool mstatus [[maybe_unused]] = minimizer.Minimize();
+    const double* pars = minimizer.X();
+    double px = pars[0];
+    double py = pars[1];
+    double pz = pars[2];
+
+    double ptot = sqrt(px*px + py*py + pz*pz);
+
+    Direction_t direction(px/ptot, py/ptot, pz/ptot);
+    AngularRecoInputHolder angularRecoInputHolder(vertex, direction, kHits);
+    return this->ReturnNeutrinoAngle(angularRecoInputHolder);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+geo::View_t NeutrinoAngularRecoAlg::GetTargetView(const art::Ptr<recob::Hit> &hit) const{
+    const geo::TPCID hit_tpcID(hit->WireID());
+    if(fGeometry->TPC(hit_tpcID).DriftDirection() == geo::kPosX){ //"normal" drift direction, we don't change anything
+        return hit->View();
+    }
+    else{ //We invert U and V
+        if(hit->View() == geo::kU){
+            return geo::kV;
+        }
+        else if(hit->View() == geo::kV){
+            return geo::kU;
+        }
+        else{
+            return hit->View();
+        }
+    }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+float NeutrinoAngularRecoAlg::GetViewTheta(geo::View_t view) const{
+    for (geo::TPCGeo const& TPC: fGeometry->Iterate<geo::TPCGeo>()) {
+        if(TPC.DriftDirection() == geo::kPosX){ //Trying to find a TPC with the right drift direction
+            for (unsigned int p = 0; p < TPC.Nplanes(); ++p) {
+                geo::PlaneGeo const& plane = TPC.Plane(p);
+                if (plane.View() == view){
+                    return 0.5f * M_PI - plane.ThetaZ();
+                }
+            }
+        }
+    } // for TPCs
+
+    throw cet::exception("NeutrinoAngularRecoAlg") << "Could not find a TPC with the right drift direction for view " << view << std::endl;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+PolarFitOutput NeutrinoAngularRecoAlg::FitViewHits(const art::Event &event, const geo::View_t &view, const std::vector<art::Ptr<recob::Hit>> &hits, const Point_t &vertex) const{
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event);
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
+    // const geo::TPCID tpc(0, 0);
+
+    if(view != geo::View_t::kU && view != geo::View_t::kV && view != geo::View_t::kW){
+        mf::LogWarning("NeutrinoAngularRecoAlg") << "Unknown view " << view << ". Skipping!";
+        PolarFitOutput output = {};
+        output.success = false;
+        return output;
+    }
+
+    std::vector<float> x_vec;
+    std::vector<float> y_vec;
+    std::vector<float> adc_vec;
+    
+    //Getting the wire angle for this view\TPC wire
+    const float theta = GetViewTheta(view);
+
+    for(art::Ptr<recob::Hit> const &hit : hits){
+        const geo::WireID hit_WireID(hit->WireID());
+
+        //Getting X from the drift
+        float hitX = detProp.ConvertTicksToX(hit->PeakTime(), hit_WireID);
+        //Shifting X by the vertex position
+        hitX -= vertex.X();
+
+        //Getting hit"Y" from the view coordinate
+        
+        auto const xyz = fGeometry->Wire(hit_WireID).GetCenter();
+        
+        const float hitY((xyz.Z() - vertex.Z())*cos(theta) - (xyz.Y() - vertex.Y())*sin(theta));
+
+        //Getting the hit ADC
+        const float adc = hit->Integral()*dune_ana::DUNEAnaHitUtils::LifetimeCorrection(clockData, detProp, hit);
+
+        x_vec.push_back(hitX);
+        y_vec.push_back(hitY);
+        adc_vec.push_back(adc);
+
+    }
+
+    PolarFitOutput output(PolarFit(x_vec, y_vec, adc_vec));
+    output.view = view;
+    output.nhits = hits.size();
+
+    return output;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+PolarFitOutput NeutrinoAngularRecoAlg::PolarFit(const std::vector<float> &xvec, const std::vector<float> &yvec, const std::vector<float> &weights) const{
+    std::complex<float> sum = 0;
+    PolarFitOutput output = {};
+
+    const uint npoints = xvec.size();
+
+    if(npoints < 1){
+        //Impossible to make a fit
+        output.success = false;
+        return output;
+    }
+
+    for(uint i = 0; i < npoints; i++){
+        std::complex<float> new_direction(xvec[i], yvec[i]); //Using complex numbers to represent 2D vector from vertex to point
+        new_direction /= sqrtf(std::norm(new_direction)); //Normalizing the direction
+        sum += new_direction*weights[i]; //Add this direction weighted by the correct weight
+    }
+
+    output.pdrift = sum.real();
+    output.pview = sum.imag();
+    
+    output.success = true;
+
+    return output;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
 
 dune::AngularRecoOutput NeutrinoAngularRecoAlg::ReturnNeutrinoAngle(const AngularRecoInputHolder &angularRecoInputHolder)
 {
@@ -322,5 +491,65 @@ bool NeutrinoAngularRecoAlg::IsTrackContained(const art::Ptr<recob::Track> &pTra
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
+
+
+CalorimetricDirectionFitter::CalorimetricDirectionFitter(std::vector<PolarFitOutput>& observed_data, double thetaU, double thetaV) :
+    _thetaU(thetaU), _thetaV(thetaV)
+{
+
+    for(const PolarFitOutput& view_fit : observed_data){
+        if(!view_fit.success){
+            continue;
+        }
+
+        switch (view_fit.view)
+        {
+            case geo::View_t::kU:
+                _pU = view_fit.pview*_calib_consts[3];
+                _pxU = view_fit.pdrift*_calib_consts[0];
+                _nhitsU = view_fit.nhits;
+                break;
+            case geo::View_t::kV:
+                _pV = view_fit.pview*_calib_consts[4];
+                _pxV = view_fit.pdrift*_calib_consts[1];
+                _nhitsV = view_fit.nhits;
+                break;
+            case geo::View_t::kW:
+                _pW = view_fit.pview*_calib_consts[5];
+                _pxW = view_fit.pdrift*_calib_consts[2];
+                _nhitsW = view_fit.nhits;
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+
+double CalorimetricDirectionFitter::Chi2(double const* x) const{
+    double px = x[0];
+    double py = x[1];
+    double pz = x[2];
+
+    double pu = cos(_thetaU)*pz - sin(_thetaU)*py;
+    double pv = cos(_thetaV)*pz - sin(_thetaV)*py;
+
+    double nhits_total = _nhitsU + _nhitsV + _nhitsW;
+
+    double chi2 = _nhitsU/nhits_total*((px - _pxU)*(px - _pxU) + (pu - _pU)*(pu - _pU)) + 
+           _nhitsV/nhits_total*((px - _pxV)*(px - _pxV) + (pv - _pV)*(pv - _pV)) + 
+           _nhitsW/nhits_total*((px - _pxW)*(px - _pxW) + (pz - _pW)*(pz - _pW));
+
+    return chi2;
+
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+int CalorimetricDirectionFitter::NViews() const{
+    return (_nhitsU > 0) + (_nhitsV > 0) + (_nhitsW > 0);
+}
 
 } //dune

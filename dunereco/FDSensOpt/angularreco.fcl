@@ -38,7 +38,7 @@ dunefd_nuangularreco_pandora_numu:
     @table::dunefd_nuangularreco_pmtrack
     RecoMethod:             1
     WireLabel:              "wclsmcnfsp:gauss"
-    HitLabel:               "gaushit"
+    HitLabel:               "hitfd"
     TrackLabel:             "pandoraTrack"
     ShowerLabel:            "pandoraShower"
     TrackToHitLabel:        "pandoraTrack"
@@ -67,6 +67,12 @@ dunefd_nuangularreco_pandora_numu_allpfps:
 {
     @table::dunefd_nuangularreco_pandora_numu
     RecoMethod: 4
+}
+
+dunefd_nuangularreco_pandora_hits:
+{
+    @table::dunefd_nuangularreco_pandora_numu
+    RecoMethod: 5
 }
 
 

@@ -36,6 +36,7 @@
 #include "dunereco/AnaUtils/DUNEAnaEventUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaHitUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaShowerUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaPFParticleUtils.h"
 
 #include <memory>
 
@@ -70,6 +71,8 @@ namespace dune {
                                   std::vector<art::Ptr<recob::Track>> &pTracks);
             std::map<art::Ptr<recob::Track>, int> GetTracksPID(const art::Event& event,
                                                                const std::vector<art::Ptr<recob::Track>> &pTracks);
+            Point_t GetPrimaryVertex(const art::Event &event) const;
+
       std::string fWireLabel;
       std::string fHitLabel;
       std::string fTrackLabel;
@@ -145,6 +148,13 @@ void NuAngularReco::produce(art::Event& evt)
       std::map<art::Ptr<recob::Track>, int> tracksPID = GetTracksPID(evt, pTracks);
       art::Ptr<recob::Track> longestTrack(this->GetLongestTrack(evt));
       angularRecoOutput = std::make_unique<dune::AngularRecoOutput>(fNeutrinoAngularRecoAlg.CalculateNeutrinoAngle(longestTrack, pTracks, tracksPID, pShowers, evt));
+  }
+  else if(fRecoMethod == 5){
+      const Point_t vertex = GetPrimaryVertex(evt);
+      angularRecoOutput = std::make_unique<dune::AngularRecoOutput>(fNeutrinoAngularRecoAlg.CalculateNeutrinoAngle(evt, vertex));
+  }
+  else{
+      throw cet::exception("NuAngularReco") << "Invalid RecoMethod: " << fRecoMethod << std::endl;
   }
 
   art::ProductID const prodId = evt.getProductID<dune::AngularRecoOutput>();
@@ -252,6 +262,26 @@ void NuAngularReco::GetTracksShowersFromPFP(const art::Event& event, std::vector
     }
     
   }
+}
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+Point_t NuAngularReco::GetPrimaryVertex(const art::Event &event) const{
+  //Get the reconstructed PFPs
+  const std::vector<art::Ptr<recob::PFParticle>> pfps(dune_ana::DUNEAnaEventUtils::GetPFParticles (event, fPFPLabel));
+  double xyz[3] = {0.0, 0.0, 0.0} ;
+  for(art::Ptr<recob::PFParticle> const& pfp : pfps){
+    //There should only be one neutrino. It should be associated with the primary vertex
+    if(dune_ana::DUNEAnaPFParticleUtils::IsNeutrino(pfp)){
+      const art::Ptr<recob::Vertex> pfp_vertex(dune_ana::DUNEAnaPFParticleUtils::GetVertex(pfp, event, fPFPLabel));
+      pfp_vertex->XYZ(xyz);
+      break;
+    }
+  }
+  Point_t vertex;
+  vertex.SetCoordinates(xyz[0], xyz[1], xyz[2]);
+  return vertex;    
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------

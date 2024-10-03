@@ -30,9 +30,12 @@ art_make( BASENAME_ONLY
   art::Utilities canvas::canvas
   fhiclcpp::fhiclcpp
   messagefacility::MF_MessageLogger
-  ROOT::EG
   cetlib::cetlib cetlib_except::cetlib_except
   ROOT::TMVA
+  ROOT_EG
+  ROOT_BASIC_LIB_LIST
+  ROOT::Minuit
+  ROOT::Minuit2
   )
 
 
