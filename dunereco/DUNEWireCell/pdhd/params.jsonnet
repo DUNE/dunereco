@@ -8,31 +8,17 @@ base {
     // This section will be overwritten in simparams.jsonnet
     det : {
 
-        // define the 6 APAs.  This must use the coordinate system
-        // defined by the wire geometry file.
-        // A full drift is a box: xyz=[3.594*wc.m, 5.9*wc.m, 2.2944*wc.m].
-        //
         // The "faces" is consumed by, at least, the Drifter and
         // AnodePlane.  The "wires" number is used to set
         // AnodePlane.ident used to lookup the anode in WireSchema.
         // It corresponds to the anode number.
-        //
-        // Also see:
-        //   wirecell-util wire-volumes protodune-wires-larsoft-v3.json.bz2
-        // to help with defining these parameters.
 
-        // from DocDB 203 and assuming wires are symmetric across x=0
-
-        // between center lines
-        local apa_cpa = 3.637*wc.m,
-        local cpa_thick = 50.8*wc.mm,
-        local apa_w2w = 85.725*wc.mm, // DocDB 203 calls "W" as "X"
+        // Numbers determined from protodunehd_v6 gdml
+        local apa_cpa = 3.5734*wc.m,
+        local cpa_thick = 3.175*wc.mm, // 1/8", from Bo Yu (BNL) and confirmed with LArSoft
+        local apa_w2w = 85.87*wc.mm,
         local plane_gap = 4.76*wc.mm,
-        local apa_g2g = 114.3*wc.mm, // note that grid plane must have
-                                     // gap 4.7675mm for this number
-                                     // to be consistent with above.
-                                     // There's probably round-off
-                                     // error in DocDB 203.
+        local apa_g2g = apa_w2w + 6*plane_gap,
 
         // The "anode" cut off plane, here measured from APA
         // centerline, determines how close to the wires do we
@@ -42,7 +28,8 @@ base {
         // Placing it w/in the response plane means any depos that are
         // "backed up" won't have proper field response.  But, the
         // tighter this is made, the less volume is simulated.
-        local apa_plane = 0.5*apa_g2g, // pick it to be at the grid wires
+        // local apa_plane = 0.5*apa_g2g, // pick it to be at the grid wires
+        local apa_plane = 0.5*apa_g2g - plane_gap, // pick it to be at the first induction wires
 
         // The "response" plane is where the field response functions
         // start.  Garfield calcualtions start somewhere relative to
@@ -110,32 +97,24 @@ base {
     },
 
     adc: super.adc {
-        // per tdr, chapter 2
-        // induction plane: 2350 ADC, collection plane: 900 ADC
+        resolution: 14, 
+        // reuse ProtoDUNE SP values
         baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
-
-        // check this.  The tdr says, "The ADC ASIC has an input
-        // buffer with offset compensation to match the output of the
-        // FE ASIC.  The input buffer first samples the input signal
-        // (with a range of 0.2 V to 1.6 V)..."
         fullscale: [0.2*wc.volt, 1.6*wc.volt],
     },
 
-    // This sets a relative gain at the input to the ADC.  Note, if
-    // you are looking to fix SimDepoSource, you are in the wrong
-    // place.  See the "scale" parameter of wcls.input.depos() defined
-    // in pgrapher/common/ui/wcls/nodes.jsonnet.
-    // also, see later overwriting in simparams.jsonnet
-    elec: super.elec {
-      postgain: 1.1365, // pulser calibration: 41.649 ADC*tick/1ke
-                       // theoretical elec resp (14mV/fC): 36.6475 ADC*tick/1ke
-      shaping: 2.2 * wc.us,
-    },
-    // elec: super.elec {
-    //     type: "JsonElecResponse",
-    //     filename: "bnl-coldelec-response-gain14-shaping5.json.bz2",
-    //     postgain: 1.0,
-    // },
+    elecs: [
+      super.elec {
+        // The FE amplifier gain in units of Voltage/Charge.
+        gain : 14.0*wc.mV/wc.fC,
+
+        // The shaping (aka peaking) time of the amplifier shaper.
+        shaping : 2.2*wc.us,
+      }
+      for n in std.range(0,3)
+    ],
+
+    elec: $.elecs[0], // nominal
 
     sim: super.sim {
 
@@ -170,15 +149,16 @@ base {
         wires: "protodunehd-wires-larsoft-v1.json.bz2",
 
         fields: [
-            // "garfield-1d-3planes-21wires-6impacts-dune-v1.json.bz2",
-            // "garfield-1d-boundary-path-rev-dune.json.bz2",
+            "np04hd-garfield-6paths.json.bz2",
+            "dune-garfield-1d565.json.bz2",
+            "dune-garfield-1d565.json.bz2",
             "dune-garfield-1d565.json.bz2",
         ],
 
-        // fixme: this is for microboone and probably bogus for
-        // protodune because (at least) the span of MB wire lengths do
-        // not cover pdsp's.
-        noise: "protodune-noise-spectra-v1.json.bz2",
+        // Noise models for different FE amplifier gains
+        // Note: set gain value accordingly in the field of elecs
+        noise: "protodunehd-noise-spectra-14mVfC-v1.json.bz2",
+        // noise: "protodunehd-noise-spectra-7d8mVfC-v1.json.bz2",
 
 
         chresp: null,

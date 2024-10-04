@@ -21,6 +21,7 @@
 #include "art_root_io/TFileDirectory.h"
 #include "lardataobj/RawData/RawDigit.h"
 #include "larcorealg/Geometry/GeometryCore.h"
+#include "larcore/Geometry/WireReadout.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RawData/raw.h"
 #include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
@@ -64,7 +65,8 @@ public:
 
 private:
   // Declare member data here.
-  const geo::GeometryCore* fGeom;
+  const geo::GeometryCore* fGeom = art::ServiceHandle<geo::Geometry>().get();
+  const geo::WireReadoutGeom& fWireReadoutGeom = art::ServiceHandle<geo::WireReadout>()->Get();
 
   art::ServiceHandle<art::TFileService> tfs;
 
@@ -105,7 +107,7 @@ void Infill::MakeInfillTrainingData::analyze(art::Event const& e)
       sEvent + "_TPCset" + std::to_string(rop.TPCset) + "_ROP" + std::to_string(rop.ROP)
     );
     ropImages[rop] = tfs->make<TH2F>(
-      sTitle.c_str(), sTitle.c_str(), fGeom->Nchannels(rop), 0, fGeom->Nchannels(rop), 6000, 0, 6000
+      sTitle.c_str(), sTitle.c_str(), fWireReadoutGeom.Nchannels(rop), 0, fWireReadoutGeom.Nchannels(rop), 6000, 0, 6000
     );
   }
 
@@ -113,13 +115,13 @@ void Infill::MakeInfillTrainingData::analyze(art::Event const& e)
 
   // Fill TH2s
   for(const raw::RawDigit& dig : *digs){ 
-    readout::ROPID rop = fGeom->ChannelToROP(dig.Channel());
+    readout::ROPID rop = fWireReadoutGeom.ChannelToROP(dig.Channel());
     if(ropImages.count(rop)){ // Ignores ROPs associated with only inactive TPCIDs
       raw::RawDigit::ADCvector_t adcs(dig.Samples());
       // raw::Uncompress(dig.ADCs(), adcs, dig.GetPedestal(), dig.Compression());
       raw::Uncompress(dig.ADCs(), adcs, dig.Compression());
 
-      const raw::ChannelID_t firstCh = fGeom->FirstChannelInROP(rop);
+      const raw::ChannelID_t firstCh = fWireReadoutGeom.FirstChannelInROP(rop);
       for(unsigned int tick = 0; tick < adcs.size(); ++tick){
         const int adc = adcs[tick] ? int(adcs[tick]) - dig.GetPedestal() : 0;
 
@@ -135,21 +137,19 @@ void Infill::MakeInfillTrainingData::analyze(art::Event const& e)
 
 void Infill::MakeInfillTrainingData::beginJob()
 {
-  fGeom = art::ServiceHandle<geo::Geometry>()->provider();
-
   // Get active ROPs (not facing a wall)
-  for (auto const& ropID : fGeom->Iterate<readout::ROPID>()) { // Iterate over ROPs in detector
-    for (const geo::TPCID tpcId : fGeom->ROPtoTPCs(ropID)) {
+  for (auto const& ropID : fWireReadoutGeom.Iterate<readout::ROPID>()) { // Iterate over ROPs in detector
+    for (const geo::TPCID tpcId : fWireReadoutGeom.ROPtoTPCs(ropID)) {
       const geo::TPCGeo tpc = fGeom->TPC(tpcId);
       const TGeoVolume* tpcVol = tpc.ActiveVolume();
       
       if (tpcVol->Capacity() > 1000000) { // At least one of the ROP's TPCIDs needs to be active
         // Networks expect a fixed image size
-        if(fGeom->SignalType(ropID) == geo::kInduction && fGeom->Nchannels(ropID) != 800) {
+        if(fWireReadoutGeom.SignalType(ropID) == geo::kInduction && fWireReadoutGeom.Nchannels(ropID) != 800) {
 	  std::cerr << "MakeInfillTrainingData_module.cc: Induction view training data should have 800 channels\n";
 	  std::abort();
         }
-        if(fGeom->SignalType(ropID) == geo::kCollection && fGeom->Nchannels(ropID) != 480) {
+        if(fWireReadoutGeom.SignalType(ropID) == geo::kCollection && fWireReadoutGeom.Nchannels(ropID) != 480) {
 	  std::cerr << "MakeInfillTrainingData_module.cc: Collection view training data should have 480 channels\n";
 	  std::abort();
         }
@@ -176,9 +176,9 @@ void Infill::MakeInfillTrainingData::endJob()
   // Print dead channels to terminal
   for(const readout::ROPID& rop : fActiveRops) {
     std::cout << "(TPCset " << rop.TPCset << ", ROP " << rop.ROP << "): ";
-    const raw::ChannelID_t firstCh = fGeom->FirstChannelInROP(rop);
+    const raw::ChannelID_t firstCh = fWireReadoutGeom.FirstChannelInROP(rop);
     for (const raw::ChannelID_t ch : fDeadChannels) {
-      if (fGeom->ChannelToROP(ch) == rop) {
+      if (fWireReadoutGeom.ChannelToROP(ch) == rop) {
         std::cout << ch - firstCh << " ";
       }
     } // Could break early if ch > last ch in currentRop to save a bit of looping?

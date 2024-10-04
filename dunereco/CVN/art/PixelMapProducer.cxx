@@ -20,6 +20,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 
+#include "larcore/Geometry/WireReadout.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
@@ -38,6 +39,7 @@ namespace cvn
   {
 
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());  
+    fWireReadoutGeom = &art::ServiceHandle<geo::WireReadout>()->Get();
     if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos)
       _cacheIntercepts();
   }
@@ -45,6 +47,7 @@ namespace cvn
   PixelMapProducer::PixelMapProducer()
   {
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());  
+    fWireReadoutGeom = &art::ServiceHandle<geo::WireReadout>()->Get();
     if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos)
       _cacheIntercepts();
   }
@@ -131,7 +134,7 @@ namespace cvn
 
   double PixelMapProducer::_getIntercept(geo::WireID wireid) const
   {
-    const geo::WireGeo* pwire = fGeometry->WirePtr(wireid);
+    const geo::WireGeo* pwire = fWireReadoutGeom->WirePtr(wireid);
     geo::Point_t center = pwire->GetCenter();
     double slope = 0.;
     if(!pwire->isVertical()) slope = pwire->TanThetaZ();
@@ -168,7 +171,7 @@ namespace cvn
         
         int tpc = (plane == 0 || !is3view30deg) ? (nCRM_col+1)*diag_tpc : (nCRM_col-1)*(nCRM_row-diag_tpc);
         geo::PlaneID const planeID(0, tpc, plane);
-        unsigned int nWiresTPC = fGeometry->Nwires(planeID);
+        unsigned int nWiresTPC = fWireReadoutGeom->Nwires(planeID);
      
         geo::WireID start = geo::WireID(planeID, 0);
         geo::WireID end = geo::WireID(planeID, nWiresTPC-1);
@@ -452,7 +455,7 @@ namespace cvn
     if (globalPlane != 1) globalWire += (tpc/12)*nWiresTPC;
     else globalWire += ((300-tpc)/12)*nWiresTPC;
     // Reverse wires and add offset for upper modules in induction views
-    if (tpc_xy > 3 and globalPlane < 2) globalWire += fGeometry->Nwires(geo::PlaneID{tpcgeom.ID(), globalPlane}) + offset - localWire;
+    if (tpc_xy > 3 and globalPlane < 2) globalWire += fWireReadoutGeom->Nwires(geo::PlaneID{tpcgeom.ID(), globalPlane}) + offset - localWire;
     else globalWire += localWire;
 
     if (tpc_x % 2 == 0) globalTDC = localTDC;
@@ -535,7 +538,7 @@ namespace cvn
     
     globalPlane = plane;
     geo::PlaneID const planeID{0, tpc, globalPlane};
-    unsigned int nWiresTPC = fGeometry->Nwires(planeID);
+    unsigned int nWiresTPC = fWireReadoutGeom->Nwires(planeID);
     bool is3view30deg = fGeometry->DetectorName().find("30deg") != std::string::npos;
     
     if(globalPlane < 2){

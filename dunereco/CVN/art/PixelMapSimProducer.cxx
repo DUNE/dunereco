@@ -19,7 +19,9 @@
 // #include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 
+#include "larcore/Geometry/WireReadout.h"
 #include "larcore/Geometry/Geometry.h"
+#include "larcorealg/Geometry/WireReadoutGeom.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larsim/MCCheater/BackTrackerService.h"
@@ -38,7 +40,8 @@ namespace cvn
     fTotHits(0)
   {
 
-    fGeometry = &*(art::ServiceHandle<geo::Geometry>());  
+    fGeometry = art::ServiceHandle<geo::Geometry>().get();
+    fWireReadoutGeom = &art::ServiceHandle<geo::WireReadout>()->Get();
     if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos)
       _cacheIntercepts();
     
@@ -47,6 +50,7 @@ namespace cvn
   PixelMapSimProducer::PixelMapSimProducer()
   {
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());  
+    fWireReadoutGeom = &art::ServiceHandle<geo::WireReadout>()->Get();
     if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos)
       _cacheIntercepts();
   }
@@ -83,7 +87,7 @@ namespace cvn
       if(!(ROIs.size())) continue;
       // auto ROIs = reco_wire->SignalROI();
 
-      std::vector<geo::WireID> wireids = fGeometry->ChannelToWire(reco_wire->Channel());
+      std::vector<geo::WireID> wireids = fWireReadoutGeom->ChannelToWire(reco_wire->Channel());
       if(!wireids.size()) continue;
       geo::WireID wireid = wireids[0];
       
@@ -151,7 +155,7 @@ namespace cvn
 
   double PixelMapSimProducer::_getIntercept(geo::WireID wireid) const
   {
-    const geo::WireGeo* pwire = fGeometry->WirePtr(wireid);
+    const geo::WireGeo* pwire = fWireReadoutGeom->WirePtr(wireid);
     geo::Point_t center = pwire->GetCenter();
     double slope = 0.;
     if(!pwire->isVertical()) slope = pwire->TanThetaZ();
@@ -188,7 +192,7 @@ namespace cvn
         
         int tpc = (plane == 0 || !is3view30deg) ? (nCRM_col+1)*diag_tpc : (nCRM_col-1)*(nCRM_row-diag_tpc);
         geo::PlaneID const planeID(0, tpc, plane);
-        unsigned int nWiresTPC = fGeometry->Nwires(planeID);
+        unsigned int nWiresTPC = fWireReadoutGeom->Nwires(planeID);
         
         geo::WireID start = geo::WireID(planeID, 0);
         geo::WireID end = geo::WireID(planeID, nWiresTPC-1);
@@ -233,7 +237,7 @@ namespace cvn
       auto& ROIs = reco_wire->TDCIDEMap();
       if(!(ROIs.size())) continue;
 
-      std::vector<geo::WireID> wireids = fGeometry->ChannelToWire(reco_wire->Channel());
+      std::vector<geo::WireID> wireids = fWireReadoutGeom->ChannelToWire(reco_wire->Channel());
       if(!wireids.size()) continue;
       geo::WireID wireid = wireids[0];
       
@@ -465,7 +469,7 @@ namespace cvn
     else globalWire += ((23-tpc)/4)*nWiresTPC;
     // Reverse wires and add offset for upper modules in induction views
     // Nitish : what's the difference between Nwires here and nWiresTPC?
-    if (tpcMod4 > 1 and globalPlane < 2) globalWire += fGeometry->Nwires(geo::PlaneID{0, tpc, globalPlane}) + offset - localWire;
+    if (tpcMod4 > 1 and globalPlane < 2) globalWire += fWireReadoutGeom->Nwires(geo::PlaneID{0, tpc, globalPlane}) + offset - localWire;
     else globalWire += localWire;
 
     if(tpcMod4 == 0 || tpcMod4 == 2){
@@ -535,7 +539,7 @@ namespace cvn
     if (globalPlane != 1) globalWire += (tpc/12)*nWiresTPC;
     else globalWire += ((300-tpc)/12)*nWiresTPC;
     // Reverse wires and add offset for upper modules in induction views
-    if (tpc_xy > 3 and globalPlane < 2) globalWire += fGeometry->Nwires(geo::PlaneID{0, tpc, globalPlane}) + offset - localWire;
+    if (tpc_xy > 3 and globalPlane < 2) globalWire += fWireReadoutGeom->Nwires(geo::PlaneID{0, tpc, globalPlane}) + offset - localWire;
     else globalWire += localWire;
 
     if (tpc_x % 2 == 0) globalTDC = localTDC;
@@ -618,7 +622,7 @@ namespace cvn
     
     globalPlane = plane;
     geo::PlaneID const planeID{0, tpc, globalPlane};
-    unsigned int nWiresTPC = fGeometry->Nwires(planeID);
+    unsigned int nWiresTPC = fWireReadoutGeom->Nwires(planeID);
     bool is3view30deg = fGeometry->DetectorName().find("30deg") != std::string::npos;
     
     if(globalPlane < 2){

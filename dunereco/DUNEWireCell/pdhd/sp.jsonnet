@@ -48,7 +48,7 @@ function(params, tools, override = {}) {
        */
       anode: wc.tn(anode),
       dft: wc.tn(tools.dft),
-      field_response: wc.tn(tools.field),
+      field_response: wc.tn(tools.fields[anode.data.ident]),
       elecresponse: wc.tn(tools.elec_resp),
       ftoffset: 0.0, // default 0.0
       ctoffset: 1.0*wc.microsecond, // default -8.0
@@ -56,7 +56,7 @@ function(params, tools, override = {}) {
       fft_flag: 0,  // 1 is faster but higher memory, 0 is slightly slower but lower memory
       postgain: 1.0,  // default 1.2
       ADC_mV: ADC_mV_ratio, // 4096 / (1400.0 * wc.mV), 
-      troi_col_th_factor: 5.0,  // default 5
+      troi_col_th_factor: 2.5,  // default 5
       troi_ind_th_factor: 3.0,  // default 3
       lroi_rebin: 6, // default 6
       lroi_th_factor: 3.5, // default 3.5
@@ -93,9 +93,9 @@ function(params, tools, override = {}) {
       mp2_roi_tag: 'mp2_roi%d' % anode.data.ident,
       
       isWrapped: false,
-      // process_planes: [0, 2],
+      // process_planes: if anode.data.ident==0 then [0, 1] else [0, 1, 2],
 
     } + override,
-  }, nin=1, nout=1, uses=[anode, tools.dft, tools.field, tools.elec_resp] + pc.uses + spfilt),
+  }, nin=1, nout=1, uses=[anode, tools.dft, tools.field, tools.fields[1], tools.fields[2], tools.fields[3], tools.elec_resp] + pc.uses + spfilt),
 
 }

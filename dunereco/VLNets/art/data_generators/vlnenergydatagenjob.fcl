@@ -31,6 +31,7 @@ physics:
     end_paths:     [ ana ]
 }
 
+services.AuxDetGeometry: @local::dune10kt_1x2x6_v2_auxdet_geo
 services.Geometry: @local::dune10kt_1x2x6_v2_geo
 
 # Method 1 -- using longest track

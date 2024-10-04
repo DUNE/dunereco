@@ -121,7 +121,7 @@ base {
             "dunevdcrp2-FR-fixcoll-adjustind.json.bz2",
         ],
 
-        noise: "protodune-noise-spectra-v1.json.bz2",
+        noise: "pdvd-top-noise-spectra-v2.json.bz2",
 
 
         chresp: null,

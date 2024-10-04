@@ -20,6 +20,8 @@
 #include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
+#include "larcore/Geometry/WireReadout.h"
+#include "larcore/Geometry/Geometry.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
@@ -69,6 +71,7 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 
   //create geometry and backtracker servicehandle object
   art::ServiceHandle<geo::Geometry> geo;
+  auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
   //art::ServiceHandle<cheat::BackTracker> bt;
   //define timeoffset and the maximum chargeratio allowed when matching induction plane hits
   //the timeoffset array is going to be replaced with defined values in the detectorproperties package later
@@ -173,8 +176,8 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 	//unsigned int FinalWire=0;
 
 	//read wireid vectors of induction plane hits matched in the above loop
-	std::vector<geo::WireID> wireiduv0 = geo->ChannelToWire(ChannelUV0);
-	std::vector<geo::WireID> wireiduv1 = geo->ChannelToWire(ChannelUV1);
+        std::vector<geo::WireID> wireiduv0 = wireReadout.ChannelToWire(ChannelUV0);
+        std::vector<geo::WireID> wireiduv1 = wireReadout.ChannelToWire(ChannelUV1);
 
 	//loop over the induction plane hit wireids, find candidate intersection positions using intersectionpoint
 	//function and find a position whose longitudinal position is closest to the average position returned above
@@ -191,8 +194,8 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 	    double ChargePerNumZ=hitsZ[z]->Integral()/hitsZ[z]->Multiplicity();
 	    double rChargeZ=hitsUV[uv0]->Integral()/hitsZ[z]->Integral();
 	    if (hitsUV[uv0]->Multiplicity()>0 && hitsZ[z]->Integral()>0) rChargeZ=ChargePerNum0/ChargePerNumZ;
-	    std::vector<geo::WireID> wires = geo->ChannelToWire(hitsZ[z]->Channel());
-            auto const vert = geo->Wire(wires[0]).GetCenter();
+            std::vector<geo::WireID> wires = wireReadout.ChannelToWire(hitsZ[z]->Channel());
+            auto const vert = wireReadout.Wire(wires[0]).GetCenter();
 	    if (fabs(PeakTimeMinusUV-PeakTimeMinusZ)<MinPeakTime && fabs(PeakTimeUV-PeakTimeZ)<20 &&
 		(rChargeZ<rmax && rChargeZ>(1/rmax)) &&
 	  	wireiduv0[wireid0].TPC==wires[0].TPC){
@@ -213,8 +216,8 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 	    double ChargePerNumZ=hitsZ[z]->Integral()/hitsZ[z]->Multiplicity();
 	    double rChargeZ=hitsUV[uv0]->Integral()/hitsZ[z]->Integral();
 	    if (hitsUV[uv0]->Multiplicity()>0 && hitsZ[z]->Integral()>0) rChargeZ=ChargePerNum0/ChargePerNumZ;
-	    std::vector<geo::WireID> wires = geo->ChannelToWire(hitsZ[z]->Channel());
-            auto const vert = geo->Wire(wires[0]).GetCenter();
+            std::vector<geo::WireID> wires = wireReadout.ChannelToWire(hitsZ[z]->Channel());
+            auto const vert = wireReadout.Wire(wires[0]).GetCenter();
 	    if (fabs(fabs(PeakTimeMinusUV-PeakTimeMinusZ)-MinPeakTime)<10 &&
 		//fabs(PeakTimeUV-PeakTimeZ)<20 &&
 		(rChargeZ<rmax && rChargeZ>(1/rmax)) &&
@@ -233,8 +236,9 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 	  //plane hit found in the loop above.
 	  for (unsigned int wireid1=0; wireid1 < wireiduv1.size(); ++wireid1){
 	    if (abs(int(wireid0)-int(wireid1))<3 && wireiduv0[wireid0].TPC==wireiduv1[wireid1].TPC){
-              geo->IntersectionPoint(wireiduv0[wireid0], wireiduv1[wireid1],
-				     CandPosition[1], CandPosition[2]);
+              auto const intersection =  wireReadout.WireIDsIntersect(wireiduv0[wireid0], wireiduv1[wireid1]);
+              CandPosition[1] = intersection->y;
+              CandPosition[2] = intersection->z;
 	      //double VertBetUVandZ=fabs(VertPosMean-CandPosition[2]);
 	      double VertBetUVandZ=fabs(VertPos-CandPosition[2]);
 	      if (CandPosition[1]>=ybound[0] && CandPosition[1]<=ybound[1] && CandPosition[2]>=zbound[0] && CandPosition[2]<=zbound[1]){
@@ -261,7 +265,7 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 	//xyzpos[1]=SimPosition[1];
 	//xyzpos[2]=SimPosition[2];
 	// geo->PositionToTPC(xyzpos, SimTPC, SimCstat);
-	//SimWire=int(0.5+geo->WireCoordinate(xyzpos[1], xyzpos[2], hitsUV[uv0]->WireID().Plane, SimTPC, SimCstat));
+	//SimWire=int(0.5+wireReadout.WireCoordinate(xyzpos[1], xyzpos[2], hitsUV[uv0]->WireID().Plane, SimTPC, SimCstat));
 	// for (unsigned int wireid0=0; wireid0 < wireiduv0.size(); ++wireid0){
 	//   if (abs(int(wireiduv0[wireid0].Wire)-int(SimWire))<2) SimWireID=wireid0;
 	// }
@@ -284,7 +288,7 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 	h.RMS=hitsUV[uv0]->RMS();
 	h.PeakAmplitude=hitsUV[uv0]->PeakAmplitude();
 	h.SigmaPeakAmplitude=hitsUV[uv0]->SigmaPeakAmplitude();
-	h.SummedADC=hitsUV[uv0]->SummedADC();
+	h.SummedADC=hitsUV[uv0]->ROISummedADC();
 	h.Integral=hitsUV[uv0]->Integral();
 	h.SigmaIntegral=hitsUV[uv0]->SigmaIntegral();
 	h.Multiplicity=hitsUV[uv0]->Multiplicity();
@@ -446,7 +450,7 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 
 
 	//shift the position and wireidreturned in the disambiguation algorithm
-	std::vector<geo::WireID> wireiduv0 = geo->ChannelToWire(InductionAll[uv0].Channel);	
+        std::vector<geo::WireID> wireiduv0 = wireReadout.ChannelToWire(InductionAll[uv0].Channel);
 	if (ShouldCorrect[BinForHit]!=0){
 	  if (InductionAll[uv0].FinalYPos>SecondPeakXmin[BinForHit] &&
 	      InductionAll[uv0].FinalYPos<SecondPeakXmax[BinForHit]){
@@ -470,7 +474,8 @@ void TimeBasedDisambig::RunDisambig( const std::vector< art::Ptr<recob::Hit> > &
 		       InductionAll[uv0].RMS,
 		       InductionAll[uv0].PeakAmplitude,
 		       InductionAll[uv0].SigmaPeakAmplitude,
-		       InductionAll[uv0].SummedADC,
+		       InductionAll[uv0].SummedADC,//ROI
+		       InductionAll[uv0].SummedADC,//HIT TO BE FIXED
 		       InductionAll[uv0].Integral,
 		       InductionAll[uv0].SigmaIntegral,
 		       InductionAll[uv0].Multiplicity,

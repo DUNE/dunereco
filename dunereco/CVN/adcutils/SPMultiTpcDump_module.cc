@@ -16,6 +16,7 @@
 
 #include "dunereco/CVN/adcutils/EventImageData.h"
 
+#include "larcore/Geometry/WireReadout.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
@@ -119,6 +120,7 @@ namespace nnet
 	float fPosX, fPosY;
 
 	geo::GeometryCore const* fGeometry;
+        geo::WireReadoutGeom const& fWireReadoutGeom = art::ServiceHandle<geo::WireReadout>()->Get();
   };
 
   //-----------------------------------------------------------------------
@@ -181,9 +183,9 @@ namespace nnet
                                 geo::TPCID const tpcID = fGeometry->PositionToTPCID(v);
                                 auto const [cryo, tpc] = std::make_tuple(tpcID.Cryostat, tpcID.TPC);
 				
-				for (size_t i = 0; i < 3; ++i)
+				for (unsigned int i = 0; i < 3; ++i)
 				{
-                                        if (fGeometry->TPC(tpcID).HasPlane(i))
+                                  if (fWireReadoutGeom.HasPlane({tpcID, i}))
                       { fPointid.position[i] = GetProjVtx(detProp, vtx, cryo, tpc, i); }
 					else
 					{ fPointid.position[i] = TVector2(0, 0); }
@@ -246,7 +248,7 @@ namespace nnet
 	for (int p = 2; p >= 0; --p) // loop over planes and make global images
 	{
 	    size_t drift_size = detProp.NumberTimeSamples() / fTrainingDataAlg.DriftWindow(); // tpc size in drift direction
-        size_t wire_size = fGeometry->Nwires(geo::PlaneID(0, 0, p));                   // tpc size in wire direction
+        size_t wire_size = fWireReadoutGeom.Nwires(geo::PlaneID(0, 0, p));                   // tpc size in wire direction
 	    size_t max_offset = (p < 2) ? 752 : 0;                                              // top-bottom projection max offset
 
         size_t ntotw = (tpcs[2] - 1) * weff[p] + wire_size + tpcs[1] * max_offset;          // global image size in wire direction
@@ -262,8 +264,8 @@ namespace nnet
             size_t tpc_y = (t / tpcs[0]) % tpcs[1];
             size_t tpc_x = t % tpcs[0];
 
-            int dir = fGeometry->TPC(geo::TPCID(cryoID, t)).DetectDriftDirection();
-            bool flip_d = (dir > 0); // need the flip in drift direction?
+            auto const dir = fGeometry->TPC(geo::TPCID(cryoID, t)).DriftSign();
+            bool flip_d = (dir == geo::DriftSign::Positive); // need the flip in drift direction?
 
 	        bool flip_w = false;     // need the flip in wire direction?
 	        size_t eff_p = p;        // global plane
@@ -279,11 +281,11 @@ namespace nnet
 
                 if ((t % 4 == 0) || (t % 4 == 1)) // bottom tpc's
                 {
-                    flip_w = (dir > 0) ? (eff_p == 1) : (eff_p == 0);
+                    flip_w = (dir == geo::DriftSign::Positive) ? (eff_p == 1) : (eff_p == 0);
                 }
                 else                              // top tpc's
                 {
-                    flip_w = (dir < 0) ? (eff_p == 1) : (eff_p == 0);
+                    flip_w = (dir == geo::DriftSign::Negative) ? (eff_p == 1) : (eff_p == 0);
                 }
 
                 offset = (p == 0) ? 48 : 752;     // top-bottopm offsets
@@ -405,12 +407,12 @@ namespace nnet
                                   TVector3& vec, const simb::MCParticle& particle)
   {
         auto vtx = geo::vect::toPoint(vec);
-  	geo::TPCID tpcid = fGeometry->FindTPCAtPosition(vtx);
+        geo::TPCGeo const* tpc = fGeometry->PositionToTPCptr(vtx);
 
-	if (tpcid.isValid)
+        if (tpc)
 	  {
 	  	float corrt0x = particle.T() * 1.e-3 * detProp.DriftVelocity();
-	  	if (fGeometry->TPC(tpcid).DetectDriftDirection() == 1) { corrt0x = corrt0x*(-1); }
+                if (tpc->DriftSign() == geo::DriftSign::Positive) { corrt0x = corrt0x*(-1); }
 	  	
                 vtx.SetX(vec.X() + corrt0x);
 	  }

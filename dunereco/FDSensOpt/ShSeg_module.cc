@@ -30,6 +30,7 @@
 #include "fhiclcpp/ParameterSet.h" 
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
+#include "larcore/Geometry/WireReadout.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Hit.h"
@@ -367,10 +368,10 @@ bool dunefd::ShSeg::BuildSegMC(art::Event & e)
 	if (iniseg->size() < 5) return false;
 
 	// 0: geo::kU, 1: geo::kV, 2: geo::kZ
-	const geo::TPCGeo& tpcgeo = geom->GetElement(tpcid);
 	double maxdist = 0.0; size_t bestview = 0; 
 	
-	for (size_t view = 0; view < tpcgeo.Nplanes(); ++view) 
+        geo::WireReadoutGeom const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
+	for (size_t view = 0; view < wireReadout.Nplanes(tpcid); ++view) 
 	{
 		std::map< size_t, std::vector< double > > ex;
 		iniseg->GetRawdEdxSequence(ex, view);

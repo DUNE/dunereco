@@ -24,6 +24,8 @@
 #include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
+#include "larcore/Geometry/WireReadout.h"
+#include "larcore/Geometry/Geometry.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/RecoBase/Hit.h"
@@ -69,6 +71,7 @@ namespace dune{
     fDisambigHits.clear();
 
     art::ServiceHandle<geo::Geometry> geo;
+    auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
 
     size_t napas = geo->NTPC()/2;
 
@@ -200,7 +203,7 @@ namespace dune{
 		std::vector< double > othermatchz;
 		std::vector< double > othermatchy;
 
-		std::vector<geo::WireID>  wires = geo->ChannelToWire(hitsUV[uv][iuv]->Channel());
+                std::vector<geo::WireID>  wires = wireReadout.ChannelToWire(hitsUV[uv][iuv]->Channel());
 		size_t wsize = wires.size();
 		std::vector<size_t> ndoublets(wsize,0);
 		std::vector<size_t> ntriplets(wsize,0);
@@ -214,31 +217,29 @@ namespace dune{
 		      {
 			for (size_t z=0; z<zmatches.size(); z++)
 			  {
-			    geo::WireID zwire = geo->ChannelToWire(hitsZ[zmatches[z]]->Channel())[0];
+                            geo::WireID zwire = wireReadout.ChannelToWire(hitsZ[zmatches[z]]->Channel())[0];
 			    if ( notOuterWire(zwire) )  // we really shouldn't have any hits on the outer z wires
 			      {
-			        geo::WireIDIntersection isect;
-			        if (geo->WireIDsIntersect(zwire,uvwire,isect))
+                                if (auto const isect = wireReadout.WireIDsIntersect(zwire,uvwire))
 			          {
-				    zmatchz.push_back(isect.z);
-				    zmatchy.push_back(isect.y);
+                                    zmatchz.push_back(isect->z);
+                                    zmatchy.push_back(isect->y);
 			          }
 			      }
 			  }
 			// There is at most one intersection of the u channel with a v channel. Still have to loop over possibilities though.
 			for (size_t iother=0; iother<othermatches.size(); iother++)
 			  {
-			    std::vector<geo::WireID>  otherwires = geo->ChannelToWire(hitsUV[other][othermatches[iother]]->Channel());
+                            std::vector<geo::WireID>  otherwires = wireReadout.ChannelToWire(hitsUV[other][othermatches[iother]]->Channel());
 			    for (size_t otherw = 0; otherw < otherwires.size(); otherw++)
 			      {
 				geo::WireID otherwire = otherwires[otherw];
 				if (notOuterWire(otherwire))
 				  {
-				    geo::WireIDIntersection isect;
-				    if (geo->WireIDsIntersect(otherwire,uvwire,isect))
+                                    if (auto const isect = wireReadout.WireIDsIntersect(otherwire,uvwire))
 				      {
-					othermatchz.push_back(isect.z);
-					othermatchy.push_back(isect.y);
+                                        othermatchz.push_back(isect->z);
+                                        othermatchy.push_back(isect->y);
 				      }
 				  }
 			      }

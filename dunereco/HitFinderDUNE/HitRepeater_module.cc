@@ -27,7 +27,7 @@
 #include "canvas/Persistency/Common/Ptr.h"
 
 // LArSoft Includes
-#include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/WireReadout.h"
 #include "lardataobj/RawData/RawDigit.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardata/ArtDataHelper/HitCreator.h"
@@ -56,7 +56,7 @@ namespace dune {
     void endJob() {}
 
   private:
-    art::ServiceHandle<geo::Geometry> geom;
+    geo::WireReadoutGeom const& fWireReadoutGeom = art::ServiceHandle<geo::WireReadout>()->Get();
     std::string fChanHitLabel;
   };
 
@@ -95,7 +95,7 @@ namespace dune {
     art::fill_ptr_vector(ChHits, ChannelHits);
       
     for( size_t h = 0; h < ChHits.size(); h++ ) {
-      std::vector<geo::WireID> cwids = geom->ChannelToWire(ChHits[h]->Channel());
+      std::vector<geo::WireID> cwids = fWireReadoutGeom.ChannelToWire(ChHits[h]->Channel());
       for(size_t w = 0; w < cwids.size(); w++) {
         art::Ptr<recob::Hit>  hit = ChHits[h];
 	      geo::WireID           wid = cwids[w];
