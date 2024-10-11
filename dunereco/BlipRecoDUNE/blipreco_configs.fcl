@@ -7,7 +7,7 @@ dune_blipalg:
   TrkProducer:          "pandoraTrack"  #// input recob::Tracks to use for blip reconstruction
   GeantProducer:        "largeant"      #// input sim::MCParticles (getting true particle info)
   SimEDepProducer:      "IonAndScint"   #// input sim::SimEnergyDeposits (getting energy/electrons deposited)
-  SimChanProducer:      "tpcrawdecoder:simpleSC"      #// label for sim::SimChannels (getting drifted charge; optional)
+  SimChanProducer:      "tpcrawdecoder:simpleSC" #// label for sim::SimChannels (getting drifted charge; optional)
   MaxHitTrkLength:      5.0             #// hits in trks > this length will be vetoed [cm]
   DoHitFiltering:       false           #// filter hits based on amp, width, RMS
   MaxWiresInCluster:    10              #// max allowable wires in a cluster

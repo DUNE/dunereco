@@ -526,25 +526,21 @@ namespace blip {
       hitinfo[i].driftTime    = thisHit->PeakTime()-kXTicksOffsets[cstat][tpc][plane]; //detProp.GetXTicksOffset(wireid);
 
       if( plist.size() ) {
-        int truthid;
-        float truthidfrac;
+        int truthid       = -9;
+        float truthidfrac = -9;
         std::vector<sim::TrackIDE> trackIDEs = art::ServiceHandle<cheat::BackTrackerService>()->HitToTrackIDEs(clockData,thisHit);
         float maxe = 0;
-        float bestfrac = 0;
-        float bestid = 0;
         float ne = 0;
         for(size_t i = 0; i < trackIDEs.size(); ++i){
           ne += (float)trackIDEs[i].numElectrons;
           if( trackIDEs[i].energy > maxe ) {
             maxe = trackIDEs[i].energy;
-            bestfrac = trackIDEs[i].energyFrac;
-            bestid = trackIDEs[i].trackID;
+            truthidfrac = trackIDEs[i].energyFrac;
+            truthid = trackIDEs[i].trackID;
           }
         }
         
         // Save the results
-        truthid     = bestid;
-        truthidfrac = bestfrac;
         hitinfo[i].g4trkid  = truthid;
         hitinfo[i].g4pdg    = map_g4trkid_pdg[truthid];
         hitinfo[i].g4frac   = truthidfrac; 
@@ -878,7 +874,8 @@ namespace blip {
               // *******************************************
               // Combine metrics into a consolidated score
               // *******************************************
-              float score = (1/3.)* (overlapFrac + ratio + exp(-fabs(dt)/float(fMatchMaxTicks)) );
+              float score = 0;
+              if( overlapFrac ) score=overlapFrac*ratio*exp(-fabs(dt)/float(fMatchMaxTicks));
 
               // If both clusters are matched to the same MC truth particle,
               // set flag to fill special diagnostic histograms...

@@ -1,0 +1,25 @@
+#include "standard_detsim_dune10kt_1x2x6.fcl"
+
+#==============================================================
+# Change the simulated diffusion params
+#
+# Defaults: tpcrawdecoder.wcls_main.structs.DL: 4e-9
+#           tpcrawdecoder.wcls_main.structs.DT: 8.8e-9
+#
+# In MicroBooNE LE analyses we used updated diffusion measurements
+# from measurement in arxiv-2104.06551
+#   DL: 3.74e-9
+#   DT: 5.85e-9
+#
+#==============================================================
+physics.producers.tpcrawdecoder.wcls_main.structs.DL: 3.74e-9
+physics.producers.tpcrawdecoder.wcls_main.structs.DT: 5.85e-9
+services.LArG4Parameters.LongitudinalDiffusion:       3.74e-9
+services.LArG4Parameters.TransverseDiffusion:         5.85e-9
+
+#==============================================================
+# Enable lowered ROI thresholds in WireCell signal processing 
+# (settings from MicroBooNE 'lowROIthreshold')
+#==============================================================
+physics.producers.tpcrawdecoder.wcls_main.configs: [ "pgrapher/experiment/dune10kt-1x2x6/wcls-sim-drift-simchannel-nf-sp_lowthreshold.jsonnet" ]
+

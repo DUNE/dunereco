@@ -594,6 +594,7 @@ class BlipAna : public art::EDAnalyzer
   // --- Histograms ---
   TH1D*   h_part_process;
   TH1D*   h_nhits[kNplanes];
+  TH1D*   h_nhits_noise[kNplanes];
   TH1D*   h_nclusts[kNplanes];
   TH1D*   h_nclusts_pm[kNplanes];
   
@@ -699,7 +700,7 @@ class BlipAna : public art::EDAnalyzer
       xa->SetBinLabel(3,"phot");
       xa->SetBinLabel(4,"conv");
       xa->SetBinLabel(5,"other");
-    
+   
     h_nblips_tm    = dir_truth.make<TH1D>("nblips_tm","Truth-matched 3D blips per event",blipBins,0,blipMax);
     h_blip_qcomp   = dir_truth.make<TH1D>("blip_qcomp","Fraction of true charge (at anode) reconstructed into 3D blips",202,0,1.01);
     h_blip_reszy   = dir_truth.make<TH2D>("blip_res_zy","Blip position resolution;Z_{reco} - Z_{true} [cm];Y_{reco} - Y_{true} [cm]",150,-15,15,150,-15,15);
@@ -724,8 +725,9 @@ class BlipAna : public art::EDAnalyzer
     float gofMin  = -10;  float gofMax = 10; int gofBins = 200;
     for(int i=kNplanes-1; i >= 0; i--) {
       
-      h_nhits[i]      = dir_hits.make<TH1D>(Form("pl%i_nhits",i),  Form("Plane %i;total number of hits",i),hitBins,0,hitMax);
-      
+      h_nhits[i]        = dir_hits.make<TH1D>(Form("pl%i_nhits",i),  Form("Plane %i;total number of hits",i),hitBins,0,hitMax);
+      h_nhits_noise[i]  = dir_hits.make<TH1D>(Form("pl%i_nhits_noise",i),  Form("Plane %i (non-truth-matched);total number of hits",i),hitBins,0,hitMax);
+
       h_hitamp[i]       = dir_hits.make<TH1D>(Form("pl%i_hit_amp",i),       Form("Plane %i untracked hits;hit amplitude [ADC]",i),ampBins,0,ampMax);
       h_hitamp_true[i]  = dir_hits.make<TH1D>(Form("pl%i_hit_amp_true",i),  Form("Plane %i untracked hits, truth-matched;hit amplitude [ADC]",i),ampBins,0,ampMax);
       h_hitamp_fake[i]  = dir_hits.make<TH1D>(Form("pl%i_hit_amp_fake",i),  Form("Plane %i untracked hits, non-truth-matched (noise);hit amplitude [ADC]",i),ampBins,0,ampMax);
@@ -1051,10 +1053,11 @@ void BlipAna::analyze(const art::Event& evt)
   int   num_hits_true[kNplanes]       ={0};
   int   num_hits_pmatch[kNplanes]     ={0};
   float total_hit_charge[kNplanes]    ={0};
-  
+ 
   for(size_t i=0; i<hitlist.size(); i++){
     auto const& hinfo = fBlipAlg->hitinfo[i];
-    
+   
+    //PrintHitInfo(hinfo);
     int     plane   = hitlist[i]->WireID().Plane;
     int     ndf     = hitlist[i]->DegreesOfFreedom();
     double  gof     = (ndf>0) ? hitlist[i]->GoodnessOfFit()/ndf : -9;
@@ -1167,9 +1170,10 @@ void BlipAna::analyze(const art::Event& evt)
   // plane-specific variables and fill histograms
   for(size_t ip=0; ip<kNplanes; ip++){
     h_nhits[ip]   ->Fill(num_hits[ip]);
+    h_nhits_noise[ip] ->Fill(num_hits[ip]-num_hits_true[ip]);
     float qcomp     = -9;
     if( num_hits_true[ip] ) {
-      if(total_numElectrons )  qcomp = total_hit_charge[ip]/total_depElectrons;
+      if(total_depElectrons )  qcomp = total_hit_charge[ip]/total_depElectrons;
       h_chargecomp[ip]->Fill( qcomp );
       h_hitpur[ip]->Fill((float)num_hits_true[ip]/num_hits[ip]);
     }
