@@ -325,7 +325,7 @@ namespace dune {
                     {
                         if (cwids[w].TPC != spTpc) { continue; } // not that side of APA
 
-                        float sp_wire = fWireReadoutGeom->Plane(id).WireCoordinate(sp->position());
+                        float sp_wire = fWireReadoutGeom->Plane(cwids[w]).WireCoordinate(sp->position());
                         float dw = std::fabs(sp_wire - cwids[w].Wire);
                         if (dw < max_dw)
                         {
