@@ -212,12 +212,12 @@ namespace blip {
     TH2D*   h_clust_q[kNplanes]; 
     TH1D*   h_clust_qratio[kNplanes];
     TH1D*   h_clust_score[kNplanes];
-    TH1D*   h_clust_truematch_overlap[kNplanes];
-    TH1D*   h_clust_truematch_dt[kNplanes];
-    TH1D*   h_clust_truematch_dtfrac[kNplanes];
-    TH1D*   h_clust_truematch_score[kNplanes]; 
-    TH2D*   h_clust_truematch_q[kNplanes]; 
-    TH1D*   h_clust_truematch_qratio[kNplanes]; 
+    TH1D*   h_clust_mc_overlap[kNplanes];
+    TH1D*   h_clust_mc_dt[kNplanes];
+    TH1D*   h_clust_mc_dtfrac[kNplanes];
+    TH1D*   h_clust_mc_score[kNplanes]; 
+    TH2D*   h_clust_mc_q[kNplanes]; 
+    TH1D*   h_clust_mc_qratio[kNplanes]; 
     TH1D*   h_nmatches[kNplanes];
   };
 

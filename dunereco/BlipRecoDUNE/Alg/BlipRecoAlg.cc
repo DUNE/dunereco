@@ -168,20 +168,20 @@ namespace blip {
         h_clust_dtfrac[i]     = hdir.make<TH1D>(Form("p%i_clust_dtfrac",i),    Form("Plane %i clusters;Charge-weighted mean dT/RMS",i),150,-1.5,1.5);
         h_clust_dt[i]         = hdir.make<TH1D>(Form("p%i_clust_dt",i),        Form("Plane %i clusters;dT [ticks]",i),200,-10,10);
         h_clust_q[i]     = hdir.make<TH2D>(Form("p%i_clust_charge",i),  
-          Form("Pre-cut, Plane %i cluster charge [#times10^{3} e-];Plane %i cluster charge [#times10^{3} e-]",fCaloPlane,i),
+          Form("Pre-cut;Plane %i cluster charge [#times10^{3} e-];Plane %i cluster charge [#times10^{3} e-]",fCaloPlane,i),
           qbins,0,qmax,qbins,0,qmax);
           h_clust_q[i]->SetOption("colz");
         h_clust_qratio[i]   = hdir.make<TH1D>(Form("p%i_clust_qratio",i),        Form("Plane %i clusters;Charge ratio",i),100,0,1.01);
         h_clust_score[i]    = hdir.make<TH1D>(Form("p%i_clust_matchscore",i),   Form("Plane %i clusters;Match score",i),101,0,1.01);
-        h_clust_truematch_overlap[i]    = hdir.make<TH1D>(Form("p%i_clust_truematch_overlap",i),   Form("Plane %i clusters;Overlap fraction",i),101,0,1.01);
-        h_clust_truematch_dt[i]         = hdir.make<TH1D>(Form("p%i_clust_truematch_dt",i),        Form("Plane %i clusters;dT [ticks]",i),200,-10,10);
-        h_clust_truematch_dtfrac[i]     = hdir.make<TH1D>(Form("p%i_clust_truematch_dtfrac",i),    Form("Plane %i clusters;Charge-weighted mean dT/RMS",i),120,-3,3);
-        h_clust_truematch_q[i]     = hdir.make<TH2D>(Form("p%i_clust_truematch_charge",i),  
-          Form("Pre-cut;Plane %i cluster charge [#times10^{3} e-];Plane %i cluster charge [#times10^{3} e-]",fCaloPlane,i),
+        h_clust_mc_overlap[i]    = hdir.make<TH1D>(Form("p%i_clust_mc_overlap",i),   Form("Plane %i truth-matched clusters;Overlap fraction",i),101,0,1.01);
+        h_clust_mc_dt[i]         = hdir.make<TH1D>(Form("p%i_clust_mc_dt",i),        Form("Plane %i truth-matched clusters;dT [ticks]",i),200,-10,10);
+        h_clust_mc_dtfrac[i]     = hdir.make<TH1D>(Form("p%i_clust_mc_dtfrac",i),    Form("Plane %i truth-matched clusters;Charge-weighted mean dT/RMS",i),120,-3,3);
+        h_clust_mc_q[i]     = hdir.make<TH2D>(Form("p%i_clust_mc_charge",i),  
+          Form("Pre-cut, truth-matched clusters;Plane %i cluster charge [#times10^{3} e-];Plane %i cluster charge [#times10^{3} e-]",fCaloPlane,i),
           qbins,0,qmax,qbins,0,qmax);
-          h_clust_truematch_q[i]->SetOption("colz");
-        h_clust_truematch_qratio[i]   = hdir.make<TH1D>(Form("p%i_clust_truematch_qratio",i),        Form("Plane %i clusters;Charge ratio",i),100,0,1.01);
-        h_clust_truematch_score[i]    = hdir.make<TH1D>(Form("p%i_clust_truematch_matchscore",i),   Form("Plane %i clusters;Match score",i),101,0,1.01);
+          h_clust_mc_q[i]->SetOption("colz");
+        h_clust_mc_qratio[i]   = hdir.make<TH1D>(Form("p%i_clust_mc_qratio",i),        Form("Plane %i truth-matched clusters;Charge ratio",i),100,0,1.01);
+        h_clust_mc_score[i]    = hdir.make<TH1D>(Form("p%i_clust_mc_matchscore",i),   Form("Plane %i truth-matched clusters;Match score",i),101,0,1.01);
         h_nmatches[i]         = hdir.make<TH1D>(Form("p%i_nmatches",i),Form("Number of plane%i matches to single collection cluster",i),20,0,20);
     
     }//endloop over planes
@@ -890,11 +890,11 @@ namespace blip {
               h_clust_q[planeB]       ->Fill( q1, q2 );
               if( score > 0 ) h_clust_score[planeB]   ->Fill(score);
               if( trueFlag ) {
-                h_clust_truematch_overlap[planeB] ->Fill(overlapFrac);
-                h_clust_truematch_dt[planeB]      ->Fill(dt);
-                h_clust_truematch_dtfrac[planeB]  ->Fill(dtfrac);
-                h_clust_truematch_q[planeB]       ->Fill(q1,q2);
-                if( score > 0 ) h_clust_truematch_score[planeB]  ->Fill(score);
+                h_clust_mc_overlap[planeB] ->Fill(overlapFrac);
+                h_clust_mc_dt[planeB]      ->Fill(dt);
+                h_clust_mc_dtfrac[planeB]  ->Fill(dtfrac);
+                h_clust_mc_q[planeB]       ->Fill(q1,q2);
+                if( score > 0 ) h_clust_mc_score[planeB]  ->Fill(score);
               }
               
               if( fSaveTree ) {
@@ -918,7 +918,7 @@ namespace blip {
               if( fabs(dt)      > fMatchMaxTicks    ) continue;
               if( fabs(dtfrac)  > fMatchSigmaFact   ) continue;
               if( qdiff         > _matchQDiffLimit  ) {
-                if(trueFlag) h_clust_truematch_qratio[planeB]  ->Fill(ratio);
+                if(trueFlag) h_clust_mc_qratio[planeB]  ->Fill(ratio);
                 h_clust_qratio[planeB]  ->Fill(ratio);
                 if( ratio < fMatchMinQRatio ) continue;
               }
