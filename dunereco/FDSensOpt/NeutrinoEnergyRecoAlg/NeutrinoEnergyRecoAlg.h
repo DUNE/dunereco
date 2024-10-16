@@ -298,9 +298,16 @@ class NeutrinoEnergyRecoAlg
         double fMinTrackLengthMCS;                               ///< the minimum track length in cm to compute MCS
         double fMaxTrackLengthMCS;                               ///< the maximum track length in cm to compute MCS
         double fSegmentSizeMCS;                                  ///< the segment length in cm to compute scattered angle MCS
+        int fNStepsChi2;                                         ///< Number of steps to be fitted in chi2 method (dafault 6)
         int fMaxMomentumMCS;                                     ///< the maximum momentum to be fitted
-        int fStepsMomentumMCS;                                   ///< for LLHD, energy steps to minimize
-        int fMaxResolutionMCS;                                   ///< for LLHD, angle resolution is fitted, set 0 to keep at 2 mrad
+        double fMinResolutionMCSChi2;                            ///< for Chi2, angle resolution is fitted,
+        double fMaxResolutionMCSChi2;                            ///< for Chi2, angle resolution is fitted, set 0 to fix at minimum
+        double fMinResolutionMCSLLHD;                            ///< for LLHD, angle resolution is fitted,
+        double fMaxResolutionMCSLLHD;                            ///< for LLHD, angle resolution is fitted, set 0 to fix at minimum
+        bool fCheckValidScattered;                               ///< for LLHD, If true, scattered angles in segments with only 2 points will not be considered
+        double fAngleCorrection;                                 ///< for LLHD, angle correction when using space angle, default is 1/0.757 from studies with MC
+
+        int fMCSAngleMethod;                                     ///< Define to use plane angles (xz or yz: 0 or 1) or space angle (2)
         double fRecombFactor;                                    ///< the average reccombination factor
 
         std::string fTrackLabel;                                 ///< the track label
