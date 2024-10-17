@@ -16,9 +16,10 @@ services:
 
   message:                @local::standard_info
 
+AuxDetGeometry: @local::dune10kt_workspace_auxdet_geo
   Geometry:		  @local::dune10kt_workspace_geo
 
-  ExptGeoHelperInterface: @local::dune_geometry_helper
+  WireReadout: @local::dune_wire_readout
   GeometryConfigurationWriter: {}
 
   LArG4Parameters:        @local::dunefd_largeantparameters

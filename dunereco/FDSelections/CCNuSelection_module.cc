@@ -30,6 +30,8 @@
 //LArSoft
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCFlux.h"
+#include "larcore/Geometry/WireReadout.h"
+#include "larcore/Geometry/Geometry.h"
 #include "larcoreobj/SummaryData/POTSummary.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Track.h"
@@ -2454,12 +2456,12 @@ TVector3 FDSelection::CCNuSelection::ProjectVectorOntoPlane(TVector3 vector_to_p
 
 double FDSelection::CCNuSelection::DistanceToNuVertex(art::Event const & evt, std::vector<art::Ptr<recob::Hit>> const artHitList, const TVector3 &nuVertex)
 {
-  art::ServiceHandle<geo::Geometry const> theGeometry;
   auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
+  auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
 
   double closestDistanceSquared(std::numeric_limits<double>::max());
 
-  for (art::Ptr<recob::Hit> hit : artHitList)
+  for (art::Ptr<recob::Hit> const& hit : artHitList)
   {
     const geo::WireID hit_WireID(hit->WireID());
     const double hit_Time(hit->PeakTime());
@@ -2468,7 +2470,7 @@ double FDSelection::CCNuSelection::DistanceToNuVertex(art::Event const & evt, st
     const geo::View_t pandora_View(lar_pandora::LArPandoraGeometry::GetGlobalView(hit_WireID.Cryostat, hit_WireID.TPC, hit_View));
 
     TVector3 vertexXYZ = nuVertex;
-    geo::Point_t hitXYZ = theGeometry->Cryostat(cryostatID).TPC(hit_WireID.TPC).Plane(hit_WireID.Plane).Wire(hit_WireID.Wire).GetCenter();
+    geo::Point_t hitXYZ = wireReadout.Wire(hit_WireID).GetCenter();
     const double hitY(hitXYZ.Y());
     const double hitZ(hitXYZ.Z());
 

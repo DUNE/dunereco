@@ -14,6 +14,7 @@
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/PtrVector.h"
 
+#include "larcore/Geometry/WireReadout.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "lardataobj/RecoBase/Wire.h"
@@ -91,6 +92,7 @@ namespace dune::apa {
   private:
 
     art::ServiceHandle<geo::Geometry> fGeom;           // handle to geometry service
+    geo::WireReadoutGeom const* fWireReadoutGeom = &art::ServiceHandle<geo::WireReadout>()->Get();
 
     unsigned int fChannelsPerAPA;                      ///< All APAs have this same number of channels
     unsigned int fAPAsPerCryo;

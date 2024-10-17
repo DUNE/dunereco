@@ -61,6 +61,7 @@
 #include "TPrincipal.h"
 #include "TTree.h"
 #include "TVector3.h"
+#include "larcore/Geometry/WireReadout.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
@@ -774,12 +775,12 @@ Bool_t dune::PointResTree::distance_cut(
     auto pos = XYZVector(spacepoint->XYZ());
     distance += (pos - reco_e_position).Mag();
   } else { // no spacepoint found, do 2D reconstruction (X, Z)
-    geo::GeometryCore const &geom = *(lar::providerFrom<geo::Geometry>());
+    auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
     auto const detProperties =
         art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(
             event);
     auto wireID = hit.WireID();
-    auto plane = geom.Plane(wireID);
+    auto const& plane = wireReadout.Plane(wireID);
     auto pos = plane.Wire(wireID).GetCenter();
     plane.DriftPoint(pos,
                      -abs(detProperties.ConvertTicksToX(
@@ -809,12 +810,12 @@ void dune::PointResTree::write_multi_distance(
     auto pos = XYZVector(spacepoint->XYZ());
     distance += (pos - reco_e_position).Mag();
   } else { // no spacepoint found, do 2D reconstruction (X, Z)
-    geo::GeometryCore const &geom = *(lar::providerFrom<geo::Geometry>());
+    auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
     auto const detProperties =
         art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(
             event);
     auto wireID = hit.WireID();
-    auto plane = geom.Plane(wireID);
+    auto const& plane = wireReadout.Plane(wireID);
     auto pos = plane.Wire(wireID).GetCenter();
     plane.DriftPoint(pos,
                      -abs(detProperties.ConvertTicksToX(

@@ -33,7 +33,7 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // LArSoft includes
-#include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/WireReadout.h"
 #include "larcorealg/Geometry/TPCGeo.h"
 #include "larcorealg/Geometry/PlaneGeo.h"
 #include "larcorealg/Geometry/WireGeo.h"
@@ -138,9 +138,9 @@ void EmLikeHits::removeHitsAssignedToTracks(
 bool EmLikeHits::isCloseToTrack(TVector2 p, const recob::Track& trk,
 	unsigned int view, unsigned int tpc, unsigned int cryo)
 {
-	art::ServiceHandle<geo::Geometry> geom;
+        auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
         geo::PlaneID const planeID{cryo, tpc, view};
-        double wirePitch = geom->Plane(planeID).WirePitch();
+        double wirePitch = wireReadout.Plane(planeID).WirePitch();
 
 	//double driftPitch = detProp.GetXTicksCoefficient(tpc, cryo);
 
