@@ -15,6 +15,7 @@ local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local params_maker = import 'pgrapher/experiment/dune10kt-hd/simparams.jsonnet';
 local fcl_params = {
     G4RefTime: std.extVar('G4RefTime') * wc.us,
+    nticks: std.extVar('nticks'),
     use_hydra: std.extVar('use_hydra'),
 };
 local params = params_maker(fcl_params) {

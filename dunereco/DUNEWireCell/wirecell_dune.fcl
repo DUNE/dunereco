@@ -1824,7 +1824,7 @@ dune10kt_horizdrift_sim_nfsp : {
         }
         structs: {
           # number of time samples
-          #nticks: @local::dunefd_detproperties.NumberTimeSamples
+          nticks: @local::dunefd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns]
           DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
           # Transverse diffusion constant [cm2/ns]
