@@ -194,7 +194,7 @@ local img = {
     }.ret,
 
     // in: IBlobSet out: ICluster
-    solving :: function(anode, aname) {
+    solving :: function(anode, aname, solving_type = "simple") {
 
         local bc = g.pnode({
             type: "BlobClustering",
@@ -277,8 +277,10 @@ local img = {
         local cs3 = self.solving("3rd"),
         local ld3 = self.local_deghosting(3,"3rd"),
 
-        // ret: g.pipeline([bc, gd1, cs1, ld1, gd2, cs2, ld2, cs3, ld3, gc],"uboone-solving"),
-        ret: g.pipeline([bc, cs1, ld1, gc],"simple-solving"),
+        ret: 
+        if solving_type == "full"
+        then g.pipeline([bc, gd1, cs1, ld1, gd2, cs2, ld2, cs3, ld3, gc],"uboone-solving")
+        else g.pipeline([bc, cs1, ld1, gc],"simple-solving"),
     }.ret,
 
     dump :: function(anode, aname, drift_speed) {
@@ -303,6 +305,15 @@ function() {
             img.slicing(anode, anode.name, 4, active_planes=[0,1,2], masked_planes=[],dummy_planes=[]), // 109*22*4
             img.tiling(anode, anode.name),
             img.solving(anode, anode.name),
+            // img.clustering(anode, anode.name),
+            img.dump(anode, anode.name, params.lar.drift_speed),])
+    else if multi_slicing == "pdhd1"
+    then g.pipeline([
+            // img.slicing(anode, anode.name, 109, active_planes=[0,1,2], masked_planes=[],dummy_planes=[]), // 109*22*4
+            // img.slicing(anode, anode.name, 1916, active_planes=[], masked_planes=[0,1],dummy_planes=[2]), // 109*22*4
+            img.slicing(anode, anode.name, 4, active_planes=[0,1], masked_planes=[],dummy_planes=[2]), // 109*22*4
+            img.tiling(anode, anode.name),
+            img.solving(anode, anode.name, "full"),
             // img.clustering(anode, anode.name),
             img.dump(anode, anode.name, params.lar.drift_speed),])
     else if multi_slicing == "active"
@@ -330,8 +341,8 @@ function() {
         ret: g.fan.fanout("FrameFanout",[active_fork,masked_fork], "fan_active_masked"),
     }.ret,
 
-    per_anode(anode) :: g.pipeline([
+    per_anode(anode, pipe_type = "single") :: g.pipeline([
         img.pre_proc(anode, anode.name),
-        imgpipe(anode, "single"),
+        imgpipe(anode, pipe_type),
         ], "per_anode"),
 }
