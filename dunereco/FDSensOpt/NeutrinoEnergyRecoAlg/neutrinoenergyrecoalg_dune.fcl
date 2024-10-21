@@ -34,7 +34,7 @@ dune_neutrinoenergyrecoalg:
     MaxResolutionMCSLLHD:   800        # mrad (double), set zero fixes at minimum
     CheckValidScattered:    true       # affects LLHD, true will check valid segments for computing scattering
     AngleCorrection:        0.757      # affects LLHD when using space angle. Value set from studies with MC divides scatted angle by 0.757
-    MCSAngleMethod:         1          # scatter angle to use: 0 (xz), 1(yz) or 2 (space angle)
+    MCSAngleMethod:         1          # scatter angle to use: 1 (xz), 2 (yz) or 3 (space angle)
 }
 
 dunevd_neutrinoenergyrecoalg:
