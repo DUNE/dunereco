@@ -51,14 +51,6 @@ class CalorimetricDirectionFitter {
         double _pU = 0, _pV = 0, _pW = 0;
         double _pxU = 0, _pxV = 0, _pxW = 0;
         int _nhitsU = 0, _nhitsV = 0, _nhitsW = 0;
-        const std::vector<double> _calib_consts = {
-            1.5e-5, //pxU
-            1.5e-5, //pxV
-            1e-5,   //pxW
-            1.3e-5, //pU
-            1.3e-5, //pV
-            1e-5    //pW
-        }; //TODO: Not ideal at all... I guess these could be obtained from calculations
 };
 
 class NeutrinoAngularRecoAlg 

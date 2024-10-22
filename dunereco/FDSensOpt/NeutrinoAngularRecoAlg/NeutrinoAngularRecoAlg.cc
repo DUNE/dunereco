@@ -198,29 +198,57 @@ dune::AngularRecoOutput NeutrinoAngularRecoAlg::CalculateNeutrinoAngle(const art
         output_vec.push_back(output);
     }
 
+    const std::vector<std::pair<double, double>> start_values = { //Changng the starting point seems to help convergence in some cases
+        {0.5, 0.5},
+        {0.5, 2},
+        {2, 0.5},
+        {2, 2},
+    };
+
     //Combining together the infos from the views
     CalorimetricDirectionFitter const caloFitter{output_vec, GetViewTheta(geo::kU), GetViewTheta(geo::kV)};
-    ROOT::Math::Functor fitFunc([&caloFitter](double const* xs){return caloFitter.Chi2(xs);}, 3);
-    ROOT::Minuit2::Minuit2Minimizer minimizer{ROOT::Minuit2::kMigrad};
-    minimizer.SetFunction(fitFunc);
-    minimizer.SetLimitedVariable(0, "px", 1, 0.01, -100, 100);
-    minimizer.SetLimitedVariable(1, "py", 1, 0.01, -100, 100);
-    minimizer.SetLimitedVariable(2, "pz", 1, 0.01, -100, 100);
-    minimizer.SetMaxFunctionCalls(1e9);
-    minimizer.SetMaxIterations(1e9);
-    minimizer.SetTolerance(0.01);
-    minimizer.SetStrategy(2);
-    minimizer.SetErrorDef(1);
+    ROOT::Math::Functor fitFunc([&caloFitter](double const* xs){return caloFitter.Chi2(xs);}, 2);
 
-    const bool mstatus [[maybe_unused]] = minimizer.Minimize();
+    if(caloFitter.NViews() < 2){
+        Point_t vertex(0,0,0);
+        Direction_t direction(0,0,0);
+        AngularRecoInputHolder angularRecoInputHolder(vertex, direction, kHits);
+        return this->ReturnNeutrinoAngle(angularRecoInputHolder);
+    }
+
+
+    ROOT::Minuit2::Minuit2Minimizer minimizer{ROOT::Minuit2::kCombined};
+    
+    bool mstatus = false;
+
+    for(const std::pair<double, double> &start_value : start_values){
+        minimizer.Clear();
+        minimizer.SetFunction(fitFunc);
+        minimizer.SetVariable(0, "theta", start_value.first, 0.01);
+        minimizer.SetVariable(1, "phi", start_value.second, 0.01);
+        minimizer.SetMaxFunctionCalls(1e9);
+        minimizer.SetMaxIterations(1e9);
+        minimizer.SetTolerance(0.01);
+        minimizer.SetStrategy(2);
+        minimizer.SetErrorDef(1);
+        mstatus = minimizer.Minimize();
+
+        if(mstatus){
+            break; //If fit converged, no need to test alternative stating values
+        }
+    }
+
+    if(!mstatus){ //Did not manage to converge, all hope is lost
+        Point_t vertex(0,0,0);
+        Direction_t direction(0,0,0);
+        AngularRecoInputHolder angularRecoInputHolder(vertex, direction, kRecoMethodNotSet);
+        return this->ReturnNeutrinoAngle(angularRecoInputHolder);
+    }
+
     const double* pars = minimizer.X();
-    double px = pars[0];
-    double py = pars[1];
-    double pz = pars[2];
-
-    double ptot = sqrt(px*px + py*py + pz*pz);
-
-    Direction_t direction(px/ptot, py/ptot, pz/ptot);
+    double theta = pars[0];
+    double phi = pars[1];
+    Direction_t direction(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
     AngularRecoInputHolder angularRecoInputHolder(vertex, direction, kHits);
     return this->ReturnNeutrinoAngle(angularRecoInputHolder);
 }
@@ -505,18 +533,18 @@ CalorimetricDirectionFitter::CalorimetricDirectionFitter(std::vector<PolarFitOut
         switch (view_fit.view)
         {
             case geo::View_t::kU:
-                _pU = view_fit.pview*_calib_consts[3];
-                _pxU = view_fit.pdrift*_calib_consts[0];
+                _pU = view_fit.pview;
+                _pxU = view_fit.pdrift;
                 _nhitsU = view_fit.nhits;
                 break;
             case geo::View_t::kV:
-                _pV = view_fit.pview*_calib_consts[4];
-                _pxV = view_fit.pdrift*_calib_consts[1];
+                _pV = view_fit.pview;
+                _pxV = view_fit.pdrift;
                 _nhitsV = view_fit.nhits;
                 break;
             case geo::View_t::kW:
-                _pW = view_fit.pview*_calib_consts[5];
-                _pxW = view_fit.pdrift*_calib_consts[2];
+                _pW = view_fit.pview;
+                _pxW = view_fit.pdrift;
                 _nhitsW = view_fit.nhits;
                 break;
             default:
@@ -529,18 +557,35 @@ CalorimetricDirectionFitter::CalorimetricDirectionFitter(std::vector<PolarFitOut
 
 
 double CalorimetricDirectionFitter::Chi2(double const* x) const{
-    double px = x[0];
-    double py = x[1];
-    double pz = x[2];
+    double theta = x[0];
+    double phi = x[1];
+
+    double px = sin(theta)*cos(phi);
+    double py = sin(theta)*sin(phi);
+    double pz = cos(theta);
 
     double pu = cos(_thetaU)*pz - sin(_thetaU)*py;
     double pv = cos(_thetaV)*pz - sin(_thetaV)*py;
 
-    double nhits_total = _nhitsU + _nhitsV + _nhitsW;
+    double u_theta_meas = atan2(_pU, _pxU);
+    double v_theta_meas = atan2(_pV, _pxV);
+    double w_theta_meas = atan2(_pW, _pxW);
 
-    double chi2 = _nhitsU/nhits_total*((px - _pxU)*(px - _pxU) + (pu - _pU)*(pu - _pU)) + 
-           _nhitsV/nhits_total*((px - _pxV)*(px - _pxV) + (pv - _pV)*(pv - _pV)) + 
-           _nhitsW/nhits_total*((px - _pxW)*(px - _pxW) + (pz - _pW)*(pz - _pW));
+    double u_theta_fit = atan2(pu, px);
+    double v_theta_fit = atan2(pv, px);
+    double w_theta_fit = atan2(pz, px);
+
+    double chi2 = 0;
+    if (_nhitsU > 0){
+        chi2 += (u_theta_fit - u_theta_meas)*(u_theta_fit - u_theta_meas);
+    }
+    if(_nhitsV > 0){
+        chi2 += (v_theta_fit - v_theta_meas)*(v_theta_fit - v_theta_meas);
+    }
+    if(_nhitsW > 0)
+    {
+        chi2 += (w_theta_fit - w_theta_meas)*(w_theta_fit - w_theta_meas);
+    }
 
     return chi2;
 

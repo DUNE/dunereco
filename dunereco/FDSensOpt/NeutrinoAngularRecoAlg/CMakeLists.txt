@@ -32,8 +32,7 @@ art_make( BASENAME_ONLY
   messagefacility::MF_MessageLogger
   cetlib::cetlib cetlib_except::cetlib_except
   ROOT::TMVA
-  ROOT_EG
-  ROOT_BASIC_LIB_LIST
+  ROOT::EG
   ROOT::Minuit
   ROOT::Minuit2
   )
