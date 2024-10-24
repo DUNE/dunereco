@@ -27,8 +27,14 @@ dune_neutrinoenergyrecoalg:
     MaxTrackLengthMCS:      1350.      # cm
     SegmentSizeMCS:         10.        # cm
     MaxMomentumMCS:         7500       # MeV (integer)
-    StepsMomentumMCS:       10         # MeV (integer)
-    MaxResolutionMCS:       0          # mrad (integer), set zero fixes at 2 mrad
+    NStepsChi2:             6          # NDF of chi2 fit (integer)
+    MinResolutionMCSChi2:   0          # mrad (double) 
+    MaxResolutionMCSChi2:   45         # mrad (double), set zero fixes at minimum
+    MinResolutionMCSLLHD:   0.001      # mrad (double) 
+    MaxResolutionMCSLLHD:   800        # mrad (double), set zero fixes at minimum
+    CheckValidScattered:    true       # affects LLHD, true will check valid segments for computing scattering
+    AngleCorrection:        0.757      # affects LLHD when using space angle. Value set from studies with MC divides scatted angle by 0.757
+    MCSAngleMethod:         1          # scatter angle to use: 1 (xz), 2 (yz) or 3 (space angle)
 }
 
 dunevd_neutrinoenergyrecoalg:
