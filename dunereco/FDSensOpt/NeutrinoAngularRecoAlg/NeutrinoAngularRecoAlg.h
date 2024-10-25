@@ -19,6 +19,7 @@
 //LArSoft
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
+#include "larcore/Geometry/WireReadout.h"
 
 //DUNE
 #include "dunereco/FDSensOpt/FDSensOptData/AngularRecoOutput.h"
@@ -200,6 +201,7 @@ class NeutrinoAngularRecoAlg
         std::string fCalorimetryLabel;                           ///< the calorimetry label
         float fDistanceToWallThreshold;                          ///< margin to consider wether a track is contained
         art::ServiceHandle<geo::Geometry const> fGeometry;       ///< handle to the geometry service
+        art::ServiceHandle<geo::WireReadout const> fWireReadout; ///< handle to the WireReadout service
 
         const float fPION_MASS = 139.57; //MeV
 };

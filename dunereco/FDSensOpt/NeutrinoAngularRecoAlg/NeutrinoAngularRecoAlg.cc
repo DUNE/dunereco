@@ -18,6 +18,7 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 //LArSoft
 #include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/WireReadout.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardataobj/RecoBase/Hit.h"
@@ -257,7 +258,7 @@ dune::AngularRecoOutput NeutrinoAngularRecoAlg::CalculateNeutrinoAngle(const art
 
 geo::View_t NeutrinoAngularRecoAlg::GetTargetView(const art::Ptr<recob::Hit> &hit) const{
     const geo::TPCID hit_tpcID(hit->WireID());
-    if(fGeometry->TPC(hit_tpcID).DriftDirection() == geo::kPosX){ //"normal" drift direction, we don't change anything
+    if(fGeometry->TPC(hit_tpcID).DriftAxisWithSign().coordinate == geo::Coordinate::X){ //"normal" drift direction, we don't change anything
         return hit->View();
     }
     else{ //We invert U and V
@@ -277,9 +278,9 @@ geo::View_t NeutrinoAngularRecoAlg::GetTargetView(const art::Ptr<recob::Hit> &hi
 
 float NeutrinoAngularRecoAlg::GetViewTheta(geo::View_t view) const{
     for (geo::TPCGeo const& TPC: fGeometry->Iterate<geo::TPCGeo>()) {
-        if(TPC.DriftDirection() == geo::kPosX){ //Trying to find a TPC with the right drift direction
-            for (unsigned int p = 0; p < TPC.Nplanes(); ++p) {
-                geo::PlaneGeo const& plane = TPC.Plane(p);
+        if(TPC.DriftAxisWithSign().coordinate == geo::Coordinate::X){ //Trying to find a TPC with the right drift direction
+            for (unsigned int p = 0; p < fWireReadout->Get().Nplanes(TPC.ID()); ++p) {
+                geo::PlaneGeo const& plane = fWireReadout->Get().Plane(geo::PlaneID(TPC.ID(), p));
                 if (plane.View() == view){
                     return 0.5f * M_PI - plane.ThetaZ();
                 }
@@ -321,7 +322,7 @@ PolarFitOutput NeutrinoAngularRecoAlg::FitViewHits(const art::Event &event, cons
 
         //Getting hit"Y" from the view coordinate
         
-        auto const xyz = fGeometry->Wire(hit_WireID).GetCenter();
+        auto const xyz = fWireReadout->Get().Wire(hit_WireID).GetCenter();
         
         const float hitY((xyz.Z() - vertex.Z())*cos(theta) - (xyz.Y() - vertex.Y())*sin(theta));
 
