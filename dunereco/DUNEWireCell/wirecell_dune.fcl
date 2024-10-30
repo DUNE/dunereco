@@ -187,6 +187,29 @@ protodunehd_sp:
     }
 }
 
+protodunehd_dnnsp:
+{
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["Pgrapher"]
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellRoot","WireCellLarsoft","WireCellHio","WireCellTbb","WireCellImg","WireCellPytorch"]
+        inputers: ["wclsRawFrameSource"]
+        outputers: ["wclsFrameSaver:spsaver", "wclsFrameSaver:dnnsaver"]
+        configs: ["pgrapher/experiment/pdhd/wcls-rawdigit-dnnsp.jsonnet"]
+        params : {
+            raw_input_label: "wclsdatahdfilter:raw"
+            reality: "data" # vs. "sim"
+            signal_output_form: "sparse"
+        }
+        structs: {
+           clock_speed: @local::protodunehd_services.DetectorClocksService.ClockSpeedTPC
+        }
+
+    }
+}
+
+
 wirecell_protodunespmc:
 {
     module_type : WireCellToolkit
