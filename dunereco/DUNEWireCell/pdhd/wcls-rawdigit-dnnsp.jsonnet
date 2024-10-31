@@ -118,7 +118,8 @@ local wcls_output = {
       //nticks: params.daq.nticks,
       // nticks: nsample,
       chanmaskmaps: [],
-      summary_tags: ['threshold'],  // retagger makes this tag
+      summary_tags: ['wiener'],  // retagger makes this tag
+      summary_suffix: "",
       //  just one threshold value
       summary_operator: { threshold: 'set' },
       nticks: -1,
@@ -345,7 +346,7 @@ local ofanin = g.pnode({
               trace: {
                 ['gauss%d' % n]: ['gauss%d' % n],
                 ['wiener%d' % n]: ['wiener%d' % n],
-                ['threshold%d' % n]: ['threshold%d' % n],
+                // ['threshold%d' % n]: ['threshold%d' % n],
               },
             }
             for n in std.range(0, std.length(tools.anodes) - 1)
@@ -364,7 +365,7 @@ local outretagger = g.pnode({
       merge: {
         'gauss\\d': 'gauss',
         'wiener\\d': 'wiener',
-        'threshold\\d': 'threshold',
+        // 'threshold\\d': 'threshold',
       },
     }],
   },

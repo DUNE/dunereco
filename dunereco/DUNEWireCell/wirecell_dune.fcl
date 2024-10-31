@@ -200,7 +200,7 @@ protodunehd_dnnsp:
         params : {
             raw_input_label: "wclsdatahdfilter:raw"
             reality: "data" # vs. "sim"
-            signal_output_form: "sparse"
+            signal_output_form: "dense" # "sparse"
         }
         structs: {
            clock_speed: @local::protodunehd_services.DetectorClocksService.ClockSpeedTPC
@@ -1820,7 +1820,24 @@ protodunehd_nfspimg : {
    }
 }
 
-
+protodunehd_img : {
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+      logsinks: ["stdout"]
+      loglevels: ["debug", "pgraph:info"]
+      plugins: ["WireCellGen", "WireCellSigProc", "WireCellImg", "WireCellSio", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
+      inputers: ["wclsCookedFrameSource:charge", "wclsCookedFrameSource:wiener"]
+      outputers: [ ]
+      configs: ["pgrapher/experiment/pdhd/wcls-img.jsonnet"]
+      params : {
+         charge_input_label: "wclsdatahd:gauss"
+         wiener_input_label: "wclsdatahd:wiener"
+         reality: "data"
+      }
+   }
+}
 
 dune10kt_horizdrift_sim_nfsp : {
     module_type : WireCellToolkit
