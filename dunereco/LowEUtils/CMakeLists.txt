@@ -1,0 +1,20 @@
+cet_make_library(
+  LIBRARY_NAME
+    LowEUtils
+  SOURCE
+    LowEUtils.cc 
+  LIBRARIES
+    ${ROOT_CORE}
+    ${ROOT_EVE}
+    cetlib::cetlib
+    lardata::Utilities
+    lardataobj::RawData
+    larcorealg::Geometry
+    larcore::Geometry_Geometry_service
+    messagefacility::MF_MessageLogger
+    art::Persistency_Provenance
+    art::Persistency_Common
+    art::Utilities 
+    lardataobj::RecoBase
+    art_root_io::tfile_support
+)
