@@ -9,6 +9,11 @@ dune_neutrinoangularrecoalg:
     DistanceToWallThreshold: 20.0      
 }
 
+dunevd_30deg_neutrinoangularrecoalg:
+{
+    @table::dune_neutrinoangularrecoalg
+    CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
+}
 
 
 END_PROLOG
