@@ -375,6 +375,41 @@ wirecell_protodunevd_mc:
     }
 }
 
+wirecell_protodunevd_mc_splusn:
+{
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["Pgrapher"]
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"]
+
+        logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
+        loglevels: ["debug"]
+
+        // needs to be found via your WIRECELL_PATH 
+        configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-simchannel-splusn.jsonnet"]
+        inputers: ["wclsSimDepoSource:electron"]
+        outputers: [
+           "wclsSimChannelSink:postdrift",
+           "wclsFrameSaver:simsignals",
+           "wclsFrameSaver:simdigits"
+        ]
+
+        // Make available parameters via Jsonnet's std.extVar()
+        params: {
+        }
+	structs: {
+           nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
+           lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
+           DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+           DT: @local::dunefd_largeantparameters.TransverseDiffusion
+           efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
+           temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
+	}
+    }
+}
+
+
 wirecell_protodunevd_sim_deposplat:
 {
     module_type : WireCellToolkit
