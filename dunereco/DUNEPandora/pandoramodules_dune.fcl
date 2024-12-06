@@ -65,6 +65,9 @@ protodune_pandora.ShouldPerformSliceId:                             true
 protodunehd_pandora:                                                @local::protodune_pandora
 protodunehd_pandora.ConfigFile:                                     "PandoraSettings_Master_ProtoDUNE_HD_TwoView_APA1.xml"
 
+protodunehd_neutrino_pandora:                                       @local::protodunehd_pandora
+protodunehd_neutrino_pandora.ConfigFile:                            "PandoraSettings_Master_ProtoDUNE_HD_Neutrino.xml"
+
 #----ProtoDUNE DP----
 protodune_dp_pandora:                                               @local::dune_pandora
 protodune_dp_pandora.ConfigFile:                                    "PandoraSettings_Master_ProtoDUNE_DP.xml"
