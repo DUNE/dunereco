@@ -23,12 +23,19 @@ namespace cvn
     fLibPath(cet::getenv(pset.get<std::string>("LibPath", ""), std::nothrow)),
     fTFProtoBuf  (fLibPath+"/"+pset.get<std::string>("TFProtoBuf")),
     fTFBundleFile(pset.get<std::string>("TFBundle", "")),
+    fOnnxModelFile(pset.get<std::string>("OnnxModel", "")),
     fUseBundle(pset.get<bool>("UseBundle", false)),
+    fUseOnnx(pset.get<bool>("UseOnnx", false)),
     fUseLogChargeScale(pset.get<bool>("ChargeLogScale")),
     fImageWires(pset.get<unsigned int>("NImageWires")),
     fImageTDCs(pset.get<unsigned int>("NImageTDCs")),
     fReverseViews(pset.get<std::vector<bool> >("ReverseViews"))
   {
+
+    //Check that both of these aren't enabled
+    if (fUseBundle && fUseOnnx) {
+      art::Exception(art::errors::Unknown) << "Cannot simultaneously provide Bundle and Onnx model";
+    }
 
     // Construct the TF Graph object. The empty vector {} is used since the protobuf
     // file gives the names of the output layer nodes
@@ -39,9 +46,14 @@ namespace cvn
             art::Exception(art::errors::Unknown) << "Tensorflow model not found or incorrect";
         }
     }
-    
+    else if (fUseOnnx) {
+        fOnnxModel = onnx::Model::create(fOnnxModelFile);
+        if (!fOnnxModel){
+            art::Exception(art::errors::Unknown) << "Onnx model not found or incorrect";
+        }
+    }
     else {
-	fTFBundle = Bundle::create(fTFBundleFile.c_str(),{},pset.get<int>("NInputs"),pset.get<int>("NOutputs")); 
+	      fTFBundle = Bundle::create(fTFBundleFile.c_str(),{},pset.get<int>("NInputs"),pset.get<int>("NOutputs")); 
         if (!fTFBundle){
             art::Exception(art::errors::Unknown) << "Tensorflow model not found or incorrect";
         }
@@ -98,6 +110,9 @@ namespace cvn
     std::vector< std::vector< std::vector< float > > > cvnResults; // shape(samples, #outputs, output_size)
     if (fUseBundle){
         cvnResults = fTFBundle->run(fTFBundleFile.c_str(),vecForTF);
+    }
+    else if (fUseOnnx) {
+        cvnResults = fOnnxModel->run(vecForTF);
     }
     else {
         do{ // do until it gets a correct result

@@ -1,5 +1,7 @@
 include_directories ( $ENV{TENSORFLOW_INC}/absl )
-include_directories ( $ENV{ONNXRUNTIME_ROOTDIR}/include() )
+
+# TODO -- replace when Onnx is ups'd
+include_directories ( $ENV{ONNXRUNTIME_ROOTDIR}/include )
 
 cet_add_compiler_flags(CXX -Wno-pedantic)
 
@@ -26,7 +28,15 @@ cet_make_library(
     onnxruntime
 )
 
+cet_make_exec(
+  NAME
+    test_onnx
+  SOURCE
+    test_onnx.cxx
+  LIBRARIES
+    ONNXObjs
+)
+
 install_headers()
 install_fhicl()
 install_source()
-
