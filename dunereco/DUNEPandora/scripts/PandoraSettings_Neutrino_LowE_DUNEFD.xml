@@ -15,12 +15,11 @@
 
     <algorithm type = "LArDLSNSignal">
         <TrainingMode>false</TrainingMode>
-        <ImageHeight>512</ImageHeight>
-        <ImageWidth>512</ImageWidth>
+        <ImageHeight>256</ImageHeight>
+        <ImageWidth>256</ImageWidth>
         <PrintOut>true</PrintOut>
         <TrainingOutputFileName>LowE_P1</TrainingOutputFileName>
         <ApplyCheatedSeparation>false</ApplyCheatedSeparation>
-        <ApplySignalZoomRandomised>false</ApplySignalZoomRandomised>
         <CaloHitListNames>SSCaloHitListW SSCaloHitListU SSCaloHitListV</CaloHitListNames>
         <CaloHitListName2D>SSCaloHitList2D</CaloHitListName2D>
         <InputCaloHitListNames>SSCaloHitListW SSCaloHitListU SSCaloHitListV</InputCaloHitListNames>
@@ -32,9 +31,9 @@
         <ZoomCaloHitListU>SCaloHitListU</ZoomCaloHitListU>
         <ZoomCaloHitListV>SCaloHitListV</ZoomCaloHitListV>
         <ZoomCaloHitListW>SCaloHitListW</ZoomCaloHitListW>
-        <ModelFileNameU>PandoraNetworkData/PandoraNet_SigBkg_DUNEFD_HD_LowE_1_U_v04_11_00.pt</ModelFileNameU>
-        <ModelFileNameV>PandoraNetworkData/PandoraNet_SigBkg_DUNEFD_HD_LowE_1_V_v04_11_00.pt</ModelFileNameV>
-        <ModelFileNameW>PandoraNetworkData/PandoraNet_SigBkg_DUNEFD_HD_LowE_1_W_v04_11_00.pt</ModelFileNameW>
+        <ModelFileNameU>PandoraNetworkData/PandoraNet_SNSignalTag_DUNEFD_HD_1_U_v04_12_00.pt</ModelFileNameU>
+        <ModelFileNameV>PandoraNetworkData/PandoraNet_SNSignalTag_DUNEFD_HD_1_V_v04_12_00.pt</ModelFileNameV>
+        <ModelFileNameW>PandoraNetworkData/PandoraNet_SNSignalTag_DUNEFD_HD_1_W_v04_12_00.pt</ModelFileNameW>
         <Visualise>false</Visualise>
         <VisualiseZoom>false</VisualiseZoom>
     </algorithm>
@@ -54,9 +53,9 @@
         <SignalListNameW>CaloHitListW</SignalListNameW>
         <SignalListName2D>CaloHitList2D</SignalListName2D>
         <BackgroundListName>BCaloHitList</BackgroundListName>
-        <ModelFileNameU>PandoraNetworkData/PandoraNet_SigBkg_DUNEFD_HD_LowE_2_U_v04_11_00.pt</ModelFileNameU>
-        <ModelFileNameV>PandoraNetworkData/PandoraNet_SigBkg_DUNEFD_HD_LowE_2_V_v04_11_00.pt</ModelFileNameV>
-        <ModelFileNameW>PandoraNetworkData/PandoraNet_SigBkg_DUNEFD_HD_LowE_2_W_v04_11_00.pt</ModelFileNameW>
+        <ModelFileNameU>PandoraNetworkData/PandoraNet_SNSignalTag_DUNEFD_HD_2_U_v04_12_00.pt</ModelFileNameU>
+        <ModelFileNameV>PandoraNetworkData/PandoraNet_SNSignalTag_DUNEFD_HD_2_V_v04_12_00.pt</ModelFileNameV>
+        <ModelFileNameW>PandoraNetworkData/PandoraNet_SNSignalTag_DUNEFD_HD_2_W_v04_12_00.pt</ModelFileNameW>
 	<Visualise>false</Visualise>
     </algorithm>
 
@@ -64,10 +63,10 @@
         <TrainingMode>false</TrainingMode>
         <OutputVertexListName>NeutrinoVertices3D_Pass1</OutputVertexListName>
         <CaloHitListNames>CaloHitListW CaloHitListU CaloHitListV</CaloHitListNames>
-        <ModelFileNameU>PandoraNetworkData/PandoraNet_Vertex_DUNEFD_HD_LowE_1_U_v04_11_00.pt</ModelFileNameU>
-        <ModelFileNameV>PandoraNetworkData/PandoraNet_Vertex_DUNEFD_HD_LowE_1_V_v04_11_00.pt</ModelFileNameV>
-        <ModelFileNameW>PandoraNetworkData/PandoraNet_Vertex_DUNEFD_HD_LowE_1_W_v04_11_00.pt</ModelFileNameW>
-        <DistanceThresholds>0. 0.00275 0.00825 0.01925 0.03575 0.05775 0.08525 0.12375 0.15125 0.20625 0.26125 0.31625 0.37125 0.42625 0.50875 0.59125 0.67375 0.75625 0.85 1.0</DistanceThresholds>
+        <ModelFileNameU>PandoraNetworkData/PandoraNet_Vertex_DUNEFD_HD_LowE_1_U_v04_12_00.pt</ModelFileNameU>
+        <ModelFileNameV>PandoraNetworkData/PandoraNet_Vertex_DUNEFD_HD_LowE_1_V_v04_12_00.pt</ModelFileNameV>
+        <ModelFileNameW>PandoraNetworkData/PandoraNet_Vertex_DUNEFD_HD_LowE_1_W_v04_12_00.pt</ModelFileNameW>
+        <DistanceThresholds>0. 0.005 0.009 0.015 0.025 0.04 0.06 0.18 0.25 1.0</DistanceThresholds>
         <Visualise>false</Visualise>
     </algorithm>
 
@@ -77,12 +76,12 @@
         <InputVertexListName>NeutrinoVertices3D_Pass1</InputVertexListName>
         <OutputVertexListName>NeutrinoVertices3D</OutputVertexListName>
         <CaloHitListNames>CaloHitListW CaloHitListU CaloHitListV</CaloHitListNames>
-        <ModelFileNameU>PandoraNetworkData/PandoraNet_Vertex_DUNEFD_HD_LowE_2_U_v04_11_00.pt</ModelFileNameU>
-        <ModelFileNameV>PandoraNetworkData/PandoraNet_Vertex_DUNEFD_HD_LowE_2_V_v04_11_00.pt</ModelFileNameV>
-        <ModelFileNameW>PandoraNetworkData/PandoraNet_Vertex_DUNEFD_HD_LowE_2_W_v04_11_00.pt</ModelFileNameW>
+        <ModelFileNameU>PandoraNetworkData/PandoraNet_Vertex_DUNEFD_HD_LowE_2_U_v04_12_00.pt</ModelFileNameU>
+        <ModelFileNameV>PandoraNetworkData/PandoraNet_Vertex_DUNEFD_HD_LowE_2_V_v04_12_00.pt</ModelFileNameV>
+        <ModelFileNameW>PandoraNetworkData/PandoraNet_Vertex_DUNEFD_HD_LowE_2_W_v04_12_00.pt</ModelFileNameW>
         <ImageWidth>128</ImageWidth>
         <ImageHeight>128</ImageHeight>
-        <DistanceThresholds>0. 0.00275 0.00825 0.01925 0.03575 0.05775 0.08525 0.12375 0.15125 0.20625 0.26125 0.31625 0.37125 0.42625 0.50875 0.59125 0.67375 0.75625 0.85 1.0</DistanceThresholds>
+        <DistanceThresholds>0. 0.005 0.009 0.015 0.025 0.04 0.06 0.18 0.25 1.0</DistanceThresholds>
         <Visualise>false</Visualise>
     </algorithm>
 
@@ -192,12 +191,12 @@
         <VertexListName>NeutrinoVertices3D</VertexListName>
         <CaloHitListName>CaloHitList2D</CaloHitListName>
         <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
-        <EnableProbability>true</EnableProbability>
+        <EnableProbability>false</EnableProbability>
         <MinProbabilityCut>0.475f</MinProbabilityCut>
         <TrainingSetMode>false</TrainingSetMode>
         <TrainingOutputFileName>LowEBackgroundClusterMergingOutputFixed.csv</TrainingOutputFileName>
-        <MvaFileName>PandoraMVAData/PandoraBdt_PfoClusterMerging_DUNEFD_HD_v04_11_00.xml</MvaFileName>
-        <MvaName>LowEClusterMerging</MvaName>
+        <MvaFileName>PandoraMVAData/PandoraBdt_ClusterMerge_DUNEFD_HD_LowE_v04_12_00.xml</MvaFileName>
+        <MvaName>MVALowEClusterMerging</MvaName>
         <WriteTree>false</WriteTree>
         <TreeName>void</TreeName>
         <TreeName2>void</TreeName2>
@@ -205,10 +204,10 @@
         <UpperHitThreshold>4</UpperHitThreshold>
         <MinNCaloHits>1</MinNCaloHits>
         <CountHitsThreshold>0</CountHitsThreshold>
-        <ContactThreshold>2</ContactThreshold>
-        <ProximityThreshold>5</ProximityThreshold>
-        <EdgeHitToolDivisions>16</EdgeHitToolDivisions>
-        <SectorTolerance>0.03</SectorTolerance>
+        <ContactThreshold>5</ContactThreshold>
+        <ProximityThreshold>20</ProximityThreshold>
+        <EdgeHitToolDivisions>8</EdgeHitToolDivisions>
+        <SectorTolerance>0.04</SectorTolerance>
     </algorithm>
 
     <!-- BdtLowEClusterMergingAlgorithm -->
@@ -222,8 +221,8 @@
         <MinProbabilityCut>0.475f</MinProbabilityCut>
         <TrainingSetMode>false</TrainingSetMode>
         <TrainingOutputFileName>LowEClusterMergingOutput.csv</TrainingOutputFileName>
-        <MvaFileName>PandoraMVAData/PandoraBdt_PfoClusterMerging_DUNEFD_HD_v04_11_00.xml</MvaFileName>
-        <MvaName>LowEClusterMerging</MvaName>
+        <MvaFileName>PandoraMVAData/PandoraBdt_ClusterMerge_DUNEFD_HD_LowE_v04_12_00.xml</MvaFileName>
+        <MvaName>MVALowEClusterMerging</MvaName>
         <WriteTree>false</WriteTree>
         <TreeName>void</TreeName>
         <TreeName2>void</TreeName2>
@@ -231,10 +230,10 @@
         <UpperHitThreshold>100</UpperHitThreshold>
         <MinNCaloHits>4</MinNCaloHits>
         <CountHitsThreshold>0</CountHitsThreshold>
-        <ContactThreshold>2</ContactThreshold>
-        <ProximityThreshold>5</ProximityThreshold>
-        <EdgeHitToolDivisions>16</EdgeHitToolDivisions>
-        <SectorTolerance>0.03</SectorTolerance>
+        <ContactThreshold>5</ContactThreshold>
+        <ProximityThreshold>20</ProximityThreshold>
+        <EdgeHitToolDivisions>8</EdgeHitToolDivisions>
+        <SectorTolerance>0.04</SectorTolerance>
     </algorithm>
 
     <!-- ThreeDTrackAlgorithms -->
