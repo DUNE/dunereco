@@ -4,8 +4,7 @@ cet_make_library(
   SOURCE
     LowEUtils.cc 
   LIBRARIES
-    ${ROOT_CORE}
-    ${ROOT_EVE}
+    ROOT::Core
     cetlib::cetlib
     lardata::Utilities
     lardataobj::RawData
