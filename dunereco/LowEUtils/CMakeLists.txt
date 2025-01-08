@@ -18,3 +18,5 @@ cet_make_library(
     lardataobj::RecoBase
     art_root_io::tfile_support
 )
+
+install_headers()
