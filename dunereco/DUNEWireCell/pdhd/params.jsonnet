@@ -106,7 +106,8 @@ base {
     elecs: [
       super.elec {
         // The FE amplifier gain in units of Voltage/Charge.
-        gain : 14.0*wc.mV/wc.fC,
+        // gain : 14.0*wc.mV/wc.fC,
+        gain : std.extVar("elecGain")*wc.mV/wc.fC,
 
         // The shaping (aka peaking) time of the amplifier shaper.
         shaping : 2.2*wc.us,
@@ -157,8 +158,10 @@ base {
 
         // Noise models for different FE amplifier gains
         // Note: set gain value accordingly in the field of elecs
-        noise: "protodunehd-noise-spectra-14mVfC-v1.json.bz2",
+        // noise: "protodunehd-noise-spectra-14mVfC-v1.json.bz2",
         // noise: "protodunehd-noise-spectra-7d8mVfC-v1.json.bz2",
+        noise: if $.elec.gain > 8*wc.mV/wc.fC then "protodunehd-noise-spectra-14mVfC-v1.json.bz2"
+               else "protodunehd-noise-spectra-7d8mVfC-v1.json.bz2",
 
 
         chresp: null,
