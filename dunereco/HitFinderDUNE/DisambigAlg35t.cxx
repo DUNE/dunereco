@@ -21,6 +21,8 @@
 #include "art_root_io/TFileDirectory.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
+#include "larcore/Geometry/WireReadout.h"
+#include "larcore/Geometry/Geometry.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
@@ -65,6 +67,7 @@ namespace dune{
     fDisambigHits.clear();
 
     art::ServiceHandle<geo::Geometry> geo;
+    auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
 
     std::vector<std::vector<art::Ptr<recob::Hit> > > hitsUV(2);
     std::vector<art::Ptr<recob::Hit> > hitsZ;
@@ -164,9 +167,9 @@ namespace dune{
             if (std::abs(tv-tz)<fTimeCut){
 	    
               //find a matched v hit, see if the 3 wire segments cross
-              geo::WireID zwire = geo->ChannelToWire(hitsZ[z]->Channel())[0];
-              std::vector<geo::WireID>  uwires = geo->ChannelToWire(hitsUV[0][u]->Channel());
-              std::vector<geo::WireID>  vwires = geo->ChannelToWire(hitsUV[1][v]->Channel());
+              geo::WireID zwire = wireReadout.ChannelToWire(hitsZ[z]->Channel())[0];
+              std::vector<geo::WireID>  uwires = wireReadout.ChannelToWire(hitsUV[0][u]->Channel());
+              std::vector<geo::WireID>  vwires = wireReadout.ChannelToWire(hitsUV[1][v]->Channel());
 	    
               unsigned int totalintersections = 0;
               unsigned int bestu = 0;  //index to wires associated with channel
@@ -174,21 +177,22 @@ namespace dune{
 
               for (size_t uw = 0; uw<uwires.size(); ++uw){
                 for (size_t vw = 0; vw<vwires.size(); ++vw){
-                  geo::WireIDIntersection widiuv;
-                  geo::WireIDIntersection widiuz;
-                  geo::WireIDIntersection widivz;
-
                   if (uwires[uw].TPC!=vwires[vw].TPC) continue;
                   if (uwires[uw].TPC!=zwire.TPC) continue;
                   if (vwires[vw].TPC!=zwire.TPC) continue;
 
-                  if (!geo->WireIDsIntersect(zwire,uwires[uw],widiuz)) continue;
-                  if (!geo->WireIDsIntersect(zwire,vwires[vw],widivz)) continue;
-                  if (!geo->WireIDsIntersect(uwires[uw],vwires[vw],widiuv)) continue;
+                  auto const widiuv = wireReadout.WireIDsIntersect(zwire,uwires[uw]);
+                  if (!widiuv) continue;
 
-                  double dis1 = sqrt(pow(widiuz.y-widivz.y,2)+pow(widiuz.z-widivz.z,2));
-                  double dis2 = sqrt(pow(widiuz.y-widiuv.y,2)+pow(widiuz.z-widiuv.z,2));
-                  double dis3 = sqrt(pow(widiuv.y-widivz.y,2)+pow(widiuv.z-widivz.z,2));
+                  auto const widiuz = wireReadout.WireIDsIntersect(zwire,vwires[vw]);
+                  if (!widiuz) continue;
+
+                  auto const widivz = wireReadout.WireIDsIntersect(uwires[uw],vwires[vw]);
+                  if (!widivz) continue;
+
+                  double dis1 = sqrt(pow(widiuz->y-widivz->y,2)+pow(widiuz->z-widivz->z,2));
+                  double dis2 = sqrt(pow(widiuz->y-widiuv->y,2)+pow(widiuz->z-widiuv->z,2));
+                  double dis3 = sqrt(pow(widiuv->y-widivz->y,2)+pow(widiuv->z-widivz->z,2));
                   double maxdis = std::max(dis1,dis2);
                   maxdis = std::max(maxdis,dis3);
 
@@ -437,15 +441,15 @@ namespace dune{
         fAPAGeo.ChannelToAPA(hitsUV[i][hit]->Channel(), apa1, cryo1);
         //unsigned int channdiff = 100000;
         //geo::WireID nearestwire;
-        std::vector<geo::WireID> wires = geo->ChannelToWire(hitsUV[i][hit]->Channel());
+        std::vector<geo::WireID> wires = wireReadout.ChannelToWire(hitsUV[i][hit]->Channel());
         //std::vector<double> disttoallhits(wires.size(),-1);
         std::vector<int> nearbyhits(wires.size(),-1);
         for (auto& u2 : fHasBeenDisambigedUV[i]){
           unsigned int apa2(0), cryo2(0);
           fAPAGeo.ChannelToAPA(hitsUV[i][u2.first]->Channel(), apa2, cryo2);
           if (apa1!=apa2) continue;
-          geo::WireID hitwire = geo->ChannelToWire(hitsUV[i][u2.first]->Channel())[u2.second-1];
-          double wire_pitch = geo->WirePitch(hitwire.asPlaneID());    //wire pitch in cm
+          geo::WireID hitwire = wireReadout.ChannelToWire(hitsUV[i][u2.first]->Channel())[u2.second-1];
+          double wire_pitch = wireReadout.Plane(hitwire.asPlaneID()).WirePitch();    //wire pitch in cm
           for (size_t w = 0; w<wires.size(); ++w){
             if (wires[w].TPC!= hitwire.TPC) continue;
             if (nearbyhits[w]<0) nearbyhits[w] = 0;

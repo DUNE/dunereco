@@ -25,4 +25,5 @@ physics:
   end_paths:  [ path0 ]
 }
 
+services.AuxDetGeometry: @local::protodune_auxdet_geo
 services.Geometry: @local::protodune_geo

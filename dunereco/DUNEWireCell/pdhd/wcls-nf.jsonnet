@@ -72,7 +72,7 @@ local wcls_output = {
     data: {
       // anode: wc.tn(tools.anode),
       anode: wc.tn(mega_anode),
-      digitize: false,  // true means save as RawDigit, else recob::Wire
+      digitize: true,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['raw'],
       // nticks: params.daq.nticks,
       chanmaskmaps: ['bad'],

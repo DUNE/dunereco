@@ -31,6 +31,7 @@
 #include "TFile.h"
 
 
+#include "larcore/Geometry/WireReadout.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RecoBase/Track.h"
@@ -143,6 +144,7 @@ namespace dunemva{
 
       art::ServiceHandle<geo::Geometry> fGeom;
       art::ServiceHandle<art::TFileService> tfs;
+      geo::WireReadoutGeom const* fWireReadoutGeom = &art::ServiceHandle<geo::WireReadout>()->Get();
 
       std::string fSelect;
       std::string fBeamMode;

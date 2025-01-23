@@ -37,65 +37,35 @@ local wf(name, data={}) = {
 };
 
 // Zeus take my eyes! Magic numbers are everywhere!
-/**  
- *  Default SP parameters (till May 2019)
- */
-// [
-//   lf('ROI_tight_lf', { tau: 0.02 * wc.megahertz }),  // 0.02 -> 0.027
-//   lf('ROI_tighter_lf', { tau: 0.1 * wc.megahertz }),  // 0.1 -> 0.075
-//   lf('ROI_loose_lf', { tau: 0.0025 * wc.megahertz }),  // 0.0025 ->  0.004
-// 
-//   hf('Gaus_tight'),
-//   hf('Gaus_wide', { sigma: 1.11408e-01 * wc.megahertz }),
-//   hf('Wiener_tight_U', {
-//     sigma: 5.75416e+01 / 800.0 * 2 * wc.megahertz,
-//     power: 4.10358e+00,
-//   }),
-//   hf("Wiener_tight_V", { sigma: 5.99306e+01/800.0*2 * wc.megahertz,
-//   	                   power: 4.20820e+00 }),
-//   hf('Wiener_tight_W', {
-//     sigma: 5.88802e+01 / 800.0 * 2 * wc.megahertz,
-//     power: 4.17455e+00,
-//   }),
-//   hf('Wiener_wide_U', {
-//     sigma: 1.78695e+01 / 200.0 * 2 * wc.megahertz,
-//     power: 5.33129e+00,
-//   }),
-//   hf("Wiener_wide_V", { sigma: 1.84666e+01/200.0*2 * wc.megahertz,
-//   	                  power: 5.60489e+00 }),
-//   hf('Wiener_wide_W', {
-//     sigma: 1.83044e+01 / 200.0 * 2 * wc.megahertz,
-//     power: 5.44945e+00,
-//   }),
-// 
-//   wf('Wire_ind', { sigma: 1.0 / wc.sqrtpi * 1.4 }),
-//   wf('Wire_col', { sigma: 1.0 / wc.sqrtpi * 3.0 }),
-// ]
-
-/**  
- *  Optimized SP parameters (May 2019)
- *  Associated tuning in sp.jsonnet
- */
 [
-  lf('ROI_tight_lf', { tau: 0.014 * wc.megahertz }),  // 0.02 
-  lf('ROI_tighter_lf', { tau: 0.06 * wc.megahertz }),  // 0.1 
   lf('ROI_loose_lf', { tau: 0.002 * wc.megahertz }),  // 0.0025 
+  lf('ROI_tight_lf', { tau: 0.016 * wc.megahertz }),  // 0.02 
+  lf('ROI_tighter_lf', { tau: 0.08 * wc.megahertz }),  // 0.1 
 
   hf('Gaus_tight'),
   hf('Gaus_wide', { sigma: 0.12 * wc.megahertz }), 
 
-
   hf('Wiener_tight_U', {
-    sigma: 0.148788  * wc.megahertz,
-    power: 3.76194,
-  }),
+    sigma: 0.221933  * wc.megahertz,
+    power: 6.55413,}),
   hf("Wiener_tight_V", {
-    sigma: 0.1596568 * wc.megahertz,
-    power: 4.36125 }),
+    sigma: 0.222723 * wc.megahertz,
+    power: 8.75998 }),
   hf('Wiener_tight_W', {
-    sigma: 0.13623 * wc.megahertz,
-    power: 3.35324,
-  }),
+    sigma: 0.225567 * wc.megahertz,
+    power: 3.47846,}),
+
+  hf('Wiener_tight_U_APA1', {
+    sigma: 0.203451  * wc.megahertz,
+    power: 5.78093,}),
+  hf("Wiener_tight_V_APA1", {
+    sigma: 0.160191 * wc.megahertz,
+    power: 3.54835 }),
+  hf('Wiener_tight_W_APA1', {
+    sigma: 0.125448 * wc.megahertz,
+    // sigma: 0.06 * wc.megahertz,
+    power: 5.27080,}),
+
 
   hf('Wiener_wide_U', {
     sigma: 0.186765  * wc.megahertz,

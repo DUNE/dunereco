@@ -19,6 +19,7 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // LArSoft includes
+#include "larcore/Geometry/WireReadout.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Track.h"
@@ -248,7 +249,6 @@ void dunefd::IniSegReco::ResetVars()
 void dunefd::IniSegReco::produce(art::Event& evt)
 {
 	ResetVars();
-	const art::ServiceHandle<geo::Geometry> geom;
 	
 	run = evt.run();
   	subrun = evt.subRun();
@@ -660,6 +660,7 @@ void dunefd::IniSegReco::collectCls(art::Event const & evt,
                                     art::Ptr<simb::MCTruth> const mctruth)
 {
 	art::ServiceHandle<geo::Geometry> geom;
+        auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
 	
 	// * clusters
  	std::vector<art::Ptr<recob::Cluster> > clusterlist;
@@ -669,11 +670,11 @@ void dunefd::IniSegReco::collectCls(art::Event const & evt,
    		art::fill_ptr_vector(clusterlist, clusterListHandle);
 		art::FindManyP< recob::Hit > hc(clusterListHandle, evt, fClusterModuleLabel);		
 
-                for (auto const& tpcg : geom->Iterate<geo::TPCGeo>())
+                for (auto const& tpcid : geom->Iterate<geo::TPCID>())
 		{
-                        auto const [c, t] = std::make_pair(tpcg.ID().Cryostat, tpcg.ID().TPC);
-				std::vector< std::vector< dunefd::Hit2D > > clinput;
-                        for (size_t p = 0; p < tpcg.Nplanes(); ++p)
+                        auto const [c, t] = std::make_pair(tpcid.Cryostat, tpcid.TPC);
+                        std::vector< std::vector< dunefd::Hit2D > > clinput;
+                        for (size_t p = 0; p < wireReadout.Nplanes(tpcid); ++p)
 				{	
 					std::map<size_t, std::vector< dunefd::Hit2D > > cls; 
 					for (size_t i = 0; i < clusterlist.size(); ++i)

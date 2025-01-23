@@ -15,8 +15,8 @@
 
 #include <string>
 #include <vector>
-#include <utility> 
-#include <memory>  
+#include <utility>
+#include <memory>
 #include <iostream>
 
 // Framework includes
@@ -31,7 +31,7 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
 // LArSoft Includes
-#include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/WireReadout.h"
 #include "lardataobj/RawData/RawDigit.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
@@ -101,7 +101,7 @@ namespace dune {
             ) const;
 
 
-    geo::GeometryCore const* fGeom;
+    geo::WireReadoutGeom const* fWireReadoutGeom;
 
     int fRun, fEvent;
     int fNHits[3];                // n all hits in each plane
@@ -144,7 +144,7 @@ namespace dune {
     // will also copy associations of SpacePoints to original hits
     produces<art::Assns<recob::Hit, recob::SpacePoint>>();
 
-    fGeom = &*(art::ServiceHandle<geo::Geometry>());
+    fWireReadoutGeom = &art::ServiceHandle<geo::WireReadout>()->Get();
 
     if (fMonitoringPlots)
     {
@@ -180,7 +180,7 @@ namespace dune {
       );
 
     // here is the copy of associations to hits, based on original hit assns
-    auto assns = std::make_unique<art::Assns<recob::Hit, recob::SpacePoint>>(); 
+    auto assns = std::make_unique<art::Assns<recob::Hit, recob::SpacePoint>>();
 
     // all hits in the collection
     std::vector< art::Ptr<recob::Hit> > eventHits;
@@ -202,7 +202,7 @@ namespace dune {
         }
         if (tpc == geo::WireID::InvalidID)
         {
-	  //mf::LogWarning("DisambigFromSpacePoints") << "No collection hit for this spacepoint.";
+          //mf::LogWarning("DisambigFromSpacePoints") << "No collection hit for this spacepoint.";
             continue;
         }
         for (const auto & h : hits) // set mapping for Induction hits
@@ -291,7 +291,7 @@ namespace dune {
     for (size_t i = 0; i < eventHits.size(); ++i)
     {
         const art::Ptr<recob::Hit> & hit = eventHits[i];
-        std::vector<geo::WireID> cwids = fGeom->ChannelToWire(hit->Channel());
+        std::vector<geo::WireID> cwids = fWireReadoutGeom->ChannelToWire(hit->Channel());
         if (cwids.empty()) { mf::LogWarning("DisambigFromSpacePoints") << "No wires for this channel???"; continue; }
         if (hit->SignalType() == geo::kCollection)
         {
@@ -325,9 +325,7 @@ namespace dune {
                     {
                         if (cwids[w].TPC != spTpc) { continue; } // not that side of APA
 
-                        float sp_wire = fGeom->WireCoordinate(
-                            sp->position(), geo::PlaneID(cryo, spTpc, plane)
-                        );
+                        float sp_wire = fWireReadoutGeom->Plane(cwids[w]).WireCoordinate(sp->position());
                         float dw = std::fabs(sp_wire - cwids[w].Wire);
                         if (dw < max_dw)
                         {
@@ -353,7 +351,7 @@ namespace dune {
                 }
                 else
                 {
-		  //mf::LogWarning("DisambigFromSpacePoints") << "Did not find matching wire (plane:" << plane << ").";
+                  //mf::LogWarning("DisambigFromSpacePoints") << "Did not find matching wire (plane:" << plane << ").";
                     unassigned.push_back(hit.key());
                     fNMissedBySpacePoints[plane]++; //count unresolved hit
                 }
@@ -382,14 +380,14 @@ namespace dune {
     {
         const auto & hit = eventHits[key];
         geo::WireID id = hit->WireID();
-        size_t cryo = id.Cryostat, plane = id.Plane;
+        unsigned int cryo = id.Cryostat, plane = id.Plane;
         float hitDrift = hit->PeakTime();
 
-        std::vector<geo::WireID> cwids = fGeom->ChannelToWire(hit->Channel());
+        std::vector<geo::WireID> cwids = fWireReadoutGeom->ChannelToWire(hit->Channel());
         if (cwids.empty()) { mf::LogWarning("DisambigFromSpacePoints") << "No wires for this channel???"; continue; }
 
-        const float dwMax = fMaxDistance / fGeom->TPC().Plane(plane).WirePitch(); // max distance in wires to look for neighbors
-        const float ddMax = dwMax * fGeom->TPC().Plane(plane).WirePitch() / std::fabs(detProp.GetXTicksCoefficient(0, 0));
+        const float dwMax = fMaxDistance / fWireReadoutGeom->Plane({0, 0, plane}).WirePitch(); // max distance in wires to look for neighbors
+        const float ddMax = dwMax * fWireReadoutGeom->Plane({0, 0, plane}).WirePitch() / std::fabs(detProp.GetXTicksCoefficient(0, 0));
 
         float bestScore = 0;
         geo::WireID bestId;
@@ -403,7 +401,7 @@ namespace dune {
             if (!allowed) { continue; }
 
             geo::PlaneID const planeID(cryo, tpc, plane);
-            const float wirePitch = fGeom->Plane(planeID).WirePitch();
+            const float wirePitch = fWireReadoutGeom->Plane(planeID).WirePitch();
             const float driftPitch = std::fabs(detProp.GetXTicksCoefficient(tpc, cryo));
 
             float maxDValue = fMaxDistance*fMaxDistance;
@@ -477,7 +475,7 @@ namespace dune {
     for (const size_t key : unassigned)
     {
         const auto & hit = eventHits[key];
-        std::vector<geo::WireID> cwids = fGeom->ChannelToWire(hit->Channel());
+        std::vector<geo::WireID> cwids = fWireReadoutGeom->ChannelToWire(hit->Channel());
         if (cwids.empty()) { mf::LogWarning("DisambigFromSpacePoints") << "No wires for this channel???"; continue; }
 
         geo::WireID bestId;
@@ -503,7 +501,7 @@ namespace dune {
     for (const size_t key : unassigned)
     {
         const auto & hit = eventHits[key];
-        std::vector<geo::WireID> cwids = fGeom->ChannelToWire(hit->Channel());
+        std::vector<geo::WireID> cwids = fWireReadoutGeom->ChannelToWire(hit->Channel());
         if (cwids.empty()) { continue; } // add warning here
 
         for (size_t w = 0; w < cwids.size(); ++w)
@@ -520,4 +518,4 @@ namespace dune {
   DEFINE_ART_MODULE(DisambigFromSpacePoints)
 
 } // end of dune namespace
-#endif 
+#endif

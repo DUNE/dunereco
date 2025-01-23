@@ -152,7 +152,8 @@ local obnf = [
         grouped_filters: [],
         channel_status_filters: [],
         noisedb: wc.tn(chndb[n]),
-        intraces: 'orig%d' % n,  // frame tag get all traces
+        // intraces: 'orig%d' % n,  // frame tag get all traces
+        intraces: 'orig',  // frame tag get all traces
         outtraces: 'raw%d' % n,
       },
     }, uses=[chndb[n], tools.anodes[n]], nin=1, nout=1
