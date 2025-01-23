@@ -25,8 +25,7 @@ local wcls_input = {
     type: 'wclsCookedFrameSource',
     name: 'charge',
     data: {
-      art_tag: charge_input_label,
-      trace_summary_tag: "",
+      recobwire_tags: [charge_input_label], summary_tags: [''], trace_tags: ['gauss'],
       frame_tags: ['gauss'],  // this is a WCT designator
       // nticks: params.daq.nticks,
     },
@@ -36,8 +35,7 @@ local wcls_input = {
     type: 'wclsCookedFrameSource',
     name: 'wiener',
     data: {
-      art_tag: wiener_input_label,
-      trace_summary_tag: "wclsdatahd:wiener",
+      recobwire_tags: [wiener_input_label], summary_tags: ['wclsdatahd:wiener'], trace_tags: ['wiener'],
       frame_tags: ['wiener'],  // this is a WCT designator
       // nticks: params.daq.nticks,
     },
