@@ -53,7 +53,7 @@ namespace cnn {
 
     TransformerCVNEvaluator::TransformerCVNEvaluator(fhicl::ParameterSet const& pset):
         EDProducer(pset),
-        fLibPath       (cet::getenv(pset.get<std::string>        ("LibPath", ""))),
+        fLibPath       (cet::getenv(pset.get<std::string>        ("LibPath", ""), std::nothrow)),
         fNetwork       (fLibPath + "/" + pset.get<std::string>   ("Network")),
         fPixelMapInput (pset.get<std::string>                    ("PixelMapInput")),
         fEventPixelMapInput (pset.get<std::string>               ("EventPixelMapInput")),

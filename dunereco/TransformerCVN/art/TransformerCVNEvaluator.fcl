@@ -8,8 +8,8 @@ standard_transformercvnevaluator:
   module_type:         TransformerCVNEvaluator
   #==================
 
-  LibPath:             "DUNE_PARDATA_DIR"
-  Network:             "TransformerCVN/dune_network_traced_pad_20_last_pid.torchscript"
+  LibPath:             ""
+  Network:             "/cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/CVN/TransformerCVN/FDHD/2018/dune_transformercvn_fd_hd_beam_2018prod.torchscript"
   MaxProngs:           20
   PixelMapInput:       "transformercvnmap"
   EventPixelMapInput:  "transformercvneventmap"
