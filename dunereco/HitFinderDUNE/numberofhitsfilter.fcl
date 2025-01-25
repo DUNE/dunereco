@@ -14,4 +14,7 @@ standard_numberofhitsfilter:
 pdhd_nhitsfilter: @local::standard_numberofhitsfilter
 pdhd_nhitsfilter.HitLimit: 20000
 
+pdvd_nhitsfilter: @local::standard_numberofhitsfilter
+pdvd_nhitsfilter.HitLimit: 20000
+
 END_PROLOG
