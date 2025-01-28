@@ -218,7 +218,7 @@ namespace cvn
       double globalTime = cluster[iHit]->PeakTime();
       if(!fProtoDUNE){
         if(fUnwrapped == 1) {
-          if (fGeometry->DetectorName() == "dune10kt_v1") {
+          if (fGeometry->DetectorName() == "dune10kt_v6") {
             if (wireid.TPC%6 == 0 or wireid.TPC%6 == 5) continue; // Skip dummy TPCs in 10kt module
             GetDUNE10ktGlobalWireTDC(detProp, wireid.Wire,cluster[iHit]->PeakTime(),wireid.Plane,wireid.TPC,globalWire,globalPlane,globalTime);
           }
