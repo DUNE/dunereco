@@ -1,0 +1,34 @@
+<lcgdict>
+
+  <class name="cnn::TransformerPixelMap" ClassVersion="11" >
+   <version ClassVersion="11" checksum="192649125"/>
+   <version ClassVersion="10" checksum="2279138595"/>
+  </class>
+
+  <class name="std::vector<cnn::TransformerPixelMap>"          />
+  <class name="art::Ptr<cnn::TransformerPixelMap>"             />
+  <class name="art::Wrapper< std::vector<cnn::TransformerPixelMap> >"    />
+
+  <class name="cnn::TransformerCVNResult" ClassVersion="11" >
+   <version ClassVersion="11" checksum="2576957070"/>
+   <version ClassVersion="10" checksum="2279138595"/>
+  </class>
+
+  <class name="std::vector<cnn::TransformerCVNResult>"          />
+  <class name="art::Ptr<cnn::TransformerCVNResult>"             />
+  <class name="art::Wrapper< std::vector<cnn::TransformerCVNResult> >"    />
+
+  <class name="cnn::TransformerCVNPID" ClassVersion="11" >
+   <version ClassVersion="11" checksum="1021514997"/>
+   <version ClassVersion="10" checksum="2279138595"/>
+  </class>
+
+  <class name="std::vector<cnn::TransformerCVNPID>"          />
+  <class name="art::Ptr<cnn::TransformerCVNPID>"             />
+  <class name="art::Wrapper< std::vector<cnn::TransformerCVNPID> >"    />
+
+  <class name="std::vector<cnn::HType>"      />
+</lcgdict>
+
+
+
