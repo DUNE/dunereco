@@ -1,0 +1,26 @@
+BEGIN_PROLOG
+
+#   This file defines the configuration for the RegCNNEventDump module
+
+standard_transformercvnmapper:
+{
+  module_type:        TransformerCVNMapper
+  #==================
+  HitsModuleLabel: "linecluster"
+  ClusterPMLabel: "transformercvneventmap"
+  ClusterPMProngLabel: "transformercvnprongmap"
+  GlobalWireMethod: 2   # 1 = nue energy, 2 for others???
+  MinClusterHits: 1
+  TdcWidth:       280   # time width of pixel map
+  WireLength:     400   # wire width of pixel map
+  TimeResolution:  24   # TransformerCVN uses the RegCNN numu energy size maps
+  WireResolution:   7 
+  ProngTagMethod: 0     # 0 = use shower, 1 = use track (for event map only)
+  ShowerModuleLabel: "emshower" #"pandoraShower" #"emshowernew"
+  TrackModuleLabel:  "pandoraTrack"
+  VertexModuleLabel: "pandora"
+  PFParticleModuleLabel: "pandora"
+  PandoraNuVertexModuleLabel: "pandora"
+}
+
+END_PROLOG
