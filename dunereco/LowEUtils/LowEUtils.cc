@@ -3,14 +3,153 @@
 namespace solar
 {
   LowEUtils::LowEUtils(fhicl::ParameterSet const &p)
-      : fClusterAlgoTime(p.get<double>("ClusterAlgoTime")),
+      : fHitLabel(p.get<std::string>("HitLabel")),
+        fGeometry(p.get<std::string>("Geometry")),
+        fDetectorSizeX(p.get<double>("DetectorSizeX")),
+        fClusterAlgoTime(p.get<double>("ClusterAlgoTime")),
         fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel")),
+        fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable")),
         fClusterMatchNHit(p.get<int>("ClusterMatchNHit")),
         fClusterMatchCharge(p.get<double>("ClusterMatchCharge")),
         fClusterInd0MatchTime(p.get<double>("ClusterInd0MatchTime")),
         fClusterInd1MatchTime(p.get<double>("ClusterInd1MatchTime")),
         fClusterMatchTime(p.get<double>("ClusterMatchTime"))
   {
+  }
+  void LowEUtils::MakeClusterVector(std::vector<LowEClusterInfo> &ClusterVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, art::Event const &evt)
+  {
+    int ID = 0;
+    for (std::vector<art::Ptr<recob::Hit>> Cluster : Clusters)
+    {
+      if (!Cluster.empty())
+      {
+        std::stable_sort(Cluster.begin(), Cluster.end(), [](art::Ptr<recob::Hit> a, art::Ptr<recob::Hit> b)
+                         { return a->PeakTime() < b->PeakTime(); });
+      }
+      float StartWire = 0;
+      float SigmaStartWire = 0;
+      float StartTick = 1e6;
+      float SigmaStartTick = 0;
+      float StartCharge = 0;
+      float StartAngle = 0;
+      float StartOpeningAngle = 0;
+      float EndWire = 0;
+      float SigmaEndWire = 0;
+      float EndTick = -1e6;
+      float SigmaEndTick = 0;
+      float EndCharge = 0;
+      float EndAngle = 0;
+      float EndOpeningAngle = 0;
+      float Integral = 0;
+      float IntegralStdDev = 0;
+      float SummedADC = 0;
+      float SummedADCstdDev = 0;
+      int NHit = 0;
+      float MultipleHitDensity = 0;
+      float Width = 0;
+      geo::View_t View;
+      geo::PlaneID Plane;
+      float WireCoord = 0;
+      float SigmaWireCoord = 0;
+      float TickCoord = 0;
+      float SigmaTickCoord = 0;
+      float IntegralAverage = 0;
+      float SummedADCaverage = 0;
+      float Charge = 0;
+      float ChargeStdDev = 0;
+      float ChargeAverage = 0;
+
+      // For computing the average tick coordinate
+      float StartIntegral = 0;
+      float EndIntegral = 0;
+      float TickCoordSum = 0;
+      float PeakAmplitude = 0;
+      float SummedAmplitude = 0;
+
+      // Compute total number of PE and MaxPE.
+      for (art::Ptr<recob::Hit> Hit : Cluster)
+      {
+        NHit++;
+        SummedADC += Hit->ROISummedADC();
+        SummedADCstdDev += Hit->ROISummedADC() * Hit->ROISummedADC();
+        Integral += Hit->Integral();
+        IntegralStdDev += Hit->Integral() * Hit->Integral();
+        SummedAmplitude += Hit->PeakAmplitude();
+        TickCoordSum += Hit->PeakTime() * Hit->PeakAmplitude();
+
+        if (fClusterChargeVariable == "SummedADC")
+        {
+          Charge += SummedADC * Hit->RMS();
+          ChargeStdDev += Charge * Charge;
+        }
+
+        if (Hit->PeakAmplitude() > PeakAmplitude)
+        {
+          PeakAmplitude = Hit->PeakAmplitude();
+          WireCoord = Hit->WireID().Wire;
+          View = Hit->View();
+          Plane = Hit->WireID().planeID();
+        }
+
+        if (Hit->PeakTime() < StartTick)
+        {
+          StartTick = Hit->PeakTime();
+          StartWire = Hit->WireID().Wire;
+          SigmaStartTick = Hit->SigmaPeakTime();
+          StartIntegral = Hit->Integral();
+          if (fClusterChargeVariable == "SummedADC")
+          {
+            StartCharge = Hit->ROISummedADC() * Hit->RMS();
+          }
+        }
+
+        if (Hit->PeakTime() > EndTick)
+        {
+          EndTick = Hit->PeakTime();
+          EndWire = Hit->WireID().Wire;
+          SigmaEndTick = Hit->SigmaPeakTime();
+          EndIntegral = Hit->Integral();
+          if (fClusterChargeVariable == "SummedADC")
+          {
+            EndCharge = Hit->ROISummedADC() * Hit->RMS();
+          }
+        }
+      }
+
+      TickCoord = TickCoordSum / SummedAmplitude;
+      SummedADCaverage = SummedADC / NHit;
+      SummedADCstdDev = sqrt(SummedADCstdDev / NHit - SummedADCaverage * SummedADCaverage);
+      IntegralAverage = Integral / NHit;
+      IntegralStdDev = sqrt(IntegralStdDev / NHit - IntegralAverage * IntegralAverage);
+      Width = abs(EndTick - StartTick);
+
+      if (fClusterChargeVariable == "Integral")
+      {
+        mf::LogInfo("LowEUtils") << "Charge variable set to 'Integral'";
+        StartCharge = StartIntegral;
+        EndCharge = EndIntegral;
+        Charge = Integral;
+        ChargeStdDev = IntegralStdDev;
+        ChargeAverage = IntegralAverage;
+      }
+      if (fClusterChargeVariable == "SummedADC")
+      {
+        mf::LogInfo("LowEUtils") << "Charge variable set to 'SummedADC' (default is 'Integral')";
+        ChargeStdDev = sqrt(ChargeStdDev / NHit - Charge * Charge);
+        ChargeAverage = Charge / NHit;
+      }
+      else
+      {
+        mf::LogError("LowEUtils") << "Charge variable not recognized. Please choose between 'Integral' and 'SummedADC'";
+        Charge = 0;
+        ChargeStdDev = 0;
+        ChargeAverage = 0;
+      }
+
+      ClusterVec.push_back(LowEClusterInfo{StartWire, SigmaStartWire, StartTick, SigmaStartTick, StartCharge, StartAngle, StartOpeningAngle, EndWire, SigmaEndWire, EndTick, SigmaEndTick, EndCharge, EndAngle, EndOpeningAngle, Integral, IntegralStdDev, SummedADC, SummedADCstdDev, NHit, MultipleHitDensity, Width, ID, View, Plane, WireCoord, SigmaWireCoord, TickCoord, SigmaTickCoord, IntegralAverage, SummedADCaverage, Charge, ChargeStdDev, ChargeAverage});
+      ID++;
+    }
+    return;
   }
   void LowEUtils::CalcAdjHits(std::vector<recob::Hit> MyVec, std::vector<std::vector<recob::Hit>> &Clusters, TH1I *MyHist, TH1F *ADCIntHist, bool HeavDebug)
   /*
@@ -161,6 +300,89 @@ namespace solar
     return;
   }
 
+  void LowEUtils::CalcAdjHits(std::vector<art::Ptr<recob::Hit>> MyVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, std::vector<std::vector<int>> &ClusterIdx)
+  /*
+  Find adjacent hits in time and space:
+  - MyVec is the vector of hits to be clustered
+  - Clusters is the vector of clustered hits
+  - ClusterIdx is the vector of indices of the hits in each cluster
+  */
+  {
+    const double TimeRange = fClusterAlgoTime;
+    const int ChanRange = fClusterAlgoAdjChannel;
+    unsigned int FilledHits = 0;
+    unsigned int NumOriHits = MyVec.size();
+    std::vector<int> HitIdx;
+    // Fill the hitidx vector with the index from 0 to MyVec.size()
+    for (size_t i = 0; i < MyVec.size(); i++)
+      HitIdx.push_back(i);
+
+    while (NumOriHits != FilledHits)
+    {
+      std::vector<art::Ptr<recob::Hit>> AdjHitVec;
+      std::vector<int> AdjHitIdx;
+
+      AdjHitVec.push_back(MyVec[0]);
+      AdjHitIdx.push_back(HitIdx[0]);
+
+      MyVec.erase(MyVec.begin() + 0);
+      HitIdx.erase(HitIdx.begin() + 0);
+
+      int LastSize = 0;
+      int NewSize = AdjHitVec.size();
+
+      while (LastSize != NewSize)
+      {
+        std::vector<int> AddNow;
+        for (size_t aL = 0; aL < AdjHitVec.size(); ++aL)
+        {
+          for (size_t nL = 0; nL < MyVec.size(); ++nL)
+          {
+            if (abs((int)AdjHitVec[aL]->Channel() - (int)MyVec[nL]->Channel()) <= ChanRange &&
+                abs((double)AdjHitVec[aL]->PeakTime() - (double)MyVec[nL]->PeakTime()) <= TimeRange &&
+                AdjHitVec[aL]->View() == MyVec[nL]->View() && AdjHitVec[aL]->SignalType() == MyVec[nL]->SignalType())
+            {
+              // --- Check that this element isn't already in AddNow.
+              bool AlreadyPres = false;
+
+              for (size_t zz = 0; zz < AddNow.size(); ++zz)
+              {
+                if (AddNow[zz] == (int)nL)
+                  AlreadyPres = true;
+              }
+
+              if (!AlreadyPres)
+                AddNow.push_back(nL);
+            } // If this TPCHit is within the window around one of my other hits.
+          } // Loop through my vector of colleciton plane hits.
+        } // Loop through AdjHitVec
+
+        // --- Now loop through AddNow and remove from Marley whilst adding to AdjHitVec
+        std::sort(AddNow.begin(), AddNow.end());
+        for (size_t aa = 0; aa < AddNow.size(); ++aa)
+        {
+          AdjHitVec.push_back(MyVec[AddNow[AddNow.size() - 1 - aa]]);
+          MyVec.erase(MyVec.begin() + AddNow[AddNow.size() - 1 - aa]); // This line creates segmentation fault
+          // Remove the corresponding index from the HitIdx vector
+          AdjHitIdx.push_back(HitIdx[AddNow[AddNow.size() - 1 - aa]]);
+          HitIdx.erase(HitIdx.begin() + AddNow[AddNow.size() - 1 - aa]);
+        }
+
+        LastSize = NewSize;
+        NewSize = AdjHitVec.size();
+      } // while ( LastSize != NewSize )
+
+      int NumAdjColHits = AdjHitVec.size();
+      FilledHits += NumAdjColHits;
+      if (AdjHitVec.size() > 0)
+      {
+        Clusters.push_back(AdjHitVec);
+        ClusterIdx.push_back(AdjHitIdx);
+      }
+    }
+    return;
+  }
+
   //......................................................
   std::vector<double> LowEUtils::ComputeRecoY(
       int Event,
@@ -201,10 +423,10 @@ namespace solar
   }
 
   void LowEUtils::FillClusterVariables(std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
-                                     std::vector<std::vector<int>> &ClNHits,
-                                     std::vector<std::vector<float>> &ClT,
-                                     std::vector<std::vector<float>> &ClCharge,
-                                     bool HeavDebug)
+                                       std::vector<std::vector<int>> &ClNHits,
+                                       std::vector<std::vector<float>> &ClT,
+                                       std::vector<std::vector<float>> &ClCharge,
+                                       bool HeavDebug)
   {
     for (size_t idx = 0; idx < Clusters.size(); idx++)
     {
@@ -227,12 +449,12 @@ namespace solar
   }
 
   void LowEUtils::MatchClusters(
-    std::vector<std::vector<std::vector<recob::Hit>>> MatchedClusters,
-    std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
-    std::vector<std::vector<int>> &ClNHits,
-    std::vector<std::vector<float>> &ClT,
-    std::vector<std::vector<float>> &ClCharge,
-    bool HeavDebug)
+      std::vector<std::vector<std::vector<recob::Hit>>> MatchedClusters,
+      std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+      std::vector<std::vector<int>> &ClNHits,
+      std::vector<std::vector<float>> &ClT,
+      std::vector<std::vector<float>> &ClCharge,
+      bool HeavDebug)
   {
     LowEUtils::FillClusterVariables(Clusters, ClNHits, ClT, ClCharge, HeavDebug);
     std::vector<std::vector<int>> MatchedClNHits = {{}, {}, {}};
