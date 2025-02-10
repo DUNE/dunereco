@@ -1,5 +1,6 @@
 #include <onnxruntime_cxx_api.h>
 #include <iostream>
+#include "dunereco/CVN/func/PixelMap.h"
 
 namespace onnx
 {
@@ -8,6 +9,10 @@ namespace onnx
     public:
         // int n_inputs = 1;
         // int n_outputs = 1;
+
+        typedef std::vector<std::vector<std::vector<float>>> ModelOutput;
+        typedef std::vector<std::vector<std::vector<std::vector<float>>>>
+            ModelInput;
 
         static std::unique_ptr<Model> create(const std::string& model_file_name) {
             bool success;
@@ -27,12 +32,8 @@ namespace onnx
         // }
 
         // Process vector of 3D inputs
-        std::vector<std::vector<std::vector<float>>> run(const std::vector<std::vector<std::vector<std::vector<float>>>>& x, long long int samples = -1) {
-            std::vector<std::vector<std::vector<float>>> result;
-            // Handle multi-dimensional inputs and run ONNX inference
-            return result;
-        }
-
+        ModelOutput run(
+            const ModelInput & x, long long int samples = -1);
     private:
         /// Constructor, initializes ONNX model
         Model(const std::string& model_file_name, bool& success);
@@ -42,7 +43,13 @@ namespace onnx
         // Input and output names
         std::vector<std::string> fInputNames;
         std::vector<std::string> fOutputNames;
-        std::vector<std::int64_t> fInputShapes;
+
+        std::vector<std::vector<std::int64_t>> fInputShapes;
+        Ort::Env fEnv;
+
+        template <typename T>
+        Ort::Value vec_to_tensor(
+            std::vector<T>& data, const std::vector<std::int64_t>& shape);
     };
 }
 

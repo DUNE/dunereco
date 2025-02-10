@@ -1,27 +1,34 @@
 #include "onnx_graph.h"
+#include <algorithm>
 onnx::Model::Model(const std::string& model_file_name, 
                    bool& success)
-: /*n_inputs(ninputs), n_outputs(noutputs),*/ fSession(nullptr) {
+: /*n_inputs(ninputs), n_outputs(noutputs),*/ fSession(nullptr), fEnv(ORT_LOGGING_LEVEL_WARNING, "ONNXModel") {
     // Load the model using ONNX Runtime Inference Session
     // onnxruntime setup
-    Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "ONNXModel");
     Ort::SessionOptions session_options;
-    fSession = Ort::Session(env, model_file_name.c_str(), session_options);
+    fSession = Ort::Session(fEnv, model_file_name.c_str(), session_options);
 
 
     // print name/shape of inputs
     Ort::AllocatorWithDefaultOptions allocator;
     
+    //TODO make the char * vecs easier
+
     std::cout << "Input Node Name/Shape (" << fInputNames.size() << "):" << std::endl;
     for (std::size_t i = 0; i < fSession.GetInputCount(); i++) {
         fInputNames.emplace_back(fSession.GetInputNameAllocated(i, allocator).get());
-        fInputShapes = fSession.GetInputTypeInfo(i).GetTensorTypeAndShapeInfo().GetShape();
-        std::cout << "\t" << fInputNames.at(i) << " : " /*<< print_shape(fInputShapes)*/ << std::endl;
+        fInputShapes.emplace_back(fSession.GetInputTypeInfo(i).GetTensorTypeAndShapeInfo().GetShape());
+        std::cout << "\t" << fInputNames.at(i) << " : " << std::endl;
+        for (const auto & sv : fInputShapes)
+            for (const auto & s : sv)
+                std::cout << "\t\t" << s << std::endl;
     }
     // some models might have negative shape values to indicate dynamic shape, e.g., for variable batch size.
-    for (auto& s : fInputShapes) {
-        if (s < 0) {
-            s = 1;
+    for (auto& sv : fInputShapes) {
+        for (auto & s : sv ) {
+            if (s < 0) {
+                s = 1;
+            }
         }
     }
 
@@ -33,70 +40,86 @@ onnx::Model::Model(const std::string& model_file_name,
         std::cout << "\t" << fOutputNames.at(i) << " : " << /*print_shape(output_shapes) <<*/ std::endl;
     }
 
-    // TODO -- CONSIDER CHECKING THIS -- add in input and output shapes
-    // assert(fInputNames.size() == 1 && fOutputNames.size() == 1);
+    // std::transform(std::begin(fInputNames), std::end(fInputNames), std::begin(fInputNames_char),
+    //                 [&](const std::string& str) { return str.c_str(); });
+    
+    // std::transform(std::begin(fOutputNames), std::end(fOutputNames), std::begin(fOutputNames_char),
+    //                 [&](const std::string& str) { return str.c_str(); });
+
 
     success = true;
 }
 
-// std::vector< std::vector< std::vector<float> > > onnx::Model::run(
-// 	const std::vector<  std::vector<  std::vector< std::vector<float> > > > & x,
-// 	long long int samples)
-// {
-//     if ((samples == 0) || x.empty() || x.front().empty() || x.front().front().empty() || x.front().front().front().empty())
-//         return std::vector< std::vector< std::vector<float> > >();
+template <typename T>
+Ort::Value onnx::Model::vec_to_tensor(
+    std::vector<T>& data, const std::vector<std::int64_t>& shape) {
+  Ort::MemoryInfo mem_info =
+      Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator,
+                                 OrtMemType::OrtMemTypeDefault);
+  auto tensor = Ort::Value::CreateTensor<T>(
+    mem_info, data.data(), data.size(), shape.data(), shape.size());
+  return tensor;
+}
 
-//     if ((samples == -1) || (samples > (long long int)x.size())) { samples = x.size(); }
+onnx::Model::ModelOutput onnx::Model::run(const onnx::Model::ModelInput & x, long long int samples) {
+    ModelOutput result;
 
-//     long long int
-//               rows = x.front().size(),
-//               cols = x.front().front().size(),
-//               depth = x.front().front().front().size();
 
-//     //Change this -- might not need it for Onnx
-//     std::vector< tensorflow::Tensor > _x;
-//     // Single-input network
-//     if (n_inputs == 1)
-//     {
-//         _x.push_back(tensorflow::Tensor(tensorflow::DT_FLOAT, tensorflow::TensorShape({ samples, rows, cols, depth })));
-//         auto input_map = _x[0].tensor<float, 4>();
-//         for (long long int s = 0; s < samples; ++s) {
-//             const auto & sample = x[s];
-//             for (long long int r = 0; r < rows; ++r) {
-//                 const auto & row = sample[r];
-//                 for (long long int c = 0; c < cols; ++c) {
-//                     const auto & col = row[c];
-//                     for (long long int d = 0; d < depth; ++d) {
-//                         input_map(s, r, c, d) = col[d];
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//     // Multi-input network
-//     else
-//     {
-//         for(int i=0; i<depth; ++i){
-//             _x.push_back(tensorflow::Tensor(tensorflow::DT_FLOAT, tensorflow::TensorShape({ samples, rows, cols, 1 })));
-//         }
+    std::vector<const char*> fInputNames_char(fInputNames.size(), nullptr);
+    std::transform(std::begin(fInputNames), std::end(fInputNames), std::begin(fInputNames_char),
+                    [&](const std::string& str) { return str.c_str(); });
+    std::vector<const char*> fOutputNames_char(fOutputNames.size(), nullptr);
+    std::transform(std::begin(fOutputNames), std::end(fOutputNames), std::begin(fOutputNames_char),
+                    [&](const std::string& str) { return str.c_str(); });
 
-//         //tensorflow::Tensor _x(tensorflow::DT_FLOAT, tensorflow::TensorShape({ samples, rows, cols, depth }));
+    for (auto & cstr : fOutputNames_char) {
+        std::cout << cstr << std::endl;
+    }
 
-//         for(int view=0; view<depth; ++view){
-//             auto input_map = _x[view].tensor<float, 4>();
-//             for (long long int s = 0; s < samples; ++s) {
-//                 const auto & sample = x[s];
-//                 for (long long int r = 0; r < rows; ++r) {
-//                     const auto & row = sample[r];
-//                     for (long long int c = 0; c < cols; ++c) {
-//                         const auto & col = row[c];
-//                         long long int d = view;
-//                         input_map(s, r, c, 0) = col[d];
-//                     }
-//                 }
-//             }
-//         }
-//     }
+    size_t rows = x.front().size(),
+           cols = x.front().front().size(),
+           nviews = x.front().front().front().size();
+    std::vector<std::vector<float>> view_vals(nviews);
+    
+    size_t temp_samples = 1; //One sample for now
+    for(size_t view = 0; view < nviews; ++view) {
+        auto & these_vals = view_vals[view];
+        for (size_t s = 0; s < temp_samples; ++s) {
+            for (size_t r = 0; r < rows; ++r) {
+                for (size_t c = 0; c < cols; ++c) {
+                    these_vals.push_back(x[s][r][c][view]);
+                }
+            }
+        }
+    }
+    
+    std::vector<Ort::Value> input_tensors;
+    for (size_t i = 0; i < nviews; ++i) {
+        input_tensors.emplace_back(vec_to_tensor<float>(view_vals[i], fInputShapes[i]));
+    }
+    auto onnx_output = fSession.Run(
+        Ort::RunOptions{nullptr}, fInputNames_char.data(), input_tensors.data(),
+        fInputNames_char.size(), fOutputNames_char.data(), fOutputNames_char.size());
 
-//     return run(_x);
-// }
+
+    //Assume only one sample -- so make a new output vector the same size of the output
+    // then we'll have possibly several output vals per output bucket
+    result.emplace_back(
+        std::vector<std::vector<float>>()
+    );
+    for (size_t i = 0; i < onnx_output.size(); ++i) {
+        auto & output = onnx_output[i];
+        int nelements = 1;
+        auto this_shape = output.GetTensorTypeAndShapeInfo().GetShape();
+        for (auto & s : this_shape) {
+            nelements *= s;
+        }
+        auto * ptr = output.GetTensorMutableData<float>();
+        result.back().push_back(
+            std::vector<float>(ptr, ptr+nelements)
+        );
+    }
+
+
+    return result;
+}

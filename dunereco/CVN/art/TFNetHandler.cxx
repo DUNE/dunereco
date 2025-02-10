@@ -39,7 +39,7 @@ namespace cvn
 
     // Construct the TF Graph object. The empty vector {} is used since the protobuf
     // file gives the names of the output layer nodes
-    if (!fUseBundle){ 
+    if (!fUseBundle && !fUseOnnx){ 
         mf::LogInfo("TFNetHandler") << "Loading network: " << fTFProtoBuf << std::endl;
         fTFGraph = tf::Graph::create(fTFProtoBuf.c_str(),{},pset.get<int>("NInputs"),pset.get<int>("NOutputs"));
         if (!fTFGraph){
@@ -112,6 +112,7 @@ namespace cvn
         cvnResults = fTFBundle->run(fTFBundleFile.c_str(),vecForTF);
     }
     else if (fUseOnnx) {
+        std::cout << "Using onnx" << std::endl;
         cvnResults = fOnnxModel->run(vecForTF);
     }
     else {

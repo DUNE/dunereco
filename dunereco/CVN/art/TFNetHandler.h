@@ -45,7 +45,7 @@ namespace cvn
     std::string  fLibPath;  ///< Library path (typically dune_pardata...)
     std::string  fTFProtoBuf;  ///< location of the tf .pb file in the above path
     std::string  fTFBundleFile;  /// location of the tf saved model folder
-    std::string fOnnxModelFile;
+    std::string  fOnnxModelFile;
     bool         fUseBundle; /// use bundle or protobuf
     bool         fUseOnnx; /// use onnx model
     bool         fUseLogChargeScale;  ///< Is the charge using a log scale?
