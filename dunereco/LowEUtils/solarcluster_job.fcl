@@ -1,0 +1,30 @@
+#include "SolarCluster.fcl"
+#include "standard_reco_dune10kt_1x2x6.fcl"
+
+process_name: SolarCluster
+
+# Define and configure some modules to do work on each event.
+# First modules are defined; they are scheduled later.
+physics.producers:
+{
+   solarcluster:  @local::solar_cluster_dune10kt_1x2x6
+}
+   
+#define the producer and filter modules for this path, order matters, 
+#filters reject all following items.  see lines starting physics.producers below
+physics.reco: [ solarcluster ] 
+
+#block to define where the output goes.  if you defined a filter in the physics
+#block and put it in the trigger_paths then you need to put a SelectEvents: {SelectEvents: [XXX]}
+#entry in the output stream you want those to go to, where XXX is the label of the filter module(s)
+outputs:
+{
+   out1:
+   {
+        module_type: RootOutput
+        fileName:    "%ifb_solarcluster.root"
+        dataTier:    "cluster3D-reconstructed"
+        compressionLevel: 1
+        saveMemoryObjectThreshold: 0
+   }
+}
