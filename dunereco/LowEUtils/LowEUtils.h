@@ -139,11 +139,19 @@ namespace solar
             std::vector<double> &Z,
             std::vector<double> &Dir,
             detinfo::DetectorClocksData clockData);
-        
+
         void MatchClusters(
             std::vector<std::vector<int>> MatchedClustersIdx,
             std::vector<std::vector<std::vector<recob::Hit>>> MatchedClusters,
             std::vector<std::vector<int>> ClustersIdx,
+            std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+            std::vector<std::vector<int>> &ClNHits,
+            std::vector<std::vector<float>> &ClT,
+            std::vector<std::vector<float>> &ClCharge,
+            bool debug = false);
+
+        void MatchClusters(
+            std::vector<std::vector<std::vector<recob::Hit>>> MatchedClusters,
             std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
             std::vector<std::vector<int>> &ClNHits,
             std::vector<std::vector<float>> &ClT,
