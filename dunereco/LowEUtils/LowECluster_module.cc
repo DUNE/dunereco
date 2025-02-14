@@ -10,32 +10,7 @@
 #ifndef LowECluster_H
 #define LowECluster_H 1
 
-// #include "duneopdet/SolarNuUtils/SolarAuxUtils.h"
 #include "dunereco/LowEUtils/LowEUtils.h"
-
-// LArSoft includes
-#include "larcore/Geometry/Geometry.h"
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Cluster.h"
-#include "lardata/Utilities/AssociationUtil.h"
-#include "lardata/DetectorInfoServices/DetectorClocksService.h"
-#include "lardataalg/DetectorInfo/DetectorClocks.h"
-
-// Framework includes
-#include "art/Framework/Core/EDProducer.h"
-#include "art/Framework/Core/ModuleMacros.h"
-#include "art/Framework/Principal/Event.h"
-#include "fhiclcpp/ParameterSet.h"
-#include "art/Framework/Principal/Handle.h"
-#include "canvas/Persistency/Common/Ptr.h"
-#include "canvas/Persistency/Common/PtrVector.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-
-// C++ Includes
-#include <vector>
-#include <string>
-#include <memory>
-#include <limits>
 
 namespace solar
 {
@@ -43,9 +18,10 @@ namespace solar
   class LowECluster : public art::EDProducer
   {
   public:
-    void ProduceCluster(const std::vector<LowEUtils::LowEClusterInfo> &LowEClusterinfo,
-                        std::vector<recob::Cluster> &LowEClusters,
-                        detinfo::DetectorClocksData const &ts) const;
+    void ProduceCluster(
+      const std::vector<LowEUtils::RawLowECluster> &RawLowECluster,
+      std::vector<recob::Cluster> &LowEClusters,
+      detinfo::DetectorClocksData const &ts) const;
 
     // Standard constructor and destructor for an ART module.
     explicit LowECluster(const fhicl::ParameterSet &);
@@ -142,11 +118,12 @@ namespace solar
     std::vector<std::vector<int>> HitIdx;
     std::vector<art::Ptr<recob::Hit>> Hits;
     std::vector<std::vector<art::Ptr<recob::Hit>>> Clusters;
-    std::vector<LowEUtils::LowEClusterInfo> LowEClusters;
+    std::vector<LowEUtils::RawLowECluster> LowEClusters;
 
     // Prepare the output data
     std::unique_ptr<std::vector<recob::Cluster>>
         ClusterPtr(new std::vector<recob::Cluster>);
+    
     std::unique_ptr<art::Assns<recob::Cluster, recob::Hit>>
         assnPtr(new art::Assns<recob::Cluster, recob::Hit>);
 
@@ -193,14 +170,14 @@ namespace solar
   }
 
   //--------------------------------------------------------------------------
-  void LowECluster::ProduceCluster(const std::vector<LowEUtils::LowEClusterInfo> &Clusters,
+  void LowECluster::ProduceCluster(const std::vector<LowEUtils::RawLowECluster> &Clusters,
                                    std::vector<recob::Cluster> &LowEClusters,
                                    detinfo::DetectorClocksData const &ts) const
   {
     // Loop over the flashes with TheFlash being the flash
     for (int i = 0; i < int(Clusters.size()); i++)
     {
-      LowEUtils::LowEClusterInfo Cluster = Clusters[i];
+      LowEUtils::RawLowECluster Cluster = Clusters[i];
 
       // Time to make the Cluster collect the info from the Clusterinfo struct
       float StartWire = Cluster.StartWire;
@@ -228,10 +205,11 @@ namespace solar
       geo::View_t View = Cluster.View;
       geo::PlaneID Plane = Cluster.Plane;
 
-      LowEClusters.emplace_back(StartWire, SigmaStartWire, StartTick, SigmaStartTick, StartCharge, StartAngle, StartOpeningAngle,
-                                EndWire, SigmaEndWire, EndTick, SigmaEndTick, EndCharge, EndAngle, EndOpeningAngle,
-                                Integral, IntegralStdDev, SummedADC, SummedADCstdDev,
-                                NHit, MultipleHitDensity, Width, ID, View, Plane);
+      LowEClusters.emplace_back(
+        StartWire, SigmaStartWire, StartTick, SigmaStartTick, StartCharge, StartAngle, StartOpeningAngle,
+        EndWire, SigmaEndWire, EndTick, SigmaEndTick, EndCharge, EndAngle, EndOpeningAngle,
+        Integral, IntegralStdDev, SummedADC, SummedADCstdDev,
+        NHit, MultipleHitDensity, Width, ID, View, Plane);
     }
   }
 } // namespace solar

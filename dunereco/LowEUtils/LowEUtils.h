@@ -11,28 +11,52 @@
 #ifndef LowETool_h
 #define LowETool_h
 
-#include <iostream>
-#include <vector>
-#include <fcntl.h>
-
-#include "fhiclcpp/ParameterSet.h"
+// LArSoft includes
 #include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/WireReadout.h"
 #include "larcorealg/Geometry/GeometryCore.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
+#include "lardata/Utilities/AssociationUtil.h"
+#include "lardataalg/DetectorInfo/DetectorClocks.h"
+#include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
-#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
-#include "lardata/Utilities/AssociationUtil.h"
+#include "larreco/RecoAlg/Cluster3DAlgs/Cluster3D.h"
+
+// Framework includes
+#include "art/Framework/Core/EDProducer.h"
+#include "art/Framework/Core/ModuleMacros.h"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "canvas/Persistency/Common/Ptr.h"
+#include "canvas/Persistency/Common/PtrVector.h"
+#include "cetlib/search_path.h"
+#include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
+// ROOT includes
 #include "TH1I.h"
 #include "TH1F.h"
+
+// C++ Includes
+#include <span>
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <iostream>
+#include <fcntl.h>
+#include <string>
+#include <memory>
+#include <limits>
+#include <vector>
 
 namespace solar
 {
     class LowEUtils
     {
     public:
-        struct LowEClusterInfo
+        struct RawLowECluster
         {
             float StartWire;
             float SigmaStartWire;
@@ -68,48 +92,89 @@ namespace solar
             float ChargeStdDev;
             float ChargeAverage;
         };
-        struct SolarCluster
+        
+        struct RawSolarCluster
         {
-            int NHit;
-            float X;
-            float Y;
-            float YWidth;
-            float Z;
-            float ZWidth;
-            float Charge;
-            float Integral;
-            float SummedADC;
-            int ID;
-            geo::View_t View;
-            geo::PlaneID Plane;
+            size_t ID;
+            unsigned int StatusBits;
+            Eigen::Vector3f Position;
+            float TotalCharge;
+            float AveragePeakTime;
+            float DeltaPeakTime;
+            float SigmaPeakTime;
+            float HitChiSquare;
+            float OverlapFraction;
+            float ChargeAsymmetry;
+            float DOCAToAxis;
+            float ArcLenToPOCA;
+            reco::ClusterHit2DVec HitVec;
+            std::vector<float> HitDeltaTSigmaVec;
+            std::vector<geo::WireID> WireIDVec;
         };
+        
         explicit LowEUtils(fhicl::ParameterSet const &p);
-        void CalcAdjHits(std::vector<recob::Hit> MyVec, std::vector<std::vector<recob::Hit>> &Clusters, TH1I *MyHist, TH1F *ADCIntHist, bool HeavDebug);
+        
+        void CalcAdjHits(std::vector<recob::Hit> MyVec, std::vector<std::vector<recob::Hit>> &Clusters, TH1I *MyHist, TH1F *ADCIntHist, bool debug);
+        
         void CalcAdjHits(std::vector<art::Ptr<recob::Hit>> MyVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, std::vector<std::vector<int>> &ClusterIdx);
-        void MakeClusterVector(std::vector<LowEClusterInfo> &ClusterVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, art::Event const &evt);
+        
+        void MakeClusterVector(std::vector<RawLowECluster> &ClusterVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, art::Event const &evt);
+        
         void FillClusterVariables(
             std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
             std::vector<std::vector<int>> &ClNHits,
             std::vector<std::vector<float>> &ClT,
             std::vector<std::vector<float>> &ClCharge,
-            bool HeavDebug);
+            bool debug);
+        
+        void FillClusterHitVectors(
+            std::vector<recob::Hit> Cluster,
+            std::vector<int> &TPC,
+            std::vector<int> &Channel,
+            std::vector<double> &Charge,
+            std::vector<double> &Time,
+            double &DeltaTime,
+            double &SigmaTima,
+            std::vector<double> &Y,
+            std::vector<double> &Z,
+            std::vector<double> &Dir,
+            detinfo::DetectorClocksData clockData);
+        
         void MatchClusters(
+            std::vector<std::vector<int>> MatchedClustersIdx,
             std::vector<std::vector<std::vector<recob::Hit>>> MatchedClusters,
+            std::vector<std::vector<int>> ClustersIdx,
             std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
             std::vector<std::vector<int>> &ClNHits,
             std::vector<std::vector<float>> &ClT,
             std::vector<std::vector<float>> &ClCharge,
-            bool HeavDebug);
+            bool debug = false);
+        
+        void ComputeCluster3D(
+            std::vector<RawSolarCluster> &RawSolarCluster,
+            std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
+            detinfo::DetectorClocksData const &clockData);
+        
+        float DOCAToAxis(Eigen::Vector3f Position, float Ind0Y, float Ind0Z, float Ind1Y, float Ind1Z);
+        
+        float ArcLenToPOCA(Eigen::Vector3f Position, float Ind0Y, float Ind0Z, float Ind1Y, float Ind1Z);
+        
+        double Average(std::vector<double> &Vec);
+        float Average(std::vector<float> &Vec);
+        
+        double STD(std::vector<double> &Vec);
+        float STD(std::vector<float> &Vec);
+        
         static std::vector<double> ComputeRecoY(
             int Event,
             std::vector<int> &IndTPC,
             std::vector<double> &Z,
-            std::vector<double> &T,
+            std::vector<double>  &T,
             std::vector<double> &IndZ,
             std::vector<double> &IndY,
             std::vector<double> &IndT,
             std::vector<double> &IndDir,
-            bool HeavDebug);
+            bool debug = false);
 
     private:
         // From fhicl configuration
@@ -124,6 +189,7 @@ namespace solar
         const double fClusterInd0MatchTime;
         const double fClusterInd1MatchTime;
         const double fClusterMatchTime;
+        const int fClusterPreselectionNHits;
     };
 }
 #endif
