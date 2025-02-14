@@ -1888,6 +1888,26 @@ protodunehd_img : {
    }
 }
 
+protodunesp_img : {
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+      logsinks: ["stdout"]
+      loglevels: ["debug", "pgraph:info"]
+      plugins: ["WireCellGen", "WireCellSigProc", "WireCellImg", "WireCellSio", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
+      inputers: ["wclsCookedFrameSource:charge", "wclsCookedFrameSource:wiener"]
+      outputers: [ ]
+      configs: ["pgrapher/experiment/pdsp/wcls-img.jsonnet"]
+      params : {
+         charge_input_label: "wclsdatasp:gauss"
+         wiener_input_label: "wclsdatasp:wiener"
+         reality: "data"
+      }
+   }
+}
+
+
 dune10kt_horizdrift_sim_nfsp : {
     module_type : WireCellToolkit
     wcls_main: {
