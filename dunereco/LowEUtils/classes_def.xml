@@ -1,0 +1,24 @@
+<!--  Include art::Wrapper lines for objects that we would like to put  -->
+<!--  into the event -->
+<!--  Include the non-wrapper lines for all objects on the art::Wrapper --> 
+<!--  lines and for all objects that are data members of those objects.-->
+
+<lcgdict>
+  <class name="geo::WireID" />
+  <class name="Eigen::Matrix<float,3,1,0,3,1>" />
+  <class name="Eigen::PlainObjectBase<Eigen::Matrix<float,3,1,0,3,1>>" />
+  
+  <class name="reco::ClusterHit2D" />
+  <class name="reco::ClusterHit2DVec" />
+  <class name="reco::ClusterHit3D" />
+
+  <class name="std::vector<geo::WireID>" />
+  <class name="std::vector<reco::ClusterHit2D>" />
+  <class name="std::vector<reco::ClusterHit3D>" />
+  
+  <class name="art::Wrapper<reco::ClusterHit2D>" />
+  <class name="art::Wrapper<reco::ClusterHit3D>" />
+  <class name="art::Wrapper<reco::ClusterHit2DVec>" />
+  <class name="art::Wrapper<vector<reco::ClusterHit2D>>" />
+  <class name="art::Wrapper<vector<reco::ClusterHit3D>>" />
+</lcgdict>

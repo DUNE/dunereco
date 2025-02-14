@@ -1,9 +1,14 @@
+# for classes_def.xml!!
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
+
 art_make(BASENAME_ONLY ALLOW_UNDERSCORES
   LIBRARY_NAME LowEUtils
   LIB_LIBRARIES
     fhiclcpp::fhiclcpp
     lardata::Utilities
     lardataobj::RecoBase
+    larreco::RecoAlg_Cluster3DAlgs
+    larreco::RecoAlg_ClusterRecoUtil
     larcorealg::Geometry
     larcore::Geometry_Geometry_service
     messagefacility::MF_MessageLogger
@@ -44,6 +49,8 @@ art_make(BASENAME_ONLY ALLOW_UNDERSCORES
     dunecore::DuneObj
     lardataalg::DetectorInfo
     lardataobj::RecoBase
+    larreco::RecoAlg_Cluster3DAlgs
+    larreco::RecoAlg_ClusterRecoUtil
     lardata::headers
     larcorealg::Geometry
     larcore::Geometry_Geometry_service
@@ -70,8 +77,11 @@ art_make(BASENAME_ONLY ALLOW_UNDERSCORES
     CLHEP::CLHEP
     Boost::filesystem
     FFTW3::FFTW3
+  DICT_LIBRARIES
+    larreco::RecoAlg_Cluster3DAlgs
 )
 
 install_headers()
 install_fhicl()
+install_scripts()
 install_source()
