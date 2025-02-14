@@ -4,11 +4,11 @@ local wiener_input_label = std.extVar('wiener_input_label');  // "wiener"
 
 local wc = import 'wirecell.jsonnet';
 local f = import "pgrapher/common/funcs.jsonnet";
-// local util = import 'pgrapher/experiment/pdhd/funcs.jsonnet';
+// local util = import 'pgrapher/experiment/pdsp/funcs.jsonnet';
 local g = import 'pgraph.jsonnet';
 
-local data_params = import 'pgrapher/experiment/pdhd/params.jsonnet';
-local simu_params = import 'pgrapher/experiment/pdhd/simparams.jsonnet';
+local data_params = import 'pgrapher/experiment/pdsp/params.jsonnet';
+local simu_params = import 'pgrapher/experiment/pdsp/simparams.jsonnet';
 local params = if reality == 'data' then data_params else simu_params;
 
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
@@ -35,7 +35,7 @@ local wcls_input = {
     type: 'wclsCookedFrameSource',
     name: 'wiener',
     data: {
-      recobwire_tags: [wiener_input_label], summary_tags: ['wclsdatahd:wiener'], trace_tags: ['wiener'],
+      recobwire_tags: [wiener_input_label], summary_tags: ['wclsdatasp:thresholdsummary'], trace_tags: ['wiener'],
       frame_tags: ['wiener'],  // this is a WCT designator
       // nticks: params.daq.nticks,
     },
@@ -50,7 +50,7 @@ local mega_anode = {
   },
 };
 
-local img = import 'pgrapher/experiment/pdhd/img.jsonnet';
+local img = import 'pgrapher/experiment/pdsp/img.jsonnet';
 local img_maker = img();
 local img_pipes = [img_maker.per_anode(a) for a in tools.anodes];
 
@@ -61,13 +61,13 @@ local chsel_pipes = [
     data: {
       channels: std.range(2560 * n, 2560 * (n + 1) - 1),
       tags: ["gauss","wiener"],
-      tag_rules: [{
-        frame: {'.*': 'sigproc',},
-        trace: {
-          'gauss': 'gauss%d' %n,
-          'wiener': 'wiener%d' %n,
-        },
-    }],
+      // tag_rules: [{
+      //   frame: {'.*': 'sigproc',},
+      //   trace: {
+      //     'gauss': 'gauss%d' %n,
+      //     'wiener': 'wiener%d' %n,
+      //   },
+      // }],
     },
   }, nin=1, nout=1)
   for n in std.range(0, std.length(tools.anodes) - 1)
@@ -107,7 +107,7 @@ local fanin_tag_rules = [
             trace: {
               ['gauss%d'%ind]:'gauss%d'%ind,
               ['wiener%d'%ind]:'wiener%d'%ind,
-              ['threshold%d'%ind]:'threshold%d'%ind,
+              ['thresholdsummary%d'%ind]:'thresholdsummary%d'%ind,
             },
 
           }

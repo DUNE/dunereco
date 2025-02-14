@@ -75,5 +75,45 @@ dunefd_nuangularreco_pandora_hits:
     RecoMethod: 5
 }
 
+dunefdvd_30deg_nuangularreco_pmtrack:
+{
+    @table::dunefd_nuangularreco_pmtrack
+    NeutrinoAngularRecoAlg:
+    {
+        @table::dunevd_30deg_neutrinoangularrecoalg
+        CalorimetryLabel: "pmtrackcalo"
+    }
+    HitLabel: "gaushit"
+}
+
+dunefdvd_30deg_nuangularreco_pandora_numu:{
+    @table::dunefd_nuangularreco_pandora_numu
+    NeutrinoAngularRecoAlg: @local::dunevd_30deg_neutrinoangularrecoalg
+    HitLabel: "gaushit"
+}
+
+dunefdvd_30deg_nuangularreco_pandora_nue:{
+    @table::dunefd_nuangularreco_pandora_nue
+    NeutrinoAngularRecoAlg: @local::dunevd_30deg_neutrinoangularrecoalg
+    HitLabel: "gaushit"
+}
+
+dunefdvd_30deg_nuangularreco_pandora_numu_allpfps:{
+    @table::dunefd_nuangularreco_pandora_numu_allpfps
+    NeutrinoAngularRecoAlg: @local::dunevd_30deg_neutrinoangularrecoalg
+    HitLabel: "gaushit"
+}
+
+dunefdvd_30deg_nuangularreco_pandora_nue_allpfps:{
+    @table::dunefd_nuangularreco_pandora_nue_allpfps
+    NeutrinoAngularRecoAlg: @local::dunevd_30deg_neutrinoangularrecoalg
+    HitLabel: "gaushit"
+}
+
+dunefdvd_30deg_nuangularreco_pandora_hits:{
+    @table::dunefd_nuangularreco_pandora_hits
+    NeutrinoAngularRecoAlg: @local::dunevd_30deg_neutrinoangularrecoalg
+    HitLabel: "gaushit"
+}
 
 END_PROLOG

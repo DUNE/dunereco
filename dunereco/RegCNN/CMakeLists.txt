@@ -1,4 +1,4 @@
-if(( DEFINED ENV{TENSORFLOW_DIR} ) AND ( DEFINED ENV{TRITON_DIR} ))
+if(( DEFINED ENV{TENSORFLOW_DIR} ) AND ( DEFINED ENV{TRITON_DIR} ) AND ( DEFINED ENV{LIBTORCH_DIR} ))
   add_subdirectory(art)
   add_subdirectory(func)
 endif()
