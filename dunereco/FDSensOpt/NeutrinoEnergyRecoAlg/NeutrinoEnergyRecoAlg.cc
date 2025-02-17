@@ -24,6 +24,7 @@
 //DUNE
 #include "dunereco/AnaUtils/DUNEAnaEventUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaHitUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaSliceUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaShowerUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaTrackUtils.h"
 
@@ -185,6 +186,41 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
         }
     }
     const double totalEnergy(this->CalculateEnergyFromCharge(wireCharge));
+
+    dune::EnergyRecoOutput output;
+    output.recoMethodUsed = static_cast<int>(kAllCharges);
+    output.fRecoVertex.SetXYZ(0.,0.,0.);
+    output.fNuLorentzVector.SetXYZT(0.,0.,0.,totalEnergy);
+    output.fLepLorentzVector.SetXYZT(0.,0.,0.,0.);
+    output.fHadLorentzVector.SetXYZT(0.,0.,0.,0.);
+    output.longestTrackContained = static_cast<int>(kContainmentNotSet);
+    output.trackMomMethod = static_cast<int>(kTrackMethodNotSet);
+    return output;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Event &event, const art::Ptr<recob::Slice> &slice, bool pdhd_apa1)
+{
+    // Try summing energy from charge in hits in slice instead of from the wire charge
+    const std::vector<art::Ptr<recob::Hit>> hits(dune_ana::DUNEAnaSliceUtils::GetHits(slice, event, fHitLabel));
+    
+    double total_hit_charge_adc(0);
+
+    for(art::Ptr<recob::Hit> const& hit: hits){
+        const geo::TPCID hit_tpcID(hit->WireID());
+        geo::View_t view = hit->View();
+        if (hit_tpcID.TPC != 1) { // Sum charge from hits on collection plane
+          if (view != geo::View_t::kW) continue;
+        } else if (pdhd_apa1) { // tpc 1 collection plane broken in pd-hd
+          if (view != geo::View_t::kU) continue;
+        } else { // If we are not in pdhd use tpc 1 W plane as usual
+          if (view != geo::View_t::kW) continue;
+        }
+
+        total_hit_charge_adc += hit->HitSummedADC();
+    }
+    const double totalEnergy(this->CalculateEnergyFromCharge(total_hit_charge_adc));
 
     dune::EnergyRecoOutput output;
     output.recoMethodUsed = static_cast<int>(kAllCharges);

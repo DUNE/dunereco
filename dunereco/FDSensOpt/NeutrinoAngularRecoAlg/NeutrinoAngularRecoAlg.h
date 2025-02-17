@@ -131,6 +131,17 @@ class NeutrinoAngularRecoAlg
         dune::AngularRecoOutput CalculateNeutrinoAngle(const art::Event &event, const Point_t& vertex);
 
 
+        /**
+        * @brief  Calculates neutrino angle using only the hits information from pandroa slice
+        *
+        * @param  slice the pandora event slice
+        * @param  vertex the reconstructed interaction vertex
+        *
+        * @return the neutrino direction summary object
+        */
+        dune::AngularRecoOutput CalculateNeutrinoAngle(const art::Event &event, const art::Ptr<recob::Slice> &slice, const Point_t& vertex);
+    
+    
     private:
 
 

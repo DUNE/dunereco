@@ -77,6 +77,19 @@ class NeutrinoEnergyRecoAlg
         dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Event &event);
 
         /**
+        * @brief  Calculates neutrino energy by summing the charge from hits in a slice
+        *
+        * @param  event the art event
+        *
+        * @param  slice the pandora slice in an event
+        *
+        * @param  pdhd_apa1 is booleon which sums charge from the collection plane in the case of pdhd, where APA 1 collection plane is broken
+        *
+        * @return the neutrino energy summary object
+        */
+        dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Event &event, const art::Ptr<recob::Slice> &slice, bool pdhd_apa1=false);
+        
+        /**
         * @brief  Calculates neutrino energy explicitly using muon momentum by range
         *
         * @param  pMuonTrack the muon track

@@ -26,6 +26,7 @@
 #include "larreco/RecoAlg/TrackMomentumCalculator.h"
 //DUNE
 #include "dunereco/AnaUtils/DUNEAnaEventUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaSliceUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaHitUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaShowerUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaTrackUtils.h"
@@ -182,6 +183,84 @@ dune::AngularRecoOutput NeutrinoAngularRecoAlg::CalculateNeutrinoAngle(const art
     std::vector<PolarFitOutput> output_vec;
     //Getting all the reconstructed 2D hits
     const std::vector<art::Ptr<recob::Hit>> hits(dune_ana::DUNEAnaEventUtils::GetHits(event, fHitLabel));
+    //Sorting all the hits per view
+    //Taking as reference the views for positive drift -> U- == V+ and V- == U+
+    std::map<geo::View_t, std::vector<art::Ptr<recob::Hit>>> hits_per_view;
+    for(art::Ptr<recob::Hit> const& hit: hits){
+        geo::View_t view = GetTargetView(hit);
+
+        if(hits_per_view.count(view) == 0){
+            hits_per_view[view] = {};
+        }
+        hits_per_view[view].push_back(hit);
+    }
+
+    for(auto const& [view, hits] : hits_per_view){
+        PolarFitOutput output = FitViewHits(event, view, hits, vertex);
+        output_vec.push_back(output);
+    }
+
+    const std::vector<std::pair<double, double>> start_values = { //Changng the starting point seems to help convergence in some cases
+        {0.5, 0.5},
+        {0.5, 2},
+        {2, 0.5},
+        {2, 2},
+    };
+
+    //Combining together the infos from the views
+    CalorimetricDirectionFitter const caloFitter{output_vec, GetViewTheta(geo::kU), GetViewTheta(geo::kV)};
+    ROOT::Math::Functor fitFunc([&caloFitter](double const* xs){return caloFitter.Chi2(xs);}, 2);
+
+    if(caloFitter.NViews() < 2){
+        Point_t vertex(0,0,0);
+        Direction_t direction(0,0,0);
+        AngularRecoInputHolder angularRecoInputHolder(vertex, direction, kHits);
+        return this->ReturnNeutrinoAngle(angularRecoInputHolder);
+    }
+
+
+    ROOT::Minuit2::Minuit2Minimizer minimizer{ROOT::Minuit2::kCombined};
+    
+    bool mstatus = false;
+
+    for(const std::pair<double, double> &start_value : start_values){
+        minimizer.Clear();
+        minimizer.SetFunction(fitFunc);
+        minimizer.SetVariable(0, "theta", start_value.first, 0.01);
+        minimizer.SetVariable(1, "phi", start_value.second, 0.01);
+        minimizer.SetMaxFunctionCalls(1e9);
+        minimizer.SetMaxIterations(1e9);
+        minimizer.SetTolerance(0.01);
+        minimizer.SetStrategy(2);
+        minimizer.SetErrorDef(1);
+        mstatus = minimizer.Minimize();
+
+        if(mstatus){
+            break; //If fit converged, no need to test alternative stating values
+        }
+    }
+
+    if(!mstatus){ //Did not manage to converge, all hope is lost
+        Point_t vertex(0,0,0);
+        Direction_t direction(0,0,0);
+        AngularRecoInputHolder angularRecoInputHolder(vertex, direction, kRecoMethodNotSet);
+        return this->ReturnNeutrinoAngle(angularRecoInputHolder);
+    }
+
+    const double* pars = minimizer.X();
+    double theta = pars[0];
+    double phi = pars[1];
+    Direction_t direction(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
+    AngularRecoInputHolder angularRecoInputHolder(vertex, direction, kHits);
+    return this->ReturnNeutrinoAngle(angularRecoInputHolder);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+dune::AngularRecoOutput NeutrinoAngularRecoAlg::CalculateNeutrinoAngle(const art::Event &event, const art::Ptr<recob::Slice> &slice, const Point_t& vertex) {
+    std::vector<PolarFitOutput> output_vec;
+    //Getting all the reconstructed 2D hits in the slice
+    const std::vector<art::Ptr<recob::Hit>> hits(dune_ana::DUNEAnaSliceUtils::GetHits(slice, event, fHitLabel));
     //Sorting all the hits per view
     //Taking as reference the views for positive drift -> U- == V+ and V- == U+
     std::map<geo::View_t, std::vector<art::Ptr<recob::Hit>>> hits_per_view;
