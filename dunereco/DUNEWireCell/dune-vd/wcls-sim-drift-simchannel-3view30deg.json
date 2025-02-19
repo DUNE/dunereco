@@ -1263,7 +1263,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer0",
       "type": "Digitizer"
@@ -1336,7 +1336,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer1",
       "type": "Digitizer"
@@ -1409,7 +1409,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer2",
       "type": "Digitizer"
@@ -1482,7 +1482,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer3",
       "type": "Digitizer"
@@ -1555,7 +1555,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer4",
       "type": "Digitizer"
@@ -1628,7 +1628,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer5",
       "type": "Digitizer"
@@ -1701,7 +1701,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer6",
       "type": "Digitizer"
@@ -1774,7 +1774,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer7",
       "type": "Digitizer"
@@ -1847,7 +1847,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer8",
       "type": "Digitizer"
@@ -1920,7 +1920,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer9",
       "type": "Digitizer"
@@ -1993,7 +1993,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer10",
       "type": "Digitizer"
@@ -2066,7 +2066,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer11",
       "type": "Digitizer"
@@ -2139,7 +2139,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer12",
       "type": "Digitizer"
@@ -2212,7 +2212,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer13",
       "type": "Digitizer"
@@ -2285,7 +2285,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer14",
       "type": "Digitizer"
@@ -2358,7 +2358,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer15",
       "type": "Digitizer"
@@ -2431,7 +2431,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer16",
       "type": "Digitizer"
@@ -2504,7 +2504,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer17",
       "type": "Digitizer"
@@ -2577,7 +2577,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer18",
       "type": "Digitizer"
@@ -2650,7 +2650,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer19",
       "type": "Digitizer"
@@ -2723,7 +2723,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer20",
       "type": "Digitizer"
@@ -2796,7 +2796,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer21",
       "type": "Digitizer"
@@ -2869,7 +2869,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer22",
       "type": "Digitizer"
@@ -2942,7 +2942,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer23",
       "type": "Digitizer"
@@ -3015,7 +3015,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer24",
       "type": "Digitizer"
@@ -3088,7 +3088,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer25",
       "type": "Digitizer"
@@ -3161,7 +3161,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer26",
       "type": "Digitizer"
@@ -3234,7 +3234,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer27",
       "type": "Digitizer"
@@ -3307,7 +3307,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer28",
       "type": "Digitizer"
@@ -3380,7 +3380,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer29",
       "type": "Digitizer"
@@ -3453,7 +3453,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer30",
       "type": "Digitizer"
@@ -3526,7 +3526,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer31",
       "type": "Digitizer"
@@ -3599,7 +3599,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer32",
       "type": "Digitizer"
@@ -3672,7 +3672,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer33",
       "type": "Digitizer"
@@ -3745,7 +3745,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer34",
       "type": "Digitizer"
@@ -3818,7 +3818,7 @@
             1.9999999999999999e-06
          ],
          "gain": 1,
-         "resolution": 12
+         "resolution": 14
       },
       "name": "digitizer35",
       "type": "Digitizer"
