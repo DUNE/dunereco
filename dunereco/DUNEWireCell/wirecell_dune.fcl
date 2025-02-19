@@ -657,6 +657,7 @@ tpcrawdecoder_dunefd_horizdrift_1x2x6 : {
       }
       structs: {
           Nbit: 14
+          elecGain: 7.8 # new default since July 2024
           # number of time samples
           #nticks: @local::dunefd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns]
@@ -698,6 +699,7 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
             engine: "TbbFlow"
         }
         structs: {
+          elecGain: 7.8 # new default since July 2024
           Nbit: 14
           # number of time samples
           #nticks: @local::dunefd_detproperties.NumberTimeSamples
@@ -746,6 +748,7 @@ tpcrawdecoder_dunefd_horizdrift_1x2x2 : {
       params: {
       }
       structs: {
+        elecGain: 7.8 # new default since July 2024
         Nbit: 14
         # Longitudinal diffusion constant [cm2/s]
         DL: 4.0
@@ -803,6 +806,7 @@ tpcrawdecoder_dunefd_vertdrift_2view : {
         files_noise: "dunevd10kt-1x6x6-2view-noise-spectra-v1.json.bz2"
       }
       structs: {
+        elecGain: 7.8 # new default since July 2024
         Nbit: 14
         # number of time samples
         nticks: @local::dunefdvd_detproperties.NumberTimeSamples
@@ -836,6 +840,7 @@ tpcrawdecoder_dunefd_vertdrift_3view: {
           files_noise: "dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2"
         }
         structs: {
+          elecGain: 7.8 # new default since July 2024
           Nbit: 14
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
@@ -898,7 +903,8 @@ tpcrawdecoder_dunefd_vertdrift_1x8x14_3view: {
           files_noise: "dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2"
         }
         structs: {
-            Nbit: 14
+          elecGain: 7.8 # new default since July 2024
+          Nbit: 14
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -930,7 +936,8 @@ tpcrawdecoder_dunefd_vertdrift_3view_30deg: {
           files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
         }
         structs: {
-            Nbit: 14
+          elecGain: 7.8 # new default since July 2024
+          Nbit: 14
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -961,7 +968,8 @@ tpcrawdecoder_dunefd_vertdrift_1x8x6_3view_30deg: {
           files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
         }
         structs: {
-            Nbit: 14
+          elecGain: 7.8 # new default since July 2024
+          Nbit: 14
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -1164,7 +1172,8 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_data_nfsp : {
       }
       # ext-code, code
       structs : {
-            Nbit: 14
+          elecGain: 7.8 # new default since July 2024
+          Nbit: 14
           # for nticks calculation in common/params.jsonnet: elec
           driftSpeed: 1.60563
           
@@ -1252,6 +1261,7 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_30deg_data_nfsp : {
       }
       # ext-code, code
       structs : {
+          elecGain: 7.8 # new default since July 2024
           Nbit: 14
           # for nticks calculation in common/params.jsonnet: elec
           driftSpeed: 1.60563
@@ -1340,6 +1350,7 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_30deg_data_nfsp : {
       }
       # ext-code, code
       structs : {
+          elecGain: 7.8 # new default since July 2024
           Nbit: 14
           
           # for nticks calculation in common/params.jsonnet: elec
@@ -1432,6 +1443,7 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_data_nfsp : {
       }
       # ext-code, code
       structs : {
+          elecGain: 7.8 # new default since July 2024
           Nbit: 14
 
           # for nticks calculation in common/params.jsonnet: elec
@@ -1524,6 +1536,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_data_nfsp : {
       }
       # ext-code, code
       structs : {
+          elecGain: 7.8 # new default since July 2024
           Nbit: 14
 
           # for nticks calculation in common/params.jsonnet: elec
@@ -1594,6 +1607,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
             process_crm: "full"
         }
         structs: {
+            elecGain: 7.8 # new default since July 2024
             Nbit: 14
             # number of time samples
             nticks: @local::dunefdvd_detproperties.NumberTimeSamples
@@ -1991,6 +2005,7 @@ dune10kt_horizdrift_sim_nfsp : {
             engine: "TbbFlow"
         }
         structs: {
+          elecGain: 7.8 # new default since July 2024
           Nbit: 14 
           # number of time samples
           nticks: @local::dunefd_detproperties.NumberTimeSamples
