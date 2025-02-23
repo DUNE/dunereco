@@ -3,6 +3,7 @@ add_subdirectory(MVAAlg)
 add_subdirectory(FDSensOptData)
 add_subdirectory(NeutrinoEnergyRecoAlg)
 add_subdirectory(NeutrinoAngularRecoAlg)
+add_subdirectory(ParticleSelectionAlg)
 
 cet_build_plugin(NueAna   art::module LIBRARIES
                         lardataalg::DetectorInfo
@@ -127,6 +128,7 @@ cet_build_plugin(ShSeg   art::module LIBRARIES
 cet_build_plugin(EnergyReco   art::module LIBRARIES
                         MVAAlg
                         NeutrinoEnergyRecoAlg
+                        ParticleSelectionAlg
                         nugen::NuReweight
                         nugen::NuReweight_art
                         nusimdata::SimulationBase

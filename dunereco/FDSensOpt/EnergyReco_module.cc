@@ -9,6 +9,7 @@
 
 #ifndef EnergyReco_H
 #define EnergyReco_H
+#pragma GCC diagnostic ignored "-Wunused-variable"
 
 //STL
 #include <limits>
@@ -33,6 +34,7 @@
 //DUNE
 #include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 #include "dunereco/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.h"
+#include "dunereco/FDSensOpt/ParticleSelectionAlg/ParticleSelectionAlg.h"
 #include "dunereco/AnaUtils/DUNEAnaEventUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaHitUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaShowerUtils.h"
@@ -47,11 +49,6 @@ namespace dune {
             void produce(art::Event& evt) override;
 
         private:
-            art::Ptr<recob::Track> GetLongestTrack(const art::Event& event);
-            art::Ptr<recob::Shower> GetHighestChargeShower(detinfo::DetectorClocksData const& clockData,
-                                                           detinfo::DetectorPropertiesData const& detProp,
-                                                           const art::Event& event);
-
             std::string fWireLabel;
             std::string fHitLabel;
             std::string fTrackLabel;
@@ -64,7 +61,9 @@ namespace dune {
             int fLongestTrackMethod;
 
 
+
             NeutrinoEnergyRecoAlg fNeutrinoEnergyRecoAlg;
+            ParticleSelectionAlg fParticleSelectionAlg;
     }; // class EnergyReco
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
@@ -81,7 +80,9 @@ EnergyReco::EnergyReco(fhicl::ParameterSet const& pset) :
     fRecoMethod(pset.get<int>("RecoMethod")),
     fLongestTrackMethod(pset.get<int>("LongestTrackMethod")),
     fNeutrinoEnergyRecoAlg(pset.get<fhicl::ParameterSet>("NeutrinoEnergyRecoAlg"),fTrackLabel,fShowerLabel,
-        fHitLabel,fWireLabel,fTrackToHitLabel,fShowerToHitLabel,fHitToSpacePointLabel)
+        fHitLabel,fWireLabel,fTrackToHitLabel,fShowerToHitLabel,fHitToSpacePointLabel),
+    fParticleSelectionAlg(pset.get<fhicl::ParameterSet>("ParticleSelectionAlg"),fTrackLabel,fShowerLabel,
+        fHitLabel,fTrackToHitLabel,fShowerToHitLabel,fHitToSpacePointLabel)
 {
     produces<dune::EnergyRecoOutput>();
     produces<art::Assns<dune::EnergyRecoOutput, recob::Track>>();
@@ -96,10 +97,11 @@ void EnergyReco::produce(art::Event& evt)
     auto assnstrk = std::make_unique<art::Assns<dune::EnergyRecoOutput, recob::Track>>();
     auto assnsshw = std::make_unique<art::Assns<dune::EnergyRecoOutput, recob::Shower>>();
 
+
     auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(evt, clockData);
-    art::Ptr<recob::Track> longestTrack(this->GetLongestTrack(evt));
-    art::Ptr<recob::Shower> highestChargeShower(this->GetHighestChargeShower(clockData, detProp, evt));
+    art::Ptr<recob::Track> longestTrack(fParticleSelectionAlg.GetLongestTrack(evt, true));
+    art::Ptr<recob::Shower> highestChargeShower(fParticleSelectionAlg.GetHighestChargeShower(clockData, detProp, evt));
 
     if (fRecoMethod == 1)
     {
@@ -127,60 +129,7 @@ void EnergyReco::produce(art::Event& evt)
     evt.put(std::move(assnsshw));
   }
 
-//-----------------------------------------------------------------------------------------------------------------------------------------
 
-art::Ptr<recob::Track> EnergyReco::GetLongestTrack(const art::Event &event)
-{
-    art::Ptr<recob::Track> pTrack{};
-    const std::vector<art::Ptr<recob::Track> > tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
-    art::FindManyP<recob::PFParticle> fmPFParticle(tracks, event, fTrackLabel);
-    
-    if (0 == tracks.size())
-        return pTrack;
-
-    double longestLength(std::numeric_limits<double>::lowest());
-    for (unsigned int iTrack = 0; iTrack < tracks.size(); ++iTrack)
-    {
-        if (fmPFParticle.isValid()){
-            std::vector<art::Ptr<recob::PFParticle>> pfp = fmPFParticle.at(iTrack);
-            if (!lar_pandora::LArPandoraHelper::IsTrack(pfp[0]))
-                continue;
-        }
-        const double length(tracks[iTrack]->Length());
-        if (length-longestLength > std::numeric_limits<double>::epsilon())
-        {
-            longestLength = length;
-            pTrack = tracks[iTrack];
-        }
-    }
-    return pTrack;
-}
-
-//-----------------------------------------------------------------------------------------------------------------------------------------
-
-art::Ptr<recob::Shower> EnergyReco::GetHighestChargeShower(detinfo::DetectorClocksData const& clockData,
-                                                           detinfo::DetectorPropertiesData const& detProp,
-                                                           const art::Event &event)
-{
-    art::Ptr<recob::Shower> pShower{};
-    const std::vector<art::Ptr<recob::Shower> > showers(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerLabel));
-    if (0 == showers.size())
-        return pShower;
-
-    double maxCharge(std::numeric_limits<double>::lowest());
-    for (unsigned int iShower = 0; iShower < showers.size(); ++iShower)
-    {
-        const std::vector<art::Ptr<recob::Hit> > showerHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(showers[iShower],
-            event,fShowerToHitLabel),2));
-        const double showerCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, showerHits));
-        if (showerCharge-maxCharge > std::numeric_limits<double>::epsilon())
-        {
-            maxCharge = showerCharge;
-            pShower = showers[iShower];
-        }
-    }
-    return pShower;
-}
 
 DEFINE_ART_MODULE(EnergyReco)
 
