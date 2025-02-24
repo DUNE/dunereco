@@ -40,9 +40,6 @@
 #include "TH1F.h"
 
 // C++ Includes
-#include <span>
-#include <Eigen/Core>
-#include <Eigen/Dense>
 #include <iostream>
 #include <fcntl.h>
 #include <string>
