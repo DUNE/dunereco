@@ -22,7 +22,6 @@
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
-#include "larreco/RecoAlg/Cluster3DAlgs/Cluster3D.h"
 
 // Framework includes
 #include "art/Framework/Core/EDProducer.h"
@@ -56,7 +55,7 @@ namespace solar
     class LowEUtils
     {
     public:
-        struct RawLowECluster
+        struct RawPerPlaneCluster
         {
             float StartWire;
             float SigmaStartWire;
@@ -96,18 +95,13 @@ namespace solar
         struct RawSolarCluster
         {
             size_t ID;
-            unsigned int StatusBits;
-            Eigen::Vector3f Position;
+            std::vector<float> Position;
             float TotalCharge;
             float AveragePeakTime;
             float DeltaPeakTime;
             float SigmaPeakTime;
-            float HitChiSquare;
-            float OverlapFraction;
             float ChargeAsymmetry;
-            float DOCAToAxis;
-            float ArcLenToPOCA;
-            reco::ClusterHit2DVec HitVec;
+            std::vector<std::vector<recob::Hit>> HitVec;
             std::vector<float> HitDeltaTSigmaVec;
             std::vector<geo::WireID> WireIDVec;
         };
@@ -118,7 +112,7 @@ namespace solar
         
         void CalcAdjHits(std::vector<art::Ptr<recob::Hit>> MyVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, std::vector<std::vector<int>> &ClusterIdx);
         
-        void MakeClusterVector(std::vector<RawLowECluster> &ClusterVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, art::Event const &evt);
+        void MakeClusterVector(std::vector<RawPerPlaneCluster> &ClusterVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, art::Event const &evt);
         
         void FillClusterVariables(
             std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
@@ -162,10 +156,6 @@ namespace solar
             std::vector<RawSolarCluster> &RawSolarCluster,
             std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
             detinfo::DetectorClocksData const &clockData);
-        
-        float DOCAToAxis(Eigen::Vector3f Position, float Ind0Y, float Ind0Z, float Ind1Y, float Ind1Z);
-        
-        float ArcLenToPOCA(Eigen::Vector3f Position, float Ind0Y, float Ind0Z, float Ind1Y, float Ind1Z);
         
         double Average(std::vector<double> &Vec);
         float Average(std::vector<float> &Vec);

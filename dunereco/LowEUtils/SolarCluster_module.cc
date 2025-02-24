@@ -11,6 +11,7 @@
 #define SolarCluster_H 1
 
 #include "dunereco/LowEUtils/LowEUtils.h"
+#include "dunereco/LowEUtils/LowECluster.h"
 
 namespace solar
 {
@@ -20,7 +21,7 @@ namespace solar
   public:
     void ProduceCluster(
       const std::vector<LowEUtils::RawSolarCluster> &RawSolarCluster,
-      std::vector<reco::ClusterHit3D> &SolarClusters,
+      std::vector<solar::LowECluster> &SolarClusters,
       detinfo::DetectorClocksData const &ts) const;
 
     // Standard constructor and destructor for an ART module.
@@ -88,8 +89,8 @@ namespace solar
     lowe(new solar::LowEUtils(p))
   {
     reconfigure(p);
-    produces<std::vector<reco::ClusterHit3D>>();
-    produces<art::Assns<reco::ClusterHit3D, recob::Cluster>>();
+    produces<std::vector<solar::LowECluster>>();
+    produces<art::Assns<solar::LowECluster, recob::Cluster>>();
   }
 
   //--------------------------------------------------------------------------
@@ -126,11 +127,11 @@ namespace solar
     std::vector<LowEUtils::RawSolarCluster> RawSolarClusters;
 
     // Prepare the output data
-    std::unique_ptr<std::vector<reco::ClusterHit3D>>
-        SolarClusterPtr(new std::vector<reco::ClusterHit3D>);
+    std::unique_ptr<std::vector<solar::LowECluster>>
+        SolarClusterPtr(new std::vector<solar::LowECluster>);
 
-    std::unique_ptr<art::Assns<reco::ClusterHit3D, recob::Cluster>>
-        assnPtr(new art::Assns<reco::ClusterHit3D, recob::Cluster>);
+    std::unique_ptr<art::Assns<solar::LowECluster, recob::Cluster>>
+        assnPtr(new art::Assns<solar::LowECluster, recob::Cluster>);
 
     // Get input data
     std::vector<art::Ptr<recob::Cluster>> ClusterPtr;
@@ -145,6 +146,10 @@ namespace solar
     
     for (int i = 0; i < NClusters; ++i)
     {
+      if (i > 5)
+      {
+        std::cout << "Looping over cluster " << i << " to find match." << std::endl;
+      }
       std::vector<art::Ptr<recob::Hit>> Hits = HitAssns.at(i);
 
       std::vector<recob::Hit> HitVec;
@@ -214,7 +219,7 @@ namespace solar
       ClusterPtrVector.push_back(art::Ptr<recob::Cluster>(ClusterHandle, MatchedClustersIdx[2][i]));
 
 
-      // Create the association between the SolarCluster (reco::ClusterHit3D) and the LowECluster (recob::Cluster)
+      // Create the association between the SolarCluster (solar::LowECluster) and the LowECluster (recob::Cluster)
       util::CreateAssn(*this, evt, *SolarClusterPtr, ClusterPtrVector,
                        *(assnPtr.get()), i);
     }
@@ -226,7 +231,7 @@ namespace solar
 
   //--------------------------------------------------------------------------
   void SolarCluster::ProduceCluster(const std::vector<LowEUtils::RawSolarCluster> &Clusters,
-                                   std::vector<reco::ClusterHit3D> &SolarClusters,
+                                   std::vector<solar::LowECluster> &SolarClusters,
                                    detinfo::DetectorClocksData const &ts) const
   {
     // Loop over the flashes with TheFlash being the flash
@@ -234,22 +239,17 @@ namespace solar
     {
       LowEUtils::RawSolarCluster Cluster = Clusters[i];
       recob::Cluster::ID_t ID = Cluster.ID;
-      unsigned int StatusBits = Cluster.StatusBits;
-      Eigen::Vector3f Position = Cluster.Position;
+      std::vector<float> Position = Cluster.Position;
       float TotalCharge = Cluster.TotalCharge;
       float AveragePeakTime = Cluster.AveragePeakTime;
       float DeltaPeakTime = Cluster.DeltaPeakTime;
       float SigmaPeakTime = Cluster.SigmaPeakTime;
-      float HitChiSquare = Cluster.HitChiSquare;
-      float OverlapFraction = Cluster.OverlapFraction;
       float ChargeAsymmetry = Cluster.ChargeAsymmetry;
-      float DOCAToAxis = Cluster.DOCAToAxis;
-      float ArcLenToPOCA = Cluster.ArcLenToPOCA;
-      reco::ClusterHit2DVec HitVec = Cluster.HitVec;
+      std::vector<std::vector<recob::Hit>> HitVec = Cluster.HitVec;
       std::vector<float> HitDeltaTSigmaVec = Cluster.HitDeltaTSigmaVec;
       std::vector<geo::WireID> WireIDVec = Cluster.WireIDVec;
       // size_t id, unsigned int statusBits, const Eigen::Vector3f &position, float totalCharge, float avePeakTime, float deltaPeakTime, float sigmaPeakTime, float hitChiSquare, float overlapFraction, float chargeAsymmetry, float docaToAxis, float arclenToPoca, const ClusterHit2DVec &hitVec, const std::vector< float > &hitDelTSigVec, const std::vector< geo::WireID > &wireIDVec
-      SolarClusters.emplace_back(ID, StatusBits, Position, TotalCharge, AveragePeakTime, DeltaPeakTime, SigmaPeakTime, HitChiSquare, OverlapFraction, ChargeAsymmetry, DOCAToAxis, ArcLenToPOCA, HitVec, HitDeltaTSigmaVec, WireIDVec);
+      SolarClusters.emplace_back(ID, Position, TotalCharge, AveragePeakTime, DeltaPeakTime, SigmaPeakTime, ChargeAsymmetry, HitVec, HitDeltaTSigmaVec, WireIDVec);
     }
   }
 } // namespace solar

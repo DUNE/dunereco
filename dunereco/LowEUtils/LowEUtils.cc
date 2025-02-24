@@ -18,7 +18,7 @@ namespace solar
   {
   }
 
-  void LowEUtils::MakeClusterVector(std::vector<RawLowECluster> &ClusterVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, art::Event const &evt)
+  void LowEUtils::MakeClusterVector(std::vector<RawPerPlaneCluster> &ClusterVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, art::Event const &evt)
   {
     int ID = 0;
     for (std::vector<art::Ptr<recob::Hit>> Cluster : Clusters)
@@ -148,7 +148,7 @@ namespace solar
         ChargeAverage = 0;
       }
 
-      ClusterVec.push_back(RawLowECluster{StartWire, SigmaStartWire, StartTick, SigmaStartTick, StartCharge, StartAngle, StartOpeningAngle, EndWire, SigmaEndWire, EndTick, SigmaEndTick, EndCharge, EndAngle, EndOpeningAngle, Integral, IntegralStdDev, SummedADC, SummedADCstdDev, NHit, MultipleHitDensity, Width, ID, View, Plane, WireCoord, SigmaWireCoord, TickCoord, SigmaTickCoord, IntegralAverage, SummedADCaverage, Charge, ChargeStdDev, ChargeAverage});
+      ClusterVec.push_back(RawPerPlaneCluster{StartWire, SigmaStartWire, StartTick, SigmaStartTick, StartCharge, StartAngle, StartOpeningAngle, EndWire, SigmaEndWire, EndTick, SigmaEndTick, EndCharge, EndAngle, EndOpeningAngle, Integral, IntegralStdDev, SummedADC, SummedADCstdDev, NHit, MultipleHitDensity, Width, ID, View, Plane, WireCoord, SigmaWireCoord, TickCoord, SigmaTickCoord, IntegralAverage, SummedADCaverage, Charge, ChargeStdDev, ChargeAverage});
       ID++;
     }
     return;
@@ -395,18 +395,13 @@ void LowEUtils::ComputeCluster3D(
   {
     // --- Declare our variables
     int Event = 0;
-    unsigned int StatusBits = 0;
-    Eigen::Vector3f Position = {0, 0, 0};
+    std::vector<float> Position = {0, 0, 0};
     float TotalCharge = 0;
     float AveragePeakTime = 0;
     float DeltaPeakTime = 0;
     float SigmaPeakTime = 0;
-    float HitChiSquare = 0;
-    float OverlapFraction = 0;
     float ChargeAsymmetry = 0;
-    float DOCAToAxis = 0;
-    float ArcLenToPOCA = 0;
-    const reco::ClusterHit2DVec HitVec = {};
+    const std::vector<std::vector<recob::Hit>> HitVec = {};
     std::vector<float> HitDeltaTSigmaVec = {};
     std::vector<geo::WireID> WireIDVec = {};
 
@@ -500,51 +495,23 @@ void LowEUtils::ComputeCluster3D(
       AveragePeakTime = Time[ii];
       DeltaPeakTime = DeltaTime;
       SigmaPeakTime = SigmaTime;
-      HitChiSquare = 0;
-      OverlapFraction = 0;
       ChargeAsymmetry = 0;
-      DOCAToAxis = LowEUtils::DOCAToAxis(Position, ClY[0][ii], ClZ[0][ii], ClY[1][ii], ClZ[1][ii]);
-      ArcLenToPOCA = LowEUtils::ArcLenToPOCA(Position, ClY[0][ii], ClZ[0][ii], ClY[1][ii], ClZ[1][ii]);
-      reco::ClusterHit2DVec HitVec;
-      for (size_t i = 0; i < MatchedClusters[2][ii].size(); i++)
+      std::vector<std::vector<recob::Hit>> HitVec;
+      for (size_t i = 0; i < 4; i++)
       {
-        recob::Hit ThisHit = MatchedClusters[2][ii][i];
-        recob::Hit *ThisHitPtr = &ThisHit;
-        const geo::WireID ThisWireID = ThisHit.WireID();
-        // unsigned statusBits, float doca, float poca, float xPosition, float timeTicks, const geo::WireID &wireID, const recob::Hit *recobHit
-        const reco::ClusterHit2D ThisHit2D(StatusBits, .0, .0, .0, Time[ii], ThisWireID, ThisHitPtr);
-        const reco::ClusterHit2D *ThisHit2DPtr = &ThisHit2D;
-        HitVec.push_back(ThisHit2DPtr);
+        HitVec.push_back({});
+        for (size_t j = 0; j < MatchedClusters[i][ii].size(); j++)
+        {
+          recob::Hit ThisHit = MatchedClusters[i][ii][j];
+          // recob::Hit *ThisHitPtr = &ThisHit;
+          // const geo::WireID ThisWireID = ThisHit.WireID();
+          HitVec[i].push_back(ThisHit);
+        }
       }
       // HitDeltaTSigmaVec = {};
       // WireIDVec = {};
-      RawSolarClusters.push_back(RawSolarCluster{size_t(ii), StatusBits, Position, TotalCharge, AveragePeakTime, DeltaPeakTime, SigmaPeakTime, HitChiSquare, OverlapFraction, ChargeAsymmetry, DOCAToAxis, ArcLenToPOCA, HitVec, HitDeltaTSigmaVec, WireIDVec});
+      RawSolarClusters.push_back(RawSolarCluster{size_t(ii), Position, TotalCharge, AveragePeakTime, DeltaPeakTime, SigmaPeakTime, ChargeAsymmetry, HitVec, HitDeltaTSigmaVec, WireIDVec});
     } // Loop over MainCl
-  }
-
-  //......................................................
-  float LowEUtils::DOCAToAxis(Eigen::Vector3f Position, float Ind0Y, float Ind0Z, float Ind1Y, float Ind1Z)
-  {
-    Eigen::Vector3f Ind0 = {0, Ind0Y, Ind0Z};
-    Eigen::Vector3f Ind1 = {0, Ind1Y, Ind1Z};
-    Eigen::Vector3f Axis = Ind1 - Ind0;
-    Eigen::Vector3f Pos = Position - Ind0;
-    float DOCAToAxis = (Pos.cross(Axis)).norm() / Axis.norm();
-    return DOCAToAxis;
-  }
-
-  //......................................................
-  float LowEUtils::ArcLenToPOCA(Eigen::Vector3f Position, float Ind0Y, float Ind0Z, float Ind1Y, float Ind1Z)
-  /*
-  Compute the arc length from the position to the point of closest approach (POCA) to the line defined by Ind0 and Ind1.
-  */
-  {
-    Eigen::Vector3f Ind0 = {0, Ind0Y, Ind0Z};
-    Eigen::Vector3f Ind1 = {0, Ind1Y, Ind1Z};
-    Eigen::Vector3f Axis = Ind1 - Ind0;
-    Eigen::Vector3f Pos = Position - Ind0;
-    float ArcLenToPOCA = (Pos.cross(Axis)).norm() / Axis.norm();
-    return ArcLenToPOCA;
   }
 
   //......................................................

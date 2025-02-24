@@ -23,7 +23,7 @@ outputs:
    {
         module_type: RootOutput
         fileName:    "%ifb_solarcluster.root"
-        dataTier:    "cluster3D-reconstructed"
+        dataTier:    "lowecluster-reconstructed"
         compressionLevel: 1
         saveMemoryObjectThreshold: 0
    }
