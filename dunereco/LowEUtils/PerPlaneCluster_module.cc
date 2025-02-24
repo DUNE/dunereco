@@ -1,31 +1,31 @@
 ////////////////////////////////////////////////////////////////////////////////////
-// Class:       LowECluster                                                       //
+// Class:       PerPlaneCluster                                                   //
 // Module Type: producer                                                          //
-// File:        LowECluster_module.cc                                             //
+// File:        PerPlaneCluster_module.cc                                         //
 //                                                                                //
 // Hit clustering, based on time and proximity information.                       //
-// To be used as per-plane clustering for the SolarCluser_module.                 //
+// To be used as per-plane clustering previous to the SolarCluser_module.         //
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LowECluster_H
-#define LowECluster_H 1
+#ifndef PerPlaneCluster_H
+#define PerPlaneCluster_H 1
 
 #include "dunereco/LowEUtils/LowEUtils.h"
 
 namespace solar
 {
 
-  class LowECluster : public art::EDProducer
+  class PerPlaneCluster : public art::EDProducer
   {
   public:
     void ProduceCluster(
-      const std::vector<LowEUtils::RawLowECluster> &RawLowECluster,
-      std::vector<recob::Cluster> &LowEClusters,
+      const std::vector<LowEUtils::RawPerPlaneCluster> &RawPerPlaneCluster,
+      std::vector<recob::Cluster> &PerPlaneClusters,
       detinfo::DetectorClocksData const &ts) const;
 
     // Standard constructor and destructor for an ART module.
-    explicit LowECluster(const fhicl::ParameterSet &);
-    virtual ~LowECluster();
+    explicit PerPlaneCluster(const fhicl::ParameterSet &);
+    virtual ~PerPlaneCluster();
 
     void beginJob();
     void endJob();
@@ -58,7 +58,7 @@ namespace solar
 
 namespace solar
 {
-  DEFINE_ART_MODULE(LowECluster)
+  DEFINE_ART_MODULE(PerPlaneCluster)
 }
 
 #endif
@@ -68,7 +68,7 @@ namespace solar
 
   //--------------------------------------------------------------------------
   // Constructor
-  LowECluster::LowECluster(const fhicl::ParameterSet &p)
+  PerPlaneCluster::PerPlaneCluster(const fhicl::ParameterSet &p)
       : EDProducer{p},
         fHitLabel(p.get<std::string>("HitLabel")),
         fGeometry(p.get<std::string>("Geometry")),
@@ -90,27 +90,27 @@ namespace solar
   }
 
   //--------------------------------------------------------------------------
-  void LowECluster::reconfigure(fhicl::ParameterSet const &p)
+  void PerPlaneCluster::reconfigure(fhicl::ParameterSet const &p)
   {
   }
 
   //--------------------------------------------------------------------------
   // Destructor
-  LowECluster::~LowECluster()
+  PerPlaneCluster::~PerPlaneCluster()
   {
   }
   //--------------------------------------------------------------------------
-  void LowECluster::beginJob()
-  {
-  }
-
-  //--------------------------------------------------------------------------
-  void LowECluster::endJob()
+  void PerPlaneCluster::beginJob()
   {
   }
 
   //--------------------------------------------------------------------------
-  void LowECluster::produce(art::Event &evt)
+  void PerPlaneCluster::endJob()
+  {
+  }
+
+  //--------------------------------------------------------------------------
+  void PerPlaneCluster::produce(art::Event &evt)
   {
     auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
 
@@ -118,7 +118,7 @@ namespace solar
     std::vector<std::vector<int>> HitIdx;
     std::vector<art::Ptr<recob::Hit>> Hits;
     std::vector<std::vector<art::Ptr<recob::Hit>>> Clusters;
-    std::vector<LowEUtils::RawLowECluster> LowEClusters;
+    std::vector<LowEUtils::RawPerPlaneCluster> PerPlaneClusters;
 
     // Prepare the output data
     std::unique_ptr<std::vector<recob::Cluster>>
@@ -138,8 +138,8 @@ namespace solar
 
     // Run the clustering
     lowe->CalcAdjHits(Hits, Clusters, HitIdx);
-    lowe->MakeClusterVector(LowEClusters, Clusters, evt);
-    ProduceCluster(LowEClusters, *ClusterPtr, clockData);
+    lowe->MakeClusterVector(PerPlaneClusters, Clusters, evt);
+    ProduceCluster(PerPlaneClusters, *ClusterPtr, clockData);
 
     // Make the associations which we noted we need
     for (size_t i = 0; i != HitIdx.size(); ++i)
@@ -170,14 +170,14 @@ namespace solar
   }
 
   //--------------------------------------------------------------------------
-  void LowECluster::ProduceCluster(const std::vector<LowEUtils::RawLowECluster> &Clusters,
-                                   std::vector<recob::Cluster> &LowEClusters,
+  void PerPlaneCluster::ProduceCluster(const std::vector<LowEUtils::RawPerPlaneCluster> &Clusters,
+                                   std::vector<recob::Cluster> &PerPlaneClusters,
                                    detinfo::DetectorClocksData const &ts) const
   {
     // Loop over the flashes with TheFlash being the flash
     for (int i = 0; i < int(Clusters.size()); i++)
     {
-      LowEUtils::RawLowECluster Cluster = Clusters[i];
+      LowEUtils::RawPerPlaneCluster Cluster = Clusters[i];
 
       // Time to make the Cluster collect the info from the Clusterinfo struct
       float StartWire = Cluster.StartWire;
@@ -205,7 +205,7 @@ namespace solar
       geo::View_t View = Cluster.View;
       geo::PlaneID Plane = Cluster.Plane;
 
-      LowEClusters.emplace_back(
+      PerPlaneClusters.emplace_back(
         StartWire, SigmaStartWire, StartTick, SigmaStartTick, StartCharge, StartAngle, StartOpeningAngle,
         EndWire, SigmaEndWire, EndTick, SigmaEndTick, EndCharge, EndAngle, EndOpeningAngle,
         Integral, IntegralStdDev, SummedADC, SummedADCstdDev,

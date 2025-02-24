@@ -3,7 +3,7 @@ BEGIN_PROLOG
 lowe_cluster_dune10kt_1x2x6:
 {
     HitLabel:           "hitfd"              # The label for the process which ran the Hits
-    module_type:        "LowECluster"
+    module_type:        "PerPlaneCluster"
 
     Geometry:                   "HD"
     DetectorSizeX:              360          # 1 TPC drift (X) length in [cm].
