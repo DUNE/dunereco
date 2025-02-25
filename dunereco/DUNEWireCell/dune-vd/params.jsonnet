@@ -50,7 +50,7 @@ function(params) base {
         
         // Set 0 for now
         //baselines: [0*wc.millivolt, 0*wc.millivolt, 0*wc.millivolt],
-        //resolution: 14,
+        resolution: std.extVar("Nbit"),
         //fullscale: [0.2*wc.volt, 1.6*wc.volt],
 
         // Copied from pdsp. induction plane: 2350 ADC, collection plane: 900 ADC
@@ -65,7 +65,7 @@ function(params) base {
         type: "ColdElecResponse",
 
         // copied from pdsp
-        gain: 14*wc.mV/wc.fC,
+        gain: std.extVar("elecGain")*wc.mV/wc.fC,
         shaping: 2.2 * wc.us,
         postgain: 1.1365,
         start: 0,

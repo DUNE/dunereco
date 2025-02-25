@@ -65,7 +65,7 @@ function(params) base {
     baselines: [900 * wc.millivolt, 900 * wc.millivolt, 200 * wc.millivolt],
 
     // The resolution (bits) of the ADC
-    resolution: 14,
+    resolution: std.extVar("Nbit"),
 
     // The voltage range as [min,max] of the ADC, eg min voltage
     // counts 0 ADC, max counts 2^resolution-1.
@@ -73,6 +73,7 @@ function(params) base {
   },
 
   elec: super.elec {
+    gain: std.extVar("elecGain")*wc.mV/wc.fC,
     postgain: 1.0,
     shaping: 2.0 * wc.us,
   },

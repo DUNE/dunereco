@@ -68,7 +68,7 @@ base {
 
     adc: super.adc {
 
-        resolution: 14,
+        resolution: std.extVar("Nbit"),
 
         // induction plane: 2350 ADC, collection plane: 900 ADC
         baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
@@ -81,6 +81,7 @@ base {
     },
 
     elec: super.elec {
+      gain: std.extVar("elecGain"),
       postgain: 1.0,
       shaping: 2.2 * wc.us,
     },
