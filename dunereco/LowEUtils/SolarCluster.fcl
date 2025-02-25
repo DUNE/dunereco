@@ -3,7 +3,7 @@ BEGIN_PROLOG
 solar_cluster_dune10kt_1x2x6:
 {
     HitLabel:           "hitfd"              # The label for the process which ran the Hits
-    ClusterLabel:       "perplanecluster"    # The label for the input clusters
+    ClusterLabel:       "planecluster"       # The label for the input clusters
     module_type:        "SolarCluster"
 
     Geometry:                   "HD"
