@@ -12,6 +12,7 @@ add_subdirectory(RecoAlgDUNE)
 add_subdirectory(RegCNN)
 add_subdirectory(TrackFinderDUNE)
 add_subdirectory(TrackPID)
+add_subdirectory(TransformerCVN)
 add_subdirectory(VLNets)
 add_subdirectory(PointResTree)
 
