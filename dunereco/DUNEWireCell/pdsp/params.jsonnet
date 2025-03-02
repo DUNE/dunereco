@@ -2,7 +2,7 @@
 // generic set of parameters and overrides things specific to PDSP.
 
 local wc = import "wirecell.jsonnet";
-local base = import "pgrapher/common/params.jsonnet";
+local base = import "pgrapher/dune/params.jsonnet";
 
 base {
     // This section will be overwritten in simparams.jsonnet
@@ -119,6 +119,8 @@ base {
         // FE ASIC.  The input buffer first samples the input signal
         // (with a range of 0.2 V to 1.6 V)..."
         fullscale: [0.2*wc.volt, 1.6*wc.volt],
+
+        resolution: 12,
     },
 
     // This sets a relative gain at the input to the ADC.  Note, if
