@@ -16,11 +16,10 @@
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
+#include "lardataobj/AnalysisBase/ParticleID.h"
 #include "lardataobj/RecoBase/Track.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Shower.h"
-#include "lardataobj/AnalysisBase/ParticleID.h"
-#include "larreco/Calorimetry/CalorimetryAlg.h"
 #include "larreco/RecoAlg/TrackMomentumCalculator.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 
@@ -60,10 +59,10 @@ namespace dune
         kMaxPrTrkMom(pset.get<double>("MaxPrTrkMom")),
         kPrMomByRangeMinLength(pset.get<double>("PrMomByRangeMinLength")),
         kPrMomByRangeMaxLength(pset.get<double>("PrMomByRangeMaxLength")),
+        kMinPionNTrk(pset.get<size_t>("MinPionNTrk")),
         kMinPionTrkLength(pset.get<double>("MinPionTrkLength")),
         kMaxPionTrkLength(pset.get<double>("MaxPionTrkLength")),
         kMinPionTrkLengthNotContained(pset.get<double>("MinPionTrkLengthNotContained")),
-        kMinPionNTrk(pset.get<size_t>("MinPionNTrk")),
         kDistanceToWallThreshold(pset.get<double>("DistanceToWallThreshold")),
         kRecombFactor(pset.get<double>("RecombFactor")),
         kPlaneToUse(pset.get<unsigned int>("Plane")),
@@ -73,7 +72,8 @@ namespace dune
         fHitLabel(hitLabel),
         fTrackToHitLabel(trackToHitLabel),
         fShowerToHitLabel(showerToHitLabel),
-        fHitToSpacePointLabel(hitToSpacePointLabel)
+        fHitToSpacePointLabel(hitToSpacePointLabel),
+        fParticleIDModuleLabel(pset.get<std::string>("ParticleIDModuleLabel"))
     {
         if (kPlaneToUse > 2)
             kPlaneToUse = static_cast<unsigned int>(geo::kUnknown);
@@ -166,6 +166,9 @@ namespace dune
             [&]() { ParticleSelectionAlg::applyMuMaxPIDA(candidates, kMaxMuPIDAAggressive); },
         };
 
+        // After each filter, check if the number of candidates is 0 or 1
+        // If there are no candidates after filtering, return the previous candidates
+        // If there is only one candidate, return it
         for (auto &filter: filters)
         {
             prevCandidates = candidates;
@@ -200,6 +203,7 @@ namespace dune
         if (0 == showers.size())
             return pShower;
 
+        // In case the plane is set to geo::Unknown, the plane with most hits will be used for each shower
         fShwIdToBestPlaneMap = ParticleSelectionAlg::GenMapBestPlaneShower(event, tPlane);
 
         double maxCharge(std::numeric_limits<double>::lowest());
@@ -215,6 +219,8 @@ namespace dune
                 pShower = showers[iShower];
             }
         }
+
+        // Store the shower and the associated track (if available)
         fLepShower = pShower;
         fLepTrack = ParticleSelectionAlg::GetTrackFromShower(event, pShower);
 
@@ -229,7 +235,6 @@ namespace dune
         auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
         auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
         return ParticleSelectionAlg::GetHighestChargeShower(clockData, detProp, event, showers, kPlane);
-
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------------
@@ -242,11 +247,13 @@ namespace dune
 
         std::vector<art::Ptr<recob::Shower>> candidates(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerLabel));
 
+        // Removing showers if they are considered as Tracks AND the total calorimetric energy of the event is above a threshold
         candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
                     [this, &event](const art::Ptr<recob::Shower> &s) {
                     return (this->IsTrack(event, s) && fTotalCaloEvent >= this->kMaxETotalCaloForTracks);
                     }), candidates.end());
 
+        // removing showers if they are considered as Tracks AND the PIDA score is above a threshold
         candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
                     [this, &event](const art::Ptr<recob::Shower> &s) {
                     return (this->IsTrack(event, s) && this->GetPIDAScore(s) > this->kMaxEPIDA);
@@ -264,16 +271,18 @@ namespace dune
         if (0 == tracks.size())
             return tracks;
 
-        if (fTrkIdToPIDAMap.size() == 0)
+        // If lepton was not searched, these maps are empty, so we need to generate them
+        if (fTrkIdToPIDAMap.empty())
             fTrkIdToPIDAMap = ParticleSelectionAlg::GenMapPIDAScore(event);
         if (fTotalCaloEvent == std::numeric_limits<double>::lowest())
             fTotalCaloEvent = ParticleSelectionAlg::GetTotalCaloEvent(event);
-        if (fTrkIdToCaloMap.size() == 0)
+        if (fTrkIdToCaloMap.empty())
             fTrkIdToCaloMap = ParticleSelectionAlg::GenMapTracksCalo(event);
-        if (fTrkIdToMomMap.size() == 0)
+        if (fTrkIdToMomMap.empty())
             fTrkIdToMomMap = ParticleSelectionAlg::GenMapTracksMom(event);
 
 
+        // If there is a lepton track, remove it from the list of tracks
         if (this->GetLepTrack().isAvailable())
         {
             tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
@@ -282,21 +291,25 @@ namespace dune
                         }), tracks.end());
         }
 
+        // Removing tracks that are not considered as tracks by LArPandora when their PIDA score is below a threshold
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this, &event](const art::Ptr<recob::Track> &t) {
                     return (this->IsTrack(event, t) && this->GetPIDAScore(t) <= this->kMinPrPIDATrack);
                     }), tracks.end());
 
+        // Removing tracks that are considered as showers by LArPandora when their PIDA score is below a threshold
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this, &event](const art::Ptr<recob::Track> &t) {
                     return (!this->IsTrack(event, t) && this->GetPIDAScore(t) <= this->kMinPrPIDAShower);
                     }), tracks.end());
 
+        // Removing tracks that have calorimetric energy above a threshold
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this](const art::Ptr<recob::Track> &t) {
                     return (this->GetTrackCalo(t) >= this->kMaxPrTrkCalo);
                     }), tracks.end());
 
+        // Removing tracks that have momentum above a threshold
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this](const art::Ptr<recob::Track> &t) {
                     return (this->GetTrackMom(t) >= this->kMaxPrTrkMom);
@@ -322,6 +335,7 @@ namespace dune
                         }), tracks.end());
         }
 
+        // If there are not enough tracks, no pion candidates
         if (tracks.size() <= kMinPionNTrk)
         {
             std::vector<art::Ptr<recob::Track>> empty;
@@ -329,6 +343,8 @@ namespace dune
             return empty;
         }
 
+        // Enforce the presence of proton candidates.
+        // This is done because pion selection is rather weak
         std::vector<art::Ptr<recob::Track>> trkprotons;
         if (fPrDone)
             trkprotons = ParticleSelectionAlg::GenProtonCandidates(event);
@@ -336,7 +352,8 @@ namespace dune
             trkprotons = ParticleSelectionAlg::GetPrTracks();
 
 
-        if (trkprotons.size() > 0)
+        // Removing proton candidates
+        if (!trkprotons.empty())
         {
             std::unordered_set<art::Ptr<recob::Track>::key_type> keys_to_remove;
             for (const art::Ptr<recob::Track> &t : trkprotons) keys_to_remove.insert(t.key());
@@ -347,16 +364,19 @@ namespace dune
                         }), tracks.end());
         }
 
+        // Removing tracks that are not considered as tracks by LArPandora
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this, &event](const art::Ptr<recob::Track> &t) {
                     return (!this->IsTrack(event, t));
                     }), tracks.end());
 
+        // Removing tracks that are not in the length range
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this](const art::Ptr<recob::Track> &t) {
                     return !(t->Length() >= this->kMinPionTrkLength && t->Length() <= this->kMaxPionTrkLength);
                     }), tracks.end());
 
+        // Removing tracks that are not contained and are not long enough
         std::optional<bool> allContained(GenContainmentInfo(event, tracks));
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this](const art::Ptr<recob::Track> &t) {

@@ -6,33 +6,44 @@ dune_particleselectionalg:
 {
     CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
 
-    MaxMuLength:                  17e3 
-    MaxMuPIDA:                    13
-    MinMuTotalCalo:               0.3
-    MaxMuTotalCalo:               2
-    MinMuPIDAShower:              5
-    MaxMuPIDAAggressive:          10
-    MaxMuContainedCalo:          1
+    MaxMuLength:                  17e3 # the max length for muon candidates
+    MaxMuPIDA:                    13   # the max PIDA for muon candidates
+    MinMuTotalCalo:               0.3  # the min calorimetric energy for muon candidates when they are showers
+    MaxMuTotalCalo:               2    # the max calorimetric energy for muon candidates when they are showers
+    MinMuPIDAShower:              5    # the min PIDA for muon candidates when they are showers
+    MaxMuPIDAAggressive:          10   # the max PIDA for muon candidates (more aggressive, after all cleanings)
+    MaxMuContainedCalo:           1    # the max calorimetric energy for muon candidates.
 
-    MaxETotalCaloForTracks:       2
-    MaxEPIDA:                     15
 
-    MinPrPIDATrack:               10
-    MinPrPIDAShower:              13
-    MaxPrTrkCalo:                 1.5
-    MaxPrTrkMom:                  2.0
+    MaxETotalCaloForTracks:       2    # the max calorimetric energy for electron candidates as track
+    MaxEPIDA:                     15   # the max calorimetric energy for electron candidates as track
 
-    PrMomByRangeMinLength:        0
-    PrMomByRangeMaxLength:        300
+    MinPrPIDATrack:               10   # the min PIDA for proton candidates as track
+    MinPrPIDAShower:              13   # the min PIDA for proton candidates as shower
+    MaxPrTrkCalo:                 1.5  # the max calorimetric energy for proton candidates
+    MaxPrTrkMom:                  2.0  # the max momentum for proton candidates
 
-    MinPionTrkLength:             3.5
-    MaxPionTrkLength:             350
-    MinPionTrkLengthNotContained: 10
-    MinPionNTrk:                  2
-    DistanceToWallThreshold:      20.0
+    PrMomByRangeMinLength:        0    # the min length for momemtum by range method
+    PrMomByRangeMaxLength:        300  # the max length for momemtum by range method
 
-    RecombFactor:                 0.63
-    Plane:                        3
+    MinPionNTrk:                  2    # the min number of tracks for searching pion candidates
+    MinPionTrkLength:             3.5  # the min length for pion candidates
+    MaxPionTrkLength:             350  # the max length for pion candidates
+    MinPionTrkLengthNotContained: 10   # the min length for pion candidates not contained
+    DistanceToWallThreshold:      20.0 # the min distance from a detector wall to be considered contained
+                                        
+    RecombFactor:                 0.63 # the recombination factor
+
+    # the plane to be used for the calorimetry
+    # 0: induction U plane
+    # 1: induction V plane
+    # 2: collection W plane
+    # >2: Unknown plane
+    # When set to >2, the plane is determined maximazing best number of valid points
+    Plane:                        3    
+                                       
+    ParticleIDModuleLabel:        "particleid" # the module label for retreving PIDA
+
 
 }
 

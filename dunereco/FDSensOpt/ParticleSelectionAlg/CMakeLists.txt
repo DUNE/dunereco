@@ -6,19 +6,13 @@ art_make( BASENAME_ONLY
   larcorealg::Geometry
   dunereco_AnaUtils
   larcore::Geometry_Geometry_service
-  larsim::Simulation nug4::ParticleNavigation lardataobj::Simulation
+  larsim::Simulation 
   lardataobj::RawData
   lardataobj::RecoBase
   lardata::ArtDataHelper
   larreco::RecoAlg
   larpandora::LArPandoraInterface
-  larreco::RecoAlg_PMAlg
   lardata::Utilities
-  larreco::Calorimetry
-  IniSegAlg
-  larsim::MCCheater_BackTrackerService_service
-  larsim::MCCheater_ParticleInventoryService_service
-  nusimdata::SimulationBase
   ROOT::Core
   art::Persistency_Common
   art::Persistency_Provenance
