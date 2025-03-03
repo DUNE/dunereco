@@ -343,7 +343,8 @@ namespace solar
           {
             if (abs((int)AdjHitVec[aL]->Channel() - (int)MyVec[nL]->Channel()) <= ChanRange &&
                 abs((double)AdjHitVec[aL]->PeakTime() - (double)MyVec[nL]->PeakTime()) <= TimeRange &&
-                AdjHitVec[aL]->View() == MyVec[nL]->View() && AdjHitVec[aL]->SignalType() == MyVec[nL]->SignalType())
+                AdjHitVec[aL]->View() == MyVec[nL]->View() && 
+                AdjHitVec[aL]->SignalType() == MyVec[nL]->SignalType())
             {
               // --- Check that this element isn't already in AddNow.
               bool AlreadyPres = false;
@@ -386,134 +387,6 @@ namespace solar
     return;
   }
 
-void LowEUtils::ComputeCluster3D(
-  std::vector<RawSolarCluster> &RawSolarClusters,
-  std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
-  detinfo::DetectorClocksData const &clockData)
-  /*
-  */
-  {
-    // --- Declare our variables
-    int Event = 0;
-    std::vector<float> Position = {0, 0, 0};
-    float TotalCharge = 0;
-    float AveragePeakTime = 0;
-    float DeltaPeakTime = 0;
-    float SigmaPeakTime = 0;
-    float ChargeAsymmetry = 0;
-    const std::vector<std::vector<recob::Hit>> HitVec = {};
-    std::vector<float> HitDeltaTSigmaVec = {};
-    std::vector<geo::WireID> WireIDVec = {};
-
-    // --- Declare our vectors to fill
-    double DeltaTime, SigmaTime, Ind0DeltaTime, Ind0SigmaTime, Ind1DeltaTime, Ind1SigmaTime;
-    std::vector<int> TPC, Ind0TPC, Ind1TPC, Channel, Ind0Channel, Ind1Channel;
-    std::vector<double> Time, Ind0Time, Ind1Time;
-    std::vector<double> Charge, Y, Z;
-    std::vector<double> Ind0Charge, Ind0Y, Ind0Z;
-    std::vector<double> Ind1Charge, Ind1Y, Ind1Z;
-    std::vector<double> ClY[3], ClZ[3];
-    std::vector<int> ClNHits[3];
-    std::vector<float> ClCharge[3];
-    std::vector<float> ClT[3];
-    std::vector<std::vector<float>> ClDir[3];
-    for (int i = 0; i < 3; i++)
-    {
-      ClY[i] = {};
-      ClZ[i] = {};
-      ClNHits[i] = {};
-      ClCharge[i] = {};
-      ClT[i] = {};
-      ClDir[i] = {};
-    }
-
-    // --- Loop over the matched clusters
-    for (int ii = 0; ii < int(MatchedClusters[2].size()); ii++)
-    {
-      Event = ii;
-      // std::cout << "Evaluating cluster #" << ii << std::endl;
-      if (MatchedClusters[2][ii].empty())
-      {
-        continue;
-      }
-      if (ClNHits[2][ii] <= fClusterPreselectionNHits)
-      {
-        continue;
-      }
-      // --- Check if we have a match in the collection plane
-      if (!MatchedClusters[0][ii].empty() && !MatchedClusters[1][ii].empty())
-      {
-        // --- Declare our vectors to fill
-        std::vector<double> Dir, Ind0Dir, Ind1Dir;
-        Dir = Ind0Dir = Ind1Dir = {};
-        FillClusterHitVectors(MatchedClusters[0][ii], Ind0TPC, Ind0Channel, Ind0Charge, Ind0Time, Ind0DeltaTime, Ind0SigmaTime, Ind0Y, Ind0Z, Ind0Dir, clockData);
-        FillClusterHitVectors(MatchedClusters[1][ii], Ind1TPC, Ind1Channel, Ind1Charge, Ind1Time, Ind1DeltaTime, Ind1SigmaTime, Ind1Y, Ind1Z, Ind1Dir, clockData);
-        FillClusterHitVectors(MatchedClusters[2][ii], TPC, Channel, Charge, Time, DeltaTime, SigmaTime, Y, Z, Dir, clockData);
-        std::vector<double> RecoY0 = LowEUtils::ComputeRecoY(Event, Ind1TPC, Z, Time, Ind0Z, Ind0Y, Ind0Time, Ind0Dir);
-        std::vector<double> RecoY1 = LowEUtils::ComputeRecoY(Event, Ind0TPC, Z, Time, Ind1Z, Ind1Y, Ind1Time, Ind1Dir);
-
-        for (size_t i = 0; i < Time.size(); i++)
-        {
-          Y[i] = ((RecoY0[i] + RecoY1[i]) / 2);
-        }
-
-        ClY[2][ii] = Average(Y);
-        ClY[1][ii] = Average(Ind1Y);
-        ClY[0][ii] = Average(Ind0Y);
-        ClZ[2][ii] = Average(Z);
-        ClZ[1][ii] = Average(Ind1Z);
-        ClZ[0][ii] = Average(Ind0Z);
-      }
-      else if (!MatchedClusters[0][ii].empty() && MatchedClusters[1][ii].empty())
-      {
-        // --- Declare our vectors to fill
-        std::vector<double> Dir, Ind0Dir;
-        Dir = Ind0Dir = {};
-        FillClusterHitVectors(MatchedClusters[0][ii], Ind0TPC, Ind0Channel, Ind0Charge, Ind0Time, Ind0DeltaTime, Ind0SigmaTime, Ind0Y, Ind0Z, Ind0Dir, clockData);
-        FillClusterHitVectors(MatchedClusters[2][ii], TPC, Channel, Charge, Time, DeltaTime, SigmaTime, Y, Z, Dir, clockData);
-        Y = LowEUtils::ComputeRecoY(Event, Ind0TPC, Z, Time, Ind0Z, Ind0Y, Ind0Time, Ind0Dir);
-        ClY[2][ii] = Average(Y);
-        ClY[0][ii] = Average(Ind0Y);
-        ClZ[2][ii] = Average(Z);
-        ClZ[0][ii] = Average(Ind0Z);
-      }
-      else if (MatchedClusters[0][ii].empty() && !MatchedClusters[1][ii].empty())
-      {
-        // --- Declare our vectors to fill
-        std::vector<double> Dir, Ind1Dir;
-        Dir = Ind1Dir = {};
-        FillClusterHitVectors(MatchedClusters[1][ii], Ind1TPC, Ind1Channel, Ind1Charge, Ind1Time, Ind1DeltaTime, Ind1SigmaTime, Ind1Y, Ind1Z, Ind1Dir, clockData);
-        FillClusterHitVectors(MatchedClusters[2][ii], TPC, Channel, Charge, Time, DeltaTime, SigmaTime, Y, Z, Dir, clockData);
-        Y = LowEUtils::ComputeRecoY(Event, Ind1TPC, Z, Time, Ind1Z, Ind1Y, Ind1Time, Ind1Dir);
-        ClY[2][ii] = Average(Y);
-        ClY[1][ii] = Average(Ind1Y);
-        ClZ[2][ii] = Average(Z);
-        ClZ[1][ii] = Average(Ind1Z);
-      }
-      Position = {0, float(ClY[2][ii]), float(ClZ[2][ii])};
-      TotalCharge = Charge[ii];
-      AveragePeakTime = Time[ii];
-      DeltaPeakTime = DeltaTime;
-      SigmaPeakTime = SigmaTime;
-      ChargeAsymmetry = 0;
-      std::vector<std::vector<recob::Hit>> HitVec;
-      for (size_t i = 0; i < 4; i++)
-      {
-        HitVec.push_back({});
-        for (size_t j = 0; j < MatchedClusters[i][ii].size(); j++)
-        {
-          recob::Hit ThisHit = MatchedClusters[i][ii][j];
-          // recob::Hit *ThisHitPtr = &ThisHit;
-          // const geo::WireID ThisWireID = ThisHit.WireID();
-          HitVec[i].push_back(ThisHit);
-        }
-      }
-      // HitDeltaTSigmaVec = {};
-      // WireIDVec = {};
-      RawSolarClusters.push_back(RawSolarCluster{size_t(ii), Position, TotalCharge, AveragePeakTime, DeltaPeakTime, SigmaPeakTime, ChargeAsymmetry, HitVec, HitDeltaTSigmaVec, WireIDVec});
-    } // Loop over MainCl
-  }
-
   //......................................................
   void LowEUtils::FillClusterHitVectors(
     std::vector<recob::Hit> Cluster,
@@ -530,12 +403,22 @@ void LowEUtils::ComputeCluster3D(
   /*
    */
   {
+    // --- Clear the vectors
+    TPC = {};
+    Channel = {};
+    Charge = {};
+    Time = {};
+    Y = {};
+    Z = {};
+    Dir = {};
+    // --- Get the wire readout object
     geo::WireReadoutGeom const &wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
     double MaxTime = -1e6;
     double MinTime = 1e6;
     // --- Declare our vectors to fill
     std::vector<int> TrackID;
     TrackID = {};
+
     for (recob::Hit ThisHit : Cluster)
     {
       TPC.push_back(ThisHit.WireID().TPC);
@@ -568,23 +451,35 @@ void LowEUtils::ComputeCluster3D(
   }
 
   //......................................................
-  double LowEUtils::Average(std::vector<double> &Vec)
+  double LowEUtils::Sum(std::vector<double> &Vec)
   {
     double Sum = 0;
     for (double Val : Vec)
     {
       Sum += Val;
     }
-    return Sum / Vec.size();
+    return Sum;
   }
-  float LowEUtils::Average(std::vector<float> &Vec)
+  float LowEUtils::Sum(std::vector<float> &Vec)
   {
     float Sum = 0;
     for (float Val : Vec)
     {
       Sum += Val;
     }
-    return Sum / Vec.size();
+    return Sum;
+  }
+
+  //......................................................
+  double LowEUtils::Average(std::vector<double> &Vec)
+  {
+    double sum = Sum(Vec);
+    return sum / Vec.size();
+  }
+  float LowEUtils::Average(std::vector<float> &Vec)
+  {
+    float sum = Sum(Vec);
+    return sum / Vec.size();
   }
 
   //......................................................
@@ -673,21 +568,100 @@ void LowEUtils::ComputeCluster3D(
       } // End of loop over clusters
     } // End of loop over planes
   }
+  void LowEUtils::FillClusterVariables(
+    std::set<int> SignalTrackIDs,
+    std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+    std::vector<std::vector<int>> &ClNHits,
+    std::vector<std::vector<float>> &ClT,
+    std::vector<std::vector<float>> &ClY,
+    std::vector<std::vector<float>> &ClZ,
+    std::vector<std::vector<float>> &ClDir,
+    std::vector<std::vector<float>> &ClCharge,
+    std::vector<std::vector<float>> &ClPurity,
+    std::vector<std::vector<float>> &ClCompleteness,
+    detinfo::DetectorClocksData const &clockData,
+    bool debug)
+  {
+    art::ServiceHandle<cheat::BackTrackerService> bt_serv;
+    geo::WireReadoutGeom const &wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
+    std::vector<float> globalSignalCharge = {0, 0, 0};
+    for (int idx = 0; idx < 3; idx++)
+    {
+      std::vector<std::vector<recob::Hit>> TheseClusters = Clusters[idx];
+      for (size_t i = 0; i < TheseClusters.size(); i++)
+      {
+        float clustT = 0, clustY = 0, clustZ = 0, clustDir = 0;
+        float clustCharge = 0, clustPurity = 0;
+        std::vector<recob::Hit> ThisCluster = TheseClusters[i];
+        for (recob::Hit hit : ThisCluster)
+        {
+          int mainTrID = -1;
+          double mainEFrac = 0;
+          double hitCharge = hit.Integral();
+          std::vector<sim::TrackIDE> ThisHitIDE = bt_serv->HitToTrackIDEs(clockData, hit);
+
+          for (size_t ideL = 0; ideL < ThisHitIDE.size(); ++ideL)
+          {
+            if (ThisHitIDE[ideL].energyFrac > mainEFrac)
+            {
+              mainEFrac = ThisHitIDE[ideL].energyFrac;
+              mainTrID = abs(ThisHitIDE[ideL].trackID);
+            }
+          }
+          const geo::WireGeo *ThisWire = wireReadout.WirePtr(hit.WireID());
+          geo::Point_t hXYZ = ThisWire->GetCenter();
+          geo::Point_t sXYZ = ThisWire->GetStart();
+          geo::Point_t eXYZ = ThisWire->GetEnd();
+          clustCharge += hitCharge;
+          clustT += hit.PeakTime() * hitCharge;
+          clustY += hXYZ.Y() * hitCharge;
+          clustZ += hXYZ.Z() * hitCharge;
+          geo::Vector_t Direction = eXYZ - sXYZ;
+          clustDir += hitCharge * Direction.Z() / Direction.Y();
+          if (SignalTrackIDs.find(mainTrID) != SignalTrackIDs.end())
+          {
+            globalSignalCharge[idx] += hitCharge;
+            clustPurity += hitCharge;
+          }
+        }
+        ClNHits[idx].push_back(ThisCluster.size());
+        ClCharge[idx].push_back(clustCharge);
+        ClT[idx].push_back(clustT / clustCharge);
+        ClY[idx].push_back(clustY / clustCharge);
+        ClZ[idx].push_back(clustZ / clustCharge);
+        ClDir[idx].push_back(clustDir / clustCharge);
+        ClPurity[idx].push_back(clustPurity / clustCharge);
+      } // End of loop over clusters
+      for (size_t i = 0; i < TheseClusters.size(); i++)
+      {
+        ClCompleteness[idx].push_back(ClPurity[idx][i] * ClCharge[idx][i] / globalSignalCharge[idx]);
+      }
+    } // End of loop over planes
+  }
 
   void LowEUtils::MatchClusters(
-      std::vector<std::vector<int>> MatchedClustersIdx,
-      std::vector<std::vector<std::vector<recob::Hit>>> MatchedClusters,
+      std::set<int> SignalTrackIDs,
+      std::vector<std::vector<int>> &MatchedClustersIdx,
+      std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
       std::vector<std::vector<int>> ClustersIdx,
       std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
       std::vector<std::vector<int>> &ClNHits,
       std::vector<std::vector<float>> &ClT,
+      std::vector<std::vector<float>> &ClY,
+      std::vector<std::vector<float>> &ClZ,
+      std::vector<std::vector<float>> &ClDir,
       std::vector<std::vector<float>> &ClCharge,
+      std::vector<std::vector<float>> &ClPurity,
+      std::vector<std::vector<float>> &ClCompleteness,
+      detinfo::DetectorClocksData const &clockData,
       bool debug)
   {
-    LowEUtils::FillClusterVariables(Clusters, ClNHits, ClT, ClCharge, debug);
+    LowEUtils::FillClusterVariables(SignalTrackIDs, Clusters, ClNHits, ClT, ClY, ClZ, ClDir, ClCharge, ClPurity, ClCompleteness, clockData, debug);
     std::vector<std::vector<int>> MatchedClNHits = {{}, {}, {}};
-    std::vector<std::vector<float>> MatchedClT = {{}, {}, {}};
+    std::vector<std::vector<float>> MatchedClT = {{}, {}, {}}, MatchedClY = {{}, {}, {}}, MatchedClZ = {{}, {}, {}}, MatchedClDir = {{}, {}, {}};
     std::vector<std::vector<float>> MatchedClCharge = {{}, {}, {}};
+    std::vector<std::vector<float>> MatchedClPurity = {{}, {}, {}};
+    std::vector<std::vector<float>> MatchedClCompleteness = {{}, {}, {}};
 
     // --- Declare our variables to fill
     int MatchInd0Idx = -1, MatchInd1Idx = -1;
@@ -706,10 +680,6 @@ void LowEUtils::ComputeCluster3D(
       Ind0ClustdT = fClusterAlgoTime;
       Ind1ClustdT = fClusterAlgoTime;
 
-      if (Clusters[0].empty())
-      {
-        continue;
-      }
       for (int jj = 0; jj < int(Clusters[0].size()); jj++)
       {
         if (ClNHits[0][jj] < (1 - fClusterMatchNHit) * ClNHits[2][ii] || ClNHits[0][jj] > (1 + fClusterMatchNHit) * ClNHits[2][ii])
@@ -727,10 +697,7 @@ void LowEUtils::ComputeCluster3D(
           MatchInd0Idx = jj;
         }
       }
-      if (Clusters[1].empty())
-      {
-        continue;
-      }
+
       for (int zz = 0; zz < int(Clusters[1].size()); zz++)
       {
         if (ClNHits[1][zz] < (1 - fClusterMatchNHit) * ClNHits[2][ii] || ClNHits[1][zz] > (1 + fClusterMatchNHit) * ClNHits[2][ii])
@@ -751,73 +718,123 @@ void LowEUtils::ComputeCluster3D(
       // Fill matched clusters according to the matching criteria
       if (MatchInd0 && MatchInd1)
       {
+        // std::cout << "\tMatched all three planes" << std::endl;
         MatchedClustersIdx[0].push_back(ClustersIdx[0][MatchInd0Idx]);
         MatchedClusters[0].push_back(Clusters[0][MatchInd0Idx]);
         MatchedClNHits[0].push_back(ClNHits[0][MatchInd0Idx]);
         MatchedClT[0].push_back(ClT[0][MatchInd0Idx]);
+        MatchedClY[0].push_back(ClY[0][MatchInd0Idx]);
+        MatchedClZ[0].push_back(ClZ[0][MatchInd0Idx]);
         MatchedClCharge[0].push_back(ClCharge[0][MatchInd0Idx]);
+        MatchedClPurity[0].push_back(ClPurity[0][MatchInd0Idx]);
+        MatchedClCompleteness[0].push_back(ClCompleteness[0][MatchInd0Idx]);
 
         MatchedClustersIdx[1].push_back(ClustersIdx[1][MatchInd1Idx]);
         MatchedClusters[1].push_back(Clusters[1][MatchInd1Idx]);
         MatchedClNHits[1].push_back(ClNHits[1][MatchInd1Idx]);
         MatchedClT[1].push_back(ClT[1][MatchInd1Idx]);
+        MatchedClY[1].push_back(ClY[1][MatchInd1Idx]);
+        MatchedClZ[1].push_back(ClZ[1][MatchInd1Idx]);
         MatchedClCharge[1].push_back(ClCharge[1][MatchInd1Idx]);
+        MatchedClPurity[1].push_back(ClPurity[1][MatchInd1Idx]);
+        MatchedClCompleteness[1].push_back(ClCompleteness[1][MatchInd1Idx]);
 
         MatchedClustersIdx[2].push_back(ClustersIdx[2][ii]);
         MatchedClusters[2].push_back(Clusters[2][ii]);
         MatchedClNHits[2].push_back(ClNHits[2][ii]);
         MatchedClT[2].push_back(ClT[2][ii]);
+        MatchedClZ[2].push_back(ClZ[2][ii]);
         MatchedClCharge[2].push_back(ClCharge[2][ii]);
+        MatchedClPurity[2].push_back(ClPurity[2][ii]);
+        MatchedClCompleteness[2].push_back(ClCompleteness[2][ii]);
+        // ThisRecoY = ThisHRefY + (ThisHZ - ThisHRefZ) / (ThisHIndDir);
+        auto ClY0 = ClY[0][MatchInd0Idx] + (ClZ[0][MatchInd0Idx] - ClZ[2][ii]) / (ClDir[0][MatchInd0Idx]);
+        auto ClY1 = ClY[1][MatchInd1Idx] + (ClZ[1][MatchInd1Idx] - ClZ[2][ii]) / (ClDir[1][MatchInd1Idx]);
+        MatchedClY[2].push_back((ClY0 + ClY1) / 2);
       }
       else if (MatchInd0 && !MatchInd1)
       {
+        // std::cout << "\tMatched only Ind0 and Col" << std::endl;
         MatchedClustersIdx[0].push_back(ClustersIdx[0][MatchInd0Idx]);
         MatchedClusters[0].push_back(Clusters[0][MatchInd0Idx]);
         MatchedClNHits[0].push_back(ClNHits[0][MatchInd0Idx]);
         MatchedClT[0].push_back(ClT[0][MatchInd0Idx]);
+        MatchedClY[0].push_back(ClY[0][MatchInd0Idx]);
+        MatchedClZ[0].push_back(ClZ[0][MatchInd0Idx]);
         MatchedClCharge[0].push_back(ClCharge[0][MatchInd0Idx]);
+        MatchedClPurity[0].push_back(ClPurity[0][MatchInd0Idx]);
+        MatchedClCompleteness[0].push_back(ClCompleteness[0][MatchInd0Idx]);
 
         MatchedClustersIdx[2].push_back(ClustersIdx[2][ii]);
         MatchedClusters[2].push_back(Clusters[2][ii]);
         MatchedClNHits[2].push_back(ClNHits[2][ii]);
         MatchedClT[2].push_back(ClT[2][ii]);
+        MatchedClY[2].push_back(ClY[2][ii] + (ClZ[2][ii] - ClZ[0][MatchInd0Idx]) / (ClDir[2][ii]));
+        MatchedClZ[2].push_back(ClZ[2][ii]);
         MatchedClCharge[2].push_back(ClCharge[2][ii]);
+        MatchedClPurity[2].push_back(ClPurity[2][ii]);
+        MatchedClCompleteness[2].push_back(ClCompleteness[2][ii]);
+
+
         // Fill missing cluster with empty vector
         MatchedClustersIdx[1].push_back({});
         MatchedClusters[1].push_back({});
         MatchedClNHits[1].push_back(0);
         MatchedClT[1].push_back(0);
+        MatchedClY[1].push_back(0);
+        MatchedClZ[1].push_back(0);
         MatchedClCharge[1].push_back(0);
+        MatchedClPurity[1].push_back(0);
+        MatchedClCompleteness[1].push_back(0);
+
       }
       else if (!MatchInd0 && MatchInd1)
       {
+        // std::cout << "\tMatched only Ind1 and Col" << std::endl;
         MatchedClustersIdx[1].push_back(ClustersIdx[1][MatchInd1Idx]);
         MatchedClusters[1].push_back(Clusters[1][MatchInd1Idx]);
         MatchedClNHits[1].push_back(ClNHits[1][MatchInd1Idx]);
         MatchedClT[1].push_back(ClT[1][MatchInd1Idx]);
+        MatchedClY[1].push_back(ClY[1][MatchInd1Idx]);
+        MatchedClZ[1].push_back(ClZ[1][MatchInd1Idx]);
         MatchedClCharge[1].push_back(ClCharge[1][MatchInd1Idx]);
+        MatchedClPurity[1].push_back(ClPurity[1][MatchInd1Idx]);
+        MatchedClCompleteness[1].push_back(ClCompleteness[1][MatchInd1Idx]);
 
         MatchedClustersIdx[2].push_back(ClustersIdx[2][ii]);
         MatchedClusters[2].push_back(Clusters[2][ii]);
         MatchedClNHits[2].push_back(ClNHits[2][ii]);
         MatchedClT[2].push_back(ClT[2][ii]);
+        MatchedClY[2].push_back(ClY[2][ii] + (ClZ[2][ii] - ClZ[1][MatchInd1Idx]) / (ClDir[2][ii]));
+        MatchedClZ[2].push_back(ClZ[2][ii]);
         MatchedClCharge[2].push_back(ClCharge[2][ii]);
+        MatchedClPurity[2].push_back(ClPurity[2][ii]);
+        MatchedClCompleteness[2].push_back(ClCompleteness[2][ii]);
         // Fill missing cluster with empty vector
         MatchedClustersIdx[0].push_back({});
         MatchedClusters[0].push_back({});
         MatchedClNHits[0].push_back(0);
         MatchedClT[0].push_back(0);
+        MatchedClY[0].push_back(0);
+        MatchedClZ[0].push_back(0);
         MatchedClCharge[0].push_back(0);
+        MatchedClPurity[0].push_back(0);
+        MatchedClCompleteness[0].push_back(0);
       }
     }
     ClNHits = MatchedClNHits;
     ClT = MatchedClT;
+    ClY = MatchedClY;
+    ClZ = MatchedClZ;
+    ClDir = MatchedClDir;
     ClCharge = MatchedClCharge;
+    ClPurity = MatchedClPurity;
+    ClCompleteness = MatchedClCompleteness;
     return;
   }
 
   void LowEUtils::MatchClusters(
-      std::vector<std::vector<std::vector<recob::Hit>>> MatchedClusters,
+      std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
       std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
       std::vector<std::vector<int>> &ClNHits,
       std::vector<std::vector<float>> &ClT,

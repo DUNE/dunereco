@@ -12,6 +12,7 @@
 #define LowETool_h
 
 // LArSoft includes
+#include "dunecore/ProducerUtils/ProducerUtils.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcore/Geometry/WireReadout.h"
 #include "larcorealg/Geometry/GeometryCore.h"
@@ -22,6 +23,8 @@
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
+#include "larsim/MCCheater/BackTrackerService.h"
+#include "larsim/MCCheater/ParticleInventoryService.h"
 
 // Framework includes
 #include "art/Framework/Core/EDProducer.h"
@@ -91,16 +94,12 @@ namespace solar
         
         struct RawSolarCluster
         {
-            size_t ID;
             std::vector<float> Position;
             float TotalCharge;
             float AveragePeakTime;
-            float DeltaPeakTime;
-            float SigmaPeakTime;
-            float ChargeAsymmetry;
-            std::vector<std::vector<recob::Hit>> HitVec;
-            std::vector<float> HitDeltaTSigmaVec;
-            std::vector<geo::WireID> WireIDVec;
+            float Purity;
+            float Completeness;
+            std::vector<int> ClusterIdxVec;
         };
         
         explicit LowEUtils(fhicl::ParameterSet const &p);
@@ -110,12 +109,25 @@ namespace solar
         void CalcAdjHits(std::vector<art::Ptr<recob::Hit>> MyVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, std::vector<std::vector<int>> &ClusterIdx);
         
         void MakeClusterVector(std::vector<RawPerPlaneCluster> &ClusterVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, art::Event const &evt);
-        
+
         void FillClusterVariables(
             std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
             std::vector<std::vector<int>> &ClNHits,
             std::vector<std::vector<float>> &ClT,
             std::vector<std::vector<float>> &ClCharge,
+            bool debug);            
+        void FillClusterVariables(
+            std::set<int> SignalTrackIDs,
+            std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+            std::vector<std::vector<int>> &ClNHits,
+            std::vector<std::vector<float>> &ClT,
+            std::vector<std::vector<float>> &ClY,
+            std::vector<std::vector<float>> &ClZ,
+            std::vector<std::vector<float>> &ClDir,
+            std::vector<std::vector<float>> &ClCharge,
+            std::vector<std::vector<float>> &ClPurity,
+            std::vector<std::vector<float>> &ClCompleteness,
+            detinfo::DetectorClocksData const &clockData,
             bool debug);
         
         void FillClusterHitVectors(
@@ -132,27 +144,31 @@ namespace solar
             detinfo::DetectorClocksData clockData);
 
         void MatchClusters(
-            std::vector<std::vector<int>> MatchedClustersIdx,
-            std::vector<std::vector<std::vector<recob::Hit>>> MatchedClusters,
+            std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
+            std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+            std::vector<std::vector<int>> &ClNHits,
+            std::vector<std::vector<float>> &ClT,
+            std::vector<std::vector<float>> &ClCharge,
+            bool debug = false);
+        void MatchClusters(
+            std::set<int> SignalTrackIDs,
+            std::vector<std::vector<int>> &MatchedClustersIdx,
+            std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
             std::vector<std::vector<int>> ClustersIdx,
             std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
             std::vector<std::vector<int>> &ClNHits,
             std::vector<std::vector<float>> &ClT,
+            std::vector<std::vector<float>> &ClY,
+            std::vector<std::vector<float>> &ClZ,
+            std::vector<std::vector<float>> &ClDir,
             std::vector<std::vector<float>> &ClCharge,
+            std::vector<std::vector<float>> &ClPurity,
+            std::vector<std::vector<float>> &ClCompleteness,
+            detinfo::DetectorClocksData const &clockData,
             bool debug = false);
 
-        void MatchClusters(
-            std::vector<std::vector<std::vector<recob::Hit>>> MatchedClusters,
-            std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
-            std::vector<std::vector<int>> &ClNHits,
-            std::vector<std::vector<float>> &ClT,
-            std::vector<std::vector<float>> &ClCharge,
-            bool debug = false);
-        
-        void ComputeCluster3D(
-            std::vector<RawSolarCluster> &RawSolarCluster,
-            std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
-            detinfo::DetectorClocksData const &clockData);
+        double Sum(std::vector<double> &Vec);
+        float Sum(std::vector<float> &Vec);
         
         double Average(std::vector<double> &Vec);
         float Average(std::vector<float> &Vec);
