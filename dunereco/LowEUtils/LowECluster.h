@@ -21,49 +21,36 @@ namespace solar {
   public:
     LowECluster(); // Default constructor
 
-    LowECluster(size_t id,
-                 const std::vector<float>& position,
-                 float totalCharge,
-                 float avePeakTime,
-                 float deltaPeakTime,
-                 float sigmaPeakTime,
-                 float chargeAsymmetry,
-                 const std::vector<std::vector<recob::Hit>>& hitVec,
-                 const std::vector<float>& hitDelTSigVec,
-                 const std::vector<geo::WireID>& wireIDVec);
+    LowECluster(
+      const std::vector<float>& position,
+      float totalCharge,
+      float avePeakTime,
+      float purity,
+      float completeness,
+      const std::vector<recob::Cluster>& clusterVec);
 
     LowECluster(const LowECluster&);
     LowECluster& operator=(LowECluster const&);
 
-    void initialize(size_t id,
-                 const std::vector<float>& position,
-                 float totalCharge,
-                 float avePeakTime,
-                 float deltaPeakTime,
-                 float sigmaPeakTime,
-                 float chargeAsymmetry,
-                 const std::vector<std::vector<recob::Hit>>& hitVec,
-                 const std::vector<float>& hitDelTSigVec,
-                 const std::vector<geo::WireID>& wireIDVec);
+    void initialize(
+      const std::vector<float>& position,
+      float totalCharge,
+      float avePeakTime,
+      float purity,
+      float completeness,
+      const std::vector<recob::Cluster>& clusterVec);
 
-    size_t getID() const { return fID; }
     const std::vector<float> getPosition() const { return fPosition; }
     float getX() const { return fPosition[0]; }
     float getY() const { return fPosition[1]; }
     float getZ() const { return fPosition[2]; }
     float getTotalCharge() const { return fTotalCharge; }
     float getAvePeakTime() const { return fAvePeakTime; }
-    float getDeltaPeakTime() const { return fDeltaPeakTime; }
-    float getSigmaPeakTime() const { return fSigmaPeakTime; }
-    float getChargeAsymmetry() const { return fChargeAsymmetry; }
-    const std::vector<std::vector<recob::Hit>>& getHits() const { return fHitVector; }
-    const std::vector<float> getHitDelTSigVec() const { return fHitDelTSigVec; }
-    const std::vector<geo::WireID>& getWireIDs() const { return fWireIDVector; }
-
-    std::vector<std::vector<recob::Hit>>& getHits() { return fHitVector; }
-
-    void setID(const size_t& id) const { fID = id; }
-    void setWireID(const geo::WireID& wid) const;
+    float getPurity() const { return fPurity; }
+    float getCompleteness() const { return fCompleteness; }
+    
+    const std::vector<recob::Cluster>& getClsuters() const { return fClusterVector; }
+    std::vector<recob::Cluster>& getClusters() { return fClusterVector; }
 
     void setPosition(const std::vector<float>& pos) const { fPosition = pos; }
 
@@ -75,22 +62,16 @@ namespace solar {
         return fPosition[0] < other.fPosition[0];
     }
 
-    bool operator==(const solar::LowECluster& other) const { return fID == other.fID; }
-
     friend std::ostream& operator<<(std::ostream& o, const LowECluster& c);
     //friend bool          operator <  (const LowECluster & a, const LowECluster & b);
 
   private:
-    mutable size_t fID;                              ///< "id" of this hit (useful for indexing)
-    mutable std::vector<float> fPosition;            ///< position of this hit combination in world coordinates
-    float fTotalCharge;                              ///< Sum of charges of all associated recob::Hits
-    float fAvePeakTime;                              ///< Average peak time of all associated recob::Hits
-    float fDeltaPeakTime;                            ///< Largest delta peak time of associated recob::Hits
-    float fSigmaPeakTime;                            ///< Quad sum of peak time sigmas
-    float fChargeAsymmetry;                          ///< Assymetry of average of two closest to third charge
-    std::vector<std::vector<recob::Hit>> fHitVector; ///< Hits comprising this 3D hit
-    mutable std::vector<float> fHitDelTSigVec;       ///< Delta t of hit to matching pair / sig
-    mutable std::vector<geo::WireID> fWireIDVector;  ///< Wire ID's for the planes making up hit
+    mutable std::vector<float> fPosition;       ///< position of this hit combination in world coordinates
+    float fTotalCharge;                         ///< Sum of charges of all associated recob::Hits
+    float fAvePeakTime;                         ///< Average peak time of all associated recob::Hits
+    float fPurity;                              ///< Purity of the cluster wrt input signal label
+    float fCompleteness;                        ///< Completeness of the cluster wrt main signal particle
+    std::vector<recob::Cluster> fClusterVector; ///< Clusters comprising this 3D cluster
   };
 } // namespace
 
