@@ -1,0 +1,57 @@
+#include "calorimetry_dune10kt.fcl"
+
+BEGIN_PROLOG
+
+dune_particleselectionalg:
+{
+    CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
+
+    MaxMuLength:                  17e3 
+    MaxMuPIDA:                    13
+    MinMuTotalCalo:               0.3
+    MaxMuTotalCalo:               2
+    MinMuPIDAShower:              5
+    MaxMuPIDAAggressive:          10
+    MaxMuContainedCalo:          1
+
+    MaxETotalCaloForTracks:       2
+    MaxEPIDA:                     15
+
+    MinPrPIDATrack:               10
+    MinPrPIDAShower:              13
+    MaxPrTrkCalo:                 1.5
+    MaxPrTrkMom:                  2.0
+
+    PrMomByRangeMinLength:        0
+    PrMomByRangeMaxLength:        300
+
+    MinPionTrkLength:             3.5
+    MaxPionTrkLength:             350
+    MinPionTrkLengthNotContained: 10
+    MinPionNTrk:                  2
+    DistanceToWallThreshold:      20.0
+
+    RecombFactor:                 0.63
+    Plane:                        3
+
+}
+
+dunevd_particleselectionalg:
+{
+    @table::dune_particleselectionalg
+    CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
+}
+
+dunevd_30deg_particleselectionalg:
+{
+    @table::dune_particleselectionalg
+    CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
+}
+
+dune10kt_particleselectionalg: @local::dune_particleselectionalg
+
+dunevd10kt_particleselectionalg: @local::dunevd_particleselectionalg
+
+dunevd10kt_30deg_particleselectionalg: @local::dunevd_30deg_particleselectionalg
+
+END_PROLOG

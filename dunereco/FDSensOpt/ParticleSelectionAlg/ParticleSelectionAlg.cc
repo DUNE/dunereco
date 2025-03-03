@@ -26,17 +26,18 @@
 
 //DUNE
 #include "dunereco/AnaUtils/DUNEAnaEventUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaPFParticleUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaTrackUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaShowerUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaHitUtils.h"
 
 #include "dunereco/FDSensOpt/ParticleSelectionAlg/ParticleSelectionAlg.h"
 
-#pragma GCC diagnostic ignored "-Wunused-variable"
 namespace dune
 {
     ParticleSelectionAlg::ParticleSelectionAlg(
             fhicl::ParameterSet const& pset,
+            const std::string &pfpLabel,
             const std::string &trackLabel,
             const std::string &showerLabel,
             const std::string &hitLabel,
@@ -44,16 +45,41 @@ namespace dune
             const std::string &showerToHitLabel,
             const std::string &hitToSpacePointLabel) :
         fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
+        kMaxMuLength(pset.get<double>("MaxMuLength")),
+        kMaxMuPIDA(pset.get<double>("MaxMuPIDA")),
+        kMinMuTotalCalo(pset.get<double>("MinMuTotalCalo")),
+        kMaxMuTotalCalo(pset.get<double>("MaxMuTotalCalo")),
+        kMinMuPIDAShower(pset.get<double>("MinMuPIDAShower")),
+        kMaxMuPIDAAggressive(pset.get<double>("MaxMuPIDAAggressive")),
+        kMaxMuContainedCalo(pset.get<double>("MaxMuContainedCalo")),
+        kMaxETotalCaloForTracks(pset.get<double>("MaxETotalCaloForTracks")),
+        kMaxEPIDA(pset.get<double>("MaxEPIDA")),
+        kMinPrPIDATrack(pset.get<double>("MinPrPIDATrack")),
+        kMinPrPIDAShower(pset.get<double>("MinPrPIDAShower")),
+        kMaxPrTrkCalo(pset.get<double>("MaxPrTrkCalo")),
+        kMaxPrTrkMom(pset.get<double>("MaxPrTrkMom")),
+        kPrMomByRangeMinLength(pset.get<double>("PrMomByRangeMinLength")),
+        kPrMomByRangeMaxLength(pset.get<double>("PrMomByRangeMaxLength")),
+        kMinPionTrkLength(pset.get<double>("MinPionTrkLength")),
+        kMaxPionTrkLength(pset.get<double>("MaxPionTrkLength")),
+        kMinPionTrkLengthNotContained(pset.get<double>("MinPionTrkLengthNotContained")),
+        kMinPionNTrk(pset.get<size_t>("MinPionNTrk")),
+        kDistanceToWallThreshold(pset.get<double>("DistanceToWallThreshold")),
+        kRecombFactor(pset.get<double>("RecombFactor")),
+        kPlaneToUse(pset.get<unsigned int>("Plane")),
+        fPFParticleLabel(pfpLabel),
         fTrackLabel(trackLabel),
         fShowerLabel(showerLabel),
         fHitLabel(hitLabel),
         fTrackToHitLabel(trackToHitLabel),
         fShowerToHitLabel(showerToHitLabel),
         fHitToSpacePointLabel(hitToSpacePointLabel)
-        // fDistanceToWallThreshold(pset.get<double>("DistanceToWallThreshold"))
     {
-        fPlane = geo::kUnknown;
-        fRecombFactor = 0.63;
+        if (kPlaneToUse > 2)
+            kPlaneToUse = static_cast<unsigned int>(geo::kUnknown);
+        kPlane = static_cast<geo::View_t>(kPlaneToUse);
+
+
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------------
@@ -98,16 +124,17 @@ namespace dune
 
     art::Ptr<recob::Track> ParticleSelectionAlg::GetLongestTrackPID(const art::Event &event)
     {
+
         fTrkIdToPIDAMap = ParticleSelectionAlg::GenMapPIDAScore(event);
         fTotalCaloEvent = ParticleSelectionAlg::GetTotalCaloEvent(event);
-        fAllTracksContained = ParticleSelectionAlg::GenContainmentInfo(event);
         art::Ptr<recob::Track> pTrack{};
+
         std::vector<art::Ptr<recob::Track>> tracks(GenMuonCandidates(event));
 
         if (0 == tracks.size())
             return pTrack;
 
-        const bool isTrackOnly = false; 
+        const bool isTrackOnly = false;
         return ParticleSelectionAlg::GetLongestTrack(event, tracks, isTrackOnly);
     }
 
@@ -117,29 +144,30 @@ namespace dune
     {
 
         std::vector<art::Ptr<recob::Track>> candidates(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
-        std::vector<art::Ptr<recob::Track>> prevCandidates = candidates; 
+        std::vector<art::Ptr<recob::Track>> prevCandidates = candidates;
 
         if (candidates.size() <= 1)
             return candidates;
 
         std::vector<std::function<void()>> filters = {
             // Remove tracks that are too big
-            [&]() { ParticleSelectionAlg::applyMuLengthFilter(candidates, fMaxMuLenght); },
+            [&]() { ParticleSelectionAlg::applyMuLengthFilter(candidates, kMaxMuLength); },
             // Remove when PIDA is > threshold (if PIDA is not valid, do nothing)
-            [&]() { ParticleSelectionAlg::applyMuMaxPIDA(candidates, 13); },
+            [&]() { ParticleSelectionAlg::applyMuMaxPIDA(candidates, kMaxMuPIDA); },
             // Removing PFPs that are assigned as shower in events with where Total Calorimetric Enegy is between user defined value
-            [&]() { ParticleSelectionAlg::applyMuShowerCutCalo(event, candidates, 0.3, 2); },
+            [&]() { ParticleSelectionAlg::applyMuShowerCutCalo(event, candidates, kMinMuTotalCalo, kMaxMuTotalCalo); },
             // Removing PFPs that are shower and have PIDA score < threshold
-            [&]() { ParticleSelectionAlg::applyMuShowerCutPIDA(event, candidates, 5); },
+            [&]() { ParticleSelectionAlg::applyMuShowerCutPIDA(event, candidates, kMinMuPIDAShower); },
             // If not all tracks are contained, remove the tracks that are contained
-            [&]() { ParticleSelectionAlg::applyMuCutContained(candidates); },
+            [&]() { ParticleSelectionAlg::applyMuCutContained(event, candidates); },
             // Remove PFPs that are showers
             [&]() { ParticleSelectionAlg::applyMuRemoveShowers(event, candidates); },
             // Remove AGAIN when PIDA is > lower_threshold (if PIDA is not valid, do nothing)
-            [&]() { ParticleSelectionAlg::applyMuMaxPIDA(candidates, 10); },
+            [&]() { ParticleSelectionAlg::applyMuMaxPIDA(candidates, kMaxMuPIDAAggressive); },
         };
 
-        for (auto &filter: filters){
+        for (auto &filter: filters)
+        {
             prevCandidates = candidates;
             filter();
             if (candidates.empty()) return prevCandidates;
@@ -152,49 +180,126 @@ namespace dune
 
     //------------------------------------------------------------------------------------------------------------------------------------------
 
+    art::Ptr<recob::Shower> ParticleSelectionAlg::GetHighestChargeShower(detinfo::DetectorClocksData const& clockData,
+                                                                         detinfo::DetectorPropertiesData const& detProp,
+                                                                         const art::Event &event)
+    {
+        const std::vector<art::Ptr<recob::Shower>> showers(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerLabel));
+        return ParticleSelectionAlg::GetHighestChargeShower(clockData, detProp, event, showers);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    art::Ptr<recob::Shower> ParticleSelectionAlg::GetHighestChargeShower(detinfo::DetectorClocksData const& clockData,
+                                                                         detinfo::DetectorPropertiesData const& detProp,
+                                                                         const art::Event &event,
+                                                                         const std::vector<art::Ptr<recob::Shower>> showers,
+                                                                         const geo::View_t tPlane)
+    {
+        art::Ptr<recob::Shower> pShower{};
+        if (0 == showers.size())
+            return pShower;
+
+        fShwIdToBestPlaneMap = ParticleSelectionAlg::GenMapBestPlaneShower(event, tPlane);
+
+        double maxCharge(std::numeric_limits<double>::lowest());
+        for (unsigned int iShower = 0; iShower < showers.size(); ++iShower)
+        {
+            const std::vector<art::Ptr<recob::Hit>>
+                showerHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(showers[iShower],
+                                event, fShowerToHitLabel), fShwIdToBestPlaneMap[showers[iShower].key()]));
+            const double showerCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, showerHits));
+            if (showerCharge-maxCharge > std::numeric_limits<double>::epsilon())
+            {
+                maxCharge = showerCharge;
+                pShower = showers[iShower];
+            }
+        }
+        fLepShower = pShower;
+        fLepTrack = ParticleSelectionAlg::GetTrackFromShower(event, pShower);
+
+        return pShower;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    art::Ptr<recob::Shower> ParticleSelectionAlg::GetHighestChargeShowerPID(const art::Event &event)
+    {
+        std::vector<art::Ptr<recob::Shower>> showers(GenElectronCandidates(event));
+        auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
+        auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
+        return ParticleSelectionAlg::GetHighestChargeShower(clockData, detProp, event, showers, kPlane);
+
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    std::vector<art::Ptr<recob::Shower>> ParticleSelectionAlg::GenElectronCandidates(const art::Event &event)
+    {
+
+        fTotalCaloEvent = ParticleSelectionAlg::GetTotalCaloEvent(event);
+        fShwIdToPIDAMap = ParticleSelectionAlg::GenMapPIDAScoreShw(event);
+
+        std::vector<art::Ptr<recob::Shower>> candidates(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerLabel));
+
+        candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
+                    [this, &event](const art::Ptr<recob::Shower> &s) {
+                    return (this->IsTrack(event, s) && fTotalCaloEvent >= this->kMaxETotalCaloForTracks);
+                    }), candidates.end());
+
+        candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
+                    [this, &event](const art::Ptr<recob::Shower> &s) {
+                    return (this->IsTrack(event, s) && this->GetPIDAScore(s) > this->kMaxEPIDA);
+                    }), candidates.end());
+
+        return candidates;
+
+    }
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
     std::vector<art::Ptr<recob::Track>> ParticleSelectionAlg::GenProtonCandidates(const art::Event &event)
     {
+        std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
+
+        if (0 == tracks.size())
+            return tracks;
+
         if (fTrkIdToPIDAMap.size() == 0)
             fTrkIdToPIDAMap = ParticleSelectionAlg::GenMapPIDAScore(event);
         if (fTotalCaloEvent == std::numeric_limits<double>::lowest())
             fTotalCaloEvent = ParticleSelectionAlg::GetTotalCaloEvent(event);
-        if (fTrkIdToContainmentMap.size() == 0)
-            fAllTracksContained = ParticleSelectionAlg::GenContainmentInfo(event);
         if (fTrkIdToCaloMap.size() == 0)
             fTrkIdToCaloMap = ParticleSelectionAlg::GenMapTracksCalo(event);
         if (fTrkIdToMomMap.size() == 0)
             fTrkIdToMomMap = ParticleSelectionAlg::GenMapTracksMom(event);
 
-        std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
 
-        if (0 == tracks.size())
-            return tracks;
-        
-        if (this->GetLepTrack().isAvailable()){
+        if (this->GetLepTrack().isAvailable())
+        {
             tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
-                        [this](const art::Ptr<recob::Track> &t){
-                        return t.key() == this->GetLepTrack().key(); 
+                        [this](const art::Ptr<recob::Track> &t) {
+                        return t.key() == this->GetLepTrack().key();
                         }), tracks.end());
         }
 
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
-                    [this, &event](const art::Ptr<recob::Track> &t){
-                    return (this->IsTrack(event, t) && this->GetPIDAScore(t) <= 10);
+                    [this, &event](const art::Ptr<recob::Track> &t) {
+                    return (this->IsTrack(event, t) && this->GetPIDAScore(t) <= this->kMinPrPIDATrack);
                     }), tracks.end());
 
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
-                    [this, &event](const art::Ptr<recob::Track> &t){
-                    return (!this->IsTrack(event, t) && this->GetPIDAScore(t) <= 13);
+                    [this, &event](const art::Ptr<recob::Track> &t) {
+                    return (!this->IsTrack(event, t) && this->GetPIDAScore(t) <= this->kMinPrPIDAShower);
                     }), tracks.end());
 
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
-                    [this](const art::Ptr<recob::Track> &t){
-                    return (this->GetTrackCalo(t) >= 1.5);
+                    [this](const art::Ptr<recob::Track> &t) {
+                    return (this->GetTrackCalo(t) >= this->kMaxPrTrkCalo);
                     }), tracks.end());
 
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
-                    [this](const art::Ptr<recob::Track> &t){
-                    return (this->GetTrackMom(t) >= 2.0);
+                    [this](const art::Ptr<recob::Track> &t) {
+                    return (this->GetTrackMom(t) >= this->kMaxPrTrkMom);
                     }), tracks.end());
 
         fPrTrack = tracks;
@@ -209,14 +314,16 @@ namespace dune
         std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
 
         // Removing lepton candidate if any
-        if (this->GetLepTrack().isAvailable()){
+        if (this->GetLepTrack().isAvailable())
+        {
             tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                         [&](const art::Ptr<recob::Track> &t) {
-                        return t.key() == this->GetLepTrack().key(); 
+                        return t.key() == this->GetLepTrack().key();
                         }), tracks.end());
         }
 
-        if (tracks.size() <= 2){
+        if (tracks.size() <= kMinPionNTrk)
+        {
             std::vector<art::Ptr<recob::Track>> empty;
             fPiTrack = empty;
             return empty;
@@ -229,13 +336,14 @@ namespace dune
             trkprotons = ParticleSelectionAlg::GetPrTracks();
 
 
-        if (trkprotons.size() > 0){
+        if (trkprotons.size() > 0)
+        {
             std::unordered_set<art::Ptr<recob::Track>::key_type> keys_to_remove;
             for (const art::Ptr<recob::Track> &t : trkprotons) keys_to_remove.insert(t.key());
 
             tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                         [&keys_to_remove](const art::Ptr<recob::Track> &t) {
-                        return keys_to_remove.count(t.key());  // O(1) lookup
+                        return keys_to_remove.count(t.key());
                         }), tracks.end());
         }
 
@@ -246,59 +354,19 @@ namespace dune
 
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this](const art::Ptr<recob::Track> &t) {
-                    return !(t->Length() >= 3.5 && t->Length() <= 350);
+                    return !(t->Length() >= this->kMinPionTrkLength && t->Length() <= this->kMaxPionTrkLength);
                     }), tracks.end());
 
+        std::optional<bool> allContained(GenContainmentInfo(event, tracks));
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this](const art::Ptr<recob::Track> &t) {
-                    return (!this->IsTrkContained(t) && t->Length() < 10);
+                    return (!this->IsTrkContained(t) && t->Length() < this->kMinPionTrkLengthNotContained);
                     }), tracks.end());
 
         fPiTrack = tracks;
 
         return tracks;
 
-    }
-
-
-    //------------------------------------------------------------------------------------------------------------------------------------------
-
-    art::Ptr<recob::Shower> ParticleSelectionAlg::GetHighestChargeShower(detinfo::DetectorClocksData const& clockData,
-                                                                         detinfo::DetectorPropertiesData const& detProp,
-                                                                         const art::Event &event)
-    {
-        art::Ptr<recob::Shower> pShower{};
-        const std::vector<art::Ptr<recob::Shower>> showers(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerLabel));
-        return ParticleSelectionAlg::GetHighestChargeShower(clockData, detProp, event, showers);
-
-    }
-
-    //------------------------------------------------------------------------------------------------------------------------------------------
-
-    art::Ptr<recob::Shower> ParticleSelectionAlg::GetHighestChargeShower(detinfo::DetectorClocksData const& clockData,
-                                                                         detinfo::DetectorPropertiesData const& detProp,
-                                                                         const art::Event &event,
-                                                                         const std::vector<art::Ptr<recob::Shower>> showers
-                                                                         )
-    {
-        art::Ptr<recob::Shower> pShower{};
-        if (0 == showers.size())
-            return pShower;
-
-        double maxCharge(std::numeric_limits<double>::lowest());
-        for (unsigned int iShower = 0; iShower < showers.size(); ++iShower)
-        {
-            const std::vector<art::Ptr<recob::Hit>>
-                showerHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(showers[iShower],
-                                event,fShowerToHitLabel),2));
-            const double showerCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, showerHits));
-            if (showerCharge-maxCharge > std::numeric_limits<double>::epsilon())
-            {
-                maxCharge = showerCharge;
-                pShower = showers[iShower];
-            }
-        }
-        return pShower;
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------------
@@ -308,64 +376,121 @@ namespace dune
 
         std::map<art::Ptr<recob::Track>::key_type, double> tTrkIdToPIDAMap;
 
-        const std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
-        trackListHandle = event.getHandle< std::vector<recob::Track>>(fTrackLabel);
+        art::Handle< std::vector<recob::Track>> trackListHandle = event.getHandle< std::vector<recob::Track>>(fTrackLabel);
+        std::unique_ptr<art::FindManyP<anab::ParticleID>> fmpid;
         fmpid = std::make_unique<art::FindManyP<anab::ParticleID>>(trackListHandle, event, fParticleIDModuleLabel);
-        if(!fmpid->isValid()) {
+        if(!fmpid->isValid())
+        {
             mf::LogWarning("ParticleSelectionAlg") << " Could not find any ParticleID association" << std::endl;
             return tTrkIdToPIDAMap;
         }
 
-        for (const art::Ptr<recob::Track> &track : tracks){
+        const std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
 
-            const std::vector< art::Ptr<anab::ParticleID>> pids = this->fmpid->at(track.key());
+        for (const art::Ptr<recob::Track> &track : tracks)
+        {
+
+            const std::vector< art::Ptr<anab::ParticleID>> pids = fmpid->at(track.key());
+            if (pids.empty())
+            {
+                tTrkIdToPIDAMap[track.key()] = 0;
+                continue;
+            }
 
             int biggestNdf(std::numeric_limits<int>::lowest());
-            geo::View_t kplane = fPlane;
+            geo::View_t tplane = kPlane;
             // if plane is set to unknown, search the plane with most points
             // when PIDA was evaluated
-            if (kplane == geo::kUnknown){
-                for (size_t ipid = 0; ipid < pids.size(); ++ipid){
+            if (tplane == geo::kUnknown)
+            {
+                for (size_t ipid = 0; ipid < pids.size(); ++ipid)
+                {
                     if (!pids[ipid]->PlaneID().isValid) continue;
                     geo::PlaneID::PlaneID_t planenum = pids[ipid]->PlaneID().Plane;
                     if (planenum<0||planenum>2) continue;
-                    auto pidScore = pids[ipid]->ParticleIDAlgScores();
-                    anab::sParticleIDAlgScores pScore = pidScore.back(); 
-                    if (pScore.fAssumedPdg != 0){
-                        throw art::Exception(art::errors::LogicError) << "PIDA is not the last PID algorith! \n";
-                    }
-                    const int pidndf = pScore.fNdf;
-                    if (pidndf-biggestNdf > std::numeric_limits<int>::epsilon())
+                    const std::vector< anab::sParticleIDAlgScores> pidScore = pids[ipid]->ParticleIDAlgScores();
+                    for (const anab::sParticleIDAlgScores &pScore : pidScore)
                     {
-                        biggestNdf = pidndf;
-                        kplane = static_cast<geo::View_t>(ipid);
+                        if (pScore.fAssumedPdg == 0 && pScore.fNdf > biggestNdf)
+                        {
+                            biggestNdf = pScore.fNdf;
+                            tplane = static_cast<geo::View_t>(ipid);
+                        }
+                    }
+                }
+                // If failed to find a plane, set to PIDA score to zero
+                if (tplane == geo::kUnknown)
+                {
+                    tTrkIdToPIDAMap[track.key()] = 0;
+                    continue;
+                }
+            }
+
+            double pidaScore = 0;
+            if(pids[tplane]->PlaneID().isValid)
+            {
+                const std::vector< anab::sParticleIDAlgScores> pidScore = pids[tplane]->ParticleIDAlgScores();
+                for (const anab::sParticleIDAlgScores &pScore : pidScore)
+                {
+                    if (pScore.fAssumedPdg == 0)
+                    {
+                        pidaScore = pScore.fValue;
                     }
                 }
             }
-            auto pidScore = pids[kplane]->ParticleIDAlgScores();
-            anab::sParticleIDAlgScores pScore = pidScore.back(); 
-            if (pScore.fAssumedPdg != 0){
-                throw art::Exception(art::errors::LogicError) << "PIDA is not the last PID algorith! \n";
-            }
-            tTrkIdToPIDAMap[track.key()] = pScore.fValue;
+            tTrkIdToPIDAMap[track.key()] = pidaScore;
         }
         return tTrkIdToPIDAMap;
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------------
 
-    bool ParticleSelectionAlg::GenContainmentInfo(const art::Event &event)
+    std::map<art::Ptr<recob::Shower>::key_type, double> ParticleSelectionAlg::GenMapPIDAScoreShw(const art::Event &event)
     {
-        bool allContained = true;
-        const std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
-        for (const art::Ptr<recob::Track> &track : tracks){
-
-            std::vector<art::Ptr<recob::Hit>> trkhits = (dune_ana::DUNEAnaTrackUtils::GetHits(track, event, fTrackLabel));
-            bool trkIsContained = ParticleSelectionAlg::IsContained(trkhits, event);
-            allContained &= trkIsContained;
-            fTrkIdToContainmentMap[track.key()] = trkIsContained; 
+        std::map<art::Ptr<recob::Shower>::key_type, double> tShwIdToPIDAMap;
+        const std::vector<art::Ptr<recob::Shower>> showers(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerLabel));
+        if (fTrkIdToPIDAMap.size() == 0)
+        {
+            fTrkIdToPIDAMap = ParticleSelectionAlg::GenMapPIDAScore(event);
+        }
+        for (const art::Ptr<recob::Shower> &shower : showers)
+        {
+            art::Ptr<recob::Track> shwTrk = ParticleSelectionAlg::GetTrackFromShower(event, shower);
+            if (!shwTrk.isAvailable())
+                tShwIdToPIDAMap[shower.key()] = 0;
+            else
+                tShwIdToPIDAMap[shower.key()] = ParticleSelectionAlg::GetPIDAScore(shwTrk);
         }
 
+        return tShwIdToPIDAMap;
+
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    bool ParticleSelectionAlg::GenContainmentInfo(const art::Event &event)
+    {
+        const std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
+        return ParticleSelectionAlg::GenContainmentInfo(event, tracks);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    bool ParticleSelectionAlg::GenContainmentInfo(const art::Event &event, const std::vector<art::Ptr<recob::Track>> &tracks)
+    {
+        bool allContained = true;
+        hitListHandle    = event.getHandle< std::vector<recob::Hit> >(fHitLabel);
+        fmsp  = std::make_unique<art::FindManyP<recob::SpacePoint>>(hitListHandle, event, fHitToSpacePointLabel);
+        for (const art::Ptr<recob::Track> &track : tracks)
+        {
+            if (fTrkIdToContainmentMap.count(track.key()) == 0)
+            {
+                std::vector<art::Ptr<recob::Hit>> trkhits = (dune_ana::DUNEAnaTrackUtils::GetHits(track, event, fTrackLabel));
+                bool trkIsContained = ParticleSelectionAlg::IsContained(trkhits, event);
+                fTrkIdToContainmentMap[track.key()] = trkIsContained;
+            }
+            allContained &= fTrkIdToContainmentMap[track.key()];
+        }
         return allContained;
     }
 
@@ -373,7 +498,8 @@ namespace dune
 
     const double ParticleSelectionAlg::GetPIDAScore(const art::Ptr<recob::Track> &track)
     {
-        if (fTrkIdToPIDAMap.count(track.key())){
+        if (fTrkIdToPIDAMap.count(track.key()))
+        {
             return fTrkIdToPIDAMap[track.key()];
         }
         return 0;
@@ -381,9 +507,22 @@ namespace dune
 
     //------------------------------------------------------------------------------------------------------------------------------------------
 
+    const double ParticleSelectionAlg::GetPIDAScore(const art::Ptr<recob::Shower> &shower)
+    {
+        if (fShwIdToPIDAMap.count(shower.key()))
+        {
+            return fShwIdToPIDAMap[shower.key()];
+        }
+        return 0;
+    }
+
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
     const double ParticleSelectionAlg::GetTrackCalo(const art::Ptr<recob::Track> &track)
     {
-        if (fTrkIdToCaloMap.count(track.key())){
+        if (fTrkIdToCaloMap.count(track.key()))
+        {
             return fTrkIdToCaloMap[track.key()];
         }
         return 0;
@@ -393,7 +532,8 @@ namespace dune
 
     const double ParticleSelectionAlg::GetTrackMom(const art::Ptr<recob::Track> &track)
     {
-        if (fTrkIdToMomMap.count(track.key())){
+        if (fTrkIdToMomMap.count(track.key()))
+        {
             return fTrkIdToMomMap[track.key()];
         }
         return 0;
@@ -406,10 +546,12 @@ namespace dune
         auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
         auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
 
-        geo::View_t kplane = fPlane;
-        if (kplane == geo::kUnknown){
+        geo::View_t tplane = kPlane;
+        if (tplane == geo::kUnknown)
+        {
             size_t maxNhits(std::numeric_limits<size_t>::lowest());
-            for (size_t ipl = 0; ipl < kNplanes; ++ipl){
+            for (size_t ipl = 0; ipl < kNplanes; ++ipl)
+            {
                 const std::vector<art::Ptr<recob::Hit>>
                     eventHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaEventUtils::GetHits(event,
                                     fHitLabel),ipl));
@@ -417,19 +559,32 @@ namespace dune
                 if (nhits-maxNhits > std::numeric_limits<size_t>::epsilon())
                 {
                     maxNhits = nhits;
-                    kplane = static_cast<geo::View_t>(ipl);
+                    tplane = static_cast<geo::View_t>(ipl);
                 }
             }
         }
 
         const std::vector<art::Ptr<recob::Hit>>
             eventHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaEventUtils::GetHits(event,
-                            fHitLabel), kplane));
+                            fHitLabel), tplane));
         const double eventObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, eventHits));
 
-        const double CaloEnergy(this->CalculateEnergyFromCharge(eventObservedCharge, kplane));
+        const double CaloEnergy(this->CalculateEnergyFromCharge(eventObservedCharge, tplane));
         return CaloEnergy;
 
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    art::Ptr<recob::Track> ParticleSelectionAlg::GetTrackFromShower(const art::Event &event, const art::Ptr<recob::Shower> &shower)
+    {
+        const art::Ptr<recob::PFParticle> pfp(dune_ana::DUNEAnaShowerUtils::GetPFParticle(shower, event, fShowerLabel));
+        if (dune_ana::DUNEAnaPFParticleUtils::IsTrack(pfp, event, fPFParticleLabel, fTrackLabel))
+        {
+            return dune_ana::DUNEAnaPFParticleUtils::GetTrack(pfp, event, fPFParticleLabel, fTrackLabel);
+
+        }
+        return art::Ptr<recob::Track>{};
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------------
@@ -439,15 +594,18 @@ namespace dune
         auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
         auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
         const std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
-        std::map<art::Ptr<recob::Track>::key_type, double> tTrkIdToCaloMap; 
-        
-        for (const art::Ptr<recob::Track> &track : tracks){
+        std::map<art::Ptr<recob::Track>::key_type, double> tTrkIdToCaloMap;
 
-            geo::View_t kplane = fPlane;
+        for (const art::Ptr<recob::Track> &track : tracks)
+        {
 
-            if (kplane == geo::kUnknown){
+            geo::View_t tplane = kPlane;
+
+            if (tplane == geo::kUnknown)
+            {
                 size_t maxNhits(std::numeric_limits<size_t>::lowest());
-                for (size_t ipl = 0; ipl < kNplanes; ++ipl){
+                for (size_t ipl = 0; ipl < kNplanes; ++ipl)
+                {
                     const std::vector<art::Ptr<recob::Hit>>
                         trkHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(track,
                                         event, fTrackLabel), ipl));
@@ -455,22 +613,22 @@ namespace dune
                     if (nhits-maxNhits > std::numeric_limits<size_t>::epsilon())
                     {
                         maxNhits = nhits;
-                        kplane = static_cast<geo::View_t>(ipl);
+                        tplane = static_cast<geo::View_t>(ipl);
                     }
                 }
             }
 
             const std::vector<art::Ptr<recob::Hit>>
                 trkHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(track,
-                                event, fTrackLabel), kplane));
+                                event, fTrackLabel), tplane));
             const double eventObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, trkHits));
 
-            const double CaloEnergy(this->CalculateEnergyFromCharge(eventObservedCharge, kplane));
+            const double CaloEnergy(this->CalculateEnergyFromCharge(eventObservedCharge, tplane));
 
             tTrkIdToCaloMap[track.key()] = CaloEnergy;
 
         }
-    
+
         return tTrkIdToCaloMap;
     }
 
@@ -480,8 +638,9 @@ namespace dune
     {
         std::map<art::Ptr<recob::Track>::key_type, double> tTrkIdToMomMap;
         const std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
-        trkf::TrackMomentumCalculator trkmrange{0,3000};
-        for (const art::Ptr<recob::Track> &track : tracks){
+        trkf::TrackMomentumCalculator trkmrange{kPrMomByRangeMinLength, kPrMomByRangeMaxLength};
+        for (const art::Ptr<recob::Track> &track : tracks)
+        {
             double trkmomrangepr = trkmrange.GetTrackMomentum(track->Length(),2212);
             tTrkIdToMomMap[track.key()] = trkmomrangepr;
         }
@@ -490,9 +649,40 @@ namespace dune
 
     //------------------------------------------------------------------------------------------------------------------------------------------
 
+    std::map<art::Ptr<recob::Shower>::key_type, geo::View_t> ParticleSelectionAlg::GenMapBestPlaneShower(const art::Event &event, const geo::View_t tPlane)
+    {
+        std::map<art::Ptr<recob::Shower>::key_type, geo::View_t> tShwIdToBestPlaneMap;
+        const std::vector<art::Ptr<recob::Shower>> showers(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerLabel));
+        for (const art::Ptr<recob::Shower> &shower : showers)
+        {
+            geo::View_t tplane = tPlane;
+            if (tplane == geo::kUnknown)
+            {
+                size_t maxNhits(std::numeric_limits<size_t>::lowest());
+                for (size_t ipl = 0; ipl < kNplanes; ++ipl)
+                {
+                    const std::vector<art::Ptr<recob::Hit>>
+                        shwHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(shower,
+                                        event, fShowerLabel), ipl));
+                    const size_t nhits = shwHits.size();
+                    if (nhits-maxNhits > std::numeric_limits<size_t>::epsilon())
+                    {
+                        maxNhits = nhits;
+                        tplane = static_cast<geo::View_t>(ipl);
+                    }
+                }
+            }
+            tShwIdToBestPlaneMap[shower.key()] = tplane;
+        }
+
+        return tShwIdToBestPlaneMap;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
     double ParticleSelectionAlg::CalculateEnergyFromCharge(const double charge, const unsigned short plane )
     {
-        return fCalorimetryAlg.ElectronsFromADCArea(charge, plane)*1./fRecombFactor/util::kGeVToElectrons;
+        return fCalorimetryAlg.ElectronsFromADCArea(charge, plane)*1./kRecombFactor/util::kGeVToElectrons;
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------------
@@ -538,12 +728,12 @@ namespace dune
             maxZ = std::max(maxZ,tpc.MaxZ());
         }
 
-        minX += fDistanceToWallThreshold;
-        maxX -= fDistanceToWallThreshold;
-        minY += fDistanceToWallThreshold;
-        maxY -= fDistanceToWallThreshold;
-        minZ += fDistanceToWallThreshold;
-        maxZ -= fDistanceToWallThreshold;
+        minX += kDistanceToWallThreshold;
+        maxX -= kDistanceToWallThreshold;
+        minY += kDistanceToWallThreshold;
+        maxY -= kDistanceToWallThreshold;
+        minZ += kDistanceToWallThreshold;
+        maxZ -= kDistanceToWallThreshold;
 
         if (x - minX < -1.*std::numeric_limits<double>::epsilon() ||
                 x - maxX > std::numeric_limits<double>::epsilon())
@@ -565,9 +755,11 @@ namespace dune
 
         for (unsigned int iHit = 0; iHit < hits.size(); ++iHit)
         {
-            std::vector<art::Ptr<recob::SpacePoint>>
-                spacePoints(dune_ana::DUNEAnaHitUtils::GetSpacePoints(hits[iHit],
-                            event, fHitLabel, fHitToSpacePointLabel));
+            std::vector<art::Ptr<recob::SpacePoint> > spacePoints;
+            if(fmsp->isValid())
+            {
+                spacePoints = fmsp->at(hits[iHit].key());
+            }
             for (unsigned int iSpacePoint = 0; iSpacePoint < spacePoints.size(); ++iSpacePoint)
             {
                 const art::Ptr<recob::SpacePoint> spacePoint(spacePoints[iSpacePoint]);
@@ -582,10 +774,12 @@ namespace dune
 
     bool ParticleSelectionAlg::IsTrkContained(const art::Ptr<recob::Track> &track)
     {
-        if (fTrkIdToContainmentMap.count(track.key())){
+        if (fTrkIdToContainmentMap.count(track.key()))
+        {
             return fTrkIdToContainmentMap[track.key()];
         }
-        else{
+        else
+        {
             throw art::Exception(art::errors::LogicError) << "The map between \
                 track id and containment information does not have this track \
                 id, this shouldn't happen.\n";
@@ -614,7 +808,7 @@ namespace dune
             const double maxPIDA)
     {
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
-                    [this, &maxPIDA](const art::Ptr<recob::Track> &t){
+                    [this, &maxPIDA](const art::Ptr<recob::Track> &t) {
                     return this->GetPIDAScore(t) > maxPIDA;
                     }), tracks.end());
 
@@ -632,7 +826,7 @@ namespace dune
         if ( !(this->fTotalCaloEvent >= minCalo && this->fTotalCaloEvent <= maxCalo) )
             return;
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
-                    [this, &event](const art::Ptr<recob::Track> &t){
+                    [this, &event](const art::Ptr<recob::Track> &t) {
                     return (!this->IsTrack(event, t));
                     }), tracks.end());
     }
@@ -645,7 +839,7 @@ namespace dune
             const double minPIDA)
     {
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
-                    [this, &event, &minPIDA](const art::Ptr<recob::Track> &t){
+                    [this, &event, &minPIDA](const art::Ptr<recob::Track> &t) {
                     return (!this->IsTrack(event, t) && this->GetPIDAScore(t) < minPIDA);
                     }), tracks.end());
     }
@@ -653,14 +847,18 @@ namespace dune
     //------------------------------------------------------------------------------------------------------------------------------------------
 
     const void ParticleSelectionAlg::applyMuCutContained(
+            const art::Event &event,
             std::vector<art::Ptr<recob::Track>>& tracks
             )
     {
-        if (fAllTracksContained)
-            return;
+        if (tracks.size()<=1) return; // Shouldn't get here...
+
+        const bool allContained{GenContainmentInfo(event, tracks)};
+        if (allContained) return; // no filter needed
+
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
-                    [this](const art::Ptr<recob::Track> &t){
-                    return (this->IsTrkContained(t));
+                    [this](const art::Ptr<recob::Track> &t) {
+                    return (this->IsTrkContained(t) && fTotalCaloEvent >= kMaxMuContainedCalo);
                     }), tracks.end());
     }
 
@@ -672,7 +870,7 @@ namespace dune
             )
     {
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
-                    [this, &event](const art::Ptr<recob::Track> &t){
+                    [this, &event](const art::Ptr<recob::Track> &t) {
                     return (!this->IsTrack(event, t));
                     }), tracks.end());
     }

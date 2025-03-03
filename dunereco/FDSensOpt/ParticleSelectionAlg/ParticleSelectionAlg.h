@@ -33,6 +33,7 @@ namespace dune
             /**
              * @brief  Constructor
              * @param  pset the FCL parameter set
+             * @param  pfpLabel the track label
              * @param  trackLabel the track label
              * @param  showerLabel the shower label
              * @param  hitLabel the hit label
@@ -43,6 +44,7 @@ namespace dune
              */
             ParticleSelectionAlg(
                     const fhicl::ParameterSet &pset,
+                    const std::string &pfpLabel,
                     const std::string &trackLabel,
                     const std::string &showerLabel,
                     const std::string &hitLabel,
@@ -93,6 +95,8 @@ namespace dune
              */
             std::vector<art::Ptr<recob::Track>> GenMuonCandidates(const art::Event &event);
 
+            std::vector<art::Ptr<recob::Shower>> GenElectronCandidates(const art::Event &event);
+
             std::vector<art::Ptr<recob::Track>> GenProtonCandidates(const art::Event &event);
 
             std::vector<art::Ptr<recob::Track>> GenPionCandidates(const art::Event &event);
@@ -118,13 +122,18 @@ namespace dune
              * @param  detProp
              * @param  event
              * @param  showers
+             * @param  tPlane reference plane for getting charge
              *
              * @return the highest charge recob::Shower
              */
             art::Ptr<recob::Shower> GetHighestChargeShower(detinfo::DetectorClocksData const& clockData,
                                                            detinfo::DetectorPropertiesData const& detProp,
                                                            const art::Event &event,
-                                                           const std::vector<art::Ptr<recob::Shower>> showers);
+                                                           const std::vector<art::Ptr<recob::Shower>> showers,
+                                                           const geo::View_t tPlane = geo::kW);
+
+
+            art::Ptr<recob::Shower> GetHighestChargeShowerPID(const art::Event &event);
 
             /**
              * @brief Retrieve the PIDA score of the track from map
@@ -135,6 +144,7 @@ namespace dune
              */
             const double GetPIDAScore(const art::Ptr<recob::Track> &track);
 
+            const double GetPIDAScore(const art::Ptr<recob::Shower> &shower);
             /**
              * @brief Retrieve the Calorimetry energy of track from map
              *
@@ -154,12 +164,43 @@ namespace dune
             const double GetTrackMom(const art::Ptr<recob::Track> &track);
 
             const art::Ptr<recob::Track> &GetLepTrack(){ return fLepTrack; }
+            const art::Ptr<recob::Shower> &GetLepShower(){ return fLepShower; }
             const std::vector<art::Ptr<recob::Track>> &GetPrTracks(){ return fPrTrack; }
             const std::vector<art::Ptr<recob::Track>> &GetPiTracks(){ return fPiTrack; }
 
+            art::Ptr<recob::Track> GetTrackFromShower(const art::Event &event, const art::Ptr<recob::Shower> &shower);
 
         private:
             calo::CalorimetryAlg fCalorimetryAlg;                    ///< the calorimetry algorithm
+            double kMaxMuLength;
+            double kMaxMuPIDA;
+            double kMinMuTotalCalo;
+            double kMaxMuTotalCalo;
+            double kMinMuPIDAShower;
+            double kMaxMuPIDAAggressive;
+            double kMaxMuContainedCalo;
+
+            double kMaxETotalCaloForTracks;
+            double kMaxEPIDA;
+
+            double kMinPrPIDATrack;
+            double kMinPrPIDAShower;
+            double kMaxPrTrkCalo;
+            double kMaxPrTrkMom;
+
+            double kPrMomByRangeMinLength;
+            double kPrMomByRangeMaxLength;
+
+            double kMinPionTrkLength;
+            double kMaxPionTrkLength;
+            double kMinPionTrkLengthNotContained;
+            size_t kMinPionNTrk;
+            double kDistanceToWallThreshold;                         ///< the min distance from a detector wall to be considered contained
+
+            double kRecombFactor;
+            unsigned int kPlaneToUse; 
+
+            std::string fPFParticleLabel;                            ///< the pfp label
             std::string fTrackLabel;                                 ///< the track label
             std::string fShowerLabel;                                ///< the shower label
             std::string fHitLabel;                                   ///< the hit label
@@ -167,29 +208,29 @@ namespace dune
             std::string fShowerToHitLabel;                           ///< the associated shower-to-hit label
             std::string fHitToSpacePointLabel;                       ///< the associated hit-to-space point label
 
-            double fMaxMuLenght;
 
             const unsigned int kNplanes = 3;
-
-            double fRecombFactor;
-            geo::View_t fPlane;
+            geo::View_t kPlane; // geo::Unknow3
 
             std::string fParticleIDModuleLabel = "pandorapid";
-            art::Handle< std::vector<recob::Track>> trackListHandle;
-            std::unique_ptr<art::FindManyP<anab::ParticleID>> fmpid;
+            art::Handle< std::vector<recob::Hit> > hitListHandle;
+            std::unique_ptr<art::FindManyP<recob::SpacePoint>> fmsp;
 
-            double fDistanceToWallThreshold;                         ///< the min distance from a detector wall to be considered contained
 
             std::map<art::Ptr<recob::Track>::key_type, double> fTrkIdToPIDAMap;
             std::map<art::Ptr<recob::Track>::key_type, double> fTrkIdToCaloMap;
             std::map<art::Ptr<recob::Track>::key_type, double> fTrkIdToMomMap;
             std::map<art::Ptr<recob::Track>::key_type, bool> fTrkIdToContainmentMap;
 
+            std::map<art::Ptr<recob::Shower>::key_type, double> fShwIdToPIDAMap;
+            std::map<art::Ptr<recob::Shower>::key_type, geo::View_t> fShwIdToBestPlaneMap;
+
             double fTotalCaloEvent = std::numeric_limits<double>::lowest();
 
             bool fAllTracksContained; 
 
             art::Ptr<recob::Track> fLepTrack;
+            art::Ptr<recob::Shower> fLepShower;
             std::vector<art::Ptr<recob::Track>> fPrTrack;
             std::vector<art::Ptr<recob::Track>> fPiTrack;
 
@@ -208,7 +249,13 @@ namespace dune
             std::map<art::Ptr<recob::Track>::key_type, double> GenMapPIDAScore(
                     const art::Event &event);
 
+            std::map<art::Ptr<recob::Shower>::key_type, double> GenMapPIDAScoreShw(const art::Event &event);
+
+            std::map<art::Ptr<recob::Shower>::key_type, geo::View_t> GenMapBestPlaneShower(const art::Event &event, const geo::View_t tPlane);
+
             bool GenContainmentInfo(const art::Event &event);
+
+            bool GenContainmentInfo(const art::Event &event, const std::vector<art::Ptr<recob::Track>> &tracks);
 
             bool IsContained(const std::vector<art::Ptr<recob::Hit>> &hits, const art::Event &event);
 
@@ -248,6 +295,7 @@ namespace dune
                     const double minPIDA);
 
             const void applyMuCutContained(
+                    const art::Event &event,
                     std::vector<art::Ptr<recob::Track>>& tracks
                     );
 
