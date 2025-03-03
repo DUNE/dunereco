@@ -179,6 +179,7 @@ cet_build_plugin(CheckRecoEnergy   art::module LIBRARIES
 cet_build_plugin(NuAngularReco   art::module LIBRARIES
                         MVAAlg
                         NeutrinoAngularRecoAlg
+                        ParticleSelectionAlg
                         nugen::NuReweight
                         nugen::NuReweight_art
                         nusimdata::SimulationBase

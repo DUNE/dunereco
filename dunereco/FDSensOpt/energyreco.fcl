@@ -12,15 +12,16 @@ dunefd_nuenergyreco_pmtrack:
     # 1 Split event into longest reco track and hadronic part, suitable for numu CC events (method 3 is used for events with no reco track)
     # 2 Split event into reco shower with highest charge and hadronic part, suitable for nue CC events (method 3 is used for events with no reco shower)
     # 3 Use charges of all hits and convert to energy, suitable for NC events, numu CC events with no reco track or nue CC events with no reco shower
-    RecoMethod:              1
+    RecoMethod:           1
 
-    WireLabel:         "wclsmcnfsp:gauss"
-    HitLabel:         "linecluster"
-    TrackLabel:        "pmtrack"
-    ShowerLabel:       "emshower"
-    TrackToHitLabel:        "pmtrack"
-    ShowerToHitLabel:        "emshower"
-    HitToSpacePointLabel:   "pmtrack"
+    WireLabel:            "wclsmcnfsp:gauss"
+    HitLabel:             "linecluster"
+    TrackLabel:           "pmtrack"
+    ShowerLabel:          "emshower"
+    TrackToHitLabel:      "pmtrack"
+    ShowerToHitLabel:     "emshower"
+    HitToSpacePointLabel: "pmtrack"
+    fPFParticleLabel:     "pandora"
 
     # LongestTrackMethod
     # '0' is the standard computation: by range or MCS, depending on containment and on MuonRangeToMCSThreshold
