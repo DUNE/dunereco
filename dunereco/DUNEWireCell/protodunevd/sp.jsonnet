@@ -40,7 +40,7 @@ function(params, tools, override = {}) {
        *  Associated tuning in sp-filters.jsonnet
        */
 
-      local resolution = std.extVar("Nbit"), // params.adc.resolution, (once refactored the code)
+      local resolution = params.adc.resolution, 
       local fullscale = if anode.data.ident < 4
                         then params.adc.fullscale[1] - params.adc.fullscale[0]
                         else 2.0*wc.volt,
