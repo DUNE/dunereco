@@ -3,7 +3,7 @@
 local g = import 'pgraph.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-local spfilt = import 'pgrapher/experiment/protodunevd/sp-filters.jsonnet';
+local spfilt = import 'protodunevd/sp-filters.jsonnet';
 
 function(params, tools, override = {}) {
 

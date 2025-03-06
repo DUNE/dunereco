@@ -7,12 +7,12 @@
 // Output is a Python numpy .npz file.
 
 local g = import 'pgraph.jsonnet';
-local f = import 'pgrapher/common/funcs.jsonnet';
+local f = import 'common/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-local io = import 'pgrapher/common/fileio.jsonnet';
-local tools_maker = import 'pgrapher/common/tools.jsonnet';
-local params_maker = import 'pgrapher/experiment/iceberg/simparams.jsonnet';
+local io = import 'common/fileio.jsonnet';
+local tools_maker = import 'common/tools.jsonnet';
+local params_maker = import 'iceberg/simparams.jsonnet';
 local fcl_params = {
     G4RefTime: std.extVar('G4RefTime') * wc.us,
 };
@@ -32,7 +32,7 @@ local params = params_maker(fcl_params) {
 
 local tools = tools_maker(params);
 
-local sim_maker = import 'pgrapher/experiment/iceberg/sim.jsonnet';
+local sim_maker = import 'iceberg/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local nanodes = std.length(tools.anodes);
@@ -40,7 +40,7 @@ local anode_iota = std.range(0, nanodes - 1);
 
 
 local output = 'wct-sim-ideal-sig.npz';
-local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
+local wcls_maker = import 'ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 local wcls_input = {
   depos: wcls.input.depos(name='', art_tag='largeant:LArG4DetectorServicevolTPCActive'),
@@ -115,7 +115,7 @@ local bagger = sim.make_bagger();
 local signal_pipes = sim.signal_pipelines;
 // local sn_pipes = sim.splusn_pipelines;
 
-local perfect = import 'pgrapher/experiment/iceberg/chndb-perfect.jsonnet';
+local perfect = import 'iceberg/chndb-perfect.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
@@ -123,10 +123,10 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in anode_iota];
 
-local nf_maker = import 'pgrapher/experiment/iceberg/nf.jsonnet';
+local nf_maker = import 'iceberg/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in anode_iota];
 
-local sp_maker = import 'pgrapher/experiment/iceberg/sp.jsonnet';
+local sp_maker = import 'iceberg/sp.jsonnet';
 local sp = sp_maker(params, tools);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
@@ -154,7 +154,7 @@ local wcls_simchannel_sink = g.pnode({
   },
 }, nin=1, nout=1, uses=tools.anodes);
 
-local magnify = import 'pgrapher/experiment/iceberg/magnify-sinks.jsonnet';
+local magnify = import 'iceberg/magnify-sinks.jsonnet';
 local magnifyio = magnify(tools, "iceberg.root");
 
 local multipass = [

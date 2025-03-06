@@ -35,7 +35,7 @@ physics :{
             // This sets the "main" Jsonnet file which provides the 
             // configuration for the Wire-Cell Toolkit components.  It is
             // take as relative to entries in WIRECELL_PATH.
-            configs: ["pgrapher/experiment/pdsp/wcls-sp.jsonnet"]
+            configs: ["pdsp/wcls-sp.jsonnet"]
 
             // Set the "external variables" required by the Jsonnet.
             params : {

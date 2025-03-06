@@ -6,7 +6,7 @@ local wc = import 'wirecell.jsonnet';
 // BIG FAT FIXME: we are taking from dune10kt-1x2x6.  If it needs tuning do
 // four things: 0) read this comment, 1) cp this file into pdsp/, 2)
 // fix the import and 3) delete this comment.
-local spfilt = import 'pgrapher/experiment/dune-vd/sp-filters.jsonnet';
+local spfilt = import 'dune-vd/sp-filters.jsonnet';
 
 function(params, tools, override = {}) {
 

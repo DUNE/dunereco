@@ -1,15 +1,15 @@
 
 local g = import 'pgraph.jsonnet';
-local f = import 'pgrapher/common/funcs.jsonnet';
+local f = import 'common/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-local io = import 'pgrapher/common/fileio.jsonnet';
-local tools_maker = import 'pgrapher/common/tools.jsonnet';
-local params = import 'pgrapher/experiment/protodunevd/simparams.jsonnet';
+local io = import 'common/fileio.jsonnet';
+local tools_maker = import 'common/tools.jsonnet';
+local params = import 'protodunevd/simparams.jsonnet';
 
 local tools = tools_maker(params);
 
-local sim_maker = import 'pgrapher/experiment/protodunevd/sim.jsonnet';
+local sim_maker = import 'protodunevd/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 // wire pitch dir (bottom drift):
@@ -67,7 +67,7 @@ local bagger = sim.make_bagger();
 local sn_pipes = sim.splusn_pipelines;
 // local analog_pipes = sim.analog_pipelines;
 
-local perfect = import 'pgrapher/experiment/protodunevd/chndb-base.jsonnet';
+local perfect = import 'protodunevd/chndb-base.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
@@ -75,7 +75,7 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in anode_iota];
 
-local nf_maker = import 'pgrapher/experiment/protodunevd/nf.jsonnet';
+local nf_maker = import 'protodunevd/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp_override = {
@@ -85,12 +85,12 @@ local sp_override = {
     process_planes: [0, 1, 2]
 };
 
-local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
+local sp_maker = import 'protodunevd/sp.jsonnet';
 local sp = sp_maker(params, tools, sp_override);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
 local magoutput = 'protodunevd-sim-check.root';
-local magnify = import 'pgrapher/experiment/protodunevd/magnify-sinks.jsonnet';
+local magnify = import 'protodunevd/magnify-sinks.jsonnet';
 local magnifyio = magnify(tools, magoutput);
 
 local parallel_pipes = [
@@ -169,12 +169,12 @@ local parallel_graph = f.fanpipe('DepoSetFanout', parallel_pipes, 'FrameFanin', 
 //     }, nin=2, nout=1) for n in std.range(0, 7)];
 // 
 // local actpipes = [g.pipeline([noises[n], digitizers[n]], name="noise-digitizer%d" %n) for n in std.range(0,7)];
-// local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
+// local util = import 'protodunevd/funcs.jsonnet';
 // local pipe_reducer = util.fansummer('DepoSetFanout', analog_pipes, frame_summers, actpipes, 'FrameFanin');
 // 
 // 
 // local magoutput = 'protodunevd-sim-check.root';
-// local magnify = import 'pgrapher/experiment/protodunevd/magnify-sinks.jsonnet';
+// local magnify = import 'protodunevd/magnify-sinks.jsonnet';
 // local magnifyio = magnify(tools, magoutput);
 // 
 // // local fansel = g.pnode({

@@ -2,7 +2,7 @@
 // generic set of parameters and overrides things specific to PDSP.
 
 local wc = import "wirecell.jsonnet";
-local base = import "pgrapher/common/params.jsonnet";
+local base = import "common/params.jsonnet";
 
 base {
     // This section will be overwritten in simparams.jsonnet
@@ -108,7 +108,7 @@ base {
     // This sets a relative gain at the input to the ADC.  Note, if
     // you are looking to fix SimDepoSource, you are in the wrong
     // place.  See the "scale" parameter of wcls.input.depos() defined
-    // in pgrapher/common/ui/wcls/nodes.jsonnet.
+    // in common/ui/wcls/nodes.jsonnet.
     // also, see later overwriting in simparams.jsonnet
     elecs: [
       super.elec { // bottom drifter

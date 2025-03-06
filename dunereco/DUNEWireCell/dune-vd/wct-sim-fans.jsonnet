@@ -1,16 +1,16 @@
 local g = import "pgraph.jsonnet";
-local f = import "pgrapher/experiment/dune-vd/funcs.jsonnet";
+local f = import "dune-vd/funcs.jsonnet";
 local wc = import "wirecell.jsonnet";
 
-local io = import 'pgrapher/common/fileio.jsonnet';
-local tools_maker = import 'pgrapher/common/tools.jsonnet';
-local param_maker = import 'pgrapher/experiment/dune-vd/params.jsonnet';
+local io = import 'common/fileio.jsonnet';
+local tools_maker = import 'common/tools.jsonnet';
+local param_maker = import 'dune-vd/params.jsonnet';
 local params = param_maker(10*wc.cm) {
 };
 
 local tools = tools_maker(params);
 
-local sim_maker = import 'pgrapher/experiment/dune-vd/sim.jsonnet';
+local sim_maker = import 'dune-vd/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 // Deposit and drifter ///////////////////////////////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ local origmagnify_pipe = [g.pipeline([origmagnify[n]], name='origmagnifypipes%d'
 // local sn_pipes = sim.signal_pipelines;
 local sn_pipes = sim.splusn_pipelines;
 
-local sp_maker = import 'pgrapher/experiment/dune-vd/sp.jsonnet';
+local sp_maker = import 'dune-vd/sp.jsonnet';
 local sp = sp_maker(params, tools, { use_roi_debug_mode: false,} );
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
@@ -98,7 +98,7 @@ g.pnode({
 local spmagnify_pipe = [g.pipeline([spmagnify[n]], name='spmagnifypipes%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local magoutput = 'sim-check.root';
-local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
+local magnify = import 'pdsp/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
 local parallel_pipes = [
