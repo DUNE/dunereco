@@ -445,63 +445,8 @@ namespace solar
       Dir.push_back(dzds / dyds);
     }
     DeltaTime = MaxTime - MinTime;
-    // Compute the sigma time from the STD of the time vector
     SigmaTime = LowEUtils::STD(Time);
     return;
-  }
-
-  //......................................................
-  double LowEUtils::Sum(std::vector<double> &Vec)
-  {
-    double Sum = 0;
-    for (double Val : Vec)
-    {
-      Sum += Val;
-    }
-    return Sum;
-  }
-  float LowEUtils::Sum(std::vector<float> &Vec)
-  {
-    float Sum = 0;
-    for (float Val : Vec)
-    {
-      Sum += Val;
-    }
-    return Sum;
-  }
-
-  //......................................................
-  double LowEUtils::Average(std::vector<double> &Vec)
-  {
-    double sum = Sum(Vec);
-    return sum / Vec.size();
-  }
-  float LowEUtils::Average(std::vector<float> &Vec)
-  {
-    float sum = Sum(Vec);
-    return sum / Vec.size();
-  }
-
-  //......................................................
-  double LowEUtils::STD(std::vector<double> &Vec)
-  {
-    double Mean = Average(Vec);
-    double Sum = 0;
-    for (double Val : Vec)
-    {
-      Sum += (Val - Mean) * (Val - Mean);
-    }
-    return sqrt(Sum / Vec.size());
-  }
-  float LowEUtils::STD(std::vector<float> &Vec)
-  {
-    float Mean = Average(Vec);
-    float Sum = 0;
-    for (float Val : Vec)
-    {
-      Sum += (Val - Mean) * (Val - Mean);
-    }
-    return sqrt(Sum / Vec.size());
   }
 
   //......................................................
@@ -769,12 +714,11 @@ namespace solar
         MatchedClusters[2].push_back(Clusters[2][ii]);
         MatchedClNHits[2].push_back(ClNHits[2][ii]);
         MatchedClT[2].push_back(ClT[2][ii]);
-        MatchedClY[2].push_back(ClY[2][ii] + (ClZ[2][ii] - ClZ[0][MatchInd0Idx]) / (ClDir[2][ii]));
+        MatchedClY[2].push_back(ClY[0][MatchInd0Idx] + (ClZ[0][MatchInd0Idx] - ClZ[2][ii]) / (ClDir[0][MatchInd0Idx]));
         MatchedClZ[2].push_back(ClZ[2][ii]);
         MatchedClCharge[2].push_back(ClCharge[2][ii]);
         MatchedClPurity[2].push_back(ClPurity[2][ii]);
         MatchedClCompleteness[2].push_back(ClCompleteness[2][ii]);
-
 
         // Fill missing cluster with empty vector
         MatchedClustersIdx[1].push_back({});
@@ -805,7 +749,7 @@ namespace solar
         MatchedClusters[2].push_back(Clusters[2][ii]);
         MatchedClNHits[2].push_back(ClNHits[2][ii]);
         MatchedClT[2].push_back(ClT[2][ii]);
-        MatchedClY[2].push_back(ClY[2][ii] + (ClZ[2][ii] - ClZ[1][MatchInd1Idx]) / (ClDir[2][ii]));
+        MatchedClY[2].push_back(ClY[1][MatchInd1Idx] + (ClZ[1][MatchInd1Idx] - ClZ[2][ii]) / (ClDir[1][MatchInd1Idx]));
         MatchedClZ[2].push_back(ClZ[2][ii]);
         MatchedClCharge[2].push_back(ClCharge[2][ii]);
         MatchedClPurity[2].push_back(ClPurity[2][ii]);
@@ -962,5 +906,23 @@ namespace solar
     ClT = MatchedClT;
     ClCharge = MatchedClCharge;
     return;
+  }
+
+  //......................................................
+  double LowEUtils::STD(const std::vector<double>& Vec)
+  {
+    if (Vec.size() == 0)
+    {
+      return 0.0;
+    }
+    double mean = std::accumulate(Vec.begin(), Vec.end(), 0.0) / Vec.size();
+    double variance = 0.0;
+
+    for (double value : Vec) {
+        variance += (value - mean) * (value - mean);
+    }
+
+    variance /= Vec.size();
+    return std::sqrt(variance);
   }
 } // namespace solar

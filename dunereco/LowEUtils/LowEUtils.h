@@ -8,8 +8,8 @@
 // @created     : Nov, 2024
 //=========================================================================================
 
-#ifndef LowETool_h
-#define LowETool_h
+#ifndef LOWEUTILS_H
+#define LOWEUTILS_H
 
 // LArSoft includes
 #include "dunecore/ProducerUtils/ProducerUtils.h"
@@ -166,15 +166,6 @@ namespace solar
             std::vector<std::vector<float>> &ClCompleteness,
             detinfo::DetectorClocksData const &clockData,
             bool debug = false);
-
-        double Sum(std::vector<double> &Vec);
-        float Sum(std::vector<float> &Vec);
-        
-        double Average(std::vector<double> &Vec);
-        float Average(std::vector<float> &Vec);
-        
-        double STD(std::vector<double> &Vec);
-        float STD(std::vector<float> &Vec);
         
         static std::vector<double> ComputeRecoY(
             int Event,
@@ -186,6 +177,8 @@ namespace solar
             std::vector<double> &IndT,
             std::vector<double> &IndDir,
             bool debug = false);
+        
+        double STD(const std::vector<double>& Vec);
 
     private:
         // From fhicl configuration

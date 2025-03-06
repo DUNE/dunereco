@@ -198,18 +198,33 @@ namespace solar
     ThisGeneratorParts.clear();
     GeneratorParticles.push_back(ThisGeneratorParts); // For each label insert empty list
 
-    auto ThisValidHanlde = evt.getValidHandle<std::vector<simb::MCTruth>>(fSignalLabel); // Get generator handle
-    art::FindManyP<simb::MCParticle> Assn(ThisValidHanlde, evt, fGEANTLabel);            // Assign labels to MCPArticles
-    producer->FillMyMaps(GeneratorParticles[0], Assn, ThisValidHanlde);                  // Fill empty list with previously assigned particles
+    auto SignalHandle = evt.getValidHandle<std::vector<simb::MCTruth>>(fSignalLabel); // Get generator handle
+    art::FindManyP<simb::MCParticle> Assn(SignalHandle, evt, fGEANTLabel);            // Assign labels to MCPArticles
+    producer->FillMyMaps(GeneratorParticles[0], Assn, SignalHandle);                  // Fill empty list with previously assigned particles
     SolarTruthInfo = SolarTruthInfo + "\n# of particles " + ProducerUtils::str(int(GeneratorParticles[0].size())) + " for " + fSignalLabel;
+
+    const simb::MCNeutrino &nue = SignalHandle->at(0).GetNeutrino();
+    SolarTruthInfo = SolarTruthInfo + "\n\tNeutrino Energy: " + ProducerUtils::str(1e3*nue.Nu().E()) + " with vertex (x,y,z) " + ProducerUtils::str(nue.Nu().Vx()) + ", " + ProducerUtils::str(nue.Nu().Vy()) + ", " + ProducerUtils::str(nue.Nu().Vz());
 
     if (GeneratorParticles[0].size() > 0)
     {
+      float eKE = 0;
+      std::string ElectronTruthInfo;
       for (std::map<int, simb::MCParticle>::iterator iter = GeneratorParticles[0].begin(); iter != GeneratorParticles[0].end(); iter++)
       {
         std::set<int> ThisGeneratorIDs = {};
         trackids.push_back(ThisGeneratorIDs);
         trackids[0].insert(iter->first);
+        int pdg = iter->second.PdgCode();
+        if (pdg == 11 && 1e3*iter->second.E()-1e3*iter->second.Mass() > eKE)
+        {
+          eKE = 1e3*iter->second.E()-1e3*iter->second.Mass();
+          ElectronTruthInfo = "\n\tMain e⁻ Energy: " + ProducerUtils::str(eKE) + "MeV with vertex (x,y,z) " + ProducerUtils::str(iter->second.EndX()) + ", " + ProducerUtils::str(iter->second.EndY()) + ", " + ProducerUtils::str(iter->second.EndZ());
+        }
+      }
+      if (eKE > 0)
+      {
+        SolarTruthInfo = SolarTruthInfo + ElectronTruthInfo;
       }
     }
     else
@@ -361,6 +376,7 @@ namespace solar
                                     std::vector<solar::LowECluster> &SolarClusters,
                                     detinfo::DetectorClocksData const &ts) const
   {
+    std::string ProduceClusterInfo;
     std::string ProduceClusterDebug;
     ProduceClusterDebug = "Producing " + ProducerUtils::str(int(Clusters.size())) + " SolarClusters";
 
@@ -387,13 +403,18 @@ namespace solar
         {
           // Retrieve the cluster from the input pointer vector
           recob::Cluster ThisCluster = *ClusterPtr[ClusterIdxVec[j]];
-          ProduceClusterDebug = ProduceClusterDebug + "\nSolarCluster " + ProducerUtils::str(i) + " has " + ProducerUtils::str(j) + " cluster ID " + ProducerUtils::str(int(ThisCluster.ID())) + " and cluster Idx " + ProducerUtils::str(ClusterIdxVec[j]);
           ClusterVec.push_back(*ClusterPtr[ClusterIdxVec[j]]);
+          ProduceClusterDebug = ProduceClusterDebug + "\nSolarCluster " + ProducerUtils::str(i) + " has " + ProducerUtils::str(j) + " cluster ID " + ProducerUtils::str(int(ThisCluster.ID())) + " and cluster Idx " + ProducerUtils::str(ClusterIdxVec[j]);
         }
       }
-
+      if ( i < 10)
+      {
+        ProduceClusterInfo = ProduceClusterInfo + "\nSolarCluster " + ProducerUtils::str(i) + " has position (t,y,z) " + ProducerUtils::str(AveragePeakTime) + ", " + ProducerUtils::str(Position[1]) + ", " + ProducerUtils::str(Position[2]);
+        ProduceClusterInfo = ProduceClusterInfo + " with total charge " + ProducerUtils::str(TotalCharge) + ", purity " + ProducerUtils::str(Purity) + " and completeness " + ProducerUtils::str(Completeness);
+      }
       SolarClusters.emplace_back(Position, TotalCharge, AveragePeakTime, Purity, Completeness, ClusterVec);
     }
+    producer->PrintInColor(ProduceClusterInfo, ProducerUtils::GetColor("green"));
     producer->PrintInColor(ProduceClusterDebug, ProducerUtils::GetColor("green"), "Debug");
   }
 } // namespace solar
