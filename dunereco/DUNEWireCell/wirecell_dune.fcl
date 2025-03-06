@@ -52,7 +52,7 @@ protodunespdata_nfsp:
         }
 
         structs: {
-            Nbit: 12 # still 12 in sp times
+            Nbit: @local::Nbit_legacy # value was still 12 in sp times
             # Define wire filter for signal processing (sp-filters.jsonnet)
             # wf('Wire_col', { sigma: 1.0 / wc.sqrtpi * std.extVar('wire_col_nsigma') }),
             wire_col_nsigma: 10.0
@@ -111,7 +111,7 @@ protodunespdata_wctsp:
         }
 
         structs: {
-            Nbit: 12 # still 12 in sp times
+            Nbit: @local::Nbit_legacy # value was still 12
             # Define wire filter for signal processing (sp-filters.jsonnet)
             # wf('Wire_col', { sigma: 1.0 / wc.sqrtpi * std.extVar('wire_col_nsigma') }),
             wire_col_nsigma: 10.0
@@ -121,8 +121,8 @@ protodunespdata_wctsp:
 
 protodunehddata_wctsp: @local::protodunespdata_wctsp
 protodunehddata_wctsp.wcls_main.configs: ["pgrapher/experiment/pdhd/wcls-sp.jsonnet"]
-protodunehddata_wctsp.wcls_main.structs.elecGain:    14 # 14 or 7.8 mV/fC (7.8 from July '24 onwards). Consider accessing through database?
-protodunehddata_wctsp.wcls_main.structs.Nbit: 14 
+protodunehddata_wctsp.wcls_main.structs.elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
+protodunehddata_wctsp.wcls_main.structs.Nbit: @local::Nbit_standard 
 
 protodunehd_nfsp:
 {
@@ -142,8 +142,8 @@ protodunehd_nfsp:
             signal_output_form: "sparse"
         }
         structs: {
-            Nbit: 14 
-            elecGain:    14 # 14 or 7.8 mV/fC
+            Nbit: @local::Nbit_standard 
+            elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
         }
     }
 }
@@ -165,9 +165,9 @@ protodunehd_nf : {
          signal_output_form: "sparse"
       }
       structs: {
-         Nbit: 14 
+         Nbit: @local::Nbit_standard 
          clock_speed: @local::protodunehd_services.DetectorClocksService.ClockSpeedTPC
-         elecGain:    14 # 14 or 7.8 mV/fC
+         elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
       }
 
    }
@@ -191,9 +191,9 @@ protodunehd_sp:
             signal_output_form: "sparse"
         }
         structs: {
-           Nbit: 14 
+           Nbit: @local::Nbit_standard 
            clock_speed: @local::protodunehd_services.DetectorClocksService.ClockSpeedTPC
-           elecGain:    14 # 14 or 7.8 mV/fC
+           elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
         }
 
     }
@@ -215,9 +215,9 @@ protodunehd_dnnsp:
             signal_output_form: "dense" # "sparse"
         }
         structs: {
-           Nbit: 14 
+           Nbit: @local::Nbit_standard 
            clock_speed: @local::protodunehd_services.DetectorClocksService.ClockSpeedTPC
-           elecGain:    14 # 14 or 7.8 mV/fC
+           elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
         }
 
     }
@@ -251,7 +251,7 @@ wirecell_protodunespmc:
         params: {
         }
         structs: {
-            Nbit: 14 
+            Nbit: @local::Nbit_standard 
             // Longitudinal diffusion constant [cm2/s]
             DL: 4.0
             // Transverse diffusion constant [cm2/s]
@@ -266,8 +266,8 @@ wirecell_protodunespmc:
 
 wirecell_protodunehdmc: @local::wirecell_protodunespmc
 wirecell_protodunehdmc.wcls_main.configs: ["pgrapher/experiment/pdhd/wcls-sim-drift-simchannel-priorSCE.jsonnet"]
-wirecell_protodunehdmc.wcls_main.structs.elecGain:    14 # 14 or 7.8 mV/fC
-wirecell_protodunehdmc.wcls_main.structs.Nbit: 14 
+wirecell_protodunehdmc.wcls_main.structs.elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
+wirecell_protodunehdmc.wcls_main.structs.Nbit: @local::Nbit_standard 
 
 wirecell_dunevd_coldbox_mc:
 {
@@ -289,7 +289,7 @@ wirecell_dunevd_coldbox_mc:
             active_cru: 'tde' // 'bde'
         }
 	structs: {
-        Nbit: 14 
+        Nbit: @local::Nbit_standard 
         # number of time samples
         nticks: @local::vdcb_crp1_top_services.DetectorPropertiesService.NumberTimeSamples
         lifetime: @local::vdcb_crp1_top_services.DetectorPropertiesService.Electronlifetime
@@ -318,7 +318,7 @@ wirecell_dunevd_coldboxcrp2_mc:
         ]
 
 	structs: {
-        Nbit: 14 
+        Nbit: @local::Nbit_standard 
         # number of time samples
         nticks: @local::vdcb_crp2_services.DetectorPropertiesService.NumberTimeSamples
         clock_speed: @local::vdcb_crp2_services.DetectorClocksService.ClockSpeedTPC
@@ -347,7 +347,7 @@ wirecell_dunevd_coldboxcrp4_mc:
         ]
 
 	structs: {
-        Nbit: 14 
+        Nbit: @local::Nbit_standard 
         # number of time samples
         nticks: @local::vdcb_crp4_services.DetectorPropertiesService.NumberTimeSamples
         clock_speed: @local::vdcb_crp4_services.DetectorClocksService.ClockSpeedTPC
@@ -385,7 +385,7 @@ wirecell_protodunevd_mc:
         params: {
         }
 	structs: {
-           Nbit: 14 
+           Nbit: @local::Nbit_standard 
            nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
            lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
            DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
@@ -420,7 +420,7 @@ wirecell_protodunevd_mc_splusn:
         params: {
         }
 	structs: {
-        Nbit: 14 
+        Nbit: @local::Nbit_standard 
         nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
         lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
         DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
@@ -448,7 +448,7 @@ wirecell_protodunevd_sim_deposplat:
         params: {
         }
 	structs: {
-        Nbit: 14 
+        Nbit: @local::Nbit_standard 
         nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
         lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
         DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
@@ -475,7 +475,7 @@ wirecell_pdhd_sim_deposplat:
         params: {
         }
 	structs: {
-        Nbit: 14
+        Nbit: @local::Nbit_standard
 	}
     }
 }
@@ -535,7 +535,7 @@ dune10kt_1x2x6_mc_nfsp:
             signal_output_form: "sparse"
         }
         structs:{
-            Nbit: 14
+            Nbit: @local::Nbit_standard
         }
     }
 }
@@ -588,7 +588,7 @@ dune10kt_1x2x2_mc_nfsp:
             signal_output_form: "sparse"
         }
         structs:{
-            Nbit: 14
+            Nbit: @local::Nbit_standard
         }
     }
 }
@@ -656,8 +656,8 @@ tpcrawdecoder_dunefd_horizdrift_1x2x6 : {
       params: {
       }
       structs: {
-          Nbit: 14
-          elecGain: 7.8 # new default since July 2024
+          Nbit: @local::Nbit_standard
+          elecGain: @local::ASICGainInMVPerFC_standard
           # number of time samples
           #nticks: @local::dunefd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns]
@@ -699,8 +699,8 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
             engine: "TbbFlow"
         }
         structs: {
-          elecGain: 7.8 # new default since July 2024
-          Nbit: 14
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
           # number of time samples
           #nticks: @local::dunefd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns]
@@ -748,8 +748,8 @@ tpcrawdecoder_dunefd_horizdrift_1x2x2 : {
       params: {
       }
       structs: {
-        elecGain: 7.8 # new default since July 2024
-        Nbit: 14
+        elecGain: @local::ASICGainInMVPerFC_standard
+        Nbit: @local::Nbit_standard
         # Longitudinal diffusion constant [cm2/s]
         DL: 4.0
         # Transverse diffusion constant [cm2/s]
@@ -806,8 +806,8 @@ tpcrawdecoder_dunefd_vertdrift_2view : {
         files_noise: "dunevd10kt-1x6x6-2view-noise-spectra-v1.json.bz2"
       }
       structs: {
-        elecGain: 7.8 # new default since July 2024
-        Nbit: 14
+        elecGain: @local::ASICGainInMVPerFC_standard
+        Nbit: @local::Nbit_standard
         # number of time samples
         nticks: @local::dunefdvd_detproperties.NumberTimeSamples
         # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -840,8 +840,8 @@ tpcrawdecoder_dunefd_vertdrift_3view: {
           files_noise: "dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2"
         }
         structs: {
-          elecGain: 7.8 # new default since July 2024
-          Nbit: 14
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -872,7 +872,7 @@ tpcrawdecoder_dunefd_vertdrift_1x8x6_3view: {
           files_noise: "dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2"
         }
         structs: {
-            Nbit: 14
+            Nbit: @local::Nbit_standard
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -903,8 +903,8 @@ tpcrawdecoder_dunefd_vertdrift_1x8x14_3view: {
           files_noise: "dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2"
         }
         structs: {
-          elecGain: 7.8 # new default since July 2024
-          Nbit: 14
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -936,8 +936,8 @@ tpcrawdecoder_dunefd_vertdrift_3view_30deg: {
           files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
         }
         structs: {
-          elecGain: 7.8 # new default since July 2024
-          Nbit: 14
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -968,8 +968,8 @@ tpcrawdecoder_dunefd_vertdrift_1x8x6_3view_30deg: {
           files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
         }
         structs: {
-          elecGain: 7.8 # new default since July 2024
-          Nbit: 14
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -1040,7 +1040,7 @@ tpcrawdecoder_iceberg_splusn : {
       params: {
       }
       structs: {
-        Nbit: 14
+        Nbit: @local::Nbit_standard
         # Longitudinal diffusion constant [cm2/s]
         DL: 4.0
         # Transverse diffusion constant [cm2/s]
@@ -1172,8 +1172,8 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_data_nfsp : {
       }
       # ext-code, code
       structs : {
-          elecGain: 7.8 # new default since July 2024
-          Nbit: 14
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
           # for nticks calculation in common/params.jsonnet: elec
           driftSpeed: 1.60563
           
@@ -1261,8 +1261,8 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_30deg_data_nfsp : {
       }
       # ext-code, code
       structs : {
-          elecGain: 7.8 # new default since July 2024
-          Nbit: 14
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
           # for nticks calculation in common/params.jsonnet: elec
           driftSpeed: 1.60563
           
@@ -1350,8 +1350,8 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_30deg_data_nfsp : {
       }
       # ext-code, code
       structs : {
-          elecGain: 7.8 # new default since July 2024
-          Nbit: 14
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
           
           # for nticks calculation in common/params.jsonnet: elec
           driftSpeed: 1.60563
@@ -1443,8 +1443,8 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_data_nfsp : {
       }
       # ext-code, code
       structs : {
-          elecGain: 7.8 # new default since July 2024
-          Nbit: 14
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
 
           # for nticks calculation in common/params.jsonnet: elec
           driftSpeed: 1.60563
@@ -1536,8 +1536,8 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_data_nfsp : {
       }
       # ext-code, code
       structs : {
-          elecGain: 7.8 # new default since July 2024
-          Nbit: 14
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
 
           # for nticks calculation in common/params.jsonnet: elec
           driftSpeed: 1.60563
@@ -1607,8 +1607,8 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
             process_crm: "full"
         }
         structs: {
-            elecGain: 7.8 # new default since July 2024
-            Nbit: 14
+            elecGain: @local::ASICGainInMVPerFC_standard
+            Nbit: @local::Nbit_standard
             # number of time samples
             nticks: @local::dunefdvd_detproperties.NumberTimeSamples
             # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -1753,7 +1753,7 @@ dune_vd_coldbox_nfsp : {
          use_magnify: "false"
       }
       structs: {
-         Nbit: 14
+         Nbit: @local::Nbit_standard
       }
    }
 }
@@ -1777,7 +1777,7 @@ dune_vd_crp2_nfsp : {
          use_magnify: "false"
       }
       structs: {
-         Nbit: 14
+         Nbit: @local::Nbit_standard
          clock_speed: @local::vdcb_crp2_services.DetectorClocksService.ClockSpeedTPC
       }
 
@@ -1803,7 +1803,7 @@ dune_vd_crp4_nfsp : {
          use_magnify: "false"
       }
       structs: {
-         Nbit: 14
+         Nbit: @local::Nbit_standard
          clock_speed: @local::vdcb_crp4_services.DetectorClocksService.ClockSpeedTPC
       }
 
@@ -1830,7 +1830,7 @@ dune_vd_crp2_nf : {
          use_magnify: "false"
       }
       structs: {
-         Nbit: 14
+         Nbit: @local::Nbit_standard
          clock_speed: @local::vdcb_crp2_services.DetectorClocksService.ClockSpeedTPC
       }
 
@@ -1857,7 +1857,7 @@ dune_vd_crp2_sp : {
          use_magnify: "false"
       }
       structs: {
-         Nbit: 14
+         Nbit: @local::Nbit_standard
          clock_speed: @local::vdcb_crp2_services.DetectorClocksService.ClockSpeedTPC
       }
 
@@ -1883,7 +1883,7 @@ protodunevd_nfsp : {
          use_magnify: "false"
       }
       structs: {
-        Nbit: 14
+        Nbit: @local::Nbit_standard
       }
    }
 }
@@ -1906,7 +1906,7 @@ protodunevd_nfspimg : {
          use_magnify: "false"
       }
       structs: {
-        Nbit: 14
+        Nbit: @local::Nbit_standard
       }
    }
 }
@@ -1929,8 +1929,8 @@ protodunehd_nfspimg : {
          use_magnify: "false"
       }
       structs: {
-         Nbit: 14
-         elecGain:    14 # 14 or 7.8 mV/fC
+         Nbit: @local::Nbit_standard
+         elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database, value changed in mid-July 2024
       }
    }
 }
@@ -1952,8 +1952,8 @@ protodunehd_img : {
          reality: "data"
       }
       structs: {
-          Nbit: 14
-         elecGain:    14 # 14 or 7.8 mV/fC
+          Nbit: @local::Nbit_standard
+         elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database, value changed in mid-July 2024
       }
    }
 }
@@ -1975,7 +1975,7 @@ protodunesp_img : {
          reality: "data"
       }
       structs: {
-          Nbit: 12 # it was still 12 in sp
+          Nbit: @local::Nbit_legacy # value was still 12
       }
    }
 }
@@ -2005,8 +2005,8 @@ dune10kt_horizdrift_sim_nfsp : {
             engine: "TbbFlow"
         }
         structs: {
-          elecGain: 7.8 # new default since July 2024
-          Nbit: 14 
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard 
           # number of time samples
           nticks: @local::dunefd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns]
