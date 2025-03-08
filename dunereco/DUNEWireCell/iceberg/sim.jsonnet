@@ -1,7 +1,7 @@
 local wc = import "wirecell.jsonnet";
 local g = import "pgraph.jsonnet";
-local f = import "pgrapher/common/funcs.jsonnet";
-local sim_maker = import "pgrapher/common/sim/nodes.jsonnet";
+local f = import "common/funcs.jsonnet";
+local sim_maker = import "common/sim/nodes.jsonnet";
 
 
 // return some nodes, includes base sim nodes.

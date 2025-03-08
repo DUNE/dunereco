@@ -29,7 +29,7 @@ protodunespdata_nfsp:
         # This sets the "main" Jsonnet file which provides the 
         # configuration for the Wire-Cell Toolkit components.  It is
         # take as relative to entries in WIRECELL_PATH.
-        configs: ["pgrapher/experiment/pdsp/wcls-nf-sp.jsonnet"]
+        configs: ["pdsp/wcls-nf-sp.jsonnet"]
 
         # Set the "external variables" required by the Jsonnet.
         params : {
@@ -52,6 +52,7 @@ protodunespdata_nfsp:
         }
 
         structs: {
+            Nbit: @local::Nbit_legacy # value was still 12 in sp times
             # Define wire filter for signal processing (sp-filters.jsonnet)
             # wf('Wire_col', { sigma: 1.0 / wc.sqrtpi * std.extVar('wire_col_nsigma') }),
             wire_col_nsigma: 10.0
@@ -85,7 +86,7 @@ protodunespdata_wctsp:
         # This sets the "main" Jsonnet file which provides the 
         # configuration for the Wire-Cell Toolkit components.  It is
         # take as relative to entries in WIRECELL_PATH.
-        configs: ["pgrapher/experiment/pdsp/wcls-sp.jsonnet"]
+        configs: ["pdsp/wcls-sp.jsonnet"]
     
         # Set the "external variables" required by the Jsonnet.
         params : {
@@ -110,6 +111,7 @@ protodunespdata_wctsp:
         }
 
         structs: {
+            Nbit: @local::Nbit_legacy # value was still 12
             # Define wire filter for signal processing (sp-filters.jsonnet)
             # wf('Wire_col', { sigma: 1.0 / wc.sqrtpi * std.extVar('wire_col_nsigma') }),
             wire_col_nsigma: 10.0
@@ -118,8 +120,9 @@ protodunespdata_wctsp:
 }
 
 protodunehddata_wctsp: @local::protodunespdata_wctsp
-protodunehddata_wctsp.wcls_main.configs: ["pgrapher/experiment/pdhd/wcls-sp.jsonnet"]
-protodunehddata_wctsp.wcls_main.structs.elecGain:    14 # 14 or 7.8 mV/fC
+protodunehddata_wctsp.wcls_main.configs: ["pdhd/wcls-sp.jsonnet"]
+protodunehddata_wctsp.wcls_main.structs.elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
+protodunehddata_wctsp.wcls_main.structs.Nbit: @local::Nbit_standard 
 
 protodunehd_nfsp:
 {
@@ -131,7 +134,7 @@ protodunehd_nfsp:
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellLarsoft"]
         inputers: ["wclsRawFrameSource"]
         outputers: ["wclsFrameSaver:spsaver"]
-        configs: ["pgrapher/experiment/pdhd/wcls-nf-sp.jsonnet"]
+        configs: ["pdhd/wcls-nf-sp.jsonnet"]
         params : {
             raw_input_label: "tpcrawdecoder:daq"
             reality: "data" # vs. "sim"
@@ -139,7 +142,8 @@ protodunehd_nfsp:
             signal_output_form: "sparse"
         }
         structs: {
-            elecGain:    14 # 14 or 7.8 mV/fC
+            Nbit: @local::Nbit_standard 
+            elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
         }
     }
 }
@@ -154,15 +158,16 @@ protodunehd_nf : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsRawFrameSource"]
       outputers: ["wclsFrameSaver:nfsaver"]
-      configs: ["pgrapher/experiment/pdhd/wcls-nf.jsonnet"]
+      configs: ["pdhd/wcls-nf.jsonnet"]
       params : {
          raw_input_label: "tpcrawdecoder:daq" # "caldata:dataprep"
          reality: "data"
          signal_output_form: "sparse"
       }
       structs: {
+         Nbit: @local::Nbit_standard 
          clock_speed: @local::protodunehd_services.DetectorClocksService.ClockSpeedTPC
-         elecGain:    14 # 14 or 7.8 mV/fC
+         elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
       }
 
    }
@@ -178,7 +183,7 @@ protodunehd_sp:
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellLarsoft"]
         inputers: ["wclsRawFrameSource"]
         outputers: ["wclsFrameSaver:spsaver"]
-        configs: ["pgrapher/experiment/pdhd/wcls-rawdigit-sp.jsonnet"]
+        configs: ["pdhd/wcls-rawdigit-sp.jsonnet"]
         params : {
             raw_input_label: "wclsdatahdfilter:raw"
             reality: "data" # vs. "sim"
@@ -186,8 +191,9 @@ protodunehd_sp:
             signal_output_form: "sparse"
         }
         structs: {
+           Nbit: @local::Nbit_standard 
            clock_speed: @local::protodunehd_services.DetectorClocksService.ClockSpeedTPC
-           elecGain:    14 # 14 or 7.8 mV/fC
+           elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
         }
 
     }
@@ -202,15 +208,16 @@ protodunehd_dnnsp:
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellRoot","WireCellLarsoft","WireCellHio","WireCellTbb","WireCellImg","WireCellPytorch"]
         inputers: ["wclsRawFrameSource"]
         outputers: ["wclsFrameSaver:spsaver", "wclsFrameSaver:dnnsaver"]
-        configs: ["pgrapher/experiment/pdhd/wcls-rawdigit-dnnsp.jsonnet"]
+        configs: ["pdhd/wcls-rawdigit-dnnsp.jsonnet"]
         params : {
             raw_input_label: "wclsdatahdfilter:raw"
             reality: "data" # vs. "sim"
             signal_output_form: "dense" # "sparse"
         }
         structs: {
+           Nbit: @local::Nbit_standard 
            clock_speed: @local::protodunehd_services.DetectorClocksService.ClockSpeedTPC
-           elecGain:    14 # 14 or 7.8 mV/fC
+           elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
         }
 
     }
@@ -227,8 +234,8 @@ wirecell_protodunespmc:
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellLarsoft"]
 
         // needs to be found via your WIRECELL_PATH 
-        # configs: ["pgrapher/experiment/pdsp/wcls-sim-drift-simchannel.jsonnet"]
-        configs: ["pgrapher/experiment/pdsp/wcls-sim-drift-simchannel-priorSCE.jsonnet"]
+        # configs: ["pdsp/wcls-sim-drift-simchannel.jsonnet"]
+        configs: ["pdsp/wcls-sim-drift-simchannel-priorSCE.jsonnet"]
 
 
         // Contract note: these exact "type:name" must be used to identify
@@ -244,6 +251,7 @@ wirecell_protodunespmc:
         params: {
         }
         structs: {
+            Nbit: @local::Nbit_standard 
             // Longitudinal diffusion constant [cm2/s]
             DL: 4.0
             // Transverse diffusion constant [cm2/s]
@@ -257,8 +265,9 @@ wirecell_protodunespmc:
 }
 
 wirecell_protodunehdmc: @local::wirecell_protodunespmc
-wirecell_protodunehdmc.wcls_main.configs: ["pgrapher/experiment/pdhd/wcls-sim-drift-simchannel-priorSCE.jsonnet"]
-wirecell_protodunehdmc.wcls_main.structs.elecGain:    14 # 14 or 7.8 mV/fC
+wirecell_protodunehdmc.wcls_main.configs: ["pdhd/wcls-sim-drift-simchannel-priorSCE.jsonnet"]
+wirecell_protodunehdmc.wcls_main.structs.elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
+wirecell_protodunehdmc.wcls_main.structs.Nbit: @local::Nbit_standard 
 
 wirecell_dunevd_coldbox_mc:
 {
@@ -268,7 +277,7 @@ wirecell_dunevd_coldbox_mc:
         apps: ["Pgrapher"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"]
         // needs to be found via your WIRECELL_PATH 
-        configs: ["pgrapher/experiment/dune-vd-coldbox/wcls-sim-drift-simchannel.jsonnet"]
+        configs: ["dune-vd-coldbox/wcls-sim-drift-simchannel.jsonnet"]
         inputers: ["wclsSimDepoSource:electron"]
         outputers: [
             "wclsSimChannelSink:postdrift",
@@ -280,13 +289,14 @@ wirecell_dunevd_coldbox_mc:
             active_cru: 'tde' // 'bde'
         }
 	structs: {
-           # number of time samples
-           nticks: @local::vdcb_crp1_top_services.DetectorPropertiesService.NumberTimeSamples
-	   lifetime: @local::vdcb_crp1_top_services.DetectorPropertiesService.Electronlifetime
-	   DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
-	   DT: @local::dunefd_largeantparameters.TransverseDiffusion
-           efield: @local::vdcb_crp1_top_services.DetectorPropertiesService.Efield[0] # kV/cm
-           temperature: @local::vdcb_services.DetectorPropertiesService.Temperature # K
+        Nbit: @local::Nbit_standard 
+        # number of time samples
+        nticks: @local::vdcb_crp1_top_services.DetectorPropertiesService.NumberTimeSamples
+        lifetime: @local::vdcb_crp1_top_services.DetectorPropertiesService.Electronlifetime
+        DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+        DT: @local::dunefd_largeantparameters.TransverseDiffusion
+        efield: @local::vdcb_crp1_top_services.DetectorPropertiesService.Efield[0] # kV/cm
+        temperature: @local::vdcb_services.DetectorPropertiesService.Temperature # K
 	}
     }
 }
@@ -300,7 +310,7 @@ wirecell_dunevd_coldboxcrp2_mc:
         apps: ["Pgrapher"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"]
         // needs to be found via your WIRECELL_PATH 
-        configs: ["pgrapher/experiment/dunevd-crp2/wcls-sim-drift-simchannel.jsonnet"]
+        configs: ["dunevd-crp2/wcls-sim-drift-simchannel.jsonnet"]
         inputers: ["wclsSimDepoSource:electron"]
         outputers: [
             "wclsSimChannelSink:postdrift",
@@ -308,14 +318,15 @@ wirecell_dunevd_coldboxcrp2_mc:
         ]
 
 	structs: {
-           # number of time samples
-           nticks: @local::vdcb_crp2_services.DetectorPropertiesService.NumberTimeSamples
-           clock_speed: @local::vdcb_crp2_services.DetectorClocksService.ClockSpeedTPC
-	   lifetime: @local::vdcb_crp2_services.DetectorPropertiesService.Electronlifetime
-	   DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
-	   DT: @local::dunefd_largeantparameters.TransverseDiffusion
-           efield: @local::vdcb_crp2_services.DetectorPropertiesService.Efield[0] # kV/cm
-           temperature: @local::vdcb_services.DetectorPropertiesService.Temperature # K
+        Nbit: @local::Nbit_standard 
+        # number of time samples
+        nticks: @local::vdcb_crp2_services.DetectorPropertiesService.NumberTimeSamples
+        clock_speed: @local::vdcb_crp2_services.DetectorClocksService.ClockSpeedTPC
+        lifetime: @local::vdcb_crp2_services.DetectorPropertiesService.Electronlifetime
+        DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+        DT: @local::dunefd_largeantparameters.TransverseDiffusion
+        efield: @local::vdcb_crp2_services.DetectorPropertiesService.Efield[0] # kV/cm
+        temperature: @local::vdcb_services.DetectorPropertiesService.Temperature # K
 	}
     }
 }
@@ -328,7 +339,7 @@ wirecell_dunevd_coldboxcrp4_mc:
         apps: ["Pgrapher"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"]
         // needs to be found via your WIRECELL_PATH 
-        configs: ["pgrapher/experiment/dunevd-crp4/wcls-sim-drift-simchannel.jsonnet"]
+        configs: ["dunevd-crp4/wcls-sim-drift-simchannel.jsonnet"]
         inputers: ["wclsSimDepoSource:electron"]
         outputers: [
             "wclsSimChannelSink:postdrift",
@@ -336,14 +347,15 @@ wirecell_dunevd_coldboxcrp4_mc:
         ]
 
 	structs: {
-           # number of time samples
-           nticks: @local::vdcb_crp4_services.DetectorPropertiesService.NumberTimeSamples
-           clock_speed: @local::vdcb_crp4_services.DetectorClocksService.ClockSpeedTPC
-	   lifetime: @local::vdcb_crp4_services.DetectorPropertiesService.Electronlifetime
-	   DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
-	   DT: @local::dunefd_largeantparameters.TransverseDiffusion
-           efield: @local::vdcb_crp4_services.DetectorPropertiesService.Efield[0] # kV/cm
-           temperature: @local::vdcb_services.DetectorPropertiesService.Temperature # K
+        Nbit: @local::Nbit_standard 
+        # number of time samples
+        nticks: @local::vdcb_crp4_services.DetectorPropertiesService.NumberTimeSamples
+        clock_speed: @local::vdcb_crp4_services.DetectorClocksService.ClockSpeedTPC
+        lifetime: @local::vdcb_crp4_services.DetectorPropertiesService.Electronlifetime
+        DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+        DT: @local::dunefd_largeantparameters.TransverseDiffusion
+        efield: @local::vdcb_crp4_services.DetectorPropertiesService.Efield[0] # kV/cm
+        temperature: @local::vdcb_services.DetectorPropertiesService.Temperature # K
 	}
     }
 }
@@ -362,7 +374,7 @@ wirecell_protodunevd_mc:
         loglevels: ["debug"]
 
         // needs to be found via your WIRECELL_PATH 
-        configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-simchannel.jsonnet"]
+        configs: ["protodunevd/wcls-sim-drift-simchannel.jsonnet"]
         inputers: ["wclsSimDepoSource:electron"]
         outputers: [
             "wclsSimChannelSink:postdrift",
@@ -373,6 +385,7 @@ wirecell_protodunevd_mc:
         params: {
         }
 	structs: {
+           Nbit: @local::Nbit_standard 
            nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
            lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
            DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
@@ -395,7 +408,7 @@ wirecell_protodunevd_mc_splusn:
         loglevels: ["debug"]
 
         // needs to be found via your WIRECELL_PATH 
-        configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-simchannel-splusn.jsonnet"]
+        configs: ["protodunevd/wcls-sim-drift-simchannel-splusn.jsonnet"]
         inputers: ["wclsSimDepoSource:electron"]
         outputers: [
            "wclsSimChannelSink:postdrift",
@@ -407,12 +420,13 @@ wirecell_protodunevd_mc_splusn:
         params: {
         }
 	structs: {
-           nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
-           lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
-           DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
-           DT: @local::dunefd_largeantparameters.TransverseDiffusion
-           efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
-           temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
+        Nbit: @local::Nbit_standard 
+        nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
+        lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
+        DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+        DT: @local::dunefd_largeantparameters.TransverseDiffusion
+        efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
+        temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
 	}
     }
 }
@@ -425,7 +439,7 @@ wirecell_protodunevd_sim_deposplat:
         tool_type: WCLS
         apps: ["Pgrapher"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellRoot","WireCellLarsoft","WireCellHio","WireCellTbb","WireCellImg","WireCellPytorch"]
-        configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-deposplat.jsonnet"]
+        configs: ["protodunevd/wcls-sim-drift-deposplat.jsonnet"]
         inputers: ["wclsSimDepoSource:"]
         outputers: [
             // "wclsSimChannelSink:postdrift",
@@ -434,12 +448,13 @@ wirecell_protodunevd_sim_deposplat:
         params: {
         }
 	structs: {
-           nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
-           lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
-           DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
-           DT: @local::dunefd_largeantparameters.TransverseDiffusion
-           efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
-           temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
+        Nbit: @local::Nbit_standard 
+        nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
+        lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
+        DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+        DT: @local::dunefd_largeantparameters.TransverseDiffusion
+        efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
+        temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
 	}
     }
 }
@@ -451,7 +466,7 @@ wirecell_pdhd_sim_deposplat:
         tool_type: WCLS
         apps: ["Pgrapher"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellRoot","WireCellLarsoft","WireCellHio","WireCellTbb","WireCellImg","WireCellPytorch"]
-        configs: ["pgrapher/experiment/pdhd/wcls-sim-drift-deposplat.jsonnet"]
+        configs: ["pdhd/wcls-sim-drift-deposplat.jsonnet"]
         inputers: ["wclsSimDepoSource:"]
         outputers: [
             // "wclsSimChannelSink:postdrift",
@@ -460,6 +475,7 @@ wirecell_pdhd_sim_deposplat:
         params: {
         }
 	structs: {
+        Nbit: @local::Nbit_standard
 	}
     }
 }
@@ -497,7 +513,7 @@ dune10kt_1x2x6_mc_nfsp:
         # This sets the "main" Jsonnet file which provides the 
         # configuration for the Wire-Cell Toolkit components.  It is
         # take as relative to entries in WIRECELL_PATH.
-        configs: ["pgrapher/experiment/dune10kt-1x2x6/wcls-nf-sp.jsonnet"]
+        configs: ["dune10kt-1x2x6/wcls-nf-sp.jsonnet"]
 
         # Set the "external variables" required by the Jsonnet.
         params : {
@@ -517,6 +533,9 @@ dune10kt_1x2x6_mc_nfsp:
 
             # Save output signal waveforms (recob::Wire) in "sparse" or "dense" form
             signal_output_form: "sparse"
+        }
+        structs:{
+            Nbit: @local::Nbit_standard
         }
     }
 }
@@ -547,7 +566,7 @@ dune10kt_1x2x2_mc_nfsp:
         # This sets the "main" Jsonnet file which provides the 
         # configuration for the Wire-Cell Toolkit components.  It is
         # take as relative to entries in WIRECELL_PATH.
-        configs: ["pgrapher/experiment/dune10kt-1x2x2/wcls-nf-sp.jsonnet"]
+        configs: ["dune10kt-1x2x2/wcls-nf-sp.jsonnet"]
 
         # Set the "external variables" required by the Jsonnet.
         params : {
@@ -567,6 +586,9 @@ dune10kt_1x2x2_mc_nfsp:
 
             # Save output signal waveforms (recob::Wire) in "sparse" or "dense" form
             signal_output_form: "sparse"
+        }
+        structs:{
+            Nbit: @local::Nbit_standard
         }
     }
 }
@@ -618,7 +640,7 @@ tpcrawdecoder_dunefd_horizdrift_1x2x6 : {
       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
 
       // needs to be found via your WIRECELL_PATH
-      configs: ["pgrapher/experiment/dune10kt-1x2x6/wcls-sim-drift-simchannel.jsonnet"]
+      configs: ["dune10kt-1x2x6/wcls-sim-drift-simchannel.jsonnet"]
 
 
       // Contract note: these exact "type:name" must be used to identify
@@ -634,6 +656,8 @@ tpcrawdecoder_dunefd_horizdrift_1x2x6 : {
       params: {
       }
       structs: {
+          Nbit: @local::Nbit_standard
+          elecGain: @local::ASICGainInMVPerFC_standard
           # number of time samples
           #nticks: @local::dunefd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns]
@@ -661,7 +685,7 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
         loglevels: ["debug"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
         # needs to be found via your WIRECELL_PATH
-        configs: ["pgrapher/experiment/dune10kt-1x2x6/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
+        configs: ["dune10kt-1x2x6/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
         # Contract note: these exact "type:name" must be used to identify
         # the configuration data structures for these components in the Jsonnet.
         inputers: ["wclsSimDepoSource:"]
@@ -675,6 +699,8 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
             engine: "TbbFlow"
         }
         structs: {
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
           # number of time samples
           #nticks: @local::dunefd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns]
@@ -706,7 +732,7 @@ tpcrawdecoder_dunefd_horizdrift_1x2x2 : {
       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
 
       // needs to be found via your WIRECELL_PATH
-      configs: ["pgrapher/experiment/dune10kt-1x2x2/wcls-sim-drift-simchannel-splusn.jsonnet"]
+      configs: ["dune10kt-1x2x2/wcls-sim-drift-simchannel-splusn.jsonnet"]
 
 
       // Contract note: these exact "type:name" must be used to identify
@@ -722,6 +748,8 @@ tpcrawdecoder_dunefd_horizdrift_1x2x2 : {
       params: {
       }
       structs: {
+        elecGain: @local::ASICGainInMVPerFC_standard
+        Nbit: @local::Nbit_standard
         # Longitudinal diffusion constant [cm2/s]
         DL: 4.0
         # Transverse diffusion constant [cm2/s]
@@ -751,7 +779,7 @@ tpcrawdecoder_dunefd_vertdrift_2view : {
       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
 
       // needs to be found via your WIRECELL_PATH
-      configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel.jsonnet"]
+      configs: ["dune-vd/wcls-sim-drift-simchannel.jsonnet"]
 
 
       // Contract note: these exact "type:name" must be used to identify
@@ -778,6 +806,8 @@ tpcrawdecoder_dunefd_vertdrift_2view : {
         files_noise: "dunevd10kt-1x6x6-2view-noise-spectra-v1.json.bz2"
       }
       structs: {
+        elecGain: @local::ASICGainInMVPerFC_standard
+        Nbit: @local::Nbit_standard
         # number of time samples
         nticks: @local::dunefdvd_detproperties.NumberTimeSamples
         # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -810,6 +840,8 @@ tpcrawdecoder_dunefd_vertdrift_3view: {
           files_noise: "dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2"
         }
         structs: {
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -840,6 +872,7 @@ tpcrawdecoder_dunefd_vertdrift_1x8x6_3view: {
           files_noise: "dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2"
         }
         structs: {
+            Nbit: @local::Nbit_standard
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -870,6 +903,8 @@ tpcrawdecoder_dunefd_vertdrift_1x8x14_3view: {
           files_noise: "dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2"
         }
         structs: {
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -901,6 +936,8 @@ tpcrawdecoder_dunefd_vertdrift_3view_30deg: {
           files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
         }
         structs: {
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -931,6 +968,8 @@ tpcrawdecoder_dunefd_vertdrift_1x8x6_3view_30deg: {
           files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
         }
         structs: {
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
           # number of time samples
           nticks: @local::dunefdvd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -959,7 +998,7 @@ tpcrawdecoder_iceberg : {
       logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
       loglevels: ["debug"]
       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
-      configs: ["pgrapher/experiment/iceberg/wcls-sim-drift-simchannel.jsonnet"]
+      configs: ["iceberg/wcls-sim-drift-simchannel.jsonnet"]
       inputers: ["wclsSimDepoSource:"]
       outputers: [
          "wclsSimChannelSink:postdrift",
@@ -991,7 +1030,7 @@ tpcrawdecoder_iceberg_splusn : {
       logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
       loglevels: ["debug"]
       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
-      configs: ["pgrapher/experiment/iceberg/wcls-sim-drift-simchannel-splusn.jsonnet"]
+      configs: ["iceberg/wcls-sim-drift-simchannel-splusn.jsonnet"]
       inputers: ["wclsSimDepoSource:"]
       outputers: [
          "wclsSimChannelSink:postdrift",
@@ -1001,6 +1040,7 @@ tpcrawdecoder_iceberg_splusn : {
       params: {
       }
       structs: {
+        Nbit: @local::Nbit_standard
         # Longitudinal diffusion constant [cm2/s]
         DL: 4.0
         # Transverse diffusion constant [cm2/s]
@@ -1029,7 +1069,7 @@ iceberg_wctnfsp:
                ]
         outputers: ["wclsFrameSaver:spsaver"]
         
-        configs: ["pgrapher/experiment/iceberg/wcls-nf-sp.jsonnet"]
+        configs: ["iceberg/wcls-nf-sp.jsonnet"]
     
         params : {
             raw_input_label: "tpcrawdecoder:daq"
@@ -1091,7 +1131,7 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_data_nfsp : {
       # This sets the "main" Jsonnet file which provides the 
       # configuration for the Wire-Cell Toolkit components.  It is
       # take as relative to entries in WIRECELL_PATH.
-      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
+      configs: ["dune-vd/wcls-nf-sp.jsonnet"]
 
       # Set the "external variables" required by the Jsonnet.
       # ext-var, string
@@ -1132,6 +1172,8 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_data_nfsp : {
       }
       # ext-code, code
       structs : {
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
           # for nticks calculation in common/params.jsonnet: elec
           driftSpeed: 1.60563
           
@@ -1181,7 +1223,7 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_30deg_data_nfsp : {
       # This sets the "main" Jsonnet file which provides the 
       # configuration for the Wire-Cell Toolkit components.  It is
       # take as relative to entries in WIRECELL_PATH.
-      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
+      configs: ["dune-vd/wcls-nf-sp.jsonnet"]
 
       # Set the "external variables" required by the Jsonnet.
       # ext-var, string
@@ -1219,6 +1261,8 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_30deg_data_nfsp : {
       }
       # ext-code, code
       structs : {
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
           # for nticks calculation in common/params.jsonnet: elec
           driftSpeed: 1.60563
           
@@ -1268,7 +1312,7 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_30deg_data_nfsp : {
       # This sets the "main" Jsonnet file which provides the 
       # configuration for the Wire-Cell Toolkit components.  It is
       # take as relative to entries in WIRECELL_PATH.
-      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
+      configs: ["dune-vd/wcls-nf-sp.jsonnet"]
 
       # Set the "external variables" required by the Jsonnet.
       # ext-var, string
@@ -1306,6 +1350,9 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_30deg_data_nfsp : {
       }
       # ext-code, code
       structs : {
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
+          
           # for nticks calculation in common/params.jsonnet: elec
           driftSpeed: 1.60563
           
@@ -1355,7 +1402,7 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_data_nfsp : {
       # This sets the "main" Jsonnet file which provides the 
       # configuration for the Wire-Cell Toolkit components.  It is
       # take as relative to entries in WIRECELL_PATH.
-      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
+      configs: ["dune-vd/wcls-nf-sp.jsonnet"]
 
       # Set the "external variables" required by the Jsonnet.
       # ext-var, string
@@ -1396,6 +1443,9 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_data_nfsp : {
       }
       # ext-code, code
       structs : {
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
+
           # for nticks calculation in common/params.jsonnet: elec
           driftSpeed: 1.60563
           
@@ -1445,7 +1495,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_data_nfsp : {
       # This sets the "main" Jsonnet file which provides the 
       # configuration for the Wire-Cell Toolkit components.  It is
       # take as relative to entries in WIRECELL_PATH.
-      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
+      configs: ["dune-vd/wcls-nf-sp.jsonnet"]
 
       # Set the "external variables" required by the Jsonnet.
       # ext-var, string
@@ -1486,6 +1536,9 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_data_nfsp : {
       }
       # ext-code, code
       structs : {
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard
+
           # for nticks calculation in common/params.jsonnet: elec
           driftSpeed: 1.60563
           
@@ -1522,7 +1575,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
         ]
 
         // needs to be found via your WIRECELL_PATH
-        configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
+        configs: ["dune-vd/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
 
 
         // Contract note: these exact "type:name" must be used to identify
@@ -1554,6 +1607,8 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
             process_crm: "full"
         }
         structs: {
+            elecGain: @local::ASICGainInMVPerFC_standard
+            Nbit: @local::Nbit_standard
             # number of time samples
             nticks: @local::dunefdvd_detproperties.NumberTimeSamples
             # Longitudinal diffusion constant [cm2/ns] 4.0e-9
@@ -1676,7 +1731,7 @@ dune_vd_coldbox_nfsp : {
       ]
       # outputers: ["wclsFrameSaver:nfsaver", "wclsFrameSaver:spsaver"]
       outputers: ["wclsFrameSaver:spsaver"]
-      configs: ["pgrapher/experiment/dune-vd-coldbox/wcls-nf-sp.jsonnet"]
+      configs: ["dune-vd-coldbox/wcls-nf-sp.jsonnet"]
       params : {
          # raw_input_label: "tpcrawdecoder:daq"
          raw_input_label: "caldata:dataprep"
@@ -1697,6 +1752,9 @@ dune_vd_coldbox_nfsp : {
 
          use_magnify: "false"
       }
+      structs: {
+         Nbit: @local::Nbit_standard
+      }
    }
 }
 
@@ -1710,7 +1768,7 @@ dune_vd_crp2_nfsp : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsRawFrameSource"]
       outputers: ["wclsFrameSaver:spsaver"]
-      configs: ["pgrapher/experiment/dunevd-crp2/wcls-nf-sp.jsonnet"]
+      configs: ["dunevd-crp2/wcls-nf-sp.jsonnet"]
       params : {
          raw_input_label: "caldata:dataprep"
          reality: "data"
@@ -1719,6 +1777,7 @@ dune_vd_crp2_nfsp : {
          use_magnify: "false"
       }
       structs: {
+         Nbit: @local::Nbit_standard
          clock_speed: @local::vdcb_crp2_services.DetectorClocksService.ClockSpeedTPC
       }
 
@@ -1735,7 +1794,7 @@ dune_vd_crp4_nfsp : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsRawFrameSource"]
       outputers: ["wclsFrameSaver:spsaver"]
-      configs: ["pgrapher/experiment/dunevd-crp4/wcls-nf-sp.jsonnet"]
+      configs: ["dunevd-crp4/wcls-nf-sp.jsonnet"]
       params : {
          raw_input_label: "caldata:dataprep"
          reality: "data"
@@ -1744,6 +1803,7 @@ dune_vd_crp4_nfsp : {
          use_magnify: "false"
       }
       structs: {
+         Nbit: @local::Nbit_standard
          clock_speed: @local::vdcb_crp4_services.DetectorClocksService.ClockSpeedTPC
       }
 
@@ -1761,7 +1821,7 @@ dune_vd_crp2_nf : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsRawFrameSource"]
       outputers: ["wclsFrameSaver:nfsaver"]
-      configs: ["pgrapher/experiment/dunevd-crp2/wcls-nf.jsonnet"]
+      configs: ["dunevd-crp2/wcls-nf.jsonnet"]
       params : {
          raw_input_label: "caldata:dataprep"
          reality: "data"
@@ -1770,6 +1830,7 @@ dune_vd_crp2_nf : {
          use_magnify: "false"
       }
       structs: {
+         Nbit: @local::Nbit_standard
          clock_speed: @local::vdcb_crp2_services.DetectorClocksService.ClockSpeedTPC
       }
 
@@ -1787,7 +1848,7 @@ dune_vd_crp2_sp : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsCookedFrameSource"]
       outputers: ["wclsFrameSaver:spsaver"]
-      configs: ["pgrapher/experiment/dunevd-crp2/wcls-sp.jsonnet"]
+      configs: ["dunevd-crp2/wcls-sp.jsonnet"]
       params : {
          raw_input_label: "caldata:dataprep"
          reality: "data"
@@ -1796,6 +1857,7 @@ dune_vd_crp2_sp : {
          use_magnify: "false"
       }
       structs: {
+         Nbit: @local::Nbit_standard
          clock_speed: @local::vdcb_crp2_services.DetectorClocksService.ClockSpeedTPC
       }
 
@@ -1812,13 +1874,16 @@ protodunevd_nfsp : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsRawFrameSource"]
       outputers: ["wclsFrameSaver:spsaver"]
-      configs: ["pgrapher/experiment/protodunevd/wcls-nf-sp.jsonnet"]
+      configs: ["protodunevd/wcls-nf-sp.jsonnet"]
       params : {
          raw_input_label: "tpcrawdecoder:daq"
          reality: "data"
          epoch: "after"
          signal_output_form: "sparse"
          use_magnify: "false"
+      }
+      structs: {
+        Nbit: @local::Nbit_standard
       }
    }
 }
@@ -1833,12 +1898,15 @@ protodunevd_nfspimg : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellImg", "WireCellSio", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsRawFrameSource"]
       outputers: [ ]
-      configs: ["pgrapher/experiment/protodunevd/wcls-nf-sp-img.jsonnet"]
+      configs: ["protodunevd/wcls-nf-sp-img.jsonnet"]
       params : {
          raw_input_label: "tpcrawdecoder:daq"
          reality: "data"
          signal_output_form: "dense"
          use_magnify: "false"
+      }
+      structs: {
+        Nbit: @local::Nbit_standard
       }
    }
 }
@@ -1853,7 +1921,7 @@ protodunehd_nfspimg : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellImg", "WireCellSio", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsRawFrameSource"]
       outputers: [ ]
-      configs: ["pgrapher/experiment/pdhd/wcls-nf-sp-img.jsonnet"]
+      configs: ["pdhd/wcls-nf-sp-img.jsonnet"]
       params : {
          raw_input_label: "tpcrawdecoder:daq"
          reality: "data"
@@ -1861,7 +1929,8 @@ protodunehd_nfspimg : {
          use_magnify: "false"
       }
       structs: {
-         elecGain:    14 # 14 or 7.8 mV/fC
+         Nbit: @local::Nbit_standard
+         elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database, value changed in mid-July 2024
       }
    }
 }
@@ -1876,14 +1945,15 @@ protodunehd_img : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellImg", "WireCellSio", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsCookedFrameSource:charge", "wclsCookedFrameSource:wiener"]
       outputers: [ ]
-      configs: ["pgrapher/experiment/pdhd/wcls-img.jsonnet"]
+      configs: ["pdhd/wcls-img.jsonnet"]
       params : {
          charge_input_label: "wclsdatahd:gauss"
          wiener_input_label: "wclsdatahd:wiener"
          reality: "data"
       }
       structs: {
-         elecGain:    14 # 14 or 7.8 mV/fC
+          Nbit: @local::Nbit_standard
+         elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database, value changed in mid-July 2024
       }
    }
 }
@@ -1898,11 +1968,14 @@ protodunesp_img : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellImg", "WireCellSio", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsCookedFrameSource:charge", "wclsCookedFrameSource:wiener"]
       outputers: [ ]
-      configs: ["pgrapher/experiment/pdsp/wcls-img.jsonnet"]
+      configs: ["pdsp/wcls-img.jsonnet"]
       params : {
          charge_input_label: "wclsdatasp:gauss"
          wiener_input_label: "wclsdatasp:wiener"
          reality: "data"
+      }
+      structs: {
+          Nbit: @local::Nbit_legacy # value was still 12
       }
    }
 }
@@ -1918,7 +1991,7 @@ dune10kt_horizdrift_sim_nfsp : {
         loglevels: ["debug"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
         # needs to be found via your WIRECELL_PATH
-        configs: ["pgrapher/experiment/dune10kt-hd/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
+        configs: ["dune10kt-hd/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
         # Contract note: these exact "type:name" must be used to identify
         # the configuration data structures for these components in the Jsonnet.
         inputers: ["wclsSimDepoSource:"]
@@ -1932,6 +2005,8 @@ dune10kt_horizdrift_sim_nfsp : {
             engine: "TbbFlow"
         }
         structs: {
+          elecGain: @local::ASICGainInMVPerFC_standard
+          Nbit: @local::Nbit_standard 
           # number of time samples
           nticks: @local::dunefd_detproperties.NumberTimeSamples
           # Longitudinal diffusion constant [cm2/ns]

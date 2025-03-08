@@ -3,7 +3,7 @@
 local g = import 'pgraph.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-local spfilt = import 'pgrapher/experiment/protodunevd/sp-filters.jsonnet';
+local spfilt = import 'protodunevd/sp-filters.jsonnet';
 
 function(params, tools, override = {}) {
 
@@ -40,7 +40,7 @@ function(params, tools, override = {}) {
        *  Associated tuning in sp-filters.jsonnet
        */
 
-      local resolution = params.adc.resolution,
+      local resolution = params.adc.resolution, 
       local fullscale = if anode.data.ident < 4
                         then params.adc.fullscale[1] - params.adc.fullscale[0]
                         else 2.0*wc.volt,

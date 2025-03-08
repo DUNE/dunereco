@@ -1,14 +1,14 @@
 # usage: wire-cell -l stdout wct-sim-check.jsonnet
 
 local g = import 'pgraph.jsonnet';
-local f = import 'pgrapher/common/funcs.jsonnet';
-local util = import 'pgrapher/experiment/pdhd/funcs.jsonnet';
+local f = import 'common/funcs.jsonnet';
+local util = import 'pdhd/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-local io = import 'pgrapher/common/fileio.jsonnet';
-local tools_maker = import 'pgrapher/common/tools.jsonnet';
+local io = import 'common/fileio.jsonnet';
+local tools_maker = import 'common/tools.jsonnet';
 
-local params = import 'pgrapher/experiment/pdhd/simparams.jsonnet';
+local params = import 'pdhd/simparams.jsonnet';
 
 // local tools = tools_maker(params);
 local btools = tools_maker(params);
@@ -17,7 +17,7 @@ local tools = btools {
     // anodes : [btools.anodes[0], btools.anodes[1], ],
 };
 
-local sim_maker = import 'pgrapher/experiment/pdhd/sim.jsonnet';
+local sim_maker = import 'pdhd/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local nanodes = std.length(tools.anodes);
@@ -42,8 +42,8 @@ local bagger = [sim.make_bagger("bagger%d"%n) for n in anode_iota];
 //local sn_pipes = sim.signal_pipelines;
 local sn_pipes = sim.splusn_pipelines;
 
-// local perfect = import 'pgrapher/experiment/pdhd/chndb-perfect.jsonnet';
-local base = import 'pgrapher/experiment/pdhd/chndb-base.jsonnet';
+// local perfect = import 'pdhd/chndb-perfect.jsonnet';
+local base = import 'pdhd/chndb-base.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
@@ -52,16 +52,16 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field],  // pnode extension
 } for n in anode_iota];
 
-//local chndb_maker = import 'pgrapher/experiment/pdhd/chndb.jsonnet';
+//local chndb_maker = import 'pdhd/chndb.jsonnet';
 //local noise_epoch = "perfect";
 //local noise_epoch = "after";
 //local chndb_pipes = [chndb_maker(params, tools.anodes[n], tools.fields[n]).wct(noise_epoch)
 //                for n in std.range(0, std.length(tools.anodes)-1)];
-local nf_maker = import 'pgrapher/experiment/pdhd/nf.jsonnet';
+local nf_maker = import 'pdhd/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb_pipes[n]) for n in std.range(0, std.length(tools.anodes)-1)];
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in anode_iota];
 
-local sp_maker = import 'pgrapher/experiment/pdhd/sp.jsonnet';
+local sp_maker = import 'pdhd/sp.jsonnet';
 // local sp = sp_maker(params, tools, { sparse: true, });
 local sp = sp_maker(params, tools, { sparse: true, use_roi_debug_mode: true, use_multi_plane_protection: true, mp_tick_resolution: 4, });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
@@ -71,7 +71,7 @@ local deposplats = [util.splat(params, tools, tools.anodes[n]) for n in anode_io
 
 local rng = tools.random;
 local magoutput = 'pdhd-sim-check-deposplat.root';
-local magnify = import 'pgrapher/experiment/pdhd/magnify-sinks.jsonnet';
+local magnify = import 'pdhd/magnify-sinks.jsonnet';
 local magnifyio = magnify(tools, magoutput);
 
 local hio_truth = [g.pnode({
@@ -179,7 +179,7 @@ local rio_sp = [g.pnode({
     ];
 
 // Note: better switch to layers
-local dnnroi = import 'pgrapher/experiment/pdhd/dnnroi.jsonnet';
+local dnnroi = import 'pdhd/dnnroi.jsonnet';
 local ts = {
     type: "TorchService",
     name: "dnnroi",

@@ -13,8 +13,8 @@ local g = import 'pgraph.jsonnet';
 local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
 
 
-local data_params = import 'pgrapher/experiment/pdhd/params.jsonnet';
-local simu_params = import 'pgrapher/experiment/pdhd/simparams.jsonnet';
+local data_params = import 'pdhd/params.jsonnet';
+local simu_params = import 'pdhd/simparams.jsonnet';
 local base = if reality == 'data' then data_params else simu_params;
 local params = base {
     daq: super.daq {
@@ -22,16 +22,16 @@ local params = base {
     },
 };
 
-local tools_maker = import 'pgrapher/common/tools.jsonnet';
+local tools_maker = import 'common/tools.jsonnet';
 local tools = tools_maker(params);
 
-local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
+local wcls_maker = import 'ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 
-//local nf_maker = import "pgrapher/experiment/pdhd/nf.jsonnet";
-//local chndb_maker = import "pgrapher/experiment/pdhd/chndb.jsonnet";
+//local nf_maker = import "pdhd/nf.jsonnet";
+//local chndb_maker = import "pdhd/chndb.jsonnet";
 
-local sp_maker = import 'pgrapher/experiment/pdhd/sp.jsonnet';
+local sp_maker = import 'pdhd/sp.jsonnet';
 
 // Collect the WC/LS input converters for use below.  Make sure the
 // "name" argument matches what is used in the FHiCL that loads this
@@ -113,7 +113,7 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local nf_maker = import 'pgrapher/experiment/pdhd/nf.jsonnet';
+local nf_maker = import 'pdhd/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
@@ -133,7 +133,7 @@ local chsel_pipes = [
 ];
 
 local magoutput = 'protodunehd-data-check.root';
-local magnify = import 'pgrapher/experiment/pdhd/magnify-sinks.jsonnet';
+local magnify = import 'pdhd/magnify-sinks.jsonnet';
 local magio = magnify(tools, magoutput);
 
 local nfsp_pipes = [
@@ -153,8 +153,8 @@ local nfsp_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-//local f = import 'pgrapher/common/funcs.jsonnet';
-local f = import 'pgrapher/experiment/pdhd/funcs.jsonnet';
+//local f = import 'common/funcs.jsonnet';
+local f = import 'pdhd/funcs.jsonnet';
 //local outtags = ['gauss%d' % n for n in std.range(0, std.length(tools.anodes) - 1)];
 //local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf', outtags);
 local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf');

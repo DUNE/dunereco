@@ -2,7 +2,7 @@
 // generic set of parameters and overrides things specific to PDSP.
 
 local wc = import "wirecell.jsonnet";
-local base = import "pgrapher/common/params.jsonnet";
+local base = import "common/params.jsonnet";
 
 base {
     // This section will be overwritten in simparams.jsonnet
@@ -81,6 +81,7 @@ base {
     elec: super.elec {
       type: "JsonElecResponse",
       filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
+      gain: std.extVar("elecGain"),
       postgain: 1.0,
     },
 

@@ -2,7 +2,7 @@
 // generic set of parameters and overrides things specific to PDSP.
 
 local wc = import "wirecell.jsonnet";
-local base = import "pgrapher/common/params.jsonnet";
+local base = import "common/params.jsonnet";
 
 base {
     // This section will be overwritten in simparams.jsonnet
@@ -95,7 +95,7 @@ base {
 
     adc: super.adc {
 
-        resolution: 14,
+        resolution: std.extVar("Nbit"),
 
         // reuse ProtoDUNE SP values for bottom drift
         baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
@@ -108,7 +108,7 @@ base {
     // This sets a relative gain at the input to the ADC.  Note, if
     // you are looking to fix SimDepoSource, you are in the wrong
     // place.  See the "scale" parameter of wcls.input.depos() defined
-    // in pgrapher/common/ui/wcls/nodes.jsonnet.
+    // in common/ui/wcls/nodes.jsonnet.
     // also, see later overwriting in simparams.jsonnet
     elecs: [
       super.elec { // bottom drifter
@@ -118,6 +118,7 @@ base {
       super.elec { // top
         type: "JsonElecResponse",
         filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
+        gain: std.extVar("elecGain")*wc.mV/wc.fC,
         postgain: 1.52, // 11mV/fC, 1.94 -> 14mV/fC
       },
     ],

@@ -4,7 +4,7 @@
 
 local wc = import "wirecell.jsonnet";
 local g = import "pgraph.jsonnet";
-local depos = import "pgrapher/common/sim/depos.jsonnet";
+local depos = import "common/sim/depos.jsonnet";
 
 function(params, tools)
 {

@@ -2,7 +2,7 @@
 // generic set of parameters and overrides things specific to PDSP.
 
 local wc = import "wirecell.jsonnet";
-local base = import "pgrapher/common/params.jsonnet";
+local base = import "common/params.jsonnet";
 
 base {
     // This section will be overwritten in simparams.jsonnet
@@ -97,7 +97,7 @@ base {
     },
 
     adc: super.adc {
-        resolution: 14, 
+        local resolution = base.adc.resolution, 
         // reuse ProtoDUNE SP values
         baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
         fullscale: [0.2*wc.volt, 1.6*wc.volt],

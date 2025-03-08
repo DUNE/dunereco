@@ -1,6 +1,6 @@
 // Here we override params.jsonnet to provide simulation-specific params.
 
-local base = import 'pgrapher/experiment/dune10kt-hd/params.jsonnet';
+local base = import 'dune10kt-hd/params.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
 function(params) base(params) {

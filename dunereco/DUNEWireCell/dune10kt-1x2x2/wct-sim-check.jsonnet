@@ -7,17 +7,17 @@
 // Output is a Python numpy .npz file.
 
 local g = import 'pgraph.jsonnet';
-local f = import 'pgrapher/common/funcs.jsonnet';
+local f = import 'common/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-local io = import 'pgrapher/common/fileio.jsonnet';
-local tools_maker = import 'pgrapher/common/tools.jsonnet';
-local params_maker = import 'pgrapher/experiment/dune10kt-1x2x2/simparams.jsonnet';
+local io = import 'common/fileio.jsonnet';
+local tools_maker = import 'common/tools.jsonnet';
+local params_maker = import 'dune10kt-1x2x2/simparams.jsonnet';
 local params = params_maker({});
 
 local tools = tools_maker(params);
 
-local sim_maker = import 'pgrapher/experiment/dune10kt-1x2x2/sim.jsonnet';
+local sim_maker = import 'dune10kt-1x2x2/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local stubby = {
@@ -47,7 +47,7 @@ local bagger = sim.make_bagger();
 //local sn_pipes = sim.signal_pipelines;
 local sn_pipes = sim.splusn_pipelines;
 
-local multimagnify = import 'pgrapher/experiment/dune10kt-1x2x2/multimagnify.jsonnet';
+local multimagnify = import 'dune10kt-1x2x2/multimagnify.jsonnet';
 local magoutput = 'dune10kt-1x2x2-sim-check.root';
 // please remove the root file before you generate a new one
 
@@ -81,16 +81,16 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
-//local chndb_maker = import 'pgrapher/experiment/pdsp/chndb.jsonnet';
+//local chndb_maker = import 'pdsp/chndb.jsonnet';
 //local noise_epoch = "perfect";
 //local noise_epoch = "after";
 //local chndb_pipes = [chndb_maker(params, tools.anodes[n], tools.fields[n]).wct(noise_epoch)
 //                for n in std.range(0, std.length(tools.anodes)-1)];
-local nf_maker = import 'pgrapher/experiment/dune10kt-1x2x2/nf.jsonnet';
+local nf_maker = import 'dune10kt-1x2x2/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb_pipes[n]) for n in std.range(0, std.length(tools.anodes)-1)];
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local sp_maker = import 'pgrapher/experiment/dune10kt-1x2x2/sp.jsonnet';
+local sp_maker = import 'dune10kt-1x2x2/sp.jsonnet';
 local sp = sp_maker(params, tools);
 //local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 local sp_pipes = [sp.make_sigproc(tools.anodes[n], n) for n in std.range(0, std.length(tools.anodes) - 1)];

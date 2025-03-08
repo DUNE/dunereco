@@ -1,11 +1,11 @@
 local g = import 'pgraph.jsonnet';
-local f = import 'pgrapher/common/funcs.jsonnet';
-local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
+local f = import 'common/funcs.jsonnet';
+local util = import 'protodunevd/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-local io = import 'pgrapher/common/fileio.jsonnet';
-local tools_maker = import 'pgrapher/common/tools.jsonnet';
-local base = import 'pgrapher/experiment/protodunevd/simparams.jsonnet';
+local io = import 'common/fileio.jsonnet';
+local tools_maker = import 'common/tools.jsonnet';
+local base = import 'protodunevd/simparams.jsonnet';
 local params = base {
   daq: super.daq {
     nticks: std.extVar('nticks'),
@@ -25,7 +25,7 @@ local params = base {
 
 local tools = tools_maker(params);
 
-local sim_maker = import 'pgrapher/experiment/protodunevd/sim.jsonnet';
+local sim_maker = import 'protodunevd/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local nanodes = std.length(tools.anodes);
@@ -39,7 +39,7 @@ local output = 'wct-sim-ideal-sig.npz';
 //                             [sim.ar39(), sim.tracks(tracklist)]);
 // local depos = sim.tracks(tracklist, step=1.0 * wc.mm);
 
-local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
+local wcls_maker = import 'ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 local wcls_input = {
   // depos: wcls.input.depos(name="", art_tag="IonAndScint"),
@@ -121,7 +121,7 @@ local bagger = sim.make_bagger();
 //local sn_pipes = sim.signal_pipelines;
 local sn_pipes = sim.splusn_pipelines;
 
-local perfect = import 'pgrapher/experiment/protodunevd/chndb-base.jsonnet';
+local perfect = import 'protodunevd/chndb-base.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
@@ -130,11 +130,11 @@ local chndb = [{
 } for n in anode_iota];
 
 
-// local nf_maker = import 'pgrapher/experiment/protodunevd/nf.jsonnet';
+// local nf_maker = import 'protodunevd/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb_pipes[n]) for n in std.range(0, std.length(tools.anodes)-1)];
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in anode_iota];
 
-local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
+local sp_maker = import 'protodunevd/sp.jsonnet';
 local sp = sp_maker(params, tools);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
@@ -163,7 +163,7 @@ local wcls_simchannel_sink = g.pnode({
 }, nin=1, nout=1, uses=tools.anodes);
 
 // local magoutput = 'protodune-data-check.root';
-// local magnify = import 'pgrapher/experiment/protodunevd/magnify-sinks.jsonnet';
+// local magnify = import 'protodunevd/magnify-sinks.jsonnet';
 // local magio = magnify(tools, magoutput);
 
 local multipass = [

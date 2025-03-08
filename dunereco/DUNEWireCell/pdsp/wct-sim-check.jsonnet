@@ -7,16 +7,16 @@
 // Output is a Python numpy .npz file.
 
 local g = import 'pgraph.jsonnet';
-local f = import 'pgrapher/common/funcs.jsonnet';
+local f = import 'common/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-local io = import 'pgrapher/common/fileio.jsonnet';
-local tools_maker = import 'pgrapher/common/tools.jsonnet';
-local params = import 'pgrapher/experiment/pdsp/simparams.jsonnet';
+local io = import 'common/fileio.jsonnet';
+local tools_maker = import 'common/tools.jsonnet';
+local params = import 'pdsp/simparams.jsonnet';
 
 local tools = tools_maker(params);
 
-local sim_maker = import 'pgrapher/experiment/pdsp/sim.jsonnet';
+local sim_maker = import 'pdsp/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local stubby = {
@@ -71,7 +71,7 @@ local bagger = sim.make_bagger();
 //local sn_pipes = sim.signal_pipelines;
 local sn_pipes = sim.splusn_pipelines;
 
-local multimagnify = import 'pgrapher/experiment/pdsp/multimagnify.jsonnet';
+local multimagnify = import 'pdsp/multimagnify.jsonnet';
 local magoutput = 'protodune-sim-check.root';
 // please remove the root file before you generate a new one
 
@@ -97,7 +97,7 @@ local magnify_pipes4 = multi_magnify4.magnify_pipelines;
 local multi_magnify5 = multimagnify('threshold', tools, magoutput);
 local magnify_pipes5 = multi_magnify5.magnifysummaries_pipelines;
 
-local perfect = import 'pgrapher/experiment/pdsp/chndb-base.jsonnet';
+local perfect = import 'pdsp/chndb-base.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
@@ -105,16 +105,16 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
-//local chndb_maker = import 'pgrapher/experiment/pdsp/chndb.jsonnet';
+//local chndb_maker = import 'pdsp/chndb.jsonnet';
 //local noise_epoch = "perfect";
 //local noise_epoch = "after";
 //local chndb_pipes = [chndb_maker(params, tools.anodes[n], tools.fields[n]).wct(noise_epoch)
 //                for n in std.range(0, std.length(tools.anodes)-1)];
-local nf_maker = import 'pgrapher/experiment/pdsp/nf.jsonnet';
+local nf_maker = import 'pdsp/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb_pipes[n]) for n in std.range(0, std.length(tools.anodes)-1)];
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local sp_maker = import 'pgrapher/experiment/pdsp/sp.jsonnet';
+local sp_maker = import 'pdsp/sp.jsonnet';
 local sp = sp_maker(params, tools);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 

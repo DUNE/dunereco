@@ -7,12 +7,12 @@
 // Output is a Python numpy .npz file.
 
 local g = import 'pgraph.jsonnet';
-local f = import 'pgrapher/common/funcs.jsonnet';
+local f = import 'common/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-local io = import 'pgrapher/common/fileio.jsonnet';
-local tools_maker = import 'pgrapher/common/tools.jsonnet';
-local base = import 'pgrapher/experiment/pdsp/simparams.jsonnet';
+local io = import 'common/fileio.jsonnet';
+local tools_maker = import 'common/tools.jsonnet';
+local base = import 'pdsp/simparams.jsonnet';
 local params = base {
   lar: super.lar {
     // Longitudinal diffusion constant
@@ -28,7 +28,7 @@ local params = base {
 
 local tools = tools_maker(params);
 
-local sim_maker = import 'pgrapher/experiment/pdsp/sim.jsonnet';
+local sim_maker = import 'pdsp/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local nanodes = std.length(tools.anodes);
@@ -42,7 +42,7 @@ local output = 'wct-sim-ideal-sig.npz';
 //                             [sim.ar39(), sim.tracks(tracklist)]);
 // local depos = sim.tracks(tracklist, step=1.0 * wc.mm);
 
-local wcls_maker = import "pgrapher/ui/wcls/nodes.jsonnet";
+local wcls_maker = import "ui/wcls/nodes.jsonnet";
 local wcls = wcls_maker(params, tools);
 local wcls_input = {
     depos: wcls.input.depos(name="", art_tag="IonAndScint"),
@@ -101,7 +101,7 @@ local bagger = sim.make_bagger();
 //local sn_pipes = sim.signal_pipelines;
 local sn_pipes = sim.splusn_pipelines;
 
-local perfect = import 'pgrapher/experiment/pdsp/chndb-perfect.jsonnet';
+local perfect = import 'pdsp/chndb-perfect.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
@@ -109,16 +109,16 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in anode_iota];
 
-//local chndb_maker = import 'pgrapher/experiment/pdsp/chndb.jsonnet';
+//local chndb_maker = import 'pdsp/chndb.jsonnet';
 //local noise_epoch = "perfect";
 //local noise_epoch = "after";
 //local chndb_pipes = [chndb_maker(params, tools.anodes[n], tools.fields[n]).wct(noise_epoch)
 //                for n in std.range(0, std.length(tools.anodes)-1)];
-local nf_maker = import 'pgrapher/experiment/pdsp/nf.jsonnet';
+local nf_maker = import 'pdsp/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb_pipes[n]) for n in std.range(0, std.length(tools.anodes)-1)];
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in anode_iota];
 
-local sp_maker = import 'pgrapher/experiment/pdsp/sp.jsonnet';
+local sp_maker = import 'pdsp/sp.jsonnet';
 local sp = sp_maker(params, tools);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
@@ -147,7 +147,7 @@ local wcls_simchannel_sink = g.pnode({
 }, nin=1, nout=1, uses=tools.anodes);
 
 // local magoutput = 'protodune-data-check.root';
-// local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
+// local magnify = import 'pdsp/magnify-sinks.jsonnet';
 // local sinks = magnify(tools, magoutput);
 
 local multipass = [

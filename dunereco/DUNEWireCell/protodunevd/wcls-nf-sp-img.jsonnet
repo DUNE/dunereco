@@ -4,7 +4,7 @@ local sigoutform = std.extVar('signal_output_form');  // eg "sparse" or "dense"
 
 
 local wc = import 'wirecell.jsonnet';
-local f = import "pgrapher/common/funcs.jsonnet";
+local f = import "common/funcs.jsonnet";
 local g = import 'pgraph.jsonnet';
 
 local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
@@ -15,15 +15,15 @@ local simu_params = import 'simparams.jsonnet';
 local params = if reality == 'data' then data_params else simu_params;
 
 
-local tools_maker = import 'pgrapher/common/tools.jsonnet';
+local tools_maker = import 'common/tools.jsonnet';
 local tools = tools_maker(params);
 
-local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
+local wcls_maker = import 'ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 
-//local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
+//local chndb_maker = import "pdsp/chndb.jsonnet";
 
-local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
+local sp_maker = import 'protodunevd/sp.jsonnet';
 
 
 // Collect the WC/LS input converters for use below.  Make sure the
@@ -103,17 +103,17 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local nf_maker = import 'pgrapher/experiment/protodunevd/nf.jsonnet';
+local nf_maker = import 'protodunevd/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
-local img = import 'pgrapher/experiment/protodunevd/img.jsonnet';
+local img = import 'protodunevd/img.jsonnet';
 local img_maker = img();
 local img_pipes = [img_maker.per_anode(a) for a in tools.anodes];
 
-local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
+local util = import 'protodunevd/funcs.jsonnet';
 local chsel_pipes = [
   g.pnode({
     type: 'ChannelSelector',
@@ -127,7 +127,7 @@ local chsel_pipes = [
 ];
 
 local magoutput = 'protodune-data-check.root';
-local magnify = import 'pgrapher/experiment/protodunevd/magnify-sinks.jsonnet';
+local magnify = import 'protodunevd/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
 local use_magnify = std.extVar("use_magnify");
