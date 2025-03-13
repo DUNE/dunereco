@@ -97,7 +97,7 @@ base {
     },
 
     adc: super.adc {
-        local resolution = std.extVar("Nbit"), // base.adc.resolution, (once refactored the code)
+        resolution: std.extVar("Nbit"),
         // reuse ProtoDUNE SP values
         baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
         fullscale: [0.2*wc.volt, 1.6*wc.volt],

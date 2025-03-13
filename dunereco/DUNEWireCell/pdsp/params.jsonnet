@@ -111,7 +111,7 @@ base {
 
     adc: super.adc {
 
-        local resolution = std.extVar("Nbit"), // base.adc.resolution, (once refactored the code)
+        resolution: std.extVar("Nbit"),
 
         // per tdr, chapter 2
         // induction plane: 2350 ADC, collection plane: 900 ADC
