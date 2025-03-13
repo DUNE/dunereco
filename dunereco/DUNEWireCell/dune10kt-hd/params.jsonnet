@@ -95,8 +95,6 @@ function(params) base {
     },
 
     adc: super.adc {
-        resolution: std.extVar("Nbit"),
-
         // per tdr, chapter 2
         // induction plane: 2350 ADC, collection plane: 900 ADC
         baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],

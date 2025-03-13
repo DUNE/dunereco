@@ -50,7 +50,6 @@ function(params) base {
         
         // Set 0 for now
         //baselines: [0*wc.millivolt, 0*wc.millivolt, 0*wc.millivolt],
-        resolution: std.extVar("Nbit"),
         //fullscale: [0.2*wc.volt, 1.6*wc.volt],
 
         // Copied from pdsp. induction plane: 2350 ADC, collection plane: 900 ADC
