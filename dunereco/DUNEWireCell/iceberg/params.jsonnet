@@ -1,4 +1,4 @@
-local base = import 'pgrapher/common/params.jsonnet';
+local base = import 'pgrapher/dune/params.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
 function(params) base {

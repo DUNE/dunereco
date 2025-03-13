@@ -1,4 +1,4 @@
-local common_params = import "pgrapher/common/params.jsonnet";
+local common_params = import "pgrapher/dune/params.jsonnet";
 
 common_params {
     
