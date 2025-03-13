@@ -130,7 +130,7 @@ function(params) base {
     // in pgrapher/common/ui/wcls/nodes.jsonnet.
     // also, see later overwriting in simparams.jsonnet
     elec: super.elec {
-      gain: std.extVar("elecGain"),
+      gain: std.extVar("elecGain")*wc.mV/wc.fC,
       postgain: 1.1365, // pulser calibration: 41.649 ADC*tick/1ke
                        // theoretical elec resp (14mV/fC): 36.6475 ADC*tick/1ke
       shaping: 2.2 * wc.us,

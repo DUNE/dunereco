@@ -127,7 +127,7 @@ base {
     //   shaping: 2.2 * wc.us,
     // },
     elec: super.elec {
-        gain: std.extVar("elecGain"),
+        gain: std.extVar("elecGain")*wc.mV/wc.fC,
     }
     elec: if std.extVar('active_cru')=='tde'
           then super.elec {

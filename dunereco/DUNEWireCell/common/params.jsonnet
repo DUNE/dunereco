@@ -117,7 +117,7 @@ local wc = import "wirecell.jsonnet";
     // Parameters having to do with the front end electronics
     elec : {
         // The FE amplifier gain in units of Voltage/Charge.
-        gain : std.extVar("elecGain"), // 7.8*wc.mV/wc.fC, // used to be 14 mV/fC
+        gain : std.extVar("elecGain")*wc.mV/wc.fC, // 7.8*wc.mV/wc.fC from pdhd July 2024, used to be 14 mV/fC. Given through fcl
 
         // The shaping (aka peaking) time of the amplifier shaper.
         shaping : 2.0*wc.us,
