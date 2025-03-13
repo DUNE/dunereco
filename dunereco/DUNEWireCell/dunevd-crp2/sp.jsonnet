@@ -12,7 +12,7 @@ local util = import 'pgrapher/experiment/dunevd-crp2/funcs.jsonnet';
 function(params, tools, override = {}) {
 
   local pc = tools.perchanresp_nameuses,
-  local resolution = params.adc.resolution, 
+  local resolution = std.extVar("Nbit"), // params.adc.resolution, (once refactored the code)  
   local fullscale = params.adc.fullscale[1] - params.adc.fullscale[0],
   local ADC_mV_ratio = ((1 << resolution) - 1 ) / fullscale,
 
