@@ -65,7 +65,6 @@ function(params) base {
         type: "ColdElecResponse",
 
         // copied from pdsp
-        gain: std.extVar("elecGain")*wc.mV/wc.fC,
         shaping: 2.2 * wc.us,
         postgain: 1.1365,
         start: 0,

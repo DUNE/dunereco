@@ -133,7 +133,6 @@ base {
               postgain: 1.0,
           }
           else super.elec {
-              gain: std.extVar("elecGain"),
               postgain: 1.1365, // pulser calibration: 41.649 ADC*tick/1ke
                                // theoretical elec resp (14mV/fC): 36.6475 ADC*tick/1ke
               shaping: 2.2 * wc.us,
