@@ -111,8 +111,6 @@ base {
 
     adc: super.adc {
 
-        resolution: std.extVar("Nbit"),
-
         // per tdr, chapter 2
         // induction plane: 2350 ADC, collection plane: 900 ADC
         baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
@@ -130,7 +128,6 @@ base {
     // in pgrapher/common/ui/wcls/nodes.jsonnet.
     // also, see later overwriting in simparams.jsonnet
     elec: super.elec {
-      gain: std.extVar("elecGain")*wc.mV/wc.fC,
       postgain: 1.1365, // pulser calibration: 41.649 ADC*tick/1ke
                        // theoretical elec resp (14mV/fC): 36.6475 ADC*tick/1ke
       shaping: 2.2 * wc.us,

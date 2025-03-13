@@ -81,7 +81,6 @@ base {
     elec: super.elec {
       type: "JsonElecResponse",
       filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
-      gain: std.extVar("elecGain")*wc.mV/wc.fC,
       postgain: 1.0,
     },
 

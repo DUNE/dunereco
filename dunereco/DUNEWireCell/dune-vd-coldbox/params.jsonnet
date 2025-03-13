@@ -126,14 +126,10 @@ base {
     //                    // theoretical elec resp (14mV/fC): 36.6475 ADC*tick/1ke
     //   shaping: 2.2 * wc.us,
     // },
-    elec: super.elec {
-        gain: std.extVar("elecGain")*wc.mV/wc.fC,
-    }
     elec: if std.extVar('active_cru')=='tde'
           then super.elec {
               type: "JsonElecResponse",
               filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
-              gain: std.extVar("elecGain"),
               postgain: 1.0,
           }
           else super.elec {

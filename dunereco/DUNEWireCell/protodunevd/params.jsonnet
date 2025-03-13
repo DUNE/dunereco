@@ -95,8 +95,6 @@ base {
 
     adc: super.adc {
 
-        resolution: std.extVar("Nbit"),
-
         // reuse ProtoDUNE SP values for bottom drift
         baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
         fullscale: [0.2*wc.volt, 1.6*wc.volt],
@@ -118,7 +116,6 @@ base {
       super.elec { // top
         type: "JsonElecResponse",
         filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
-        gain: std.extVar("elecGain")*wc.mV/wc.fC,
         postgain: 1.52, // 11mV/fC, 1.94 -> 14mV/fC
       },
     ],

@@ -97,7 +97,6 @@ base {
     },
 
     adc: super.adc {
-        resolution: std.extVar("Nbit"),
         // reuse ProtoDUNE SP values
         baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
         fullscale: [0.2*wc.volt, 1.6*wc.volt],
@@ -107,7 +106,6 @@ base {
       super.elec {
         // The FE amplifier gain in units of Voltage/Charge.
         // gain : 14.0*wc.mV/wc.fC,
-        gain : std.extVar("elecGain")*wc.mV/wc.fC,
 
         // The shaping (aka peaking) time of the amplifier shaper.
         shaping : 2.2*wc.us,

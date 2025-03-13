@@ -107,7 +107,7 @@ local wc = import "wirecell.jsonnet";
         baselines: [900*wc.millivolt,900*wc.millivolt,200*wc.millivolt],
 
         // The resolution (bits) of the ADC
-        resolution: 14, // used to be 12 bits
+        // resolution: 14, // read from fcl
 
         // The voltage range as [min,max] of the ADC, eg min voltage
         // counts 0 ADC, max counts 2^resolution-1.
