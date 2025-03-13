@@ -10,7 +10,7 @@ local aux = import "aux.jsonnet";
 //
 // Note, spfilt are a list of filter objects which MUST match
 // hard-wired names in the C++, sorry.  See, eg
-// pdsp/sp-filters.jsonnet.
+// pgrapher/experiment/pdsp/sp-filters.jsonnet.
 function(anode, fieldresp, elecresp, spfilt, adcpermv, perchan=null, dft=aux.dft, override={}) 
     local apaid = anode.data.ident;
 

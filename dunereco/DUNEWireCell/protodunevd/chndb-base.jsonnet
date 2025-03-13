@@ -4,7 +4,7 @@
 
 local handmade = import 'chndb-resp.jsonnet';
 local wc = import 'wirecell.jsonnet';
-local util = import 'protodunevd/funcs.jsonnet';
+local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
 
 function(params, anode, field, n, rms_cuts=[])
   {

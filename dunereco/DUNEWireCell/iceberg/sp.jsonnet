@@ -6,7 +6,7 @@ local wc = import 'wirecell.jsonnet';
 // BIG FAT FIXME: we are taking from uboone.  If PDSP needs tuning do
 // four things: 0) read this comment, 1) cp this file into pdsp/, 2)
 // fix the import and 3) delete this comment.
-local spfilt = import 'iceberg/sp-filters.jsonnet';
+local spfilt = import 'pgrapher/experiment/iceberg/sp-filters.jsonnet';
 
 function(params, tools, override = {}) {
 

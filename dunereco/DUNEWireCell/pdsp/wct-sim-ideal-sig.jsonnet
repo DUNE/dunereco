@@ -9,13 +9,13 @@
 local wc = import "wirecell.jsonnet";
 local g = import "pgraph.jsonnet";
 
-local io = import "common/fileio.jsonnet";
-local params = import "pdsp/simparams.jsonnet";
-local tools_maker = import "common/tools.jsonnet";
+local io = import "pgrapher/common/fileio.jsonnet";
+local params = import "pgrapher/experiment/pdsp/simparams.jsonnet";
+local tools_maker = import "pgrapher/common/tools.jsonnet";
 
 local tools = tools_maker(params);
 
-local sim_maker = import "pdsp/sim.jsonnet";
+local sim_maker = import "pgrapher/experiment/pdsp/sim.jsonnet";
 local sim = sim_maker(params, tools);
 
 local stubby = {

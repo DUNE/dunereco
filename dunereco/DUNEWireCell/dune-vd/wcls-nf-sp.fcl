@@ -62,7 +62,7 @@ physics :{
             # This sets the "main" Jsonnet file which provides the 
             # configuration for the Wire-Cell Toolkit components.  It is
             # take as relative to entries in WIRECELL_PATH.
-            configs: ["dune-vd/wcls-nf-sp.jsonnet"]
+            configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
 
             # Set the "external variables" required by the Jsonnet.
             # ext-var, string

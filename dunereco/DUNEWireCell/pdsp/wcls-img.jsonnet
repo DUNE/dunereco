@@ -3,18 +3,18 @@ local charge_input_label = std.extVar('charge_input_label');  // "gauss", "dnnsp
 local wiener_input_label = std.extVar('wiener_input_label');  // "wiener"
 
 local wc = import 'wirecell.jsonnet';
-local f = import "common/funcs.jsonnet";
-// local util = import 'pdsp/funcs.jsonnet';
+local f = import "pgrapher/common/funcs.jsonnet";
+// local util = import 'pgrapher/experiment/pdsp/funcs.jsonnet';
 local g = import 'pgraph.jsonnet';
 
-local data_params = import 'pdsp/params.jsonnet';
-local simu_params = import 'pdsp/simparams.jsonnet';
+local data_params = import 'pgrapher/experiment/pdsp/params.jsonnet';
+local simu_params = import 'pgrapher/experiment/pdsp/simparams.jsonnet';
 local params = if reality == 'data' then data_params else simu_params;
 
-local tools_maker = import 'common/tools.jsonnet';
+local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local tools = tools_maker(params);
 
-local wcls_maker = import 'ui/wcls/nodes.jsonnet';
+local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 // Collect the WC/LS input converters for use below.  Make sure the
 // "name" argument matches what is used in the FHiCL that loads this
@@ -50,7 +50,7 @@ local mega_anode = {
   },
 };
 
-local img = import 'pdsp/img.jsonnet';
+local img = import 'pgrapher/experiment/pdsp/img.jsonnet';
 local img_maker = img();
 local img_pipes = [img_maker.per_anode(a) for a in tools.anodes];
 

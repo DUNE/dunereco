@@ -29,7 +29,7 @@ protodunespdata_nfsp:
         # This sets the "main" Jsonnet file which provides the 
         # configuration for the Wire-Cell Toolkit components.  It is
         # take as relative to entries in WIRECELL_PATH.
-        configs: ["pdsp/wcls-nf-sp.jsonnet"]
+        configs: ["pgrapher/experiment/pdsp/wcls-nf-sp.jsonnet"]
 
         # Set the "external variables" required by the Jsonnet.
         params : {
@@ -86,7 +86,7 @@ protodunespdata_wctsp:
         # This sets the "main" Jsonnet file which provides the 
         # configuration for the Wire-Cell Toolkit components.  It is
         # take as relative to entries in WIRECELL_PATH.
-        configs: ["pdsp/wcls-sp.jsonnet"]
+        configs: ["pgrapher/experiment/pdsp/wcls-sp.jsonnet"]
     
         # Set the "external variables" required by the Jsonnet.
         params : {
@@ -120,7 +120,7 @@ protodunespdata_wctsp:
 }
 
 protodunehddata_wctsp: @local::protodunespdata_wctsp
-protodunehddata_wctsp.wcls_main.configs: ["pdhd/wcls-sp.jsonnet"]
+protodunehddata_wctsp.wcls_main.configs: ["pgrapher/experiment/pdhd/wcls-sp.jsonnet"]
 protodunehddata_wctsp.wcls_main.structs.elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
 protodunehddata_wctsp.wcls_main.structs.Nbit: @local::Nbit_standard 
 
@@ -134,7 +134,7 @@ protodunehd_nfsp:
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellLarsoft"]
         inputers: ["wclsRawFrameSource"]
         outputers: ["wclsFrameSaver:spsaver"]
-        configs: ["pdhd/wcls-nf-sp.jsonnet"]
+        configs: ["pgrapher/experiment/pdhd/wcls-nf-sp.jsonnet"]
         params : {
             raw_input_label: "tpcrawdecoder:daq"
             reality: "data" # vs. "sim"
@@ -158,7 +158,7 @@ protodunehd_nf : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsRawFrameSource"]
       outputers: ["wclsFrameSaver:nfsaver"]
-      configs: ["pdhd/wcls-nf.jsonnet"]
+      configs: ["pgrapher/experiment/pdhd/wcls-nf.jsonnet"]
       params : {
          raw_input_label: "tpcrawdecoder:daq" # "caldata:dataprep"
          reality: "data"
@@ -183,7 +183,7 @@ protodunehd_sp:
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellLarsoft"]
         inputers: ["wclsRawFrameSource"]
         outputers: ["wclsFrameSaver:spsaver"]
-        configs: ["pdhd/wcls-rawdigit-sp.jsonnet"]
+        configs: ["pgrapher/experiment/pdhd/wcls-rawdigit-sp.jsonnet"]
         params : {
             raw_input_label: "wclsdatahdfilter:raw"
             reality: "data" # vs. "sim"
@@ -208,7 +208,7 @@ protodunehd_dnnsp:
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellRoot","WireCellLarsoft","WireCellHio","WireCellTbb","WireCellImg","WireCellPytorch"]
         inputers: ["wclsRawFrameSource"]
         outputers: ["wclsFrameSaver:spsaver", "wclsFrameSaver:dnnsaver"]
-        configs: ["pdhd/wcls-rawdigit-dnnsp.jsonnet"]
+        configs: ["pgrapher/experiment/pdhd/wcls-rawdigit-dnnsp.jsonnet"]
         params : {
             raw_input_label: "wclsdatahdfilter:raw"
             reality: "data" # vs. "sim"
@@ -234,8 +234,8 @@ wirecell_protodunespmc:
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellLarsoft"]
 
         // needs to be found via your WIRECELL_PATH 
-        # configs: ["pdsp/wcls-sim-drift-simchannel.jsonnet"]
-        configs: ["pdsp/wcls-sim-drift-simchannel-priorSCE.jsonnet"]
+        # configs: ["pgrapher/experiment/pdsp/wcls-sim-drift-simchannel.jsonnet"]
+        configs: ["pgrapher/experiment/pdsp/wcls-sim-drift-simchannel-priorSCE.jsonnet"]
 
 
         // Contract note: these exact "type:name" must be used to identify
@@ -265,7 +265,7 @@ wirecell_protodunespmc:
 }
 
 wirecell_protodunehdmc: @local::wirecell_protodunespmc
-wirecell_protodunehdmc.wcls_main.configs: ["pdhd/wcls-sim-drift-simchannel-priorSCE.jsonnet"]
+wirecell_protodunehdmc.wcls_main.configs: ["pgrapher/experiment/pdhd/wcls-sim-drift-simchannel-priorSCE.jsonnet"]
 wirecell_protodunehdmc.wcls_main.structs.elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
 wirecell_protodunehdmc.wcls_main.structs.Nbit: @local::Nbit_standard 
 
@@ -277,7 +277,7 @@ wirecell_dunevd_coldbox_mc:
         apps: ["Pgrapher"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"]
         // needs to be found via your WIRECELL_PATH 
-        configs: ["dune-vd-coldbox/wcls-sim-drift-simchannel.jsonnet"]
+        configs: ["pgrapher/experiment/dune-vd-coldbox/wcls-sim-drift-simchannel.jsonnet"]
         inputers: ["wclsSimDepoSource:electron"]
         outputers: [
             "wclsSimChannelSink:postdrift",
@@ -310,7 +310,7 @@ wirecell_dunevd_coldboxcrp2_mc:
         apps: ["Pgrapher"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"]
         // needs to be found via your WIRECELL_PATH 
-        configs: ["dunevd-crp2/wcls-sim-drift-simchannel.jsonnet"]
+        configs: ["pgrapher/experiment/dunevd-crp2/wcls-sim-drift-simchannel.jsonnet"]
         inputers: ["wclsSimDepoSource:electron"]
         outputers: [
             "wclsSimChannelSink:postdrift",
@@ -339,7 +339,7 @@ wirecell_dunevd_coldboxcrp4_mc:
         apps: ["Pgrapher"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"]
         // needs to be found via your WIRECELL_PATH 
-        configs: ["dunevd-crp4/wcls-sim-drift-simchannel.jsonnet"]
+        configs: ["pgrapher/experiment/dunevd-crp4/wcls-sim-drift-simchannel.jsonnet"]
         inputers: ["wclsSimDepoSource:electron"]
         outputers: [
             "wclsSimChannelSink:postdrift",
@@ -374,7 +374,7 @@ wirecell_protodunevd_mc:
         loglevels: ["debug"]
 
         // needs to be found via your WIRECELL_PATH 
-        configs: ["protodunevd/wcls-sim-drift-simchannel.jsonnet"]
+        configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-simchannel.jsonnet"]
         inputers: ["wclsSimDepoSource:electron"]
         outputers: [
             "wclsSimChannelSink:postdrift",
@@ -408,7 +408,7 @@ wirecell_protodunevd_mc_splusn:
         loglevels: ["debug"]
 
         // needs to be found via your WIRECELL_PATH 
-        configs: ["protodunevd/wcls-sim-drift-simchannel-splusn.jsonnet"]
+        configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-simchannel-splusn.jsonnet"]
         inputers: ["wclsSimDepoSource:electron"]
         outputers: [
            "wclsSimChannelSink:postdrift",
@@ -439,7 +439,7 @@ wirecell_protodunevd_sim_deposplat:
         tool_type: WCLS
         apps: ["Pgrapher"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellRoot","WireCellLarsoft","WireCellHio","WireCellTbb","WireCellImg","WireCellPytorch"]
-        configs: ["protodunevd/wcls-sim-drift-deposplat.jsonnet"]
+        configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-deposplat.jsonnet"]
         inputers: ["wclsSimDepoSource:"]
         outputers: [
             // "wclsSimChannelSink:postdrift",
@@ -466,7 +466,7 @@ wirecell_pdhd_sim_deposplat:
         tool_type: WCLS
         apps: ["Pgrapher"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellRoot","WireCellLarsoft","WireCellHio","WireCellTbb","WireCellImg","WireCellPytorch"]
-        configs: ["pdhd/wcls-sim-drift-deposplat.jsonnet"]
+        configs: ["pgrapher/experiment/pdhd/wcls-sim-drift-deposplat.jsonnet"]
         inputers: ["wclsSimDepoSource:"]
         outputers: [
             // "wclsSimChannelSink:postdrift",
@@ -513,7 +513,7 @@ dune10kt_1x2x6_mc_nfsp:
         # This sets the "main" Jsonnet file which provides the 
         # configuration for the Wire-Cell Toolkit components.  It is
         # take as relative to entries in WIRECELL_PATH.
-        configs: ["dune10kt-1x2x6/wcls-nf-sp.jsonnet"]
+        configs: ["pgrapher/experiment/dune10kt-1x2x6/wcls-nf-sp.jsonnet"]
 
         # Set the "external variables" required by the Jsonnet.
         params : {
@@ -566,7 +566,7 @@ dune10kt_1x2x2_mc_nfsp:
         # This sets the "main" Jsonnet file which provides the 
         # configuration for the Wire-Cell Toolkit components.  It is
         # take as relative to entries in WIRECELL_PATH.
-        configs: ["dune10kt-1x2x2/wcls-nf-sp.jsonnet"]
+        configs: ["pgrapher/experiment/dune10kt-1x2x2/wcls-nf-sp.jsonnet"]
 
         # Set the "external variables" required by the Jsonnet.
         params : {
@@ -640,7 +640,7 @@ tpcrawdecoder_dunefd_horizdrift_1x2x6 : {
       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
 
       // needs to be found via your WIRECELL_PATH
-      configs: ["dune10kt-1x2x6/wcls-sim-drift-simchannel.jsonnet"]
+      configs: ["pgrapher/experiment/dune10kt-1x2x6/wcls-sim-drift-simchannel.jsonnet"]
 
 
       // Contract note: these exact "type:name" must be used to identify
@@ -685,7 +685,7 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
         loglevels: ["debug"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
         # needs to be found via your WIRECELL_PATH
-        configs: ["dune10kt-1x2x6/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
+        configs: ["pgrapher/experiment/dune10kt-1x2x6/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
         # Contract note: these exact "type:name" must be used to identify
         # the configuration data structures for these components in the Jsonnet.
         inputers: ["wclsSimDepoSource:"]
@@ -732,7 +732,7 @@ tpcrawdecoder_dunefd_horizdrift_1x2x2 : {
       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
 
       // needs to be found via your WIRECELL_PATH
-      configs: ["dune10kt-1x2x2/wcls-sim-drift-simchannel-splusn.jsonnet"]
+      configs: ["pgrapher/experiment/dune10kt-1x2x2/wcls-sim-drift-simchannel-splusn.jsonnet"]
 
 
       // Contract note: these exact "type:name" must be used to identify
@@ -779,7 +779,7 @@ tpcrawdecoder_dunefd_vertdrift_2view : {
       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
 
       // needs to be found via your WIRECELL_PATH
-      configs: ["dune-vd/wcls-sim-drift-simchannel.jsonnet"]
+      configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel.jsonnet"]
 
 
       // Contract note: these exact "type:name" must be used to identify
@@ -998,7 +998,7 @@ tpcrawdecoder_iceberg : {
       logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
       loglevels: ["debug"]
       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
-      configs: ["iceberg/wcls-sim-drift-simchannel.jsonnet"]
+      configs: ["pgrapher/experiment/iceberg/wcls-sim-drift-simchannel.jsonnet"]
       inputers: ["wclsSimDepoSource:"]
       outputers: [
          "wclsSimChannelSink:postdrift",
@@ -1030,7 +1030,7 @@ tpcrawdecoder_iceberg_splusn : {
       logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
       loglevels: ["debug"]
       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
-      configs: ["iceberg/wcls-sim-drift-simchannel-splusn.jsonnet"]
+      configs: ["pgrapher/experiment/iceberg/wcls-sim-drift-simchannel-splusn.jsonnet"]
       inputers: ["wclsSimDepoSource:"]
       outputers: [
          "wclsSimChannelSink:postdrift",
@@ -1069,7 +1069,7 @@ iceberg_wctnfsp:
                ]
         outputers: ["wclsFrameSaver:spsaver"]
         
-        configs: ["iceberg/wcls-nf-sp.jsonnet"]
+        configs: ["pgrapher/experiment/iceberg/wcls-nf-sp.jsonnet"]
     
         params : {
             raw_input_label: "tpcrawdecoder:daq"
@@ -1131,7 +1131,7 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_data_nfsp : {
       # This sets the "main" Jsonnet file which provides the 
       # configuration for the Wire-Cell Toolkit components.  It is
       # take as relative to entries in WIRECELL_PATH.
-      configs: ["dune-vd/wcls-nf-sp.jsonnet"]
+      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
 
       # Set the "external variables" required by the Jsonnet.
       # ext-var, string
@@ -1223,7 +1223,7 @@ dune10kt_dunefd_vertdrift_1x6x6_3view_30deg_data_nfsp : {
       # This sets the "main" Jsonnet file which provides the 
       # configuration for the Wire-Cell Toolkit components.  It is
       # take as relative to entries in WIRECELL_PATH.
-      configs: ["dune-vd/wcls-nf-sp.jsonnet"]
+      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
 
       # Set the "external variables" required by the Jsonnet.
       # ext-var, string
@@ -1312,7 +1312,7 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_30deg_data_nfsp : {
       # This sets the "main" Jsonnet file which provides the 
       # configuration for the Wire-Cell Toolkit components.  It is
       # take as relative to entries in WIRECELL_PATH.
-      configs: ["dune-vd/wcls-nf-sp.jsonnet"]
+      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
 
       # Set the "external variables" required by the Jsonnet.
       # ext-var, string
@@ -1402,7 +1402,7 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_data_nfsp : {
       # This sets the "main" Jsonnet file which provides the 
       # configuration for the Wire-Cell Toolkit components.  It is
       # take as relative to entries in WIRECELL_PATH.
-      configs: ["dune-vd/wcls-nf-sp.jsonnet"]
+      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
 
       # Set the "external variables" required by the Jsonnet.
       # ext-var, string
@@ -1495,7 +1495,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_data_nfsp : {
       # This sets the "main" Jsonnet file which provides the 
       # configuration for the Wire-Cell Toolkit components.  It is
       # take as relative to entries in WIRECELL_PATH.
-      configs: ["dune-vd/wcls-nf-sp.jsonnet"]
+      configs: ["pgrapher/experiment/dune-vd/wcls-nf-sp.jsonnet"]
 
       # Set the "external variables" required by the Jsonnet.
       # ext-var, string
@@ -1575,7 +1575,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
         ]
 
         // needs to be found via your WIRECELL_PATH
-        configs: ["dune-vd/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
+        configs: ["pgrapher/experiment/dune-vd/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
 
 
         // Contract note: these exact "type:name" must be used to identify
@@ -1731,7 +1731,7 @@ dune_vd_coldbox_nfsp : {
       ]
       # outputers: ["wclsFrameSaver:nfsaver", "wclsFrameSaver:spsaver"]
       outputers: ["wclsFrameSaver:spsaver"]
-      configs: ["dune-vd-coldbox/wcls-nf-sp.jsonnet"]
+      configs: ["pgrapher/experiment/dune-vd-coldbox/wcls-nf-sp.jsonnet"]
       params : {
          # raw_input_label: "tpcrawdecoder:daq"
          raw_input_label: "caldata:dataprep"
@@ -1768,7 +1768,7 @@ dune_vd_crp2_nfsp : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsRawFrameSource"]
       outputers: ["wclsFrameSaver:spsaver"]
-      configs: ["dunevd-crp2/wcls-nf-sp.jsonnet"]
+      configs: ["pgrapher/experiment/dunevd-crp2/wcls-nf-sp.jsonnet"]
       params : {
          raw_input_label: "caldata:dataprep"
          reality: "data"
@@ -1794,7 +1794,7 @@ dune_vd_crp4_nfsp : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsRawFrameSource"]
       outputers: ["wclsFrameSaver:spsaver"]
-      configs: ["dunevd-crp4/wcls-nf-sp.jsonnet"]
+      configs: ["pgrapher/experiment/dunevd-crp4/wcls-nf-sp.jsonnet"]
       params : {
          raw_input_label: "caldata:dataprep"
          reality: "data"
@@ -1821,7 +1821,7 @@ dune_vd_crp2_nf : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsRawFrameSource"]
       outputers: ["wclsFrameSaver:nfsaver"]
-      configs: ["dunevd-crp2/wcls-nf.jsonnet"]
+      configs: ["pgrapher/experiment/dunevd-crp2/wcls-nf.jsonnet"]
       params : {
          raw_input_label: "caldata:dataprep"
          reality: "data"
@@ -1848,7 +1848,7 @@ dune_vd_crp2_sp : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsCookedFrameSource"]
       outputers: ["wclsFrameSaver:spsaver"]
-      configs: ["dunevd-crp2/wcls-sp.jsonnet"]
+      configs: ["pgrapher/experiment/dunevd-crp2/wcls-sp.jsonnet"]
       params : {
          raw_input_label: "caldata:dataprep"
          reality: "data"
@@ -1874,7 +1874,7 @@ protodunevd_nfsp : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsRawFrameSource"]
       outputers: ["wclsFrameSaver:spsaver"]
-      configs: ["protodunevd/wcls-nf-sp.jsonnet"]
+      configs: ["pgrapher/experiment/protodunevd/wcls-nf-sp.jsonnet"]
       params : {
          raw_input_label: "tpcrawdecoder:daq"
          reality: "data"
@@ -1898,7 +1898,7 @@ protodunevd_nfspimg : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellImg", "WireCellSio", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsRawFrameSource"]
       outputers: [ ]
-      configs: ["protodunevd/wcls-nf-sp-img.jsonnet"]
+      configs: ["pgrapher/experiment/protodunevd/wcls-nf-sp-img.jsonnet"]
       params : {
          raw_input_label: "tpcrawdecoder:daq"
          reality: "data"
@@ -1921,7 +1921,7 @@ protodunehd_nfspimg : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellImg", "WireCellSio", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsRawFrameSource"]
       outputers: [ ]
-      configs: ["pdhd/wcls-nf-sp-img.jsonnet"]
+      configs: ["pgrapher/experiment/pdhd/wcls-nf-sp-img.jsonnet"]
       params : {
          raw_input_label: "tpcrawdecoder:daq"
          reality: "data"
@@ -1945,7 +1945,7 @@ protodunehd_img : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellImg", "WireCellSio", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsCookedFrameSource:charge", "wclsCookedFrameSource:wiener"]
       outputers: [ ]
-      configs: ["pdhd/wcls-img.jsonnet"]
+      configs: ["pgrapher/experiment/pdhd/wcls-img.jsonnet"]
       params : {
          charge_input_label: "wclsdatahd:gauss"
          wiener_input_label: "wclsdatahd:wiener"
@@ -1968,7 +1968,7 @@ protodunesp_img : {
       plugins: ["WireCellGen", "WireCellSigProc", "WireCellImg", "WireCellSio", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
       inputers: ["wclsCookedFrameSource:charge", "wclsCookedFrameSource:wiener"]
       outputers: [ ]
-      configs: ["pdsp/wcls-img.jsonnet"]
+      configs: ["pgrapher/experiment/pdsp/wcls-img.jsonnet"]
       params : {
          charge_input_label: "wclsdatasp:gauss"
          wiener_input_label: "wclsdatasp:wiener"
@@ -1991,7 +1991,7 @@ dune10kt_horizdrift_sim_nfsp : {
         loglevels: ["debug"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
         # needs to be found via your WIRECELL_PATH
-        configs: ["dune10kt-hd/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
+        configs: ["pgrapher/experiment/dune10kt-hd/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
         # Contract note: these exact "type:name" must be used to identify
         # the configuration data structures for these components in the Jsonnet.
         inputers: ["wclsSimDepoSource:"]

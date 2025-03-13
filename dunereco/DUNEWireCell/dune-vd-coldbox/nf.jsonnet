@@ -2,7 +2,7 @@
 
 local g = import 'pgraph.jsonnet';
 local wc = import 'wirecell.jsonnet';
-// local gainmap = import 'pdsp/chndb-rel-gain.jsonnet';
+// local gainmap = import 'pgrapher/experiment/pdsp/chndb-rel-gain.jsonnet';
 
 function(params, anode, chndbobj, n, name='')
   {

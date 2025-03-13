@@ -13,11 +13,11 @@
 //
 // jsonnet -V reality=data -V epoch=dynamic -V raw_input_label=daq \\
 //         -V signal_output_form=sparse \\
-//         -J cfg cfg/uboone/wcls-nf-sp.jsonnet
+//         -J cfg cfg/pgrapher/experiment/uboone/wcls-nf-sp.jsonnet
 //
 // jsonnet -V reality=sim -V epoch=perfect -V raw_input_label=daq \\
 //         -V signal_output_form=sparse \\
-//         -J cfg cfg/uboone/wcls-nf-sp.jsonnet
+//         -J cfg cfg/pgrapher/experiment/uboone/wcls-nf-sp.jsonnet
 
 
 local epoch = std.extVar('epoch');  // eg "dynamic", "after", "before", "perfect"
@@ -36,16 +36,16 @@ local simu_params = import 'simparams.jsonnet';
 local params = if reality == 'data' then data_params else simu_params;
 
 
-local tools_maker = import 'common/tools.jsonnet';
+local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local tools = tools_maker(params);
 
-local wcls_maker = import 'ui/wcls/nodes.jsonnet';
+local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 
-//local nf_maker = import "pdsp/nf.jsonnet";
-//local chndb_maker = import "pdsp/chndb.jsonnet";
+//local nf_maker = import "pgrapher/experiment/pdsp/nf.jsonnet";
+//local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
 
-local sp_maker = import 'dune-vd-coldbox/sp.jsonnet';
+local sp_maker = import 'pgrapher/experiment/dune-vd-coldbox/sp.jsonnet';
 
 //local chndbm = chndb_maker(params, tools);
 //local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
@@ -145,13 +145,13 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local nf_maker = import 'dune-vd-coldbox/nf.jsonnet';
+local nf_maker = import 'pgrapher/experiment/dune-vd-coldbox/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
-local util = import 'dune-vd-coldbox/funcs.jsonnet';
+local util = import 'pgrapher/experiment/dune-vd-coldbox/funcs.jsonnet';
 local chsel_pipes = [
   g.pnode({
     type: 'ChannelSelector',
@@ -165,7 +165,7 @@ local chsel_pipes = [
 ];
 
 local magoutput = 'protodune-data-check.root';
-local magnify = import 'dune-vd-coldbox/magnify-sinks.jsonnet';
+local magnify = import 'pgrapher/experiment/dune-vd-coldbox/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
 local use_magnify = std.extVar("use_magnify");

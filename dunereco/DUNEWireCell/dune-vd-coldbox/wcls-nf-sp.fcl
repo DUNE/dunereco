@@ -30,7 +30,7 @@ physics :{
             // This sets the "main" Jsonnet file which provides the 
             // configuration for the Wire-Cell Toolkit components.  It is
             // take as relative to entries in WIRECELL_PATH.
-            configs: ["dune-vd-coldbox/wcls-nf-sp.jsonnet"]
+            configs: ["pgrapher/experiment/dune-vd-coldbox/wcls-nf-sp.jsonnet"]
             // Set the "external variables" required by the Jsonnet.
             params : {
                // This locates the input raw::RawDigit collection in the art::Event 

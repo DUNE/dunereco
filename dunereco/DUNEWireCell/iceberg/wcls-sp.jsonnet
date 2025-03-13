@@ -13,11 +13,11 @@
 //
 // jsonnet -V reality=data -V epoch=dynamic -V raw_input_label=daq \\
 //         -V signal_output_form=sparse \\
-//         -J cfg cfg/uboone/wcls-nf-sp.jsonnet
+//         -J cfg cfg/pgrapher/experiment/uboone/wcls-nf-sp.jsonnet
 //
 // jsonnet -V reality=sim -V epoch=perfect -V raw_input_label=daq \\
 //         -V signal_output_form=sparse \\
-//         -J cfg cfg/uboone/wcls-nf-sp.jsonnet
+//         -J cfg cfg/pgrapher/experiment/uboone/wcls-nf-sp.jsonnet
 
 
 local epoch = std.extVar('epoch');  // eg "dynamic", "after", "before", "perfect"
@@ -36,13 +36,13 @@ local data_params = import 'params.jsonnet';
 local simu_params = import 'simparams.jsonnet';
 local params = if reality == 'data' then data_params else simu_params;
 
-local tools_maker = import 'common/tools.jsonnet';
+local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local tools = tools_maker(params);
 
-local wcls_maker = import 'ui/wcls/nodes.jsonnet';
+local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 
-local sp_maker = import 'iceberg/sp.jsonnet';
+local sp_maker = import 'pgrapher/experiment/iceberg/sp.jsonnet';
 
 //local chndbm = chndb_maker(params, tools);
 //local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
@@ -157,7 +157,7 @@ local nf_pipes = [g.pipeline([obnf[n]], name='nf%d'%n) for n in std.range(0, std
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
-local multimagnify = import 'iceberg/multimagnify.jsonnet';
+local multimagnify = import 'pgrapher/experiment/iceberg/multimagnify.jsonnet';
 local magoutput = 'iceberg-data-check.root';
 
 local rootfile_creation_frames = g.pnode({
@@ -208,8 +208,8 @@ local nfsp_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-//local f = import 'common/funcs.jsonnet';
-local f = import 'iceberg/funcs.jsonnet';
+//local f = import 'pgrapher/common/funcs.jsonnet';
+local f = import 'pgrapher/experiment/iceberg/funcs.jsonnet';
 //local outtags = ['gauss%d' % n for n in std.range(0, std.length(tools.anodes) - 1)];
 //local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf', outtags);
 local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf');

@@ -9,16 +9,16 @@
 local wc = import "wirecell.jsonnet";
 local g = import "pgraph.jsonnet";
 
-local cli = import "ui/cli/nodes.jsonnet";
+local cli = import "pgrapher/ui/cli/nodes.jsonnet";
 
-local io = import "common/fileio.jsonnet";
-local params_maker = import 'dune10kt-1x2x2/simparams.jsonnet';
+local io = import "pgrapher/common/fileio.jsonnet";
+local params_maker = import 'pgrapher/experiment/dune10kt-1x2x2/simparams.jsonnet';
 local params = params_maker({});
-local tools_maker = import "common/tools.jsonnet";
+local tools_maker = import "pgrapher/common/tools.jsonnet";
 
 local tools = tools_maker(params);
 
-local sim_maker = import "dune10kt-1x2x2/sim.jsonnet";
+local sim_maker = import "pgrapher/experiment/dune10kt-1x2x2/sim.jsonnet";
 local sim = sim_maker(params, tools);
 
 local stubby = {

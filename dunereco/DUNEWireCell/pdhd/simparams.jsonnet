@@ -1,6 +1,6 @@
 // Here we override params.jsonnet to provide simulation-specific params.
 
-local base = import 'pdhd/params.jsonnet';
+local base = import 'pgrapher/experiment/pdhd/params.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
 base {
@@ -239,7 +239,7 @@ base {
   // This sets a relative gain at the input to the ADC.  Note, if
   // you are looking to fix SimDepoSource, you are in the wrong
   // place.  See the "scale" parameter of wcls.input.depos() defined
-  // in common/ui/wcls/nodes.jsonnet.
+  // in pgrapher/common/ui/wcls/nodes.jsonnet.
   // elec: super.elec {
   //   postgain: 1.0,
   //   shaping: 2.2 * wc.us,

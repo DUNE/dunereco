@@ -3,16 +3,16 @@
 // one set of nominal field response function.
 
 local g = import 'pgraph.jsonnet';
-local f = import 'common/funcs.jsonnet';
+local f = import 'pgrapher/common/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-local io = import 'common/fileio.jsonnet';
-local tools_maker = import 'common/tools.jsonnet';
-local params = import 'dune-vd-coldbox/simparams.jsonnet';
+local io = import 'pgrapher/common/fileio.jsonnet';
+local tools_maker = import 'pgrapher/common/tools.jsonnet';
+local params = import 'pgrapher/experiment/dune-vd-coldbox/simparams.jsonnet';
 
 local tools = tools_maker(params);
 
-local sim_maker = import 'dune-vd-coldbox/sim.jsonnet';
+local sim_maker = import 'pgrapher/experiment/dune-vd-coldbox/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local stubby = {
@@ -44,7 +44,7 @@ local bagger = sim.make_bagger();
 // local sn_pipes = sim.splusn_pipelines;
 local analog_pipes = sim.analog_pipelines;
 
-// local perfect = import 'dune-vd-coldbox/chndb-base.jsonnet';
+// local perfect = import 'pgrapher/experiment/dune-vd-coldbox/chndb-base.jsonnet';
 // local chndb = [{
 //   type: 'OmniChannelNoiseDB',
 //   name: 'ocndbperfect%d' % n,
@@ -52,10 +52,10 @@ local analog_pipes = sim.analog_pipelines;
 //   uses: [tools.anodes[n], tools.field, tools.dft],
 // } for n in anode_iota];
 // 
-// local nf_maker = import 'dune-vd-coldbox/nf.jsonnet';
+// local nf_maker = import 'pgrapher/experiment/dune-vd-coldbox/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local sp_maker = import 'dune-vd-coldbox/sp.jsonnet';
+local sp_maker = import 'pgrapher/experiment/dune-vd-coldbox/sp.jsonnet';
 local sp = sp_maker(params, tools);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
@@ -117,12 +117,12 @@ local frame_summers = [
     }, nin=2, nout=1) for n in std.range(0, 1)];
 
 local actpipes = [g.pipeline([noises[n], digitizers[n]], name="noise-digitizer%d" %n) for n in std.range(0,1)];
-local util = import 'dune-vd-coldbox/funcs.jsonnet';
+local util = import 'pgrapher/experiment/dune-vd-coldbox/funcs.jsonnet';
 local pipe_reducer = util.fansummer('DepoSetFanout', analog_pipes, frame_summers, actpipes, 'FrameFanin');
 
 
 local magoutput = 'dune-vd-coldbox-sim-check.root';
-local magnify = import 'dune-vd-coldbox/magnify-sinks.jsonnet';
+local magnify = import 'pgrapher/experiment/dune-vd-coldbox/magnify-sinks.jsonnet';
 local magnifyio = magnify(tools, magoutput);
 
 // local fansel = g.pnode({

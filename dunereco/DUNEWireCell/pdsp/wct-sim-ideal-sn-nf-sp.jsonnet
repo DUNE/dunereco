@@ -9,14 +9,14 @@
 
 local wc = import "wirecell.jsonnet";
 local g = import "pgraph.jsonnet";
-local f = import "common/funcs.jsonnet";
+local f = import "pgrapher/common/funcs.jsonnet";
 
-local io = import "common/fileio.jsonnet";
-local params = import "pdsp/simparams.jsonnet";
-local tools_maker = import "common/tools.jsonnet";
-local sim_maker = import "pdsp/sim.jsonnet";
+local io = import "pgrapher/common/fileio.jsonnet";
+local params = import "pgrapher/experiment/pdsp/simparams.jsonnet";
+local tools_maker = import "pgrapher/common/tools.jsonnet";
+local sim_maker = import "pgrapher/experiment/pdsp/sim.jsonnet";
 
-local sp_maker = import "pdsp/sp.jsonnet";
+local sp_maker = import "pgrapher/experiment/pdsp/sp.jsonnet";
 
 local tools = tools_maker(params);
 

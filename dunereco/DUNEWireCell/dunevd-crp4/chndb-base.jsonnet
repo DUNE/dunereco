@@ -4,7 +4,7 @@
 
 local handmade = import 'chndb-resp.jsonnet';
 local wc = import 'wirecell.jsonnet';
-local util = import 'dunevd-crp2/funcs.jsonnet';
+local util = import 'pgrapher/experiment/dunevd-crp2/funcs.jsonnet';
 
 function(params, anode, field, n, rms_cuts=[])
   {

@@ -7,13 +7,13 @@
 // Output is a Python numpy .npz file.
 
 local g = import 'pgraph.jsonnet';
-local f = import 'common/funcs.jsonnet';
-local util = import 'dunevd-crp2/funcs.jsonnet';
+local f = import 'pgrapher/common/funcs.jsonnet';
+local util = import 'pgrapher/experiment/dunevd-crp2/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-local io = import 'common/fileio.jsonnet';
-local tools_maker = import 'common/tools.jsonnet';
-local base = import 'dunevd-crp2/simparams.jsonnet';
+local io = import 'pgrapher/common/fileio.jsonnet';
+local tools_maker = import 'pgrapher/common/tools.jsonnet';
+local base = import 'pgrapher/experiment/dunevd-crp2/simparams.jsonnet';
 local params = base {
   daq: super.daq {
     nticks: std.extVar('nticks'),
@@ -34,7 +34,7 @@ local params = base {
 
 local tools = tools_maker(params);
 
-local sim_maker = import 'dunevd-crp2/sim.jsonnet';
+local sim_maker = import 'pgrapher/experiment/dunevd-crp2/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local nanodes = std.length(tools.anodes);
@@ -48,7 +48,7 @@ local output = 'wct-sim-ideal-sig.npz';
 //                             [sim.ar39(), sim.tracks(tracklist)]);
 // local depos = sim.tracks(tracklist, step=1.0 * wc.mm);
 
-local wcls_maker = import 'ui/wcls/nodes.jsonnet';
+local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 local wcls_input = {
   // depos: wcls.input.depos(name="", art_tag="IonAndScint"),
@@ -124,7 +124,7 @@ local bagger = sim.make_bagger();
 // local sn_pipes = sim.splusn_pipelines;
 local analog_pipes = sim.analog_pipelines;
 
-local perfect = import 'dunevd-crp2/chndb-base.jsonnet';
+local perfect = import 'pgrapher/experiment/dunevd-crp2/chndb-base.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
@@ -133,11 +133,11 @@ local chndb = [{
 } for n in anode_iota];
 
 
-// local nf_maker = import 'dunevd-crp2/nf.jsonnet';
+// local nf_maker = import 'pgrapher/experiment/dunevd-crp2/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb_pipes[n]) for n in std.range(0, std.length(tools.anodes)-1)];
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in anode_iota];
 
-local sp_maker = import 'dunevd-crp2/sp.jsonnet';
+local sp_maker = import 'pgrapher/experiment/dunevd-crp2/sp.jsonnet';
 local sp = sp_maker(params, tools);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 

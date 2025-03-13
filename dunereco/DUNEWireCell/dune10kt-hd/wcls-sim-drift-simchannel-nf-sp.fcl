@@ -18,7 +18,7 @@ physics :{
             plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
 
             // needs to be found via your WIRECELL_PATH
-            configs: ["dune10kt-hd/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
+            configs: ["pgrapher/experiment/dune10kt-hd/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
 
 
             // Contract note: these exact "type:name" must be used to identify

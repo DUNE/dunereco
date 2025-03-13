@@ -1,10 +1,10 @@
 local g = import "pgraph.jsonnet";
-local f = import "common/funcs.jsonnet";
+local f = import "pgrapher/common/funcs.jsonnet";
 local wc = import "wirecell.jsonnet";
 
-local io = import 'common/fileio.jsonnet';
-local tools_maker = import 'common/tools.jsonnet';
-local params = import 'pdhd/simparams.jsonnet';
+local io = import 'pgrapher/common/fileio.jsonnet';
+local tools_maker = import 'pgrapher/common/tools.jsonnet';
+local params = import 'pgrapher/experiment/pdhd/simparams.jsonnet';
 local fcl_params = {
     use_dnnroi: false,
 };
@@ -13,7 +13,7 @@ local tools = tools_maker(params);
 // local tools_all = tools_maker(params);
 // local tools = tools_all {anodes: [tools_all.anodes[n] for n in [0,1,2,3]]};
 
-local sim_maker = import 'pdhd/sim.jsonnet';
+local sim_maker = import 'pgrapher/experiment/pdhd/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 // Deposit and drifter ///////////////////////////////////////////////////////////////////////////////
@@ -48,7 +48,7 @@ local bagger = sim.make_bagger();
 // local sn_pipes = sim.signal_pipelines;
 local sn_pipes = sim.splusn_pipelines;
 
-local sp_maker = import 'pdhd/sp.jsonnet';
+local sp_maker = import 'pgrapher/experiment/pdhd/sp.jsonnet';
 local sp_override = {
     sparse: false,
     use_roi_debug_mode: false,
@@ -58,12 +58,12 @@ local sp_override = {
 local sp = sp_maker(params, tools, sp_override);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
-local img = import 'pdhd/img.jsonnet';
+local img = import 'pgrapher/experiment/pdhd/img.jsonnet';
 local img_maker = img();
 local img_pipes = [img_maker.per_anode(a) for a in tools.anodes];
 
 local magoutput = 'protodunehd-sim-fans.root';
-local magnify = import 'pdhd/magnify-sinks.jsonnet';
+local magnify = import 'pgrapher/experiment/pdhd/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 local frame_tap = function(name, outname, tags, digitize) {
     ret: g.fan.tap('FrameFanout',  g.pnode({
@@ -88,7 +88,7 @@ local frame_sink = function(name, outname, tags, digitize) {
     }, nin=1, nout=0),
 }.ret;
 
-// local dnnroi = import 'pdhd/dnnroi.jsonnet';
+// local dnnroi = import 'pgrapher/experiment/pdhd/dnnroi.jsonnet';
 // local ts = {
 //     type: "TorchService",
 //     name: "dnnroi",

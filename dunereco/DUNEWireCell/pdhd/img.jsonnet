@@ -1,8 +1,8 @@
 local wc = import "wirecell.jsonnet";
 local g = import "pgraph.jsonnet";
-local f = import 'common/funcs.jsonnet';
-local params = import "pdhd/simparams.jsonnet";
-local tools_maker = import 'common/tools.jsonnet';
+local f = import 'pgrapher/common/funcs.jsonnet';
+local params = import "pgrapher/experiment/pdhd/simparams.jsonnet";
+local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local tools = tools_maker(params);
 local anodes = tools.anodes;
 

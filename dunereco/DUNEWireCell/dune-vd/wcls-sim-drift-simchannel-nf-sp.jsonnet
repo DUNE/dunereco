@@ -7,13 +7,13 @@
 // Output is a Python numpy .npz file.
 
 local g = import 'pgraph.jsonnet';
-local f = import 'dune-vd/funcs.jsonnet';
+local f = import 'pgrapher/experiment/dune-vd/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
-local hs = import "common/helpers.jsonnet";
+local hs = import "pgrapher/common/helpers.jsonnet";
 
-local io = import 'common/fileio.jsonnet';
-local tools_maker = import 'common/tools.jsonnet';
-local params_maker = import 'dune-vd/params.jsonnet';
+local io = import 'pgrapher/common/fileio.jsonnet';
+local tools_maker = import 'pgrapher/common/tools.jsonnet';
+local params_maker = import 'pgrapher/experiment/dune-vd/params.jsonnet';
 local response_plane = std.extVar('response_plane')*wc.cm;
 local fcl_params = {
     G4RefTime: std.extVar('G4RefTime') * wc.us,
@@ -51,7 +51,7 @@ else if fcl_params.process_crm == "test2"
 then tools_all {anodes: [tools_all.anodes[n] for n in [36, 44]]}
 else tools_all;
 
-local sim_maker = import 'dune-vd/sim.jsonnet';
+local sim_maker = import 'pgrapher/experiment/dune-vd/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local nanodes = std.length(tools.anodes);
@@ -65,7 +65,7 @@ local output = 'wct-sim-ideal-sig.npz';
 //                             [sim.ar39(), sim.tracks(tracklist)]);
 // local depos = sim.tracks(tracklist, step=1.0 * wc.mm);
 
-local wcls_maker = import 'ui/wcls/nodes.jsonnet';
+local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 local wcls_input = {
   depos: wcls.input.depos(name='', art_tag='IonAndScint'),
@@ -143,7 +143,7 @@ local bagger = sim.make_bagger();
 // local sn_pipes = sim.signal_pipelines;
 local sn_pipes = sim.splusn_pipelines;
 
-local perfect = import 'dune10kt-1x2x6/chndb-perfect.jsonnet';
+local perfect = import 'pgrapher/experiment/dune10kt-1x2x6/chndb-perfect.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
@@ -151,16 +151,16 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field],  // pnode extension
 } for n in anode_iota];
 
-//local chndb_maker = import 'pdsp/chndb.jsonnet';
+//local chndb_maker = import 'pgrapher/experiment/pdsp/chndb.jsonnet';
 //local noise_epoch = "perfect";
 //local noise_epoch = "after";
 //local chndb_pipes = [chndb_maker(params, tools.anodes[n], tools.fields[n]).wct(noise_epoch)
 //                for n in std.range(0, std.length(tools.anodes)-1)];
-local nf_maker = import 'dune-vd/nf.jsonnet';
+local nf_maker = import 'pgrapher/experiment/dune-vd/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb_pipes[n]) for n in std.range(0, std.length(tools.anodes)-1)];
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in anode_iota];
 
-local sp_maker = import 'dune-vd/sp.jsonnet';
+local sp_maker = import 'pgrapher/experiment/dune-vd/sp.jsonnet';
 local sp_override = if fcl_params.use_dnnroi then
 {
     sparse: true,
@@ -209,7 +209,7 @@ local wcls_simchannel_sink = g.pnode({
 }, nin=1, nout=1, uses=tools.anodes);
 
 local magoutput = 'mag-sim-sp.root';
-local magnify = import 'dune-vd/magnify-sinks.jsonnet';
+local magnify = import 'pgrapher/experiment/dune-vd/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
 local multipass = [
@@ -229,7 +229,7 @@ local multipass = [
   for n in anode_iota
 ];
 
-local f = import 'dune-vd/funcs.jsonnet';
+local f = import 'pgrapher/experiment/dune-vd/funcs.jsonnet';
 // local outtags = ['gauss%d' % anode.data.ident for anode in tools.anodes];
 local outtags = [];
 local tag_rules = {

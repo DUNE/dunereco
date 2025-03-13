@@ -9,19 +9,19 @@
 
 local wc = import "wirecell.jsonnet";
 local g = import "pgraph.jsonnet";
-local f = import "common/funcs.jsonnet";
+local f = import "pgrapher/common/funcs.jsonnet";
 
-local cli = import "ui/cli/nodes.jsonnet";
+local cli = import "pgrapher/ui/cli/nodes.jsonnet";
 
-local io = import "common/fileio.jsonnet";
-local params_maker = import 'dune10kt-1x2x2/simparams.jsonnet';
+local io = import "pgrapher/common/fileio.jsonnet";
+local params_maker = import 'pgrapher/experiment/dune10kt-1x2x2/simparams.jsonnet';
 local params = params_maker({});
-local tools_maker = import "common/tools.jsonnet";
-local sim_maker = import "dune10kt-1x2x2/sim.jsonnet";
+local tools_maker = import "pgrapher/common/tools.jsonnet";
+local sim_maker = import "pgrapher/experiment/dune10kt-1x2x2/sim.jsonnet";
 // Fixme: currently, no noise filter.  Need to at least add a "null" NF to produce thresholds.
 // Or, maybe better, move that into OSP.  W/out it, behavior is undefined.
 // local nf = ...
-local sp_maker = import "dune10kt-1x2x2/sp.jsonnet";
+local sp_maker = import "pgrapher/experiment/dune10kt-1x2x2/sp.jsonnet";
 
 local tools = tools_maker(params);
 

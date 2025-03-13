@@ -13,11 +13,11 @@
 //
 // jsonnet -V reality=data -V epoch=dynamic -V raw_input_label=daq \\
 //         -V signal_output_form=sparse \\
-//         -J cfg cfg/uboone/wcls-nf-sp.jsonnet
+//         -J cfg cfg/pgrapher/experiment/uboone/wcls-nf-sp.jsonnet
 //
 // jsonnet -V reality=sim -V epoch=perfect -V raw_input_label=daq \\
 //         -V signal_output_form=sparse \\
-//         -J cfg cfg/uboone/wcls-nf-sp.jsonnet
+//         -J cfg cfg/pgrapher/experiment/uboone/wcls-nf-sp.jsonnet
 
 
 local epoch = std.extVar('epoch');  // eg "dynamic", "after", "before", "perfect"
@@ -30,18 +30,18 @@ local g = import 'pgraph.jsonnet';
 
 local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
 
-local tools_maker = import 'common/tools.jsonnet';
-local params_maker = import 'iceberg/simparams.jsonnet';
+local tools_maker = import 'pgrapher/common/tools.jsonnet';
+local params_maker = import 'pgrapher/experiment/iceberg/simparams.jsonnet';
 local fcl_params = {
     G4RefTime: std.extVar('G4RefTime') * wc.us,
 };
 local params = params_maker(fcl_params);
 local tools = tools_maker(params);
 
-local wcls_maker = import 'ui/wcls/nodes.jsonnet';
+local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 
-local sp_maker = import 'iceberg/sp.jsonnet';
+local sp_maker = import 'pgrapher/experiment/iceberg/sp.jsonnet';
 
 //local chndbm = chndb_maker(params, tools);
 //local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
@@ -123,7 +123,7 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local nf_maker = import 'iceberg/nf.jsonnet';
+local nf_maker = import 'pgrapher/experiment/iceberg/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
@@ -143,7 +143,7 @@ local chsel_pipes = [
 ];
 
 local magoutput = 'iceberg-data-check.root';
-local magnify = import 'iceberg/magnify-sinks.jsonnet';
+local magnify = import 'pgrapher/experiment/iceberg/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
 local nfsp_pipes = [
@@ -163,8 +163,8 @@ local nfsp_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-//local f = import 'common/funcs.jsonnet';
-local f = import 'iceberg/funcs.jsonnet';
+//local f = import 'pgrapher/common/funcs.jsonnet';
+local f = import 'pgrapher/experiment/iceberg/funcs.jsonnet';
 //local outtags = ['gauss%d' % n for n in std.range(0, std.length(tools.anodes) - 1)];
 //local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf', outtags);
 local fanpipe = f.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf');

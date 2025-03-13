@@ -1,16 +1,16 @@
 // Inspired to the PCBRP cli-sim-npz.jsonnet
 
 local g = import 'pgraph.jsonnet';
-local f = import 'common/funcs.jsonnet';
+local f = import 'pgrapher/common/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-local io = import 'common/fileio.jsonnet';
-local tools_maker = import 'common/tools.jsonnet';
-local params = import 'dune-vd/simparams.jsonnet';
+local io = import 'pgrapher/common/fileio.jsonnet';
+local tools_maker = import 'pgrapher/common/tools.jsonnet';
+local params = import 'pgrapher/experiment/dune-vd/simparams.jsonnet';
 
 local tools = tools_maker(params);
 
-local sim_maker = import 'dune-vd/sim.jsonnet';
+local sim_maker = import 'pgrapher/experiment/dune-vd/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 

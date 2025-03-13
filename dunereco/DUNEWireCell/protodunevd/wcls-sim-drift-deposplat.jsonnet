@@ -1,12 +1,12 @@
 
 local g = import 'pgraph.jsonnet';
-local f = import 'common/funcs.jsonnet';
+local f = import 'pgrapher/common/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
-local io = import 'common/fileio.jsonnet';
-local tools_maker = import 'common/tools.jsonnet';
+local io = import 'pgrapher/common/fileio.jsonnet';
+local tools_maker = import 'pgrapher/common/tools.jsonnet';
 
-local params = import 'protodunevd/simparams.jsonnet';
+local params = import 'pgrapher/experiment/protodunevd/simparams.jsonnet';
 
 // local tools = tools_maker(params);
 local btools = tools_maker(params);
@@ -14,7 +14,7 @@ local tools = btools {
     anodes : [btools.anodes[0], ],
 };
 
-local sim_maker = import 'protodunevd/sim.jsonnet';
+local sim_maker = import 'pgrapher/experiment/protodunevd/sim.jsonnet';
 local sim = sim_maker(params, tools);
 
 local nanodes = std.length(tools.anodes);
@@ -85,7 +85,7 @@ local tracklist = [
 ];
 local track_depos = sim.tracks(tracklist, step=1.0 * wc.mm);
 
-local wcls_maker = import "ui/wcls/nodes.jsonnet";
+local wcls_maker = import "pgrapher/ui/wcls/nodes.jsonnet";
 local wcls = wcls_maker(params, tools);
 local wcls_input = {
     // depos: wcls.input.depos(name="", art_tag="largeant:LArG4DetectorServicevolTPCActive"),
@@ -153,8 +153,8 @@ local bagger = [sim.make_bagger("bagger%d"%n) for n in anode_iota];
 //local sn_pipes = sim.signal_pipelines;
 local sn_pipes = sim.splusn_pipelines;
 
-// local perfect = import 'protodunevd/chndb-perfect.jsonnet';
-local base = import 'protodunevd/chndb-base.jsonnet';
+// local perfect = import 'pgrapher/experiment/protodunevd/chndb-perfect.jsonnet';
+local base = import 'pgrapher/experiment/protodunevd/chndb-base.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
@@ -163,16 +163,16 @@ local chndb = [{
   uses: [tools.anodes[n], tools.field],  // pnode extension
 } for n in anode_iota];
 
-//local chndb_maker = import 'protodunevd/chndb.jsonnet';
+//local chndb_maker = import 'pgrapher/experiment/protodunevd/chndb.jsonnet';
 //local noise_epoch = "perfect";
 //local noise_epoch = "after";
 //local chndb_pipes = [chndb_maker(params, tools.anodes[n], tools.fields[n]).wct(noise_epoch)
 //                for n in std.range(0, std.length(tools.anodes)-1)];
-local nf_maker = import 'protodunevd/nf.jsonnet';
+local nf_maker = import 'pgrapher/experiment/protodunevd/nf.jsonnet';
 // local nf_pipes = [nf_maker(params, tools.anodes[n], chndb_pipes[n]) for n in std.range(0, std.length(tools.anodes)-1)];
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in anode_iota];
 
-local sp_maker = import 'protodunevd/sp.jsonnet';
+local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
 local sp = sp_maker(params, tools, { sparse: true, use_roi_debug_mode: true, use_multi_plane_protection: true, mp_tick_resolution: 4, });
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
@@ -202,7 +202,7 @@ local wcls_simchannel_sink = g.pnode({
 }, nin=1, nout=1, uses=tools.anodes);
 
 local magoutput = 'g4-rec-0.root';
-local magnify = import 'protodunevd/magnify-sinks.jsonnet';
+local magnify = import 'pgrapher/experiment/protodunevd/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
 local hio_truth = [g.pnode({
@@ -309,7 +309,7 @@ local rio_sp = [g.pnode({
     for n in std.range(0, std.length(tools.anodes) - 1)
     ];
 
-// local img = import "protodunevd/img.jsonnet";
+// local img = import "pgrapher/experiment/protodunevd/img.jsonnet";
 // local use_blob_reframer = false;
 // local perapa_img_pipelines = [
 //     g.pipeline([
@@ -375,7 +375,7 @@ local rio_sp = [g.pnode({
 //     ];
 
 // Note: better switch to layers
-local dnnroi = import 'protodunevd/dnnroi.jsonnet';
+local dnnroi = import 'pgrapher/experiment/protodunevd/dnnroi.jsonnet';
 local ts = {
     type: "TorchService",
     name: "dnnroi",

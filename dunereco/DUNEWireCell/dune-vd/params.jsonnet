@@ -2,7 +2,7 @@
 // generic set of parameters and overrides things specific to PDSP.
 
 local wc = import "wirecell.jsonnet";
-local base = import "common/params.jsonnet";
+local base = import "pgrapher/common/params.jsonnet";
 
 function(params) base {
     // This section will be overwritten in simparams.jsonnet
