@@ -97,7 +97,7 @@ base {
     },
 
     adc: super.adc {
-        local resolution = base.adc.resolution, 
+        local resolution = base.adc.resolution; 
         // reuse ProtoDUNE SP values
         baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
         fullscale: [0.2*wc.volt, 1.6*wc.volt],
