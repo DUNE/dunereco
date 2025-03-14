@@ -1,2 +1,4 @@
 #include "pointrestree.fcl"
+process_name: PointResTree
 services.Geometry: @local::dune10kt_1x2x2_v6_refactored_geo
+physics.analyzers.PointResTree.GeneratorLabel:	   "marley"
