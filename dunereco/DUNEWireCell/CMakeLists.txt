@@ -11,7 +11,6 @@ add_subdirectory(dunevd-crp2)
 add_subdirectory(dunevd-crp4)
 add_subdirectory(ui)
 add_subdirectory(common)
-add_subdirectory(dune)
 add_subdirectory(fhicl)
 
 install_fhicl()
