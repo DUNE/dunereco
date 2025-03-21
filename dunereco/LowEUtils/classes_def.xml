@@ -1,0 +1,17 @@
+<!--  Include art::Wrapper lines for objects that we would like to put  -->
+<!--  into the event -->
+<!--  Include the non-wrapper lines for all objects on the art::Wrapper --> 
+<!--  lines and for all objects that are data members of those objects.-->
+
+<lcgdict>
+  <class name="vector<geo::WireID>" />
+  <class name="vector<vector<recob::Hit>>" />
+  <class name="solar::LowECluster" />
+  <class name="vector<solar::LowECluster>" />
+  <class name="art::Wrapper<vector<solar::LowECluster>>" />
+
+  <class name="art::Assns<solar::LowECluster,recob::Cluster,void>" />
+  <class name="art::Assns<recob::Cluster,solar::LowECluster,void>" />
+  <class name="art::Wrapper<art::Assns<recob::Cluster,solar::LowECluster,void>>" />
+  <class name="art::Wrapper<art::Assns<solar::LowECluster,recob::Cluster,void>>" />
+</lcgdict>
