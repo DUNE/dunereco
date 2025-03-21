@@ -2,7 +2,7 @@
 // generic set of parameters and overrides things specific to PDSP.
 
 local wc = import "wirecell.jsonnet";
-local base = import "pgrapher/dune/params.jsonnet";
+local base = import "pgrapher/common/params.jsonnet";
 
 function(params) base {
     // This section will be overwritten in simparams.jsonnet
@@ -110,7 +110,6 @@ function(params) base {
     },
 
     adc: super.adc {
-
         // per tdr, chapter 2
         // induction plane: 2350 ADC, collection plane: 900 ADC
         baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
@@ -120,6 +119,7 @@ function(params) base {
         // FE ASIC.  The input buffer first samples the input signal
         // (with a range of 0.2 V to 1.6 V)..."
         fullscale: [0.2*wc.volt, 1.6*wc.volt],
+
     },
 
     // This sets a relative gain at the input to the ADC.  Note, if

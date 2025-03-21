@@ -2,7 +2,7 @@
 // generic set of parameters and overrides things specific to PDSP.
 
 local wc = import "wirecell.jsonnet";
-local base = import "pgrapher/dune/params.jsonnet";
+local base = import "pgrapher/common/params.jsonnet";
 
 base {
     // This section will be overwritten in simparams.jsonnet
@@ -94,6 +94,8 @@ base {
     },
 
     adc: super.adc {
+
+        resolution: 14,
 
         // reuse ProtoDUNE SP values for bottom drift
         baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
