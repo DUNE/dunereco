@@ -1,4 +1,4 @@
-local base = import 'pgrapher/dune/params.jsonnet';
+local base = import 'pgrapher/common/params.jsonnet';
 local wc = import 'wirecell.jsonnet';
 
 function(params) base {
@@ -63,6 +63,9 @@ function(params) base {
 
   adc: super.adc {
     baselines: [900 * wc.millivolt, 900 * wc.millivolt, 200 * wc.millivolt],
+
+    // The resolution (bits) of the ADC
+    resolution: 14,
 
     // The voltage range as [min,max] of the ADC, eg min voltage
     // counts 0 ADC, max counts 2^resolution-1.
