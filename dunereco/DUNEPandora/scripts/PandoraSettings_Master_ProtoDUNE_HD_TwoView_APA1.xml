@@ -49,7 +49,7 @@
         <VisualizeOverallRecoStatus>false</VisualizeOverallRecoStatus>
     </algorithm>
 
-    <algorithm type = "LArTestBeamEventValidation">
+<!--    <algorithm type = "LArTestBeamEventValidation">
         <CaloHitListName>CaloHitList2D</CaloHitListName>
         <MCParticleListName>Input</MCParticleListName>
         <PfoListName>RecreatedPfos</PfoListName>
@@ -59,6 +59,7 @@
         <OutputTree>Validation</OutputTree>
         <OutputFile>Validation.root</OutputFile>
     </algorithm>
+-->
 <!--   <algorithm type = "LArVisualMonitoring">
         <ShowCurrentPfos>true</ShowCurrentPfos>
         <ShowDetector>true</ShowDetector>
