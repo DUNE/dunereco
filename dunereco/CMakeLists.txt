@@ -14,6 +14,7 @@ add_subdirectory(TrackFinderDUNE)
 add_subdirectory(TrackPID)
 add_subdirectory(VLNets)
 add_subdirectory(PointResTree)
+add_subdirectory(ExtractWire)
 
 # these two were not built in dunetpc at the time of the split
 # add_subdirectory(SNSlicer)

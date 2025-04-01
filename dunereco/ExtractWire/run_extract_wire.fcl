@@ -1,0 +1,57 @@
+#include "services_dune.fcl"
+#include "ExtractWire.fcl"
+
+#include "services_refactored_pdune.fcl"
+#include "LArG4_dune.fcl"
+#include "wirecell_dune.fcl"
+#include "tools_dune.fcl"
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TimeTracker:       @local::dune_time_tracker
+  MemoryTracker:     @local::dune_memory_tracker
+  RandomNumberGenerator: {} #ART native random number generator
+  message:              @local::dune_message_services_prod
+  @table::protodunehd_refactored_simulation_services
+  #FileCatalogMetadata:  @local::art_file_catalog_data
+  #                      #@table::protodunehd_reco_services
+  #ExptGeoHelperInterface:       @local::dune_geometry_helper
+  #GeometryConfigurationWriter:  {}
+  #Geometry:                     @local::protodunehdv7_geo
+  #DetectorClocksService:        @local::protodunehd_detectorclocks
+  #DetectorPropertiesService:    @local::protodunehd_detproperties
+
+
+
+
+  #TFileService: 
+  #{
+  #  fileName: "pdhd_hit_checker.root" 
+  #} 
+}
+
+physics: {
+    analyzers: {
+        extractwire: @local::ExtractWire
+    }
+    producers: {
+        largeant:     @local::protodune_larg4
+        IonAndScint:  @local::protodunehd_ionandscint
+        IonAndScintExternal: @local::protodunehd_ionandscint_external
+        
+        
+        tpcrawdecodermain:  @local::wirecell_protodunehdmc
+        wclsfiltermain:         @local::protodunehd_nf
+        wclsspmain:         @local::protodunehd_sp
+        
+        #tpcrawdecoderalt:  @local::wirecell_protodunehdmc
+        #wclsfilteralt:         @local::protodunehd_nf
+        #wclsspalt:          @local::protodunehd_sp
+    }
+
+    simulate: [largeant, IonAndScint, IonAndScintExternal, tpcrawdecodermain, wclsfiltermain, wclsspmain]
+    analyze: [extractwire]
+    trigger_paths: [  simulate ] 
+    end_paths:     [  analyze  ]
+}

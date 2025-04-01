@@ -1,0 +1,33 @@
+include_directories(${HEP_HPC_INCLUDE_DIRS})
+#include_directories($ENV{LARDATAOBJ_INC})
+#include_directories($ENV{LARCOREOBJ_INC})
+
+cet_build_plugin(ExtractWire art::module LIBRARIES
+                        larcore_Geometry_Geometry_service
+                        larcorealg_Geometry
+			            lardataobj_RecoBase
+                        nug4::ParticleNavigation
+                        ROOT::Core
+                        art::Persistency_Common 
+                        art::Persistency_Provenance 
+                        art::Utilities
+                        #canvas_Utilities
+                        messagefacility::MF_MessageLogger
+                        hep_hpc_hdf5
+                        ${HDF5_LIBRARIES}
+                        BASENAME_ONLY
+)
+target_include_directories(
+    ExtractWire_module
+    PUBLIC
+    $ENV{LARDATAOBJ_INC}
+    $ENV{LARCOREOBJ_INC}
+)
+target_link_directories(
+    ExtractWire_module
+    PUBLIC
+    $ENV{LARCORE_LIB}
+    $ENV{LARCOREALG_LIB}
+    $ENV{LARDATAOBJ_LIB}
+    $ENV{CANVAS_LIB}
+)

@@ -1,0 +1,7 @@
+BEGIN_PROLOG
+ExtractWire: {
+    module_type: "ExtractWire"
+    WireLabelMain: "wclsspmain"
+    WireLabelAlt: "wclsspalt"
+}
+END_PROLOG
