@@ -19,7 +19,9 @@
 
 #include "hep_hpc/hdf5/File.hpp"
 #include "hep_hpc/hdf5/Ntuple.hpp"
+#include "hep_hpc/hdf5/make_ntuple.hpp"
 #include "lardataobj/RecoBase/Wire.h"
+#include <array>
 
 namespace wire {
   class ExtractWire;
@@ -27,8 +29,14 @@ namespace wire {
 
 
 class wire::ExtractWire : public art::EDAnalyzer {
+
+using wire_range_t = std::pair<size_t, size_t>;
+using output_ranges_t = std::vector<std::pair<wire_range_t, size_t>>;
+
+
 public:
   explicit ExtractWire(fhicl::ParameterSet const& p);
+  ~ExtractWire() noexcept {};
   // The compiler-generated destructor is fine for non-base
   // classes without bare pointers or other resource use.
 
@@ -40,29 +48,124 @@ public:
 
   // Required functions.
   void analyze(art::Event const& e) override;
+  void beginSubRun(art::SubRun const& sr) override;
+  void endSubRun(art::SubRun const& sr) override;
 
 private:
+
+  void WireLoop(const std::array<int, 3> & evtID, const art::ValidHandle<std::vector<recob::Wire>> & wires);
 
   // Declare member data here.
   //Main --> Truth (i.e. 'perfect' APA)
   //Alt --> Input (i.e. 'bad' APA)
   art::InputTag fWireLabelMain, fWireLabelAlt;
+  std::string fOutputName;
+  output_ranges_t fOutputRanges;
+  hep_hpc::hdf5::File fOutputFile;
+
+  std::vector<
+    hep_hpc::hdf5::Ntuple<
+      hep_hpc::hdf5::Column<int, 1>,    // event id (run, subrun, event)
+      hep_hpc::hdf5::Column<size_t, 1>,    // Wire Number and Tick
+      // hep_hpc::hdf5::Column<int, 1>,  // Tick of ROI portion
+      hep_hpc::hdf5::Column<float, 1>  // Value of waveform
+    > *
+  > fMainWires; ///< event ntuple with neutrino information
 };
 
 
 wire::ExtractWire::ExtractWire(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
     fWireLabelMain(p.get<art::InputTag>("WireLabelMain")),
-    fWireLabelAlt(p.get<art::InputTag>("WireLabelAlt")) {}
+    fWireLabelAlt(p.get<art::InputTag>("WireLabelAlt")),
+    fOutputName(p.get<std::string>("OutputName", "extracted_wires")),
+    fOutputRanges(p.get<output_ranges_t>("OutputRanges")) {
+
+}
+
+void wire::ExtractWire::beginSubRun(art::SubRun const& sr) {
+
+  // struct timeval now;
+  // gettimeofday(&now, NULL);
+
+  // Open HDF5 output
+  std::ostringstream fileName;
+  fileName << fOutputName << "_r" << std::setfill('0') << std::setw(5) << sr.run()
+    << "_s" << std::setfill('0') << std::setw(5) << sr.subRun() << ".h5";
+  fOutputFile = hep_hpc::hdf5::File(fileName.str(), H5F_ACC_TRUNC);
+
+  for (auto & range : fOutputRanges) {
+    std::ostringstream ntuple_name;
+    ntuple_name << "wire_info_" << range.second;
+    fMainWires.push_back(
+      new hep_hpc::hdf5::Ntuple(
+        hep_hpc::hdf5::make_ntuple(
+          {fOutputFile, ntuple_name.str(), 1000},
+          hep_hpc::hdf5::make_column<int>("event_id", 3),
+          hep_hpc::hdf5::make_column<size_t>("chan_tick", 2),
+          // hep_hpc::hdf5::make_scalar_column<int>("tick", 1),
+          hep_hpc::hdf5::make_scalar_column<float>("value", 1)
+        )
+      )
+    );
+  }
+}
+
+void wire::ExtractWire::endSubRun(art::SubRun const& sr) {
+  fOutputFile.close();
+  for (auto * ptr : fMainWires) delete ptr;
+}
+void wire::ExtractWire::WireLoop(const std::array<int, 3> & evtID, const art::ValidHandle<std::vector<recob::Wire>> & wires) {
+  for (const auto & wire : (*wires)) {
+    bool found_out = false;
+    size_t out_index = 0;
+    size_t start_wire = 0;
+    for (const auto & [range, index] : fOutputRanges) {
+      if (range.first <= wire.Channel() && wire.Channel() < range.second) {
+        found_out = true;
+        out_index = index;
+        start_wire = range.first;
+        break;
+      }
+    }
+    if (!found_out) continue;
+
+       
+    // std::cout << wire.Channel() << " " << wire.View() << std::endl;
+    // std::cout << "\t" << wire.SignalROI().size() << std::endl;
+    // std::cout << out_index << std::endl;
+
+    // std::cout << "Ranges:" << std::endl;
+    for (const auto & range : wire.SignalROI().get_ranges()) {
+      // std::cout << range.begin_index() << std::endl;
+      size_t range_index = range.begin_index();
+      for (const auto & v : range.data()) {
+        // std::cout << "\t" << range_index << " " << v << std::endl;
+        std::array<size_t, 2> chan_tick {(wire.Channel()-start_wire), range_index};
+        fMainWires.at(out_index)->insert(
+          evtID.data(),
+          chan_tick.data(),
+          v
+        );
+        ++range_index;
+      }
+    }
+  }
+}
 
 void wire::ExtractWire::analyze(art::Event const& e) {
+
+  int run = e.id().run();
+  int subrun = e.id().subRun();
+  int event = e.id().event();
+
+  std::array<int, 3> evtID { run, subrun, event };
+
   auto main_wires = e.getValidHandle<std::vector<recob::Wire>>(fWireLabelMain);
   // auto alt_wires = e.getValidHandle<std::vector<recob::Wire>>(fWireLabelAlt);
 
+  WireLoop(evtID, main_wires);
 
-  for (const auto & wire : (*main_wires)) {
-    std::cout << wire.Channel() << std::endl;
-  }
 }
 
 DEFINE_ART_MODULE(wire::ExtractWire)

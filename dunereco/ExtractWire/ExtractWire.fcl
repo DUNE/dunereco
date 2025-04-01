@@ -3,5 +3,11 @@ ExtractWire: {
     module_type: "ExtractWire"
     WireLabelMain: "wclsspmain"
     WireLabelAlt: "wclsspalt"
+    OutputRanges: [
+        [[0,480], 0],
+        [[480,960], 1],
+        [[960, 1760], 2],
+        [[1760, 2560], 3]
+    ]
 }
 END_PROLOG

@@ -35,26 +35,23 @@ physics: {
     analyzers: {
         extractwire: @local::ExtractWire
     }
-    #producers: {
-    #    largeant:     @local::protodune_larg4
-    #    IonAndScint:  @local::protodunehd_ionandscint
-    #    IonAndScintExternal: @local::protodunehd_ionandscint_external
-    #    
-    #    
-    #    tpcrawdecodermain:  @local::wirecell_protodunehdmc
-    #    wclsfiltermain:         @local::protodunehd_nf
-    #    wclsspmain:         @local::protodunehd_sp
-    #    
-    #    #tpcrawdecoderalt:  @local::wirecell_protodunehdmc
-    #    #wclsfilteralt:         @local::protodunehd_nf
-    #    #wclsspalt:          @local::protodunehd_sp
-    #}
-#
-    #simulate: [largeant, IonAndScint, IonAndScintExternal, tpcrawdecodermain, wclsfiltermain, wclsspmain]
+    producers: {
+        largeant:     @local::protodune_larg4
+        IonAndScint:  @local::protodunehd_ionandscint
+        IonAndScintExternal: @local::protodunehd_ionandscint_external
+        
+        
+        tpcrawdecodermain:  @local::wirecell_protodunehdmc
+        wclsfiltermain:         @local::protodunehd_nf
+        wclsspmain:         @local::protodunehd_sp
+        
+        #tpcrawdecoderalt:  @local::wirecell_protodunehdmc
+        #wclsfilteralt:         @local::protodunehd_nf
+        #wclsspalt:          @local::protodunehd_sp
+    }
+
+    simulate: [largeant, IonAndScint, IonAndScintExternal, tpcrawdecodermain, wclsfiltermain, wclsspmain]
     analyze: [extractwire]
-    trigger_paths: [  ] 
+    trigger_paths: [  simulate ] 
     end_paths:     [  analyze  ]
 }
-
-physics.analyzers.extractwire.WireLabelMain: "wclsdatahd:gauss"
-physics.analyzers.extractwire.WireLabelAlt: "wclsdatahd:gauss"
