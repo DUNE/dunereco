@@ -69,5 +69,5 @@ outputs:
    compressionLevel: 1
  }
 }
-physics.producers.tpcrawdecoderperfect.configs[0]: "pgrapher/experiment/pdhd/wcls-sim-drift-simchannel-priorSCE_perfect_apa1.jsonnet"
-physics.producers.wclsnfspperfect.configs[0]: "pgrapher/experiment/pdhd/wcls-nf-sp_perfect_apa1.jsonnet"
+physics.producers.tpcrawdecoderperfect.wcls_main.configs[0]: "pgrapher/experiment/pdhd/wcls-sim-drift-simchannel-priorSCE_perfect_apa1.jsonnet"
+physics.producers.wclsnfspperfect.wcls_main.configs[0]: "pgrapher/experiment/pdhd/wcls-nf-sp_perfect_apa1.jsonnet"
