@@ -32,9 +32,7 @@ services:
 }
 
 physics: {
-    analyzers: {
-        extractwire: @local::ExtractWire
-    }
+
     producers: {
         largeant:     @local::protodune_larg4
         IonAndScint:  @local::protodunehd_ionandscint
@@ -44,8 +42,8 @@ physics: {
         tpcrawdecoderperfect:  @local::wirecell_protodunehdmc
         wclsnfspperfect:         @local::protodunehd_nfsp
         
-        tpcrawdecoderbadapa1:  @local::wirecell_protodunehdmc
-        wclsnfspbadapa1:         @local::protodunehd_nfsp
+        #tpcrawdecoderbadapa1:  @local::wirecell_protodunehdmc
+        #wclsnfspbadapa1:         @local::protodunehd_nfsp
     }
 
     simulate: [
@@ -53,20 +51,23 @@ physics: {
         IonAndScint,
         IonAndScintExternal,
 
-        #tpcrawdecoderperfect,
-        #wclsnfspperfect,
-
-        tpcrawdecoderbadapa1,
-        wclsnfspbadapa1
+        tpcrawdecoderperfect,
+        wclsnfspperfect
     ]
-    analyze: [extractwire]
+    stream1:  [ out1 ]
+    analyze: []
     trigger_paths: [  simulate ] 
-    end_paths:     [  analyze  ]
+    end_paths:     [  stream1  ]
 }
 
+outputs:
+{
+ out1:
+ {
+   module_type: RootOutput
+   fileName:    "pdhd_wirecell_perfect_apa1.root" #default file name, can override from command line with -o or --output
+   compressionLevel: 1
+ }
+}
 physics.producers.tpcrawdecoderperfect.configs[0]: "pgrapher/experiment/pdhd/wcls-sim-drift-simchannel-priorSCE_perfect_apa1.jsonnet"
 physics.producers.wclsnfspperfect.configs[0]: "pgrapher/experiment/pdhd/wcls-nf-sp_perfect_apa1.jsonnet"
-physics.analyzers.extractwire.WireLabelForInput: "wclsnfspbadapa1:gauss"
-#physics.analyzers.extractwire.WireLabelForInput: "wclsnfspperfect:gauss"
-#physics.analyzers.extractwire.WireLabelForTruth: "wclsnfspperfect:gauss"
-physics.analyzers.extractwire.WireLabelForTruth: "wclsnfspbadapa1:gauss"
