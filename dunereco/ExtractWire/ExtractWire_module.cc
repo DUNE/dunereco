@@ -70,19 +70,19 @@ private:
   // Declare member data here.
   //Main --> Truth (i.e. 'perfect' APA)
   //Alt --> Input (i.e. 'bad' APA)
-  art::InputTag fWireLabelMain, fWireLabelAlt;
+  art::InputTag fWireLabelForInput, fWireLabelForTruth;
   std::string fOutputName;
   output_ranges_t fOutputRanges;
   hep_hpc::hdf5::File fOutputFile;
 
-  std::vector<ntuple_t*> fMainWires, fAltWires; //
+  std::vector<ntuple_t*> fNTupleForInput, fNTupleForTruth; //
 };
 
 
 wire::ExtractWire::ExtractWire(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
-    fWireLabelMain(p.get<art::InputTag>("WireLabelMain")),
-    fWireLabelAlt(p.get<art::InputTag>("WireLabelAlt")),
+    fWireLabelForInput(p.get<art::InputTag>("WireLabelForInput")),
+    fWireLabelForTruth(p.get<art::InputTag>("WireLabelForTruth")),
     fOutputName(p.get<std::string>("OutputName", "extracted_wires")),
     fOutputRanges(p.get<output_ranges_t>("OutputRanges")) {
 
@@ -117,15 +117,15 @@ void wire::ExtractWire::beginSubRun(art::SubRun const& sr) {
     << "_s" << std::setfill('0') << std::setw(5) << sr.subRun() << ".h5";
   fOutputFile = hep_hpc::hdf5::File(fileName.str(), H5F_ACC_TRUNC);
 
-  MakeNTuples(fMainWires, "input_wire_info");
-  MakeNTuples(fAltWires, "truth_wire_info");
+  MakeNTuples(fNTupleForInput, "input_wire_info");
+  MakeNTuples(fNTupleForTruth, "truth_wire_info");
   
 }
 
 void wire::ExtractWire::endSubRun(art::SubRun const& sr) {
   fOutputFile.close();
-  for (auto * ptr : fMainWires) delete ptr;
-  for (auto * ptr : fAltWires) delete ptr;
+  for (auto * ptr : fNTupleForInput) delete ptr;
+  for (auto * ptr : fNTupleForTruth) delete ptr;
 }
 void wire::ExtractWire::WireLoop(
     const std::array<int, 3> & evtID,
@@ -176,11 +176,11 @@ void wire::ExtractWire::analyze(art::Event const& e) {
 
   std::array<int, 3> evtID { run, subrun, event };
 
-  auto main_wires = e.getValidHandle<std::vector<recob::Wire>>(fWireLabelMain);
-  auto alt_wires = e.getValidHandle<std::vector<recob::Wire>>(fWireLabelAlt);
+  auto wires_for_input = e.getValidHandle<std::vector<recob::Wire>>(fWireLabelForInput);
+  auto wires_for_truth = e.getValidHandle<std::vector<recob::Wire>>(fWireLabelForTruth);
 
-  WireLoop(evtID, main_wires, fMainWires);
-  WireLoop(evtID, alt_wires, fAltWires);
+  WireLoop(evtID, wires_for_input, fNTupleForInput);
+  WireLoop(evtID, wires_for_truth, fNTupleForTruth);
 
 }
 

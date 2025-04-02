@@ -56,5 +56,5 @@ physics: {
     end_paths:     [  analyze  ]
 }
 
-physics.analyzers.extractwire.WireLabelMain: "wclsdatahd:gauss"
-physics.analyzers.extractwire.WireLabelAlt: "wclsdatahd:gauss"
+physics.analyzers.extractwire.WireLabelForInput: "wclsdatahd:gauss"
+physics.analyzers.extractwire.WireLabelForTruth: "wclsdatahd:gauss"

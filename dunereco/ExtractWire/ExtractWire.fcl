@@ -1,8 +1,8 @@
 BEGIN_PROLOG
 ExtractWire: {
     module_type: "ExtractWire"
-    WireLabelMain: "wclsspmain"
-    WireLabelAlt: "wclsspalt"
+    WireLabelForInput: "wclsspmain"
+    WireLabelForTruth: "wclsspalt"
     OutputRanges: [
         [[0,480], 0],
         [[480,960], 1],

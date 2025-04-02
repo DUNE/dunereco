@@ -41,17 +41,30 @@ physics: {
         IonAndScintExternal: @local::protodunehd_ionandscint_external
         
         
-        tpcrawdecodermain:  @local::wirecell_protodunehdmc
-        wclsfiltermain:         @local::protodunehd_nf
-        wclsspmain:         @local::protodunehd_sp
+        tpcrawdecoderperfect:  @local::wirecell_protodunehdmc
+        wclsnfspperfect:         @local::protodunehd_nfsp
         
-        #tpcrawdecoderalt:  @local::wirecell_protodunehdmc
-        #wclsfilteralt:         @local::protodunehd_nf
-        #wclsspalt:          @local::protodunehd_sp
+        tpcrawdecoderbadapa1:  @local::wirecell_protodunehdmc
+        wclsnfspbadapa1:         @local::protodunehd_nfsp
     }
 
-    simulate: [largeant, IonAndScint, IonAndScintExternal, tpcrawdecodermain, wclsfiltermain, wclsspmain]
+    simulate: [
+        largeant,
+        IonAndScint,
+        IonAndScintExternal,
+
+        tpcrawdecoderperfect,
+        wclsnfspperfect,
+
+        tpcrawdecoderbadapa1,
+        wclsnfspbadapa1
+    ]
     analyze: [extractwire]
     trigger_paths: [  simulate ] 
     end_paths:     [  analyze  ]
 }
+
+physics.producers.tpcrawdecoderperfect.configs[0]: "pgrapher/experiment/pdhd/wcls-sim-drift-simchannel-priorSCE_perfect_apa1.jsonnet"
+physics.producers.wclsnfspperfect.configs[0]: "pgrapher/experiment/pdhd/wcls-nf-sp_perfect_apa1.jsonnet"
+physics.analyzers.extractwire.WireLabelForInput: "wclsnfsbadapa1:gauss"
+physics.analyzers.extractwire.WireLabelForTruth: "wclsnfspperfect:gauss"
