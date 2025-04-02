@@ -33,7 +33,12 @@ class wire::ExtractWire : public art::EDAnalyzer {
 using wire_range_t = std::pair<size_t, size_t>;
 using output_ranges_t = std::vector<std::pair<wire_range_t, size_t>>;
 
-
+using ntuple_t
+  = hep_hpc::hdf5::Ntuple<
+    hep_hpc::hdf5::Column<int, 1>,    // event id (run, subrun, event)
+    hep_hpc::hdf5::Column<size_t, 1>,    // Wire Number and Tick
+    hep_hpc::hdf5::Column<float, 1>  // Value of waveform
+  >;
 public:
   explicit ExtractWire(fhicl::ParameterSet const& p);
   ~ExtractWire() noexcept {};
@@ -53,7 +58,14 @@ public:
 
 private:
 
-  void WireLoop(const std::array<int, 3> & evtID, const art::ValidHandle<std::vector<recob::Wire>> & wires);
+  void WireLoop(
+    const std::array<int, 3> & evtID,
+    const art::ValidHandle<std::vector<recob::Wire>> & wires,
+    std::vector<ntuple_t*> & ntuple_vec);
+
+  void MakeNTuples(
+    std::vector<ntuple_t*> & wires_ntuple,
+    std::string base_name);
 
   // Declare member data here.
   //Main --> Truth (i.e. 'perfect' APA)
@@ -63,14 +75,7 @@ private:
   output_ranges_t fOutputRanges;
   hep_hpc::hdf5::File fOutputFile;
 
-  std::vector<
-    hep_hpc::hdf5::Ntuple<
-      hep_hpc::hdf5::Column<int, 1>,    // event id (run, subrun, event)
-      hep_hpc::hdf5::Column<size_t, 1>,    // Wire Number and Tick
-      // hep_hpc::hdf5::Column<int, 1>,  // Tick of ROI portion
-      hep_hpc::hdf5::Column<float, 1>  // Value of waveform
-    > *
-  > fMainWires; ///< event ntuple with neutrino information
+  std::vector<ntuple_t*> fMainWires, fAltWires; //
 };
 
 
@@ -81,6 +86,24 @@ wire::ExtractWire::ExtractWire(fhicl::ParameterSet const& p)
     fOutputName(p.get<std::string>("OutputName", "extracted_wires")),
     fOutputRanges(p.get<output_ranges_t>("OutputRanges")) {
 
+}
+
+void wire::ExtractWire::MakeNTuples(std::vector<ntuple_t*> & wires_ntuple, std::string base_name) {
+  for (auto & range : fOutputRanges) {
+    std::ostringstream ntuple_name;
+    // ntuple_name << "wire_info_" << range.second;
+    ntuple_name << base_name << "_" << range.second;
+    wires_ntuple.push_back(
+      new hep_hpc::hdf5::Ntuple(
+        hep_hpc::hdf5::make_ntuple(
+          {fOutputFile, ntuple_name.str(), 1000},
+          hep_hpc::hdf5::make_column<int>("event_id", 3),
+          hep_hpc::hdf5::make_column<size_t>("chan_tick", 2),
+          hep_hpc::hdf5::make_scalar_column<float>("value", 1)
+        )
+      )
+    );
+  }
 }
 
 void wire::ExtractWire::beginSubRun(art::SubRun const& sr) {
@@ -94,28 +117,20 @@ void wire::ExtractWire::beginSubRun(art::SubRun const& sr) {
     << "_s" << std::setfill('0') << std::setw(5) << sr.subRun() << ".h5";
   fOutputFile = hep_hpc::hdf5::File(fileName.str(), H5F_ACC_TRUNC);
 
-  for (auto & range : fOutputRanges) {
-    std::ostringstream ntuple_name;
-    ntuple_name << "wire_info_" << range.second;
-    fMainWires.push_back(
-      new hep_hpc::hdf5::Ntuple(
-        hep_hpc::hdf5::make_ntuple(
-          {fOutputFile, ntuple_name.str(), 1000},
-          hep_hpc::hdf5::make_column<int>("event_id", 3),
-          hep_hpc::hdf5::make_column<size_t>("chan_tick", 2),
-          // hep_hpc::hdf5::make_scalar_column<int>("tick", 1),
-          hep_hpc::hdf5::make_scalar_column<float>("value", 1)
-        )
-      )
-    );
-  }
+  MakeNTuples(fMainWires, "input_wire_info");
+  MakeNTuples(fAltWires, "truth_wire_info");
+  
 }
 
 void wire::ExtractWire::endSubRun(art::SubRun const& sr) {
   fOutputFile.close();
   for (auto * ptr : fMainWires) delete ptr;
+  for (auto * ptr : fAltWires) delete ptr;
 }
-void wire::ExtractWire::WireLoop(const std::array<int, 3> & evtID, const art::ValidHandle<std::vector<recob::Wire>> & wires) {
+void wire::ExtractWire::WireLoop(
+    const std::array<int, 3> & evtID,
+    const art::ValidHandle<std::vector<recob::Wire>> & wires,
+    std::vector<ntuple_t*> & ntuple_vec) {
   for (const auto & wire : (*wires)) {
     bool found_out = false;
     size_t out_index = 0;
@@ -142,7 +157,7 @@ void wire::ExtractWire::WireLoop(const std::array<int, 3> & evtID, const art::Va
       for (const auto & v : range.data()) {
         // std::cout << "\t" << range_index << " " << v << std::endl;
         std::array<size_t, 2> chan_tick {(wire.Channel()-start_wire), range_index};
-        fMainWires.at(out_index)->insert(
+        ntuple_vec.at(out_index)->insert(
           evtID.data(),
           chan_tick.data(),
           v
@@ -162,9 +177,10 @@ void wire::ExtractWire::analyze(art::Event const& e) {
   std::array<int, 3> evtID { run, subrun, event };
 
   auto main_wires = e.getValidHandle<std::vector<recob::Wire>>(fWireLabelMain);
-  // auto alt_wires = e.getValidHandle<std::vector<recob::Wire>>(fWireLabelAlt);
+  auto alt_wires = e.getValidHandle<std::vector<recob::Wire>>(fWireLabelAlt);
 
-  WireLoop(evtID, main_wires);
+  WireLoop(evtID, main_wires, fMainWires);
+  WireLoop(evtID, alt_wires, fAltWires);
 
 }
 
