@@ -49,19 +49,35 @@ function (anode, ts, prefix="dnnroi", output_scale=1.0, nticks=6000, tick_per_sl
             nchunks: nchunks
         }
     }, nin=1, nout=1, uses=[ts, anode]);
+    // local dnnroi_w = pg.pnode({
+    //     type: "PlaneSelector",
+    //     name: prename+"w",
+    //     data: {
+    //         anode: wc.tn(anode),
+    //         plane: 2,
+    //         tags: ["gauss%d"%apaid],
+    //         tag_rules: [{
+    //             frame: {".*":"DNNROIFinding"},
+    //             trace: {["gauss%d"%apaid]:"dnnsp%dw"%apaid},
+    //         }],
+    //     }
+    // }, nin=1, nout=1, uses=[anode]);
     local dnnroi_w = pg.pnode({
-        type: "PlaneSelector",
+        type: "DNNROIFinding",
         name: prename+"w",
         data: {
             anode: wc.tn(anode),
             plane: 2,
-            tags: ["gauss%d"%apaid],
-            tag_rules: [{
-                frame: {".*":"DNNROIFinding"},
-                trace: {["gauss%d"%apaid]:"dnnsp%dw"%apaid},
-            }],
+            intags: intags,
+            decon_charge_tag: "decon_charge%d" %apaid,
+            outtag: "dnnsp%dw"%apaid,
+            output_scale: output_scale,
+            forward: wc.tn(ts),
+            tick_per_slice: tick_per_slice,
+            nticks: nticks,
+            nchunks: nchunks
         }
-    }, nin=1, nout=1, uses=[anode]);
+    }, nin=1, nout=1, uses=[ts, anode]);
 
     local dnnpipes = [dnnroi_u, dnnroi_v, dnnroi_w];
     local dnnfanout = pg.pnode({
