@@ -11,6 +11,7 @@ local spfilt = import 'pgrapher/experiment/pdhd/sp-filters.jsonnet';
 function(params, tools, override = {}) {
 
   local pc = tools.perchanresp_nameuses,
+  local fltr = tools.fltrespuses,
 
   local resolution = params.adc.resolution,
   local fullscale = params.adc.fullscale[1] - params.adc.fullscale[0],
@@ -28,6 +29,10 @@ function(params, tools, override = {}) {
       anode: wc.tn(anode),
       dft: wc.tn(tools.dft),
       field_response: wc.tn(tools.fields[anode.data.ident]),
+      filter_responses_tn: if anode.data.ident == 0
+                           then ["FilterResponse:plane0",
+                                 "FilterResponse:plane2", "FilterResponse:plane1"]
+                           else [ ],
       elecresponse: wc.tn(tools.elec_resp),
       ftoffset: 0.0, // default 0.0
       ctoffset: 1.0*wc.microsecond, // default -8.0
@@ -42,11 +47,11 @@ function(params, tools, override = {}) {
       lroi_th_factor1: 0.7, // default 0.7
       lroi_jump_one_bin: 1, // default 0
 
-      r_th_factor: 3.0,  // default 3
+      r_th_factor: if anode.data.ident==0 then 2.5 else 3.0,  // default 3
       r_fake_signal_low_th: 375,  // default 500
       r_fake_signal_high_th: 750,  // default 1000
       r_fake_signal_low_th_ind_factor: 1.0,  // default 1
-      r_fake_signal_high_th_ind_factor: 1.0,  // default 1      
+      r_fake_signal_high_th_ind_factor: 1.0,  // default 1
       r_th_peak: 3.0, // default 3.0
       r_sep_peak: 6.0, // default 6.0
       r_low_peak_sep_threshold_pre: 1200, // default 1200
@@ -70,6 +75,8 @@ function(params, tools, override = {}) {
       use_multi_plane_protection: false,
       mp3_roi_tag: 'mp3_roi%d' % anode.data.ident,
       mp2_roi_tag: 'mp2_roi%d' % anode.data.ident,
+      // mp_th1: if anode.data.ident==0 then 200 else 1000,
+      // mp_th2: if anode.data.ident==0 then 100 else 500,
       
       isWrapped: false,
       // process_planes: if anode.data.ident==0 then [0, 1] else [0, 1, 2],
@@ -80,6 +87,6 @@ function(params, tools, override = {}) {
                             else ["Wiener_tight_U", "Wiener_tight_V", "Wiener_tight_W"],
 
     } + override,
-  }, nin=1, nout=1, uses=[anode, tools.dft, tools.field, tools.fields[1], tools.fields[2], tools.fields[3], tools.elec_resp] + pc.uses + spfilt),
+  }, nin=1, nout=1, uses=[anode, tools.dft, tools.field, tools.fields[1], tools.fields[2], tools.fields[3], tools.elec_resp] + pc.uses + fltr.uses + spfilt),
 
 }
