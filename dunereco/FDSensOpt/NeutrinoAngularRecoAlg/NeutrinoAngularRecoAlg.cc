@@ -258,7 +258,7 @@ dune::AngularRecoOutput NeutrinoAngularRecoAlg::CalculateNeutrinoAngle(const art
 
 geo::View_t NeutrinoAngularRecoAlg::GetTargetView(const art::Ptr<recob::Hit> &hit) const{
     const geo::TPCID hit_tpcID(hit->WireID());
-    if(fGeometry->TPC(hit_tpcID).DriftAxisWithSign().coordinate == geo::Coordinate::X){ //"normal" drift direction, we don't change anything
+    if(fGeometry->TPC(hit_tpcID).DriftAxisWithSign().sign == geo::DriftSign::Positive){ //"normal" drift direction, we don't change anything
         return hit->View();
     }
     else{ //We invert U and V
