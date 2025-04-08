@@ -278,7 +278,7 @@ geo::View_t NeutrinoAngularRecoAlg::GetTargetView(const art::Ptr<recob::Hit> &hi
 
 float NeutrinoAngularRecoAlg::GetViewTheta(geo::View_t view) const{
     for (geo::TPCGeo const& TPC: fGeometry->Iterate<geo::TPCGeo>()) {
-        if(TPC.DriftAxisWithSign().coordinate == geo::Coordinate::X){ //Trying to find a TPC with the right drift direction
+        if(TPC.DriftAxisWithSign().sign == geo::DriftSign::Positive){ //Trying to find a TPC with the right drift direction
             for (unsigned int p = 0; p < fWireReadout->Get().Nplanes(TPC.ID()); ++p) {
                 geo::PlaneGeo const& plane = fWireReadout->Get().Plane(geo::PlaneID(TPC.ID(), p));
                 if (plane.View() == view){
