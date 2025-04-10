@@ -108,7 +108,7 @@ local sp_override = { // assume all tages sets in base sp.jsonnet
     // break_roi_loop2_tag: "",
     // shrink_roi_tag: "",
     // extend_roi_tag: "",
-    decon_charge_tag: "",
+    // decon_charge_tag: "",
     use_multi_plane_protection: true,
     do_not_mp_protect_traditional: true, // do_not_mp_protect_traditional to
                                          // make a clear ref, defualt is false
@@ -259,8 +259,7 @@ local ts = {
     type: "TorchService",
     name: "dnnroi",
     data: {
-        // model: "ts-model/unet-l23-cosmic500-e50.ts",
-        model: "ts-model/CP49.ts",
+        model: "ts-model/unet-cosmic390-newwc-depofluxsplat-pdhd.ts",
         device: "cpu", // "gpucpu",
         concurrency: 1,
     },
