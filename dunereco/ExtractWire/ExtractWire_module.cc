@@ -39,6 +39,14 @@ using ntuple_t
     hep_hpc::hdf5::Column<size_t, 1>,    // Wire Number and Tick
     hep_hpc::hdf5::Column<float, 1>  // Value of waveform
   >;
+
+using event_ntuple_t
+  = hep_hpc::hdf5::Ntuple<
+    hep_hpc::hdf5::Column<int, 1>,    // event id (run, subrun, event)
+    hep_hpc::hdf5::Column<size_t, 1>    // Wire Number and Tick
+  >;
+
+  
 public:
   explicit ExtractWire(fhicl::ParameterSet const& p);
   ~ExtractWire() noexcept {};
@@ -61,10 +69,13 @@ private:
   void WireLoop(
     const std::array<int, 3> & evtID,
     const art::ValidHandle<std::vector<recob::Wire>> & wires,
-    std::vector<ntuple_t*> & ntuple_vec);
+    std::vector<ntuple_t*> & ntuple_vec,
+    std::vector<event_ntuple_t*> & event_ntuple_vec
+  );
 
   void MakeNTuples(
     std::vector<ntuple_t*> & wires_ntuple,
+    std::vector<event_ntuple_t*> & event_ntuple,
     std::string base_name);
 
   // Declare member data here.
@@ -76,6 +87,7 @@ private:
   hep_hpc::hdf5::File fOutputFile;
 
   std::vector<ntuple_t*> fNTupleForInput, fNTupleForTruth; //
+  std::vector<event_ntuple_t*> fEventNTupleForInput, fEventNTupleForTruth; // for event info
 };
 
 
@@ -88,10 +100,12 @@ wire::ExtractWire::ExtractWire(fhicl::ParameterSet const& p)
 
 }
 
-void wire::ExtractWire::MakeNTuples(std::vector<ntuple_t*> & wires_ntuple, std::string base_name) {
+void wire::ExtractWire::MakeNTuples(
+  std::vector<ntuple_t*> & wires_ntuple,
+  std::vector<event_ntuple_t*> & event_ntuple,
+  std::string base_name) {
   for (auto & range : fOutputRanges) {
     std::ostringstream ntuple_name;
-    // ntuple_name << "wire_info_" << range.second;
     ntuple_name << base_name << "_" << range.second;
     wires_ntuple.push_back(
       new hep_hpc::hdf5::Ntuple(
@@ -100,6 +114,18 @@ void wire::ExtractWire::MakeNTuples(std::vector<ntuple_t*> & wires_ntuple, std::
           hep_hpc::hdf5::make_column<int>("event_id", 3),
           hep_hpc::hdf5::make_column<size_t>("chan_tick", 2),
           hep_hpc::hdf5::make_scalar_column<float>("value", 1)
+        )
+      )
+    );
+
+    std::ostringstream event_ntuple_name;
+    event_ntuple_name << base_name << "_event_" << range.second;
+    event_ntuple.push_back(
+      new hep_hpc::hdf5::Ntuple(
+        hep_hpc::hdf5::make_ntuple(
+          {fOutputFile, event_ntuple_name.str(), 1000},
+          hep_hpc::hdf5::make_column<int>("event_id", 3),
+          hep_hpc::hdf5::make_column<size_t>("roi_count", 1)
         )
       )
     );
@@ -117,8 +143,8 @@ void wire::ExtractWire::beginSubRun(art::SubRun const& sr) {
     << "_s" << std::setfill('0') << std::setw(5) << sr.subRun() << ".h5";
   fOutputFile = hep_hpc::hdf5::File(fileName.str(), H5F_ACC_TRUNC);
 
-  MakeNTuples(fNTupleForInput, "input_wire_info");
-  MakeNTuples(fNTupleForTruth, "truth_wire_info");
+  MakeNTuples(fNTupleForInput, fEventNTupleForInput, "input_wire_info");
+  MakeNTuples(fNTupleForTruth, fEventNTupleForTruth, "truth_wire_info");
   
 }
 
@@ -126,11 +152,18 @@ void wire::ExtractWire::endSubRun(art::SubRun const& sr) {
   fOutputFile.close();
   for (auto * ptr : fNTupleForInput) delete ptr;
   for (auto * ptr : fNTupleForTruth) delete ptr;
+  for (auto * ptr : fEventNTupleForInput) delete ptr;
+  for (auto * ptr : fEventNTupleForTruth) delete ptr;
 }
 void wire::ExtractWire::WireLoop(
     const std::array<int, 3> & evtID,
     const art::ValidHandle<std::vector<recob::Wire>> & wires,
-    std::vector<ntuple_t*> & ntuple_vec) {
+    std::vector<ntuple_t*> & ntuple_vec,
+    std::vector<event_ntuple_t*> & event_ntuple_vec) {
+
+
+  std::map<size_t, size_t> counts;
+
   for (const auto & wire : (*wires)) {
     bool found_out = false;
     size_t out_index = 0;
@@ -163,9 +196,23 @@ void wire::ExtractWire::WireLoop(
           v
         );
         ++range_index;
+
+        if (counts.find(out_index) == counts.end()) {
+          counts[out_index] = 0;
+        }
+        ++counts[out_index];
       }
     }
   }
+
+  for (const auto & [range, index] : fOutputRanges) {
+    size_t count = counts[index];
+    event_ntuple_vec.at(index)->insert(
+      evtID.data(),
+      count
+    );
+  }
+
 }
 
 void wire::ExtractWire::analyze(art::Event const& e) {
@@ -179,8 +226,8 @@ void wire::ExtractWire::analyze(art::Event const& e) {
   auto wires_for_input = e.getValidHandle<std::vector<recob::Wire>>(fWireLabelForInput);
   auto wires_for_truth = e.getValidHandle<std::vector<recob::Wire>>(fWireLabelForTruth);
 
-  WireLoop(evtID, wires_for_input, fNTupleForInput);
-  WireLoop(evtID, wires_for_truth, fNTupleForTruth);
+  WireLoop(evtID, wires_for_input, fNTupleForInput, fEventNTupleForInput);
+  WireLoop(evtID, wires_for_truth, fNTupleForTruth, fEventNTupleForTruth);
 
 }
 
