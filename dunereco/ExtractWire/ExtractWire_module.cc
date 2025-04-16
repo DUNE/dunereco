@@ -125,7 +125,7 @@ void wire::ExtractWire::MakeNTuples(
         hep_hpc::hdf5::make_ntuple(
           {fOutputFile, event_ntuple_name.str(), 1000},
           hep_hpc::hdf5::make_column<int>("event_id", 3),
-          hep_hpc::hdf5::make_column<size_t>("roi_count", 1)
+          hep_hpc::hdf5::make_scalar_column<size_t>("roi_count", 1)
         )
       )
     );
