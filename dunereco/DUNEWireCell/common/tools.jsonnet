@@ -67,6 +67,17 @@ function(params)
     then {name:"", uses:[]}
     else {name:wc.tn($.perchanresp), uses:[$.perchanresp]},
 
+    filter_responses : [{
+        type: "FilterResponse",
+        name : "plane%d" %plane,
+        data : {
+            filename: params.files.fltresp,
+            planeid: plane,
+        }
+    } for plane in [0,1,2] ],
+    fltrespuses : if std.type(params.files.fltresp) == 'null'
+    then {uses:[]}
+    else {uses:$.filter_responses},
 
     wires : {
         type: "WireSchemaFile",

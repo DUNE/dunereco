@@ -150,11 +150,13 @@ base {
         wires: "protodunehd-wires-larsoft-v1.json.bz2",
 
         fields: [
-            "np04hd-garfield-6paths.json.bz2",
+            "np04hd-garfield-6paths-mcmc-bestfit.json.bz2",
             "dune-garfield-1d565.json.bz2",
             "dune-garfield-1d565.json.bz2",
             "dune-garfield-1d565.json.bz2",
         ],
+
+        fltresp: "protodunehd-field-response-filters.json.bz2",
 
         // Noise models for different FE amplifier gains
         // Note: set gain value accordingly in the field of elecs
