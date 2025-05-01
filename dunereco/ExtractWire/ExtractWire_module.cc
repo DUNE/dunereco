@@ -82,6 +82,7 @@ private:
   //Main --> Truth (i.e. 'perfect' APA)
   //Alt --> Input (i.e. 'bad' APA)
   art::InputTag fWireLabelForInput, fWireLabelForTruth;
+  bool fSaveTruth;
   std::string fOutputName;
   output_ranges_t fOutputRanges;
   hep_hpc::hdf5::File fOutputFile;
@@ -94,7 +95,8 @@ private:
 wire::ExtractWire::ExtractWire(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
     fWireLabelForInput(p.get<art::InputTag>("WireLabelForInput")),
-    fWireLabelForTruth(p.get<art::InputTag>("WireLabelForTruth")),
+    fWireLabelForTruth(p.get<art::InputTag>("WireLabelForTruth", art::InputTag())),
+    fSaveTruth(p.get<bool>("SaveTruth", true)),
     fOutputName(p.get<std::string>("OutputName", "extracted_wires")),
     fOutputRanges(p.get<output_ranges_t>("OutputRanges")) {
 
@@ -144,16 +146,19 @@ void wire::ExtractWire::beginSubRun(art::SubRun const& sr) {
   fOutputFile = hep_hpc::hdf5::File(fileName.str(), H5F_ACC_TRUNC);
 
   MakeNTuples(fNTupleForInput, fEventNTupleForInput, "input_wire_info");
-  MakeNTuples(fNTupleForTruth, fEventNTupleForTruth, "truth_wire_info");
+  if (fSaveTruth)
+    MakeNTuples(fNTupleForTruth, fEventNTupleForTruth, "truth_wire_info");
   
 }
 
 void wire::ExtractWire::endSubRun(art::SubRun const& sr) {
   fOutputFile.close();
   for (auto * ptr : fNTupleForInput) delete ptr;
-  for (auto * ptr : fNTupleForTruth) delete ptr;
   for (auto * ptr : fEventNTupleForInput) delete ptr;
-  for (auto * ptr : fEventNTupleForTruth) delete ptr;
+  if (fSaveTruth) {
+    for (auto * ptr : fNTupleForTruth) delete ptr;
+    for (auto * ptr : fEventNTupleForTruth) delete ptr;
+  }
 }
 void wire::ExtractWire::WireLoop(
     const std::array<int, 3> & evtID,
@@ -224,11 +229,12 @@ void wire::ExtractWire::analyze(art::Event const& e) {
   std::array<int, 3> evtID { run, subrun, event };
 
   auto wires_for_input = e.getValidHandle<std::vector<recob::Wire>>(fWireLabelForInput);
-  auto wires_for_truth = e.getValidHandle<std::vector<recob::Wire>>(fWireLabelForTruth);
-
   WireLoop(evtID, wires_for_input, fNTupleForInput, fEventNTupleForInput);
-  WireLoop(evtID, wires_for_truth, fNTupleForTruth, fEventNTupleForTruth);
 
+  if (fSaveTruth){
+    auto wires_for_truth = e.getValidHandle<std::vector<recob::Wire>>(fWireLabelForTruth);
+    WireLoop(evtID, wires_for_truth, fNTupleForTruth, fEventNTupleForTruth);
+  }
 }
 
 DEFINE_ART_MODULE(wire::ExtractWire)

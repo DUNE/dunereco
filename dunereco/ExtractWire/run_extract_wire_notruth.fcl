@@ -1,0 +1,48 @@
+#include "services_dune.fcl"
+#include "ExtractWire.fcl"
+
+#include "services_refactored_pdune.fcl"
+#include "LArG4_dune.fcl"
+#include "wirecell_dune.fcl"
+#include "tools_dune.fcl"
+
+process_name: "ExtractWires"
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TimeTracker:       @local::dune_time_tracker
+  MemoryTracker:     @local::dune_memory_tracker
+  RandomNumberGenerator: {} #ART native random number generator
+  message:              @local::dune_message_services_prod
+  @table::protodunehd_refactored_simulation_services
+  #FileCatalogMetadata:  @local::art_file_catalog_data
+  #                      #@table::protodunehd_reco_services
+  #ExptGeoHelperInterface:       @local::dune_geometry_helper
+  #GeometryConfigurationWriter:  {}
+  #Geometry:                     @local::protodunehdv7_geo
+  #DetectorClocksService:        @local::protodunehd_detectorclocks
+  #DetectorPropertiesService:    @local::protodunehd_detproperties
+
+
+
+
+  #TFileService: 
+  #{
+  #  fileName: "pdhd_hit_checker.root" 
+  #} 
+}
+
+physics: {
+    analyzers: {
+        extractwire: @local::ExtractWire
+    }
+
+    analyze: [extractwire]
+    trigger_paths: [  ] 
+    end_paths:     [  analyze  ]
+}
+
+physics.analyzers.extractwire.WireLabelForInput: "wclsnfspbadapa1:gauss"
+physics.analyzers.extractwire.SaveTruth: false 
+#physics.analyzers.extractwire.WireLabelForTruth: "wclsnfspperfect:gauss"
