@@ -31,3 +31,4 @@ target_link_directories(
     $ENV{LARDATAOBJ_LIB}
     $ENV{CANVAS_LIB}
 )
+install_fhicl()

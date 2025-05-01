@@ -6,6 +6,8 @@
 #include "wirecell_dune.fcl"
 #include "tools_dune.fcl"
 
+process_name: "LArG4WC1"
+
 services:
 {
   # Load the service that manages root files for histograms.
