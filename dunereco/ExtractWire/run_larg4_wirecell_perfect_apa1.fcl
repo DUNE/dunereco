@@ -1,6 +1,7 @@
 #include "services_dune.fcl"
 #include "ExtractWire.fcl"
 
+#include "corsika_protodune.fcl"
 #include "services_refactored_pdune.fcl"
 #include "LArG4_dune.fcl"
 #include "wirecell_dune.fcl"
@@ -36,6 +37,7 @@ services:
 physics: {
 
     producers: {
+        cosmicgenerator: @local::protodune_corsika_cmc
         largeant:     @local::protodune_larg4
         IonAndScint:  @local::protodunehd_ionandscint
         IonAndScintExternal: @local::protodunehd_ionandscint_external
@@ -49,6 +51,7 @@ physics: {
     }
 
     simulate: [
+        cosmicgenerator,
         largeant,
         IonAndScint,
         IonAndScintExternal,
