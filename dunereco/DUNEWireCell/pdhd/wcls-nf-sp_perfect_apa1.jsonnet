@@ -35,7 +35,7 @@ local wcls = wcls_maker(params, tools);
 //local nf_maker = import "pgrapher/experiment/pdhd/nf.jsonnet";
 //local chndb_maker = import "pgrapher/experiment/pdhd/chndb.jsonnet";
 
-local sp_maker = import 'pgrapher/experiment/pdhd/sp.jsonnet';
+local sp_maker = import 'pgrapher/experiment/pdhd/sp_perfect_apa1.jsonnet';
 
 //local chndbm = chndb_maker(params, tools);
 //local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);

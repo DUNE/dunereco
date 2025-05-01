@@ -40,8 +40,8 @@ physics: {
     }
 
     simulate: [
-        tpcrawdecoderbadapa1,
-        wclsnfspbadapa1
+        tpcrawdecoderbadapa1 #,
+        #wclsnfspbadapa1
     ]
     stream1:  [ out1 ]
     analyze: []
