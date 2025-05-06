@@ -35,7 +35,7 @@ services:
 
 physics: {
     producers: {
-        tpcrawdecoderbadapa1:  @local::wirecell_protodunehdmc
+        #tpcrawdecoderbadapa1:  @local::wirecell_protodunehdmc
         wclsnfspbadapa1:         @local::protodunehd_nfsp
     }
 

@@ -44,14 +44,14 @@ physics: {
         
         
         tpcrawdecoderperfect:  @local::wirecell_protodunehdmc
-        wclsnfspperfect:         @local::protodunehd_nfsp
+        #wclsnfspperfect:         @local::protodunehd_nfsp
         
         #tpcrawdecoderbadapa1:  @local::wirecell_protodunehdmc
         #wclsnfspbadapa1:         @local::protodunehd_nfsp
     }
 
     simulate: [
-        cosmicgenerator,
+        #cosmicgenerator,
         largeant,
         IonAndScint,
         IonAndScintExternal,
@@ -75,5 +75,5 @@ outputs:
  }
 }
 physics.producers.tpcrawdecoderperfect.wcls_main.configs[0]: "pgrapher/experiment/pdhd/wcls-sim-drift-simchannel-priorSCE_perfect_apa1.jsonnet"
-physics.producers.wclsnfspperfect.wcls_main.configs[0]: "pgrapher/experiment/pdhd/wcls-nf-sp_perfect_apa1.jsonnet"
-physics.producers.wclsnfspperfect.wcls_main.params.raw_input_label: "tpcrawdecoderperfect:daq"
+#physics.producers.wclsnfspperfect.wcls_main.configs[0]: "pgrapher/experiment/pdhd/wcls-nf-sp_perfect_apa1.jsonnet"
+#physics.producers.wclsnfspperfect.wcls_main.params.raw_input_label: "tpcrawdecoderperfect:daq"
