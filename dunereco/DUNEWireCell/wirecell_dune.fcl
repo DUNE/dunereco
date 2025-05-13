@@ -1900,6 +1900,7 @@ protodunevd_nfsp : {
          epoch: "after"
          signal_output_form: "sparse"
          use_magnify: "false"
+         use_resampler: "false"
       }
       structs: {
         Nbit: @local::Nbit_standard
