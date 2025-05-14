@@ -7,7 +7,7 @@
 #include "wirecell_dune.fcl"
 #include "tools_dune.fcl"
 
-process_name: "LArG4WC1"
+process_name: "LArWC1"
 
 services:
 {
@@ -51,10 +51,10 @@ physics: {
     }
 
     simulate: [
-        cosmicgenerator,
-        largeant,
-        IonAndScint,
-        IonAndScintExternal,
+        #cosmicgenerator,
+        #largeant #,
+        #IonAndScint,
+        #IonAndScintExternal #,
 
         tpcrawdecoderperfect #,
         #wclsnfspperfect
