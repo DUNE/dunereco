@@ -25,6 +25,7 @@ namespace solar
       std::vector<LowEUtils::RawSolarCluster> &Clusters,
       std::vector<std::vector<int>> MatchedClustersIdx,
       std::vector<std::vector<int>> ClNHits,
+      std::vector<std::vector<int>> ClChannel,
       std::vector<std::vector<float>> ClT,
       std::vector<std::vector<float>> ClY,
       std::vector<std::vector<float>> ClZ,
@@ -151,7 +152,7 @@ namespace solar
     std::vector<std::vector<int>>  ClustersIdx = {{}, {}, {}}, MatchedClustersIdx = {{}, {}, {}};
     std::vector<std::vector<float>> ClustersPurity = {{}, {}, {}};
     std::vector<std::vector<std::vector<recob::Hit>>> Clusters = {{}, {}, {}}, MatchedClusters = {{}, {}, {}};
-    std::vector<std::vector<int>> MatchedClNHits = {{}, {}, {}};
+    std::vector<std::vector<int>> MatchedClNHits = {{}, {}, {}}, MatchedClChannel = {{}, {}, {}};
     std::vector<std::vector<float>> MatchedClT = {{}, {}, {}}, MatchedClY = {{}, {}, {}}, MatchedClZ = {{}, {}, {}}, MatchedClDir = {{}, {}, {}}; 
     std::vector<std::vector<float>> MatchedClCharge = {{}, {}, {}}, MatchedClPurity = {{}, {}, {}}, MatchedClCompleteness = {{}, {}, {}};
     std::vector<LowEUtils::RawSolarCluster> RawSolarClusters;
@@ -316,12 +317,12 @@ namespace solar
       }
     }
     SolarClusterInfo = SolarClusterInfo + " (" + ProducerUtils::str(Clusters0.size()) + "," + ProducerUtils::str(Clusters1.size()) + "," + ProducerUtils::str(Clusters2.size()) + ")";
-    lowe->MatchClusters(SignalTrackIDs, MatchedClustersIdx, MatchedClusters, ClustersIdx, Clusters, MatchedClNHits, MatchedClT, MatchedClY, MatchedClZ, MatchedClDir, MatchedClCharge, MatchedClPurity, MatchedClCompleteness, clockData, fDebug);
+    lowe->MatchClusters(SignalTrackIDs, MatchedClustersIdx, MatchedClusters, ClustersIdx, Clusters, MatchedClNHits, MatchedClChannel, MatchedClT, MatchedClY, MatchedClZ, MatchedClDir, MatchedClCharge, MatchedClPurity, MatchedClCompleteness, clockData, fDebug);
     SolarClusterInfo = SolarClusterInfo + "\nFound " + ProducerUtils::str(int(MatchedClustersIdx[2].size())) + " MatchedClusters (from col. plane loop)!";
 
     producer->PrintInColor(SolarClusterInfo, ProducerUtils::GetColor("blue"));
     producer->PrintInColor(SolarClusterDebug, ProducerUtils::GetColor("red"), "Debug");
-    FillClusters(RawSolarClusters, MatchedClustersIdx, MatchedClNHits, MatchedClT, MatchedClY, MatchedClZ, MatchedClCharge, MatchedClPurity, MatchedClCompleteness);
+    FillClusters(RawSolarClusters, MatchedClustersIdx, MatchedClNHits, MatchedClChannel, MatchedClT, MatchedClY, MatchedClZ, MatchedClCharge, MatchedClPurity, MatchedClCompleteness);
     ProduceCluster(RawSolarClusters, ClusterPtr, *SolarClusterPtr, clockData);
 
     // Make the associations which we noted we need
@@ -348,6 +349,7 @@ namespace solar
     std::vector<LowEUtils::RawSolarCluster> &Clusters,
     std::vector<std::vector<int>> MatchedClustersIdx,
     std::vector<std::vector<int>> ClNHits,
+    std::vector<std::vector<int>> ClChannel,
     std::vector<std::vector<float>> ClT,
     std::vector<std::vector<float>> ClY,
     std::vector<std::vector<float>> ClZ,
@@ -366,7 +368,7 @@ namespace solar
       {
         ClusterIdxVec.push_back(MatchedClustersIdx[ii][i]);
       }
-      Clusters.push_back(LowEUtils::RawSolarCluster{Position, ClCharge[2][i], ClT[2][i], ClPurity[2][i], ClCompleteness[2][i], ClusterIdxVec});
+      Clusters.push_back(LowEUtils::RawSolarCluster{Position, int(ClusterIdxVec.size()), ClChannel[2][1], ClCharge[2][i], ClT[2][i], ClPurity[2][i], ClCompleteness[2][i], ClusterIdxVec});
     }
     producer->PrintInColor(FillClustersDebug, ProducerUtils::GetColor("green"), "Debug");
   }
@@ -386,6 +388,8 @@ namespace solar
       // std::cout << "Producing SolarCluster " << i << std::endl;
       LowEUtils::RawSolarCluster Cluster = Clusters[i];
       std::vector<float> Position = Cluster.Position;
+      int NHits = Cluster.NHits;
+      int MainChannel = Cluster.MainChannel;
       float TotalCharge = Cluster.TotalCharge;
       float AveragePeakTime = Cluster.AveragePeakTime;
       float Purity = Cluster.Purity;
@@ -412,7 +416,7 @@ namespace solar
         ProduceClusterInfo = ProduceClusterInfo + "\nSolarCluster " + ProducerUtils::str(i) + " has position (t,y,z) " + ProducerUtils::str(AveragePeakTime) + ", " + ProducerUtils::str(Position[1]) + ", " + ProducerUtils::str(Position[2]);
         ProduceClusterInfo = ProduceClusterInfo + " with total charge " + ProducerUtils::str(TotalCharge) + ", purity " + ProducerUtils::str(Purity) + " and completeness " + ProducerUtils::str(Completeness);
       }
-      SolarClusters.emplace_back(Position, TotalCharge, AveragePeakTime, Purity, Completeness, ClusterVec);
+      SolarClusters.emplace_back(Position, NHits, MainChannel, TotalCharge, AveragePeakTime, Purity, Completeness, ClusterVec);
     }
     producer->PrintInColor(ProduceClusterInfo, ProducerUtils::GetColor("green"));
     producer->PrintInColor(ProduceClusterDebug, ProducerUtils::GetColor("green"), "Debug");
