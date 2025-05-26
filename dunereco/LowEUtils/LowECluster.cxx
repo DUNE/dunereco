@@ -1,6 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////
 //
-// \brief Definition of cluster object for Solar neutrino studies in DUNE
+// Definition of cluster object for low energy neutrino studies in DUNE
+//  
 //
 // \author sergio.manthey@ciemat.es
 //
@@ -11,41 +12,49 @@
 namespace solar {
 
   LowECluster::LowECluster()
-    : fPosition(std::vector<float>(3, -1e6))
-    , fTotalCharge(-1)
-    , fAvePeakTime(-1e6)
-    , fPurity(-1)
-    , fCompleteness(-1)
+    : averagePosition(std::vector<float>(3, -1e6))
+    , nHits(0)
+    , mainChannel(-1)
+    , totalCharge(-1)
+    , averageTime(-1e6)
+    , averagePurity(-1)
+    , totalCompleteness(-1)
   {
-    fClusterVector.clear();
-    fClusterVector.resize(3, recob::Cluster());
+    clusterVector.clear();
+    clusterVector.resize(3, recob::Cluster());
   }
 
   LowECluster::LowECluster(
     const std::vector<float>& position,
-    float totalCharge,
-    float avePeakTime,
+    int   nhits,
+    int   channel,
+    float charge,
+    float time,
     float purity,
     float completeness,
-    const std::vector<recob::Cluster>& clusterVec)
-    : fPosition(position)
-    , fTotalCharge(totalCharge)
-    , fAvePeakTime(avePeakTime)
-    , fPurity(purity)
-    , fCompleteness(completeness)
+    const std::vector<recob::Cluster>& clusters)
+    : averagePosition(position)
+    , nHits(nhits)
+    , mainChannel(channel)
+    , totalCharge(charge)
+    , averageTime(time)
+    , averagePurity(purity)
+    , totalCompleteness(completeness)
   {
-    fClusterVector.resize(3, recob::Cluster());
-    std::copy(clusterVec.begin(), clusterVec.end(), fClusterVector.begin());
+    clusterVector.resize(3, recob::Cluster());
+    std::copy(clusters.begin(), clusters.end(), clusterVector.begin());
   }
 
   LowECluster::LowECluster(const LowECluster& toCopy)
   {
-    fPosition = toCopy.fPosition;
-    fTotalCharge = toCopy.fTotalCharge;
-    fAvePeakTime = toCopy.fAvePeakTime;
-    fPurity = toCopy.fPurity;
-    fCompleteness = toCopy.fCompleteness;
-    fClusterVector = toCopy.fClusterVector;
+    averagePosition = toCopy.averagePosition;
+    nHits = toCopy.nHits;
+    mainChannel = toCopy.mainChannel;
+    totalCharge = toCopy.totalCharge;
+    averageTime = toCopy.averageTime;
+    averagePurity = toCopy.averagePurity;
+    totalCompleteness = toCopy.totalCompleteness;
+    clusterVector = toCopy.clusterVector;
   }
 
   LowECluster& LowECluster::operator=(LowECluster const& toCopy)
@@ -58,18 +67,22 @@ namespace solar {
 
   void LowECluster::initialize(
     const std::vector<float>& position,
-    float totalCharge,
-    float avePeakTime,
+    int   nhits,
+    int   channel,
+    float charge,
+    float time,
     float purity,
     float completeness,
-    const std::vector<recob::Cluster>& clusterVec)
+    const std::vector<recob::Cluster>& clusters)
   {
-    fPosition = position;
-    fTotalCharge = totalCharge;
-    fAvePeakTime = avePeakTime;
-    fPurity = purity;
-    fCompleteness = completeness;
-    fClusterVector = clusterVec;
+    averagePosition = position;
+    nHits = nhits;
+    mainChannel = channel;
+    totalCharge = charge;
+    averageTime = time;
+    averagePurity = purity;
+    totalCompleteness = completeness;
+    clusterVector = clusters;
 
     return;
   }

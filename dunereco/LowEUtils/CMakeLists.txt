@@ -13,6 +13,7 @@ art_make(BASENAME_ONLY ALLOW_UNDERSCORES
     larsim::MCCheater_PhotonBackTrackerService_service
     larsim::MCCheater_ParticleInventoryService_service
     messagefacility::MF_MessageLogger
+    dunecore::ProducerUtils
     art::Framework_Core
     art::Framework_Principal
     art::Framework_Services_Registry
@@ -26,6 +27,7 @@ art_make(BASENAME_ONLY ALLOW_UNDERSCORES
     cetlib::cetlib 
     cetlib_except::cetlib_except 
     Boost::filesystem
+  
   SERVICE_LIBRARIES
     art::Framework_Core
     art::Framework_Principal
@@ -50,6 +52,7 @@ art_make(BASENAME_ONLY ALLOW_UNDERSCORES
     larsim::MCCheater_ParticleInventoryService_service
     messagefacility::MF_MessageLogger
     ROOT::Core
+  
   MODULE_LIBRARIES LowEUtils
     dunecore::DuneObj
     dunecore::ProducerUtils
