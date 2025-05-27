@@ -23,55 +23,63 @@ namespace solar {
 
     LowECluster(
       const std::vector<float>& position,
-      float totalCharge,
-      float avePeakTime,
+      int   nhits,
+      int   channel,
+      float charge,
+      float time,
       float purity,
       float completeness,
-      const std::vector<recob::Cluster>& clusterVec);
+      const std::vector<recob::Cluster>& clusters);
 
     LowECluster(const LowECluster&);
     LowECluster& operator=(LowECluster const&);
 
     void initialize(
       const std::vector<float>& position,
-      float totalCharge,
-      float avePeakTime,
+      int   nhits,
+      int   channel,
+      float charge,
+      float time,
       float purity,
       float completeness,
-      const std::vector<recob::Cluster>& clusterVec);
+      const std::vector<recob::Cluster>& clusters);
 
-    const std::vector<float> getPosition() const { return fPosition; }
-    float getX() const { return fPosition[0]; }
-    float getY() const { return fPosition[1]; }
-    float getZ() const { return fPosition[2]; }
-    float getTotalCharge() const { return fTotalCharge; }
-    float getAvePeakTime() const { return fAvePeakTime; }
-    float getPurity() const { return fPurity; }
-    float getCompleteness() const { return fCompleteness; }
+    const std::vector<float> getPosition() const { return averagePosition; }
+    float getX() const { return averagePosition[0]; }
+    float getY() const { return averagePosition[1]; }
+    float getZ() const { return averagePosition[2]; }
+    int   getNHits() const { return clusterVector.size(); }
+    int   getMainChannel() const { return mainChannel; }
+    float getTotalCharge() const { return totalCharge; }
+    float getAverageTime() const { return averageTime; }
+    float getPurity() const { return averagePurity; }
+    float getCompleteness() const { return totalCompleteness; }
     
-    const std::vector<recob::Cluster>& getClsuters() const { return fClusterVector; }
-    std::vector<recob::Cluster>& getClusters() { return fClusterVector; }
+    const std::vector<recob::Cluster>& getClusters() const { return clusterVector; }
+    std::vector<recob::Cluster>& getClusters() { return clusterVector; }
 
-    void setPosition(const std::vector<float>& pos) const { fPosition = pos; }
+    void setPosition(const std::vector<float>& pos) const { averagePosition = pos; }
 
     bool operator<(const solar::LowECluster& other) const
     {
-      if (fPosition[2] != other.fPosition[2])
-        return fPosition[2] < other.fPosition[2];
+      if (averagePosition[2] != other.averagePosition[2])
+        return averagePosition[2] < other.averagePosition[2];
       else
-        return fPosition[0] < other.fPosition[0];
+        return averagePosition[0] < other.averagePosition[0];
     }
 
     friend std::ostream& operator<<(std::ostream& o, const LowECluster& c);
     //friend bool          operator <  (const LowECluster & a, const LowECluster & b);
 
   private:
-    mutable std::vector<float> fPosition;       ///< position of this hit combination in world coordinates
-    float fTotalCharge;                         ///< Sum of charges of all associated recob::Hits
-    float fAvePeakTime;                         ///< Average peak time of all associated recob::Hits
-    float fPurity;                              ///< Purity of the cluster wrt input signal label
-    float fCompleteness;                        ///< Completeness of the cluster wrt main signal particle
-    std::vector<recob::Cluster> fClusterVector; ///< Clusters comprising this 3D cluster
+    mutable std::vector<float> averagePosition; ///< position of this hit combination in world coordinates
+    int nHits;                                  ///< Number of hits in this cluster
+    int mainChannel;                            ///< Main channel of the cluster
+    float totalCharge;                          ///< Sum of charges of all associated recob::Hits
+    float averageTime;                          ///< Average peak time of all associated recob::Hits
+    float averagePurity;                        ///< Purity of the cluster wrt input signal label
+    float totalCompleteness;                    ///< Completeness of the cluster wrt main signal particle
+    std::vector<recob::Cluster> clusterVector;  ///< Clusters comprising this 3D cluster
   };
 } // namespace
 
