@@ -58,7 +58,6 @@ namespace solar
     std::string fHitLabel; // Input tag for Hit collection
     std::string fClusterLabel; // Input tag for LowECluster collection
     std::string fGeometry;
-    double fDetectorSizeX;
 
     float fClusterAlgoTime;
     int fClusterAlgoAdjChannel;
@@ -97,7 +96,6 @@ namespace solar
     fHitLabel(p.get<std::string>("HitLabel")),
     fClusterLabel(p.get<std::string>("ClusterLabel")),
     fGeometry(p.get<std::string>("Geometry")),
-    fDetectorSizeX(p.get<double>("DetectorSizeX")),
     fClusterAlgoTime(p.get<float>("ClusterAlgoTime")),
     fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel")),
     fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable")),
