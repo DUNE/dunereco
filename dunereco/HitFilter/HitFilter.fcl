@@ -1,7 +1,0 @@
-BEGIN_PROLOG
-HitFilter: {
-    module_type: "HitFilter"
-    InputHitLabel: "gaushit"
-    ValidTPCs: [4, 5]
-}
-END_PROLOG
