@@ -1,6 +1,7 @@
 #include "calorimetry_dune10kt.fcl"
 #include "trackfinderalgorithms.fcl"
 #include "neutrinoenergyrecoalg_dune.fcl"
+#include "particleselectionalg_dune.fcl"
 
 BEGIN_PROLOG
 
@@ -21,7 +22,7 @@ dunefd_nuenergyreco_pmtrack:
     TrackToHitLabel:      "pmtrack"
     ShowerToHitLabel:     "emshower"
     HitToSpacePointLabel: "pmtrack"
-    fPFParticleLabel:     "pandora"
+    PFParticleLabel:     "pandora"
 
     # LongestTrackMethod
     # '0' is the standard computation: by range or MCS, depending on containment and on MuonRangeToMCSThreshold
@@ -30,6 +31,7 @@ dunefd_nuenergyreco_pmtrack:
     LongestTrackMethod:     0
 
     NeutrinoEnergyRecoAlg:   @local::dune10kt_neutrinoenergyrecoalg
+    ParticleSelectionAlg: @local::dune10kt_particleselectionalg
 }
 
 dunefd_nuenergyreco_pandora_numu:
