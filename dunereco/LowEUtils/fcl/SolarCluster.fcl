@@ -9,10 +9,8 @@ solar_cluster_dune10kt_1x2x6:
     module_type:        "SolarCluster"
 
     Geometry:                   "HD"
-    DetectorSizeX:              360          # 1 TPC drift (X) length in [cm].
     DetectorSizeY:              600          # 1 TPC Y length in [cm].
     DetectorSizeZ:              1400         # 1 TPC Z length in [cm].
-    DetectorDriftTime:          4500         # Don't change this value for HD unless you know what you are doing!!!
     ClusterAlgoTime:            25           # Time window to look for plane clusters in [tick] units.
     ClusterAlgoAdjChannel:      3            # Number of adjacent channels to look for plane clusters.
     ClusterChargeVariable:      "Integral"   # Charge variable to use for cluster matching: "Integral" or "SummedADC".
@@ -29,9 +27,7 @@ solar_cluster_dune10kt_1x2x6:
 
 solar_cluster_dunevd10kt_1x8x14_3view_30deg: @local::solar_cluster_dune10kt_1x2x6
 solar_cluster_dunevd10kt_1x8x14_3view_30deg.Geometry: "VD"
-solar_cluster_dunevd10kt_1x8x14_3view_30deg.DetectorSizeX: 340
 solar_cluster_dunevd10kt_1x8x14_3view_30deg.DetectorSizeY: 680
 solar_cluster_dunevd10kt_1x8x14_3view_30deg.DetectorSizeZ: 2100
-solar_cluster_dunevd10kt_1x8x14_3view_30deg.DetectorDriftTime: 8000
 
 END_PROLOG

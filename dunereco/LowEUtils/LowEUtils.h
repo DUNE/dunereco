@@ -198,7 +198,6 @@ namespace solar
         // From fhicl configuration
         const std::string fHitLabel;
         const std::string fGeometry;
-        const double fDetectorSizeX;
         const double fClusterAlgoTime;
         const int fClusterAlgoAdjChannel;
         const std::string fClusterChargeVariable;

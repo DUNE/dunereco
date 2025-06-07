@@ -39,7 +39,6 @@ namespace solar
     art::ServiceHandle<geo::Geometry> geo;
     std::string fHitLabel; // Input tag for Hit collection
     std::string fGeometry;
-    double fDetectorSizeX;
 
     float fClusterAlgoTime;
     int fClusterAlgoAdjChannel;
@@ -72,7 +71,6 @@ namespace solar
       : EDProducer{p},
         fHitLabel(p.get<std::string>("HitLabel")),
         fGeometry(p.get<std::string>("Geometry")),
-        fDetectorSizeX(p.get<double>("DetectorSizeX")),
         fClusterAlgoTime(p.get<float>("ClusterAlgoTime")),
         fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel")),
         fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable")),
