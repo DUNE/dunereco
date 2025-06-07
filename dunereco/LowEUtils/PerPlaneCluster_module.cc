@@ -79,7 +79,6 @@ namespace solar
         fClusterInd0MatchTime(p.get<float>("ClusterInd0MatchTime")),
         fClusterInd1MatchTime(p.get<float>("ClusterInd1MatchTime")),
         fClusterMatchTime(p.get<float>("ClusterMatchTime")),
-        // solaraux(new solar::SolarAuxUtils(p)),
         lowe(new solar::LowEUtils(p))
   {
     reconfigure(p);
