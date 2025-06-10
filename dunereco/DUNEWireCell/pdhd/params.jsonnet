@@ -2,7 +2,7 @@
 // generic set of parameters and overrides things specific to PDSP.
 
 local wc = import "wirecell.jsonnet";
-local base = import "pgrapher/common/params.jsonnet";
+local base = import "pgrapher/dune/params.jsonnet";
 
 base {
     // This section will be overwritten in simparams.jsonnet
@@ -150,11 +150,13 @@ base {
         wires: "protodunehd-wires-larsoft-v1.json.bz2",
 
         fields: [
-            "np04hd-garfield-6paths.json.bz2",
+            "np04hd-garfield-6paths-mcmc-bestfit.json.bz2",
             "dune-garfield-1d565.json.bz2",
             "dune-garfield-1d565.json.bz2",
             "dune-garfield-1d565.json.bz2",
         ],
+
+        fltresp: "protodunehd-field-response-filters.json.bz2",
 
         // Noise models for different FE amplifier gains
         // Note: set gain value accordingly in the field of elecs
