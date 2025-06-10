@@ -51,16 +51,6 @@ namespace dune
                     const std::string &showerToHitLabel,
                     const std::string &hitToSpacePointLabel);
 
-            /**
-             * @brief  Retrieve longest tracks from all recob::Tracks of the event.
-             * The track is also saved in private member fLepTrack
-             *
-             * @param  event the art event
-             * @param  isTrackOnly Set to true as default. Only consider recob::Tracks which recob::PFParticle returns IsTrack as true
-             *
-             * @return the longest recob::Track
-             */
-            art::Ptr<recob::Track> GetLongestTrack(const art::Event &event, const bool isTrackOnly = true);
 
             /**
              * @brief  Retrieve longest tracks of the event using PIDA
@@ -80,30 +70,64 @@ namespace dune
              * using PIDA
              *
              * @param  event the art event
+             * @param  applyMuFilters rather to apply or not muon filters 
              *
              * @return the longest recob::Track
              */
-            art::Ptr<recob::Track> GetLongestTrackPID(const art::Event& event);
+            art::Ptr<recob::Track> GetLongestTrackPID(const art::Event& event, const bool applyMuFilters = true);
+
+
+            /**
+             * @brief  Default muon selection using filters
+             *
+             * @param  event the art event
+             * @param  candidates initial tracks list to select
+             *
+             * @return vector of recob::Track
+             */
+            std::vector<art::Ptr<recob::Track>> MuDefaultSelection(const art::Event &event, std::vector<art::Ptr<recob::Track>> &candidates);
 
             /**
              * @brief  Apply filters and returns subset of recob::Tracks that
              * are candidates to be muons.
              *
              * @param  event the art event
+             * @param  applyMuFilters rather to apply or not muon filters 
              *
              * @return vector of recob::Track
              */
-            std::vector<art::Ptr<recob::Track>> GenMuonCandidates(const art::Event &event);
+            std::vector<art::Ptr<recob::Track>> GenMuonCandidates(const art::Event &event, const bool applyMuFilters = true);
+
+            /**
+             * @brief  Default electron selection using filters
+             *
+             * @param  event the art event
+             * @param  candidates initial shower list to select
+             *
+             * @return vector of recob::Shower
+             */
+            std::vector<art::Ptr<recob::Shower>> EDefaultSelection(const art::Event &event, std::vector<art::Ptr<recob::Shower>> &candidates);
 
             /**
              * @brief  Apply filters and returns subset of recob::Showers that
              * are candidates to be electrons.
              *
              * @param  event the art event
+             * @param  applyElectronFilters rather to apply or not electron filters 
              *
              * @return vector of recob::Shower
              */
-            std::vector<art::Ptr<recob::Shower>> GenElectronCandidates(const art::Event &event);
+            std::vector<art::Ptr<recob::Shower>> GenElectronCandidates(const art::Event &event, const bool applyElectronFilters = true);
+
+            /**
+             * @brief  Default proton selection
+             *
+             * @param  event the art event
+             * @param  tracks initial tracks list to select
+             *
+             * @return vector of recob::Track
+             */
+            std::vector<art::Ptr<recob::Track>> PrDefaultSelection(const art::Event &event, std::vector<art::Ptr<recob::Track>> &tracks);
 
             /**
              * @brief  Apply filters and returns subset of recob::Tracks that
@@ -116,6 +140,16 @@ namespace dune
             std::vector<art::Ptr<recob::Track>> GenProtonCandidates(const art::Event &event);
 
             /**
+             * @brief  Default pion selection
+             *
+             * @param  event the art event
+             * @param  tracks initial tracks list to select
+             *
+             * @return vector of recob::Track
+             */
+            std::vector<art::Ptr<recob::Track>> PionDefaultSelection(const art::Event &event, std::vector<art::Ptr<recob::Track>> &tracks);
+
+            /**
              * @brief  Apply filters and returns subset of recob::Tracks that
              * are candidates to be pions.
              *
@@ -124,19 +158,6 @@ namespace dune
              * @return vector of recob::Track
              */
             std::vector<art::Ptr<recob::Track>> GenPionCandidates(const art::Event &event);
-
-            /**
-             * @brief  Retrieve Highest Charge Shower from event
-             *
-             * @param  clockData 
-             * @param  detProp
-             * @param  event
-             *
-             * @return the highest charge recob::Shower
-             */
-            art::Ptr<recob::Shower> GetHighestChargeShower(detinfo::DetectorClocksData const& clockData,
-                                                           detinfo::DetectorPropertiesData const& detProp,
-                                                           const art::Event &event);
 
             /**
              * @brief  Retrieve Highest Charge Shower from vector of showers.
@@ -154,7 +175,7 @@ namespace dune
             art::Ptr<recob::Shower> GetHighestChargeShower(detinfo::DetectorClocksData const& clockData,
                                                            detinfo::DetectorPropertiesData const& detProp,
                                                            const art::Event &event,
-                                                           const std::vector<art::Ptr<recob::Shower>> showers,
+                                                           const std::vector<art::Ptr<recob::Shower>> &showers,
                                                            const geo::View_t tPlane = geo::kW);
 
 
@@ -162,10 +183,11 @@ namespace dune
              * @brief  Retrieve Highest Charge Shower from event using PIDA
              *
              * @param  event
+             * @param  applyElectronFilters rather to apply or not electron filters 
              *
              * @return the highest charge recob::Shower
              */
-            art::Ptr<recob::Shower> GetHighestChargeShowerPID(const art::Event &event);
+            art::Ptr<recob::Shower> GetHighestChargeShowerPID(const art::Event &event, const bool applyElectronFilters = true);
 
             /**
              * @brief  Retrieve the PIDA score of the track from map
@@ -205,8 +227,8 @@ namespace dune
 
             const art::Ptr<recob::Track> &GetLepTrack(){ return fLepTrack; }
             const art::Ptr<recob::Shower> &GetLepShower(){ return fLepShower; }
-            const std::vector<art::Ptr<recob::Track>> &GetPrTracks(){ return fPrTrack; }
-            const std::vector<art::Ptr<recob::Track>> &GetPiTracks(){ return fPiTrack; }
+            const std::vector<art::Ptr<recob::Track>> &GetPrTracks(){ return fPrTracks; }
+            const std::vector<art::Ptr<recob::Track>> &GetPiTracks(){ return fPiTracks; }
 
             /**
              * @brief  Retrieve the track assciated to the shower
@@ -220,6 +242,7 @@ namespace dune
 
         private:
             calo::CalorimetryAlg fCalorimetryAlg;                    
+            int    fMuSelectMethod;                                  ///< the method for muon selection
             double kMaxMuLength;                                     ///< the max length for muon candidates
             double kMaxMuPIDA;                                       ///< the max PIDA for muon candidates
             double kMinMuTotalCalo;                                  ///< the min calorimetric energy for muon candidates when they are showers
@@ -231,9 +254,11 @@ namespace dune
                                                                      ///Used to exclude tracks that are contained
 
 
+            int    fESelectMethod;                                  ///< the method for electron selection
             double kMaxETotalCaloForTracks;                          ///< the max calorimetric energy for electron candidates as track
             double kMaxEPIDA;                                        ///< the max PIDA for electron candidates as track
 
+            int    fPrSelectMethod;                                  ///< the method for proton selection
             double kMinPrPIDATrack;                                  ///< the min PIDA for proton candidates as track
             double kMinPrPIDAShower;                                 ///< the min PIDA for proton candidates as shower
             double kMaxPrTrkCalo;                                    ///< the max calorimetric energy for proton candidates
@@ -242,6 +267,7 @@ namespace dune
             double kPrMomByRangeMinLength;                           ///< the min length for momemtum by range method
             double kPrMomByRangeMaxLength;                           ///< the max length for momemtum by range method
 
+            int    fPionSelectMethod;                                ///< the method for pion selection
             size_t kMinPionNTrk;                                     ///< the min number of tracks for searching pion candidates
             double kMinPionTrkLength;                                ///< the min length for pion candidates
             double kMaxPionTrkLength;                                ///< the max length for pion candidates
@@ -266,6 +292,7 @@ namespace dune
             const unsigned int kNplanes = 3;
             geo::View_t kPlane; 
 
+
             // The following are the default values for the ParticleID module label
             // The code is much faster if FindManyP is used this way
             art::Handle< std::vector<recob::Hit> > hitListHandle; ///< handle to the hit list
@@ -284,10 +311,29 @@ namespace dune
 
             art::Ptr<recob::Track> fLepTrack;             ///< the lepton track
             art::Ptr<recob::Shower> fLepShower;           ///< the lepton shower
-            std::vector<art::Ptr<recob::Track>> fPrTrack; ///< proton candidates
-            std::vector<art::Ptr<recob::Track>> fPiTrack; ///< pion candidates
+            std::vector<art::Ptr<recob::Track>> fPrTracks; ///< proton candidates
+            std::vector<art::Ptr<recob::Track>> fPiTracks; ///< pion candidates
 
             bool fPrDone = false;  ///< flag to check if proton candidates are already set
+
+
+            // Setup of methods, for now, only default method implemented.
+            enum class MuSelectMethod
+            {
+                kDefault = 0,
+            };
+            enum class ESelectMethod
+            {
+                kDefault = 0,
+            };
+            enum class PrSelectMethod
+            {
+                kDefault = 0,
+            };
+            enum class PionSelectMethod
+            {
+                kDefault = 0,
+            };
 
             /**
              * @brief  Generates a map between track key and PIDA score 
@@ -433,7 +479,7 @@ namespace dune
              *
              * @return true if PFP is considered as Shower, false otherwise
              */
-            bool IsTrack(const art::Event &event, const art::Ptr<recob::Shower> shower);
+            bool IsTrack(const art::Event &event, const art::Ptr<recob::Shower> &shower);
 
 
             const void applyMuLengthFilter(

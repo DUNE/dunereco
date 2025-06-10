@@ -59,8 +59,8 @@ namespace dune {
 
             int fRecoMethod;
             int fLongestTrackMethod;
-
-
+            bool fApplyMuFilters;
+            bool fApplyElectronFilters;
 
             NeutrinoEnergyRecoAlg fNeutrinoEnergyRecoAlg;
             ParticleSelectionAlg fParticleSelectionAlg;
@@ -70,7 +70,10 @@ namespace dune {
             {
                 kMuonAndHadronic = 1,                                 ///< muon momentum and hadronic deposited energy method
                 kElectronAndHadronic,                                 ///< electron deposited energy and hadronic deposited energy method
-                kAllCharges                                           ///< summed wire charges
+                kAllCharges,                                          ///< summed wire charges
+                kMuonProtonPionHadronic,                              ///< muon, protons and pions momenta + all other hadronic deposited energy (PID)
+                kElectronProtonPionHadronic,                          ///< protons and pions momenta + electron and all other hadronic deposited energy (PID)
+                kProtonPionHadronic,                                  ///< protons and pions momenta + summed wire charges
             };
 
             ///The muon momentum reconstruction method
@@ -80,6 +83,7 @@ namespace dune {
                 kbyRange,                                             ///< muon momentum by range
                 kbyMCS                                                ///< muon momentum by multiple scattering
             };
+
     }; // class EnergyReco
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
@@ -96,6 +100,8 @@ EnergyReco::EnergyReco(fhicl::ParameterSet const& pset) :
     fPFParticleLabel(pset.get<std::string>("PFParticleLabel")),
     fRecoMethod(pset.get<int>("RecoMethod")),
     fLongestTrackMethod(pset.get<int>("LongestTrackMethod")),
+    fApplyMuFilters(pset.get<bool>("ApplyMuFilters")),
+    fApplyElectronFilters(pset.get<bool>("ApplyElectronFilters")),
     fNeutrinoEnergyRecoAlg(pset.get<fhicl::ParameterSet>("NeutrinoEnergyRecoAlg"),fTrackLabel,fShowerLabel,
         fHitLabel,fWireLabel,fTrackToHitLabel,fShowerToHitLabel,fHitToSpacePointLabel),
     fParticleSelectionAlg(pset.get<fhicl::ParameterSet>("ParticleSelectionAlg"),fPFParticleLabel,fTrackLabel,fShowerLabel,
@@ -117,24 +123,26 @@ void EnergyReco::produce(art::Event& evt)
 
     auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(evt, clockData);
-    art::Ptr<recob::Track> longestTrack(fParticleSelectionAlg.GetLongestTrack(evt, true));
-    art::Ptr<recob::Shower> highestChargeShower(fParticleSelectionAlg.GetHighestChargeShower(clockData, detProp, evt));
+    art::Ptr<recob::Track> longestTrack(fParticleSelectionAlg.GetLongestTrackPID(evt, fApplyMuFilters));
+    art::Ptr<recob::Shower> highestChargeShower(fParticleSelectionAlg.GetHighestChargeShowerPID(evt, fApplyElectronFilters));
 
     if (fRecoMethod == EnergyRecoMethod::kMuonAndHadronic)
-    {
-        if (fLongestTrackMethod == LongestTrackMethod::kTrackMethodNotSet || !longestTrack.isAvailable() || longestTrack.isNull())
-            energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(longestTrack, evt));
-        else if (fLongestTrackMethod == LongestTrackMethod::kbyRange)
-            energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergyViaMuonRanging(longestTrack, evt));
-        else if (fLongestTrackMethod == LongestTrackMethod::kbyMCS)
-        {
-            energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergyViaMuonMCS(longestTrack, evt));
-        }
-    }
+        energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(longestTrack, evt, fLongestTrackMethod));
     else if (fRecoMethod == EnergyRecoMethod::kElectronAndHadronic)
         energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(highestChargeShower, evt));
     else if (fRecoMethod == EnergyRecoMethod::kAllCharges)
         energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(evt));
+    else
+    {
+        std::vector<art::Ptr<recob::Track>> protonTracks(fParticleSelectionAlg.GenProtonCandidates(evt));
+        std::vector<art::Ptr<recob::Track>> pionTracks(fParticleSelectionAlg.GenPionCandidates(evt));
+        if (fRecoMethod == EnergyRecoMethod::kMuonProtonPionHadronic)
+            energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergyPID(longestTrack, evt, fLongestTrackMethod, protonTracks, pionTracks));
+        else if (fRecoMethod == EnergyRecoMethod::kElectronProtonPionHadronic)
+            energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergyPID(highestChargeShower, evt, protonTracks, pionTracks));
+        else if (fRecoMethod == EnergyRecoMethod::kProtonPionHadronic)
+            energyRecoOutput = std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergyPID(evt, protonTracks, pionTracks));
+    }
 
     art::ProductID const prodId = evt.getProductID<dune::EnergyRecoOutput>();
     art::EDProductGetter const* prodGetter = evt.productGetter(prodId);

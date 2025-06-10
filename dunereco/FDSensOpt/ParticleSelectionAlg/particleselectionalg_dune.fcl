@@ -6,6 +6,7 @@ dune_particleselectionalg:
 {
     CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
 
+    MuSelectMethod:               0    # the method for muon selection (dafault (only): 0)
     MaxMuLength:                  17e3 # the max length for muon candidates
     MaxMuPIDA:                    13   # the max PIDA for muon candidates
     MinMuTotalCalo:               0.3  # the min calorimetric energy for muon candidates when they are showers
@@ -15,9 +16,11 @@ dune_particleselectionalg:
     MaxMuContainedCalo:           1    # the max calorimetric energy for muon candidates.
 
 
+    ESelectMethod:                0    # the method for electron selection (dafault (only): 0)
     MaxETotalCaloForTracks:       2    # the max calorimetric energy for electron candidates as track
     MaxEPIDA:                     15   # the max calorimetric energy for electron candidates as track
 
+    PrSelectMethod:               0    # the method for proton selection (dafault (only): 0)
     MinPrPIDATrack:               10   # the min PIDA for proton candidates as track
     MinPrPIDAShower:              13   # the min PIDA for proton candidates as shower
     MaxPrTrkCalo:                 1.5  # the max calorimetric energy for proton candidates
@@ -26,6 +29,7 @@ dune_particleselectionalg:
     PrMomByRangeMinLength:        0    # the min length for momemtum by range method
     PrMomByRangeMaxLength:        300  # the max length for momemtum by range method
 
+    PionSelectMethod:             0    # the method for pion selection (dafault (only): 0)
     MinPionNTrk:                  2    # the min number of tracks for searching pion candidates
     MinPionTrkLength:             3.5  # the min length for pion candidates
     MaxPionTrkLength:             350  # the max length for pion candidates

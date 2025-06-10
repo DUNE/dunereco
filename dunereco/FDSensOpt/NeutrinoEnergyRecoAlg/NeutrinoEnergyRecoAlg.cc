@@ -77,6 +77,14 @@ NeutrinoEnergyRecoAlg::NeutrinoEnergyRecoAlg(fhicl::ParameterSet const& pset, co
 
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event)
 {
+    return CalculateNeutrinoEnergy(pMuonTrack, event, LongestTrackMethod::kNoPreferred);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event,
+        const int fLongestTrackMethod)
+{
     if (!pMuonTrack.isAvailable() || pMuonTrack.isNull())
     {
         mf::LogWarning("NeutrinoEnergyRecoAlg") << " Cannot access the muon track which is needed for this energy reconstructio method.\n"
@@ -90,13 +98,14 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
     bool isContained(this->IsContained(muonHits, event));
     const double uncorrectedMuonMomentumMCS(this->CalculateUncorrectedMuonMomentumByMCS(pMuonTrack));
     const double muonMomentumMCS(this->CalculateLinearlyCorrectedValue(uncorrectedMuonMomentumMCS, fGradTrkMomMCS, fIntTrkMomMCS));
-    if (!isContained)
-    {
+    const MuonContainmentStatus MuContainment = (isContained) ? MuonContainmentStatus::kIsContained : MuonContainmentStatus::kIsExiting;
+    if (( !isContained && fLongestTrackMethod != LongestTrackMethod::kbyRange)
+            || fLongestTrackMethod == LongestTrackMethod::kbyMCS) {
         if (uncorrectedMuonMomentumMCS > std::numeric_limits<double>::epsilon())
         {
             EnergyRecoInputHolder energyRecoInputHolder(vertex, 
                 this->CalculateParticle4Momentum(kMuonMass, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
-                kMuonAndHadronic, kMCS, kIsExiting, fGradNuMuHadEnExit, fIntNuMuHadEnExit);
+                kMuonAndHadronic, kMCS, MuContainment, fGradNuMuHadEnExit, fIntNuMuHadEnExit);
             return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
         }
         else
@@ -107,12 +116,13 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
     else
     {
         const double muonMomentumRange(CalculateMuonMomentumByRange(pMuonTrack));
-        if (uncorrectedMuonMomentumMCS > std::numeric_limits<double>::epsilon() 
-            && muonMomentumRange/muonMomentumMCS - fMuonRangeToMCSThreshold < -1.*std::numeric_limits<double>::epsilon())
+        if ( fLongestTrackMethod != LongestTrackMethod::kbyRange
+                && uncorrectedMuonMomentumMCS > std::numeric_limits<double>::epsilon() 
+                && muonMomentumRange/muonMomentumMCS - fMuonRangeToMCSThreshold < -1.*std::numeric_limits<double>::epsilon() )
         {
             EnergyRecoInputHolder energyRecoInputHolder(vertex, 
                 this->CalculateParticle4Momentum(kMuonMass, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
-                kMuonAndHadronic, kMCS, kIsContained, fGradNuMuHadEnExit, fIntNuMuHadEnExit);
+                kMuonAndHadronic, kMCS, MuContainment, fGradNuMuHadEnExit, fIntNuMuHadEnExit);
 
             return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
         }
@@ -120,7 +130,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
         {
             EnergyRecoInputHolder energyRecoInputHolder(vertex, 
                 this->CalculateParticle4Momentum(kMuonMass, muonMomentumRange, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
-                kMuonAndHadronic, kContained, kIsContained, fGradNuMuHadEnCont, fIntNuMuHadEnCont);
+                kMuonAndHadronic, kContained, MuContainment, fGradNuMuHadEnCont, fIntNuMuHadEnCont);
 
             return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
         }
@@ -195,49 +205,6 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
     output.longestTrackContained = static_cast<int>(kContainmentNotSet);
     output.trackMomMethod = static_cast<int>(kTrackMethodNotSet);
     return output;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergyViaMuonRanging(const art::Ptr<recob::Track> &pMuonTrack,
-    const art::Event &event)
-{
-    Point_t vertex(pMuonTrack->Start().X(), pMuonTrack->Start().Y(), pMuonTrack->Start().Z());
-
-    const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel),2));
-    bool isContained(this->IsContained(muonHits, event));
-    const double muonMomentumRange(this->CalculateMuonMomentumByRange(pMuonTrack));
-
-    EnergyRecoInputHolder energyRecoInputHolder(vertex, 
-        this->CalculateParticle4Momentum(kMuonMass, muonMomentumRange, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
-        kMuonAndHadronic, kContained, static_cast<MuonContainmentStatus>(isContained), fGradNuMuHadEnCont, fIntNuMuHadEnCont);
-
-    return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergyViaMuonMCS(const art::Ptr<recob::Track> &pMuonTrack,
-    const art::Event &event)
-{
-    Point_t vertex(pMuonTrack->Start().X(), pMuonTrack->Start().Y(), pMuonTrack->Start().Z());
-
-    const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel),2));
-    bool isContained(this->IsContained(muonHits, event));
-    const double muonMomentumMCS(this->CalculateMuonMomentumByMCS(pMuonTrack));
-
-    if (muonMomentumMCS > std::numeric_limits<double>::epsilon())
-    {
-        EnergyRecoInputHolder energyRecoInputHolder(vertex, 
-                this->CalculateParticle4Momentum(kMuonMass, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
-                kMuonAndHadronic, kMCS, static_cast<MuonContainmentStatus>(isContained), fGradNuMuHadEnExit, fIntNuMuHadEnExit);
-
-        return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
-    }
-    else 
-        return this->CalculateNeutrinoEnergy(event);
-
-
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
