@@ -9,7 +9,7 @@ cmake_minimum_required (VERSION 3.20 FATAL_ERROR)
 
 find_package(cetmodules 3.12.00 REQUIRED)
 project(dunereco LANGUAGES CXX)
-set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 10.08.00d00)
+set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 10.08.01d00)
 
 # cetbuildtools contains our cmake modules
 
@@ -61,6 +61,7 @@ find_package(GENIE REQUIRED EXPORT)
 find_package( GSL REQUIRED )
 find_package( hep_hpc REQUIRED )
 find_package( Geant4 REQUIRED )
+find_package(Range-v3 REQUIRED)
 if(DEFINED ENV{CAFFE_LIB})
   find_package(caffe REQUIRED)
 endif()

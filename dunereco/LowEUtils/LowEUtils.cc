@@ -7,7 +7,6 @@ namespace solar
   LowEUtils::LowEUtils(fhicl::ParameterSet const &p)
   : fHitLabel(p.get<std::string>("HitLabel")),
     fGeometry(p.get<std::string>("Geometry")),
-    fDetectorSizeX(p.get<double>("DetectorSizeX")),
     fClusterAlgoTime(p.get<double>("ClusterAlgoTime")),
     fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel")),
     fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable")),

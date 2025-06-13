@@ -1,0 +1,7 @@
+BEGIN_PROLOG
+WireFilter: {
+    module_type: "WireFilter"
+    InputWireLabel: "wclsdatahd:gauss"
+    ValidTPCs: [2, 3, 4, 5, 6, 7]
+}
+END_PROLOG
