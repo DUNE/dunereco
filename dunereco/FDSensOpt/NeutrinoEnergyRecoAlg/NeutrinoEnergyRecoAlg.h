@@ -54,10 +54,11 @@ class NeutrinoEnergyRecoAlg
         * @param  pMuonTrack the muon track
         * @param  event the art event
         * @param  fLongestTrackMethod method to compute muon momemntum (default:0, 1 - force by range, 2 - force by mcs)
+        * @param  fUsePID rather to use PID or not
         *
         * @return the neutrino energy summary object
         */
-        dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event, const int fLongestTrackMethod);
+        dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event, const int fLongestTrackMethod, const bool fUsePID);
 
         /**
         * @brief  Calculates neutrino energy using a muon track (the muon track may be ignored if it isn't of a suitable quality)
@@ -74,68 +75,34 @@ class NeutrinoEnergyRecoAlg
         *
         * @param  pElectronShower the electron shower
         * @param  event the art event
+        * @param  fUsePID rather to use PID or not
         *
         * @return the neutrino energy summary object
         */
-        dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Ptr<recob::Shower> &pElectronShower, const art::Event &event);
+        dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Ptr<recob::Shower> &pElectronShower, const art::Event &event, const bool fUsePID = false);
 
         /**
         * @brief  Calculates neutrino energy by summing wire charges
         *
         * @param  event the art event
+        * @param  fUsePID rather to use PID or not
         *
         * @return the neutrino energy summary object
         */
-        dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Event &event);
+        dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Event &event, const bool fUsePID = false);
 
-        /**
-        * @brief  Calculates neutrino energy using a muon track (the muon track may be ignored if it isn't of a suitable quality)
-        * considers protons and pions from PID and evaluate their energy by CSDA table.
-        *
-        * @param  pMuonTrack the muon track
-        * @param  event the art event
-        * @param  fLongestTrackMethod method to compute muon momemntum (default:0, 1 - force by range, 2 - force by mcs)
-        * @param  protonTracks the proton tracks
-        * @param  pionTracks the pion tracks
-        *
-        * @return the neutrino energy summary object
-        */
-        dune::EnergyRecoOutput CalculateNeutrinoEnergyPID(const art::Ptr<recob::Track> &pMuonTrack,
-                const art::Event &event,
-                const int fLongestTrackMethod,
-                const std::vector<art::Ptr<recob::Track>> &protonTracks,
-                const std::vector<art::Ptr<recob::Track>> &pionTracks);
+        ///The muon momentum reconstruction method
+        ///Can be used to control method
+        enum MuonTrackMethod
+        {
+            kTrackMethodNotSet = -1,                              ///< method not set
+            kMCS,                                                 ///< muon momentum by multiple scattering
+            kContained                                            ///< muon momentum by range
+        };
 
-        /**
-        * @brief  Calculates neutrino energy using an electron shower(the electron may be ignored if it isn't of a suitable quality)
-        * considers protons and pions from PID and evaluate their energy by CSDA table.
-        *
-        * @param  pElectronShower the electron shower
-        * @param  event the art event
-        * @param  protonTracks the proton tracks
-        * @param  pionTracks the pion tracks
-        *
-        * @return the neutrino energy summary object
-        */
-        dune::EnergyRecoOutput CalculateNeutrinoEnergyPID(const art::Ptr<recob::Shower> &pElectronShower, 
-            const art::Event &event,
-            const std::vector<art::Ptr<recob::Track>> &protonTracks,
-            const std::vector<art::Ptr<recob::Track>> &pionTracks);
 
-        /**
-        * @brief  Calculates neutrino energy by summing wire charges
-        * considers protons and pions from PID and evaluate their energy by CSDA table.
-        *
-        * @param  event the art event
-        * @param  protonTracks the proton tracks
-        * @param  pionTracks the pion tracks
-        *
-        * @return the neutrino energy summary object
-        */
-        dune::EnergyRecoOutput CalculateNeutrinoEnergyPID(const art::Event &event,
-                const std::vector<art::Ptr<recob::Track>> &protonTracks,
-                const std::vector<art::Ptr<recob::Track>> &pionTracks);
-
+        void SetProtons(const std::vector<art::Ptr<recob::Track>> &trks){ fProtonTracks = trks; }
+        void SetPions(const std::vector<art::Ptr<recob::Track>> &trks){ fPionTracks = trks; }
 
     private:
 
@@ -150,6 +117,8 @@ class NeutrinoEnergyRecoAlg
         const std::pair<int, double> pProton{kProtonPdg, kProtonMass};  ///< the pair of proton pdg and mass
         const std::pair<int, double> pPion{kPionPdg, kPionMass};        ///< the pair of pion pdg and mass
         
+        std::vector<art::Ptr<recob::Track>> fProtonTracks;               ///< proton tracks
+        std::vector<art::Ptr<recob::Track>> fPionTracks;                 ///< pion tracks
 
         ///The energy reconstruction method
         enum EnergyRecoMethod
@@ -163,13 +132,7 @@ class NeutrinoEnergyRecoAlg
             kProtonPionHadronic,                                  ///< protons and pions momenta + summed wire charges
 
         };
-        ///The muon momentum reconstruction method
-        enum MuonTrackMethod
-        {
-            kTrackMethodNotSet = -1,                              ///< method not set
-            kMCS,                                                 ///< muon momentum by multiple scattering
-            kContained                                            ///< muon momentum by range
-        };
+
         ///The muon containment status
         enum MuonContainmentStatus
         {
@@ -322,7 +285,7 @@ class NeutrinoEnergyRecoAlg
         * @brief  Calculates neutrino energy using a muon track (the muon track may be ignored if it isn't of a suitable quality)
         * considers protons and pions from PID and evaluate their energy by CSDA table.
         *
-        * @param  pMuonTrack the muon track
+        * @param  leptonHits the hits from the lepton
         * @param  event the art event
         * @param  energyRecoInputHolder the holder object holding pre-calculated or pre-existing information
         * @param  protonTracks the proton tracks
@@ -335,6 +298,22 @@ class NeutrinoEnergyRecoAlg
             const EnergyRecoInputHolder &energyRecoInputHolder,
             const std::vector<art::Ptr<recob::Track>> &protonTracks,
             const std::vector<art::Ptr<recob::Track>> &pionTracks);
+
+        /**
+        * @brief  Calculates neutrino energy by summing wire charges 
+        * considers protons and pions from PID and evaluate their energy by CSDA table.
+        *
+        * @param  wireCharge total charge from wires (collection plane)
+        * @param  event the art event
+        * @param  protonTracks the proton tracks
+        * @param  pionTracks the pion tracks
+        *
+        * @return the neutrino energy summary object
+        */
+        dune::EnergyRecoOutput CalculateNeutrinoEnergyPID(const double wireCharge,
+                const art::Event &event,
+                const std::vector<art::Ptr<recob::Track>> &protonTracks,
+                const std::vector<art::Ptr<recob::Track>> &pionTracks);
 
         /**
         * @brief  Calculates the energy of each track by range and by calorimetry. In case of pions, calorimetric energy 
@@ -401,15 +380,6 @@ class NeutrinoEnergyRecoAlg
         std::string fTrackToHitLabel;                            ///< the associated track-to-hit label
         std::string fShowerToHitLabel;                           ///< the associated shower-to-hit label
         std::string fHitToSpacePointLabel;                       ///< the associated hit-to-space point label
-
-        ///The muon momentum reconstruction method
-        /// WARNING!! This needs to be a 'copy' of LongestTrackMethod implemented in EnergyReco_module.cc
-        enum LongestTrackMethod
-        {
-            kNoPreferred = 0,                                    ///< method not set
-            kbyRange,                                            ///< muon momentum by range
-            kbyMCS                                               ///< muon momentum by multiple scattering
-        };
 
         const double KfromP(const double p, const double m){ return std::sqrt(cet::sum_of_squares(p,m))-m;
  }

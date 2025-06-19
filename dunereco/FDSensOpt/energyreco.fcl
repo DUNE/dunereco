@@ -39,6 +39,8 @@ dunefd_nuenergyreco_pmtrack:
     ApplyMuFilters:       false
     # Rather to apply or not cuts for selection of highest charge shower
     ApplyElectronFilters: false
+    # Rather to use or not PID in the energy reconstruction
+    UsePID: false
 
     NeutrinoEnergyRecoAlg:   @local::dune10kt_neutrinoenergyrecoalg
     ParticleSelectionAlg: @local::dune10kt_particleselectionalg
@@ -74,12 +76,14 @@ dunefd_nuenergyreco_pandora_nue:
     @table::dunefd_nuenergyreco_pandora_numu
     RecoMethod: 2
 }
+dunefd_nuenergyreco_pandora_nue.ParticleSelectionAlg.MinPionTrkLength: 20
 
 dunefd_nuenergyreco_pandora_nc:
 {
     @table::dunefd_nuenergyreco_pandora_numu
     RecoMethod: 3
 }
+dunefd_nuenergyreco_pandora_nc.ParticleSelectionAlg.MinPionTrkLength: 20
 
 dunefdvd_nuenergyreco_pandora_numu: @local::dunefd_nuenergyreco_pandora_numu
 dunefdvd_nuenergyreco_pandora_numu.NeutrinoEnergyRecoAlg: @local::dunevd10kt_neutrinoenergyrecoalg
