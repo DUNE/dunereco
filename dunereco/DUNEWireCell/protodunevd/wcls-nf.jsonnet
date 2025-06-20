@@ -1,26 +1,4 @@
-// This is a main entry point to configure a WC/LS job that applies
-// noise filtering and signal processing to existing RawDigits.  The
-// FHiCL is expected to provide the following parameters as attributes
-// in the "params" structure.
-//
-// epoch: the hardware noise fix expoch: "before", "after", "dynamic" or "perfect"
-// reality: whether we are running on "data" or "sim"ulation.
-// raw_input_label: the art::Event inputTag for the input RawDigit
-//
-// see the .fcl of the same name for an example
-//
-// Manual testing, eg:
-//
-// jsonnet -V reality=data -V epoch=dynamic -V raw_input_label=daq \\
-//         -V signal_output_form=sparse \\
-//         -J cfg cfg/pgrapher/experiment/uboone/wcls-nf-sp.jsonnet
-//
-// jsonnet -V reality=sim -V epoch=perfect -V raw_input_label=daq \\
-//         -V signal_output_form=sparse \\
-//         -J cfg cfg/pgrapher/experiment/uboone/wcls-nf-sp.jsonnet
 
-
-local epoch = std.extVar('epoch');  // eg "dynamic", "after", "before", "perfect"
 local reality = std.extVar('reality');
 local sigoutform = std.extVar('signal_output_form');  // eg "sparse" or "dense"
 
@@ -42,13 +20,7 @@ local tools = tools_maker(params);
 local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 
-//local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
-
 local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
-
-//local chndbm = chndb_maker(params, tools);
-//local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
-
 
 local use_resampler = std.extVar("use_resampler");
 // Collect the WC/LS input converters for use below.  Make sure the
@@ -170,15 +142,8 @@ local nfsp_pipes = [
              [ chsel_pipes[n] ]
              + (if use_resampler=='true' && n<4 then [ resamplers[n] ] else [ ])
              + (if use_magnify =='true' then [mio.orig_pipe[n]] else [ ])
-             // + [ nf_pipes[n] ]
-             // + (if use_magnify =='true' then [mio.raw_pipe[n]] else [ ])
-             + [ sp_pipes[n] ]
-             + (if use_magnify =='true' then
-               [
-                mio.decon_pipe[n],
-                // mio.threshold_pipe[n],
-                // mio.debug_pipe[n]
-               ] else [ ]),
+             + [ nf_pipes[n] ]
+             + (if use_magnify =='true' then [mio.raw_pipe[n]] else [ ]),
 
              'nfsp_pipe_%d' % n)
   for n in std.range(0, std.length(tools.anodes) - 1)
@@ -207,6 +172,7 @@ local fanin_tag_rules = [
               '.*': 'framefanin',
             },
             trace: {
+              ['raw%d'%ind]:'raw%d'%ind,
               ['gauss%d'%ind]:'gauss%d'%ind,
               ['wiener%d'%ind]:'wiener%d'%ind,
               ['threshold%d'%ind]:'threshold%d'%ind,
@@ -231,15 +197,14 @@ local retagger = g.pnode({
         '.*': 'retagger',
       },
       merge: {
-        'gauss\\d': 'gauss',
-        'wiener\\d': 'wiener',
+        'raw\\d': 'raw',
       },
     }],
   },
 }, nin=1, nout=1);
 
 local sink = g.pnode({ type: 'DumpFrames' }, nin=1, nout=0);
-local graph = g.pipeline([wcls_input.adc_digits, fanpipe, retagger, wcls_output.sp_signals, sink]);
+local graph = g.pipeline([wcls_input.adc_digits, fanpipe, retagger, wcls_output.nf_digits, sink]);
 
 local app = {
   type: 'Pgrapher',

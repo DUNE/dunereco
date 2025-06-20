@@ -1,26 +1,4 @@
-// This is a main entry point to configure a WC/LS job that applies
-// noise filtering and signal processing to existing RawDigits.  The
-// FHiCL is expected to provide the following parameters as attributes
-// in the "params" structure.
-//
-// epoch: the hardware noise fix expoch: "before", "after", "dynamic" or "perfect"
-// reality: whether we are running on "data" or "sim"ulation.
-// raw_input_label: the art::Event inputTag for the input RawDigit
-//
-// see the .fcl of the same name for an example
-//
-// Manual testing, eg:
-//
-// jsonnet -V reality=data -V epoch=dynamic -V raw_input_label=daq \\
-//         -V signal_output_form=sparse \\
-//         -J cfg cfg/pgrapher/experiment/uboone/wcls-nf-sp.jsonnet
-//
-// jsonnet -V reality=sim -V epoch=perfect -V raw_input_label=daq \\
-//         -V signal_output_form=sparse \\
-//         -J cfg cfg/pgrapher/experiment/uboone/wcls-nf-sp.jsonnet
 
-
-local epoch = std.extVar('epoch');  // eg "dynamic", "after", "before", "perfect"
 local reality = std.extVar('reality');
 local sigoutform = std.extVar('signal_output_form');  // eg "sparse" or "dense"
 
@@ -46,10 +24,6 @@ local wcls = wcls_maker(params, tools);
 
 local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
 
-//local chndbm = chndb_maker(params, tools);
-//local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
-
-
 local use_resampler = std.extVar("use_resampler");
 // Collect the WC/LS input converters for use below.  Make sure the
 // "name" argument matches what is used in the FHiCL that loads this
@@ -62,8 +36,8 @@ local wcls_input = {
     data: {
       art_tag: raw_input_label,
       frame_tags: ['orig'],  // this is a WCT designator
-      tick: if use_resampler=='true' then 512*wc.ns else 500*wc.ns,
       // nticks: params.daq.nticks,
+      tick: params.daq.tick,
     },
   }, nin=0, nout=1),
 
@@ -148,18 +122,6 @@ local chsel_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-local resamplers = [
-  g.pnode({
-    type: 'Resampler',
-    name: 'resmp%d' %n,
-    data: {
-      period: 500*wc.ns,
-      time_pad: "linear",
-    }
-  }, nin=1, nout=1)
-  for n in std.range(0, std.length(tools.anodes) - 1)
-];
-
 local magoutput = 'protodune-data-check.root';
 local magnify = import 'pgrapher/experiment/protodunevd/magnify-sinks.jsonnet';
 local mio = magnify(tools, magoutput);
@@ -168,10 +130,7 @@ local use_magnify = std.extVar("use_magnify");
 local nfsp_pipes = [
   g.pipeline(
              [ chsel_pipes[n] ]
-             + (if use_resampler=='true' && n<4 then [ resamplers[n] ] else [ ])
              + (if use_magnify =='true' then [mio.orig_pipe[n]] else [ ])
-             // + [ nf_pipes[n] ]
-             // + (if use_magnify =='true' then [mio.raw_pipe[n]] else [ ])
              + [ sp_pipes[n] ]
              + (if use_magnify =='true' then
                [

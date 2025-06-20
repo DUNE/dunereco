@@ -13,11 +13,13 @@
 
 // LArSoft includes
 #include "dunecore/ProducerUtils/ProducerUtils.h"
+#include "dunereco/LowEUtils/LowECluster.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcore/Geometry/WireReadout.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardataalg/DetectorInfo/DetectorClocks.h"
 #include "lardata/Utilities/AssociationUtil.h"
@@ -95,6 +97,8 @@ namespace solar
         struct RawSolarCluster
         {
             std::vector<float> Position;
+            int NHits;
+            int MainChannel;
             float TotalCharge;
             float AveragePeakTime;
             float Purity;
@@ -120,6 +124,7 @@ namespace solar
             std::set<int> SignalTrackIDs,
             std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
             std::vector<std::vector<int>> &ClNHits,
+            std::vector<std::vector<int>> &ClChannel,
             std::vector<std::vector<float>> &ClT,
             std::vector<std::vector<float>> &ClY,
             std::vector<std::vector<float>> &ClZ,
@@ -150,6 +155,7 @@ namespace solar
             std::vector<std::vector<float>> &ClT,
             std::vector<std::vector<float>> &ClCharge,
             bool debug = false);
+        
         void MatchClusters(
             std::set<int> SignalTrackIDs,
             std::vector<std::vector<int>> &MatchedClustersIdx,
@@ -157,6 +163,7 @@ namespace solar
             std::vector<std::vector<int>> ClustersIdx,
             std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
             std::vector<std::vector<int>> &ClNHits,
+            std::vector<std::vector<int>> &ClChannel,
             std::vector<std::vector<float>> &ClT,
             std::vector<std::vector<float>> &ClY,
             std::vector<std::vector<float>> &ClZ,
@@ -180,11 +187,17 @@ namespace solar
         
         double STD(const std::vector<double>& Vec);
 
+        void FindPrimaryClusters(
+            const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector,
+            std::vector<std::vector<art::Ptr<solar::LowECluster>>> &EventCandidateVector,
+            std::vector<std::vector<int>> &EventCandidateIdx,
+            const detinfo::DetectorClocksData &clockData,
+            const art::Event &evt);
+
     private:
         // From fhicl configuration
         const std::string fHitLabel;
         const std::string fGeometry;
-        const double fDetectorSizeX;
         const double fClusterAlgoTime;
         const int fClusterAlgoAdjChannel;
         const std::string fClusterChargeVariable;
@@ -194,6 +207,7 @@ namespace solar
         const double fClusterInd1MatchTime;
         const double fClusterMatchTime;
         const int fClusterPreselectionNHits;
+        const float fAdjClusterRad; // Radius in cm to search for adjacent clusters
     };
 }
 #endif

@@ -1900,6 +1900,58 @@ protodunevd_nfsp : {
          epoch: "after"
          signal_output_form: "sparse"
          use_magnify: "false"
+         use_resampler: "false"
+      }
+      structs: {
+        Nbit: @local::Nbit_standard
+        elecGain: 14 # probably will change
+      }
+   }
+}
+
+protodunevd_nf : {
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+      logsinks: ["stdout"]
+      loglevels: ["debug", "pgraph:info"]
+      plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
+      inputers: ["wclsRawFrameSource"]
+      outputers: ["wclsFrameSaver:nfsaver"]
+      configs: ["pgrapher/experiment/protodunevd/wcls-nf.jsonnet"]
+      params : {
+         raw_input_label: "tpcrawdecoder:daq"
+         reality: "data"
+         epoch: "after"
+         signal_output_form: "sparse"
+         use_magnify: "false"
+         use_resampler: "false"
+      }
+      structs: {
+        Nbit: @local::Nbit_standard
+        elecGain: 14 # probably will change
+      }
+   }
+}
+
+protodunevd_sp : {
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+      logsinks: ["stdout"]
+      loglevels: ["debug", "pgraph:info"]
+      plugins: ["WireCellGen", "WireCellSigProc", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft"]
+      inputers: ["wclsRawFrameSource"]
+      outputers: ["wclsFrameSaver:spsaver"]
+      configs: ["pgrapher/experiment/protodunevd/wcls-rawdigit-sp.jsonnet"]
+      params : {
+         raw_input_label: "wclsdatavdfilter:raw"
+         reality: "data"
+         epoch: "after"
+         signal_output_form: "sparse"
+         use_magnify: "false"
       }
       structs: {
         Nbit: @local::Nbit_standard
