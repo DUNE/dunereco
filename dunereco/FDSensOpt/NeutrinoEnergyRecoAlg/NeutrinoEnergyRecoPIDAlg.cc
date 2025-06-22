@@ -115,7 +115,7 @@ namespace dune
         auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
         auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
 
-        trkf::TrackMomentumCalculator TrackMomCalc{0,3000}; // tracks should already be filtered, no reason to limit the lenght
+        trkf::TrackMomentumCalculator TrackMomCalc{0,3000}; // tracks should already be filtered, no reason to limit the length
 
         const size_t ntrks = tracks.size();
         const double pMass = pParticle.second;
@@ -145,7 +145,7 @@ namespace dune
                 if (trkObservedEnergy > pKinFromRange)
                     pKinFromRange = trkObservedEnergy;
             }
-            totalObservedCharge=trkObservedCharge;
+            totalObservedCharge+=trkObservedCharge;
             totalKinFromRange+=pKinFromRange;
         }
         return std::make_pair(totalKinFromRange, totalObservedCharge);
