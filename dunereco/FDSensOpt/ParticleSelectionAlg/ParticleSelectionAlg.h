@@ -70,11 +70,10 @@ namespace dune
              * using PIDA
              *
              * @param  event the art event
-             * @param  applyMuFilters rather to apply or not muon filters 
              *
              * @return the longest recob::Track
              */
-            art::Ptr<recob::Track> GetLongestTrackPID(const art::Event& event, const bool applyMuFilters = true);
+            art::Ptr<recob::Track> GetLongestTrackPID(const art::Event& event);
 
 
             /**
@@ -92,11 +91,10 @@ namespace dune
              * are candidates to be muons.
              *
              * @param  event the art event
-             * @param  applyMuFilters rather to apply or not muon filters 
              *
              * @return vector of recob::Track
              */
-            std::vector<art::Ptr<recob::Track>> GenMuonCandidates(const art::Event &event, const bool applyMuFilters = true);
+            std::vector<art::Ptr<recob::Track>> GenMuonCandidates(const art::Event &event);
 
             /**
              * @brief  Default electron selection using filters
@@ -113,11 +111,10 @@ namespace dune
              * are candidates to be electrons.
              *
              * @param  event the art event
-             * @param  applyElectronFilters rather to apply or not electron filters 
              *
              * @return vector of recob::Shower
              */
-            std::vector<art::Ptr<recob::Shower>> GenElectronCandidates(const art::Event &event, const bool applyElectronFilters = true);
+            std::vector<art::Ptr<recob::Shower>> GenElectronCandidates(const art::Event &event);
 
             /**
              * @brief  Default proton selection
@@ -183,11 +180,10 @@ namespace dune
              * @brief  Retrieve Highest Charge Shower from event using PIDA
              *
              * @param  event
-             * @param  applyElectronFilters rather to apply or not electron filters 
              *
              * @return the highest charge recob::Shower
              */
-            art::Ptr<recob::Shower> GetHighestChargeShowerPID(const art::Event &event, const bool applyElectronFilters = true);
+            art::Ptr<recob::Shower> GetHighestChargeShowerPID(const art::Event &event);
 
             /**
              * @brief  Retrieve the PIDA score of the track from map
@@ -322,11 +318,13 @@ namespace dune
             // Setup of methods, for now, only default method implemented.
             enum class MuSelectMethod
             {
-                kDefault = 0,
+                kSimple = 0,
+                kDefault
             };
             enum class ESelectMethod
             {
-                kDefault = 0,
+                kSimple = 0,
+                kDefault
             };
             enum class PrSelectMethod
             {

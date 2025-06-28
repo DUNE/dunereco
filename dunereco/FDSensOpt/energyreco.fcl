@@ -35,10 +35,6 @@ dunefd_nuenergyreco_pmtrack:
     # '2' forcefully use only mcs
     LongestTrackMethod:     0
 
-    # Rather to apply or not cuts for selection of longest track
-    ApplyMuFilters:       false
-    # Rather to apply or not cuts for selection of highest charge shower
-    ApplyElectronFilters: false
     # Rather to use or not PID in the energy reconstruction
     UsePID: false
 

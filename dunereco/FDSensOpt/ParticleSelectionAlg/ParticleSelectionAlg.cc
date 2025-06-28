@@ -112,11 +112,11 @@ namespace dune
 
     //------------------------------------------------------------------------------------------------------------------------------------------
 
-    art::Ptr<recob::Track> ParticleSelectionAlg::GetLongestTrackPID(const art::Event &event, const bool applyMuFilters)
+    art::Ptr<recob::Track> ParticleSelectionAlg::GetLongestTrackPID(const art::Event &event)
     {
         art::Ptr<recob::Track> pTrack{};
-        std::vector<art::Ptr<recob::Track>> tracks(GenMuonCandidates(event, applyMuFilters));
-        const bool isTrackOnly = (applyMuFilters) ? false : true;
+        std::vector<art::Ptr<recob::Track>> tracks(GenMuonCandidates(event));
+        const bool isTrackOnly = (fMuSelectMethod != static_cast<int>(MuSelectMethod::kSimple)) ? false : true;
         return ParticleSelectionAlg::GetLongestTrack(event, tracks, isTrackOnly);
 
     }
@@ -161,12 +161,12 @@ namespace dune
 
     //------------------------------------------------------------------------------------------------------------------------------------------
 
-    std::vector<art::Ptr<recob::Track>> ParticleSelectionAlg::GenMuonCandidates(const art::Event &event, const bool applyMuFilters)
+    std::vector<art::Ptr<recob::Track>> ParticleSelectionAlg::GenMuonCandidates(const art::Event &event)
     {
 
         std::vector<art::Ptr<recob::Track>> candidates(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
 
-        if (candidates.size() <= 1 || !applyMuFilters)
+        if (candidates.size() <= 1 || (fMuSelectMethod == static_cast<int>(MuSelectMethod::kSimple)))
             return candidates;
 
         // Faster here in case no selection is done. Both variables have a safetity check later
@@ -183,6 +183,7 @@ namespace dune
         }
 
     }
+
     //------------------------------------------------------------------------------------------------------------------------------------------
 
     art::Ptr<recob::Shower> ParticleSelectionAlg::GetHighestChargeShower(detinfo::DetectorClocksData const& clockData,
@@ -221,12 +222,14 @@ namespace dune
 
     //------------------------------------------------------------------------------------------------------------------------------------------
 
-    art::Ptr<recob::Shower> ParticleSelectionAlg::GetHighestChargeShowerPID(const art::Event &event, const bool applyElectronFilters)
+    art::Ptr<recob::Shower> ParticleSelectionAlg::GetHighestChargeShowerPID(const art::Event &event)
     {
-        std::vector<art::Ptr<recob::Shower>> showers(GenElectronCandidates(event, applyElectronFilters));
+        std::vector<art::Ptr<recob::Shower>> showers(GenElectronCandidates(event));
         auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
         auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
-        const geo::View_t tPlane = (applyElectronFilters) ? kPlane : geo::kW;
+
+        
+        const geo::View_t tPlane = (fESelectMethod != static_cast<int>(ESelectMethod::kSimple)) ? kPlane : geo::kW;
         return ParticleSelectionAlg::GetHighestChargeShower(clockData, detProp, event, showers, tPlane);
     }
 
@@ -252,12 +255,12 @@ namespace dune
 
     //------------------------------------------------------------------------------------------------------------------------------------------
 
-    std::vector<art::Ptr<recob::Shower>> ParticleSelectionAlg::GenElectronCandidates(const art::Event &event, const bool applyElectronFilters)
+    std::vector<art::Ptr<recob::Shower>> ParticleSelectionAlg::GenElectronCandidates(const art::Event &event)
     {
 
         std::vector<art::Ptr<recob::Shower>> candidates(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerLabel));
         
-        if (!applyElectronFilters)
+        if (fESelectMethod == static_cast<int>(ESelectMethod::kSimple))
         {
             return candidates;
         }

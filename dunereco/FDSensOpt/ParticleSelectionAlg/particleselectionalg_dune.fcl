@@ -6,7 +6,9 @@ dune_particleselectionalg:
 {
     CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
 
-    MuSelectMethod:               0    # the method for muon selection (dafault (only): 0)
+    MuSelectMethod:               0    # the method for muon selection
+                                       # 0: uses GetLongestTrack only
+                                       # 1: uses MuDefaultSelection
     MaxMuLength:                  17e3 # the max length for muon candidates
     MaxMuPIDA:                    13   # the max PIDA for muon candidates
     MinMuTotalCalo:               0.3  # the min calorimetric energy for muon candidates when they are showers
@@ -15,8 +17,9 @@ dune_particleselectionalg:
     MaxMuPIDAAggressive:          10   # the max PIDA for muon candidates (more aggressive, after all cleanings)
     MaxMuContainedCalo:           1    # the max calorimetric energy for muon candidates.
 
-
-    ESelectMethod:                0    # the method for electron selection (dafault (only): 0)
+    ESelectMethod:                0    # the method for electron selection
+                                       # 0: uses GetHighestChargeShower only
+                                       # 1: uses EDefaultSelection
     MaxETotalCaloForTracks:       0.2  # the max calorimetric energy for electron candidates as track
     MaxEPIDA:                     15   # the max calorimetric energy for electron candidates as track
 
@@ -34,6 +37,7 @@ dune_particleselectionalg:
     MinPionTrkLength:             3.5  # the min length for pion candidates
     MaxPionTrkLength:             350  # the max length for pion candidates
     MinPionTrkLengthNotContained: 10   # the min length for pion candidates not contained
+
     DistanceToWallThreshold:      20.0 # the min distance from a detector wall to be considered contained
                                         
     RecombFactor:                 0.63 # the recombination factor

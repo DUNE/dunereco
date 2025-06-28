@@ -59,8 +59,6 @@ namespace dune {
 
             int fRecoMethod;
             int fLongestTrackMethod;
-            bool fApplyMuFilters;
-            bool fApplyElectronFilters;
 
             NeutrinoEnergyRecoAlg fNeutrinoEnergyRecoAlg;
             fhicl::ParameterSet fParticleSelectionAlgParams;
@@ -100,8 +98,6 @@ EnergyReco::EnergyReco(fhicl::ParameterSet const& pset) :
     fPFParticleLabel(pset.get<std::string>("PFParticleLabel")),
     fRecoMethod(pset.get<int>("RecoMethod")),
     fLongestTrackMethod(pset.get<int>("LongestTrackMethod")),
-    fApplyMuFilters(pset.get<bool>("ApplyMuFilters")),
-    fApplyElectronFilters(pset.get<bool>("ApplyElectronFilters")),
     fNeutrinoEnergyRecoAlg(pset.get<fhicl::ParameterSet>("NeutrinoEnergyRecoAlg"),fTrackLabel,fShowerLabel,
         fHitLabel,fWireLabel,fTrackToHitLabel,fShowerToHitLabel,fHitToSpacePointLabel),
     fParticleSelectionAlgParams(pset.get<fhicl::ParameterSet>("ParticleSelectionAlg"))
@@ -126,8 +122,8 @@ void EnergyReco::produce(art::Event& evt)
 
     auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(evt, clockData);
-    art::Ptr<recob::Track> longestTrack(fParticleSelectionAlg.GetLongestTrackPID(evt, fApplyMuFilters));
-    art::Ptr<recob::Shower> highestChargeShower(fParticleSelectionAlg.GetHighestChargeShowerPID(evt, fApplyElectronFilters));
+    art::Ptr<recob::Track> longestTrack(fParticleSelectionAlg.GetLongestTrackPID(evt));
+    art::Ptr<recob::Shower> highestChargeShower(fParticleSelectionAlg.GetHighestChargeShowerPID(evt));
 
     // Needed because the enum don't match
     int fLongestTrackMethodNAlg = fNeutrinoEnergyRecoAlg.MuonTrackMethod::kTrackMethodNotSet;
