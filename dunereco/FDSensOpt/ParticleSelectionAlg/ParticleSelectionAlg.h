@@ -227,6 +227,8 @@ namespace dune
             const std::vector<art::Ptr<recob::Track>> &GetPiTracks(){ return fPiTracks; }
 
             void SetLepTrack(const art::Ptr<recob::Track> &trk){ fLepTrack = trk; }
+            void SetPrTracks(const std::vector<art::Ptr<recob::Track>> &tracks){ fPrTracks = tracks; }
+            void SetPiTracks(const std::vector<art::Ptr<recob::Track>> &tracks){ fPiTracks = tracks; }
 
             /**
              * @brief  Retrieve the track assciated to the shower
