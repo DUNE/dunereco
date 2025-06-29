@@ -117,7 +117,8 @@ void EnergyReco::produce(art::Event& evt)
 
     // Particle selection alg. has to be initialized each time
     // Easiest way to reset private and public members
-    ParticleSelectionAlg fParticleSelectionAlg(fParticleSelectionAlgParams,fPFParticleLabel,fTrackLabel,fShowerLabel, fHitLabel,fTrackToHitLabel,fShowerToHitLabel,fHitToSpacePointLabel);
+    ParticleSelectionAlg fParticleSelectionAlg(fParticleSelectionAlgParams, fPFParticleLabel, fTrackLabel, fShowerLabel, fHitLabel,
+            fTrackToHitLabel, fShowerToHitLabel, fHitToSpacePointLabel);
 
 
     auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);

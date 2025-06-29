@@ -53,7 +53,8 @@ namespace dune
         const double protonsObservedCharge = protonsEnergyCharge.second;
         const double pionsObservedCharge = pionsEnergyCharge.second;
 
-        const std::vector<art::Ptr<recob::Hit> > eventHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaEventUtils::GetHits(event, fHitLabel),2));
+        const std::vector<art::Ptr<recob::Hit>>
+            eventHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaEventUtils::GetHits(event, fHitLabel),2));
         const double eventObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, eventHits));
 
         const double hadronicObservedCharge(eventObservedCharge-(leptonObservedCharge+protonsObservedCharge + pionsObservedCharge));
@@ -92,7 +93,8 @@ namespace dune
 
         const double protonsObservedCharge = protonsEnergyCharge.second;
         const double pionsObservedCharge = pionsEnergyCharge.second;
-        const double totalEnergy(this->CalculateEnergyFromCharge(wireCharge - (protonsObservedCharge + pionsObservedCharge)) + protonsKin + pionsKin + kPionMass*npions);
+        const double totalEnergy(this->CalculateEnergyFromCharge(wireCharge - (protonsObservedCharge + pionsObservedCharge)) + protonsKin
+                + pionsKin + kPionMass*npions);
 
         dune::EnergyRecoOutput output;
         output.recoMethodUsed = static_cast<int>(kProtonPionHadronic);
@@ -137,7 +139,9 @@ namespace dune
                 mf::LogError("NeutrinoEnergyRecoPIDAlg") << "Momentum by range was lower than one. Setting Kinetic energy to zero";
                 pKinFromRange = 0;
             }
-            const std::vector<art::Ptr<recob::Hit> > trkHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(tracks[i], event, fTrackToHitLabel),2));
+            const std::vector<art::Ptr<recob::Hit>>
+                trkHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(tracks[i], event, fTrackToHitLabel),2));
+
             const double trkObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, trkHits));
             if (pParticle == pPion)
             {

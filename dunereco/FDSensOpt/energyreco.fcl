@@ -17,7 +17,6 @@ dunefd_nuenergyreco_pmtrack:
     # 5 Split event into reco shower with highest charge, protons and pions and all other hadronic part, suitable for nue CC events (method 6 is used for events with no reco shower)
     # 6 Momenta of protons and pions and charges of all other hits and convert to energy, suitable for NC events, numu CC events with no reco track or nue CC events with no reco shower
     # For RecoMethod 5, 6 and 7, selection can be adjusted in ParticleSelectionAlg
-
     RecoMethod:           1
 
     WireLabel:            "wclsmcnfsp:gauss"
@@ -27,7 +26,7 @@ dunefd_nuenergyreco_pmtrack:
     TrackToHitLabel:      "pmtrack"
     ShowerToHitLabel:     "emshower"
     HitToSpacePointLabel: "pmtrack"
-    PFParticleLabel:     "pandora"
+    PFParticleLabel:      "pandora"
 
     # LongestTrackMethod
     # '0' is the standard computation: by range or MCS, depending on containment and on MuonRangeToMCSThreshold

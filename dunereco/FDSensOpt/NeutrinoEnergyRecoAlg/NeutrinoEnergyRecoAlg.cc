@@ -95,7 +95,8 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
 
     Point_t vertex(pMuonTrack->Start().X(), pMuonTrack->Start().Y(), pMuonTrack->Start().Z());
 
-    const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel),2));
+    const std::vector<art::Ptr<recob::Hit>>
+        muonHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel),2));
     bool isContained(this->IsContained(muonHits, event));
     const double uncorrectedMuonMomentumMCS(this->CalculateUncorrectedMuonMomentumByMCS(pMuonTrack));
     const double muonMomentumMCS(this->CalculateLinearlyCorrectedValue(uncorrectedMuonMomentumMCS, fGradTrkMomMCS, fIntTrkMomMCS));
@@ -157,7 +158,9 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
 
     Point_t vertex(pElectronShower->ShowerStart().X(), pElectronShower->ShowerStart().Y(), pElectronShower->ShowerStart().Z());
 
-    const std::vector<art::Ptr<recob::Hit> > electronHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(pElectronShower, event, fShowerToHitLabel),2));
+    const std::vector<art::Ptr<recob::Hit>>
+        electronHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(pElectronShower, event,
+                        fShowerToHitLabel),2));
     const double electronEnergy(this->CalculateElectronEnergy(pElectronShower, event));
     const double electronMomentum = std::sqrt(electronEnergy*(electronEnergy + 2*kElectronMass));
     const EnergyRecoMethod fMethodEnergyUsed = (fUsePID) ? kElectronProtonPionHadronic : kElectronAndHadronic;
@@ -250,7 +253,9 @@ double NeutrinoEnergyRecoAlg::CalculateMuonMomentumByMCS(const art::Ptr<recob::T
 
 double NeutrinoEnergyRecoAlg::CalculateElectronEnergy(const art::Ptr<recob::Shower> &pElectronShower, const art::Event &event)
 {
-    const std::vector<art::Ptr<recob::Hit> > electronHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(pElectronShower, event, fShowerToHitLabel),2));
+    const std::vector<art::Ptr<recob::Hit>>
+        electronHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(pElectronShower, event,
+                        fShowerToHitLabel),2));
     auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
     const double electronObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, electronHits));
