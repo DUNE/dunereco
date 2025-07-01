@@ -423,7 +423,7 @@ Momentum_t NeutrinoAngularRecoAlg::ComputeTracksMomentum(const std::vector<art::
         const recob::Track::Vector_t &dir = pTrack->StartDirection();
 
         if(dir.X() < -1){ //Direction is not defined (-999, -999, -999),
-            continue; //We skip this shower
+            continue; //We skip this track
         }
 
         float momentum_norm = 0;
