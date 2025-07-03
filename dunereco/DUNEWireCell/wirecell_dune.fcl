@@ -142,6 +142,7 @@ protodunehd_nfsp:
             reality: "data" # vs. "sim"
             epoch: "after"
             signal_output_form: "sparse"
+            use_resampler: "false"
         }
         structs: {
             Nbit: @local::Nbit_standard 
@@ -165,6 +166,7 @@ protodunehd_nf : {
          raw_input_label: "tpcrawdecoder:daq" # "caldata:dataprep"
          reality: "data"
          signal_output_form: "sparse"
+         use_resampler: "false"
       }
       structs: {
          Nbit: @local::Nbit_standard 
@@ -2000,6 +2002,7 @@ protodunehd_nfspimg : {
          reality: "data"
          signal_output_form: "dense"
          use_magnify: "false"
+         use_resampler: "false"
       }
       structs: {
          Nbit: @local::Nbit_standard

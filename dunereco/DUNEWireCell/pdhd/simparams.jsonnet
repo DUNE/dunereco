@@ -111,7 +111,6 @@ base {
     // In MB LArSoft simulation, they expect a different number of
     // ticks than acutal data.
     nticks: 6000,
-    tick: 512.0,
   },
 
   // These parameters only make sense for running WCT simulation on

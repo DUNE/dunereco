@@ -94,7 +94,6 @@ base {
 
     daq: super.daq {
         nticks: 6000,
-        tick: 512.0,
     },
 
     adc: super.adc {
