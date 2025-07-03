@@ -10,7 +10,8 @@ function(g, wc, tools) {
                 period: 500*wc.ns,
                 time_pad: "linear",
             }
-        }, nin=1, nout=1)
+        }, nin=1, nout=1,
+        uses=[tools.dft, tools.anodes[n]])
         for n in std.range(0, std.length(tools.anodes) - 1)
     ]
 }

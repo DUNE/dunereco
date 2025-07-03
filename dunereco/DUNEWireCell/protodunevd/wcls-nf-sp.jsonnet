@@ -51,6 +51,9 @@ local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
 
 
 local use_resampler = std.extVar("use_resampler");
+// Suggest changing this to use this switch
+// local use_resampler = (reality == 'data');
+
 // Collect the WC/LS input converters for use below.  Make sure the
 // "name" argument matches what is used in the FHiCL that loads this
 // file.  In particular if there is no ":" in the inputer then name
@@ -148,17 +151,20 @@ local chsel_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-local resamplers = [
-  g.pnode({
-    type: 'Resampler',
-    name: 'resmp%d' %n,
-    data: {
-      period: 500*wc.ns,
-      time_pad: "linear",
-    }
-  }, nin=1, nout=1)
-  for n in std.range(0, std.length(tools.anodes) - 1)
-];
+local resamplers_config = import 'resamplers.jsonnet';
+local load_resamplers = resamplers_config(g, wc, tools);
+local resamplers = load_resamplers.resamplers;
+// local resamplers = [
+//   g.pnode({
+//     type: 'Resampler',
+//     name: 'resmp%d' %n,
+//     data: {
+//       period: 500*wc.ns,
+//       time_pad: "linear",
+//     }
+//   }, nin=1, nout=1)
+//   for n in std.range(0, std.length(tools.anodes) - 1)
+// ];
 
 local magoutput = 'protodune-data-check.root';
 local magnify = import 'pgrapher/experiment/protodunevd/magnify-sinks.jsonnet';

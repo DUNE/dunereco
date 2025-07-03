@@ -150,6 +150,8 @@ protodunehd_nfsp:
         }
     }
 }
+protodunehd_nfsp_mc: @local::protodunehd_nfsp
+protodunehd_nfsp_mc.wcls_main.params.reality: "sim"
 
 protodunehd_nf : {
    module_type : WireCellToolkit
@@ -176,6 +178,8 @@ protodunehd_nf : {
 
    }
 }
+protodunehd_nf_mc: @local::protodunehd_nf
+protodunehd_nf_mc.wcls_main.params.reality: "sim"
 
 protodunehd_sp:
 {
@@ -202,6 +206,8 @@ protodunehd_sp:
 
     }
 }
+protodunehd_sp_mc: @local::protodunehd_sp
+protodunehd_sp_mc.wcls_main.params.reality: "sim"
 
 protodunehd_dnnsp:
 {
@@ -226,6 +232,8 @@ protodunehd_dnnsp:
 
     }
 }
+protodunehd_dnnsp_mc: @local::protodunehd_dnnsp
+protodunehd_dnnsp_mc.wcls_main.params.reality: "sim"
 
 
 wirecell_protodunespmc:

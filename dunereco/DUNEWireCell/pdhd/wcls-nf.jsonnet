@@ -33,7 +33,7 @@ local wcls = wcls_maker(params, tools);
 
 local sp_maker = import 'pgrapher/experiment/pdhd/sp.jsonnet';
 
-local use_resampler = std.extVar("use_resampler");
+local use_resampler = (reality == 'data');
 
 // Collect the WC/LS input converters for use below.  Make sure the
 // "name" argument matches what is used in the FHiCL that loads this

@@ -40,7 +40,7 @@ local sp_maker = import 'pgrapher/experiment/pdhd/sp.jsonnet';
 //local chndbm = chndb_maker(params, tools);
 //local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
 
-local use_resampler = (std.extVar("use_resampler") == 'true');
+local use_resampler = (reality == 'data');
 
 // Collect the WC/LS input converters for use below.  Make sure the
 // "name" argument matches what is used in the FHiCL that loads this
