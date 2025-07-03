@@ -139,7 +139,7 @@ local chsel_pipes = [
 ];
 
 
-local resamplers_config = import 'resamplers.jsonnet';
+local resamplers_config = import 'pgrapher/common/resamplers.jsonnet';
 local load_resamplers = resamplers_config(g, wc, tools);
 local resamplers = load_resamplers.resamplers;
 

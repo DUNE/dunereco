@@ -128,7 +128,7 @@ local chsel_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-local resamplers_config = import 'resamplers.jsonnet';
+local resamplers_config = import 'pgrapher/common/resamplers.jsonnet';
 local load_resamplers = resamplers_config(g, wc, tools);
 local resamplers = load_resamplers.resamplers;
 
