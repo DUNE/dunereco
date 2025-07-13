@@ -484,6 +484,9 @@ namespace dune
             bool IsTrack(const art::Event &event, const art::Ptr<recob::Shower> &shower);
 
 
+            geo::View_t GetBestPlane(const art::Event &event,  const std::vector<art::Ptr<recob::Hit>> &allhits);
+
+
             const void applyMuLengthFilter(
                     std::vector<art::Ptr<recob::Track>>& tracks,
                     const double maxlen);

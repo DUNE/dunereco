@@ -621,22 +621,8 @@ namespace dune
         auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
         auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
 
-        geo::View_t tplane = kPlane;
         auto const allHits = dune_ana::DUNEAnaEventUtils::GetHits(event, fHitLabel);
-        if (tplane == geo::kUnknown)
-        {
-            size_t maxNhits = 0;
-            for (size_t ipl = 0; ipl < kNplanes; ++ipl)
-            {
-                const std::vector<art::Ptr<recob::Hit>> eventHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(allHits,ipl));
-                const size_t nhits = eventHits.size();
-                if (nhits >= maxNhits )
-                {
-                    maxNhits = nhits;
-                    tplane = static_cast<geo::View_t>(ipl);
-                }
-            }
-        }
+        geo::View_t tplane = this->GetBestPlane(event, allHits);
 
         const std::vector<art::Ptr<recob::Hit>> eventHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(allHits, tplane));
         const double eventObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, eventHits));
@@ -673,24 +659,9 @@ namespace dune
         for (const art::Ptr<recob::Track> &track : tracks)
         {
 
-            geo::View_t tplane = kPlane;
-
-
             const auto alltrkhits = dune_ana::DUNEAnaTrackUtils::GetHits(track, event, fTrackLabel);
-            if (tplane == geo::kUnknown)
-            {
-                size_t maxNhits = 0;
-                for (size_t ipl = 0; ipl < kNplanes; ++ipl)
-                {
-                    const std::vector<art::Ptr<recob::Hit>> trkHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(alltrkhits, ipl));
-                    const size_t nhits = trkHits.size();
-                    if (nhits >= maxNhits )
-                    {
-                        maxNhits = nhits;
-                        tplane = static_cast<geo::View_t>(ipl);
-                    }
-                }
-            }
+            
+            geo::View_t tplane = this->GetBestPlane(event, alltrkhits);
 
             const std::vector<art::Ptr<recob::Hit>> trkHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(alltrkhits, tplane));
 
@@ -729,21 +700,7 @@ namespace dune
         for (const art::Ptr<recob::Shower> &shower : showers)
         {
             const auto allshwhits = dune_ana::DUNEAnaShowerUtils::GetHits(shower, event, fShowerLabel);
-            geo::View_t tplane = tPlane;
-            if (tplane == geo::kUnknown)
-            {
-                size_t maxNhits = 0;
-                for (size_t ipl = 0; ipl < kNplanes; ++ipl)
-                {
-                    const std::vector<art::Ptr<recob::Hit>> shwHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(allshwhits, ipl));
-                    const size_t nhits = shwHits.size();
-                    if (nhits >= maxNhits)
-                    {
-                        maxNhits = nhits;
-                        tplane = static_cast<geo::View_t>(ipl);
-                    }
-                }
-            }
+            geo::View_t tplane = this->GetBestPlane(event, allshwhits);
             tShwIdToBestPlaneMap[shower.key()] = tplane;
         }
 
@@ -771,6 +728,29 @@ namespace dune
     {
         const art::Ptr< recob::PFParticle > pfp(dune_ana::DUNEAnaShowerUtils::GetPFParticle(shower, event, fShowerLabel));
         return lar_pandora::LArPandoraHelper::IsTrack(pfp);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    geo::View_t ParticleSelectionAlg::GetBestPlane(const art::Event &event,  const std::vector<art::Ptr<recob::Hit>> &allhits)
+    {
+        geo::View_t tplane = kPlane;
+
+        if (tplane == geo::kUnknown)
+        {
+            size_t maxNhits = 0;
+            for (size_t ipl = 0; ipl < kNplanes; ++ipl)
+            {
+                const std::vector<art::Ptr<recob::Hit>> planehits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(allhits, ipl));
+                const size_t nhits = planehits.size();
+                if (nhits >= maxNhits)
+                {
+                    maxNhits = nhits;
+                    tplane = static_cast<geo::View_t>(ipl);
+                }
+            }
+        }
+        return tplane;
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------------
