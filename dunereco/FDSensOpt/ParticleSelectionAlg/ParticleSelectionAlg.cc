@@ -117,7 +117,7 @@ namespace dune
         art::Ptr<recob::Track> pTrack{};
         std::vector<art::Ptr<recob::Track>> tracks(GenMuonCandidates(event));
         const bool isTrackOnly = (fMuSelectMethod != static_cast<int>(MuSelectMethod::kSimple)) ? false : true;
-        return ParticleSelectionAlg::GetLongestTrack(event, tracks, isTrackOnly);
+        return this->GetLongestTrack(event, tracks, isTrackOnly);
 
     }
 
@@ -131,19 +131,19 @@ namespace dune
 
         std::vector<std::function<void()>> filters = {
             // Remove tracks that are too big
-            [&]() { ParticleSelectionAlg::applyMuLengthFilter(candidates, kMaxMuLength); },
+            [&]() { this->applyMuLengthFilter(candidates, kMaxMuLength); },
             // Remove when PIDA is > threshold (if PIDA is not valid, do nothing)
-            [&]() { ParticleSelectionAlg::applyMuMaxPIDA(candidates, kMaxMuPIDA); },
+            [&]() { this->applyMuMaxPIDA(candidates, kMaxMuPIDA); },
             // Removing PFPs that are assigned as shower in events with where Total Calorimetric Enegy is between user defined value
-            [&]() { ParticleSelectionAlg::applyMuShowerCutCalo(event, candidates, kMinMuTotalCalo, kMaxMuTotalCalo); },
+            [&]() { this->applyMuShowerCutCalo(event, candidates, kMinMuTotalCalo, kMaxMuTotalCalo); },
             // Removing PFPs that are shower and have PIDA score < threshold
-            [&]() { ParticleSelectionAlg::applyMuShowerCutPIDA(event, candidates, kMinMuPIDAShower); },
+            [&]() { this->applyMuShowerCutPIDA(event, candidates, kMinMuPIDAShower); },
             // If not all tracks are contained, remove the tracks that are contained
-            [&]() { ParticleSelectionAlg::applyMuCutContained(event, candidates); },
+            [&]() { this->applyMuCutContained(event, candidates); },
             // Remove PFPs that are showers
-            [&]() { ParticleSelectionAlg::applyMuRemoveShowers(event, candidates); },
+            [&]() { this->applyMuRemoveShowers(event, candidates); },
             // Remove AGAIN when PIDA is > lower_threshold (if PIDA is not valid, do nothing)
-            [&]() { ParticleSelectionAlg::applyMuMaxPIDA(candidates, kMaxMuPIDAAggressive); },
+            [&]() { this->applyMuMaxPIDA(candidates, kMaxMuPIDAAggressive); },
         };
 
         // After each filter, check if the number of candidates is 0 or 1
@@ -170,12 +170,12 @@ namespace dune
             return candidates;
 
         // Faster here in case no selection is done. Both variables have a safetity check later
-        fTrkIdToPIDAMap = ParticleSelectionAlg::GenMapPIDAScore(event);
-        fTotalCaloEvent = ParticleSelectionAlg::GetTotalCaloEvent(event);
+        fTrkIdToPIDAMap = this->GenMapPIDAScore(event);
+        fTotalCaloEvent = this->GetTotalCaloEvent(event);
 
         // If more and more methods are implemented, change it to switch
         if (fMuSelectMethod == static_cast<int>(MuSelectMethod::kDefault))
-            return ParticleSelectionAlg::MuDefaultSelection(event, candidates);
+            return this->MuDefaultSelection(event, candidates);
         else
         {
             throw art::Exception(art::errors::LogicError) << "Muon selection \
@@ -197,7 +197,7 @@ namespace dune
             return pShower;
 
         // In case the plane is set to geo::Unknown, the plane with most hits will be used for each shower
-        fShwIdToBestPlaneMap = ParticleSelectionAlg::GenMapBestPlaneShower(event, tPlane);
+        fShwIdToBestPlaneMap = this->GenMapBestPlaneShower(event, tPlane);
 
         double maxCharge(std::numeric_limits<double>::lowest());
         for (unsigned int iShower = 0; iShower < showers.size(); ++iShower)
@@ -215,7 +215,7 @@ namespace dune
 
         // Store the shower and the associated track (if available)
         fLepShower = pShower;
-        fLepTrack = ParticleSelectionAlg::GetTrackFromShower(event, pShower);
+        fLepTrack = this->GetTrackFromShower(event, pShower);
 
         return pShower;
     }
@@ -230,7 +230,7 @@ namespace dune
 
         
         const geo::View_t tPlane = (fESelectMethod != static_cast<int>(ESelectMethod::kSimple)) ? kPlane : geo::kW;
-        return ParticleSelectionAlg::GetHighestChargeShower(clockData, detProp, event, showers, tPlane);
+        return this->GetHighestChargeShower(clockData, detProp, event, showers, tPlane);
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------------
@@ -266,12 +266,12 @@ namespace dune
         }
 
         // Faster here in case no selection is done. fTotalCaloEvent has a safety check, fShwIdToPIDAMap is used only here
-        fTotalCaloEvent = ParticleSelectionAlg::GetTotalCaloEvent(event);
-        fShwIdToPIDAMap = ParticleSelectionAlg::GenMapPIDAScoreShw(event);
+        fTotalCaloEvent = this->GetTotalCaloEvent(event);
+        fShwIdToPIDAMap = this->GenMapPIDAScoreShw(event);
 
         // If more and more methods are implemented, change it to switch
         if (fESelectMethod == static_cast<int>(ESelectMethod::kDefault))
-            return ParticleSelectionAlg::EDefaultSelection(event, candidates);
+            return this->EDefaultSelection(event, candidates);
         else
         {
             throw art::Exception(art::errors::LogicError) << "Electron selection \
@@ -331,13 +331,13 @@ namespace dune
         }
         // If lepton was not searched, these maps are empty, so we need to generate them
         if (fTrkIdToPIDAMap.empty())
-            fTrkIdToPIDAMap = ParticleSelectionAlg::GenMapPIDAScore(event);
+            fTrkIdToPIDAMap = this->GenMapPIDAScore(event);
         if (fTotalCaloEvent == std::numeric_limits<double>::lowest())
-            fTotalCaloEvent = ParticleSelectionAlg::GetTotalCaloEvent(event);
+            fTotalCaloEvent = this->GetTotalCaloEvent(event);
         if (fTrkIdToCaloMap.empty())
-            fTrkIdToCaloMap = ParticleSelectionAlg::GenMapTracksCalo(event);
+            fTrkIdToCaloMap = this->GenMapTracksCalo(event);
         if (fTrkIdToMomMap.empty())
-            fTrkIdToMomMap = ParticleSelectionAlg::GenMapTracksMom(event);
+            fTrkIdToMomMap = this->GenMapTracksMom(event);
 
         fPrDone = true;
         if (0 == tracks.size())
@@ -347,7 +347,7 @@ namespace dune
 
 
         if (fPrSelectMethod == static_cast<int>(PrSelectMethod::kDefault))
-            return ParticleSelectionAlg::PrDefaultSelection(event, tracks);
+            return this->PrDefaultSelection(event, tracks);
         else
         {
             throw art::Exception(art::errors::LogicError) << "Proton selection \
@@ -388,9 +388,9 @@ namespace dune
         // This is done because pion selection is rather weak
         std::vector<art::Ptr<recob::Track>> trkprotons;
         if (!fPrDone)
-            trkprotons = ParticleSelectionAlg::GenProtonCandidates(event);
+            trkprotons = this->GenProtonCandidates(event);
         else
-            trkprotons = ParticleSelectionAlg::GetPrTracks();
+            trkprotons = this->GetPrTracks();
 
 
         // Removing proton candidates
@@ -435,7 +435,7 @@ namespace dune
     {
         std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
         if (fPionSelectMethod == static_cast<int>(PionSelectMethod::kDefault))
-            return ParticleSelectionAlg::PionDefaultSelection(event, tracks);
+            return this->PionDefaultSelection(event, tracks);
         else
         {
             throw art::Exception(art::errors::LogicError) << "Pion selection \
@@ -526,15 +526,15 @@ namespace dune
         const std::vector<art::Ptr<recob::Shower>> showers(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerLabel));
         if (fTrkIdToPIDAMap.size() == 0)
         {
-            fTrkIdToPIDAMap = ParticleSelectionAlg::GenMapPIDAScore(event);
+            fTrkIdToPIDAMap = this->GenMapPIDAScore(event);
         }
         for (const art::Ptr<recob::Shower> &shower : showers)
         {
-            art::Ptr<recob::Track> shwTrk = ParticleSelectionAlg::GetTrackFromShower(event, shower);
+            art::Ptr<recob::Track> shwTrk = this->GetTrackFromShower(event, shower);
             if (!shwTrk.isAvailable())
                 tShwIdToPIDAMap[shower.key()] = 0;
             else
-                tShwIdToPIDAMap[shower.key()] = ParticleSelectionAlg::GetPIDAScore(shwTrk);
+                tShwIdToPIDAMap[shower.key()] = this->GetPIDAScore(shwTrk);
         }
 
         return tShwIdToPIDAMap;
@@ -546,7 +546,7 @@ namespace dune
     bool ParticleSelectionAlg::GenContainmentInfo(const art::Event &event)
     {
         const std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
-        return ParticleSelectionAlg::GenContainmentInfo(event, tracks);
+        return this->GenContainmentInfo(event, tracks);
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------------
@@ -561,7 +561,7 @@ namespace dune
             if (fTrkIdToContainmentMap.count(track.key()) == 0)
             {
                 std::vector<art::Ptr<recob::Hit>> trkhits = (dune_ana::DUNEAnaTrackUtils::GetHits(track, event, fTrackLabel));
-                bool trkIsContained = ParticleSelectionAlg::IsContained(trkhits, event);
+                bool trkIsContained = this->IsContained(trkhits, event);
                 fTrkIdToContainmentMap[track.key()] = trkIsContained;
             }
             allContained &= fTrkIdToContainmentMap[track.key()];
@@ -835,7 +835,7 @@ namespace dune
             for (unsigned int iSpacePoint = 0; iSpacePoint < spacePoints.size(); ++iSpacePoint)
             {
                 const art::Ptr<recob::SpacePoint> spacePoint(spacePoints[iSpacePoint]);
-                if (!(ParticleSelectionAlg::IsPointContained(spacePoint->XYZ()[0],spacePoint->XYZ()[1],spacePoint->XYZ()[2])))
+                if (!(this->IsPointContained(spacePoint->XYZ()[0],spacePoint->XYZ()[1],spacePoint->XYZ()[2])))
                     return false;
             }
         }
