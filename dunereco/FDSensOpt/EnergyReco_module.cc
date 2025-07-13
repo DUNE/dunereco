@@ -71,7 +71,7 @@ namespace dune {
                 kAllCharges,                                          ///< summed wire charges
                 kMuonProtonPionHadronic,                              ///< muon, protons and pions momenta + all other hadronic deposited energy (PID)
                 kElectronProtonPionHadronic,                          ///< protons and pions momenta + electron and all other hadronic deposited energy (PID)
-                kProtonPionHadronic,                                  ///< protons and pions momenta + summed wire charges
+                kProtonPionHadronic                                   ///< protons and pions momenta + summed wire charges
             };
 
             ///The muon momentum reconstruction method

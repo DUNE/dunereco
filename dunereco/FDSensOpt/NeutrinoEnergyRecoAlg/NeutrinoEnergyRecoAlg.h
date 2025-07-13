@@ -53,12 +53,12 @@ class NeutrinoEnergyRecoAlg
         *
         * @param  pMuonTrack the muon track
         * @param  event the art event
-        * @param  fLongestTrackMethod method to compute muon momemntum (default:0, 1 - force by range, 2 - force by mcs)
-        * @param  fUsePID rather to use PID or not
+        * @param  longestTrackMethod method to compute muon momemntum (default:0, 1 - force by range, 2 - force by mcs)
+        * @param  usePID rather to use PID or not
         *
         * @return the neutrino energy summary object
         */
-        dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event, const int fLongestTrackMethod, const bool fUsePID);
+        dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event, const int longestTrackMethod, const bool usePID);
 
         /**
         * @brief  Calculates neutrino energy using a muon track (the muon track may be ignored if it isn't of a suitable quality)
@@ -75,21 +75,21 @@ class NeutrinoEnergyRecoAlg
         *
         * @param  pElectronShower the electron shower
         * @param  event the art event
-        * @param  fUsePID rather to use PID or not
+        * @param  usePID rather to use PID or not
         *
         * @return the neutrino energy summary object
         */
-        dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Ptr<recob::Shower> &pElectronShower, const art::Event &event, const bool fUsePID = false);
+        dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Ptr<recob::Shower> &pElectronShower, const art::Event &event, const bool usePID = false);
 
         /**
         * @brief  Calculates neutrino energy by summing wire charges
         *
         * @param  event the art event
-        * @param  fUsePID rather to use PID or not
+        * @param  usePID rather to use PID or not
         *
         * @return the neutrino energy summary object
         */
-        dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Event &event, const bool fUsePID = false);
+        dune::EnergyRecoOutput CalculateNeutrinoEnergy(const art::Event &event, const bool usePID = false);
 
         ///The muon momentum reconstruction method
         ///Can be used to control method
