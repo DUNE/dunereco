@@ -142,6 +142,7 @@ protodunehd_nfsp:
             reality: "data" # vs. "sim"
             epoch: "after"
             signal_output_form: "sparse"
+            use_resampler: "false"
         }
         structs: {
             Nbit: @local::Nbit_standard 
@@ -149,6 +150,8 @@ protodunehd_nfsp:
         }
     }
 }
+protodunehd_nfsp_mc: @local::protodunehd_nfsp
+protodunehd_nfsp_mc.wcls_main.params.reality: "sim"
 
 protodunehd_nf : {
    module_type : WireCellToolkit
@@ -165,6 +168,7 @@ protodunehd_nf : {
          raw_input_label: "tpcrawdecoder:daq" # "caldata:dataprep"
          reality: "data"
          signal_output_form: "sparse"
+         use_resampler: "false"
       }
       structs: {
          Nbit: @local::Nbit_standard 
@@ -174,6 +178,8 @@ protodunehd_nf : {
 
    }
 }
+protodunehd_nf_mc: @local::protodunehd_nf
+protodunehd_nf_mc.wcls_main.params.reality: "sim"
 
 protodunehd_sp:
 {
@@ -200,6 +206,8 @@ protodunehd_sp:
 
     }
 }
+protodunehd_sp_mc: @local::protodunehd_sp
+protodunehd_sp_mc.wcls_main.params.reality: "sim"
 
 protodunehd_dnnsp:
 {
@@ -224,6 +232,8 @@ protodunehd_dnnsp:
 
     }
 }
+protodunehd_dnnsp_mc: @local::protodunehd_dnnsp
+protodunehd_dnnsp_mc.wcls_main.params.reality: "sim"
 
 
 wirecell_protodunespmc:
@@ -2000,6 +2010,7 @@ protodunehd_nfspimg : {
          reality: "data"
          signal_output_form: "dense"
          use_magnify: "false"
+         use_resampler: "false"
       }
       structs: {
          Nbit: @local::Nbit_standard
