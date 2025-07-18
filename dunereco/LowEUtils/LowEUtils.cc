@@ -616,72 +616,118 @@ namespace solar
     LowEUtils::FillClusterVariables(SignalTrackIDs, Clusters, ClNHits, ClChannel, ClT, ClY, ClZ, ClDir, ClCharge, ClPurity, ClCompleteness, clockData, debug);
     std::vector<std::vector<int>> MatchedClNHits = {{}, {}, {}}, MatchedClChannel = {{}, {}, {}};
     std::vector<std::vector<float>> MatchedClT = {{}, {}, {}}, MatchedClY = {{}, {}, {}}, MatchedClZ = {{}, {}, {}}, MatchedClDir = {{}, {}, {}};
-    std::vector<std::vector<float>> MatchedClCharge = {{}, {}, {}};
-    std::vector<std::vector<float>> MatchedClPurity = {{}, {}, {}};
-    std::vector<std::vector<float>> MatchedClCompleteness = {{}, {}, {}};
+    std::vector<std::vector<float>> MatchedClCompleteness = {{}, {}, {}}, MatchedClCharge = {{}, {}, {}}, MatchedClPurity = {{}, {}, {}};
 
     // --- Declare our variables to fill
     int MatchInd0Idx = -1, MatchInd1Idx = -1;
     double Ind0ClustdT = fClusterAlgoTime, Ind1ClustdT = fClusterAlgoTime;
     bool MatchInd0 = false, MatchInd1 = false;
 
-    for (size_t ii = 0; ii < Clusters[2].size(); ii++)
+    // Create an index vector with the time sorted indices for each plane
+    std::vector<std::vector<int>> ClustersIdxSorted = {{}, {}, {}};
+    for (int i = 0; i < 3; i++)
     {
-      if (Clusters[2][ii].empty())
+      std::vector<std::pair<float, int>> ClTIdx;
+      for (size_t j = 0; j < ClT[i].size(); j++)
+      {
+        ClTIdx.push_back(std::make_pair(ClT[i][j], j));
+      }
+      std::sort(ClTIdx.begin(), ClTIdx.end());
+      for (auto &pair : ClTIdx)
+      {
+        ClustersIdxSorted[i].push_back(pair.second);
+      }
+    }
+
+    for (size_t ii = 0; ii < ClustersIdxSorted[2].size(); ii++)
+    {
+      int index = ClustersIdxSorted[2][ii];
+      if (Clusters[2][index].empty())
       {
         continue;
       }
       // Reset variables for next match
       MatchInd0 = false;
       MatchInd1 = false;
-      Ind0ClustdT = fClusterAlgoTime;
-      Ind1ClustdT = fClusterAlgoTime;
-
-      for (int jj = 0; jj < int(Clusters[0].size()); jj++)
+      Ind0ClustdT = fClusterMatchTime;
+      Ind1ClustdT = fClusterMatchTime;
+      MatchInd0Idx = -1;
+      MatchInd1Idx = -1;
+      // Initialize the last sorted indices for Ind0 and Ind1
+      int LastSortedInd0 = 0, LastSortedInd1 = 0;
+      // std::cout << " - Matching cluster " << ii << " with index " << index << " and time " << ClT[2][index] << std::endl;
+      for (int jj = LastSortedInd0; jj < int(ClustersIdxSorted[0].size()); jj++)
       {
-        if (ClNHits[0][jj] < (1 - fClusterMatchNHit) * ClNHits[2][ii] || ClNHits[0][jj] > (1 + fClusterMatchNHit) * ClNHits[2][ii])
+        int index0 = ClustersIdxSorted[0][jj];
+        if (ClT[2][index] - ClT[0][index0] > fClusterMatchTime ||
+            abs(ClNHits[0][index0] - ClNHits[2][index]) / ClNHits[2][index] > fClusterMatchNHit || 
+            abs(ClCharge[0][index0] - ClCharge[2][index]) / ClCharge[2][index] > fClusterMatchCharge)
         {
           continue;
         } // Cut on number of hits of Ind0 cluster
-        if (ClCharge[0][jj] < (1 - fClusterMatchCharge) * ClCharge[2][ii] || ClCharge[0][jj] > (1 + fClusterMatchCharge) * ClCharge[2][ii])
+        if (abs(ClT[2][index] - ClT[0][index0]) <= fClusterMatchTime)
         {
-          continue;
-        } // Cut on charge of Ind0 cluster
-        if (abs(ClT[2][ii] - ClT[0][jj]) < fClusterAlgoTime && abs(fClusterInd0MatchTime - abs(ClT[2][ii] - ClT[0][jj])) < abs(fClusterInd0MatchTime - Ind0ClustdT))
+          // std::cout << "    Checking Ind0 cluster " << index0 << " with index " << jj << " and time " << ClT[0][index0] << std::endl;
+          if (abs(fClusterInd0MatchTime - abs(ClT[2][index] - ClT[0][index0])) < abs(fClusterInd0MatchTime - Ind0ClustdT))
+          {
+            MatchInd0 = true;
+            Ind0ClustdT = abs(ClT[2][index] - ClT[0][index0]);
+            MatchInd0Idx = index0;
+            LastSortedInd0 = jj; // Store the last sorted index for Ind0
+          }
+        }
+        else if ((ClT[0][index0] - ClT[2][index]) > fClusterMatchTime)
         {
-          Ind0ClustdT = abs(ClT[2][ii] - ClT[0][jj]);
-          MatchInd0 = true;
-          MatchInd0Idx = jj;
+          break; // Exit loop if time difference exceeds threshold
         }
       }
 
-      for (int zz = 0; zz < int(Clusters[1].size()); zz++)
+      for (int zz = LastSortedInd1; zz < int(ClustersIdxSorted[1].size()); zz++)
       {
-        if (ClNHits[1][zz] < (1 - fClusterMatchNHit) * ClNHits[2][ii] || ClNHits[1][zz] > (1 + fClusterMatchNHit) * ClNHits[2][ii])
+        int index1 = ClustersIdxSorted[1][zz];
+        if (ClT[1][index1] - ClT[2][index] > fClusterMatchTime ||
+            abs(ClNHits[1][index1] - ClNHits[2][index]) / ClNHits[2][index] > fClusterMatchNHit || 
+            abs(ClCharge[1][index1] - ClCharge[2][index]) / ClCharge[2][index] > fClusterMatchCharge)
         {
           continue;
         } // Cut on number of hits of Ind1 cluster
-        if (ClCharge[1][zz] < (1 - fClusterMatchCharge) * ClCharge[2][ii] || ClCharge[1][zz] > (1 + fClusterMatchCharge) * ClCharge[2][ii])
+        if (abs(ClT[2][index] - ClT[1][index1]) <= fClusterMatchTime)
         {
-          continue;
-        } // Cut on charge of Ind1 cluster
-        if (abs(ClT[2][ii] - ClT[1][zz]) < fClusterAlgoTime && abs(fClusterInd1MatchTime - abs(ClT[2][ii] - ClT[1][zz])) < abs(fClusterInd1MatchTime - Ind1ClustdT))
+          // std::cout << "    Checking Ind1 cluster " << index1 << " with index " << zz << " and time " << ClT[1][index1] << std::endl;
+          if (abs(fClusterInd1MatchTime - abs(ClT[2][index] - ClT[1][index1])) < abs(fClusterInd1MatchTime - Ind1ClustdT))
+          {
+            MatchInd1 = true;
+            Ind1ClustdT = abs(ClT[2][index] - ClT[1][index1]);
+            MatchInd1Idx = index1;
+            LastSortedInd1 = zz; // Store the last sorted index for Ind1
+          }
+        }
+        else if ((ClT[1][index1] - ClT[2][index]) > fClusterMatchTime)
         {
-          Ind1ClustdT = abs(ClT[2][ii] - ClT[1][zz]);
-          MatchInd1 = true;
-          MatchInd1Idx = zz;
+          break; // Exit loop if time difference exceeds threshold
         }
       } // Loop over ind1 clusters
       // Fill matched clusters according to the matching criteria
-      if (MatchInd0 && MatchInd1)
+      float ClY1, ClY0, ClY2;
+      
+      if (!MatchInd0 && !MatchInd1)
       {
+        // std::cout << "    No match found for index " << index << ". Skipping..." << std::endl;
+        continue;
+      } // No match found, skip to next index
+      
+      else if (MatchInd0 && MatchInd1)
+      {
+        ClY0 = ClY[0][MatchInd0Idx] + (ClZ[2][index] - ClZ[0][MatchInd0Idx]) / (ClDir[0][MatchInd0Idx]);
+        ClY1 = ClY[1][MatchInd1Idx] + (ClZ[2][index] - ClZ[1][MatchInd1Idx]) / (ClDir[1][MatchInd1Idx]);
+        ClY2 = (ClY0 + ClY1) / 2;
         // std::cout << "\tMatched all three planes" << std::endl;
         MatchedClustersIdx[0].push_back(ClustersIdx[0][MatchInd0Idx]);
         MatchedClusters[0].push_back(Clusters[0][MatchInd0Idx]);
         MatchedClNHits[0].push_back(ClNHits[0][MatchInd0Idx]);
         MatchedClChannel[0].push_back(ClChannel[0][MatchInd0Idx]);
         MatchedClT[0].push_back(ClT[0][MatchInd0Idx]);
-        MatchedClY[0].push_back(ClY[0][MatchInd0Idx]);
+        MatchedClY[0].push_back(ClY0);
         MatchedClZ[0].push_back(ClZ[0][MatchInd0Idx]);
         MatchedClCharge[0].push_back(ClCharge[0][MatchInd0Idx]);
         MatchedClPurity[0].push_back(ClPurity[0][MatchInd0Idx]);
@@ -692,101 +738,88 @@ namespace solar
         MatchedClNHits[1].push_back(ClNHits[1][MatchInd1Idx]);
         MatchedClChannel[1].push_back(ClChannel[1][MatchInd1Idx]);
         MatchedClT[1].push_back(ClT[1][MatchInd1Idx]);
-        MatchedClY[1].push_back(ClY[1][MatchInd1Idx]);
+        MatchedClY[1].push_back(ClY1);
         MatchedClZ[1].push_back(ClZ[1][MatchInd1Idx]);
         MatchedClCharge[1].push_back(ClCharge[1][MatchInd1Idx]);
         MatchedClPurity[1].push_back(ClPurity[1][MatchInd1Idx]);
         MatchedClCompleteness[1].push_back(ClCompleteness[1][MatchInd1Idx]);
-
-        MatchedClustersIdx[2].push_back(ClustersIdx[2][ii]);
-        MatchedClusters[2].push_back(Clusters[2][ii]);
-        MatchedClNHits[2].push_back(ClNHits[2][ii]);
-        MatchedClChannel[2].push_back(ClChannel[2][ii]);
-        MatchedClT[2].push_back(ClT[2][ii]);
-        MatchedClZ[2].push_back(ClZ[2][ii]);
-        MatchedClCharge[2].push_back(ClCharge[2][ii]);
-        MatchedClPurity[2].push_back(ClPurity[2][ii]);
-        MatchedClCompleteness[2].push_back(ClCompleteness[2][ii]);
         // ThisRecoY = ThisHRefY + (ThisHZ - ThisHRefZ) / (ThisHIndDir);
-        auto ClY0 = ClY[0][MatchInd0Idx] + (ClZ[0][MatchInd0Idx] - ClZ[2][ii]) / (ClDir[0][MatchInd0Idx]);
-        auto ClY1 = ClY[1][MatchInd1Idx] + (ClZ[1][MatchInd1Idx] - ClZ[2][ii]) / (ClDir[1][MatchInd1Idx]);
-        MatchedClY[2].push_back((ClY0 + ClY1) / 2);
       }
+      
       else if (MatchInd0 && !MatchInd1)
       {
+        ClY0 = ClY[0][MatchInd0Idx] + (ClZ[2][index] - ClZ[0][MatchInd0Idx]) / (ClDir[0][MatchInd0Idx]);
+        ClY1 = -1e6;
+        ClY2 = ClY0;
         // std::cout << "\tMatched only Ind0 and Col" << std::endl;
         MatchedClustersIdx[0].push_back(ClustersIdx[0][MatchInd0Idx]);
         MatchedClusters[0].push_back(Clusters[0][MatchInd0Idx]);
         MatchedClNHits[0].push_back(ClNHits[0][MatchInd0Idx]);
         MatchedClChannel[0].push_back(ClChannel[0][MatchInd0Idx]);
         MatchedClT[0].push_back(ClT[0][MatchInd0Idx]);
-        MatchedClY[0].push_back(ClY[0][MatchInd0Idx]);
+        MatchedClY[0].push_back(ClY0);
         MatchedClZ[0].push_back(ClZ[0][MatchInd0Idx]);
         MatchedClCharge[0].push_back(ClCharge[0][MatchInd0Idx]);
         MatchedClPurity[0].push_back(ClPurity[0][MatchInd0Idx]);
         MatchedClCompleteness[0].push_back(ClCompleteness[0][MatchInd0Idx]);
-
-        MatchedClustersIdx[2].push_back(ClustersIdx[2][ii]);
-        MatchedClusters[2].push_back(Clusters[2][ii]);
-        MatchedClNHits[2].push_back(ClNHits[2][ii]);
-        MatchedClChannel[2].push_back(ClChannel[2][ii]);
-        MatchedClT[2].push_back(ClT[2][ii]);
-        MatchedClY[2].push_back(ClY[0][MatchInd0Idx] + (ClZ[0][MatchInd0Idx] - ClZ[2][ii]) / (ClDir[0][MatchInd0Idx]));
-        MatchedClZ[2].push_back(ClZ[2][ii]);
-        MatchedClCharge[2].push_back(ClCharge[2][ii]);
-        MatchedClPurity[2].push_back(ClPurity[2][ii]);
-        MatchedClCompleteness[2].push_back(ClCompleteness[2][ii]);
-
         // Fill missing cluster with empty vector
         MatchedClustersIdx[1].push_back({});
         MatchedClusters[1].push_back({});
         MatchedClNHits[1].push_back(0);
         MatchedClChannel[1].push_back(0);
-        MatchedClT[1].push_back(0);
-        MatchedClY[1].push_back(0);
-        MatchedClZ[1].push_back(0);
-        MatchedClCharge[1].push_back(0);
-        MatchedClPurity[1].push_back(0);
-        MatchedClCompleteness[1].push_back(0);
+        MatchedClT[1].push_back(-1e6);
+        MatchedClY[1].push_back(-1e6);
+        MatchedClZ[1].push_back(-1e6);
+        MatchedClCharge[1].push_back(-1e6);
+        MatchedClPurity[1].push_back(-1);
+        MatchedClCompleteness[1].push_back(-1);
 
       }
+      
       else if (!MatchInd0 && MatchInd1)
       {
+        ClY0 = -1e6;
+        ClY1 = ClY[1][MatchInd1Idx] + (ClZ[2][index] - ClZ[1][MatchInd1Idx]) / (ClDir[1][MatchInd1Idx]);
+        ClY2 = ClY1;
         // std::cout << "\tMatched only Ind1 and Col" << std::endl;
         MatchedClustersIdx[1].push_back(ClustersIdx[1][MatchInd1Idx]);
         MatchedClusters[1].push_back(Clusters[1][MatchInd1Idx]);
         MatchedClNHits[1].push_back(ClNHits[1][MatchInd1Idx]);
         MatchedClChannel[1].push_back(ClChannel[1][MatchInd1Idx]);
         MatchedClT[1].push_back(ClT[1][MatchInd1Idx]);
-        MatchedClY[1].push_back(ClY[1][MatchInd1Idx]);
+        MatchedClY[1].push_back(ClY1);
         MatchedClZ[1].push_back(ClZ[1][MatchInd1Idx]);
         MatchedClCharge[1].push_back(ClCharge[1][MatchInd1Idx]);
         MatchedClPurity[1].push_back(ClPurity[1][MatchInd1Idx]);
         MatchedClCompleteness[1].push_back(ClCompleteness[1][MatchInd1Idx]);
-
-        MatchedClustersIdx[2].push_back(ClustersIdx[2][ii]);
-        MatchedClusters[2].push_back(Clusters[2][ii]);
-        MatchedClNHits[2].push_back(ClNHits[2][ii]);
-        MatchedClChannel[2].push_back(ClChannel[2][ii]);
-        MatchedClT[2].push_back(ClT[2][ii]);
-        MatchedClY[2].push_back(ClY[1][MatchInd1Idx] + (ClZ[1][MatchInd1Idx] - ClZ[2][ii]) / (ClDir[1][MatchInd1Idx]));
-        MatchedClZ[2].push_back(ClZ[2][ii]);
-        MatchedClCharge[2].push_back(ClCharge[2][ii]);
-        MatchedClPurity[2].push_back(ClPurity[2][ii]);
-        MatchedClCompleteness[2].push_back(ClCompleteness[2][ii]);
         // Fill missing cluster with empty vector
         MatchedClustersIdx[0].push_back({});
         MatchedClusters[0].push_back({});
         MatchedClNHits[0].push_back(0);
         MatchedClChannel[0].push_back(0);
-        MatchedClT[0].push_back(0);
-        MatchedClY[0].push_back(0);
-        MatchedClZ[0].push_back(0);
-        MatchedClCharge[0].push_back(0);
-        MatchedClPurity[0].push_back(0);
-        MatchedClCompleteness[0].push_back(0);
+        MatchedClT[0].push_back(-1e6);
+        MatchedClY[0].push_back(-1e6);
+        MatchedClZ[0].push_back(-1e6);
+        MatchedClCharge[0].push_back(-1e6);
+        MatchedClPurity[0].push_back(-1);
+        MatchedClCompleteness[0].push_back(-1);
       }
+
+      // std::cout << "    ***Matched cluster " << ii << " with index " << index << " to Ind0: " << MatchInd0Idx << ", Ind1: " << MatchInd1Idx
+                // << ", ClY2: " << ClY2 << std::endl;
+      // Fill the matched collection plane cluster
+      MatchedClustersIdx[2].push_back(ClustersIdx[2][index]);
+      MatchedClusters[2].push_back(Clusters[2][index]);
+      MatchedClNHits[2].push_back(ClNHits[2][index]);
+      MatchedClChannel[2].push_back(ClChannel[2][index]);
+      MatchedClT[2].push_back(ClT[2][index]);
+      MatchedClY[2].push_back(ClY2);
+      MatchedClZ[2].push_back(ClZ[2][index]);
+      MatchedClCharge[2].push_back(ClCharge[2][index]);
+      MatchedClPurity[2].push_back(ClPurity[2][index]);
+      MatchedClCompleteness[2].push_back(ClCompleteness[2][index]);
     }
+    
     ClNHits = MatchedClNHits;
     ClChannel = MatchedClChannel;
     ClT = MatchedClT;
@@ -903,8 +936,8 @@ namespace solar
         // Fill missing cluster with empty vector
         MatchedClusters[1].push_back({});
         MatchedClNHits[1].push_back(0);
-        MatchedClT[1].push_back(0);
-        MatchedClCharge[1].push_back(0);
+        MatchedClT[1].push_back(-1e6);
+        MatchedClCharge[1].push_back(-1e6);
       }
       else if (!MatchInd0 && MatchInd1)
       {
@@ -920,8 +953,8 @@ namespace solar
         // Fill missing cluster with empty vector
         MatchedClusters[0].push_back({});
         MatchedClNHits[0].push_back(0);
-        MatchedClT[0].push_back(0);
-        MatchedClCharge[0].push_back(0);
+        MatchedClT[0].push_back(-1e6);
+        MatchedClCharge[0].push_back(-1e6);
       }
     }
     ClNHits = MatchedClNHits;
@@ -949,7 +982,7 @@ namespace solar
   }
 
   //......................................................
-  void LowEUtils::FindPrimaryClusters(const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector, std::vector<std::vector<art::Ptr<solar::LowECluster>>> &EventCandidateVector, std::vector<std::vector<int>> &EventCandidateIdx, const detinfo::DetectorClocksData &clockData, const art::Event &evt)
+  void LowEUtils::FindPrimaryClusters(const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector, std::vector<bool> &EventCandidateFound, std::vector<std::vector<art::Ptr<solar::LowECluster>>> &EventCandidateVector, std::vector<std::vector<int>> &EventCandidateIdx, const detinfo::DetectorClocksData &clockData, const art::Event &evt)
   {
     // This is the low energy primary cluster algorithm. It groups all input clusters into event candidates by finding the primary clusters (charge > adjacent clusters up to distance fAdjClusterRad).
     // The algorithm outputs vectors of clusters where the first entry is the primary cluster and the rest are the corresponding adjacent clusters.
@@ -1087,6 +1120,7 @@ namespace solar
       if (PreselectionCluster)
       {
         // Store the original indices of the clustered clusters
+        EventCandidateFound.push_back(true);
         EventCandidateVector.push_back(std::move(AdjClusterVec));
         EventCandidateIdx.push_back(std::move(AdjClusterIdx));
         sEventCandidateFinding += "Cluster size: " + ProducerUtils::str(int(EventCandidateVector.back().size())) + "\n";
@@ -1094,6 +1128,7 @@ namespace solar
       }
       else
       {
+        EventCandidateFound.push_back(false);
         ProducerUtils::PrintInColor(sEventCandidateFinding, ProducerUtils::GetColor("red"), "Debug");
       }
     }
