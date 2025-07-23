@@ -1,0 +1,24 @@
+#include "TransformerVarConfigs.fcl"
+
+BEGIN_PROLOG
+
+dunefd_transformer_energy_producer_numu:
+{
+    module_type     : "TransformerEnergyProducer"
+
+    ConfigInputVars : @local::dunefd_transformer_default_input_vars
+    ModelPath       : "${DUNE_PARDATA_DIR}/Transformers/energy/fd_numu_mcc11_v1"
+}
+
+transformer_energy_analyzer:
+{
+    module_type     : "TransformerEnergyAnalyzer"
+
+    ConfigInputVars : @local::dunefd_transformer_default_input_vars
+    ModelPath       : "${DUNE_PARDATA_DIR}/Transformers/energy/fd_numu_mcc11_v1"
+
+    OutputFormat    : "csv"
+    OutputPrecision : 6
+}
+
+END_PROLOG

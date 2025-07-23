@@ -1,0 +1,6 @@
+<lcgdict>
+    <class name="transformer::TransformerEnergy" ClassVersion="10">
+     <version ClassVersion="10" checksum="1364348082"/>
+    </class>
+    <class name="art::Wrapper<transformer::TransformerEnergy>"/>
+</lcgdict>

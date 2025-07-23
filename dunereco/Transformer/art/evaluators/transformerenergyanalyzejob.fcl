@@ -1,0 +1,31 @@
+#include "services_dune.fcl"
+#include "TransformerEvaluatorConfigs.fcl"
+#include "resourcetracking_services.fcl"
+
+process_name: TransformerEnergyAnalyze
+
+services:
+{
+    TFileService: { fileName: "dummyfile.root" }
+    @table::standard_resourcetrackers
+    @table::dunefd_simulation_services
+}
+
+source:
+{
+    module_type: RootInput
+    maxEvents:   -1
+}
+
+physics:
+{
+    analyzers : { transformerana :   @local::transformer_energy_analyzer }
+    ana       : [ transformerana ]
+
+    trigger_paths : [ ]
+    end_paths     : [ ana ]
+}
+
+services.AuxDetGeometry: @local::dune10kt_1x2x6_v2_auxdet_geo
+services.Geometry: @local::dune10kt_1x2x6_v2_geo
+
