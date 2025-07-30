@@ -1,0 +1,21 @@
+BEGIN_PROLOG
+
+# This file defines the configuration for the TransformerCVNEvaluator module
+
+# Evaluator for TransformerCVN network
+standard_transformercvnevaluator:
+{
+  module_type:         TransformerCVNEvaluator
+  #==================
+
+  LibPath:             ""
+  Network:             "/cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/CVN/TransformerCVN/FDHD/2018/dune_transformercvn_fd_hd_beam_2018prod.torchscript"
+  MaxProngs:           20
+  PixelMapInput:       "transformercvnmap"
+  EventPixelMapInput:  "transformercvneventmap"
+  EventResultLabel:    "transformercvneventresult"
+  ProngPixelMapInput:  "transformercvnprongmap"
+  ProngResultLabel:    "transformercvnprongresult"
+}
+
+END_PROLOG

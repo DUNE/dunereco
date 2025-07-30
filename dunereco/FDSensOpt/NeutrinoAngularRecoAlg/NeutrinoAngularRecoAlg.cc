@@ -337,7 +337,7 @@ dune::AngularRecoOutput NeutrinoAngularRecoAlg::CalculateNeutrinoAngle(const art
 
 geo::View_t NeutrinoAngularRecoAlg::GetTargetView(const art::Ptr<recob::Hit> &hit) const{
     const geo::TPCID hit_tpcID(hit->WireID());
-    if(fGeometry->TPC(hit_tpcID).DriftAxisWithSign().coordinate == geo::Coordinate::X){ //"normal" drift direction, we don't change anything
+    if(fGeometry->TPC(hit_tpcID).DriftAxisWithSign().sign == geo::DriftSign::Positive){ //"normal" drift direction, we don't change anything
         return hit->View();
     }
     else{ //We invert U and V
@@ -357,7 +357,7 @@ geo::View_t NeutrinoAngularRecoAlg::GetTargetView(const art::Ptr<recob::Hit> &hi
 
 float NeutrinoAngularRecoAlg::GetViewTheta(geo::View_t view) const{
     for (geo::TPCGeo const& TPC: fGeometry->Iterate<geo::TPCGeo>()) {
-        if(TPC.DriftAxisWithSign().coordinate == geo::Coordinate::X){ //Trying to find a TPC with the right drift direction
+        if(TPC.DriftAxisWithSign().sign == geo::DriftSign::Positive){ //Trying to find a TPC with the right drift direction
             for (unsigned int p = 0; p < fWireReadout->Get().Nplanes(TPC.ID()); ++p) {
                 geo::PlaneGeo const& plane = fWireReadout->Get().Plane(geo::PlaneID(TPC.ID(), p));
                 if (plane.View() == view){
@@ -469,6 +469,11 @@ Momentum_t NeutrinoAngularRecoAlg::ComputeShowersMomentum(const std::vector<art:
     for(const art::Ptr<recob::Shower> &pShower : pShowers){
         float E = GetShowerEnergy(pShower)*1e-3; //Converts from MeV to GeV
         const TVector3 &dir = pShower->Direction();
+
+        if(dir.X() < -1){ //Direction is not defined (-999, -999, -999),
+            continue; //We skip this shower
+        }
+
         momentum.SetX(momentum.X() + E*dir.X());
         momentum.SetY(momentum.Y() + E*dir.Y());
         momentum.SetZ(momentum.Z() + E*dir.Z());
@@ -492,6 +497,12 @@ Momentum_t NeutrinoAngularRecoAlg::ComputeTracksMomentum(const std::vector<art::
         int pid = 0;
         if (tracksPID.count(pTrack) == 1){
             pid = tracksPID.at(pTrack);
+        }
+
+        const recob::Track::Vector_t &dir = pTrack->StartDirection();
+
+        if(dir.X() < -1){ //Direction is not defined (-999, -999, -999),
+            continue; //We skip this track
         }
 
         float momentum_norm = 0;
@@ -518,10 +529,11 @@ Momentum_t NeutrinoAngularRecoAlg::ComputeTracksMomentum(const std::vector<art::
             momentum_norm = GetTrackKE(fmCal.at(iTrack))*1e-3; //Converts MeV to GeV
             break;
         }
-        const recob::Track::Vector_t &dir = pTrack->StartDirection();
+
         momentum.SetX(momentum.X() + momentum_norm*dir.X());
         momentum.SetY(momentum.Y() + momentum_norm*dir.Y());
         momentum.SetZ(momentum.Z() + momentum_norm*dir.Z());
+
     }
 
     return momentum;

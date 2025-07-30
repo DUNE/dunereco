@@ -23,18 +23,30 @@ dune_neutrinoenergyrecoalg:
     RecombFactor:            0.63
 
     MCSMethod:              "Chi2"     # Chi2 or "LLHD"
-    MinTrackLengthMCS:      100.       # cm
-    MaxTrackLengthMCS:      1350.      # cm
+    MinTrackLengthMCS:      0.         # cm
+    MaxTrackLengthMCS:      3000.      # cm
     SegmentSizeMCS:         10.        # cm
-    MaxMomentumMCS:         7500       # MeV (integer)
+    MaxMomentumMCS:         100000     # MeV (integer)
     NStepsChi2:             6          # NDF of chi2 fit (integer)
     MinResolutionMCSChi2:   0          # mrad (double) 
-    MaxResolutionMCSChi2:   45         # mrad (double), set zero fixes at minimum
+    MaxResolutionMCSChi2:   0          # mrad (double), set zero fixes at minimum
     MinResolutionMCSLLHD:   0.001      # mrad (double) 
     MaxResolutionMCSLLHD:   800        # mrad (double), set zero fixes at minimum
     CheckValidScattered:    true       # affects LLHD, true will check valid segments for computing scattering
     AngleCorrection:        0.757      # affects LLHD when using space angle. Value set from studies with MC divides scatted angle by 0.757
-    MCSAngleMethod:         1          # scatter angle to use: 1 (xz), 2 (yz) or 3 (space angle)
+    MCSAngleMethod:         3          # scatter angle to use: 1 (xz), 2 (yz) or 3 (space angle)
+}
+
+dune_neutrinoenergyrecoalg_llhd:
+{
+    @table::dune_neutrinoenergyrecoalg
+    MCSMethod: "LLHD"
+    MinTrackLengthMCS: 0
+    MaxTrackLengthMCS: 3000
+    MaxMomentumMCS: 100000
+    MinResolutionMCSLLHD: 0
+    MaxResolutionMCSLLHD: 0
+    MCSAngleMethod: 3
 }
 
 dunevd_neutrinoenergyrecoalg:
@@ -43,9 +55,21 @@ dunevd_neutrinoenergyrecoalg:
     CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
 }
 
+dunevd_neutrinoenergyrecoalg_llhd:
+{
+    @table::dune_neutrinoenergyrecoalg_llhd
+    CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
+}
+
 dunevd_30deg_neutrinoenergyrecoalg:
 {
     @table::dune_neutrinoenergyrecoalg
+    CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
+}
+
+dunevd_30deg_neutrinoenergyrecoalg_llhd:
+{
+    @table::dune_neutrinoenergyrecoalg_llhd
     CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
 }
 

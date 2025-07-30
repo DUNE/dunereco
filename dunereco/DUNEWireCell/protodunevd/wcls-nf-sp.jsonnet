@@ -50,6 +50,10 @@ local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
 //local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
 
 
+local use_resampler = std.extVar("use_resampler");
+// Suggest changing this to use this switch
+// local use_resampler = (reality == 'data');
+
 // Collect the WC/LS input converters for use below.  Make sure the
 // "name" argument matches what is used in the FHiCL that loads this
 // file.  In particular if there is no ":" in the inputer then name
@@ -61,6 +65,7 @@ local wcls_input = {
     data: {
       art_tag: raw_input_label,
       frame_tags: ['orig'],  // this is a WCT designator
+      tick: if use_resampler=='true' then 512*wc.ns else 500*wc.ns,
       // nticks: params.daq.nticks,
     },
   }, nin=0, nout=1),
@@ -146,29 +151,41 @@ local chsel_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
+local resamplers_config = import 'pgrapher/common/resamplers.jsonnet';
+local load_resamplers = resamplers_config(g, wc, tools);
+local resamplers = load_resamplers.resamplers;
+// local resamplers = [
+//   g.pnode({
+//     type: 'Resampler',
+//     name: 'resmp%d' %n,
+//     data: {
+//       period: 500*wc.ns,
+//       time_pad: "linear",
+//     }
+//   }, nin=1, nout=1)
+//   for n in std.range(0, std.length(tools.anodes) - 1)
+// ];
+
 local magoutput = 'protodune-data-check.root';
 local magnify = import 'pgrapher/experiment/protodunevd/magnify-sinks.jsonnet';
-local sinks = magnify(tools, magoutput);
+local mio = magnify(tools, magoutput);
 
 local use_magnify = std.extVar("use_magnify");
 local nfsp_pipes = [
   g.pipeline(
-             if use_magnify =='true' then
-             [
-               chsel_pipes[n],
-               sinks.orig_pipe[n],
-               // nf_pipes[n],
-               // sinks.raw_pipe[n],
-               sp_pipes[n],
-               sinks.decon_pipe[n],
-               // sinks.threshold_pipe[n],
-               // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
-             ]
-             else [
-               chsel_pipes[n],
-               // nf_pipes[n],
-               sp_pipes[n],
-             ],
+             [ chsel_pipes[n] ]
+             + (if use_resampler=='true' && n<4 then [ resamplers[n] ] else [ ])
+             + (if use_magnify =='true' then [mio.orig_pipe[n]] else [ ])
+             // + [ nf_pipes[n] ]
+             // + (if use_magnify =='true' then [mio.raw_pipe[n]] else [ ])
+             + [ sp_pipes[n] ]
+             + (if use_magnify =='true' then
+               [
+                mio.decon_pipe[n],
+                // mio.threshold_pipe[n],
+                // mio.debug_pipe[n]
+               ] else [ ]),
+
              'nfsp_pipe_%d' % n)
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
