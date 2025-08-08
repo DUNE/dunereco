@@ -137,6 +137,7 @@ local wcls_simchannel_sink = g.pnode({
     anodes_tn: [wc.tn(anode) for anode in tools.anodes],
     rng: wc.tn(rng),
     tick: params.daq.tick,
+    response_plane: params.det.response_plane,
     start_time: -0.25 * wc.ms,
     readout_time: params.daq.readout_time,
     nsigma: 3.0,

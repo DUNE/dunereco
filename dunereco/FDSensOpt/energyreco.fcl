@@ -56,6 +56,12 @@ dunefd_nuenergyreco_pandora_numu_mcs:
     LongestTrackMethod: 2
 }
 
+dunefd_nuenergyreco_pandora_numu_mcs_llhd:
+{
+    @table::dunefd_nuenergyreco_pandora_numu_mcs
+    NeutrinoEnergyRecoAlg: @local::dune_neutrinoenergyrecoalg_llhd
+}
+
 dunefd_nuenergyreco_pandora_nue:
 {
     @table::dunefd_nuenergyreco_pandora_numu
@@ -80,6 +86,10 @@ dunefdvd_nuenergyreco_pandora_numu_mcs: @local::dunefd_nuenergyreco_pandora_numu
 dunefdvd_nuenergyreco_pandora_numu_mcs.NeutrinoEnergyRecoAlg: @local::dunevd10kt_neutrinoenergyrecoalg
 dunefdvd_nuenergyreco_pandora_numu_mcs.HitLabel: "gaushit"
 
+dunefdvd_nuenergyreco_pandora_numu_mcs_llhd: @local::dunefd_nuenergyreco_pandora_numu_mcs_llhd
+dunefdvd_nuenergyreco_pandora_numu_mcs_llhd.NeutrinoEnergyRecoAlg: @local::dunevd_neutrinoenergyrecoalg_llhd
+dunefdvd_nuenergyreco_pandora_numu_mcs_llhd.HitLabel: "gaushit"
+
 dunefdvd_nuenergyreco_pandora_nue:  @local::dunefd_nuenergyreco_pandora_nue
 dunefdvd_nuenergyreco_pandora_nue.NeutrinoEnergyRecoAlg: @local::dunevd10kt_neutrinoenergyrecoalg
 dunefdvd_nuenergyreco_pandora_nue.HitLabel: "gaushit"
@@ -99,6 +109,10 @@ dunefdvd_30deg_nuenergyreco_pandora_numu_range.HitLabel: "gaushit"
 dunefdvd_30deg_nuenergyreco_pandora_numu_mcs: @local::dunefd_nuenergyreco_pandora_numu_mcs
 dunefdvd_30deg_nuenergyreco_pandora_numu_mcs.NeutrinoEnergyRecoAlg: @local::dunevd10kt_30deg_neutrinoenergyrecoalg
 dunefdvd_30deg_nuenergyreco_pandora_numu_mcs.HitLabel: "gaushit"
+
+dunefdvd_30deg_nuenergyreco_pandora_numu_mcs_llhd: @local::dunefd_nuenergyreco_pandora_numu_mcs_llhd
+dunefdvd_30deg_nuenergyreco_pandora_numu_mcs_llhd.NeutrinoEnergyRecoAlg: @local::dunevd_30deg_neutrinoenergyrecoalg_llhd
+dunefdvd_30deg_nuenergyreco_pandora_numu_mcs_llhd.HitLabel: "gaushit"
 
 dunefdvd_30deg_nuenergyreco_pandora_nue:  @local::dunefd_nuenergyreco_pandora_nue
 dunefdvd_30deg_nuenergyreco_pandora_nue.NeutrinoEnergyRecoAlg: @local::dunevd10kt_30deg_neutrinoenergyrecoalg
