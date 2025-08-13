@@ -86,7 +86,7 @@ function(params) base {
     // The "absolute" time (ie, in G4 time) that the lower edge of
     // of final readout tick #0 should correspond to.  This is a
     // "fixed" notion.
-    local tick0_time = if std.objectHas(params, 'G4RefTime') then params.G4RefTime else 0,
+    tick0_time: if std.objectHas(params, 'G4RefTime') then params.G4RefTime else 0,
 
     // Open the ductor's gate a bit early.
     local response_time_offset = $.det.response_plane / $.lar.drift_speed,
@@ -95,7 +95,7 @@ function(params) base {
     ductor: {
       nticks: $.daq.nticks + response_nticks,
       readout_time: self.nticks * $.daq.tick,
-      start_time: tick0_time - response_time_offset,
+      start_time: $.sim.tick0_time - response_time_offset,
     },
 
     // To counter the enlarged duration of the ductor, a Reframer
