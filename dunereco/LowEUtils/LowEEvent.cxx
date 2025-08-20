@@ -8,8 +8,8 @@ namespace lowe {
     {
     }
 
-    LowEEvent::LowEEvent(const std::vector<solar::LowECluster>& clusters, const std::vector<recob::OpFlash>& flashes)
-        : fClusters(clusters), fFlashes(flashes), fMatchedFlash()
+    LowEEvent::LowEEvent(const fhicl::ParameterSet& p, const std::vector<solar::LowECluster>& clusters, const std::vector<recob::OpFlash>& flashes)
+        : pset(p), fClusters(clusters), fFlashes(flashes), fMatchedFlash()
     {
     }
 
@@ -21,6 +21,7 @@ namespace lowe {
     LowEEvent& LowEEvent::operator=(LowEEvent const& toCopy)
     {
         if (this != &toCopy) {
+            pset = toCopy.pset;
             fClusters = toCopy.fClusters;
             fFlashes = toCopy.fFlashes;
             fMatchedFlash = toCopy.fMatchedFlash;
@@ -28,8 +29,9 @@ namespace lowe {
         return *this;
     }
 
-    void LowEEvent::initialize(const std::vector<solar::LowECluster>& clusters, const std::vector<recob::OpFlash>& flashes)
+    void LowEEvent::initialize(const fhicl::ParameterSet& p, const std::vector<solar::LowECluster>& clusters, const std::vector<recob::OpFlash>& flashes)
     {
+        pset = p;
         fClusters = clusters;
         fFlashes = flashes;
         fMatchedFlash = recob::OpFlash();

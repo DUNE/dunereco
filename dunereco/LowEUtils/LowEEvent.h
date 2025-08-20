@@ -32,7 +32,7 @@ using namespace solar;
 
 namespace lowe {
     /**
-    *  @brief LowEEvent is de1fined as a collection of 1 reco object (blip, cluster or pandora) and a list of PDS flash candidates.
+    *  @brief LowEEvent is defined as a collection of 1 reco object (blip, cluster or pandora) and a list of PDS flash candidates.
     */
     class LowEEvent {
     public:
@@ -44,7 +44,7 @@ namespace lowe {
         //     : fBlips(), fFlashes(flashes), fMatchedFlash() {}
         
         // Solar Constructor: used for solar neutrino studies, where we have a collection of LowEClusters and OpFlashes.
-        LowEEvent(const std::vector<solar::LowECluster>& clusters, const std::vector<recob::OpFlash>& flashes);
+        LowEEvent(const fhicl::ParameterSet& p, const std::vector<solar::LowECluster>& clusters, const std::vector<recob::OpFlash>& flashes);
         
         // Supernova Constructor: used for supernova studies, where we have a pandora particle and OpFlashes.
         // Missing implementation...
@@ -56,7 +56,7 @@ namespace lowe {
         ~LowEEvent() = default; // Default destructor
 
         // Initialize the LowEEvent with clusters and flashes
-        void initialize(const std::vector<solar::LowECluster>& clusters, const std::vector<recob::OpFlash>& flashes);
+        void initialize(const fhicl::ParameterSet& p, const std::vector<solar::LowECluster>& clusters, const std::vector<recob::OpFlash>& flashes);
 
         // Getters
         const std::vector<int>& getClustersIdx() const { return fClustersIdx; } // returns the indices of the clusters in the event as recovered from the original LowECluster collection
@@ -122,13 +122,14 @@ namespace lowe {
             const art::Event& evt,
             bool debug = false)
         {
+            LowEUtils utils(pset); // Create an instance of LowEUtils with the parameter set
             // Call the matching utility function to find the best match
-            LowEUtils Utils{fhicl::ParameterSet()}; // Changed parentheses to braces
-            return Utils.MatchPDSFlash(SolarClusterVector, PDSFlashes, MatchedFlash, clockData, evt, debug);
+            return utils.MatchPDSFlash(SolarClusterVector, PDSFlashes, MatchedFlash, clockData, evt, debug);
         }
+                    
                 
-            
     private:
+        fhicl::ParameterSet pset; // Create a parameter set (you may need to initialize it appropriately)
         std::vector<int> fClustersIdx; // indices of the clusters in the event as recovered from the original Blip/LowECluster/Pandora collection
         std::vector<solar::LowECluster> fClusters; // collection of clusters in the event
         std::vector<recob::OpFlash> fFlashes; // collection of PDS flash candidates in the event

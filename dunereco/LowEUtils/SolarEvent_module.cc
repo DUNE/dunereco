@@ -31,7 +31,7 @@ namespace lowe
     
         void beginJob();
         void endJob();
-        void reconfigure(fhicl::ParameterSet const &pset);
+        void reconfigure(fhicl::ParameterSet const &p);
     
         // The producer routine, called once per event.
         void produce(art::Event &);
@@ -39,7 +39,6 @@ namespace lowe
     private:
         // The parameters we'll read from the .fcl file.
         std::string fSignalLabel; // Input tag for MCTruth label
-        std::string fGEANTLabel; // Input tag for GEANT label
         std::string fHitLabel; // Input tag for Hit collection
         std::string fClusterLabel; // Input tag for LowECluster collection
         std::string fOpFlashLabel; // Input tag for OpFlash collection
@@ -66,15 +65,15 @@ namespace lowe
     // Constructor
     SolarEvent::SolarEvent(const fhicl::ParameterSet &p)
         : EDProducer{p},
-          fSignalLabel(p.get<std::string>("SignalLabel")),
-        //   fGEANTLabel(p.get<std::string>("GEANT4Label")),
-          fClusterLabel(p.get<std::string>("ClusterLabel")),
-          fOpFlashLabel(p.get<std::string>("OpFlashLabel")),
-          fDebug(p.get<bool>("Debug")),
-          producer(new producer::ProducerUtils(p))
+        fSignalLabel(p.get<std::string>("SignalLabel")),
+        fClusterLabel(p.get<std::string>("ClusterLabel")),
+        fOpFlashLabel(p.get<std::string>("OpFlashLabel")),
+        fDebug(p.get<bool>("Debug")),
+        lowe(new lowe::LowEUtils(p)),
+        producer(new producer::ProducerUtils(p))
     {
         reconfigure(p);
-        produces<std::vector<solar::LowECluster>>();
+        produces<std::vector<lowe::LowEEvent>>();
     }
 
     //--------------------------------------------------------------------------
@@ -131,7 +130,7 @@ namespace lowe
         {
             producer->PrintInColor("Valid handle not found for LowEClusters!", ProducerUtils::GetColor("red"), "Debug");
         }
-        if (evt.getByLabel(fHitLabel, FlashHandle))
+        if (evt.getByLabel(fOpFlashLabel, FlashHandle))
         {
             art::fill_ptr_vector(FlashPtr, FlashHandle);
             producer->PrintInColor("Found valid handle for OpFlashes!", ProducerUtils::GetColor("green"));
@@ -178,7 +177,7 @@ namespace lowe
             util::CreateAssn(*this, evt, *SolarEventPtr, clusterPtr, *(ClusterAssnPtr.get()), i);
 
             // Create associations with OpFlashes
-            // util::CreateAssn(*this, evt, *SolarEventPtr, event.getPtrFlashes(), *(FlashAssnPtr.get()), i);
+            util::CreateAssn(*this, evt, *SolarEventPtr, event.getPtrFlashes(), *(FlashAssnPtr.get()), i);
         }
 
         // Store the LowEEvents and associations in the event

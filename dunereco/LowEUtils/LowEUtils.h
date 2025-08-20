@@ -230,16 +230,16 @@ namespace lowe
             const double fClusterInd1MatchTime;
             const double fClusterMatchTime;
             const int fClusterPreselectionNHits;
-            const float fAdjClusterRad;                              // Radius in cm to search for adjacent clusters
-            const int fAdjOpFlashMinNHitCut;                         // Minimum number of hits for adjacent flash
-            const double fAdjOpFlashX;                               // Maximum X distance for adjacent flash matching [cm]
-            const double fAdjOpFlashY;                               // Maximum Y distance for adjacent flash matching [cm]
-            const double fAdjOpFlashZ;                               // Maximum Z distance for adjacent flash matching [cm]
-            const double fAdjOpFlashMinPECut;                        // Minimum photoelectrons for adjacent flash
-            const double fAdjOpFlashMaxPERatioCut;                   // Maximum photoelectrons ratio for adjacent flash
-            const bool fAdjOpFlashMembraneProjection;                // If true, project the TPC reco onto the membrane
-            const bool fAdjOpFlashEndCapProjection;                  // If true, project the TPC reco onto the end cap
-            const std::unique_ptr<producer::ProducerUtils> producer; // Pointer to the ProducerUtils instance
+            const float fAdjClusterRad;                        // Radius in cm to search for adjacent clusters
+            const int fAdjOpFlashMinNHitCut;                   // Minimum number of hits for adjacent flash
+            const double fAdjOpFlashX;                         // Maximum X distance for adjacent flash matching [cm]
+            const double fAdjOpFlashY;                         // Maximum Y distance for adjacent flash matching [cm]
+            const double fAdjOpFlashZ;                         // Maximum Z distance for adjacent flash matching [cm]
+            const double fAdjOpFlashMinPECut;                  // Minimum photoelectrons for adjacent flash
+            const double fAdjOpFlashMaxPERatioCut;             // Maximum photoelectrons ratio for adjacent flash
+            const bool fAdjOpFlashMembraneProjection;          // If true, project the TPC reco onto the membrane
+            const bool fAdjOpFlashEndCapProjection;            // If true, project the TPC reco onto the end cap
+            std::unique_ptr<producer::ProducerUtils> producer; // Pointer to the ProducerUtils instance
     };
-} // namespace solar
+} // namespace lowe
 #endif

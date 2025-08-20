@@ -23,9 +23,11 @@ namespace lowe
     fAdjOpFlashMinPECut(p.get<double>("fAdjOpFlashMinPECut")),
     fAdjOpFlashMaxPERatioCut(p.get<double>("fAdjOpFlashMaxPERatioCut")),
     fAdjOpFlashMembraneProjection(p.get<bool>("fAdjOpFlashMembraneProjection")),
-    fAdjOpFlashEndCapProjection(p.get<bool>("fAdjOpFlashEndCapProjection"))
+    fAdjOpFlashEndCapProjection(p.get<bool>("fAdjOpFlashEndCapProjection")),
+    producer(new ProducerUtils(p))
   {
-    producer::ProducerUtils pset(p);
+    // Initialize the LowEUtils instance
+    producer->PrintInColor("LowEUtils initialized with parameters from FHiCL configuration.", ProducerUtils::GetColor("green"));
   }
 
   void LowEUtils::MakeClusterVector(std::vector<RawPerPlaneCluster> &ClusterVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, art::Event const &evt)
