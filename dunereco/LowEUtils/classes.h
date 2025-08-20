@@ -3,5 +3,6 @@
 
 #include "lardataobj/RecoBase/Cluster.h"
 #include "dunereco/LowEUtils/LowECluster.h"
+#include "dunereco/LowEUtils/LowEEvent.h"
 
 #include <vector>

@@ -9,9 +9,17 @@
   <class name="solar::LowECluster" />
   <class name="vector<solar::LowECluster>" />
   <class name="art::Wrapper<vector<solar::LowECluster>>" />
+  <class name="lowe::LowEEvent" />
+  <class name="art::Wrapper<lowe::LowEEvent>" />
 
-  <class name="art::Assns<solar::LowECluster,recob::Cluster,void>" />
   <class name="art::Assns<recob::Cluster,solar::LowECluster,void>" />
+  <class name="art::Assns<recob::OpFlash,lowe::LowEEvent,void>" />
+  <class name="art::Assns<solar::LowECluster,recob::Cluster,void>" />
+  <class name="art::Assns<solar::LowECluster,lowe::LowEEvent,void>" />
+  <class name="art::Assns<lowe::LowEEvent,recob::OpFlash,void>" />
+  <class name="art::Assns<lowe::LowEEvent,solar::LowECluster,void>" />
   <class name="art::Wrapper<art::Assns<recob::Cluster,solar::LowECluster,void>>" />
   <class name="art::Wrapper<art::Assns<solar::LowECluster,recob::Cluster,void>>" />
+  <class name="art::Wrapper<art::Assns<lowe::LowEEvent,recob::OpFlash,void>>" />
+  <class name="art::Wrapper<art::Assns<lowe::LowEEvent,solar::LowECluster,void>>" />
 </lcgdict>
