@@ -13,6 +13,7 @@
 #include "dunereco/LowEUtils/LowEUtils.h"
 #include "dunereco/LowEUtils/LowECluster.h"
 
+using namespace lowe;
 using namespace producer;
 
 namespace solar
@@ -74,7 +75,7 @@ namespace solar
     art::ServiceHandle<cheat::BackTrackerService> bt_serv;
     art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
     std::unique_ptr<producer::ProducerUtils> producer;
-    std::unique_ptr<solar::LowEUtils> lowe;
+    std::unique_ptr<lowe::LowEUtils> lowe;
   };
 }
 
@@ -107,7 +108,7 @@ namespace solar
     fClusterPreselectionNHits(p.get<int>("ClusterPreselectionNHits")),
     fDebug(p.get<bool>("Debug")),
     producer(new producer::ProducerUtils(p)),
-    lowe(new solar::LowEUtils(p))
+    lowe(new lowe::LowEUtils(p))
   {
     reconfigure(p);
     produces<std::vector<solar::LowECluster>>();

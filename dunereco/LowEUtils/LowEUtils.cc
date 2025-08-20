@@ -2,11 +2,10 @@
 
 using namespace producer;
 
-namespace solar
+namespace lowe
 {
   LowEUtils::LowEUtils(fhicl::ParameterSet const &p)
   : fHitLabel(p.get<std::string>("HitLabel")),
-    fGeometry(p.get<std::string>("Geometry")),
     fClusterAlgoTime(p.get<double>("ClusterAlgoTime")),
     fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel")),
     fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable")),
@@ -16,8 +15,17 @@ namespace solar
     fClusterInd1MatchTime(p.get<double>("ClusterInd1MatchTime")),
     fClusterMatchTime(p.get<double>("ClusterMatchTime")),
     fClusterPreselectionNHits(p.get<int>("ClusterPreselectionNHits")),
-    fAdjClusterRad(p.get<double>("AdjClusterRad"))
+    fAdjClusterRad(p.get<double>("AdjClusterRad")),
+    fAdjOpFlashMinNHitCut(p.get<int>("fAdjOpFlashMinNHitCut")),
+    fAdjOpFlashX(p.get<double>("AdjOpFlashX")),
+    fAdjOpFlashY(p.get<double>("AdjOpFlashY")),
+    fAdjOpFlashZ(p.get<double>("AdjOpFlashZ")),
+    fAdjOpFlashMinPECut(p.get<double>("fAdjOpFlashMinPECut")),
+    fAdjOpFlashMaxPERatioCut(p.get<double>("fAdjOpFlashMaxPERatioCut")),
+    fAdjOpFlashMembraneProjection(p.get<bool>("fAdjOpFlashMembraneProjection")),
+    fAdjOpFlashEndCapProjection(p.get<bool>("fAdjOpFlashEndCapProjection"))
   {
+    producer::ProducerUtils pset(p);
   }
 
   void LowEUtils::MakeClusterVector(std::vector<RawPerPlaneCluster> &ClusterVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, art::Event const &evt)
@@ -999,7 +1007,7 @@ namespace solar
     const geo::CryostatGeo& cryostat = geom->Cryostat(c);
     const geo::TPCGeo& tpcg = cryostat.TPC(0);
     const double driftLength = tpcg.DriftDistance();
-    const double driftT = driftLength / detProp.DriftVelocity();
+    const double driftTime = driftLength / detProp.DriftVelocity();
 
     // Create a sorting index based on the input vector.
     std::vector<int> sortingIndex(SolarClusterVector.size());
@@ -1043,8 +1051,8 @@ namespace solar
 
         // int refcluster2 = adjcluster->getMainChannel();
         float dTcluster1 = adjcluster->getAverageTime() - cluster->getAverageTime();
-        float dXcluster1 = dTcluster1 * driftLength / driftT;
-        if (std::abs(dTcluster1) > fAdjClusterRad * driftT / driftLength)
+        float dXcluster1 = dTcluster1 * driftLength / driftTime;
+        if (std::abs(dTcluster1) > fAdjClusterRad * driftTime / driftLength)
           break;
 
         // If cluster has already been clustered, skip
@@ -1086,8 +1094,8 @@ namespace solar
 
         // int refcluster2 = adjcluster->getMainChannel();
         float dTcluster2 = cluster->getAverageTime() - adjcluster->getAverageTime();
-        float dXcluster2 = dTcluster2 * driftLength / driftT;
-        if (std::abs(dTcluster2) > fAdjClusterRad * driftT / driftLength)
+        float dXcluster2 = dTcluster2 * driftLength / driftTime;
+        if (std::abs(dTcluster2) > fAdjClusterRad * driftTime / driftLength)
           break;
 
         // if cluster has already been clustered, skip
@@ -1134,4 +1142,153 @@ namespace solar
     }
     return;
   }
-} // namespace solar
+
+  int LowEUtils::MatchPDSFlash(
+    const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector,
+    const std::vector<art::Ptr<recob::OpFlash>> &PDSFlashes,
+    art::Ptr<recob::OpFlash> &MatchedFlash,
+    const detinfo::DetectorClocksData &clockData,
+    const art::Event &evt,
+    bool debug)
+  {
+    // get drift properties
+    art::ServiceHandle<geo::Geometry> geom;
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
+    double driftLength = 0;
+    double driftTime = 0; // in cm/us, but we will use it as a time variable
+    
+    // Get geometry from the geometry service
+    std::string geoName = geom->DetectorName();
+    std::string fGeometry = "";
+    // Get the drift length from the geometry service
+    geo::CryostatID c(0);
+    const geo::CryostatGeo &cryostat = geom->Cryostat(c);
+    const geo::TPCGeo &tpcg = cryostat.TPC(0);
+    
+    if (geoName.find("dune10kt") != std::string::npos)
+    {
+        driftLength = tpcg.DriftDistance();
+        driftTime = driftLength / detProp.DriftVelocity(); // in us
+        fGeometry = "HD";
+    }
+    else if(geoName.find("dunevd10kt") != std::string::npos)
+    {
+        driftLength = tpcg.DriftDistance();
+        driftTime = driftLength / detProp.DriftVelocity();
+        fGeometry = "VD";
+    }
+    else
+    {
+        producer->PrintInColor("Unknown geometry: " + geoName, ProducerUtils::GetColor("red"));
+        return -1; // Unknown geometry
+    }
+    
+    // Match according to the main cluster time and position
+    if (SolarClusterVector.empty() || PDSFlashes.empty()) {
+        return -1; // No clusters or flashes to match
+    }
+    // Assuming the first cluster is the main one
+    const auto &mainCluster = SolarClusterVector.front();
+    // Get the time and position of the main cluster
+    double clusterTime = mainCluster->getAverageTime();
+    double clusterY = mainCluster->getY();
+    double clusterZ = mainCluster->getZ();
+    double matchedFlashPE = 0.0;
+    int matchedFlashIndex = -1;
+    // Loop through the flashes to find the best match
+    for (int i = 0; i < int(PDSFlashes.size()); i++)
+    {
+        const auto &flash = PDSFlashes[i];
+        double flashPE = flash->TotalPE();
+        // double flashR = -1e6;
+        double distanceX = 1e6;    
+        // Check if the flash time is within the acceptable range
+        double flashTime = flash->Time();
+        // If dT is bigger that drift time, skip this flash
+        if (std::abs(flashTime - clusterTime) > driftTime){
+            continue; // Skip this flash if it's too far in time
+        }
+        
+        if (int(flash->PEs().size()) < fAdjOpFlashMinNHitCut || flash->TotalPE() < fAdjOpFlashMinPECut || *std::max_element(flash->PEs().begin(), flash->PEs().end()) / flash->TotalPE() > fAdjOpFlashMaxPERatioCut)
+        {
+            continue; // Skip flashes with insufficient charge or hits
+        }
+
+        // Calculate the distance in space
+        double flashY = flash->YCenter();
+        double flashZ = flash->ZCenter();
+        // if (!producer) {
+        //     fhicl::ParameterSet pset; // Create a parameter set (you may need to initialize it properly)
+        //     producer = std::make_unique<producer::ProducerUtils>(pset);
+        // }
+        producer->ComputeDistanceX(distanceX, clusterTime, flashTime, driftLength, driftTime);
+        if (fGeometry == "HD")
+        {
+            // For DUNE 10kt geometry, we have different projections based on the plane
+            // Change the sign of distanceX for the collection plane
+            if (flash->Frame() == 0) // Collection plane
+            {
+                distanceX = -distanceX; // Convert to the collection plane coordinate system
+            }
+            if (pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1)
+            {
+                continue;
+            }
+            // flashR = sqrt(pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
+        }
+        else if (fGeometry == "VD")
+        {
+            // Convert distanceX to the VD geometry [-driftLength/2, driftLength/2]
+            distanceX = driftLength / 2 - distanceX;
+            if (flash->Frame() == 0) // Cathode flashes
+            {
+                if (pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1)
+                {
+                    continue;
+                }
+                // flashR = sqrt(pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
+            }
+            else if (flash->Frame() == 1 || flash->Frame() == 2) // Membrane flashes
+            {
+                if (fAdjOpFlashMembraneProjection){
+                    if (pow(distanceX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1){
+                        continue;
+                    }
+                }
+                else{
+                    if (pow(distanceX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1){
+                        continue;
+                    }
+                }
+                // flashR = sqrt(pow(distanceX, 2) + pow(clusterZ - flashZ, 2));
+            } 
+            else if (flash->Frame() == 3 || flash->Frame() == 4) // End-Cap flashes
+            {
+                if (fAdjOpFlashEndCapProjection){
+                    if (pow(distanceX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) > 1){
+                        continue;
+                    }
+                }
+                else{
+                    if (pow(distanceX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1){
+                        continue;
+                    }
+                }
+                // flashR = sqrt(pow(distanceX, 2) + pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
+            } 
+        }
+        else
+        {
+            continue; // Unknown geometry, skip this matching
+        }
+
+        if (flashPE > matchedFlashPE || matchedFlashIndex == -1) {
+            // If this flash has more PE than the previous best match, update the match
+            matchedFlashPE = flashPE;
+            matchedFlashIndex = i;
+            MatchedFlash = flash; // Store the matched flash
+        }
+    }
+    return matchedFlashIndex; // Return the index of the matched flash or -1 if no match found
+  } // MatchPDSFlash
+} // namespace lowe

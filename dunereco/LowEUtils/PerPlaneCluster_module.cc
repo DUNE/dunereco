@@ -12,6 +12,9 @@
 
 #include "dunereco/LowEUtils/LowEUtils.h"
 
+using namespace lowe;
+using namespace producer;
+
 namespace solar
 {
 
@@ -49,8 +52,7 @@ namespace solar
     float fClusterInd0MatchTime;
     float fClusterInd1MatchTime;
     float fClusterMatchTime;
-    // std::unique_ptr<solar::SolarAuxUtils> solaraux;
-    std::unique_ptr<solar::LowEUtils> lowe;
+    std::unique_ptr<lowe::LowEUtils> lowe;
   };
 
 }
@@ -79,7 +81,7 @@ namespace solar
         fClusterInd0MatchTime(p.get<float>("ClusterInd0MatchTime")),
         fClusterInd1MatchTime(p.get<float>("ClusterInd1MatchTime")),
         fClusterMatchTime(p.get<float>("ClusterMatchTime")),
-        lowe(new solar::LowEUtils(p))
+        lowe(new lowe::LowEUtils(p))
   {
     reconfigure(p);
     produces<std::vector<recob::Cluster>>();
