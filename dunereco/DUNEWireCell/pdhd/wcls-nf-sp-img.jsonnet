@@ -140,8 +140,8 @@ local use_magnify = std.extVar("use_magnify");
 local nfsp_pipes = [
   g.pipeline(
     [chsel_pipes[n]] +
-    if use_resampler then [resamplers[n]] else [] +
-    if use_magnify =='true' then [
+    (if use_resampler then [resamplers[n]] else []) +
+    (if use_magnify =='true' then [
       magio.orig_pipe[n],
       nf_pipes[n],
       magio.raw_pipe[n],
@@ -155,7 +155,7 @@ local nfsp_pipes = [
       nf_pipes[n],
       sp_pipes[n],
       img_pipes[n],
-    ],
+    ]),
     'nfsp_pipe_%d' % n)
     for n in std.range(0, std.length(tools.anodes) - 1)
 ];

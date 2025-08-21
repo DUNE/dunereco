@@ -162,7 +162,7 @@ local magio = magnify(tools, magoutput);
 local nfsp_pipes = [
   g.pipeline(
     [chsel_pipes[n]] + 
-    if use_resampler then [resamplers[n]] else [] +
+    (if use_resampler then [resamplers[n]] else []) +
     [
       // magio.orig_pipe[n],
       nf_pipes[n],
