@@ -13,22 +13,14 @@
 // Framework Includes
 #include "fhiclcpp/ParameterSet.h"
 
-// LArSoft includes
-#include "larcore/Geometry/Geometry.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/OpFlash.h"
-
 // DUNE includes
 #include "dunereco/LowEUtils/LowEUtils.h"
 
 // std includes
 #include <vector>
-#include <list>
-#include <set>
-#include <map>
 
 using namespace solar;
+using namespace producer;
 
 namespace lowe {
     /**
@@ -36,7 +28,7 @@ namespace lowe {
     */
     class LowEEvent {
     public:
-        LowEEvent(); // Default constructor: initializes an empty LowEEvent with no clusters or flashes.
+        LowEEvent(); // Constructor with ParameterSet
 
         // Radiological Constructor: used for radiological studies, where we have a list of Blips and OpFlashes.
         // Missing implementation... Maybe better to just constrcut with 1 blip and a list of flashes?
@@ -57,6 +49,7 @@ namespace lowe {
 
         // Initialize the LowEEvent with clusters and flashes
         void initialize(const fhicl::ParameterSet& p, const std::vector<solar::LowECluster>& clusters, const std::vector<recob::OpFlash>& flashes);
+        void reconfigure(fhicl::ParameterSet const& pset) { this->pset = pset; } // Reconfigure the LowEEvent with a new parameter set
 
         // Getters
         const std::vector<int>& getClustersIdx() const { return fClustersIdx; } // returns the indices of the clusters in the event as recovered from the original LowECluster collection
@@ -124,7 +117,16 @@ namespace lowe {
         {
             LowEUtils utils(pset); // Create an instance of LowEUtils with the parameter set
             // Call the matching utility function to find the best match
-            return utils.MatchPDSFlash(SolarClusterVector, PDSFlashes, MatchedFlash, clockData, evt, debug);
+            int matchedIndex = utils.MatchPDSFlash(SolarClusterVector, PDSFlashes, MatchedFlash, clockData, evt, debug);
+            if (matchedIndex >= 0) {
+                fMatchedFlash = *MatchedFlash; // Set the matched flash if a match was found
+                fIsMatchedFlash = true; // Set the flag indicating a matched flash exists
+            }
+            else {
+                fMatchedFlash = recob::OpFlash(); // Reset matched flash if no match was found
+                fIsMatchedFlash = false; // Reset the flag indicating no matched flash exists
+            }
+            return matchedIndex; // Return the index of the matched flash
         }
                     
                 
@@ -134,6 +136,7 @@ namespace lowe {
         std::vector<solar::LowECluster> fClusters; // collection of clusters in the event
         std::vector<recob::OpFlash> fFlashes; // collection of PDS flash candidates in the event
         recob::OpFlash fMatchedFlash; // matched flash, if any
+        bool fIsMatchedFlash; // flag to indicate if a matched flash exists
         struct LowEInteraction;
 
     }; // class LowEEvent

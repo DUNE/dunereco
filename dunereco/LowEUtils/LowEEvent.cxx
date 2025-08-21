@@ -4,17 +4,17 @@ using namespace solar;
 
 namespace lowe {
     LowEEvent::LowEEvent()
-        : fClusters(), fFlashes(), fMatchedFlash()
+        : pset(), fClusters(), fFlashes(), fMatchedFlash(), fIsMatchedFlash(false)
     {
     }
 
     LowEEvent::LowEEvent(const fhicl::ParameterSet& p, const std::vector<solar::LowECluster>& clusters, const std::vector<recob::OpFlash>& flashes)
-        : pset(p), fClusters(clusters), fFlashes(flashes), fMatchedFlash()
+        : pset(p), fClusters(clusters), fFlashes(flashes), fMatchedFlash(), fIsMatchedFlash(false)
     {
     }
 
     LowEEvent::LowEEvent(const LowEEvent& toCopy)
-        : fClusters(toCopy.fClusters), fFlashes(toCopy.fFlashes), fMatchedFlash(toCopy.fMatchedFlash)
+        : pset(toCopy.pset), fClusters(toCopy.fClusters), fFlashes(toCopy.fFlashes), fMatchedFlash(toCopy.fMatchedFlash), fIsMatchedFlash(toCopy.fIsMatchedFlash)
     {
     }
 
@@ -25,15 +25,17 @@ namespace lowe {
             fClusters = toCopy.fClusters;
             fFlashes = toCopy.fFlashes;
             fMatchedFlash = toCopy.fMatchedFlash;
+            fIsMatchedFlash = toCopy.fIsMatchedFlash;
         }
         return *this;
     }
 
     void LowEEvent::initialize(const fhicl::ParameterSet& p, const std::vector<solar::LowECluster>& clusters, const std::vector<recob::OpFlash>& flashes)
     {
-        pset = p;
+        pset = fhicl::ParameterSet(p); // Copy the parameter set
         fClusters = clusters;
         fFlashes = flashes;
         fMatchedFlash = recob::OpFlash();
+        fIsMatchedFlash = false; // Reset matched flash status
     }
 } // namespace lowe
