@@ -2,35 +2,28 @@ BEGIN_PROLOG
 
 solar_event_dune10kt_1x2x6:
 {
-    module_type:        "SolarCluster"
+    module_type:        "SolarEvent"
     SignalLabel:        "marley"             # The label for the input signal
-    GEANT4Label:        "largeant"           # The label for the input GEANT4
-    HitLabel:           "hitfd"              # The label for the process which ran the Hits
     ClusterLabel:       "solarcluster"       # The label for the input clusters
+    OpFlashLabel:       "solarflash"         # The label for the optical flash
 
-    DetectorSizeY:              600          # 1 TPC Y length in [cm].
-    DetectorSizeZ:              1400         # 1 TPC Z length in [cm].
-    ClusterAlgoTime:            25           # Time window to look for plane clusters in [tick] units.
-    ClusterAlgoAdjChannel:      3            # Number of adjacent channels to look for plane clusters.
-    ClusterChargeVariable:      "Integral"   # Charge variable to use for cluster matching: "Integral" or "SummedADC".
+    AdjOpFlashX:                  100.         # X distance to search for adj. OpFlashes reconstructed in [cm] units.
+    AdjOpFlashY:                  100.         # Y distance to search for adj. OpFlashes reconstructed in [cm] units.
+    AdjOpFlashZ:                  100.         # Z distance to search for adj. OpFlashes reconstructed in [cm] units.
+    AdjOpFlashMaxPERatioCut:      1.00         # Cut on the maximum OpHit PE contribution to the total OpFlash PE.
+    AdjOpFlashMinPECut:           20.0         # Cut on the minimum OpHit PE. From average bkg rate of ~20 PE per tick.
+    AdjOpFlashMinNHitCut:         3            # Cut on the minimum number of OpHits in the OpFlash.
+    AdjOpFlashMembraneProjection: false        # If true, the OpFlash matching is projected on the membrane planes for VD.
+    AdjOpFlashEndCapProjection:   false        # If true, the OpFlash matching is projected on the end cap planes for VD.
 
-    AdjClusterRad:              100.         # Radius in [cm] to look for adjacent clusters for low energy.
-    ClusterMatchNHit:           2            # NHit fraction to match clusters. abs(NHitsCol - NHitsInd) / NHitsCol < ClusterMatchNHit.
-    ClusterMatchTime:           20.0         # Time window to look for ind. plane clusters in [tick] units.
-    ClusterMatchCharge:         0.6          # Charge fraction to match clusters. abs(ChargeCol - ChargeInd) / ChargeCol < ClusterMatchCharge.
-    ClusterInd0MatchTime:       0.00         # Wirecell seems to have made this time delay obsolete.
-    ClusterInd1MatchTime:       0.00         # Wirecell seems to have made this time delay obsolete.
-    ClusterPreselectionNHits:      0         # Min number of hits to preselect a cluster.
-
-    Debug:                      true
+    Debug:                        true
 }
 
 solar_event_dunevd10kt_1x8x14_3view_30deg: @local::solar_event_dune10kt_1x2x6
-solar_event_dunevd10kt_1x8x14_3view_30deg.Geometry: "VD"
-solar_event_dunevd10kt_1x8x14_3view_30deg.DetectorSizeY: 680
-solar_event_dunevd10kt_1x8x14_3view_30deg.DetectorSizeZ: 2100
+solar_event_dunevd10kt_1x8x14_3view_30deg.AdjOpFlashX: 200
+solar_event_dunevd10kt_1x8x14_3view_30deg.AdjOpFlashY: 200
+solar_event_dunevd10kt_1x8x14_3view_30deg.AdjOpFlashZ: 200
 
 solar_event_dunevd10kt_1x8x6_3view_30deg: @local::solar_event_dunevd10kt_1x8x14_3view_30deg
-solar_event_dunevd10kt_1x8x6_3view_30deg.DetectorSizeZ: 900
 
 END_PROLOG

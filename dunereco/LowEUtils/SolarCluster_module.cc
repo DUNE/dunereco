@@ -1,6 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////////
 // Class:       SolarCluster                                                      //
 // Module Type: producer                                                          //
+// Module Label solarcluster                                                      //
 // File:        SolarCluster_module.cc                                            //
 //                                                                                //
 // Hit clustering, based on plane-matching information.                           //
@@ -11,7 +12,6 @@
 #define SolarCluster_H 1
 
 #include "dunereco/LowEUtils/LowEUtils.h"
-#include "dunereco/LowEUtils/LowECluster.h"
 
 using namespace lowe;
 using namespace producer;
@@ -22,6 +22,17 @@ namespace solar
   class SolarCluster : public art::EDProducer
   {
   public:
+    // Standard constructor and destructor for an ART module.
+    explicit SolarCluster(const fhicl::ParameterSet &);
+    virtual ~SolarCluster();
+
+    void beginJob();
+    void endJob();
+    void reconfigure(fhicl::ParameterSet const &pset);
+
+    // The producer routine, called once per event.
+    void produce(art::Event &);
+
     void FillClusters(
       std::vector<LowEUtils::RawSolarCluster> &Clusters,
       std::vector<std::vector<int>> MatchedClustersIdx,
@@ -39,31 +50,16 @@ namespace solar
       const std::vector<art::Ptr<recob::Cluster>> &ClusterPtr,
       std::vector<solar::LowECluster> &SolarClusters,
       detinfo::DetectorClocksData const &ts) const;
-
-    // Standard constructor and destructor for an ART module.
-    explicit SolarCluster(const fhicl::ParameterSet &);
-    virtual ~SolarCluster();
-
-    void beginJob();
-    void endJob();
-    void reconfigure(fhicl::ParameterSet const &pset);
-
-    // The producer routine, called once per event.
-    void produce(art::Event &);
-
+  
   private:
     // The parameters we'll read from the .fcl file.
     art::ServiceHandle<geo::Geometry> geo;
     std::string fSignalLabel; // Input tag for MCTruth label
     std::string fGEANTLabel; // Input tag for GEANT label
-    std::string fHitLabel; // Input tag for Hit collection
     std::string fClusterLabel; // Input tag for LowECluster collection
-    std::string fGeometry;
-
     float fClusterAlgoTime;
     int fClusterAlgoAdjChannel;
     std::string fClusterChargeVariable;
-
     int   fClusterMatchNHit;
     float fClusterMatchCharge;
     float fClusterInd0MatchTime;
@@ -74,8 +70,8 @@ namespace solar
     geo::WireReadoutGeom const &wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
     art::ServiceHandle<cheat::BackTrackerService> bt_serv;
     art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
-    std::unique_ptr<producer::ProducerUtils> producer;
-    std::unique_ptr<lowe::LowEUtils> lowe;
+    producer::ProducerUtils *producer;
+    lowe::LowEUtils *lowe;
   };
 }
 
@@ -92,21 +88,19 @@ namespace solar
   // Constructor
   SolarCluster::SolarCluster(const fhicl::ParameterSet &p)
   : EDProducer{p},
-    fSignalLabel(p.get<std::string>("SignalLabel")),
-    fGEANTLabel(p.get<std::string>("GEANT4Label")),
-    fHitLabel(p.get<std::string>("HitLabel")),
-    fClusterLabel(p.get<std::string>("ClusterLabel")),
-    fGeometry(p.get<std::string>("Geometry")),
-    fClusterAlgoTime(p.get<float>("ClusterAlgoTime")),
-    fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel")),
-    fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable")),
-    fClusterMatchNHit(p.get<int>("ClusterMatchNHit")),
-    fClusterMatchCharge(p.get<float>("ClusterMatchCharge")),
-    fClusterInd0MatchTime(p.get<float>("ClusterInd0MatchTime")),
-    fClusterInd1MatchTime(p.get<float>("ClusterInd1MatchTime")),
-    fClusterMatchTime(p.get<float>("ClusterMatchTime")),
-    fClusterPreselectionNHits(p.get<int>("ClusterPreselectionNHits")),
-    fDebug(p.get<bool>("Debug")),
+    fSignalLabel(p.get<std::string>("SignalLabel", "marley")),
+    fGEANTLabel(p.get<std::string>("GEANTLabel", "largeant")),
+    fClusterLabel(p.get<std::string>("ClusterLabel", "planecluster")),
+    fClusterAlgoTime(p.get<float>("ClusterAlgoTime", 25.0)), // Time threshold for clustering [ticks]
+    fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel", 3)), // Number of adjacent channels to consider for clustering
+    fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable", "Integral")), // Variable to use for charge calculation
+    fClusterMatchNHit(p.get<int>("ClusterMatchNHit", 2)), // NHit fraction to match clusters. abs(NHitsCol - NHitsInd) / NHitsCol < ClusterMatchNHit.
+    fClusterMatchCharge(p.get<float>("ClusterMatchCharge", 0.6)), // Charge fraction to match clusters. abs(ChargeCol - ChargeInd) / ChargeCol < ClusterMatchCharge.
+    fClusterInd0MatchTime(p.get<float>("ClusterInd0MatchTime", 0.0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd0MatchTime. [ticks]
+    fClusterInd1MatchTime(p.get<float>("ClusterInd1MatchTime", 0.0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd1MatchTime. [ticks]
+    fClusterMatchTime(p.get<float>("ClusterMatchTime", 20.0)), // Max time difference to match clusters. abs(TimeCol - TimeInd) < ClusterMatchTime. [ticks]
+    fClusterPreselectionNHits(p.get<int>("ClusterPreselectionNHits", 3)), // Minimum number of hits in a cluster to consider it for further processing
+    fDebug(p.get<bool>("Debug", false)), // Debug flag to print additional information
     producer(new producer::ProducerUtils(p)),
     lowe(new lowe::LowEUtils(p))
   {
@@ -124,6 +118,7 @@ namespace solar
   // Destructor
   SolarCluster::~SolarCluster()
   {
+    delete producer;
   }
   //--------------------------------------------------------------------------
   void SolarCluster::beginJob()
@@ -138,6 +133,7 @@ namespace solar
   //--------------------------------------------------------------------------
   void SolarCluster::produce(art::Event &evt)
   {
+    producer->PrintInColor("SolarCluster::produce called", producer::ProducerUtils::GetColor("green"), "Debug");
     std::string SolarTruthInfo;
     std::string SolarClusterInfo;
     std::string SolarClusterDebug;

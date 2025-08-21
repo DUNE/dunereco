@@ -41,7 +41,6 @@ namespace solar
     // The parameters we'll read from the .fcl file.
     art::ServiceHandle<geo::Geometry> geo;
     std::string fHitLabel; // Input tag for Hit collection
-    std::string fGeometry;
 
     float fClusterAlgoTime;
     int fClusterAlgoAdjChannel;
@@ -71,16 +70,15 @@ namespace solar
   // Constructor
   PerPlaneCluster::PerPlaneCluster(const fhicl::ParameterSet &p)
       : EDProducer{p},
-        fHitLabel(p.get<std::string>("HitLabel")),
-        fGeometry(p.get<std::string>("Geometry")),
-        fClusterAlgoTime(p.get<float>("ClusterAlgoTime")),
-        fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel")),
-        fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable")),
-        fClusterMatchNHit(p.get<int>("ClusterMatchNHit")),
-        fClusterMatchCharge(p.get<float>("ClusterMatchCharge")),
-        fClusterInd0MatchTime(p.get<float>("ClusterInd0MatchTime")),
-        fClusterInd1MatchTime(p.get<float>("ClusterInd1MatchTime")),
-        fClusterMatchTime(p.get<float>("ClusterMatchTime")),
+        fHitLabel(p.get<std::string>("HitLabel", "hitfd")),
+        fClusterAlgoTime(p.get<float>("ClusterAlgoTime", 25)), // Time threshold for clustering [ticks]
+        fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel", 3)), // Number of adjacent channels to consider for clustering
+        fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable", "Integral")), // Variable to use for charge calculation
+        fClusterMatchNHit(p.get<int>("ClusterMatchNHit", 2)), // NHit fraction to match clusters. abs(NHitsCol - NHitsInd) / NHitsCol < ClusterMatchNHit.
+        fClusterMatchCharge(p.get<float>("ClusterMatchCharge", 0.6)), // Charge fraction to match clusters. abs(ChargeCol - ChargeInd) / ChargeCol < ClusterMatchCharge.
+        fClusterInd0MatchTime(p.get<float>("ClusterInd0MatchTime", 0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd0MatchTime. [ticks]
+        fClusterInd1MatchTime(p.get<float>("ClusterInd1MatchTime", 0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd1MatchTime. [ticks]
+        fClusterMatchTime(p.get<float>("ClusterMatchTime", 20)), // Max time difference to match clusters. abs(TimeCol - TimeInd) < ClusterMatchTime. [ticks]
         lowe(new lowe::LowEUtils(p))
   {
     reconfigure(p);
@@ -111,6 +109,7 @@ namespace solar
   //--------------------------------------------------------------------------
   void PerPlaneCluster::produce(art::Event &evt)
   {
+    ProducerUtils::PrintInColor("PerPlaneCluster::produce called", ProducerUtils::GetColor("green"), "Debug");
     auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
 
     // Prepare the input data
@@ -152,15 +151,17 @@ namespace solar
       }
       if (i < 10)
       {
-        std::cout << "Genrating Cluster " << i << " with " << HitPtrVector.size() << " hits" << std::endl;
+        // std::cout << "Generating Cluster " << i << " with " << HitPtrVector.size() << " hits" << std::endl;
+        ProducerUtils::PrintInColor("Generating Cluster " + ProducerUtils::str(i) + " with " + ProducerUtils::str(HitPtrVector.size()) + " hits", ProducerUtils::GetColor("green"), "Debug");
       }
       // Create the association between the flash and the Hits
       util::CreateAssn(*this, evt, *ClusterPtr, HitPtrVector,
                        *(assnPtr.get()), i);
       if (i == HitIdx.size() - 1)
       {
-        std::cout << "..." << std::endl;
-        std::cout << "Generated " << i + 1 << " Cluster" << std::endl;
+        // std::cout << "..." << std::endl;
+        // std::cout << "Generated " << i + 1 << " Cluster" << std::endl;
+        ProducerUtils::PrintInColor("Generated " + ProducerUtils::str(i + 1) + " Clusters", ProducerUtils::GetColor("green"), "Debug");
       }
     }
     // Store results into the event

@@ -5,25 +5,25 @@ using namespace producer;
 namespace lowe
 {
   LowEUtils::LowEUtils(fhicl::ParameterSet const &p)
-  : fHitLabel(p.get<std::string>("HitLabel")),
-    fClusterAlgoTime(p.get<double>("ClusterAlgoTime")),
-    fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel")),
-    fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable")),
-    fClusterMatchNHit(p.get<int>("ClusterMatchNHit")),
-    fClusterMatchCharge(p.get<double>("ClusterMatchCharge")),
-    fClusterInd0MatchTime(p.get<double>("ClusterInd0MatchTime")),
-    fClusterInd1MatchTime(p.get<double>("ClusterInd1MatchTime")),
-    fClusterMatchTime(p.get<double>("ClusterMatchTime")),
-    fClusterPreselectionNHits(p.get<int>("ClusterPreselectionNHits")),
-    fAdjClusterRad(p.get<double>("AdjClusterRad")),
-    fAdjOpFlashMinNHitCut(p.get<int>("fAdjOpFlashMinNHitCut")),
-    fAdjOpFlashX(p.get<double>("AdjOpFlashX")),
-    fAdjOpFlashY(p.get<double>("AdjOpFlashY")),
-    fAdjOpFlashZ(p.get<double>("AdjOpFlashZ")),
-    fAdjOpFlashMinPECut(p.get<double>("fAdjOpFlashMinPECut")),
-    fAdjOpFlashMaxPERatioCut(p.get<double>("fAdjOpFlashMaxPERatioCut")),
-    fAdjOpFlashMembraneProjection(p.get<bool>("fAdjOpFlashMembraneProjection")),
-    fAdjOpFlashEndCapProjection(p.get<bool>("fAdjOpFlashEndCapProjection")),
+  : fHitLabel(p.get<std::string>("HitLabel", "hitfd")),
+    fClusterAlgoTime(p.get<double>("ClusterAlgoTime", 25.0)), // Time threshold for clustering [ticks]
+    fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel", 3)), // Channel threshold for clustering
+    fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable", "Integral")), // Variable to use for charge calculation
+    fClusterMatchNHit(p.get<int>("ClusterMatchNHit", 2)), // NHit fraction to match clusters. abs(NHitsCol - NHitsInd) / NHitsCol < ClusterMatchNHit.
+    fClusterMatchCharge(p.get<double>("ClusterMatchCharge", 0.6)), // Charge fraction to match clusters. abs(ChargeCol - ChargeInd) / ChargeCol < ClusterMatchCharge.
+    fClusterInd0MatchTime(p.get<double>("ClusterInd0MatchTime", 0.0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd0MatchTime. [ticks]
+    fClusterInd1MatchTime(p.get<double>("ClusterInd1MatchTime", 0.0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd1MatchTime. [ticks]
+    fClusterMatchTime(p.get<double>("ClusterMatchTime", 20.0)), // Max time difference to match clusters. abs(TimeCol - TimeInd) < ClusterMatchTime. [ticks]
+    fClusterPreselectionNHits(p.get<int>("ClusterPreselectionNHits", 3)), // Minimum number of hits in a cluster to consider it for further processing
+    fAdjClusterRad(p.get<double>("AdjClusterRad", 100)), // Radius for adjacent cluster search [cm]
+    fAdjOpFlashMinNHitCut(p.get<int>("fAdjOpFlashMinNHitCut", 3)),
+    fAdjOpFlashX(p.get<double>("AdjOpFlashX", 100.0)), // X coordinate for flash projection [cm]
+    fAdjOpFlashY(p.get<double>("AdjOpFlashY", 100.0)), // Y coordinate for flash projection [cm]
+    fAdjOpFlashZ(p.get<double>("AdjOpFlashZ", 100.0)), // Z coordinate for flash projection [cm]
+    fAdjOpFlashMinPECut(p.get<double>("fAdjOpFlashMinPECut", 20.0)), // Minimum PE for flash selection
+    fAdjOpFlashMaxPERatioCut(p.get<double>("fAdjOpFlashMaxPERatioCut", 1)), // Maximum PE ratio for flash selection
+    fAdjOpFlashMembraneProjection(p.get<bool>("fAdjOpFlashMembraneProjection", false)), // Whether to project flashes onto the membrane
+    fAdjOpFlashEndCapProjection(p.get<bool>("fAdjOpFlashEndCapProjection", false)), // Whether to project flashes onto the end cap
     producer(new ProducerUtils(p))
   {
     // Initialize the LowEUtils instance
@@ -146,7 +146,7 @@ namespace lowe
         ChargeStdDev = IntegralStdDev;
         ChargeAverage = IntegralAverage;
       }
-      if (fClusterChargeVariable == "SummedADC")
+      else if (fClusterChargeVariable == "SummedADC")
       {
         mf::LogInfo("LowEUtils") << "Charge variable set to 'SummedADC' (default is 'Integral')";
         ChargeStdDev = sqrt(ChargeStdDev / NHit - Charge * Charge);
