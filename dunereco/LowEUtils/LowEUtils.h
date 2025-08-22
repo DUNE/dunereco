@@ -227,6 +227,7 @@ namespace lowe
             const double fClusterInd0MatchTime;
             const double fClusterInd1MatchTime;
             const double fClusterMatchTime;
+            const bool fClusterPreselectionSignal;             // If true, only consider clusters with signal track IDs
             const int fClusterPreselectionNHits;
             const float fAdjClusterRad;                        // Radius in cm to search for adjacent clusters
             const bool fAdjClusterSingleMatch;                 // If true, match adjacent clusters to the first primary cluster only

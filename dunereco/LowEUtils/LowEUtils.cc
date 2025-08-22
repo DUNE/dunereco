@@ -14,6 +14,7 @@ namespace lowe
     fClusterInd0MatchTime(p.get<double>("ClusterInd0MatchTime", 0.0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd0MatchTime. [ticks]
     fClusterInd1MatchTime(p.get<double>("ClusterInd1MatchTime", 0.0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd1MatchTime. [ticks]
     fClusterMatchTime(p.get<double>("ClusterMatchTime", 20.0)), // Max time difference to match clusters. abs(TimeCol - TimeInd) < ClusterMatchTime. [ticks]
+    fClusterPreselectionSignal(p.get<bool>("ClusterPreselectionSignal", false)), // Whether to apply signal (purity > 0) preselection
     fClusterPreselectionNHits(p.get<int>("ClusterPreselectionNHits", 3)), // Minimum number of hits in a cluster to consider it for further processing
     fAdjClusterRad(p.get<double>("AdjClusterRad", 100)), // Radius for adjacent cluster search [cm]
     fAdjClusterSingleMatch(p.get<bool>("AdjClusterSingleMatch", false)), // Whether to match adjacent clusters to the first primary cluster only
@@ -1034,6 +1035,11 @@ namespace lowe
       std::vector<bool> EvaluatedAdjCluster(SolarClusterVector.size(), false);
 
       const auto &cluster = SolarClusterVector[*it];
+      if (fClusterPreselectionSignal && cluster->getPurity() == 0) {
+        EventCandidateFound.push_back(false);
+        continue;
+      }
+
       if (cluster->getNHits() <= fClusterPreselectionNHits) {
         EventCandidateFound.push_back(false);
         continue;
@@ -1045,7 +1051,7 @@ namespace lowe
       EvaluatedCluster[*it] = true;
       AdjClusterIdx.push_back(*it);
       AdjClusterVec.push_back(cluster);
-      sEventCandidateFinding += "Trigger cluster found: NHits " + ProducerUtils::str(cluster->getNHits()) + " Channel " + ProducerUtils::str(cluster->getMainChannel()) + " Time " + ProducerUtils::str(cluster->getAverageTime()) + " Charge " + ProducerUtils::str(cluster->getTotalCharge()) + "\n";
+      sEventCandidateFinding += "Trigger cluster found: NHits " + ProducerUtils::str(cluster->getNHits()) + " Channel " + ProducerUtils::str(cluster->getMainChannel()) + " Time " + ProducerUtils::str(cluster->getAverageTime()) + " Charge " + ProducerUtils::str(cluster->getTotalCharge()) + " Purity " + ProducerUtils::str(cluster->getPurity()) + "\n";
       
       // Make use of the fact that the clusters are sorted in time to only consider the clusters that are adjacent in the vector up to a certain time range
       for (auto it2 = it; it2 != sortingIndex.end(); ++it2) // Start from the next element
@@ -1070,47 +1076,47 @@ namespace lowe
 
         // If AdjClusterSingleMatch is true and adjcluster has already been evaluated, skip
         if (fAdjClusterSingleMatch && EvaluatedCluster[*it2] == true) {
-          sEventCandidateFinding += "\tSkipping already evaluated adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
+          sEventCandidateFinding += "\tSkipping already evaluated adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
           continue;
         }
         
         // If cluster has already been clustered, skip
         if (EvaluatedAdjCluster[*it2] == true) {
-          sEventCandidateFinding += "\tSkipping already evaluated cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
+          sEventCandidateFinding += "\tSkipping already evaluated cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
           continue;
         }
 
         auto ref4 = TVector3(0, cluster->getY(), cluster->getZ()) - TVector3(dXcluster1, adjcluster->getY(), adjcluster->getZ());
         if (ref4.Mag() < fAdjClusterRad)
         {
-          sEventCandidateFinding += "\tFound adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
+          // sEventCandidateFinding += "\tFound adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
           if (adjcluster->getTotalCharge() > cluster->getTotalCharge())
           {
-            sEventCandidateFinding += "¡¡¡Found bigger cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
+            sEventCandidateFinding += "¡¡¡Found bigger cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
             EvaluatedCluster[*it] = false;
             PreselectionCluster = false;
 
             // Reset the EvaluatedCluster values for the clusters that have been added to the cluster
             for (auto it3 = AdjClusterIdx.begin(); it3 != AdjClusterIdx.end(); ++it3)
             {
-              sEventCandidateFinding += "---Removing cluster: NHits " + ProducerUtils::str(SolarClusterVector[*it3]->getNHits()) + " Channel " + ProducerUtils::str(SolarClusterVector[*it3]->getMainChannel()) + " Time " + ProducerUtils::str(SolarClusterVector[*it3]->getAverageTime()) + " Charge " + ProducerUtils::str(SolarClusterVector[*it3]->getTotalCharge()) + "\n";
+              sEventCandidateFinding += "---Removing cluster: NHits " + ProducerUtils::str(SolarClusterVector[*it3]->getNHits()) + " Channel " + ProducerUtils::str(SolarClusterVector[*it3]->getMainChannel()) + " Time " + ProducerUtils::str(SolarClusterVector[*it3]->getAverageTime()) + " Charge " + ProducerUtils::str(SolarClusterVector[*it3]->getTotalCharge()) + " Purity " + ProducerUtils::str(SolarClusterVector[*it3]->getPurity()) + "\n";
               EvaluatedCluster[*it3] = false;
               EvaluatedAdjCluster[*it3] = false; // Reset the evaluated status for the adjacent clusters
             }
             break;
           }
           else{
-            sEventCandidateFinding += "+++Adding cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
+            sEventCandidateFinding += "+++Adding cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
             AdjClusterVec.push_back(adjcluster);
             AdjClusterIdx.push_back(*it2);
             EvaluatedCluster[*it2] = true;
             EvaluatedAdjCluster[*it2] = true; // Mark this adjacent cluster as evaluated
           }
         }
-        else
-        {
-          sEventCandidateFinding += "\tSkipping distant cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
-        }
+        // else
+        // {
+        //   sEventCandidateFinding += "\tSkipping distant cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
+        // }
       }
 
       if (PreselectionCluster == false) {
@@ -1142,47 +1148,47 @@ namespace lowe
 
         // If AdjClusterSingleMatch is true and adjcluster has already been evaluated, skip
         if (fAdjClusterSingleMatch && EvaluatedCluster[*it4] == true) {
-          sEventCandidateFinding += "\tSkipping already evaluated adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
+          sEventCandidateFinding += "\tSkipping already evaluated adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
           continue;
         }
 
         // if cluster has already been clustered, skip
         if (EvaluatedAdjCluster[*it4] == true){
-          sEventCandidateFinding += "\tSkipping already evaluated cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
+          sEventCandidateFinding += "\tSkipping already evaluated cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
           continue;
         }
 
         auto ref4 = TVector3(0, cluster->getY(), cluster->getZ()) - TVector3(dXcluster2, adjcluster->getY(), adjcluster->getZ());
         if (ref4.Mag() < fAdjClusterRad)
         {
-          sEventCandidateFinding += "\tFound adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
+          // sEventCandidateFinding += "\tFound adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
           if (adjcluster->getTotalCharge() > cluster->getTotalCharge())
           {
-            sEventCandidateFinding += "¡¡¡Found bigger cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
+            sEventCandidateFinding += "¡¡¡Found bigger cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
             EvaluatedCluster[*it] = false;
             PreselectionCluster = false;
 
             // Reset the EvaluatedCluster values for the clusters that have been added to the cluster
             for (auto it5 = AdjClusterIdx.begin(); it5 != AdjClusterIdx.end(); ++it5)
             {
-              sEventCandidateFinding += "---Removing cluster: NHits " + ProducerUtils::str(SolarClusterVector[*it5]->getNHits()) + " Channel " + ProducerUtils::str(SolarClusterVector[*it5]->getMainChannel()) + " Time " + ProducerUtils::str(SolarClusterVector[*it5]->getAverageTime()) + " Charge " + ProducerUtils::str(SolarClusterVector[*it5]->getTotalCharge()) + "\n";
+              sEventCandidateFinding += "---Removing cluster: NHits " + ProducerUtils::str(SolarClusterVector[*it5]->getNHits()) + " Channel " + ProducerUtils::str(SolarClusterVector[*it5]->getMainChannel()) + " Time " + ProducerUtils::str(SolarClusterVector[*it5]->getAverageTime()) + " Charge " + ProducerUtils::str(SolarClusterVector[*it5]->getTotalCharge()) + " Purity " + ProducerUtils::str(SolarClusterVector[*it5]->getPurity()) + "\n";
               EvaluatedCluster[*it5] = false;
               EvaluatedAdjCluster[*it5] = false; // Reset the evaluated status for the adjacent clusters
             }
             break;
           }
           else {
-            sEventCandidateFinding += "+++Adding cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
+            sEventCandidateFinding += "+++Adding cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
             AdjClusterVec.push_back(adjcluster);
             AdjClusterIdx.push_back(*it4);
             EvaluatedCluster[*it4] = true;
             EvaluatedAdjCluster[*it4] = true; // Mark this adjacent cluster as evaluated
           }
         }
-        else
-        {
-          sEventCandidateFinding += "\tSkipping distant cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
-        }
+        // else
+        // {
+        //   sEventCandidateFinding += "\tSkipping distant cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
+        // }
       }
 
       if (PreselectionCluster == false)
@@ -1199,6 +1205,12 @@ namespace lowe
       EventCandidateIdx.push_back(std::move(AdjClusterIdx));
       EventCandidateFound.push_back(true);
     }
+
+    // Check that the EventCandidateFound vector is the same size as the SolarClusterVector
+    if (EventCandidateFound.size() != SolarClusterVector.size()) {
+      producer->PrintInColor("Error: EventCandidateFound vector size does not match SolarClusterVector size", ProducerUtils::GetColor("red"), "Error");
+    }
+
     sEventCandidateFinding += "Total number of event candidates found: " + ProducerUtils::str(EventCandidateVector.size()) + "\n";
     ProducerUtils::PrintInColor(sEventCandidateFinding, ProducerUtils::GetColor("blue"), "Debug");
     return;
@@ -1211,6 +1223,7 @@ namespace lowe
     const art::Event &evt,
     bool debug)
   {
+    std::string sFlashMatching = "LowEUtils::MatchPDSFlash " + ProducerUtils::str(SolarClusterVector.size()) + " clusters and " + ProducerUtils::str(PDSFlashes.size()) + " flashes found in the event\n";
     // get drift properties
     art::ServiceHandle<geo::Geometry> geom;
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
@@ -1242,6 +1255,8 @@ namespace lowe
         producer->PrintInColor("Unknown geometry: " + geoName, ProducerUtils::GetColor("red"));
         return -1; // Unknown geometry
     }
+
+    sFlashMatching += "Drift length: " + ProducerUtils::str(driftLength) + " cm, Drift time: " + ProducerUtils::str(driftTime) + " us, Geometry: " + fGeometry + "\n";
     
     // Match according to the main cluster time and position
     if (SolarClusterVector.empty() || PDSFlashes.empty()) {
@@ -1251,21 +1266,25 @@ namespace lowe
     const auto &mainCluster = SolarClusterVector.front();
     // Get the time and position of the main cluster
     double clusterTime = mainCluster->getAverageTime();
+    double clusterX = -1e6;    
     double clusterY = mainCluster->getY();
     double clusterZ = mainCluster->getZ();
-    double matchedFlashPE = 0.0;
+    
     int matchedFlashIndex = -1;
+    double matchedFlashPE = 0.0;
+    double matchedRecoX = -1e6;
     // Loop through the flashes to find the best match
     for (int i = 0; i < int(PDSFlashes.size()); i++)
     {
+        // Reset cluster X for each flash
         const auto &flash = PDSFlashes[i];
         double flashPE = flash->TotalPE();
         // double flashR = -1e6;
-        double distanceX = 1e6;    
         // Check if the flash time is within the acceptable range
         double flashTime = flash->Time();
+        double dT = clusterTime - flashTime; // Time difference between the cluster and the flash
         // If dT is bigger that drift time, skip this flash
-        if (std::abs(flashTime - clusterTime) > driftTime){
+        if (std::abs(dT) > driftTime){
             continue; // Skip this flash if it's too far in time
         }
         
@@ -1281,14 +1300,14 @@ namespace lowe
         //     fhicl::ParameterSet pset; // Create a parameter set (you may need to initialize it properly)
         //     producer = std::make_unique<producer::ProducerUtils>(pset);
         // }
-        producer->ComputeDistanceX(distanceX, clusterTime, flashTime, driftLength, driftTime);
+        producer->ComputeDistanceX(clusterX, clusterTime, flashTime, driftLength, driftTime);
         if (fGeometry == "HD")
         {
             // For DUNE 10kt geometry, we have different projections based on the plane
-            // Change the sign of distanceX for the collection plane
+            // Change the sign of clusterX for the collection plane
             if (flash->Frame() == 0) // Collection plane
             {
-                distanceX = -distanceX; // Convert to the collection plane coordinate system
+                clusterX = -clusterX; // Convert to the collection plane coordinate system
             }
             if (pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1)
             {
@@ -1298,44 +1317,44 @@ namespace lowe
         }
         else if (fGeometry == "VD")
         {
-            // Convert distanceX to the VD geometry [-driftLength/2, driftLength/2]
-            distanceX = driftLength / 2 - distanceX;
-            if (flash->Frame() == 0) // Cathode flashes
-            {
-                if (pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1)
-                {
-                    continue;
-                }
-                // flashR = sqrt(pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
-            }
-            else if (flash->Frame() == 1 || flash->Frame() == 2) // Membrane flashes
-            {
-                if (fAdjOpFlashMembraneProjection){
-                    if (pow(distanceX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1){
-                        continue;
-                    }
-                }
-                else{
-                    if (pow(distanceX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1){
-                        continue;
-                    }
-                }
-                // flashR = sqrt(pow(distanceX, 2) + pow(clusterZ - flashZ, 2));
-            } 
-            else if (flash->Frame() == 3 || flash->Frame() == 4) // End-Cap flashes
-            {
-                if (fAdjOpFlashEndCapProjection){
-                    if (pow(distanceX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) > 1){
-                        continue;
-                    }
-                }
-                else{
-                    if (pow(distanceX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1){
-                        continue;
-                    }
-                }
-                // flashR = sqrt(pow(distanceX, 2) + pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
-            } 
+          // Convert clusterX to the VD geometry [-driftLength/2, driftLength/2]
+          if (flash->Frame() == 0) // Cathode flashes
+          {
+              if (pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1)
+              {
+                  continue;
+              }
+              // flashR = sqrt(pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
+          }
+          else if (flash->Frame() == 1 || flash->Frame() == 2) // Membrane flashes
+          {
+              if (fAdjOpFlashMembraneProjection){
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1){
+                      continue;
+                  }
+              }
+              else{
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1){
+                      continue;
+                  }
+              }
+              // flashR = sqrt(pow(clusterX, 2) + pow(clusterZ - flashZ, 2));
+          } 
+          else if (flash->Frame() == 3 || flash->Frame() == 4) // End-Cap flashes
+          {
+              if (fAdjOpFlashEndCapProjection){
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) > 1){
+                      continue;
+                  }
+              }
+              else{
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1){
+                      continue;
+                  }
+              }
+              // flashR = sqrt(pow(clusterX, 2) + pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
+          } 
+          clusterX = driftLength / 2 - clusterX; // Convert to the VD geometry coordinate system
         }
         else
         {
@@ -1346,7 +1365,22 @@ namespace lowe
             // If this flash has more PE than the previous best match, update the match
             matchedFlashPE = flashPE;
             matchedFlashIndex = i;
+            matchedRecoX = clusterX;
         }
+    }
+    if (debug)
+    {
+        if (matchedFlashIndex != -1)
+        {
+            sFlashMatching += "Matched flash: Index " + ProducerUtils::str(matchedFlashIndex) + " PE " + ProducerUtils::str(matchedFlashPE) + " Time " + ProducerUtils::str(PDSFlashes[matchedFlashIndex]->Time()) + " Y " + ProducerUtils::str(PDSFlashes[matchedFlashIndex]->YCenter()) + " Z " + ProducerUtils::str(PDSFlashes[matchedFlashIndex]->ZCenter()) + "\n";
+            // Print recon info of the cluster
+            sFlashMatching += "Cluster: Time " + ProducerUtils::str(mainCluster->getAverageTime()) + " Vertex " + ProducerUtils::str(matchedRecoX) + ", " + ProducerUtils::str(mainCluster->getY()) + ", " + ProducerUtils::str(mainCluster->getZ()) + "\n";
+        }
+        else
+        {
+            sFlashMatching += "No flash matched to cluster: NHits " + ProducerUtils::str(mainCluster->getNHits()) + " Channel " + ProducerUtils::str(mainCluster->getMainChannel()) + " Time " + ProducerUtils::str(mainCluster->getAverageTime()) + " Charge " + ProducerUtils::str(mainCluster->getTotalCharge()) + "\n";
+        }
+        ProducerUtils::PrintInColor(sFlashMatching, ProducerUtils::GetColor("blue"), "Debug");
     }
     return matchedFlashIndex; // Return the index of the matched flash or -1 if no match found
   } // MatchPDSFlash
