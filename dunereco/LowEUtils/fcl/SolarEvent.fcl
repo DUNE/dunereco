@@ -4,8 +4,14 @@ solar_event_dune10kt_1x2x6:
 {
     module_type:        "SolarEvent"
     SignalLabel:        "marley"             # The label for the input signal
+    GEANT4Label:        "largeant"           # The label for the GEANT4 process
     ClusterLabel:       "solarcluster"       # The label for the input clusters
     OpFlashLabel:       "solarflash"         # The label for the optical flash
+
+    ClusterPreselectionSignal:    true         # If true, the cluster must be signal particle to be saved.
+    ClusterPreselectionNHits:     0            # Minimum number of hits in the cluster.
+    AdjClusterRad:                100.         # Radius to search for adjacent clusters reconstructed in [cm] units.
+    AdjClusterSingleMatch:        false        # If true, each adjacent cluster is allowed to match only one primary cluster.
 
     AdjOpFlashX:                  100.         # X distance to search for adj. OpFlashes reconstructed in [cm] units.
     AdjOpFlashY:                  100.         # Y distance to search for adj. OpFlashes reconstructed in [cm] units.
