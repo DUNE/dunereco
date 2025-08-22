@@ -65,7 +65,7 @@ namespace lowe
         fSignalLabel(p.get<std::string>("SignalLabel", "marley")),
         fGEANTLabel(p.get<std::string>("GEANTLabel", "largeant")),
         fClusterLabel(p.get<std::string>("ClusterLabel", "solarcluster")),
-        fOpFlashLabel(p.get<std::string>("OpFlashLabel", "solaropflash")),
+        fOpFlashLabel(p.get<std::string>("OpFlashLabel", "solarflash")),
         fDebug(p.get<bool>("Debug", false)),      
         lowe(new lowe::LowEUtils(p)),
         producer(new producer::ProducerUtils(p))
@@ -121,9 +121,7 @@ namespace lowe
         std::unique_ptr<art::Assns<lowe::LowEEvent, recob::OpFlash>> FlashAssnPtr(new art::Assns<lowe::LowEEvent, recob::OpFlash>);
         // Get input data: LowEClusters and OpFlashes (need to implement blips/clusters/pandora handling)
         std::vector<art::Ptr<solar::LowECluster>> ClusterPtr;
-        art::Handle<std::vector<solar::LowECluster>> ClusterHandle;
         std::vector<art::Ptr<recob::OpFlash>> FlashPtr;
-        art::Handle<std::vector<recob::OpFlash>> FlashHandle;
 
         // Get MCTruth information
         auto SignalHandle = evt.getValidHandle<std::vector<simb::MCTruth>>(fSignalLabel); // Get generator handle
@@ -167,23 +165,13 @@ namespace lowe
 
         producer->PrintInColor(SolarTruthInfo, producer::ProducerUtils::GetColor("magenta"));
 
-
-        if (evt.getByLabel(fClusterLabel, ClusterHandle)) {
-            art::fill_ptr_vector(ClusterPtr, ClusterHandle);
-            sSolarEvent += "Found valid handle for LowEClusters! Found " + ProducerUtils::str(ClusterPtr.size()) + " LowEClusters.\n";
+        auto ClusterHandle = evt.getValidHandle<std::vector<solar::LowECluster>>(fClusterLabel); // Get LowECluster handle
+        auto FlashHandle = evt.getValidHandle<std::vector<recob::OpFlash>>(fOpFlashLabel); // Get OpFlash handle
+        for (const auto &cluster : *ClusterHandle) {
+            ClusterPtr.push_back(art::Ptr<solar::LowECluster>(ClusterHandle, &cluster - &(*ClusterHandle)[0]));
         }
-
-        else {
-            sSolarEventErrors += "Valid handle not found for LowEClusters!\n";
-        }
-
-        if (evt.getByLabel(fOpFlashLabel, FlashHandle)) {
-            art::fill_ptr_vector(FlashPtr, FlashHandle);
-            sSolarEvent += "Found valid handle for OpFlashes! Found " + ProducerUtils::str(FlashPtr.size()) + " OpFlashes.\n";
-        }
-
-        else {
-            sSolarEventErrors += "Valid handle not found for OpFlashes!\n";
+        for (const auto &flash : *FlashHandle) {
+            FlashPtr.push_back(art::Ptr<recob::OpFlash>(FlashHandle, &flash - &(*FlashHandle)[0]));
         }
 
         // Process the clusters to generate groups of Main and Adjacent clusters
