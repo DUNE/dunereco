@@ -52,7 +52,7 @@ namespace solar {
     float getX() const { return averagePosition[0]; }
     float getY() const { return averagePosition[1]; }
     float getZ() const { return averagePosition[2]; }
-    int   getNHits() const { return clusterVector.size(); }
+    int   getNHits() const { return nHits; }
     int   getMainChannel() const { return mainChannel; }
     float getTotalCharge() const { return totalCharge; }
     float getAverageTime() const { return averageTime; }
