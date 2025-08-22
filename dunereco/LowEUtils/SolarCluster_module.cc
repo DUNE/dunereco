@@ -39,6 +39,7 @@ namespace solar
       std::vector<std::vector<int>> ClNHits,
       std::vector<std::vector<int>> ClChannel,
       std::vector<std::vector<float>> ClT,
+      std::vector<std::vector<float>> ClX,
       std::vector<std::vector<float>> ClY,
       std::vector<std::vector<float>> ClZ,
       std::vector<std::vector<float>> ClCharge,
@@ -142,7 +143,8 @@ namespace solar
 
     // Recover driftTime and driftLength from the detector properties
     art::ServiceHandle<geo::Geometry> geom;
-
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
+    float driftVelocity = detProp.DriftVelocity();
     // Get geometry from the geometry service
     std::string fGeometry = geom->DetectorName();
     if (fGeometry.find("dune10kt") != std::string::npos)
@@ -167,7 +169,7 @@ namespace solar
     std::vector<std::vector<float>> ClustersPurity = {{}, {}, {}};
     std::vector<std::vector<std::vector<recob::Hit>>> Clusters = {{}, {}, {}}, MatchedClusters = {{}, {}, {}};
     std::vector<std::vector<int>> MatchedClNHits = {{}, {}, {}}, MatchedClChannel = {{}, {}, {}};
-    std::vector<std::vector<float>> MatchedClT = {{}, {}, {}}, MatchedClY = {{}, {}, {}}, MatchedClZ = {{}, {}, {}}, MatchedClDir = {{}, {}, {}}; 
+    std::vector<std::vector<float>> MatchedClT = {{}, {}, {}}, MatchedClX = {{}, {}, {}}, MatchedClY = {{}, {}, {}}, MatchedClZ = {{}, {}, {}}, MatchedClDir = {{}, {}, {}}; 
     std::vector<std::vector<float>> MatchedClCharge = {{}, {}, {}}, MatchedClPurity = {{}, {}, {}}, MatchedClCompleteness = {{}, {}, {}};
     std::vector<LowEUtils::RawSolarCluster> RawSolarClusters;
 
@@ -328,7 +330,17 @@ namespace solar
 
     producer->PrintInColor(SolarClusterInfo, ProducerUtils::GetColor("blue"));
     producer->PrintInColor(SolarClusterDebug, ProducerUtils::GetColor("red"), "Debug");
-    FillClusters(RawSolarClusters, MatchedClustersIdx, MatchedClNHits, MatchedClChannel, MatchedClT, MatchedClY, MatchedClZ, MatchedClCharge, MatchedClPurity, MatchedClCompleteness);
+    // Compute MatchedClX from the time and the drift velocity
+    for (size_t j = 0; j != MatchedClT.size(); ++j)
+    {
+      for (size_t i = 0; i != MatchedClT[j].size(); ++i)
+      {
+        MatchedClX[j].push_back((MatchedClT[j][i] / clockData.TPCClock().TickPeriod()) * driftVelocity);
+      }
+    }
+
+
+    FillClusters(RawSolarClusters, MatchedClustersIdx, MatchedClNHits, MatchedClChannel, MatchedClT, MatchedClX, MatchedClY, MatchedClZ, MatchedClCharge, MatchedClPurity, MatchedClCompleteness);
     ProduceCluster(RawSolarClusters, ClusterPtr, *SolarClusterPtr, clockData);
 
     // Make the associations which we noted we need
@@ -357,6 +369,7 @@ namespace solar
     std::vector<std::vector<int>> ClNHits,
     std::vector<std::vector<int>> ClChannel,
     std::vector<std::vector<float>> ClT,
+    std::vector<std::vector<float>> ClX,
     std::vector<std::vector<float>> ClY,
     std::vector<std::vector<float>> ClZ,
     std::vector<std::vector<float>> ClCharge,
@@ -368,13 +381,13 @@ namespace solar
     FillClustersDebug = "Filling " + ProducerUtils::str(int(ClNHits[2].size())) + " SolarClusters";
     for (int i = 0; i < int(ClNHits[2].size()); i++)
     {
-      std::vector<float> Position = {0, float(ClY[2][i]), float(ClZ[2][i])};
+      std::vector<float> Position = {float(ClX[2][i]), float(ClY[2][i]), float(ClZ[2][i])};
       std::vector<int> ClusterIdxVec = {};
       for (size_t ii = 0; ii < 3; ii++)
       {
         ClusterIdxVec.push_back(MatchedClustersIdx[ii][i]);
       }
-      Clusters.push_back(LowEUtils::RawSolarCluster{Position, int(ClusterIdxVec.size()), ClChannel[2][1], ClCharge[2][i], ClT[2][i], ClPurity[2][i], ClCompleteness[2][i], ClusterIdxVec});
+      Clusters.push_back(LowEUtils::RawSolarCluster{Position, ClNHits[2][i], ClChannel[2][i], ClCharge[2][i], ClT[2][i], ClPurity[2][i], ClCompleteness[2][i], ClusterIdxVec});
     }
     producer->PrintInColor(FillClustersDebug, ProducerUtils::GetColor("green"), "Debug");
   }
