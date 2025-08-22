@@ -203,7 +203,6 @@ namespace lowe
             * @brief MatchPDSFlash matches a vector of LowEClusters with a vector of PDS flashes.
             * @param SolarClusterVector Vector of LowEClusters to match.
             * @param PDSFlashes Vector of PDS flashes to match against.
-            * @param MatchedFlash Reference to an art::Ptr<recob::OpFlash> to store the matched flash.
             * @param clockData DetectorClocksData for time calculations.
             * @param debug If true, enables debug output.
             * @return Returns the index of the matched flash, or -1 if no match is found.
@@ -213,7 +212,6 @@ namespace lowe
             int MatchPDSFlash(
                 const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector,
                 const std::vector<art::Ptr<recob::OpFlash>> &PDSFlashes,
-                art::Ptr<recob::OpFlash> &MatchedFlash,
                 const detinfo::DetectorClocksData &clockData,
                 const art::Event &evt,
                 bool debug = false);
@@ -231,6 +229,7 @@ namespace lowe
             const double fClusterMatchTime;
             const int fClusterPreselectionNHits;
             const float fAdjClusterRad;                        // Radius in cm to search for adjacent clusters
+            const bool fAdjClusterSingleMatch;                 // If true, match adjacent clusters to the first primary cluster only
             const int fAdjOpFlashMinNHitCut;                   // Minimum number of hits for adjacent flash
             const double fAdjOpFlashX;                         // Maximum X distance for adjacent flash matching [cm]
             const double fAdjOpFlashY;                         // Maximum Y distance for adjacent flash matching [cm]
