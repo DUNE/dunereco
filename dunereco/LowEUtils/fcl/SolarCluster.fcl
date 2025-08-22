@@ -8,7 +8,6 @@ solar_cluster_dune10kt_1x2x6:
     HitLabel:           "hitfd"              # The label for the process which ran the Hits
     ClusterLabel:       "planecluster"       # The label for the input clusters
 
-    Geometry:                   "HD"
     DetectorSizeY:              600          # 1 TPC Y length in [cm].
     DetectorSizeZ:              1400         # 1 TPC Z length in [cm].
     ClusterAlgoTime:            25           # Time window to look for plane clusters in [tick] units.
@@ -27,7 +26,6 @@ solar_cluster_dune10kt_1x2x6:
 }
 
 solar_cluster_dunevd10kt_1x8x14_3view_30deg: @local::solar_cluster_dune10kt_1x2x6
-solar_cluster_dunevd10kt_1x8x14_3view_30deg.Geometry: "VD"
 solar_cluster_dunevd10kt_1x8x14_3view_30deg.DetectorSizeY: 680
 solar_cluster_dunevd10kt_1x8x14_3view_30deg.DetectorSizeZ: 2100
 
