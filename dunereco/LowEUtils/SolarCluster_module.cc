@@ -49,7 +49,7 @@ namespace solar
       const std::vector<LowEUtils::RawSolarCluster> &RawSolarCluster,
       const std::vector<art::Ptr<recob::Cluster>> &ClusterPtr,
       std::vector<solar::LowECluster> &SolarClusters,
-      detinfo::DetectorClocksData const &ts) const;
+      detinfo::DetectorClocksData const &clockData) const;
   
   private:
     // The parameters we'll read from the .fcl file.
@@ -133,11 +133,30 @@ namespace solar
   //--------------------------------------------------------------------------
   void SolarCluster::produce(art::Event &evt)
   {
-    producer->PrintInColor("SolarCluster::produce called", producer::ProducerUtils::GetColor("green"), "Debug");
+    producer->PrintInColor("SolarCluster::produce called", producer::ProducerUtils::GetColor("yellow"));
     std::string SolarTruthInfo;
     std::string SolarClusterInfo;
     std::string SolarClusterDebug;
     auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
+    producer->PrintInColor("Using clock data with TriggerTime: " + ProducerUtils::str(clockData.TriggerTime()) + " [us]", producer::ProducerUtils::GetColor("yellow"), "Debug");
+
+    // Recover driftTime and driftLength from the detector properties
+    art::ServiceHandle<geo::Geometry> geom;
+
+    // Get geometry from the geometry service
+    std::string fGeometry = geom->DetectorName();
+    if (fGeometry.find("dune10kt") != std::string::npos)
+    {
+      fGeometry = "HD";
+    }
+    else if (fGeometry.find("dunevd10kt") != std::string::npos)
+    {
+      fGeometry = "VD";
+    }
+    else
+    {
+      producer->PrintInColor("Unknown geometry: " + fGeometry, producer::ProducerUtils::GetColor("red"));
+    }
 
     // Prepare temporary data
     std::vector<std::set<int>> trackids = {};
@@ -182,11 +201,6 @@ namespace solar
     // --- Fill MC Truth IDs to tracking vectors. Get a list of all of my particles in one chunk. ---
     const sim::ParticleList &PartList = pi_serv->ParticleList();
     SolarTruthInfo = "\nThere are a total of " + ProducerUtils::str(PartList.size()) + " particles in the event";
-
-    // Find all simb::MCTruth objects in the event
-    // art::ProductID const prodId = evt.getProductID<std::vector<simb::MCTruth>>();
-    // art::EDProductGetter const* prodGetter = evt.productGetter(prodId);
-    // art::Ptr<std::vector<simb::MCTruth>> MCTruthPtr{ prodId, 0U, prodGetter };
 
     art::Handle<std::vector<simb::MCTruth>> ThisHandle;
     evt.getByLabel(fSignalLabel, ThisHandle);
@@ -281,9 +295,6 @@ namespace solar
       art::Ptr<recob::Cluster> ThisCluster = ClusterPtr[i];
       std::vector<art::Ptr<recob::Hit>> Hits = HitAssns.at(i);
 
-      // SolarClusterInfo = SolarClusterInfo + "\n\tCluster " + ProducerUtils::str(i) + " has " + ProducerUtils::str(Hits.size()) + " hits"; 
-      // SolarClusterInfo = SolarClusterInfo + " with ID " + ProducerUtils::str(int(ThisCluster->ID())) + ", view " + ProducerUtils::str(int(ThisCluster->View())) + " and plane " + ProducerUtils::str(int(ThisCluster->Plane().Plane));
-
       for (auto const &hit : Hits)
       {
         HitVec.push_back(*hit);
@@ -371,7 +382,7 @@ namespace solar
   void SolarCluster::ProduceCluster(const std::vector<LowEUtils::RawSolarCluster> &Clusters,
                                     const std::vector<art::Ptr<recob::Cluster>> &ClusterPtr,
                                     std::vector<solar::LowECluster> &SolarClusters,
-                                    detinfo::DetectorClocksData const &ts) const
+                                    detinfo::DetectorClocksData const &clockData) const
   {
     std::string ProduceClusterInfo;
     std::string ProduceClusterDebug;
@@ -386,7 +397,7 @@ namespace solar
       int NHits = Cluster.NHits;
       int MainChannel = Cluster.MainChannel;
       float TotalCharge = Cluster.TotalCharge;
-      float AveragePeakTime = Cluster.AveragePeakTime;
+      float AveragePeakTime = Cluster.AveragePeakTime * clockData.TPCClock().TickPeriod(); // Convert to us
       float Purity = Cluster.Purity;
       float Completeness = Cluster.Completeness;
       std::vector<int> ClusterIdxVec = Cluster.ClusterIdxVec;
