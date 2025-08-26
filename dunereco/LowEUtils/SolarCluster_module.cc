@@ -36,6 +36,7 @@ namespace solar
     void FillClusters(
       std::vector<LowEUtils::RawSolarCluster> &Clusters,
       std::vector<std::vector<int>> MatchedClustersIdx,
+      std::vector<std::vector<int>> ClMainID,
       std::vector<std::vector<int>> ClNHits,
       std::vector<std::vector<int>> ClChannel,
       std::vector<std::vector<float>> ClT,
@@ -163,12 +164,11 @@ namespace solar
     // Prepare temporary data
     std::vector<std::set<int>> trackids = {};
     std::map<int, simb::MCParticle> ThisGeneratorParts;
-    std::vector<std::map<int, simb::MCParticle>> GeneratorParticles = {};
     std::vector<std::vector<art::Ptr<recob::Hit>>> Clusters0, Clusters1, Clusters2;
     std::vector<std::vector<int>>  ClustersIdx = {{}, {}, {}}, MatchedClustersIdx = {{}, {}, {}};
     std::vector<std::vector<float>> ClustersPurity = {{}, {}, {}};
     std::vector<std::vector<std::vector<recob::Hit>>> Clusters = {{}, {}, {}}, MatchedClusters = {{}, {}, {}};
-    std::vector<std::vector<int>> MatchedClNHits = {{}, {}, {}}, MatchedClChannel = {{}, {}, {}};
+    std::vector<std::vector<int>> MatchedClMainID = {{}, {}, {}}, MatchedClNHits = {{}, {}, {}}, MatchedClChannel = {{}, {}, {}};
     std::vector<std::vector<float>> MatchedClT = {{}, {}, {}}, MatchedClX = {{}, {}, {}}, MatchedClY = {{}, {}, {}}, MatchedClZ = {{}, {}, {}}, MatchedClDir = {{}, {}, {}}; 
     std::vector<std::vector<float>> MatchedClCharge = {{}, {}, {}}, MatchedClPurity = {{}, {}, {}}, MatchedClCompleteness = {{}, {}, {}};
     std::vector<LowEUtils::RawSolarCluster> RawSolarClusters;
@@ -204,45 +204,62 @@ namespace solar
     const sim::ParticleList &PartList = pi_serv->ParticleList();
     SolarTruthInfo = "\nThere are a total of " + ProducerUtils::str(PartList.size()) + " particles in the event";
 
-    art::Handle<std::vector<simb::MCTruth>> ThisHandle;
-    evt.getByLabel(fSignalLabel, ThisHandle);
-
     ThisGeneratorParts.clear();
-    GeneratorParticles.push_back(ThisGeneratorParts); // For each label insert empty list
-
     auto SignalHandle = evt.getValidHandle<std::vector<simb::MCTruth>>(fSignalLabel); // Get generator handle
     art::FindManyP<simb::MCParticle> Assn(SignalHandle, evt, fGEANTLabel);            // Assign labels to MCPArticles
-    producer->FillMyMaps(GeneratorParticles[0], Assn, SignalHandle);                  // Fill empty list with previously assigned particles
-    SolarTruthInfo = SolarTruthInfo + "\n# of particles " + ProducerUtils::str(int(GeneratorParticles[0].size())) + " for " + fSignalLabel;
+    producer->FillMyMaps(ThisGeneratorParts, Assn, SignalHandle);                  // Fill empty list with previously assigned particles
+    SolarTruthInfo = SolarTruthInfo + "\n# of particles " + ProducerUtils::str(int(ThisGeneratorParts.size())) + " for " + fSignalLabel;
 
-    const simb::MCNeutrino &nue = SignalHandle->at(0).GetNeutrino();
-    SolarTruthInfo = SolarTruthInfo + "\n\tNeutrino Energy: " + ProducerUtils::str(1e3*nue.Nu().E()) + " with vertex (x,y,z) " + ProducerUtils::str(nue.Nu().Vx()) + ", " + ProducerUtils::str(nue.Nu().Vy()) + ", " + ProducerUtils::str(nue.Nu().Vz());
+    if (fSignalLabel == "marley") {
+      const simb::MCNeutrino &nue = SignalHandle->at(0).GetNeutrino();
+      SolarTruthInfo = SolarTruthInfo + "\n\tNeutrino Energy: " + ProducerUtils::str(1e3*nue.Nu().E()) + " with vertex (x,y,z) " + ProducerUtils::str(nue.Nu().Vx()) + ", " + ProducerUtils::str(nue.Nu().Vy()) + ", " + ProducerUtils::str(nue.Nu().Vz());
 
-    if (GeneratorParticles[0].size() > 0)
-    {
-      float eKE = 0;
-      std::string ElectronTruthInfo;
-      for (std::map<int, simb::MCParticle>::iterator iter = GeneratorParticles[0].begin(); iter != GeneratorParticles[0].end(); iter++)
+      if (ThisGeneratorParts.size() > 0)
+      {
+        float eKE = 0;
+        std::string ElectronTruthInfo = "\n\tNo primary electron found.";
+        for (std::map<int, simb::MCParticle>::iterator iter = ThisGeneratorParts.begin(); iter != ThisGeneratorParts.end(); iter++)
+        {
+          std::set<int> ThisGeneratorIDs = {};
+          trackids.push_back(ThisGeneratorIDs);
+          trackids[0].insert(iter->first);
+          int pdg = iter->second.PdgCode();
+          if (pdg == 11 && 1e3*iter->second.E()-1e3*iter->second.Mass() > eKE)
+          {
+            eKE = 1e3*iter->second.E()-1e3*iter->second.Mass();
+            ElectronTruthInfo = "\n\tMain e⁻ Energy: " + ProducerUtils::str(eKE) + "MeV with vertex (x,y,z) " + ProducerUtils::str(iter->second.EndX()) + ", " + ProducerUtils::str(iter->second.EndY()) + ", " + ProducerUtils::str(iter->second.EndZ());
+          }
+        }
+        if (eKE > 0)
+        {
+          SolarTruthInfo = SolarTruthInfo + ElectronTruthInfo;
+        }
+      }
+      else
       {
         std::set<int> ThisGeneratorIDs = {};
         trackids.push_back(ThisGeneratorIDs);
-        trackids[0].insert(iter->first);
-        int pdg = iter->second.PdgCode();
-        if (pdg == 11 && 1e3*iter->second.E()-1e3*iter->second.Mass() > eKE)
-        {
-          eKE = 1e3*iter->second.E()-1e3*iter->second.Mass();
-          ElectronTruthInfo = "\n\tMain e⁻ Energy: " + ProducerUtils::str(eKE) + "MeV with vertex (x,y,z) " + ProducerUtils::str(iter->second.EndX()) + ", " + ProducerUtils::str(iter->second.EndY()) + ", " + ProducerUtils::str(iter->second.EndZ());
-        }
-      }
-      if (eKE > 0)
-      {
-        SolarTruthInfo = SolarTruthInfo + ElectronTruthInfo;
       }
     }
-    else
-    {
-      std::set<int> ThisGeneratorIDs = {};
-      trackids.push_back(ThisGeneratorIDs);
+    else{
+      std::string SingleTruthInfo = "\nSingle Particle Truth Info: ";
+      if (ThisGeneratorParts.size() > 0)
+      {
+        for (std::map<int, simb::MCParticle>::iterator iter = ThisGeneratorParts.begin(); iter != ThisGeneratorParts.end(); iter++)
+        {
+          std::set<int> ThisGeneratorIDs = {};
+          trackids.push_back(ThisGeneratorIDs);
+          trackids[0].insert(iter->first);
+          int pdg = iter->second.PdgCode();
+          SingleTruthInfo = SingleTruthInfo + "\n\tPDG: " + ProducerUtils::str(pdg) + " with energy " + ProducerUtils::str(1e3*iter->second.E()) + "MeV and vertex (x,y,z) " + ProducerUtils::str(iter->second.Vx()) + ", " + ProducerUtils::str(iter->second.Vy()) + ", " + ProducerUtils::str(iter->second.Vz());
+        }
+        SolarTruthInfo = SolarTruthInfo + SingleTruthInfo;
+      }
+      else
+      {
+        std::set<int> ThisGeneratorIDs = {};
+        trackids.push_back(ThisGeneratorIDs);
+      }
     }
 
     producer->PrintInColor(SolarTruthInfo, ProducerUtils::GetColor("bright_red"));
@@ -325,7 +342,7 @@ namespace solar
       }
     }
     SolarClusterInfo = SolarClusterInfo + " (" + ProducerUtils::str(Clusters0.size()) + "," + ProducerUtils::str(Clusters1.size()) + "," + ProducerUtils::str(Clusters2.size()) + ")";
-    lowe->MatchClusters(SignalTrackIDs, MatchedClustersIdx, MatchedClusters, ClustersIdx, Clusters, MatchedClNHits, MatchedClChannel, MatchedClT, MatchedClY, MatchedClZ, MatchedClDir, MatchedClCharge, MatchedClPurity, MatchedClCompleteness, clockData, fDebug);
+    lowe->MatchClusters(SignalTrackIDs, MatchedClustersIdx, MatchedClusters, ClustersIdx, Clusters, MatchedClMainID, MatchedClNHits, MatchedClChannel, MatchedClT, MatchedClY, MatchedClZ, MatchedClDir, MatchedClCharge, MatchedClPurity, MatchedClCompleteness, clockData, fDebug);
     SolarClusterInfo = SolarClusterInfo + "\nFound " + ProducerUtils::str(int(MatchedClustersIdx[2].size())) + " MatchedClusters (from col. plane loop)!";
 
     producer->PrintInColor(SolarClusterInfo, ProducerUtils::GetColor("blue"));
@@ -340,7 +357,7 @@ namespace solar
     }
 
 
-    FillClusters(RawSolarClusters, MatchedClustersIdx, MatchedClNHits, MatchedClChannel, MatchedClT, MatchedClX, MatchedClY, MatchedClZ, MatchedClCharge, MatchedClPurity, MatchedClCompleteness);
+    FillClusters(RawSolarClusters, MatchedClustersIdx, MatchedClMainID, MatchedClNHits, MatchedClChannel, MatchedClT, MatchedClX, MatchedClY, MatchedClZ, MatchedClCharge, MatchedClPurity, MatchedClCompleteness);
     ProduceCluster(RawSolarClusters, ClusterPtr, *SolarClusterPtr, clockData);
 
     // Make the associations which we noted we need
@@ -366,6 +383,7 @@ namespace solar
   void SolarCluster::FillClusters(
     std::vector<LowEUtils::RawSolarCluster> &Clusters,
     std::vector<std::vector<int>> MatchedClustersIdx,
+    std::vector<std::vector<int>> ClMainID,
     std::vector<std::vector<int>> ClNHits,
     std::vector<std::vector<int>> ClChannel,
     std::vector<std::vector<float>> ClT,
@@ -387,7 +405,7 @@ namespace solar
       {
         ClusterIdxVec.push_back(MatchedClustersIdx[ii][i]);
       }
-      Clusters.push_back(LowEUtils::RawSolarCluster{Position, ClNHits[2][i], ClChannel[2][i], ClCharge[2][i], ClT[2][i], ClPurity[2][i], ClCompleteness[2][i], ClusterIdxVec});
+      Clusters.push_back(LowEUtils::RawSolarCluster{Position, ClMainID[2][i], ClNHits[2][i], ClChannel[2][i], ClCharge[2][i], ClT[2][i], ClPurity[2][i], ClCompleteness[2][i], ClusterIdxVec});
     }
     producer->PrintInColor(FillClustersDebug, ProducerUtils::GetColor("green"), "Debug");
   }
@@ -407,6 +425,7 @@ namespace solar
       // std::cout << "Producing SolarCluster " << i << std::endl;
       LowEUtils::RawSolarCluster Cluster = Clusters[i];
       std::vector<float> Position = Cluster.Position;
+      int MainID = Cluster.MainID;
       int NHits = Cluster.NHits;
       int MainChannel = Cluster.MainChannel;
       float TotalCharge = Cluster.TotalCharge;
@@ -435,7 +454,7 @@ namespace solar
         ProduceClusterInfo = ProduceClusterInfo + "\nSolarCluster " + ProducerUtils::str(i) + " has position (t,y,z) " + ProducerUtils::str(AveragePeakTime) + ", " + ProducerUtils::str(Position[1]) + ", " + ProducerUtils::str(Position[2]);
         ProduceClusterInfo = ProduceClusterInfo + " with total charge " + ProducerUtils::str(TotalCharge) + ", purity " + ProducerUtils::str(Purity) + " and completeness " + ProducerUtils::str(Completeness);
       }
-      SolarClusters.emplace_back(Position, NHits, MainChannel, TotalCharge, AveragePeakTime, Purity, Completeness, ClusterVec);
+      SolarClusters.emplace_back(Position, MainID, NHits, MainChannel, TotalCharge, AveragePeakTime, Purity, Completeness, ClusterVec);
     }
     producer->PrintInColor(ProduceClusterInfo, ProducerUtils::GetColor("green"));
     producer->PrintInColor(ProduceClusterDebug, ProducerUtils::GetColor("green"), "Debug");

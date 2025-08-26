@@ -34,6 +34,7 @@ namespace lowe
 
   void LowEUtils::MakeClusterVector(std::vector<RawPerPlaneCluster> &ClusterVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, art::Event const &evt)
   {
+    mf::LogDebug("LowEUtils") << "Charge variable set to " << fClusterChargeVariable;
     int ID = 0;
     for (std::vector<art::Ptr<recob::Hit>> Cluster : Clusters)
     {
@@ -141,7 +142,6 @@ namespace lowe
 
       if (fClusterChargeVariable == "Integral")
       {
-        mf::LogInfo("LowEUtils") << "Charge variable set to 'Integral'";
         StartCharge = StartIntegral;
         EndCharge = EndIntegral;
         Charge = Integral;
@@ -150,7 +150,6 @@ namespace lowe
       }
       else if (fClusterChargeVariable == "SummedADC")
       {
-        mf::LogInfo("LowEUtils") << "Charge variable set to 'SummedADC' (default is 'Integral')";
         ChargeStdDev = sqrt(ChargeStdDev / NHit - Charge * Charge);
         ChargeAverage = Charge / NHit;
       }
@@ -530,6 +529,7 @@ namespace lowe
   void LowEUtils::FillClusterVariables(
     std::set<int> SignalTrackIDs,
     std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+    std::vector<std::vector<int>> &ClMainID,
     std::vector<std::vector<int>> &ClNHits,
     std::vector<std::vector<int>> &ClChannel,
     std::vector<std::vector<float>> &ClT,
@@ -550,6 +550,7 @@ namespace lowe
       std::vector<std::vector<recob::Hit>> TheseClusters = Clusters[idx];
       for (size_t i = 0; i < TheseClusters.size(); i++)
       {
+        int mainTrID = -1;
         int mainChannel = -1;
         double mainCharge = 0;
         float clustT = 0, clustY = 0, clustZ = 0, clustDir = 0;
@@ -557,7 +558,7 @@ namespace lowe
         std::vector<recob::Hit> ThisCluster = TheseClusters[i];
         for (recob::Hit hit : ThisCluster)
         {
-          int mainTrID = -1;
+          int mainHitTrID = -1;
           double mainEFrac = 0;
           double hitCharge = hit.Integral();
           std::vector<sim::TrackIDE> ThisHitIDE = bt_serv->HitToTrackIDEs(clockData, hit);
@@ -567,7 +568,7 @@ namespace lowe
             if (ThisHitIDE[ideL].energyFrac > mainEFrac)
             {
               mainEFrac = ThisHitIDE[ideL].energyFrac;
-              mainTrID = abs(ThisHitIDE[ideL].trackID);
+              mainHitTrID = abs(ThisHitIDE[ideL].trackID);
             }
           }
           const geo::WireGeo *ThisWire = wireReadout.WirePtr(hit.WireID());
@@ -577,6 +578,7 @@ namespace lowe
           clustCharge += hitCharge;
           if (clustCharge > mainCharge)
           {
+            mainTrID = mainHitTrID;
             mainCharge = clustCharge;
             mainChannel = hit.Channel();
           };
@@ -585,12 +587,13 @@ namespace lowe
           clustZ += hXYZ.Z() * hitCharge;
           geo::Vector_t Direction = eXYZ - sXYZ;
           clustDir += hitCharge * Direction.Z() / Direction.Y();
-          if (SignalTrackIDs.find(mainTrID) != SignalTrackIDs.end())
+          if (SignalTrackIDs.find(mainHitTrID) != SignalTrackIDs.end())
           {
             globalSignalCharge[idx] += hitCharge;
             clustPurity += hitCharge;
           }
         }
+        ClMainID[idx].push_back(mainTrID);
         ClNHits[idx].push_back(ThisCluster.size());
         ClChannel[idx].push_back(mainChannel);
         ClCharge[idx].push_back(clustCharge);
@@ -613,6 +616,7 @@ namespace lowe
       std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
       std::vector<std::vector<int>> ClustersIdx,
       std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+      std::vector<std::vector<int>> &ClMainID,
       std::vector<std::vector<int>> &ClNHits,
       std::vector<std::vector<int>> &ClChannel,
       std::vector<std::vector<float>> &ClT,
@@ -625,8 +629,8 @@ namespace lowe
       detinfo::DetectorClocksData const &clockData,
       bool debug)
   {
-    LowEUtils::FillClusterVariables(SignalTrackIDs, Clusters, ClNHits, ClChannel, ClT, ClY, ClZ, ClDir, ClCharge, ClPurity, ClCompleteness, clockData, debug);
-    std::vector<std::vector<int>> MatchedClNHits = {{}, {}, {}}, MatchedClChannel = {{}, {}, {}};
+    LowEUtils::FillClusterVariables(SignalTrackIDs, Clusters, ClMainID, ClNHits, ClChannel, ClT, ClY, ClZ, ClDir, ClCharge, ClPurity, ClCompleteness, clockData, debug);
+    std::vector<std::vector<int>> MatchedClMainID = {{}, {}, {}}, MatchedClNHits = {{}, {}, {}}, MatchedClChannel = {{}, {}, {}};
     std::vector<std::vector<float>> MatchedClT = {{}, {}, {}}, MatchedClY = {{}, {}, {}}, MatchedClZ = {{}, {}, {}}, MatchedClDir = {{}, {}, {}};
     std::vector<std::vector<float>> MatchedClCompleteness = {{}, {}, {}}, MatchedClCharge = {{}, {}, {}}, MatchedClPurity = {{}, {}, {}};
 
@@ -736,6 +740,7 @@ namespace lowe
         // std::cout << "\tMatched all three planes" << std::endl;
         MatchedClustersIdx[0].push_back(ClustersIdx[0][MatchInd0Idx]);
         MatchedClusters[0].push_back(Clusters[0][MatchInd0Idx]);
+        MatchedClMainID[0].push_back(ClMainID[0][MatchInd0Idx]);
         MatchedClNHits[0].push_back(ClNHits[0][MatchInd0Idx]);
         MatchedClChannel[0].push_back(ClChannel[0][MatchInd0Idx]);
         MatchedClT[0].push_back(ClT[0][MatchInd0Idx]);
@@ -747,6 +752,7 @@ namespace lowe
 
         MatchedClustersIdx[1].push_back(ClustersIdx[1][MatchInd1Idx]);
         MatchedClusters[1].push_back(Clusters[1][MatchInd1Idx]);
+        MatchedClMainID[1].push_back(ClMainID[1][MatchInd1Idx]);
         MatchedClNHits[1].push_back(ClNHits[1][MatchInd1Idx]);
         MatchedClChannel[1].push_back(ClChannel[1][MatchInd1Idx]);
         MatchedClT[1].push_back(ClT[1][MatchInd1Idx]);
@@ -766,6 +772,7 @@ namespace lowe
         // std::cout << "\tMatched only Ind0 and Col" << std::endl;
         MatchedClustersIdx[0].push_back(ClustersIdx[0][MatchInd0Idx]);
         MatchedClusters[0].push_back(Clusters[0][MatchInd0Idx]);
+        MatchedClMainID[0].push_back(ClMainID[0][MatchInd0Idx]);
         MatchedClNHits[0].push_back(ClNHits[0][MatchInd0Idx]);
         MatchedClChannel[0].push_back(ClChannel[0][MatchInd0Idx]);
         MatchedClT[0].push_back(ClT[0][MatchInd0Idx]);
@@ -777,6 +784,7 @@ namespace lowe
         // Fill missing cluster with empty vector
         MatchedClustersIdx[1].push_back({});
         MatchedClusters[1].push_back({});
+        MatchedClMainID[1].push_back(-1);
         MatchedClNHits[1].push_back(0);
         MatchedClChannel[1].push_back(0);
         MatchedClT[1].push_back(-1e6);
@@ -796,6 +804,7 @@ namespace lowe
         // std::cout << "\tMatched only Ind1 and Col" << std::endl;
         MatchedClustersIdx[1].push_back(ClustersIdx[1][MatchInd1Idx]);
         MatchedClusters[1].push_back(Clusters[1][MatchInd1Idx]);
+        MatchedClMainID[1].push_back(ClMainID[1][MatchInd1Idx]);
         MatchedClNHits[1].push_back(ClNHits[1][MatchInd1Idx]);
         MatchedClChannel[1].push_back(ClChannel[1][MatchInd1Idx]);
         MatchedClT[1].push_back(ClT[1][MatchInd1Idx]);
@@ -807,6 +816,7 @@ namespace lowe
         // Fill missing cluster with empty vector
         MatchedClustersIdx[0].push_back({});
         MatchedClusters[0].push_back({});
+        MatchedClMainID[0].push_back(-1);
         MatchedClNHits[0].push_back(0);
         MatchedClChannel[0].push_back(0);
         MatchedClT[0].push_back(-1e6);
@@ -822,6 +832,7 @@ namespace lowe
       // Fill the matched collection plane cluster
       MatchedClustersIdx[2].push_back(ClustersIdx[2][index]);
       MatchedClusters[2].push_back(Clusters[2][index]);
+      MatchedClMainID[2].push_back(ClMainID[2][index]);
       MatchedClNHits[2].push_back(ClNHits[2][index]);
       MatchedClChannel[2].push_back(ClChannel[2][index]);
       MatchedClT[2].push_back(ClT[2][index]);
@@ -831,7 +842,7 @@ namespace lowe
       MatchedClPurity[2].push_back(ClPurity[2][index]);
       MatchedClCompleteness[2].push_back(ClCompleteness[2][index]);
     }
-    
+    ClMainID = MatchedClMainID;
     ClNHits = MatchedClNHits;
     ClChannel = MatchedClChannel;
     ClT = MatchedClT;
@@ -1000,6 +1011,7 @@ namespace lowe
     // The algorithm outputs vectors of clusters where the first entry is the primary cluster and the rest are the corresponding adjacent clusters.
 
     // Initialize the vector of EventCandidateVector and the vector of indices.
+    EventCandidateFound.clear();
     EventCandidateVector.clear();
     EventCandidateIdx.clear();
 
@@ -1113,10 +1125,6 @@ namespace lowe
             EvaluatedAdjCluster[*it2] = true; // Mark this adjacent cluster as evaluated
           }
         }
-        // else
-        // {
-        //   sEventCandidateFinding += "\tSkipping distant cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
-        // }
       }
 
       if (PreselectionCluster == false) {
@@ -1185,10 +1193,6 @@ namespace lowe
             EvaluatedAdjCluster[*it4] = true; // Mark this adjacent cluster as evaluated
           }
         }
-        // else
-        // {
-        //   sEventCandidateFinding += "\tSkipping distant cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
-        // }
       }
 
       if (PreselectionCluster == false)

@@ -23,6 +23,7 @@ namespace solar {
 
     LowECluster(
       const std::vector<float>& position,
+      int   id,
       int   nhits,
       int   channel,
       float charge,
@@ -39,6 +40,7 @@ namespace solar {
 
     void initialize(
       const std::vector<float>& position,
+      int   id,
       int   nhits,
       int   channel,
       float charge,
@@ -52,6 +54,7 @@ namespace solar {
     float getX() const { return averagePosition[0]; }
     float getY() const { return averagePosition[1]; }
     float getZ() const { return averagePosition[2]; }
+    int   getMainID() const { return mainID; }
     int   getNHits() const { return nHits; }
     int   getMainChannel() const { return mainChannel; }
     float getTotalCharge() const { return totalCharge; }
@@ -64,6 +67,7 @@ namespace solar {
 
     // Setters
     void setPosition(const std::vector<float>& pos) const { averagePosition = pos; }
+    void setMainID(int id) { mainID = id; }
     void setNHits(int nhits) { nHits = nhits; }
     void setMainChannel(int channel) { mainChannel = channel; }
     void setTotalCharge(float charge) { totalCharge = charge; }
@@ -86,6 +90,7 @@ namespace solar {
 
   private:
     mutable std::vector<float> averagePosition; ///< position of this hit combination in world coordinates
+    int mainID;                                 ///< Main track ID contributing to this cluster
     int nHits;                                  ///< Number of hits in this cluster
     int mainChannel;                            ///< Main channel of the cluster
     float totalCharge;                          ///< Sum of charges of all associated recob::Hits

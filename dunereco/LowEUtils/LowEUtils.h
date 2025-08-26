@@ -102,6 +102,7 @@ namespace lowe
             struct RawSolarCluster
             {
                 std::vector<float> Position;
+                int MainID;
                 int NHits;
                 int MainChannel;
                 float TotalCharge;
@@ -127,6 +128,7 @@ namespace lowe
             void FillClusterVariables(
                 std::set<int> SignalTrackIDs,
                 std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+                std::vector<std::vector<int>> &ClMainID,
                 std::vector<std::vector<int>> &ClNHits,
                 std::vector<std::vector<int>> &ClChannel,
                 std::vector<std::vector<float>> &ClT,
@@ -166,6 +168,7 @@ namespace lowe
                 std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
                 std::vector<std::vector<int>> ClustersIdx,
                 std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+                std::vector<std::vector<int>> &ClMainID,
                 std::vector<std::vector<int>> &ClNHits,
                 std::vector<std::vector<int>> &ClChannel,
                 std::vector<std::vector<float>> &ClT,
