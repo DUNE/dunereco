@@ -13,6 +13,7 @@ namespace solar {
 
   LowECluster::LowECluster()
     : averagePosition(std::vector<float>(3, -1e6))
+    , mainID(-1)
     , nHits(0)
     , mainChannel(-1)
     , totalCharge(-1)
@@ -26,6 +27,7 @@ namespace solar {
 
   LowECluster::LowECluster(
     const std::vector<float>& position,
+    int   id,
     int   nhits,
     int   channel,
     float charge,
@@ -34,6 +36,7 @@ namespace solar {
     float completeness,
     const std::vector<recob::Cluster>& clusters)
     : averagePosition(position)
+    , mainID(id)
     , nHits(nhits)
     , mainChannel(channel)
     , totalCharge(charge)
@@ -48,6 +51,7 @@ namespace solar {
   LowECluster::LowECluster(const LowECluster& toCopy)
   {
     averagePosition = toCopy.averagePosition;
+    mainID = toCopy.mainID;
     nHits = toCopy.nHits;
     mainChannel = toCopy.mainChannel;
     totalCharge = toCopy.totalCharge;
@@ -67,6 +71,7 @@ namespace solar {
 
   void LowECluster::initialize(
     const std::vector<float>& position,
+    int   id,
     int   nhits,
     int   channel,
     float charge,
@@ -76,6 +81,7 @@ namespace solar {
     const std::vector<recob::Cluster>& clusters)
   {
     averagePosition = position;
+    mainID = id;
     nHits = nhits;
     mainChannel = channel;
     totalCharge = charge;
