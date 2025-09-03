@@ -1,4 +1,4 @@
-art_make( 
+art_make(
     LIB_LIBRARIES larcorealg::Geometry
     larcore::Geometry_Geometry_service
     larsim::Simulation lardataobj::Simulation
@@ -7,6 +7,7 @@ art_make(
     lardataobj::RecoBase
     lardataobj::AnalysisBase
     lardata::Utilities
+    larpandora::LArPandoraInterface
     nusimdata::SimulationBase
     ROOT::Core
     art::Persistency_Common
