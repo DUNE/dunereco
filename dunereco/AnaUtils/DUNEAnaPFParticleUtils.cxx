@@ -22,6 +22,7 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/PFParticleMetadata.h"
 #include "lardataobj/AnalysisBase/T0.h"
+#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 
 namespace dune_ana
 {
@@ -166,8 +167,12 @@ bool DUNEAnaPFParticleUtils::IsTrack(const art::Ptr<recob::PFParticle> &pParticl
 {
     // This function needs to fail if GetTrack would fail
     const std::vector<art::Ptr<recob::Track>> theseTracks = DUNEAnaPFParticleUtils::GetAssocProductVector<recob::Track>(pParticle,evt,particleLabel,trackLabel);
+    if (theseTracks.empty())
+    {
+        return false;
+    }
 
-    return !theseTracks.empty();
+    return lar_pandora::LArPandoraHelper::IsTrack(pParticle);
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
@@ -175,8 +180,12 @@ bool DUNEAnaPFParticleUtils::IsTrack(const art::Ptr<recob::PFParticle> &pParticl
 bool DUNEAnaPFParticleUtils::IsShower(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &particleLabel, const std::string &showerLabel)
 {
     const std::vector<art::Ptr<recob::Shower>> theseShowers = DUNEAnaPFParticleUtils::GetAssocProductVector<recob::Shower>(pParticle,evt,particleLabel,showerLabel);
-   
-    return !theseShowers.empty();
+    if (theseShowers.empty())
+    {
+        return false;
+    }
+
+    return lar_pandora::LArPandoraHelper::IsShower(pParticle);
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
