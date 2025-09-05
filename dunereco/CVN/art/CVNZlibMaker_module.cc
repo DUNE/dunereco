@@ -287,6 +287,9 @@ namespace cvn {
     TVector3 nu_mom = true_neutrino.Nu().Momentum().Vect();
     TVector3 lep_mom = true_neutrino.Lepton().Momentum().Vect();
     float lepangle = nu_mom.Angle(lep_mom);
+    float nu_px = true_neutrino.Nu().Px();
+    float nu_py = true_neutrino.Nu().Py();
+    float nu_pz = true_neutrino.Nu().Pz();
 
     // Put a containment cut here
     bool fApplyFidVol = true;
@@ -341,7 +344,7 @@ namespace cvn {
     }
 
 
-    TrainingData train(interaction, nu_energy, lep_energy, lepangle,
+    TrainingData train(interaction, nu_energy, nu_px, nu_py, nu_pz, lep_energy, lepangle,
       reco_nue_energy, reco_numu_energy, reco_nutau_energy,
       event_weight, *pixelmaps[0]);
 
@@ -415,6 +418,9 @@ namespace cvn {
 
         info_file << td.fNuEnergy << std::endl;
         info_file << td.fLepEnergy << std::endl;
+        info_file << td.fNuPx << std::endl;
+        info_file << td.fNuPy << std::endl;
+        info_file << td.fNuPz << std::endl;
         info_file << td.fRecoNueEnergy << std::endl;
         info_file << td.fRecoNumuEnergy << std::endl;
         info_file << td.fRecoNutauEnergy << std::endl;

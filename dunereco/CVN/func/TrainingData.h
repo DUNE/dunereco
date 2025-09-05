@@ -23,7 +23,7 @@ namespace cvn
   public:
     TrainingData(){};
     TrainingData(const InteractionType& interaction,
-                 float nuEnergy, float lepEnergy, float lepAngle,
+                 float nuEnergy, float nuPx, float nuPy, float nuPz, float lepEnergy, float lepAngle,
                  float nueEnergy, float numuEnergy,
                  float nutauEnergy, float weight,
                  const PixelMap& pMap);
@@ -40,6 +40,9 @@ namespace cvn
 
     InteractionType  fInt;     ///< Class of the event
     float    fNuEnergy;        ///< True energy of neutrino event
+    float    fNuPx;            ///< True Px of neutrino event
+    float    fNuPy;            ///< True Py of neutrino event
+    float    fNuPz;            ///< True Pz of neutrino event
     float    fLepEnergy;       ///< True energy of outgoing lepton
     float    fLepAngle;        ///< True lepton angle wrt neutrino direction 
     float    fRecoNueEnergy;   ///< Reconstructed energy under nue hypothesis

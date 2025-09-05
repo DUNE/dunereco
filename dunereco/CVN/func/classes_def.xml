@@ -1,5 +1,6 @@
 <lcgdict>
-  <class name="cvn::TrainingData" ClassVersion="21" >
+  <class name="cvn::TrainingData" ClassVersion="22" >
+   <version ClassVersion="22" checksum="497744414"/>
    <version ClassVersion="21" checksum="1124419612"/>
    <version ClassVersion="20" checksum="4175091702"/>
    <version ClassVersion="19" checksum="1702019780"/>
