@@ -112,9 +112,9 @@ namespace lowe
                 std::vector<int> ClusterIdxVec;
             };
             
-            void CalcAdjHits(std::vector<recob::Hit> MyVec, std::vector<std::vector<recob::Hit>> &Clusters, TH1I *MyHist, TH1F *ADCIntHist, bool debug);
+            void CalcAdjHits(std::vector<recob::Hit> MyVec, std::vector<std::vector<recob::Hit>> &Clusters, TH1I *MyHist, TH1F *ADCIntHist, art::Event const &evt, bool debug);
             
-            void CalcAdjHits(std::vector<art::Ptr<recob::Hit>> MyVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, std::vector<std::vector<int>> &ClusterIdx);
+            void CalcAdjHits(std::vector<art::Ptr<recob::Hit>> MyVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, std::vector<std::vector<int>> &ClusterIdx, art::Event const &evt);
             
             void MakeClusterVector(std::vector<RawPerPlaneCluster> &ClusterVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, art::Event const &evt);
 
@@ -123,6 +123,7 @@ namespace lowe
                 std::vector<std::vector<int>> &ClNHits,
                 std::vector<std::vector<float>> &ClT,
                 std::vector<std::vector<float>> &ClCharge,
+                art::Event const &evt,
                 bool debug);            
             
             void FillClusterVariables(
@@ -160,6 +161,7 @@ namespace lowe
                 std::vector<std::vector<int>> &ClNHits,
                 std::vector<std::vector<float>> &ClT,
                 std::vector<std::vector<float>> &ClCharge,
+                art::Event const &evt,
                 bool debug = false);
             
             void MatchClusters(

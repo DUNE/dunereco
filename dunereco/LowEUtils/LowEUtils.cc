@@ -6,14 +6,14 @@ namespace lowe
 {
   LowEUtils::LowEUtils(fhicl::ParameterSet const &p)
   : fHitLabel(p.get<std::string>("HitLabel", "hitfd")),
-    fClusterAlgoTime(p.get<double>("ClusterAlgoTime", 25.0)), // Time threshold for clustering [ticks]
+    fClusterAlgoTime(p.get<double>("ClusterAlgoTime", 12.5)), // Time threshold for clustering [us]
     fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel", 3)), // Channel threshold for clustering
     fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable", "Integral")), // Variable to use for charge calculation
     fClusterMatchNHit(p.get<int>("ClusterMatchNHit", 2)), // NHit fraction to match clusters. abs(NHitsCol - NHitsInd) / NHitsCol < ClusterMatchNHit.
     fClusterMatchCharge(p.get<double>("ClusterMatchCharge", 0.6)), // Charge fraction to match clusters. abs(ChargeCol - ChargeInd) / ChargeCol < ClusterMatchCharge.
-    fClusterInd0MatchTime(p.get<double>("ClusterInd0MatchTime", 0.0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd0MatchTime. [ticks]
-    fClusterInd1MatchTime(p.get<double>("ClusterInd1MatchTime", 0.0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd1MatchTime. [ticks]
-    fClusterMatchTime(p.get<double>("ClusterMatchTime", 20.0)), // Max time difference to match clusters. abs(TimeCol - TimeInd) < ClusterMatchTime. [ticks]
+    fClusterInd0MatchTime(p.get<double>("ClusterInd0MatchTime", 0.0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd0MatchTime. [us]
+    fClusterInd1MatchTime(p.get<double>("ClusterInd1MatchTime", 0.0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd1MatchTime. [us]
+    fClusterMatchTime(p.get<double>("ClusterMatchTime", 10.0)), // Max time difference to match clusters. abs(TimeCol - TimeInd) < ClusterMatchTime. [us]
     fClusterPreselectionSignal(p.get<bool>("ClusterPreselectionSignal", false)), // Whether to apply signal (purity > 0) preselection
     fClusterPreselectionNHits(p.get<int>("ClusterPreselectionNHits", 3)), // Minimum number of hits in a cluster to consider it for further processing
     fAdjClusterRad(p.get<double>("AdjClusterRad", 100)), // Radius for adjacent cluster search [cm]
@@ -167,7 +167,7 @@ namespace lowe
     return;
   }
 
-  void LowEUtils::CalcAdjHits(std::vector<recob::Hit> MyVec, std::vector<std::vector<recob::Hit>> &Clusters, TH1I *MyHist, TH1F *ADCIntHist, bool debug)
+  void LowEUtils::CalcAdjHits(std::vector<recob::Hit> MyVec, std::vector<std::vector<recob::Hit>> &Clusters, TH1I *MyHist, TH1F *ADCIntHist, art::Event const &evt, bool debug)
   /*
   Find adjacent hits in time and space:
   - MyVec is the vector of hits to be clustered
@@ -177,10 +177,13 @@ namespace lowe
   - debug is a boolean to turn on/off debugging statements
   */
   {
-    const double TimeRange = fClusterAlgoTime;
-    const int ChanRange = fClusterAlgoAdjChannel;
     unsigned int FilledHits = 0;
     unsigned int NumOriHits = MyVec.size();
+    const double TimeRange = fClusterAlgoTime;
+    const int ChanRange = fClusterAlgoAdjChannel;
+
+    detinfo::DetectorClocksData clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
+    auto TickPeriod = clockData.TPCClock().TickPeriod();
 
     while (NumOriHits != FilledHits)
     {
@@ -202,15 +205,15 @@ namespace lowe
             if (debug)
             {
               std::cout << "\t\tLooping though AdjVec " << aL << " and  MyVec " << nL
-                        << " AdjClusterVec - " << AdjClusterVec[aL].Channel() << " & " << AdjClusterVec[aL].PeakTime()
-                        << " MVec - " << MyVec[nL].Channel() << " & " << MyVec[nL].PeakTime()
+                        << " AdjClusterVec - " << AdjClusterVec[aL].Channel() << " & " << AdjClusterVec[aL].PeakTime() * TickPeriod
+                        << " MVec - " << MyVec[nL].Channel() << " & " << MyVec[nL].PeakTime() * TickPeriod
                         << " Channel " << abs((int)AdjClusterVec[aL].Channel() - (int)MyVec[nL].Channel()) << " bool " << (bool)(abs((int)AdjClusterVec[aL].Channel() - (int)MyVec[nL].Channel()) <= ChanRange)
-                        << " Time " << abs(AdjClusterVec[aL].PeakTime() - MyVec[nL].PeakTime()) << " bool " << (bool)(abs((double)AdjClusterVec[aL].PeakTime() - (double)MyVec[nL].PeakTime()) <= TimeRange)
+                        << " Time " << abs(AdjClusterVec[aL].PeakTime() * TickPeriod - MyVec[nL].PeakTime() * TickPeriod) << " bool " << (bool)(abs((double)AdjClusterVec[aL].PeakTime() * TickPeriod - (double)MyVec[nL].PeakTime() * TickPeriod) <= TimeRange)
                         << std::endl;
             }
 
             if (abs((int)AdjClusterVec[aL].Channel() - (int)MyVec[nL].Channel()) <= ChanRange &&
-                abs((double)AdjClusterVec[aL].PeakTime() - (double)MyVec[nL].PeakTime()) <= TimeRange)
+                abs((double)AdjClusterVec[aL].PeakTime() * TickPeriod - (double)MyVec[nL].PeakTime() * TickPeriod) <= TimeRange)
             {
 
               if (debug)
@@ -237,7 +240,7 @@ namespace lowe
           if (debug)
           {
             std::cout << "\tRemoving element " << AddNow.size() - 1 - aa << " from MyVec ===> "
-                      << MyVec[AddNow[AddNow.size() - 1 - aa]].Channel() << " & " << MyVec[AddNow[AddNow.size() - 1 - aa]].PeakTime()
+                      << MyVec[AddNow[AddNow.size() - 1 - aa]].Channel() << " & " << MyVec[AddNow[AddNow.size() - 1 - aa]].PeakTime() * TickPeriod
                       << std::endl;
           }
 
@@ -254,7 +257,7 @@ namespace lowe
                     << "\nLets see what is in AdjClusterVec...." << std::endl;
           for (size_t aL = 0; aL < AdjClusterVec.size(); ++aL)
           {
-            std::cout << "\tElement " << aL << " is ===> " << AdjClusterVec[aL].Channel() << " & " << AdjClusterVec[aL].PeakTime() << std::endl;
+            std::cout << "\tElement " << aL << " is ===> " << AdjClusterVec[aL].Channel() << " & " << AdjClusterVec[aL].PeakTime() * TickPeriod << std::endl;
           }
         }
       } // while ( LastSize != NewSize )
@@ -289,7 +292,7 @@ namespace lowe
 
         for (recob::Hit TPCHit : hits)
         {
-          tick += TPCHit.Integral() * TPCHit.PeakTime();
+          tick += TPCHit.Integral() * TPCHit.PeakTime()*TickPeriod;
           channel += TPCHit.Integral() * TPCHit.Channel();
           adcInt += TPCHit.Integral();
         }
@@ -316,7 +319,7 @@ namespace lowe
     return;
   }
 
-  void LowEUtils::CalcAdjHits(std::vector<art::Ptr<recob::Hit>> MyVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, std::vector<std::vector<int>> &ClusterIdx)
+  void LowEUtils::CalcAdjHits(std::vector<art::Ptr<recob::Hit>> MyVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, std::vector<std::vector<int>> &ClusterIdx, art::Event const &evt)
   /*
   Find adjacent hits in time and space:
   - MyVec is the vector of hits to be clustered
@@ -324,11 +327,15 @@ namespace lowe
   - ClusterIdx is the vector of indices of the hits in each cluster
   */
   {
-    const double TimeRange = fClusterAlgoTime;
-    const int ChanRange = fClusterAlgoAdjChannel;
+    std::vector<int> HitIdx;
     unsigned int FilledHits = 0;
     unsigned int NumOriHits = MyVec.size();
-    std::vector<int> HitIdx;
+    const double TimeRange = fClusterAlgoTime;
+    const int ChanRange = fClusterAlgoAdjChannel;
+
+    detinfo::DetectorClocksData clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
+    auto TickPeriod = clockData.TPCClock().TickPeriod();
+
     // Fill the hitidx vector with the index from 0 to MyVec.size()
     for (size_t i = 0; i < MyVec.size(); i++)
       HitIdx.push_back(i);
@@ -355,7 +362,7 @@ namespace lowe
           for (size_t nL = 0; nL < MyVec.size(); ++nL)
           {
             if (abs((int)AdjClusterVec[aL]->Channel() - (int)MyVec[nL]->Channel()) <= ChanRange &&
-                abs((double)AdjClusterVec[aL]->PeakTime() - (double)MyVec[nL]->PeakTime()) <= TimeRange &&
+                abs((double)AdjClusterVec[aL]->PeakTime() * TickPeriod - (double)MyVec[nL]->PeakTime() * TickPeriod) <= TimeRange &&
                 AdjClusterVec[aL]->View() == MyVec[nL]->View() && 
                 AdjClusterVec[aL]->SignalType() == MyVec[nL]->SignalType())
             {
@@ -426,6 +433,7 @@ namespace lowe
     Dir = {};
     // --- Get the wire readout object
     geo::WireReadoutGeom const &wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
+    auto TickPeriod = ClockData.TPCClock().TickPeriod();
     double MaxTime = -1e6;
     double MinTime = 1e6;
     // --- Declare our vectors to fill
@@ -437,14 +445,14 @@ namespace lowe
       TPC.push_back(ThisHit.WireID().TPC);
       Channel.push_back(ThisHit.Channel());
       Charge.push_back(ThisHit.Integral());
-      Time.push_back(ThisHit.PeakTime());
-      if (ThisHit.PeakTime() > MaxTime)
+      Time.push_back(ThisHit.PeakTime() * TickPeriod);
+      if (ThisHit.PeakTime() * TickPeriod > MaxTime)
       {
-        MaxTime = ThisHit.PeakTime();
+        MaxTime = ThisHit.PeakTime() * TickPeriod;
       }
-      if (ThisHit.PeakTime() < MinTime)
-      {
-        MinTime = ThisHit.PeakTime();
+      if (ThisHit.PeakTime() * TickPeriod < MinTime)
+      { 
+        MinTime = ThisHit.PeakTime() * TickPeriod;
       }
       const geo::WireGeo *ThisWire = wireReadout.WirePtr(ThisHit.WireID());
       geo::Point_t hXYZ = ThisWire->GetCenter();
@@ -501,12 +509,16 @@ namespace lowe
     return RecoY;
   }
 
-  void LowEUtils::FillClusterVariables(std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
-                                       std::vector<std::vector<int>> &ClNHits,
-                                       std::vector<std::vector<float>> &ClT,
-                                       std::vector<std::vector<float>> &ClCharge,
-                                       bool debug)
+  void LowEUtils::FillClusterVariables(
+    std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+    std::vector<std::vector<int>> &ClNHits,
+    std::vector<std::vector<float>> &ClT,
+    std::vector<std::vector<float>> &ClCharge,
+    art::Event const &evt,
+    bool debug)
   {
+    detinfo::DetectorClocksData const &clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
+    auto TickPeriod = clockData.TPCClock().TickPeriod();
     for (size_t idx = 0; idx < Clusters.size(); idx++)
     {
       std::vector<std::vector<recob::Hit>> TheseClusters = Clusters[idx];
@@ -518,7 +530,7 @@ namespace lowe
         for (recob::Hit hit : ThisCluster)
         {
           clustCharge += hit.Integral();
-          clustT += hit.PeakTime();
+          clustT += hit.PeakTime() * TickPeriod * hit.Integral();
         }
         ClT[idx].push_back(clustT / clustCharge);
         ClCharge[idx].push_back(clustCharge);
@@ -544,6 +556,7 @@ namespace lowe
   {
     art::ServiceHandle<cheat::BackTrackerService> bt_serv;
     geo::WireReadoutGeom const &wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
+    auto TickPeriod = clockData.TPCClock().TickPeriod();
     std::vector<float> globalSignalCharge = {0, 0, 0};
     for (int idx = 0; idx < 3; idx++)
     {
@@ -582,7 +595,7 @@ namespace lowe
             mainCharge = clustCharge;
             mainChannel = hit.Channel();
           };
-          clustT += hit.PeakTime() * hitCharge;
+          clustT += hit.PeakTime() * TickPeriod * hitCharge;
           clustY += hXYZ.Y() * hitCharge;
           clustZ += hXYZ.Z() * hitCharge;
           geo::Vector_t Direction = eXYZ - sXYZ;
@@ -861,9 +874,10 @@ namespace lowe
       std::vector<std::vector<int>> &ClNHits,
       std::vector<std::vector<float>> &ClT,
       std::vector<std::vector<float>> &ClCharge,
+      art::Event const &evt,
       bool debug)
   {
-    LowEUtils::FillClusterVariables(Clusters, ClNHits, ClT, ClCharge, debug);
+    LowEUtils::FillClusterVariables(Clusters, ClNHits, ClT, ClCharge, evt, debug);
     std::vector<std::vector<int>> MatchedClNHits = {{}, {}, {}};
     std::vector<std::vector<float>> MatchedClT = {{}, {}, {}};
     std::vector<std::vector<float>> MatchedClCharge = {{}, {}, {}};
@@ -1009,6 +1023,8 @@ namespace lowe
   {
     // This is the low energy primary cluster algorithm. It groups all input clusters into event candidates by finding the primary clusters (charge > adjacent clusters up to distance fAdjClusterRad).
     // The algorithm outputs vectors of clusters where the first entry is the primary cluster and the rest are the corresponding adjacent clusters.
+    art::ServiceHandle<geo::Geometry> geom;
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
 
     // Initialize the vector of EventCandidateVector and the vector of indices.
     EventCandidateFound.clear();
@@ -1016,9 +1032,6 @@ namespace lowe
     EventCandidateIdx.clear();
 
     // Find correct drift time and distance relation from geometry service
-    art::ServiceHandle<geo::Geometry> geom;
-    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
-
     geo::CryostatID c(0);
     const geo::CryostatGeo& cryostat = geom->Cryostat(c);
     const geo::TPCGeo& tpcg = cryostat.TPC(0);
@@ -1235,13 +1248,13 @@ namespace lowe
     double driftTime = 0; // in cm/us, but we will use it as a time variable
     
     // Get geometry from the geometry service
-    std::string fGeometry = "";
     std::string geoName = geom->DetectorName();
     // Get the drift length from the geometry service
     geo::CryostatID c(0);
     const geo::CryostatGeo &cryostat = geom->Cryostat(c);
     const geo::TPCGeo &tpcg = cryostat.TPC(0);
-    
+    const double fidVolZ = cryostat.BoundingBox().MaxZ() - cryostat.BoundingBox().MinZ();
+    std::string fGeometry = "Unknown";
     if (geoName.find("dune10kt") != std::string::npos)
     {
         driftLength = tpcg.DriftDistance();
@@ -1260,7 +1273,7 @@ namespace lowe
         return -1; // Unknown geometry
     }
 
-    sFlashMatching += "Drift length: " + ProducerUtils::str(driftLength) + " cm, Drift time: " + ProducerUtils::str(driftTime) + " us, Geometry: " + fGeometry + "\n";
+    sFlashMatching += "Drift length: " + ProducerUtils::str(driftLength) + " cm, Drift time: " + ProducerUtils::str(driftTime) + " us, Geometry: " + geoName + "\n";
     
     // Match according to the main cluster time and position
     if (SolarClusterVector.empty() || PDSFlashes.empty()) {
@@ -1333,6 +1346,7 @@ namespace lowe
           else if (flash->Frame() == 1 || flash->Frame() == 2) // Membrane flashes
           {
               if (fAdjOpFlashMembraneProjection){
+                  if (clusterY * flashY < 0) {continue;}
                   if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1){
                       continue;
                   }
@@ -1347,6 +1361,8 @@ namespace lowe
           else if (flash->Frame() == 3 || flash->Frame() == 4) // End-Cap flashes
           {
               if (fAdjOpFlashEndCapProjection){
+                  if (clusterZ < fidVolZ/2 && flash->Frame() == 3) {continue;} // Skip if the cluster is in the bottom half and the flash is in the top end-cap
+                  if (clusterZ > fidVolZ/2 && flash->Frame() == 4) {continue;} // Skip if the cluster is in the top half and the flash is in the bottom end-cap
                   if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) > 1){
                       continue;
                   }

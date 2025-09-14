@@ -17,7 +17,7 @@ solar_event_dune10kt_1x2x6:
     AdjOpFlashY:                  100.         # Y distance to search for adj. OpFlashes reconstructed in [cm] units.
     AdjOpFlashZ:                  100.         # Z distance to search for adj. OpFlashes reconstructed in [cm] units.
     AdjOpFlashMaxPERatioCut:      1.00         # Cut on the maximum OpHit PE contribution to the total OpFlash PE.
-    AdjOpFlashMinPECut:           20.0         # Cut on the minimum OpHit PE. From average bkg rate of ~20 PE per tick.
+    AdjOpFlashMinPECut:           20.0         # Cut on the minimum OpHit PE.
     AdjOpFlashMinNHitCut:         3            # Cut on the minimum number of OpHits in the OpFlash.
     AdjOpFlashMembraneProjection: false        # If true, the OpFlash matching is projected on the membrane planes for VD.
     AdjOpFlashEndCapProjection:   false        # If true, the OpFlash matching is projected on the end cap planes for VD.
@@ -26,9 +26,9 @@ solar_event_dune10kt_1x2x6:
 }
 
 solar_event_dunevd10kt_1x8x14_3view_30deg: @local::solar_event_dune10kt_1x2x6
-solar_event_dunevd10kt_1x8x14_3view_30deg.AdjOpFlashX: 200
-solar_event_dunevd10kt_1x8x14_3view_30deg.AdjOpFlashY: 200
-solar_event_dunevd10kt_1x8x14_3view_30deg.AdjOpFlashZ: 200
+solar_event_dunevd10kt_1x8x14_3view_30deg.AdjOpFlashX: 100
+solar_event_dunevd10kt_1x8x14_3view_30deg.AdjOpFlashY: 100
+solar_event_dunevd10kt_1x8x14_3view_30deg.AdjOpFlashZ: 100
 
 solar_event_dunevd10kt_1x8x6_3view_30deg: @local::solar_event_dunevd10kt_1x8x14_3view_30deg
 

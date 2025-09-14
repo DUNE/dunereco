@@ -71,14 +71,14 @@ namespace solar
   PerPlaneCluster::PerPlaneCluster(const fhicl::ParameterSet &p)
       : EDProducer{p},
         fHitLabel(p.get<std::string>("HitLabel", "hitfd")),
-        fClusterAlgoTime(p.get<float>("ClusterAlgoTime", 25)), // Time threshold for clustering [ticks]
+        fClusterAlgoTime(p.get<float>("ClusterAlgoTime", 12.5)), // Time threshold for clustering [us]
         fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel", 3)), // Number of adjacent channels to consider for clustering
         fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable", "Integral")), // Variable to use for charge calculation
         fClusterMatchNHit(p.get<int>("ClusterMatchNHit", 2)), // NHit fraction to match clusters. abs(NHitsCol - NHitsInd) / NHitsCol < ClusterMatchNHit.
         fClusterMatchCharge(p.get<float>("ClusterMatchCharge", 0.6)), // Charge fraction to match clusters. abs(ChargeCol - ChargeInd) / ChargeCol < ClusterMatchCharge.
-        fClusterInd0MatchTime(p.get<float>("ClusterInd0MatchTime", 0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd0MatchTime. [ticks]
-        fClusterInd1MatchTime(p.get<float>("ClusterInd1MatchTime", 0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd1MatchTime. [ticks]
-        fClusterMatchTime(p.get<float>("ClusterMatchTime", 20)), // Max time difference to match clusters. abs(TimeCol - TimeInd) < ClusterMatchTime. [ticks]
+        fClusterInd0MatchTime(p.get<float>("ClusterInd0MatchTime", 0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd0MatchTime. [us]
+        fClusterInd1MatchTime(p.get<float>("ClusterInd1MatchTime", 0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd1MatchTime. [us]
+        fClusterMatchTime(p.get<float>("ClusterMatchTime", 10)), // Max time difference to match clusters. abs(TimeCol - TimeInd) < ClusterMatchTime. [us]
         lowe(new lowe::LowEUtils(p))
   {
     reconfigure(p);
@@ -135,7 +135,7 @@ namespace solar
     }
 
     // Run the clustering
-    lowe->CalcAdjHits(Hits, Clusters, HitIdx);
+    lowe->CalcAdjHits(Hits, Clusters, HitIdx, evt);
     lowe->MakeClusterVector(PerPlaneClusters, Clusters, evt);
     ProduceCluster(PerPlaneClusters, *ClusterPtr, clockData);
 
