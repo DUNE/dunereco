@@ -93,14 +93,14 @@ namespace solar
     fSignalLabel(p.get<std::string>("SignalLabel", "marley")),
     fGEANTLabel(p.get<std::string>("GEANTLabel", "largeant")),
     fClusterLabel(p.get<std::string>("ClusterLabel", "planecluster")),
-    fClusterAlgoTime(p.get<float>("ClusterAlgoTime", 25.0)), // Time threshold for clustering [ticks]
+    fClusterAlgoTime(p.get<float>("ClusterAlgoTime", 12.5)), // Time threshold for clustering [ticks]
     fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel", 3)), // Number of adjacent channels to consider for clustering
     fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable", "Integral")), // Variable to use for charge calculation
     fClusterMatchNHit(p.get<int>("ClusterMatchNHit", 2)), // NHit fraction to match clusters. abs(NHitsCol - NHitsInd) / NHitsCol < ClusterMatchNHit.
     fClusterMatchCharge(p.get<float>("ClusterMatchCharge", 0.6)), // Charge fraction to match clusters. abs(ChargeCol - ChargeInd) / ChargeCol < ClusterMatchCharge.
     fClusterInd0MatchTime(p.get<float>("ClusterInd0MatchTime", 0.0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd0MatchTime. [ticks]
     fClusterInd1MatchTime(p.get<float>("ClusterInd1MatchTime", 0.0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd1MatchTime. [ticks]
-    fClusterMatchTime(p.get<float>("ClusterMatchTime", 20.0)), // Max time difference to match clusters. abs(TimeCol - TimeInd) < ClusterMatchTime. [ticks]
+    fClusterMatchTime(p.get<float>("ClusterMatchTime", 10.0)), // Max time difference to match clusters. abs(TimeCol - TimeInd) < ClusterMatchTime. [ticks]
     fClusterPreselectionNHits(p.get<int>("ClusterPreselectionNHits", 3)), // Minimum number of hits in a cluster to consider it for further processing
     fDebug(p.get<bool>("Debug", false)), // Debug flag to print additional information
     producer(new producer::ProducerUtils(p)),
