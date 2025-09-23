@@ -25,6 +25,13 @@ local reality = std.extVar('reality');
 local sigoutform = std.extVar('signal_output_form');  // eg "sparse" or "dense"
 
 
+local use_dnnroi = true;
+local inference_service = "TritonService"; // "TorchService" or "TritonService"
+local nchunks = 1;
+local model = "ts-model/mobileunet_largedataset_fullimage.ts"; // mobilenetv3-hokyeong.ts, unet-haiwang.ts
+
+
+
 local wc = import 'wirecell.jsonnet';
 local g = import 'pgraph.jsonnet';
 
@@ -45,6 +52,28 @@ local wcls = wcls_maker(params, tools);
 //local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
 
 local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
+local sp_override = if use_dnnroi then
+{
+    sparse: false,
+    use_roi_debug_mode: true,
+    m_save_negative_charge: false,
+    use_multi_plane_protection: true,
+    mp_tick_resolution: 10,
+    tight_lf_tag: "",
+    cleanup_roi_tag: "",
+    break_roi_loop1_tag: "",
+    break_roi_loop2_tag: "",
+    shrink_roi_tag: "",
+    extend_roi_tag: "",
+}
+else
+{
+    sparse: false,
+    use_roi_debug_mode: false,
+    m_save_negative_charge: false,
+    use_multi_plane_protection: false,
+    mp_tick_resolution: 10,
+};
 
 //local chndbm = chndb_maker(params, tools);
 //local chndb = if epoch == "dynamic" then chndbm.wcls_multi(name="") else chndbm.wct(epoch);
@@ -135,8 +164,32 @@ local chndb = [{
 local nf_maker = import 'pgrapher/experiment/protodunevd/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
-local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
+local sp = sp_maker(params, tools, sp_override);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
+
+local dnnroi = import 'pgrapher/experiment/dune-vd/dnnroi.jsonnet';
+local ts =
+if inference_service == "TorchService" then
+{
+    type: "TorchService",
+    name: "dnnroi",
+    data: {
+        model: model,
+        device: "cpu",
+        concurrency: 1,
+    },
+}
+else if inference_service == "TritonService" then
+{
+    type: "TritonService",
+    name: "dnnroi",
+    data: {
+        url: "ailab01.fnal.gov:8001",
+        model: "dnn",
+    },
+}
+else error("unsupported inference_service: " + inference_service);
+
 
 local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
 local chsel_pipes = [
@@ -184,8 +237,11 @@ local nfsp_pipes = [
                 mio.decon_pipe[n],
                 // mio.threshold_pipe[n],
                 // mio.debug_pipe[n]
-               ] else [ ]),
-
+               ] else [ ])
+             + (if use_dnnroi then [
+                dnnroi(tools.anodes[n], ts, output_scale=1.0, nchunks=nchunks),
+                // sinks.dnnroi_pipe[n],
+               ] else []),
              'nfsp_pipe_%d' % n)
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
