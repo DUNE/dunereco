@@ -220,7 +220,7 @@ local resamplers = load_resamplers.resamplers;
 // ];
 
 local magoutput = 'protodune-data-check.root';
-local magnify = import 'pgrapher/experiment/protodunevd/magnify-sinks.jsonnet';
+local magnify = import 'pgrapher/experiment/dune-vd/magnify-sinks.jsonnet';
 local mio = magnify(tools, magoutput);
 
 local use_magnify = std.extVar("use_magnify");
@@ -240,7 +240,7 @@ local nfsp_pipes = [
                ] else [ ])
              + (if use_dnnroi then [
                 dnnroi(tools.anodes[n], ts, output_scale=1.0, nchunks=nchunks),
-                // sinks.dnnroi_pipe[n],
+                mio.dnnroi_pipe[n],
                ] else []),
              'nfsp_pipe_%d' % n)
   for n in std.range(0, std.length(tools.anodes) - 1)
