@@ -25,10 +25,11 @@ local reality = std.extVar('reality');
 local sigoutform = std.extVar('signal_output_form');  // eg "sparse" or "dense"
 
 
-local use_dnnroi = true;
-local inference_service = "TritonService"; // "TorchService" or "TritonService"
+local use_dnnroi = std.extVar('use_dnnroi');
+local dnn_roi_model = std.extVar('dnn_roi_model');
+local inference_service = std.extVar('inference_service'); // "TorchService" or "TritonService"
+local triton_url = std.extVar('triton_url'); // only used for "TritonService" but we have to get it here
 local nchunks = 1;
-local model = "ts-model/mobileunet_largedataset_fullimage.ts"; // mobilenetv3-hokyeong.ts, unet-haiwang.ts
 
 
 
@@ -174,7 +175,7 @@ if inference_service == "TorchService" then
     type: "TorchService",
     name: "dnnroi",
     data: {
-        model: model,
+        model: dnn_roi_model,
         device: "cpu",
         concurrency: 1,
     },
@@ -184,8 +185,8 @@ else if inference_service == "TritonService" then
     type: "TritonService",
     name: "dnnroi",
     data: {
-        url: "ailab01.fnal.gov:8001",
-        model: "dnn",
+        url: triton_url,
+        model: dnn_roi_model,
     },
 }
 else error("unsupported inference_service: " + inference_service);
