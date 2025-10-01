@@ -114,6 +114,7 @@ base {
       super.elec { // bottom drifter
         postgain: 1.1365, 
         shaping: 2.2 * wc.us,
+        gain: 7.8*wc.mV/wc.fC,
       },
       super.elec { // top
         type: "JsonElecResponse",
