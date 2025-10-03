@@ -23,6 +23,7 @@
 local epoch = std.extVar('epoch');  // eg "dynamic", "after", "before", "perfect"
 local reality = std.extVar('reality');
 local sigoutform = std.extVar('signal_output_form');  // eg "sparse" or "dense"
+local use_ssl = std.extVar('use_ssl');  // code not string
 
 
 local use_dnnroi = std.extVar('use_dnnroi');
@@ -187,6 +188,7 @@ else if inference_service == "TritonService" then
     data: {
         url: triton_url,
         model: dnn_roi_model,
+        use_ssl: use_ssl,
     },
 }
 else error("unsupported inference_service: " + inference_service);
