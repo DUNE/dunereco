@@ -221,6 +221,13 @@ namespace lowe
                 const art::Event &evt,
                 bool debug = false);
 
+            bool SelectPDSFlashPE(
+                const float &TPCDriftTime,
+                const float &MatchedDriftTime,
+                const float &ClusterCharge,
+                const float &OpFlashPE);
+
+        // Declare member data here.
         private:
             // From fhicl configuration
             const std::string fHitLabel;
@@ -244,6 +251,10 @@ namespace lowe
             const double fAdjOpFlashMaxPERatioCut;             // Maximum photoelectrons ratio for adjacent flash
             const bool fAdjOpFlashMembraneProjection;          // If true, project the TPC reco onto the membrane
             const bool fAdjOpFlashEndCapProjection;            // If true, project the TPC reco onto the end cap
+            const double fAdjOpFlashMinPEAttenuation;          // Attenuation factor for minimum PE cut based on drift time [us]
+            const std::string fAdjOpFlashMinPEAttenuate;       // Type of attenuation for minimum PE cut ("light_map", "asymptotic", "linear" or "flat")
+            const int fAdjOpFlashMinPEAttenuationStrength;     // Strength of the asymptotic attenuation for minimum PE cut (in powers of 10)
+            const std::vector<std::pair<std::string, std::vector<double>>> fAdjOpFlashMinPELightMap; // Light map file and histogram name for light map attenuation
             std::unique_ptr<producer::ProducerUtils> producer; // Pointer to the ProducerUtils instance
     };
 } // namespace lowe

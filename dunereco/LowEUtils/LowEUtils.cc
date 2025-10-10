@@ -22,10 +22,14 @@ namespace lowe
     fAdjOpFlashX(p.get<double>("AdjOpFlashX", 100.0)), // X coordinate for flash projection [cm]
     fAdjOpFlashY(p.get<double>("AdjOpFlashY", 100.0)), // Y coordinate for flash projection [cm]
     fAdjOpFlashZ(p.get<double>("AdjOpFlashZ", 100.0)), // Z coordinate for flash projection [cm]
-    fAdjOpFlashMinPECut(p.get<double>("AdjOpFlashMinPECut", 20.0)), // Minimum PE for flash selection
-    fAdjOpFlashMaxPERatioCut(p.get<double>("AdjOpFlashMaxPERatioCut", 1)), // Maximum PE ratio for flash selection
+    fAdjOpFlashMinPECut(p.get<double>("AdjOpFlashMinPECut", 0.0)), // Minimum PE for flash selection
+    fAdjOpFlashMaxPERatioCut(p.get<double>("AdjOpFlashMaxPERatioCut", 1.0)), // Maximum PE ratio for flash selection
     fAdjOpFlashMembraneProjection(p.get<bool>("AdjOpFlashMembraneProjection", false)), // Whether to project flashes onto the membrane
     fAdjOpFlashEndCapProjection(p.get<bool>("AdjOpFlashEndCapProjection", false)), // Whether to project flashes onto the end cap
+    fAdjOpFlashMinPEAttenuation(p.get<double>("AdjOpFlashMinPEAttenuation", 1)), // PE cut attenuation over drift time [us] to compensate for light attenuation
+    fAdjOpFlashMinPEAttenuate(p.get<std::string>("AdjOpFlashMinPEAttenuate", "flat")), // Type of attenuation for minimum PE cut ("light_map", "asymptotic", "linear" or "flat")
+    fAdjOpFlashMinPEAttenuationStrength(p.get<int>("AdjOpFlashMinPEAttenuationStrength", 10)), // Strength of the asymptotic attenuation for minimum PE cut (in powers of 10)
+    fAdjOpFlashMinPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashMinPELightMap")), // Light map file and histogram name for light map attenuation
     producer(new ProducerUtils(p))
   {
     // Initialize the LowEUtils instance
@@ -1112,11 +1116,9 @@ namespace lowe
         }
 
         auto ref4 = TVector3(0, cluster->getY(), cluster->getZ()) - TVector3(dXcluster1, adjcluster->getY(), adjcluster->getZ());
-        if (ref4.Mag() < fAdjClusterRad)
-        {
+        if (ref4.Mag() < fAdjClusterRad) {
           // sEventCandidateFinding += "\tFound adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
-          if (adjcluster->getTotalCharge() > cluster->getTotalCharge())
-          {
+          if (adjcluster->getTotalCharge() > cluster->getTotalCharge()) {
             sEventCandidateFinding += "¡¡¡Found bigger cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
             EvaluatedCluster[*it] = false;
             PreselectionCluster = false;
@@ -1130,7 +1132,7 @@ namespace lowe
             }
             break;
           }
-          else{
+          else {
             sEventCandidateFinding += "+++Adding cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
             AdjClusterVec.push_back(adjcluster);
             AdjClusterIdx.push_back(*it2);
@@ -1174,7 +1176,7 @@ namespace lowe
         }
 
         // if cluster has already been clustered, skip
-        if (EvaluatedAdjCluster[*it4] == true){
+        if (EvaluatedAdjCluster[*it4] == true) {
           sEventCandidateFinding += "\tSkipping already evaluated cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
           continue;
         }
@@ -1183,8 +1185,7 @@ namespace lowe
         if (ref4.Mag() < fAdjClusterRad)
         {
           // sEventCandidateFinding += "\tFound adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
-          if (adjcluster->getTotalCharge() > cluster->getTotalCharge())
-          {
+          if (adjcluster->getTotalCharge() > cluster->getTotalCharge()) {
             sEventCandidateFinding += "¡¡¡Found bigger cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
             EvaluatedCluster[*it] = false;
             PreselectionCluster = false;
@@ -1208,8 +1209,7 @@ namespace lowe
         }
       }
 
-      if (PreselectionCluster == false)
-      {
+      if (PreselectionCluster == false) {
         sEventCandidateFinding += "\tSkipping non-preselected cluster\n";
         EvaluatedCluster[*it] = false;
         EventCandidateFound.push_back(false);
@@ -1255,20 +1255,17 @@ namespace lowe
     const geo::TPCGeo &tpcg = cryostat.TPC(0);
     const double fidVolZ = cryostat.BoundingBox().MaxZ() - cryostat.BoundingBox().MinZ();
     std::string fGeometry = "Unknown";
-    if (geoName.find("dune10kt") != std::string::npos)
-    {
+    if (geoName.find("dune10kt") != std::string::npos) {
         driftLength = tpcg.DriftDistance();
         driftTime = driftLength / detProp.DriftVelocity(); // in us
         fGeometry = "HD";
     }
-    else if(geoName.find("dunevd10kt") != std::string::npos)
-    {
+    else if(geoName.find("dunevd10kt") != std::string::npos) {
         driftLength = tpcg.DriftDistance();
         driftTime = driftLength / detProp.DriftVelocity();
         fGeometry = "VD";
     }
-    else
-    {
+    else {
         producer->PrintInColor("Unknown geometry: " + geoName, ProducerUtils::GetColor("red"));
         return -1; // Unknown geometry
     }
@@ -1283,6 +1280,7 @@ namespace lowe
     const auto &mainCluster = SolarClusterVector.front();
     // Get the time and position of the main cluster
     double clusterTime = mainCluster->getAverageTime();
+    double clusterCharge = mainCluster->getTotalCharge();
     double clusterX = -1e6;    
     double clusterY = mainCluster->getY();
     double clusterZ = mainCluster->getZ();
@@ -1301,25 +1299,22 @@ namespace lowe
         double flashTime = flash->Time();
         double dT = clusterTime - flashTime; // Time difference between the cluster and the flash
         // If dT is bigger that drift time, skip this flash
-        if (std::abs(dT) > driftTime){
-            continue; // Skip this flash if it's too far in time
+        if (dT > driftTime || dT < 0) {
+            continue; // Skip this flash if it's too far in time or in the future
         }
-        
-        if (int(flash->PEs().size()) < fAdjOpFlashMinNHitCut || flash->TotalPE() < fAdjOpFlashMinPECut || *std::max_element(flash->PEs().begin(), flash->PEs().end()) / flash->TotalPE() > fAdjOpFlashMaxPERatioCut)
-        {
-            continue; // Skip flashes with insufficient charge or hits
+        if (int(flash->PEs().size()) < fAdjOpFlashMinNHitCut || *std::max_element(flash->PEs().begin(), flash->PEs().end()) / flash->TotalPE() > fAdjOpFlashMaxPERatioCut) {
+            continue; // Skip flashes with insufficient hits or too much concentration in one XA
+        }
+        if ( SelectPDSFlashPE(driftTime, dT, clusterCharge, flashPE) == false ) {
+            continue; // Skip flashes that don't pass the PE selection
         }
 
         // Calculate the distance in space
         double flashY = flash->YCenter();
         double flashZ = flash->ZCenter();
-        // if (!producer) {
-        //     fhicl::ParameterSet pset; // Create a parameter set (you may need to initialize it properly)
-        //     producer = std::make_unique<producer::ProducerUtils>(pset);
-        // }
+
         producer->ComputeDistanceX(clusterX, clusterTime, flashTime, driftLength, driftTime);
-        if (fGeometry == "HD")
-        {
+        if (fGeometry == "HD") {
             // For DUNE 10kt geometry, we have different projections based on the plane
             // Change the sign of clusterX for the collection plane
             if (flash->Frame() == 0) // Collection plane
@@ -1332,43 +1327,39 @@ namespace lowe
             }
             // flashR = sqrt(pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
         }
-        else if (fGeometry == "VD")
-        {
+        else if (fGeometry == "VD") {
           // Convert clusterX to the VD geometry [-driftLength/2, driftLength/2]
-          if (flash->Frame() == 0) // Cathode flashes
-          {
+          if (flash->Frame() == 0) {// Cathode flashes
               if (pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1)
               {
                   continue;
               }
               // flashR = sqrt(pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
           }
-          else if (flash->Frame() == 1 || flash->Frame() == 2) // Membrane flashes
-          {
-              if (fAdjOpFlashMembraneProjection){
+          else if (flash->Frame() == 1 || flash->Frame() == 2) {// Membrane flashes
+              if (fAdjOpFlashMembraneProjection) {
                   if (clusterY * flashY < 0) {continue;}
-                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1){
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1) {
                       continue;
                   }
               }
-              else{
-                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1){
+              else {
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1) {
                       continue;
                   }
               }
               // flashR = sqrt(pow(clusterX, 2) + pow(clusterZ - flashZ, 2));
           } 
-          else if (flash->Frame() == 3 || flash->Frame() == 4) // End-Cap flashes
-          {
-              if (fAdjOpFlashEndCapProjection){
+          else if (flash->Frame() == 3 || flash->Frame() == 4) {// End-Cap flashes
+              if (fAdjOpFlashEndCapProjection) {
                   if (clusterZ < fidVolZ/2 && flash->Frame() == 3) {continue;} // Skip if the cluster is in the bottom half and the flash is in the top end-cap
                   if (clusterZ > fidVolZ/2 && flash->Frame() == 4) {continue;} // Skip if the cluster is in the top half and the flash is in the bottom end-cap
-                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) > 1){
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) > 1) {
                       continue;
                   }
               }
-              else{
-                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1){
+              else {
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1) {
                       continue;
                   }
               }
@@ -1376,8 +1367,7 @@ namespace lowe
           } 
           clusterX = driftLength / 2 - clusterX; // Convert to the VD geometry coordinate system
         }
-        else
-        {
+        else {
             continue; // Unknown geometry, skip this matching
         }
 
@@ -1388,20 +1378,61 @@ namespace lowe
             matchedRecoX = clusterX;
         }
     }
-    if (debug)
-    {
-        if (matchedFlashIndex != -1)
-        {
+    if (debug) {
+        if (matchedFlashIndex != -1) {
             sFlashMatching += "Matched flash: Index " + ProducerUtils::str(matchedFlashIndex) + " PE " + ProducerUtils::str(matchedFlashPE) + " Time " + ProducerUtils::str(PDSFlashes[matchedFlashIndex]->Time()) + " Y " + ProducerUtils::str(PDSFlashes[matchedFlashIndex]->YCenter()) + " Z " + ProducerUtils::str(PDSFlashes[matchedFlashIndex]->ZCenter()) + "\n";
             // Print recon info of the cluster
             sFlashMatching += "Cluster: Time " + ProducerUtils::str(mainCluster->getAverageTime()) + " Vertex " + ProducerUtils::str(matchedRecoX) + ", " + ProducerUtils::str(mainCluster->getY()) + ", " + ProducerUtils::str(mainCluster->getZ()) + "\n";
         }
-        else
-        {
+        else {
             sFlashMatching += "No flash matched to cluster: NHits " + ProducerUtils::str(mainCluster->getNHits()) + " Channel " + ProducerUtils::str(mainCluster->getMainChannel()) + " Time " + ProducerUtils::str(mainCluster->getAverageTime()) + " Charge " + ProducerUtils::str(mainCluster->getTotalCharge()) + "\n";
         }
         ProducerUtils::PrintInColor(sFlashMatching, ProducerUtils::GetColor("blue"), "Debug");
     }
     return matchedFlashIndex; // Return the index of the matched flash or -1 if no match found
   } // MatchPDSFlash
+
+
+  bool LowEUtils::SelectPDSFlashPE(
+    const float &TPCDriftTime,
+    const float &MatchedDriftTime,
+    const float &ClusterCharge,
+    const float &OpFlashPE)
+  {
+    if (fAdjOpFlashMinPEAttenuate == "light_map") {
+      double a, b, c;
+      for (int i = 0; i < int(fAdjOpFlashMinPELightMap.size()); i++) {
+        if (fAdjOpFlashMinPELightMap[i].first == "Amplitude") {
+          a = fAdjOpFlashMinPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMinPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMinPELightMap[i].second[2];
+        }
+        else if (fAdjOpFlashMinPELightMap[i].first == "Attenuation") {
+          b = fAdjOpFlashMinPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMinPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMinPELightMap[i].second[2];
+        }
+        else if (fAdjOpFlashMinPELightMap[i].first == "Correction") {
+          c = fAdjOpFlashMinPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMinPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMinPELightMap[i].second[2];
+        }
+      }
+      double MinPE = pow(10, a - a * b * MatchedDriftTime / TPCDriftTime + c * pow(MatchedDriftTime / TPCDriftTime, 2));
+      if (OpFlashPE < MinPE) { return false; }
+      else { return true; }
+    }
+    else if (fAdjOpFlashMinPEAttenuate == "asymptotic") {
+      if (OpFlashPE < fAdjOpFlashMinPECut - fAdjOpFlashMinPEAttenuation * (1-pow(pow(10,fAdjOpFlashMinPEAttenuationStrength), -MatchedDriftTime / TPCDriftTime)) * fAdjOpFlashMinPECut) { return false; }
+      else { return true; }
+    } 
+    else if (fAdjOpFlashMinPEAttenuate == "linear") {
+      if (OpFlashPE < fAdjOpFlashMinPECut - fAdjOpFlashMinPEAttenuation * pow(MatchedDriftTime / TPCDriftTime, 2) * fAdjOpFlashMinPECut) { return false; }
+      else { return true; }
+    }
+    else if (fAdjOpFlashMinPEAttenuate == "flat") {
+      if (OpFlashPE < fAdjOpFlashMinPECut) { return false; }
+      else { return true; }
+    }
+    else {
+      ProducerUtils::PrintInColor("Warning: Unknown fAdjOpFlashMinPEAttenuate option " + fAdjOpFlashMinPEAttenuate + ", using flat cut", ProducerUtils::GetColor("red"), "Warning");
+      if (OpFlashPE < fAdjOpFlashMinPECut) { return false; }
+      else { return true; }
+    }
+    return true;
+  } // SelectPDSFlashPE
 } // namespace lowe
