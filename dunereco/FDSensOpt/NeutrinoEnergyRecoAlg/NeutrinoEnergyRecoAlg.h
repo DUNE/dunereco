@@ -288,16 +288,12 @@ class NeutrinoEnergyRecoAlg
         * @param  leptonHits the hits from the lepton
         * @param  event the art event
         * @param  energyRecoInputHolder the holder object holding pre-calculated or pre-existing information
-        * @param  protonTracks the proton tracks
-        * @param  pionTracks the pion tracks
         *
         * @return the neutrino energy summary object
         */
         dune::EnergyRecoOutput CalculateNeutrinoEnergyPID(const std::vector<art::Ptr<recob::Hit> > &leptonHits, 
             const art::Event &event,
-            const EnergyRecoInputHolder &energyRecoInputHolder,
-            const std::vector<art::Ptr<recob::Track>> &protonTracks,
-            const std::vector<art::Ptr<recob::Track>> &pionTracks);
+            const EnergyRecoInputHolder &energyRecoInputHolder);
 
         /**
         * @brief  Calculates neutrino energy by summing wire charges 
@@ -305,15 +301,11 @@ class NeutrinoEnergyRecoAlg
         *
         * @param  wireCharge total charge from wires (collection plane)
         * @param  event the art event
-        * @param  protonTracks the proton tracks
-        * @param  pionTracks the pion tracks
         *
         * @return the neutrino energy summary object
         */
         dune::EnergyRecoOutput CalculateNeutrinoEnergyPID(const double wireCharge,
-                const art::Event &event,
-                const std::vector<art::Ptr<recob::Track>> &protonTracks,
-                const std::vector<art::Ptr<recob::Track>> &pionTracks);
+                const art::Event &event);
 
         /**
         * @brief  Calculates the energy of each track by range and by calorimetry. In case of pions, calorimetric energy 

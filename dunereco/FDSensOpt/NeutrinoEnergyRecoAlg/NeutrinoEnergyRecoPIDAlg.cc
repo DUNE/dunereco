@@ -33,9 +33,7 @@ namespace dune
 
     dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergyPID(const std::vector<art::Ptr<recob::Hit> > &leptonHits, 
             const art::Event &event,
-            const EnergyRecoInputHolder &energyRecoInputHolder,
-            const std::vector<art::Ptr<recob::Track>> &protonTracks,
-            const std::vector<art::Ptr<recob::Track>> &pionTracks)
+            const EnergyRecoInputHolder &energyRecoInputHolder)
     {
 
 
@@ -43,9 +41,9 @@ namespace dune
         auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
         const double leptonObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, leptonHits));
 
-        const int npions = pionTracks.size();
-        const std::pair<double, double> protonsEnergyCharge(CalculateTracksObservedEnergyPID(event, protonTracks, pProton));
-        const std::pair<double, double> pionsEnergyCharge(CalculateTracksObservedEnergyPID(event, pionTracks, pPion));
+        const int npions = NeutrinoEnergyRecoAlg::fPionTracks.size();
+        const std::pair<double, double> protonsEnergyCharge(CalculateTracksObservedEnergyPID(event, NeutrinoEnergyRecoAlg::fProtonTracks, pProton));
+        const std::pair<double, double> pionsEnergyCharge(CalculateTracksObservedEnergyPID(event, NeutrinoEnergyRecoAlg::fPionTracks, pPion));
 
         const double protonsKin = protonsEnergyCharge.first;
         const double pionsKin = pionsEnergyCharge.first;
@@ -79,14 +77,12 @@ namespace dune
     //------------------------------------------------------------------------------------------------------------------------------------------
 
     dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergyPID(const double wireCharge,
-            const art::Event &event,
-            const std::vector<art::Ptr<recob::Track>> &protonTracks,
-            const std::vector<art::Ptr<recob::Track>> &pionTracks)
+            const art::Event &event)
     {
 
-        const int npions = pionTracks.size();
-        const std::pair<double, double> protonsEnergyCharge(CalculateTracksObservedEnergyPID(event, protonTracks, pProton));
-        const std::pair<double, double> pionsEnergyCharge(CalculateTracksObservedEnergyPID(event, pionTracks, pPion));
+        const int npions = NeutrinoEnergyRecoAlg::fPionTracks.size();
+        const std::pair<double, double> protonsEnergyCharge(CalculateTracksObservedEnergyPID(event, NeutrinoEnergyRecoAlg::fProtonTracks, pProton));
+        const std::pair<double, double> pionsEnergyCharge(CalculateTracksObservedEnergyPID(event, NeutrinoEnergyRecoAlg::fPionTracks, pPion));
 
         const double protonsKin = protonsEnergyCharge.first;
         const double pionsKin = pionsEnergyCharge.first;

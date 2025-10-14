@@ -137,7 +137,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
     if (!usePID)
         return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
     else
-        return this->CalculateNeutrinoEnergyPID(muonHits, event, energyRecoInputHolder, NeutrinoEnergyRecoAlg::fProtonTracks, NeutrinoEnergyRecoAlg::fPionTracks);
+        return this->CalculateNeutrinoEnergyPID(muonHits, event, energyRecoInputHolder);
 
 }
 
@@ -174,7 +174,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
     if (!usePID)
         return this->CalculateNeutrinoEnergy(electronHits, event, energyRecoInputHolder);
     else
-        return this->CalculateNeutrinoEnergyPID(electronHits, event, energyRecoInputHolder, NeutrinoEnergyRecoAlg::fProtonTracks, NeutrinoEnergyRecoAlg::fPionTracks);
+        return this->CalculateNeutrinoEnergyPID(electronHits, event, energyRecoInputHolder);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -218,7 +218,7 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
         return output;
     }
     else
-        return this->CalculateNeutrinoEnergyPID(wireCharge, event, NeutrinoEnergyRecoAlg::fProtonTracks, NeutrinoEnergyRecoAlg::fPionTracks);
+        return this->CalculateNeutrinoEnergyPID(wireCharge, event);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
