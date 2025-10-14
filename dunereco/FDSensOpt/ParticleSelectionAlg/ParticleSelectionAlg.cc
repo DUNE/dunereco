@@ -114,7 +114,6 @@ namespace dune
 
     art::Ptr<recob::Track> ParticleSelectionAlg::GetLongestTrackPID(const art::Event &event)
     {
-        art::Ptr<recob::Track> pTrack{};
         std::vector<art::Ptr<recob::Track>> tracks(GenMuonCandidates(event));
         const bool isTrackOnly = (fMuSelectMethod != static_cast<int>(MuSelectMethod::kSimple)) ? false : true;
         return this->GetLongestTrack(event, tracks, isTrackOnly);
