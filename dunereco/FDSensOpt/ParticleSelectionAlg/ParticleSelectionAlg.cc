@@ -282,9 +282,10 @@ namespace dune
     //------------------------------------------------------------------------------------------------------------------------------------------
 
     std::vector<art::Ptr<recob::Track>> ParticleSelectionAlg::PrDefaultSelection(const art::Event &event,
-            std::vector<art::Ptr<recob::Track>> &tracks)
+            const std::vector<art::Ptr<recob::Track>> &otracks)
     {
 
+        std::vector<art::Ptr<recob::Track>> tracks = otracks;
 
         // Removing tracks that are not considered as tracks by LArPandora when their PIDA score is below a threshold
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
@@ -358,9 +359,10 @@ namespace dune
     //------------------------------------------------------------------------------------------------------------------------------------------
 
     std::vector<art::Ptr<recob::Track>> ParticleSelectionAlg::PionDefaultSelection(const art::Event &event,
-            std::vector<art::Ptr<recob::Track>> &tracks)
+            const std::vector<art::Ptr<recob::Track>> &otracks)
     {
 
+        std::vector<art::Ptr<recob::Track>> tracks = otracks;
         const std::vector< art::Ptr< recob::PFParticle > > allPFPs(dune_ana::DUNEAnaEventUtils::GetPFParticles(event, fPFParticleLabel));
 
         size_t nrecos = allPFPs.size();

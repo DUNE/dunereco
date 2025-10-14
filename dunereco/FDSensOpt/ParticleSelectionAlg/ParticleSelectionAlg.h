@@ -124,7 +124,7 @@ namespace dune
              *
              * @return vector of recob::Track
              */
-            std::vector<art::Ptr<recob::Track>> PrDefaultSelection(const art::Event &event, std::vector<art::Ptr<recob::Track>> &tracks);
+            std::vector<art::Ptr<recob::Track>> PrDefaultSelection(const art::Event &event, const std::vector<art::Ptr<recob::Track>> &otracks);
 
             /**
              * @brief  Apply filters and returns subset of recob::Tracks that
@@ -144,7 +144,7 @@ namespace dune
              *
              * @return vector of recob::Track
              */
-            std::vector<art::Ptr<recob::Track>> PionDefaultSelection(const art::Event &event, std::vector<art::Ptr<recob::Track>> &tracks);
+            std::vector<art::Ptr<recob::Track>> PionDefaultSelection(const art::Event &event, const std::vector<art::Ptr<recob::Track>> &otracks);
 
             /**
              * @brief  Apply filters and returns subset of recob::Tracks that
