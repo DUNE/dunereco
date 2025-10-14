@@ -138,9 +138,9 @@ local wcls_simchannel_sink = g.pnode({
     artlabel: 'simpleSC',  // where to save in art::Event
     anodes_tn: [wc.tn(anode) for anode in tools.anodes],
     rng: wc.tn(rng),
-    tick: 0.5 * wc.us,
-    start_time: -0.25 * wc.ms,
-    readout_time: self.tick * 6000,
+    tick: params.daq.tick,
+    start_time: params.sim.tick0_time,
+    readout_time: self.tick * params.daq.nticks,
     nsigma: 3.0,
     drift_speed: params.lar.drift_speed,
     u_to_rp: 100 * wc.mm,  // 90.58 * wc.mm,
