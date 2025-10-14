@@ -45,31 +45,31 @@ namespace dune
             const std::string &hitToSpacePointLabel) :
         fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
         fMuSelectMethod(pset.get<int>("MuSelectMethod")),
-        kMaxMuLength(pset.get<double>("MaxMuLength")),
-        kMaxMuPIDA(pset.get<double>("MaxMuPIDA")),
-        kMinMuTotalCalo(pset.get<double>("MinMuTotalCalo")),
-        kMaxMuTotalCalo(pset.get<double>("MaxMuTotalCalo")),
-        kMinMuPIDAShower(pset.get<double>("MinMuPIDAShower")),
-        kMaxMuPIDAAggressive(pset.get<double>("MaxMuPIDAAggressive")),
-        kMaxMuContainedCalo(pset.get<double>("MaxMuContainedCalo")),
+        fMaxMuLength(pset.get<double>("MaxMuLength")),
+        fMaxMuPIDA(pset.get<double>("MaxMuPIDA")),
+        fMinMuTotalCalo(pset.get<double>("MinMuTotalCalo")),
+        fMaxMuTotalCalo(pset.get<double>("MaxMuTotalCalo")),
+        fMinMuPIDAShower(pset.get<double>("MinMuPIDAShower")),
+        fMaxMuPIDAAggressive(pset.get<double>("MaxMuPIDAAggressive")),
+        fMaxMuContainedCalo(pset.get<double>("MaxMuContainedCalo")),
         fESelectMethod(pset.get<int>("ESelectMethod")),
-        kMaxETotalCaloForTracks(pset.get<double>("MaxETotalCaloForTracks")),
-        kMaxEPIDA(pset.get<double>("MaxEPIDA")),
+        fMaxETotalCaloForTracks(pset.get<double>("MaxETotalCaloForTracks")),
+        fMaxEPIDA(pset.get<double>("MaxEPIDA")),
         fPrSelectMethod(pset.get<int>("PrSelectMethod")),
-        kMinPrPIDATrack(pset.get<double>("MinPrPIDATrack")),
-        kMinPrPIDAShower(pset.get<double>("MinPrPIDAShower")),
-        kMaxPrTrkCalo(pset.get<double>("MaxPrTrkCalo")),
-        kMaxPrTrkMom(pset.get<double>("MaxPrTrkMom")),
-        kPrMomByRangeMinLength(pset.get<double>("PrMomByRangeMinLength")),
-        kPrMomByRangeMaxLength(pset.get<double>("PrMomByRangeMaxLength")),
+        fMinPrPIDATrack(pset.get<double>("MinPrPIDATrack")),
+        fMinPrPIDAShower(pset.get<double>("MinPrPIDAShower")),
+        fMaxPrTrkCalo(pset.get<double>("MaxPrTrkCalo")),
+        fMaxPrTrkMom(pset.get<double>("MaxPrTrkMom")),
+        fPrMomByRangeMinLength(pset.get<double>("PrMomByRangeMinLength")),
+        fPrMomByRangeMaxLength(pset.get<double>("PrMomByRangeMaxLength")),
         fPionSelectMethod(pset.get<int>("PionSelectMethod")),
-        kMinPionNTrk(pset.get<size_t>("MinPionNTrk")),
-        kMinPionTrkLength(pset.get<double>("MinPionTrkLength")),
-        kMaxPionTrkLength(pset.get<double>("MaxPionTrkLength")),
-        kMinPionTrkLengthNotContained(pset.get<double>("MinPionTrkLengthNotContained")),
-        kDistanceToWallThreshold(pset.get<double>("DistanceToWallThreshold")),
-        kRecombFactor(pset.get<double>("RecombFactor")),
-        kPlaneToUse(pset.get<unsigned int>("Plane")),
+        fMinPionNTrk(pset.get<size_t>("MinPionNTrk")),
+        fMinPionTrkLength(pset.get<double>("MinPionTrkLength")),
+        fMaxPionTrkLength(pset.get<double>("MaxPionTrkLength")),
+        fMinPionTrkLengthNotContained(pset.get<double>("MinPionTrkLengthNotContained")),
+        fDistanceToWallThreshold(pset.get<double>("DistanceToWallThreshold")),
+        fRecombFactor(pset.get<double>("RecombFactor")),
+        fPlaneToUse(pset.get<unsigned int>("Plane")),
         fPFParticleLabel(pfpLabel),
         fTrackLabel(trackLabel),
         fShowerLabel(showerLabel),
@@ -79,9 +79,9 @@ namespace dune
         fHitToSpacePointLabel(hitToSpacePointLabel),
         fParticleIDModuleLabel(pset.get<std::string>("ParticleIDModuleLabel"))
     {
-        if (kPlaneToUse > 2)
-            kPlaneToUse = static_cast<unsigned int>(geo::kUnknown);
-        kPlane = static_cast<geo::View_t>(kPlaneToUse);
+        if (fPlaneToUse > 2)
+            fPlaneToUse = static_cast<unsigned int>(geo::kUnknown);
+        fPlane = static_cast<geo::View_t>(fPlaneToUse);
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------------
@@ -131,19 +131,19 @@ namespace dune
 
         std::vector<std::function<void()>> filters = {
             // Remove tracks that are too big
-            [&]() { this->applyMuLengthFilter(candidates, kMaxMuLength); },
+            [&]() { this->applyMuLengthFilter(candidates, fMaxMuLength); },
             // Remove when PIDA is > threshold (if PIDA is not valid, do nothing)
-            [&]() { this->applyMuMaxPIDA(candidates, kMaxMuPIDA); },
+            [&]() { this->applyMuMaxPIDA(candidates, fMaxMuPIDA); },
             // Removing PFPs that are assigned as shower in events with where Total Calorimetric Enegy is between user defined value
-            [&]() { this->applyMuShowerCutCalo(event, candidates, kMinMuTotalCalo, kMaxMuTotalCalo); },
+            [&]() { this->applyMuShowerCutCalo(event, candidates, fMinMuTotalCalo, fMaxMuTotalCalo); },
             // Removing PFPs that are shower and have PIDA score < threshold
-            [&]() { this->applyMuShowerCutPIDA(event, candidates, kMinMuPIDAShower); },
+            [&]() { this->applyMuShowerCutPIDA(event, candidates, fMinMuPIDAShower); },
             // If not all tracks are contained, remove the tracks that are contained
             [&]() { this->applyMuCutContained(event, candidates); },
             // Remove PFPs that are showers
             [&]() { this->applyMuRemoveShowers(event, candidates); },
             // Remove AGAIN when PIDA is > lower_threshold (if PIDA is not valid, do nothing)
-            [&]() { this->applyMuMaxPIDA(candidates, kMaxMuPIDAAggressive); },
+            [&]() { this->applyMuMaxPIDA(candidates, fMaxMuPIDAAggressive); },
         };
 
         // After each filter, check if the number of candidates is 0 or 1
@@ -229,7 +229,7 @@ namespace dune
         auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
 
         
-        const geo::View_t tPlane = (fESelectMethod != static_cast<int>(ESelectMethod::kSimple)) ? kPlane : geo::kW;
+        const geo::View_t tPlane = (fESelectMethod != static_cast<int>(ESelectMethod::kSimple)) ? fPlane : geo::kW;
         return this->GetHighestChargeShower(clockData, detProp, event, showers, tPlane);
     }
 
@@ -241,13 +241,13 @@ namespace dune
         // Removing showers if they are considered as Tracks AND the total calorimetric energy of the event is above a threshold
         candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
                     [this, &event](const art::Ptr<recob::Shower> &s) {
-                    return (this->IsTrack(event, s) && fTotalCaloEvent >= this->kMaxETotalCaloForTracks);
+                    return (this->IsTrack(event, s) && fTotalCaloEvent >= this->fMaxETotalCaloForTracks);
                     }), candidates.end());
 
         // removing showers if they are considered as Tracks AND the PIDA score is above a threshold
         candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
                     [this, &event](const art::Ptr<recob::Shower> &s) {
-                    return (this->IsTrack(event, s) && this->GetPIDAScore(s) > this->kMaxEPIDA);
+                    return (this->IsTrack(event, s) && this->GetPIDAScore(s) > this->fMaxEPIDA);
                     }), candidates.end());
 
         return candidates;
@@ -290,25 +290,25 @@ namespace dune
         // Removing tracks that are not considered as tracks by LArPandora when their PIDA score is below a threshold
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this, &event](const art::Ptr<recob::Track> &t) {
-                    return (this->IsTrack(event, t) && this->GetPIDAScore(t) <= this->kMinPrPIDATrack);
+                    return (this->IsTrack(event, t) && this->GetPIDAScore(t) <= this->fMinPrPIDATrack);
                     }), tracks.end());
 
         // Removing tracks that are considered as showers by LArPandora when their PIDA score is below a threshold
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this, &event](const art::Ptr<recob::Track> &t) {
-                    return (!this->IsTrack(event, t) && this->GetPIDAScore(t) <= this->kMinPrPIDAShower);
+                    return (!this->IsTrack(event, t) && this->GetPIDAScore(t) <= this->fMinPrPIDAShower);
                     }), tracks.end());
 
         // Removing tracks that have calorimetric energy above a threshold
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this](const art::Ptr<recob::Track> &t) {
-                    return (this->GetTrackCalo(t) >= this->kMaxPrTrkCalo);
+                    return (this->GetTrackCalo(t) >= this->fMaxPrTrkCalo);
                     }), tracks.end());
 
         // Removing tracks that have momentum above a threshold
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this](const art::Ptr<recob::Track> &t) {
-                    return (this->GetTrackMom(t) >= this->kMaxPrTrkMom || this->GetTrackMom(t) <= 0);
+                    return (this->GetTrackMom(t) >= this->fMaxPrTrkMom || this->GetTrackMom(t) <= 0);
                     }), tracks.end());
 
         fPrTracks = tracks;
@@ -377,7 +377,7 @@ namespace dune
         }
 
         // If there are not enough reconstructed objects, no pion candidates
-        if (nrecos <= kMinPionNTrk)
+        if (nrecos <= fMinPionNTrk)
         {
             std::vector<art::Ptr<recob::Track>> empty;
             fPiTracks = empty;
@@ -414,14 +414,14 @@ namespace dune
         // Removing tracks that are not in the length range
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this](const art::Ptr<recob::Track> &t) {
-                    return !(t->Length() >= this->kMinPionTrkLength && t->Length() <= this->kMaxPionTrkLength);
+                    return !(t->Length() >= this->fMinPionTrkLength && t->Length() <= this->fMaxPionTrkLength);
                     }), tracks.end());
 
         // Removing tracks that are not contained and are not long enough
         std::optional<bool> allContained(GenContainmentInfo(event, tracks));
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this](const art::Ptr<recob::Track> &t) {
-                    return (!this->IsTrkContained(t) && t->Length() < this->kMinPionTrkLengthNotContained);
+                    return (!this->IsTrkContained(t) && t->Length() < this->fMinPionTrkLengthNotContained);
                     }), tracks.end());
 
         fPiTracks = tracks;
@@ -473,7 +473,7 @@ namespace dune
             }
 
             int biggestNdf = 0;
-            geo::View_t tplane = kPlane;
+            geo::View_t tplane = fPlane;
             // if plane is set to unknown, search the plane with most points
             // when PIDA was evaluated
             if (tplane == geo::kUnknown)
@@ -682,7 +682,7 @@ namespace dune
     {
         std::map<art::Ptr<recob::Track>::key_type, double> tTrkIdToMomMap;
         const std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
-        trkf::TrackMomentumCalculator trkmrange{kPrMomByRangeMinLength, kPrMomByRangeMaxLength};
+        trkf::TrackMomentumCalculator trkmrange{fPrMomByRangeMinLength, fPrMomByRangeMaxLength};
         for (const art::Ptr<recob::Track> &track : tracks)
         {
             double trkmomrangepr = trkmrange.GetTrackMomentum(track->Length(),2212);
@@ -711,7 +711,7 @@ namespace dune
 
     double ParticleSelectionAlg::CalculateEnergyFromCharge(const double charge, const unsigned short plane )
     {
-        return fCalorimetryAlg.ElectronsFromADCArea(charge, plane)*1./kRecombFactor/util::kGeVToElectrons;
+        return fCalorimetryAlg.ElectronsFromADCArea(charge, plane)*1./fRecombFactor/util::kGeVToElectrons;
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------------
@@ -734,7 +734,7 @@ namespace dune
 
     geo::View_t ParticleSelectionAlg::GetBestPlane(const art::Event &event,  const std::vector<art::Ptr<recob::Hit>> &allhits)
     {
-        geo::View_t tplane = kPlane;
+        geo::View_t tplane = fPlane;
 
         if (tplane == geo::kUnknown)
         {
@@ -780,12 +780,12 @@ namespace dune
             maxZ = std::max(maxZ,tpc.MaxZ());
         }
 
-        minX += kDistanceToWallThreshold;
-        maxX -= kDistanceToWallThreshold;
-        minY += kDistanceToWallThreshold;
-        maxY -= kDistanceToWallThreshold;
-        minZ += kDistanceToWallThreshold;
-        maxZ -= kDistanceToWallThreshold;
+        minX += fDistanceToWallThreshold;
+        maxX -= fDistanceToWallThreshold;
+        minY += fDistanceToWallThreshold;
+        maxY -= fDistanceToWallThreshold;
+        minZ += fDistanceToWallThreshold;
+        maxZ -= fDistanceToWallThreshold;
 
         if (x - minX < -1.*std::numeric_limits<double>::epsilon() ||
                 x - maxX > std::numeric_limits<double>::epsilon())
@@ -910,7 +910,7 @@ namespace dune
 
         tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
                     [this](const art::Ptr<recob::Track> &t) {
-                    return (this->IsTrkContained(t) && fTotalCaloEvent >= kMaxMuContainedCalo);
+                    return (this->IsTrkContained(t) && fTotalCaloEvent >= fMaxMuContainedCalo);
                     }), tracks.end());
     }
 

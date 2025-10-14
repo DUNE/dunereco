@@ -243,40 +243,40 @@ namespace dune
         private:
             calo::CalorimetryAlg fCalorimetryAlg;                    
             int    fMuSelectMethod;                                  ///< the method for muon selection
-            double kMaxMuLength;                                     ///< the max length for muon candidates
-            double kMaxMuPIDA;                                       ///< the max PIDA for muon candidates
-            double kMinMuTotalCalo;                                  ///< the min calorimetric energy for muon candidates when they are showers
-            double kMaxMuTotalCalo;                                  ///< the max calorimetric energy for muon candidates when they are showers
-            double kMinMuPIDAShower;                                 ///< the min PIDA for muon candidates when they are showers
+            double fMaxMuLength;                                     ///< the max length for muon candidates
+            double fMaxMuPIDA;                                       ///< the max PIDA for muon candidates
+            double fMinMuTotalCalo;                                  ///< the min calorimetric energy for muon candidates when they are showers
+            double fMaxMuTotalCalo;                                  ///< the max calorimetric energy for muon candidates when they are showers
+            double fMinMuPIDAShower;                                 ///< the min PIDA for muon candidates when they are showers
                                                                      ///(in combination with calorimetric energy)
-            double kMaxMuPIDAAggressive;                             ///< the max PIDA for muon candidates (more aggressive, after all cleanings)
-            double kMaxMuContainedCalo;                              ///< the max calorimetric energy for muon candidates.
+            double fMaxMuPIDAAggressive;                             ///< the max PIDA for muon candidates (more aggressive, after all cleanings)
+            double fMaxMuContainedCalo;                              ///< the max calorimetric energy for muon candidates.
                                                                      ///Used to exclude tracks that are contained
 
 
             int    fESelectMethod;                                  ///< the method for electron selection
-            double kMaxETotalCaloForTracks;                          ///< the max calorimetric energy for electron candidates as track
-            double kMaxEPIDA;                                        ///< the max PIDA for electron candidates as track
+            double fMaxETotalCaloForTracks;                          ///< the max calorimetric energy for electron candidates as track
+            double fMaxEPIDA;                                        ///< the max PIDA for electron candidates as track
 
             int    fPrSelectMethod;                                  ///< the method for proton selection
-            double kMinPrPIDATrack;                                  ///< the min PIDA for proton candidates as track
-            double kMinPrPIDAShower;                                 ///< the min PIDA for proton candidates as shower
-            double kMaxPrTrkCalo;                                    ///< the max calorimetric energy for proton candidates
-            double kMaxPrTrkMom;                                     ///< the max momentum for proton candidates
+            double fMinPrPIDATrack;                                  ///< the min PIDA for proton candidates as track
+            double fMinPrPIDAShower;                                 ///< the min PIDA for proton candidates as shower
+            double fMaxPrTrkCalo;                                    ///< the max calorimetric energy for proton candidates
+            double fMaxPrTrkMom;                                     ///< the max momentum for proton candidates
 
-            double kPrMomByRangeMinLength;                           ///< the min length for momemtum by range method
-            double kPrMomByRangeMaxLength;                           ///< the max length for momemtum by range method
+            double fPrMomByRangeMinLength;                           ///< the min length for momemtum by range method
+            double fPrMomByRangeMaxLength;                           ///< the max length for momemtum by range method
 
             int    fPionSelectMethod;                                ///< the method for pion selection
-            size_t kMinPionNTrk;                                     ///< the min number of tracks for searching pion candidates
-            double kMinPionTrkLength;                                ///< the min length for pion candidates
-            double kMaxPionTrkLength;                                ///< the max length for pion candidates
-            double kMinPionTrkLengthNotContained;                    ///< the min length for pion candidates not contained
+            size_t fMinPionNTrk;                                     ///< the min number of tracks for searching pion candidates
+            double fMinPionTrkLength;                                ///< the min length for pion candidates
+            double fMaxPionTrkLength;                                ///< the max length for pion candidates
+            double fMinPionTrkLengthNotContained;                    ///< the min length for pion candidates not contained
 
-            double kDistanceToWallThreshold;                         ///< the min distance from a detector wall to be considered contained
+            double fDistanceToWallThreshold;                         ///< the min distance from a detector wall to be considered contained
 
-            double kRecombFactor;                                    ///< the recombination factor
-            unsigned int kPlaneToUse;                                ///< the plane to use
+            double fRecombFactor;                                    ///< the recombination factor
+            unsigned int fPlaneToUse;                                ///< the plane to use
                                                                      ///Set to geo::kUnknown to use the plane with most valid entries
 
             std::string fPFParticleLabel;                            ///< the pfp label
@@ -290,7 +290,7 @@ namespace dune
 
 
             const unsigned int kNplanes = 3;
-            geo::View_t kPlane; 
+            geo::View_t fPlane; 
 
 
             // The following are the default values for the ParticleID module label
