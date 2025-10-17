@@ -29,7 +29,7 @@ namespace lowe
     fAdjOpFlashMinPEAttenuation(p.get<double>("AdjOpFlashMinPEAttenuation", 1)), // PE cut attenuation over drift time [us] to compensate for light attenuation
     fAdjOpFlashMinPEAttenuate(p.get<std::string>("AdjOpFlashMinPEAttenuate", "flat")), // Type of attenuation for minimum PE cut ("light_map", "asymptotic", "linear" or "flat")
     fAdjOpFlashMinPEAttenuationStrength(p.get<int>("AdjOpFlashMinPEAttenuationStrength", 10)), // Strength of the asymptotic attenuation for minimum PE cut (in powers of 10)
-    fAdjOpFlashMinPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashMinPELightMap")), // Light map file and histogram name for light map attenuation
+    fAdjOpFlashMinPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashMinPELightMap", {})), // Light map file and histogram name for light map attenuation
     producer(new ProducerUtils(p))
   {
     // Initialize the LowEUtils instance
