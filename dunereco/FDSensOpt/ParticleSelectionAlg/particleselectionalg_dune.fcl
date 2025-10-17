@@ -1,0 +1,76 @@
+#include "calorimetry_dune10kt.fcl"
+
+BEGIN_PROLOG
+
+dune_particleselectionalg:
+{
+    CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
+
+    MuSelectMethod:               0    # the method for muon selection
+                                       # 0: uses GetLongestTrack only
+                                       # 1: uses MuDefaultSelection
+    MaxMuLength:                  17e3 # the max length for muon candidates
+    MaxMuPIDA:                    13   # the max PIDA for muon candidates
+    MinMuTotalCalo:               0.3  # the min calorimetric energy for muon candidates when they are showers
+    MaxMuTotalCalo:               2    # the max calorimetric energy for muon candidates when they are showers
+    MinMuPIDAShower:              5    # the min PIDA for muon candidates when they are showers
+    MaxMuPIDAAggressive:          10   # the max PIDA for muon candidates (more aggressive, after all cleanings)
+    MaxMuContainedCalo:           1    # the max calorimetric energy for muon candidates.
+
+    ESelectMethod:                0    # the method for electron selection
+                                       # 0: uses GetHighestChargeShower only
+                                       # 1: uses EDefaultSelection
+    MaxETotalCaloForTracks:       0.2  # the max calorimetric energy for electron candidates as track
+    MaxEPIDA:                     15   # the max calorimetric energy for electron candidates as track
+
+    PrSelectMethod:               0    # the method for proton selection (dafault (only): 0)
+    MinPrPIDATrack:               10   # the min PIDA for proton candidates as track
+    MinPrPIDAShower:              13   # the min PIDA for proton candidates as shower
+    MaxPrTrkCalo:                 1.5  # the max calorimetric energy for proton candidates
+    MaxPrTrkMom:                  2.0  # the max momentum for proton candidates
+
+    PrMomByRangeMinLength:        0    # the min length for momemtum by range method
+    PrMomByRangeMaxLength:        3000 # the max length for momemtum by range method
+
+    PionSelectMethod:             0    # the method for pion selection (dafault (only): 0)
+    MinPionNTrk:                  2    # the min number of tracks for searching pion candidates
+    MinPionTrkLength:             3.5  # the min length for pion candidates
+    MaxPionTrkLength:             350  # the max length for pion candidates
+    MinPionTrkLengthNotContained: 10   # the min length for pion candidates not contained
+
+    DistanceToWallThreshold:      20.0 # the min distance from a detector wall to be considered contained
+                                        
+    RecombFactor:                 0.63 # the recombination factor
+
+    # the plane to be used for the calorimetry
+    # 0: induction U plane
+    # 1: induction V plane
+    # 2: collection W plane
+    # >2: Unknown plane
+    # When set to >2, the plane is determined maximazing best number of valid points
+    Plane:                        3    
+                                       
+    ParticleIDModuleLabel:        "pandorapid" # the module label for retreving PIDA
+
+
+}
+
+dunevd_particleselectionalg:
+{
+    @table::dune_particleselectionalg
+    CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
+}
+
+dunevd_30deg_particleselectionalg:
+{
+    @table::dune_particleselectionalg
+    CalorimetryAlg: @local::dunevd10kt_calorimetryalgmc
+}
+
+dune10kt_particleselectionalg: @local::dune_particleselectionalg
+
+dunevd10kt_particleselectionalg: @local::dunevd_particleselectionalg
+
+dunevd10kt_30deg_particleselectionalg: @local::dunevd_30deg_particleselectionalg
+
+END_PROLOG
