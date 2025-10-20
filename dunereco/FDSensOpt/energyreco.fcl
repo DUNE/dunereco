@@ -1,6 +1,7 @@
 #include "calorimetry_dune10kt.fcl"
 #include "trackfinderalgorithms.fcl"
 #include "neutrinoenergyrecoalg_dune.fcl"
+#include "particleselectionalg_dune.fcl"
 
 BEGIN_PROLOG
 
@@ -12,15 +13,20 @@ dunefd_nuenergyreco_pmtrack:
     # 1 Split event into longest reco track and hadronic part, suitable for numu CC events (method 3 is used for events with no reco track)
     # 2 Split event into reco shower with highest charge and hadronic part, suitable for nue CC events (method 3 is used for events with no reco shower)
     # 3 Use charges of all hits and convert to energy, suitable for NC events, numu CC events with no reco track or nue CC events with no reco shower
-    RecoMethod:              1
+    # 4 Split event into longest reco track, select protons and pions and all other hadronic part, suitable for numu CC events (method 6 is used for events with no longest track)
+    # 5 Split event into reco shower with highest charge, protons and pions and all other hadronic part, suitable for nue CC events (method 6 is used for events with no reco shower)
+    # 6 Momenta of protons and pions and charges of all other hits and convert to energy, suitable for NC events, numu CC events with no reco track or nue CC events with no reco shower
+    # For RecoMethod 5, 6 and 7, selection can be adjusted in ParticleSelectionAlg
+    RecoMethod:           1
 
-    WireLabel:         "wclsmcnfsp:gauss"
-    HitLabel:         "linecluster"
-    TrackLabel:        "pmtrack"
-    ShowerLabel:       "emshower"
-    TrackToHitLabel:        "pmtrack"
-    ShowerToHitLabel:        "emshower"
-    HitToSpacePointLabel:   "pmtrack"
+    WireLabel:            "wclsmcnfsp:gauss"
+    HitLabel:             "linecluster"
+    TrackLabel:           "pmtrack"
+    ShowerLabel:          "emshower"
+    TrackToHitLabel:      "pmtrack"
+    ShowerToHitLabel:     "emshower"
+    HitToSpacePointLabel: "pmtrack"
+    PFParticleLabel:      "pandora"
 
     # LongestTrackMethod
     # '0' is the standard computation: by range or MCS, depending on containment and on MuonRangeToMCSThreshold
@@ -28,7 +34,11 @@ dunefd_nuenergyreco_pmtrack:
     # '2' forcefully use only mcs
     LongestTrackMethod:     0
 
+    # Rather to use or not PID in the energy reconstruction
+    UsePID: false
+
     NeutrinoEnergyRecoAlg:   @local::dune10kt_neutrinoenergyrecoalg
+    ParticleSelectionAlg: @local::dune10kt_particleselectionalg
 }
 
 dunefd_nuenergyreco_pandora_numu:
@@ -67,12 +77,14 @@ dunefd_nuenergyreco_pandora_nue:
     @table::dunefd_nuenergyreco_pandora_numu
     RecoMethod: 2
 }
+dunefd_nuenergyreco_pandora_nue.ParticleSelectionAlg.MinPionTrkLength: 20
 
 dunefd_nuenergyreco_pandora_nc:
 {
     @table::dunefd_nuenergyreco_pandora_numu
     RecoMethod: 3
 }
+dunefd_nuenergyreco_pandora_nc.ParticleSelectionAlg.MinPionTrkLength: 20
 
 dunefdvd_nuenergyreco_pandora_numu: @local::dunefd_nuenergyreco_pandora_numu
 dunefdvd_nuenergyreco_pandora_numu.NeutrinoEnergyRecoAlg: @local::dunevd10kt_neutrinoenergyrecoalg

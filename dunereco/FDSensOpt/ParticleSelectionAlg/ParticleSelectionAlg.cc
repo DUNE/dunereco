@@ -1,0 +1,934 @@
+/**
+ *  @file   dunereco/FDSensOpt/ParticleSelectionAlg/ParticleSelectionAlg.h
+ *
+ *  @brief  Implementation file for the Particle Selection algorithm.
+ *  Written by Henrique Souza (henrique.souza@mib.infn.it
+ *
+ *  $Log: $
+ */
+
+//STL
+#include <limits>
+//ART
+#include "canvas/Utilities/Exception.h"
+//LArSoft
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
+#include "lardata/Utilities/AssociationUtil.h"
+#include "lardataobj/AnalysisBase/Calorimetry.h"
+#include "lardataobj/AnalysisBase/ParticleID.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Shower.h"
+#include "larreco/RecoAlg/TrackMomentumCalculator.h"
+#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
+
+//DUNE
+#include "dunereco/AnaUtils/DUNEAnaEventUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaPFParticleUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaTrackUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaShowerUtils.h"
+#include "dunereco/AnaUtils/DUNEAnaHitUtils.h"
+
+#include "dunereco/FDSensOpt/ParticleSelectionAlg/ParticleSelectionAlg.h"
+
+namespace dune
+{
+    ParticleSelectionAlg::ParticleSelectionAlg(
+            fhicl::ParameterSet const& pset,
+            const std::string &pfpLabel,
+            const std::string &trackLabel,
+            const std::string &showerLabel,
+            const std::string &hitLabel,
+            const std::string &trackToHitLabel,
+            const std::string &showerToHitLabel,
+            const std::string &hitToSpacePointLabel) :
+        fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
+        fMuSelectMethod(pset.get<int>("MuSelectMethod")),
+        fMaxMuLength(pset.get<double>("MaxMuLength")),
+        fMaxMuPIDA(pset.get<double>("MaxMuPIDA")),
+        fMinMuTotalCalo(pset.get<double>("MinMuTotalCalo")),
+        fMaxMuTotalCalo(pset.get<double>("MaxMuTotalCalo")),
+        fMinMuPIDAShower(pset.get<double>("MinMuPIDAShower")),
+        fMaxMuPIDAAggressive(pset.get<double>("MaxMuPIDAAggressive")),
+        fMaxMuContainedCalo(pset.get<double>("MaxMuContainedCalo")),
+        fESelectMethod(pset.get<int>("ESelectMethod")),
+        fMaxETotalCaloForTracks(pset.get<double>("MaxETotalCaloForTracks")),
+        fMaxEPIDA(pset.get<double>("MaxEPIDA")),
+        fPrSelectMethod(pset.get<int>("PrSelectMethod")),
+        fMinPrPIDATrack(pset.get<double>("MinPrPIDATrack")),
+        fMinPrPIDAShower(pset.get<double>("MinPrPIDAShower")),
+        fMaxPrTrkCalo(pset.get<double>("MaxPrTrkCalo")),
+        fMaxPrTrkMom(pset.get<double>("MaxPrTrkMom")),
+        fPrMomByRangeMinLength(pset.get<double>("PrMomByRangeMinLength")),
+        fPrMomByRangeMaxLength(pset.get<double>("PrMomByRangeMaxLength")),
+        fPionSelectMethod(pset.get<int>("PionSelectMethod")),
+        fMinPionNTrk(pset.get<size_t>("MinPionNTrk")),
+        fMinPionTrkLength(pset.get<double>("MinPionTrkLength")),
+        fMaxPionTrkLength(pset.get<double>("MaxPionTrkLength")),
+        fMinPionTrkLengthNotContained(pset.get<double>("MinPionTrkLengthNotContained")),
+        fDistanceToWallThreshold(pset.get<double>("DistanceToWallThreshold")),
+        fRecombFactor(pset.get<double>("RecombFactor")),
+        fPlaneToUse(pset.get<unsigned int>("Plane")),
+        fPFParticleLabel(pfpLabel),
+        fTrackLabel(trackLabel),
+        fShowerLabel(showerLabel),
+        fHitLabel(hitLabel),
+        fTrackToHitLabel(trackToHitLabel),
+        fShowerToHitLabel(showerToHitLabel),
+        fHitToSpacePointLabel(hitToSpacePointLabel),
+        fParticleIDModuleLabel(pset.get<std::string>("ParticleIDModuleLabel"))
+    {
+        if (fPlaneToUse > 2)
+            fPlaneToUse = static_cast<unsigned int>(geo::kUnknown);
+        fPlane = static_cast<geo::View_t>(fPlaneToUse);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    art::Ptr<recob::Track> ParticleSelectionAlg::GetLongestTrack(
+            const art::Event &event,
+            const std::vector<art::Ptr<recob::Track>> &tracks,
+            const bool isTrackOnly = true)
+    {
+        art::Ptr<recob::Track> pTrack{};
+        double longestLength(std::numeric_limits<double>::lowest());
+        for (unsigned int iTrack = 0; iTrack < tracks.size(); ++iTrack)
+        {
+            if (isTrackOnly && !this->IsTrack(event, tracks[iTrack]))
+                continue;
+            const double length(tracks[iTrack]->Length());
+            if (length-longestLength > std::numeric_limits<double>::epsilon())
+            {
+                longestLength = length;
+                pTrack = tracks[iTrack];
+            }
+        }
+
+        fLepTrack = pTrack;
+
+        return pTrack;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    art::Ptr<recob::Track> ParticleSelectionAlg::GetLongestTrackPID(const art::Event &event)
+    {
+        std::vector<art::Ptr<recob::Track>> tracks(GenMuonCandidates(event));
+        const bool isTrackOnly = (fMuSelectMethod != static_cast<int>(MuSelectMethod::kSimple)) ? false : true;
+        return this->GetLongestTrack(event, tracks, isTrackOnly);
+
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    std::vector<art::Ptr<recob::Track>> ParticleSelectionAlg::MuDefaultSelection(const art::Event &event,
+                                                                                 std::vector<art::Ptr<recob::Track>> &candidates)
+    {
+
+        std::vector<art::Ptr<recob::Track>> prevCandidates = candidates;
+
+        std::vector<std::function<void()>> filters = {
+            // Remove tracks that are too big
+            [&]() { this->applyMuLengthFilter(candidates, fMaxMuLength); },
+            // Remove when PIDA is > threshold (if PIDA is not valid, do nothing)
+            [&]() { this->applyMuMaxPIDA(candidates, fMaxMuPIDA); },
+            // Removing PFPs that are assigned as shower in events with where Total Calorimetric Enegy is between user defined value
+            [&]() { this->applyMuShowerCutCalo(event, candidates, fMinMuTotalCalo, fMaxMuTotalCalo); },
+            // Removing PFPs that are shower and have PIDA score < threshold
+            [&]() { this->applyMuShowerCutPIDA(event, candidates, fMinMuPIDAShower); },
+            // If not all tracks are contained, remove the tracks that are contained
+            [&]() { this->applyMuCutContained(event, candidates); },
+            // Remove PFPs that are showers
+            [&]() { this->applyMuRemoveShowers(event, candidates); },
+            // Remove AGAIN when PIDA is > lower_threshold (if PIDA is not valid, do nothing)
+            [&]() { this->applyMuMaxPIDA(candidates, fMaxMuPIDAAggressive); },
+        };
+
+        // After each filter, check if the number of candidates is 0 or 1
+        // If there are no candidates after filtering, return the previous candidates
+        // If there is only one candidate, return it
+        for (auto &filter: filters)
+        {
+            prevCandidates = candidates;
+            filter();
+            if (candidates.empty()) return prevCandidates;
+            if (candidates.size() == 1) return candidates;
+        }
+        return candidates;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    std::vector<art::Ptr<recob::Track>> ParticleSelectionAlg::GenMuonCandidates(const art::Event &event)
+    {
+
+        std::vector<art::Ptr<recob::Track>> candidates(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
+
+        if (candidates.size() <= 1 || (fMuSelectMethod == static_cast<int>(MuSelectMethod::kSimple)))
+            return candidates;
+
+        // Faster here in case no selection is done. Both variables have a safetity check later
+        fTrkIdToPIDAMap = this->GenMapPIDAScore(event);
+        fTotalCaloEvent = this->GetTotalCaloEvent(event);
+
+        // If more and more methods are implemented, change it to switch
+        if (fMuSelectMethod == static_cast<int>(MuSelectMethod::kDefault))
+            return this->MuDefaultSelection(event, candidates);
+        else
+        {
+            throw art::Exception(art::errors::LogicError) << "Muon selection \
+                method not recognized.\n";
+        }
+
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    art::Ptr<recob::Shower> ParticleSelectionAlg::GetHighestChargeShower(detinfo::DetectorClocksData const& clockData,
+                                                                         detinfo::DetectorPropertiesData const& detProp,
+                                                                         const art::Event &event,
+                                                                         const std::vector<art::Ptr<recob::Shower>> &showers,
+                                                                         const geo::View_t tPlane)
+    {
+        art::Ptr<recob::Shower> pShower{};
+        if (0 == showers.size())
+            return pShower;
+
+        // In case the plane is set to geo::Unknown, the plane with most hits will be used for each shower
+        fShwIdToBestPlaneMap = this->GenMapBestPlaneShower(event, tPlane);
+
+        double maxCharge(std::numeric_limits<double>::lowest());
+        for (unsigned int iShower = 0; iShower < showers.size(); ++iShower)
+        {
+            const std::vector<art::Ptr<recob::Hit>>
+                showerHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(showers[iShower],
+                                event, fShowerToHitLabel), fShwIdToBestPlaneMap[showers[iShower].key()]));
+            const double showerCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, showerHits));
+            if (showerCharge-maxCharge > std::numeric_limits<double>::epsilon())
+            {
+                maxCharge = showerCharge;
+                pShower = showers[iShower];
+            }
+        }
+
+        // Store the shower and the associated track (if available)
+        fLepShower = pShower;
+        fLepTrack = this->GetTrackFromShower(event, pShower);
+
+        return pShower;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    art::Ptr<recob::Shower> ParticleSelectionAlg::GetHighestChargeShowerPID(const art::Event &event)
+    {
+        std::vector<art::Ptr<recob::Shower>> showers(GenElectronCandidates(event));
+        auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
+        auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
+
+        
+        const geo::View_t tPlane = (fESelectMethod != static_cast<int>(ESelectMethod::kSimple)) ? fPlane : geo::kW;
+        return this->GetHighestChargeShower(clockData, detProp, event, showers, tPlane);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    std::vector<art::Ptr<recob::Shower>> ParticleSelectionAlg::EDefaultSelection(const art::Event &event,
+            std::vector<art::Ptr<recob::Shower>> &candidates)
+    {
+        // Removing showers if they are considered as Tracks AND the total calorimetric energy of the event is above a threshold
+        candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
+                    [this, &event](const art::Ptr<recob::Shower> &s) {
+                    return (this->IsTrack(event, s) && fTotalCaloEvent >= this->fMaxETotalCaloForTracks);
+                    }), candidates.end());
+
+        // removing showers if they are considered as Tracks AND the PIDA score is above a threshold
+        candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
+                    [this, &event](const art::Ptr<recob::Shower> &s) {
+                    return (this->IsTrack(event, s) && this->GetPIDAScore(s) > this->fMaxEPIDA);
+                    }), candidates.end());
+
+        return candidates;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    std::vector<art::Ptr<recob::Shower>> ParticleSelectionAlg::GenElectronCandidates(const art::Event &event)
+    {
+
+        std::vector<art::Ptr<recob::Shower>> candidates(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerLabel));
+        
+        if (fESelectMethod == static_cast<int>(ESelectMethod::kSimple))
+        {
+            return candidates;
+        }
+
+        // Faster here in case no selection is done. fTotalCaloEvent has a safety check, fShwIdToPIDAMap is used only here
+        fTotalCaloEvent = this->GetTotalCaloEvent(event);
+        fShwIdToPIDAMap = this->GenMapPIDAScoreShw(event);
+
+        // If more and more methods are implemented, change it to switch
+        if (fESelectMethod == static_cast<int>(ESelectMethod::kDefault))
+            return this->EDefaultSelection(event, candidates);
+        else
+        {
+            throw art::Exception(art::errors::LogicError) << "Electron selection \
+                method not recognized.\n";
+        }
+
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    std::vector<art::Ptr<recob::Track>> ParticleSelectionAlg::PrDefaultSelection(const art::Event &event,
+            const std::vector<art::Ptr<recob::Track>> &otracks)
+    {
+
+        std::vector<art::Ptr<recob::Track>> tracks = otracks;
+
+        // Removing tracks that are not considered as tracks by LArPandora when their PIDA score is below a threshold
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                    [this, &event](const art::Ptr<recob::Track> &t) {
+                    return (this->IsTrack(event, t) && this->GetPIDAScore(t) <= this->fMinPrPIDATrack);
+                    }), tracks.end());
+
+        // Removing tracks that are considered as showers by LArPandora when their PIDA score is below a threshold
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                    [this, &event](const art::Ptr<recob::Track> &t) {
+                    return (!this->IsTrack(event, t) && this->GetPIDAScore(t) <= this->fMinPrPIDAShower);
+                    }), tracks.end());
+
+        // Removing tracks that have calorimetric energy above a threshold
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                    [this](const art::Ptr<recob::Track> &t) {
+                    return (this->GetTrackCalo(t) >= this->fMaxPrTrkCalo);
+                    }), tracks.end());
+
+        // Removing tracks that have momentum above a threshold
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                    [this](const art::Ptr<recob::Track> &t) {
+                    return (this->GetTrackMom(t) >= this->fMaxPrTrkMom || this->GetTrackMom(t) <= 0);
+                    }), tracks.end());
+
+        fPrTracks = tracks;
+        return tracks;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    std::vector<art::Ptr<recob::Track>> ParticleSelectionAlg::GenProtonCandidates(const art::Event &event)
+    {
+        std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
+
+        // If there is a lepton track, remove it from the list of tracks
+        if (this->GetLepTrack().isAvailable())
+        {
+            tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                        [this](const art::Ptr<recob::Track> &t) {
+                        return t.key() == this->GetLepTrack().key();
+                        }), tracks.end());
+        }
+        // If lepton was not searched, these maps are empty, so we need to generate them
+        if (fTrkIdToPIDAMap.empty())
+            fTrkIdToPIDAMap = this->GenMapPIDAScore(event);
+        if (fTotalCaloEvent == std::numeric_limits<double>::lowest())
+            fTotalCaloEvent = this->GetTotalCaloEvent(event);
+        if (fTrkIdToCaloMap.empty())
+            fTrkIdToCaloMap = this->GenMapTracksCalo(event);
+        if (fTrkIdToMomMap.empty())
+            fTrkIdToMomMap = this->GenMapTracksMom(event);
+
+        fPrDone = true;
+        if (0 == tracks.size())
+        {
+            return tracks;
+        }
+
+
+        if (fPrSelectMethod == static_cast<int>(PrSelectMethod::kDefault))
+            return this->PrDefaultSelection(event, tracks);
+        else
+        {
+            throw art::Exception(art::errors::LogicError) << "Proton selection \
+                method not recognized.\n";
+        }
+
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    std::vector<art::Ptr<recob::Track>> ParticleSelectionAlg::PionDefaultSelection(const art::Event &event,
+            const std::vector<art::Ptr<recob::Track>> &otracks)
+    {
+
+        std::vector<art::Ptr<recob::Track>> tracks = otracks;
+        const std::vector< art::Ptr< recob::PFParticle > > allPFPs(dune_ana::DUNEAnaEventUtils::GetPFParticles(event, fPFParticleLabel));
+
+        size_t nrecos = allPFPs.size();
+
+        // Removing lepton candidate if any
+        if (this->GetLepTrack().isAvailable())
+        {
+            tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                        [&](const art::Ptr<recob::Track> &t) {
+                        return t.key() == this->GetLepTrack().key();
+                        }), tracks.end());
+            nrecos--;
+        }
+
+        // If there are not enough reconstructed objects, no pion candidates
+        if (nrecos <= fMinPionNTrk)
+        {
+            std::vector<art::Ptr<recob::Track>> empty;
+            fPiTracks = empty;
+            return empty;
+        }
+
+        // Enforce the presence of proton candidates.
+        // This is done because pion selection is rather weak
+        std::vector<art::Ptr<recob::Track>> trkprotons;
+        if (!fPrDone)
+            trkprotons = this->GenProtonCandidates(event);
+        else
+            trkprotons = this->GetPrTracks();
+
+
+        // Removing proton candidates
+        if (!trkprotons.empty())
+        {
+            std::unordered_set<art::Ptr<recob::Track>::key_type> keys_to_remove;
+            for (const art::Ptr<recob::Track> &t : trkprotons) keys_to_remove.insert(t.key());
+
+            tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                        [&keys_to_remove](const art::Ptr<recob::Track> &t) {
+                        return keys_to_remove.count(t.key());
+                        }), tracks.end());
+        }
+
+        // Removing tracks that are not considered as tracks by LArPandora
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                    [this, &event](const art::Ptr<recob::Track> &t) {
+                    return (!this->IsTrack(event, t));
+                    }), tracks.end());
+
+        // Removing tracks that are not in the length range
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                    [this](const art::Ptr<recob::Track> &t) {
+                    return !(t->Length() >= this->fMinPionTrkLength && t->Length() <= this->fMaxPionTrkLength);
+                    }), tracks.end());
+
+        // Removing tracks that are not contained and are not long enough
+        std::optional<bool> allContained(GenContainmentInfo(event, tracks));
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                    [this](const art::Ptr<recob::Track> &t) {
+                    return (!this->IsTrkContained(t) && t->Length() < this->fMinPionTrkLengthNotContained);
+                    }), tracks.end());
+
+        fPiTracks = tracks;
+
+        return tracks;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    std::vector<art::Ptr<recob::Track>> ParticleSelectionAlg::GenPionCandidates(const art::Event &event)
+    {
+        std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
+        if (fPionSelectMethod == static_cast<int>(PionSelectMethod::kDefault))
+            return this->PionDefaultSelection(event, tracks);
+        else
+        {
+            throw art::Exception(art::errors::LogicError) << "Pion selection \
+                method not recognized.\n";
+        }
+
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    std::map<art::Ptr<recob::Track>::key_type, double> ParticleSelectionAlg::GenMapPIDAScore(const art::Event &event)
+    {
+
+        std::map<art::Ptr<recob::Track>::key_type, double> tTrkIdToPIDAMap;
+
+        art::Handle< std::vector<recob::Track>> trackListHandle = event.getHandle< std::vector<recob::Track>>(fTrackLabel);
+        std::unique_ptr<art::FindManyP<anab::ParticleID>> fmpid = std::make_unique<art::FindManyP<anab::ParticleID>>(
+                trackListHandle, event, fParticleIDModuleLabel);
+        if(!fmpid->isValid())
+        {
+            std::cerr << "(ParticleSelectionAlg) Could not find any ParticleID association " << fTrackLabel << " and " << fParticleIDModuleLabel << std::endl;
+            return tTrkIdToPIDAMap;
+        }
+
+        const std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
+
+        for (const art::Ptr<recob::Track> &track : tracks)
+        {
+
+            const std::vector< art::Ptr<anab::ParticleID>> pids = fmpid->at(track.key());
+            if (pids.empty())
+            {
+                tTrkIdToPIDAMap[track.key()] = 0;
+                continue;
+            }
+
+            int biggestNdf = 0;
+            geo::View_t tplane = fPlane;
+            // if plane is set to unknown, search the plane with most points
+            // when PIDA was evaluated
+            if (tplane == geo::kUnknown)
+            {
+                for (size_t ipid = 0; ipid < pids.size(); ++ipid)
+                {
+                    if (!pids[ipid]->PlaneID().isValid) continue;
+                    geo::PlaneID::PlaneID_t planenum = pids[ipid]->PlaneID().Plane;
+                    if (planenum<0||planenum>2) continue;
+                    const std::vector< anab::sParticleIDAlgScores> pidScore = pids[ipid]->ParticleIDAlgScores();
+                    for (const anab::sParticleIDAlgScores &pScore : pidScore)
+                    {
+                        if (pScore.fAssumedPdg == 0 && pScore.fNdf >= biggestNdf)
+                        {
+                            biggestNdf = pScore.fNdf;
+                            tplane = static_cast<geo::View_t>(ipid);
+                        }
+                    }
+                }
+                // If failed to find a plane, set to PIDA score to zero
+                if (tplane == geo::kUnknown)
+                {
+                    tTrkIdToPIDAMap[track.key()] = 0;
+                    continue;
+                }
+            }
+
+            double pidaScore = 0;
+            if(pids[tplane]->PlaneID().isValid)
+            {
+                const std::vector< anab::sParticleIDAlgScores> pidScore = pids[tplane]->ParticleIDAlgScores();
+                for (const anab::sParticleIDAlgScores &pScore : pidScore)
+                {
+                    if (pScore.fAssumedPdg == 0)
+                    {
+                        pidaScore = pScore.fValue;
+                    }
+                }
+            }
+            tTrkIdToPIDAMap[track.key()] = pidaScore;
+        }
+        return tTrkIdToPIDAMap;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    std::map<art::Ptr<recob::Shower>::key_type, double> ParticleSelectionAlg::GenMapPIDAScoreShw(const art::Event &event)
+    {
+        std::map<art::Ptr<recob::Shower>::key_type, double> tShwIdToPIDAMap;
+        const std::vector<art::Ptr<recob::Shower>> showers(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerLabel));
+        if (fTrkIdToPIDAMap.size() == 0)
+        {
+            fTrkIdToPIDAMap = this->GenMapPIDAScore(event);
+        }
+        for (const art::Ptr<recob::Shower> &shower : showers)
+        {
+            art::Ptr<recob::Track> shwTrk = this->GetTrackFromShower(event, shower);
+            if (!shwTrk.isAvailable())
+                tShwIdToPIDAMap[shower.key()] = 0;
+            else
+                tShwIdToPIDAMap[shower.key()] = this->GetPIDAScore(shwTrk);
+        }
+
+        return tShwIdToPIDAMap;
+
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    bool ParticleSelectionAlg::GenContainmentInfo(const art::Event &event)
+    {
+        const std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
+        return this->GenContainmentInfo(event, tracks);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    bool ParticleSelectionAlg::GenContainmentInfo(const art::Event &event, const std::vector<art::Ptr<recob::Track>> &tracks)
+    {
+        bool allContained = true;
+        hitListHandle    = event.getHandle< std::vector<recob::Hit> >(fHitLabel);
+        fmsp  = std::make_unique<art::FindManyP<recob::SpacePoint>>(hitListHandle, event, fHitToSpacePointLabel);
+        for (const art::Ptr<recob::Track> &track : tracks)
+        {
+            if (fTrkIdToContainmentMap.count(track.key()) == 0)
+            {
+                std::vector<art::Ptr<recob::Hit>> trkhits = (dune_ana::DUNEAnaTrackUtils::GetHits(track, event, fTrackLabel));
+                bool trkIsContained = this->IsContained(trkhits, event);
+                fTrkIdToContainmentMap[track.key()] = trkIsContained;
+            }
+            allContained &= fTrkIdToContainmentMap[track.key()];
+        }
+        return allContained;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    const double ParticleSelectionAlg::GetPIDAScore(const art::Ptr<recob::Track> &track)
+    {
+        if (fTrkIdToPIDAMap.count(track.key()))
+        {
+            return fTrkIdToPIDAMap[track.key()];
+        }
+        return 0;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    const double ParticleSelectionAlg::GetPIDAScore(const art::Ptr<recob::Shower> &shower)
+    {
+        if (fShwIdToPIDAMap.count(shower.key()))
+        {
+            return fShwIdToPIDAMap[shower.key()];
+        }
+        return 0;
+    }
+
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    const double ParticleSelectionAlg::GetTrackCalo(const art::Ptr<recob::Track> &track)
+    {
+        if (fTrkIdToCaloMap.count(track.key()))
+        {
+            return fTrkIdToCaloMap[track.key()];
+        }
+        return 0;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    const double ParticleSelectionAlg::GetTrackMom(const art::Ptr<recob::Track> &track)
+    {
+        if (fTrkIdToMomMap.count(track.key()))
+        {
+            return fTrkIdToMomMap[track.key()];
+        }
+        return 0;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    double ParticleSelectionAlg::GetTotalCaloEvent(const art::Event &event)
+    {
+        auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
+        auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
+
+        auto const allHits = dune_ana::DUNEAnaEventUtils::GetHits(event, fHitLabel);
+        geo::View_t tplane = this->GetBestPlane(event, allHits);
+
+        const std::vector<art::Ptr<recob::Hit>> eventHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(allHits, tplane));
+        const double eventObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, eventHits));
+
+        const double CaloEnergy(this->CalculateEnergyFromCharge(eventObservedCharge, tplane));
+        return CaloEnergy;
+
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    art::Ptr<recob::Track> ParticleSelectionAlg::GetTrackFromShower(const art::Event &event, const art::Ptr<recob::Shower> &shower)
+    {
+        if (!shower.isAvailable())
+            return art::Ptr<recob::Track>{};
+        const art::Ptr<recob::PFParticle> pfp(dune_ana::DUNEAnaShowerUtils::GetPFParticle(shower, event, fShowerLabel));
+        if (dune_ana::DUNEAnaPFParticleUtils::IsTrack(pfp, event, fPFParticleLabel, fTrackLabel))
+        {
+            return dune_ana::DUNEAnaPFParticleUtils::GetTrack(pfp, event, fPFParticleLabel, fTrackLabel);
+
+        }
+        return art::Ptr<recob::Track>{};
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    std::map<art::Ptr<recob::Track>::key_type, double> ParticleSelectionAlg::GenMapTracksCalo(const art::Event &event)
+    {
+        auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
+        auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
+        const std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
+        std::map<art::Ptr<recob::Track>::key_type, double> tTrkIdToCaloMap;
+
+        for (const art::Ptr<recob::Track> &track : tracks)
+        {
+
+            const auto alltrkhits = dune_ana::DUNEAnaTrackUtils::GetHits(track, event, fTrackLabel);
+            
+            geo::View_t tplane = this->GetBestPlane(event, alltrkhits);
+
+            const std::vector<art::Ptr<recob::Hit>> trkHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(alltrkhits, tplane));
+
+            const double eventObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, trkHits));
+
+            const double CaloEnergy(this->CalculateEnergyFromCharge(eventObservedCharge, tplane));
+
+            tTrkIdToCaloMap[track.key()] = CaloEnergy;
+
+        }
+
+        return tTrkIdToCaloMap;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    std::map<art::Ptr<recob::Track>::key_type, double> ParticleSelectionAlg::GenMapTracksMom(const art::Event &event)
+    {
+        std::map<art::Ptr<recob::Track>::key_type, double> tTrkIdToMomMap;
+        const std::vector<art::Ptr<recob::Track>> tracks(dune_ana::DUNEAnaEventUtils::GetTracks(event, fTrackLabel));
+        trkf::TrackMomentumCalculator trkmrange{fPrMomByRangeMinLength, fPrMomByRangeMaxLength};
+        for (const art::Ptr<recob::Track> &track : tracks)
+        {
+            double trkmomrangepr = trkmrange.GetTrackMomentum(track->Length(),2212);
+            tTrkIdToMomMap[track.key()] = trkmomrangepr;
+        }
+        return tTrkIdToMomMap;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    std::map<art::Ptr<recob::Shower>::key_type, geo::View_t> ParticleSelectionAlg::GenMapBestPlaneShower(const art::Event &event, const geo::View_t tPlane)
+    {
+        std::map<art::Ptr<recob::Shower>::key_type, geo::View_t> tShwIdToBestPlaneMap;
+        const std::vector<art::Ptr<recob::Shower>> showers(dune_ana::DUNEAnaEventUtils::GetShowers(event, fShowerLabel));
+        for (const art::Ptr<recob::Shower> &shower : showers)
+        {
+            const auto allshwhits = dune_ana::DUNEAnaShowerUtils::GetHits(shower, event, fShowerLabel);
+            geo::View_t tplane = this->GetBestPlane(event, allshwhits);
+            tShwIdToBestPlaneMap[shower.key()] = tplane;
+        }
+
+        return tShwIdToBestPlaneMap;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    double ParticleSelectionAlg::CalculateEnergyFromCharge(const double charge, const unsigned short plane )
+    {
+        return fCalorimetryAlg.ElectronsFromADCArea(charge, plane)*1./fRecombFactor/util::kGeVToElectrons;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    bool ParticleSelectionAlg::IsTrack(const art::Event &event, const art::Ptr<recob::Track> &track)
+    {
+        const art::Ptr< recob::PFParticle > pfp(dune_ana::DUNEAnaTrackUtils::GetPFParticle(track, event, fTrackLabel));
+        return lar_pandora::LArPandoraHelper::IsTrack(pfp);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    bool ParticleSelectionAlg::IsTrack(const art::Event &event, const art::Ptr<recob::Shower> &shower)
+    {
+        const art::Ptr< recob::PFParticle > pfp(dune_ana::DUNEAnaShowerUtils::GetPFParticle(shower, event, fShowerLabel));
+        return lar_pandora::LArPandoraHelper::IsTrack(pfp);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    geo::View_t ParticleSelectionAlg::GetBestPlane(const art::Event &event,  const std::vector<art::Ptr<recob::Hit>> &allhits)
+    {
+        geo::View_t tplane = fPlane;
+
+        if (tplane == geo::kUnknown)
+        {
+            size_t maxNhits = 0;
+            for (size_t ipl = 0; ipl < kNplanes; ++ipl)
+            {
+                const std::vector<art::Ptr<recob::Hit>> planehits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(allhits, ipl));
+                const size_t nhits = planehits.size();
+                if (nhits >= maxNhits)
+                {
+                    maxNhits = nhits;
+                    tplane = static_cast<geo::View_t>(ipl);
+                }
+            }
+        }
+        return tplane;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    bool ParticleSelectionAlg::IsPointContained(const double x, const double y, const double z)
+    {
+        geo::Point_t const position{x,y,z};
+        art::ServiceHandle<geo::Geometry> fGeometry;
+
+        geo::TPCID tpcID(fGeometry->FindTPCAtPosition(position));
+        if (!(fGeometry->HasTPC(tpcID)))
+            return false;
+
+        double minX(std::numeric_limits<double>::max());
+        double maxX(std::numeric_limits<double>::lowest());
+        double minY(std::numeric_limits<double>::max());
+        double maxY(std::numeric_limits<double>::lowest());
+        double minZ(std::numeric_limits<double>::max());
+        double maxZ(std::numeric_limits<double>::lowest());
+        for (auto const& tpc : fGeometry->Iterate<geo::TPCGeo>())
+        {
+            minX = std::min(minX,tpc.MinX());
+            maxX = std::max(maxX,tpc.MaxX());
+            minY = std::min(minY,tpc.MinY());
+            maxY = std::max(maxY,tpc.MaxY());
+            minZ = std::min(minZ,tpc.MinZ());
+            maxZ = std::max(maxZ,tpc.MaxZ());
+        }
+
+        minX += fDistanceToWallThreshold;
+        maxX -= fDistanceToWallThreshold;
+        minY += fDistanceToWallThreshold;
+        maxY -= fDistanceToWallThreshold;
+        minZ += fDistanceToWallThreshold;
+        maxZ -= fDistanceToWallThreshold;
+
+        if (x - minX < -1.*std::numeric_limits<double>::epsilon() ||
+                x - maxX > std::numeric_limits<double>::epsilon())
+            return false;
+        if (y - minY < -1.*std::numeric_limits<double>::epsilon() ||
+                y - maxY > std::numeric_limits<double>::epsilon())
+            return false;
+        if (z - minZ < -1.*std::numeric_limits<double>::epsilon() ||
+                z - maxZ > std::numeric_limits<double>::epsilon())
+            return false;
+
+        return true;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    bool ParticleSelectionAlg::IsContained(const std::vector<art::Ptr<recob::Hit>> &hits, const art::Event &event)
+    {
+
+        for (unsigned int iHit = 0; iHit < hits.size(); ++iHit)
+        {
+            std::vector<art::Ptr<recob::SpacePoint> > spacePoints;
+            if(fmsp->isValid())
+            {
+                spacePoints = fmsp->at(hits[iHit].key());
+            }
+            for (unsigned int iSpacePoint = 0; iSpacePoint < spacePoints.size(); ++iSpacePoint)
+            {
+                const art::Ptr<recob::SpacePoint> spacePoint(spacePoints[iSpacePoint]);
+                if (!(this->IsPointContained(spacePoint->XYZ()[0],spacePoint->XYZ()[1],spacePoint->XYZ()[2])))
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    bool ParticleSelectionAlg::IsTrkContained(const art::Ptr<recob::Track> &track)
+    {
+        if (fTrkIdToContainmentMap.count(track.key()))
+        {
+            return fTrkIdToContainmentMap[track.key()];
+        }
+        else
+        {
+            throw art::Exception(art::errors::LogicError) << "The map between \
+                track id and containment information does not have this track \
+                id, this shouldn't happen.\n";
+
+        }
+        return false;
+    }
+
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    const void ParticleSelectionAlg::applyMuLengthFilter(
+            std::vector<art::Ptr<recob::Track>>& tracks,
+            const double maxlen)
+    {
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                    [&maxlen](const art::Ptr<recob::Track> &t) {
+                    return t->Length() > maxlen;
+                    }), tracks.end());
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    const void ParticleSelectionAlg::applyMuMaxPIDA(
+            std::vector<art::Ptr<recob::Track>>& tracks,
+            const double maxPIDA)
+    {
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                    [this, &maxPIDA](const art::Ptr<recob::Track> &t) {
+                    return this->GetPIDAScore(t) > maxPIDA;
+                    }), tracks.end());
+
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    const void ParticleSelectionAlg::applyMuShowerCutCalo(
+            const art::Event &event,
+            std::vector<art::Ptr<recob::Track>>& tracks,
+            const double minCalo,
+            const double maxCalo)
+    {
+        // Nothing to be filtered in this event
+        if ( !(this->fTotalCaloEvent >= minCalo && this->fTotalCaloEvent <= maxCalo) )
+            return;
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                    [this, &event](const art::Ptr<recob::Track> &t) {
+                    return (!this->IsTrack(event, t));
+                    }), tracks.end());
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    const void ParticleSelectionAlg::applyMuShowerCutPIDA(
+            const art::Event &event,
+            std::vector<art::Ptr<recob::Track>>& tracks,
+            const double minPIDA)
+    {
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                    [this, &event, &minPIDA](const art::Ptr<recob::Track> &t) {
+                    return (!this->IsTrack(event, t) && this->GetPIDAScore(t) < minPIDA);
+                    }), tracks.end());
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    const void ParticleSelectionAlg::applyMuCutContained(
+            const art::Event &event,
+            std::vector<art::Ptr<recob::Track>>& tracks
+            )
+    {
+        if (tracks.size()<=1) return; // Shouldn't get here...
+
+        const bool allContained{GenContainmentInfo(event, tracks)};
+        if (allContained) return; // no filter needed
+
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                    [this](const art::Ptr<recob::Track> &t) {
+                    return (this->IsTrkContained(t) && fTotalCaloEvent >= fMaxMuContainedCalo);
+                    }), tracks.end());
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+    const void ParticleSelectionAlg::applyMuRemoveShowers(
+            const art::Event &event,
+            std::vector<art::Ptr<recob::Track>>& tracks
+            )
+    {
+        tracks.erase(std::remove_if(tracks.begin(), tracks.end(),
+                    [this, &event](const art::Ptr<recob::Track> &t) {
+                    return (!this->IsTrack(event, t));
+                    }), tracks.end());
+    }
+
+    //------------------------------------------------------------------------------------------------------------------------------------------
+
+}
+
