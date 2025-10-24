@@ -25,6 +25,7 @@ namespace solar {
       const std::vector<float>& position,
       int   id,
       int   nhits,
+      int   tpc,
       int   channel,
       float charge,
       float time,
@@ -42,6 +43,7 @@ namespace solar {
       const std::vector<float>& position,
       int   id,
       int   nhits,
+      int   tpc,
       int   channel,
       float charge,
       float time,
@@ -56,6 +58,7 @@ namespace solar {
     float getZ() const { return averagePosition[2]; }
     int   getMainID() const { return mainID; }
     int   getNHits() const { return nHits; }
+    int   getTPC() const { return TPC; }
     int   getMainChannel() const { return mainChannel; }
     float getTotalCharge() const { return totalCharge; }
     float getAverageTime() const { return averageTime; }
@@ -69,6 +72,7 @@ namespace solar {
     void setPosition(const std::vector<float>& pos) const { averagePosition = pos; }
     void setMainID(int id) { mainID = id; }
     void setNHits(int nhits) { nHits = nhits; }
+    void setTPC(int tpc) { TPC = tpc; }
     void setMainChannel(int channel) { mainChannel = channel; }
     void setTotalCharge(float charge) { totalCharge = charge; }
     void setAverageTime(float time) { averageTime = time; }
@@ -92,6 +96,7 @@ namespace solar {
     mutable std::vector<float> averagePosition; ///< position of this hit combination in world coordinates
     int mainID;                                 ///< Main track ID contributing to this cluster
     int nHits;                                  ///< Number of hits in this cluster
+    int TPC;                                    ///< TPC number of the cluster
     int mainChannel;                            ///< Main channel of the cluster
     float totalCharge;                          ///< Sum of charges of all associated recob::Hits
     float averageTime;                          ///< Average peak time of all associated recob::Hits

@@ -104,6 +104,7 @@ namespace lowe
                 std::vector<float> Position;
                 int MainID;
                 int NHits;
+                int TPC;
                 int MainChannel;
                 float TotalCharge;
                 float AveragePeakTime;
@@ -131,6 +132,7 @@ namespace lowe
                 std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
                 std::vector<std::vector<int>> &ClMainID,
                 std::vector<std::vector<int>> &ClNHits,
+                std::vector<std::vector<int>> &ClTPC,
                 std::vector<std::vector<int>> &ClChannel,
                 std::vector<std::vector<float>> &ClT,
                 std::vector<std::vector<float>> &ClY,
@@ -172,6 +174,7 @@ namespace lowe
                 std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
                 std::vector<std::vector<int>> &ClMainID,
                 std::vector<std::vector<int>> &ClNHits,
+                std::vector<std::vector<int>> &ClTPC,
                 std::vector<std::vector<int>> &ClChannel,
                 std::vector<std::vector<float>> &ClT,
                 std::vector<std::vector<float>> &ClY,

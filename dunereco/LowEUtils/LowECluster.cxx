@@ -15,6 +15,7 @@ namespace solar {
     : averagePosition(std::vector<float>(3, -1e6))
     , mainID(-1)
     , nHits(0)
+    , TPC(-1)
     , mainChannel(-1)
     , totalCharge(-1)
     , averageTime(-1e6)
@@ -29,6 +30,7 @@ namespace solar {
     const std::vector<float>& position,
     int   id,
     int   nhits,
+    int   tpc,
     int   channel,
     float charge,
     float time,
@@ -38,6 +40,7 @@ namespace solar {
     : averagePosition(position)
     , mainID(id)
     , nHits(nhits)
+    , TPC(tpc)
     , mainChannel(channel)
     , totalCharge(charge)
     , averageTime(time)
@@ -53,6 +56,7 @@ namespace solar {
     averagePosition = toCopy.averagePosition;
     mainID = toCopy.mainID;
     nHits = toCopy.nHits;
+    TPC = toCopy.TPC;
     mainChannel = toCopy.mainChannel;
     totalCharge = toCopy.totalCharge;
     averageTime = toCopy.averageTime;
@@ -72,6 +76,7 @@ namespace solar {
   void LowECluster::initialize(
     const std::vector<float>& position,
     int   id,
+    int   tpc,
     int   nhits,
     int   channel,
     float charge,
@@ -83,6 +88,7 @@ namespace solar {
     averagePosition = position;
     mainID = id;
     nHits = nhits;
+    TPC = tpc;
     mainChannel = channel;
     totalCharge = charge;
     averageTime = time;

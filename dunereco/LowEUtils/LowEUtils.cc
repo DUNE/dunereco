@@ -547,6 +547,7 @@ namespace lowe
     std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
     std::vector<std::vector<int>> &ClMainID,
     std::vector<std::vector<int>> &ClNHits,
+    std::vector<std::vector<int>> &ClTPC,
     std::vector<std::vector<int>> &ClChannel,
     std::vector<std::vector<float>> &ClT,
     std::vector<std::vector<float>> &ClY,
@@ -567,6 +568,7 @@ namespace lowe
       std::vector<std::vector<recob::Hit>> TheseClusters = Clusters[idx];
       for (size_t i = 0; i < TheseClusters.size(); i++)
       {
+        int mainTPC = -1;
         int mainTrID = -1;
         int mainChannel = -1;
         double mainCharge = 0;
@@ -598,6 +600,7 @@ namespace lowe
             mainTrID = mainHitTrID;
             mainCharge = clustCharge;
             mainChannel = hit.Channel();
+            mainTPC = hit.WireID().TPC;
           };
           clustT += hit.PeakTime() * TickPeriod * hitCharge;
           clustY += hXYZ.Y() * hitCharge;
@@ -612,6 +615,7 @@ namespace lowe
         }
         ClMainID[idx].push_back(mainTrID);
         ClNHits[idx].push_back(ThisCluster.size());
+        ClTPC[idx].push_back(mainTPC);
         ClChannel[idx].push_back(mainChannel);
         ClCharge[idx].push_back(clustCharge);
         ClT[idx].push_back(clustT / clustCharge);
@@ -635,6 +639,7 @@ namespace lowe
       std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
       std::vector<std::vector<int>> &ClMainID,
       std::vector<std::vector<int>> &ClNHits,
+      std::vector<std::vector<int>> &ClTPC,
       std::vector<std::vector<int>> &ClChannel,
       std::vector<std::vector<float>> &ClT,
       std::vector<std::vector<float>> &ClY,
@@ -646,8 +651,8 @@ namespace lowe
       detinfo::DetectorClocksData const &clockData,
       bool debug)
   {
-    LowEUtils::FillClusterVariables(SignalTrackIDs, Clusters, ClMainID, ClNHits, ClChannel, ClT, ClY, ClZ, ClDir, ClCharge, ClPurity, ClCompleteness, clockData, debug);
-    std::vector<std::vector<int>> MatchedClMainID = {{}, {}, {}}, MatchedClNHits = {{}, {}, {}}, MatchedClChannel = {{}, {}, {}};
+    LowEUtils::FillClusterVariables(SignalTrackIDs, Clusters, ClMainID, ClNHits, ClTPC, ClChannel, ClT, ClY, ClZ, ClDir, ClCharge, ClPurity, ClCompleteness, clockData, debug);
+    std::vector<std::vector<int>> MatchedClMainID = {{}, {}, {}}, MatchedClNHits = {{}, {}, {}}, MatchedClTPC = {{}, {}, {}}, MatchedClChannel = {{}, {}, {}};
     std::vector<std::vector<float>> MatchedClT = {{}, {}, {}}, MatchedClY = {{}, {}, {}}, MatchedClZ = {{}, {}, {}}, MatchedClDir = {{}, {}, {}};
     std::vector<std::vector<float>> MatchedClCompleteness = {{}, {}, {}}, MatchedClCharge = {{}, {}, {}}, MatchedClPurity = {{}, {}, {}};
 
@@ -759,6 +764,7 @@ namespace lowe
         MatchedClusters[0].push_back(Clusters[0][MatchInd0Idx]);
         MatchedClMainID[0].push_back(ClMainID[0][MatchInd0Idx]);
         MatchedClNHits[0].push_back(ClNHits[0][MatchInd0Idx]);
+        MatchedClTPC[0].push_back(ClTPC[0][MatchInd0Idx]);
         MatchedClChannel[0].push_back(ClChannel[0][MatchInd0Idx]);
         MatchedClT[0].push_back(ClT[0][MatchInd0Idx]);
         MatchedClY[0].push_back(ClY0);
@@ -771,6 +777,7 @@ namespace lowe
         MatchedClusters[1].push_back(Clusters[1][MatchInd1Idx]);
         MatchedClMainID[1].push_back(ClMainID[1][MatchInd1Idx]);
         MatchedClNHits[1].push_back(ClNHits[1][MatchInd1Idx]);
+        MatchedClTPC[1].push_back(ClTPC[1][MatchInd1Idx]);
         MatchedClChannel[1].push_back(ClChannel[1][MatchInd1Idx]);
         MatchedClT[1].push_back(ClT[1][MatchInd1Idx]);
         MatchedClY[1].push_back(ClY1);
@@ -791,6 +798,7 @@ namespace lowe
         MatchedClusters[0].push_back(Clusters[0][MatchInd0Idx]);
         MatchedClMainID[0].push_back(ClMainID[0][MatchInd0Idx]);
         MatchedClNHits[0].push_back(ClNHits[0][MatchInd0Idx]);
+        MatchedClTPC[0].push_back(ClTPC[0][MatchInd0Idx]);
         MatchedClChannel[0].push_back(ClChannel[0][MatchInd0Idx]);
         MatchedClT[0].push_back(ClT[0][MatchInd0Idx]);
         MatchedClY[0].push_back(ClY0);
@@ -803,6 +811,7 @@ namespace lowe
         MatchedClusters[1].push_back({});
         MatchedClMainID[1].push_back(-1);
         MatchedClNHits[1].push_back(0);
+        MatchedClTPC[1].push_back(-1);
         MatchedClChannel[1].push_back(0);
         MatchedClT[1].push_back(-1e6);
         MatchedClY[1].push_back(-1e6);
@@ -823,6 +832,7 @@ namespace lowe
         MatchedClusters[1].push_back(Clusters[1][MatchInd1Idx]);
         MatchedClMainID[1].push_back(ClMainID[1][MatchInd1Idx]);
         MatchedClNHits[1].push_back(ClNHits[1][MatchInd1Idx]);
+        MatchedClTPC[1].push_back(ClTPC[1][MatchInd1Idx]);
         MatchedClChannel[1].push_back(ClChannel[1][MatchInd1Idx]);
         MatchedClT[1].push_back(ClT[1][MatchInd1Idx]);
         MatchedClY[1].push_back(ClY1);
@@ -835,6 +845,7 @@ namespace lowe
         MatchedClusters[0].push_back({});
         MatchedClMainID[0].push_back(-1);
         MatchedClNHits[0].push_back(0);
+        MatchedClTPC[0].push_back(-1);
         MatchedClChannel[0].push_back(0);
         MatchedClT[0].push_back(-1e6);
         MatchedClY[0].push_back(-1e6);
@@ -851,6 +862,7 @@ namespace lowe
       MatchedClusters[2].push_back(Clusters[2][index]);
       MatchedClMainID[2].push_back(ClMainID[2][index]);
       MatchedClNHits[2].push_back(ClNHits[2][index]);
+      MatchedClTPC[2].push_back(ClTPC[2][index]);
       MatchedClChannel[2].push_back(ClChannel[2][index]);
       MatchedClT[2].push_back(ClT[2][index]);
       MatchedClY[2].push_back(ClY2);
@@ -861,6 +873,7 @@ namespace lowe
     }
     ClMainID = MatchedClMainID;
     ClNHits = MatchedClNHits;
+    ClTPC = MatchedClTPC;
     ClChannel = MatchedClChannel;
     ClT = MatchedClT;
     ClY = MatchedClY;
@@ -1115,6 +1128,12 @@ namespace lowe
           continue;
         }
 
+        // If adjcluster is not in the same side of the APA as cluster, skip
+        if (cluster->getTPC()%2 != adjcluster->getTPC()%2) {
+          sEventCandidateFinding += "\tSkipping adjacent cluster in different TPC side: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
+          continue;
+        }
+
         auto ref4 = TVector3(0, cluster->getY(), cluster->getZ()) - TVector3(dXcluster1, adjcluster->getY(), adjcluster->getZ());
         if (ref4.Mag() < fAdjClusterRad) {
           // sEventCandidateFinding += "\tFound adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
@@ -1178,6 +1197,12 @@ namespace lowe
         // if cluster has already been clustered, skip
         if (EvaluatedAdjCluster[*it4] == true) {
           sEventCandidateFinding += "\tSkipping already evaluated cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
+          continue;
+        }
+
+        // If adjcluster is not in the same side of the APA as cluster, skip
+        if (cluster->getTPC()%2 != adjcluster->getTPC()%2) {
+          sEventCandidateFinding += "\tSkipping adjacent cluster in different TPC side: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
           continue;
         }
 
