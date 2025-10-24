@@ -21,7 +21,7 @@ source:
 
 physics:
 {
-    producers: { energyreconumu: @local::dunefd_nuenergyreco_pmtrack }
+    producers: { energyreconumu: @local::dunefd_nuenergyreco_pandora_numu }
     analyzers: { transformerenergydatagen: @local::dunefd_transformerenergydatagen_numu }
 
     ana:  [ transformerenergydatagen ]
@@ -31,8 +31,8 @@ physics:
     end_paths:     [ ana ]
 }
 
-services.AuxDetGeometry: @local::dune10kt_1x2x6_v2_auxdet_geo
-services.Geometry: @local::dune10kt_1x2x6_v2_geo
+services.AuxDetGeometry: @local::dune10kt_1x2x6_v5_refactored_auxdet_geo
+services.Geometry: @local::dune10kt_1x2x6_v5_refactored_geo
 
 # Method 1 -- using longest track
 physics.producers.energyreconumu.RecoMethod : 1

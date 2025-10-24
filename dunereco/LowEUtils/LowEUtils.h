@@ -189,6 +189,7 @@ namespace solar
 
         void FindPrimaryClusters(
             const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector,
+            std::vector<bool> &EventCandidateFound,
             std::vector<std::vector<art::Ptr<solar::LowECluster>>> &EventCandidateVector,
             std::vector<std::vector<int>> &EventCandidateIdx,
             const detinfo::DetectorClocksData &clockData,
