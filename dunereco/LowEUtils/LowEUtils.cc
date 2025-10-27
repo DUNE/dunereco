@@ -1117,13 +1117,13 @@ namespace lowe
         }
 
         // If AdjClusterSingleMatch is true and adjcluster has already been evaluated, skip
-        if (fAdjClusterSingleMatch && EvaluatedCluster[*it2] == true) {
+        if (fAdjClusterSingleMatch && EvaluatedCluster[*it2]) {
           sEventCandidateFinding += "\tSkipping already evaluated adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
           continue;
         }
         
         // If cluster has already been clustered, skip
-        if (EvaluatedAdjCluster[*it2] == true) {
+        if (EvaluatedAdjCluster[*it2]) {
           sEventCandidateFinding += "\tSkipping already evaluated cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
           continue;
         }
@@ -1136,7 +1136,6 @@ namespace lowe
 
         auto ref4 = TVector3(0, cluster->getY(), cluster->getZ()) - TVector3(dXcluster1, adjcluster->getY(), adjcluster->getZ());
         if (ref4.Mag() < fAdjClusterRad) {
-          // sEventCandidateFinding += "\tFound adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
           if (adjcluster->getTotalCharge() > cluster->getTotalCharge()) {
             sEventCandidateFinding += "¡¡¡Found bigger cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
             EvaluatedCluster[*it] = false;
@@ -1189,13 +1188,13 @@ namespace lowe
         }
 
         // If AdjClusterSingleMatch is true and adjcluster has already been evaluated, skip
-        if (fAdjClusterSingleMatch && EvaluatedCluster[*it4] == true) {
+        if (fAdjClusterSingleMatch && EvaluatedCluster[*it4]) {
           sEventCandidateFinding += "\tSkipping already evaluated adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
           continue;
         }
 
         // if cluster has already been clustered, skip
-        if (EvaluatedAdjCluster[*it4] == true) {
+        if (EvaluatedAdjCluster[*it4]) {
           sEventCandidateFinding += "\tSkipping already evaluated cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
           continue;
         }
@@ -1209,7 +1208,6 @@ namespace lowe
         auto ref4 = TVector3(0, cluster->getY(), cluster->getZ()) - TVector3(dXcluster2, adjcluster->getY(), adjcluster->getZ());
         if (ref4.Mag() < fAdjClusterRad)
         {
-          // sEventCandidateFinding += "\tFound adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + "\n";
           if (adjcluster->getTotalCharge() > cluster->getTotalCharge()) {
             sEventCandidateFinding += "¡¡¡Found bigger cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
             EvaluatedCluster[*it] = false;
