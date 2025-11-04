@@ -176,8 +176,8 @@ local nfsp_pipes = [
              [ chsel_pipes[n] ]
              + (if use_resampler=='true' && n<4 then [ resamplers[n] ] else [ ])
              + (if use_magnify =='true' then [mio.orig_pipe[n]] else [ ])
-             // + [ nf_pipes[n] ]
-             // + (if use_magnify =='true' then [mio.raw_pipe[n]] else [ ])
+             + [ nf_pipes[n] ]
+             + (if use_magnify =='true' then [mio.raw_pipe[n]] else [ ])
              + [ sp_pipes[n] ]
              + (if use_magnify =='true' then
                [
