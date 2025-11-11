@@ -77,90 +77,109 @@ NeutrinoEnergyRecoAlg::NeutrinoEnergyRecoAlg(fhicl::ParameterSet const& pset, co
 
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event)
 {
+    // This function is kept just so old codes don't break. 
+    return CalculateNeutrinoEnergy(pMuonTrack, event, MuonTrackMethod::kTrackMethodNotSet, false);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Ptr<recob::Track> &pMuonTrack, const art::Event &event,
+        const int longestTrackMethod, const bool usePID)
+{
     if (!pMuonTrack.isAvailable() || pMuonTrack.isNull())
     {
         mf::LogWarning("NeutrinoEnergyRecoAlg") << " Cannot access the muon track which is needed for this energy reconstructio method.\n"
         << "Swapping to energy reconstruction method " << kAllCharges << " for this calculation." << std::endl;
-        return this->CalculateNeutrinoEnergy(event);
+        return this->CalculateNeutrinoEnergy(event, usePID);
     }
 
     Point_t vertex(pMuonTrack->Start().X(), pMuonTrack->Start().Y(), pMuonTrack->Start().Z());
 
-    const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel),2));
+    const std::vector<art::Ptr<recob::Hit>>
+        muonHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel),2));
     bool isContained(this->IsContained(muonHits, event));
     const double uncorrectedMuonMomentumMCS(this->CalculateUncorrectedMuonMomentumByMCS(pMuonTrack));
     const double muonMomentumMCS(this->CalculateLinearlyCorrectedValue(uncorrectedMuonMomentumMCS, fGradTrkMomMCS, fIntTrkMomMCS));
-    if (!isContained)
-    {
-        if (uncorrectedMuonMomentumMCS > std::numeric_limits<double>::epsilon())
+    const double muonMomentumRange(CalculateMuonMomentumByRange(pMuonTrack));
+    const MuonContainmentStatus MuContainment = (isContained) ? MuonContainmentStatus::kIsContained : MuonContainmentStatus::kIsExiting;
+
+    bool setMCS = (longestTrackMethod == MuonTrackMethod::kMCS);
+
+    // Only useful if MCS didn't fail
+    if (uncorrectedMuonMomentumMCS > std::numeric_limits<double>::epsilon()){
+        // Only when by range is not set 
+        if ( longestTrackMethod != MuonTrackMethod::kContained )
         {
-            EnergyRecoInputHolder energyRecoInputHolder(vertex, 
-                this->CalculateParticle4Momentum(kMuonMass, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
-                kMuonAndHadronic, kMCS, kIsExiting, fGradNuMuHadEnExit, fIntNuMuHadEnExit);
-            return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
-        }
-        else
-        {
-            return this->CalculateNeutrinoEnergy(event);
+            if ( !isContained )
+                setMCS = true;
+            else
+                if ( muonMomentumRange/muonMomentumMCS - fMuonRangeToMCSThreshold < -1.*std::numeric_limits<double>::epsilon() ) 
+                    setMCS = true;
+
         }
     }
+    else if ( longestTrackMethod == kMCS || (longestTrackMethod == kTrackMethodNotSet  && !isContained) )
+        return this->CalculateNeutrinoEnergy(event, usePID);
+
+    const double muonMomentum = (setMCS) ? muonMomentumMCS : muonMomentumRange;
+
+    const auto muon4Momentum = this->CalculateParticle4Momentum(kMuonMass, muonMomentum, pMuonTrack->VertexDirection().X(),
+            pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z());
+
+    const double fGradNuMuHad = (setMCS) ? fGradNuMuHadEnExit : fGradNuMuHadEnCont;
+    const double fIntNuMuHad = (setMCS) ? fIntNuMuHadEnExit : fIntNuMuHadEnCont;
+    const MuonTrackMethod fMethodMuonUsed = (setMCS) ? kMCS : kContained;
+    const EnergyRecoMethod fMethodEnergyUsed = (usePID) ? kMuonProtonPionHadronic : kMuonAndHadronic;
+
+    EnergyRecoInputHolder energyRecoInputHolder(vertex, 
+            muon4Momentum, fMethodEnergyUsed, fMethodMuonUsed, MuContainment, fGradNuMuHad, fIntNuMuHad);
+
+    if (!usePID)
+        return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
     else
-    {
-        const double muonMomentumRange(CalculateMuonMomentumByRange(pMuonTrack));
-        if (uncorrectedMuonMomentumMCS > std::numeric_limits<double>::epsilon() 
-            && muonMomentumRange/muonMomentumMCS - fMuonRangeToMCSThreshold < -1.*std::numeric_limits<double>::epsilon())
-        {
-            EnergyRecoInputHolder energyRecoInputHolder(vertex, 
-                this->CalculateParticle4Momentum(kMuonMass, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
-                kMuonAndHadronic, kMCS, kIsContained, fGradNuMuHadEnExit, fIntNuMuHadEnExit);
+        return this->CalculateNeutrinoEnergyPID(muonHits, event, energyRecoInputHolder);
 
-            return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
-        }
-        else
-        {
-            EnergyRecoInputHolder energyRecoInputHolder(vertex, 
-                this->CalculateParticle4Momentum(kMuonMass, muonMomentumRange, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
-                kMuonAndHadronic, kContained, kIsContained, fGradNuMuHadEnCont, fIntNuMuHadEnCont);
-
-            return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
-        }
-    }
-
-    throw art::Exception(art::errors::LogicError) << "Unable to determine how to calculate neutrino energy using muon track! \n";
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Ptr<recob::Shower> &pElectronShower, 
-    const art::Event &event)
+    const art::Event &event, const bool usePID)
 {
     if (!pElectronShower.isAvailable() || pElectronShower.isNull())
     {
+        const int passingToMethod = (usePID) ? kProtonPionHadronic : kAllCharges;
         mf::LogWarning("NeutrinoEnergyRecoAlg") 
         << " Cannot access the electron shower which is needed for this energy reconstructio method.\n"
-        << "Swapping to energy reconstruction method " << kAllCharges << " for this calculation." << std::endl;
-        return this->CalculateNeutrinoEnergy(event);
+        << "Swapping to energy reconstruction method " << passingToMethod << " for this calculation." << std::endl;
+        return this->CalculateNeutrinoEnergy(event, usePID);
     }
 
 
     Point_t vertex(pElectronShower->ShowerStart().X(), pElectronShower->ShowerStart().Y(), pElectronShower->ShowerStart().Z());
 
-    const std::vector<art::Ptr<recob::Hit> > electronHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(pElectronShower, event, fShowerToHitLabel),2));
+    const std::vector<art::Ptr<recob::Hit>>
+        electronHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(pElectronShower, event,
+                        fShowerToHitLabel),2));
     const double electronEnergy(this->CalculateElectronEnergy(pElectronShower, event));
     const double electronMomentum = std::sqrt(electronEnergy*(electronEnergy + 2*kElectronMass));
+    const EnergyRecoMethod fMethodEnergyUsed = (usePID) ? kElectronProtonPionHadronic : kElectronAndHadronic;
 
     const Momentum4_t electron4Momentum(this->CalculateParticle4Momentum(kElectronMass, electronMomentum,
         pElectronShower->Direction().X(), pElectronShower->Direction().Y(), pElectronShower->Direction().Z()));
 
     EnergyRecoInputHolder energyRecoInputHolder(vertex, electron4Momentum, 
-    kElectronAndHadronic, kTrackMethodNotSet, kContainmentNotSet, fGradNuEHadEn, fIntNuEHadEn);
+    fMethodEnergyUsed, kTrackMethodNotSet, kContainmentNotSet, fGradNuEHadEn, fIntNuEHadEn);
 
-    return this->CalculateNeutrinoEnergy(electronHits, event, energyRecoInputHolder);
+    if (!usePID)
+        return this->CalculateNeutrinoEnergy(electronHits, event, energyRecoInputHolder);
+    else
+        return this->CalculateNeutrinoEnergyPID(electronHits, event, energyRecoInputHolder);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Event &event)
+dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art::Event &event, const bool usePID)
 {
     auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
     auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
@@ -184,60 +203,22 @@ dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergy(const art:
                 wireCharge += signal[iSignal]*dune_ana::DUNEAnaHitUtils::LifetimeCorrection(clockData, detProp, iSignal+binFirstTickROI, triggerTme);
         }
     }
-    const double totalEnergy(this->CalculateEnergyFromCharge(wireCharge));
-
-    dune::EnergyRecoOutput output;
-    output.recoMethodUsed = static_cast<int>(kAllCharges);
-    output.fRecoVertex.SetXYZ(0.,0.,0.);
-    output.fNuLorentzVector.SetXYZT(0.,0.,0.,totalEnergy);
-    output.fLepLorentzVector.SetXYZT(0.,0.,0.,0.);
-    output.fHadLorentzVector.SetXYZT(0.,0.,0.,0.);
-    output.longestTrackContained = static_cast<int>(kContainmentNotSet);
-    output.trackMomMethod = static_cast<int>(kTrackMethodNotSet);
-    return output;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergyViaMuonRanging(const art::Ptr<recob::Track> &pMuonTrack,
-    const art::Event &event)
-{
-    Point_t vertex(pMuonTrack->Start().X(), pMuonTrack->Start().Y(), pMuonTrack->Start().Z());
-
-    const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel),2));
-    bool isContained(this->IsContained(muonHits, event));
-    const double muonMomentumRange(this->CalculateMuonMomentumByRange(pMuonTrack));
-
-    EnergyRecoInputHolder energyRecoInputHolder(vertex, 
-        this->CalculateParticle4Momentum(kMuonMass, muonMomentumRange, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
-        kMuonAndHadronic, kContained, static_cast<MuonContainmentStatus>(isContained), fGradNuMuHadEnCont, fIntNuMuHadEnCont);
-
-    return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-dune::EnergyRecoOutput NeutrinoEnergyRecoAlg::CalculateNeutrinoEnergyViaMuonMCS(const art::Ptr<recob::Track> &pMuonTrack,
-    const art::Event &event)
-{
-    Point_t vertex(pMuonTrack->Start().X(), pMuonTrack->Start().Y(), pMuonTrack->Start().Z());
-
-    const std::vector<art::Ptr<recob::Hit> > muonHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaTrackUtils::GetHits(pMuonTrack, event, fTrackToHitLabel),2));
-    bool isContained(this->IsContained(muonHits, event));
-    const double muonMomentumMCS(this->CalculateMuonMomentumByMCS(pMuonTrack));
-
-    if (muonMomentumMCS > std::numeric_limits<double>::epsilon())
+    if (!usePID)
     {
-        EnergyRecoInputHolder energyRecoInputHolder(vertex, 
-                this->CalculateParticle4Momentum(kMuonMass, muonMomentumMCS, pMuonTrack->VertexDirection().X(), pMuonTrack->VertexDirection().Y(), pMuonTrack->VertexDirection().Z()), 
-                kMuonAndHadronic, kMCS, static_cast<MuonContainmentStatus>(isContained), fGradNuMuHadEnExit, fIntNuMuHadEnExit);
+        const double totalEnergy(this->CalculateEnergyFromCharge(wireCharge));
 
-        return this->CalculateNeutrinoEnergy(muonHits, event, energyRecoInputHolder);
+        dune::EnergyRecoOutput output;
+        output.recoMethodUsed = static_cast<int>(kAllCharges);
+        output.fRecoVertex.SetXYZ(0.,0.,0.);
+        output.fNuLorentzVector.SetXYZT(0.,0.,0.,totalEnergy);
+        output.fLepLorentzVector.SetXYZT(0.,0.,0.,0.);
+        output.fHadLorentzVector.SetXYZT(0.,0.,0.,0.);
+        output.longestTrackContained = static_cast<int>(kContainmentNotSet);
+        output.trackMomMethod = static_cast<int>(kTrackMethodNotSet);
+        return output;
     }
-    else 
-        return this->CalculateNeutrinoEnergy(event);
-
-
+    else
+        return this->CalculateNeutrinoEnergyPID(wireCharge, event);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -272,7 +253,9 @@ double NeutrinoEnergyRecoAlg::CalculateMuonMomentumByMCS(const art::Ptr<recob::T
 
 double NeutrinoEnergyRecoAlg::CalculateElectronEnergy(const art::Ptr<recob::Shower> &pElectronShower, const art::Event &event)
 {
-    const std::vector<art::Ptr<recob::Hit> > electronHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(pElectronShower, event, fShowerToHitLabel),2));
+    const std::vector<art::Ptr<recob::Hit>>
+        electronHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(pElectronShower, event,
+                        fShowerToHitLabel),2));
     auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clockData);
     const double electronObservedCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, electronHits));

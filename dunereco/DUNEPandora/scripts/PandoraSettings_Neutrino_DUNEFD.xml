@@ -588,15 +588,18 @@
        <InputVertexListName>NeutrinoVertices3D</InputVertexListName>
        <NeutrinoPfoListName>NeutrinoParticles3D</NeutrinoPfoListName>
     </algorithm>
-    <algorithm type = "LArNeutrinoHierarchy">
-        <NeutrinoPfoListName>NeutrinoParticles3D</NeutrinoPfoListName>
-        <DaughterPfoListNames>TrackParticles3D ShowerParticles3D</DaughterPfoListNames>
-        <DisplayPfoInfoMap>false</DisplayPfoInfoMap>
-        <PfoRelationTools>
-            <tool type = "LArVertexAssociatedPfos"/>
-            <tool type = "LArEndAssociatedPfos"/>
-            <tool type = "LArBranchAssociatedPfos"/>
-        </PfoRelationTools>
+    <algorithm type = "LArDLNeutrinoHierarchy">
+       <tool type = "LArDLPrimaryHierarchy" description = "DLPrimaryHierarchyTool">
+         <PrimaryShowerClassifierModelName>PandoraNetworkData/PandoraNet_Hierarchy_DUNEFD_HD_S_Class_v014_15_00.pt</PrimaryShowerClassifierModelName>
+         <PrimaryTrackBranchModelName>PandoraNetworkData/PandoraNet_Hierarchy_DUNEFD_HD_T_Edge_v014_15_00.pt</PrimaryTrackBranchModelName>
+         <PrimaryTrackClassifierModelName>PandoraNetworkData/PandoraNet_Hierarchy_DUNEFD_HD_T_Class_v014_15_00.pt</PrimaryTrackClassifierModelName>
+       </tool>
+       <tool type = "LArDLLaterTierHierarchy" description = "DLLaterTierHierarchyTool">
+         <TrackShowerBranchModelName>PandoraNetworkData/PandoraNet_Hierarchy_DUNEFD_HD_TS_Edge_v014_15_00.pt</TrackShowerBranchModelName>
+         <TrackShowerClassifierModelName>PandoraNetworkData/PandoraNet_Hierarchy_DUNEFD_HD_TS_Class_v014_15_00.pt</TrackShowerClassifierModelName>
+         <TrackTrackBranchModelName>PandoraNetworkData/PandoraNet_Hierarchy_DUNEFD_HD_TT_Edge_v014_15_00.pt</TrackTrackBranchModelName>
+         <TrackTrackClassifierModelName>PandoraNetworkData/PandoraNet_Hierarchy_DUNEFD_HD_TT_Class_v014_15_00.pt</TrackTrackClassifierModelName>
+       </tool>
     </algorithm>
     <algorithm type = "LArNeutrinoDaughterVertices">
         <NeutrinoPfoListName>NeutrinoParticles3D</NeutrinoPfoListName>
