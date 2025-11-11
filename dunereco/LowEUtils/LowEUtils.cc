@@ -2,26 +2,43 @@
 
 using namespace producer;
 
-namespace solar
+namespace lowe
 {
   LowEUtils::LowEUtils(fhicl::ParameterSet const &p)
-  : fHitLabel(p.get<std::string>("HitLabel")),
-    fGeometry(p.get<std::string>("Geometry")),
-    fClusterAlgoTime(p.get<double>("ClusterAlgoTime")),
-    fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel")),
-    fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable")),
-    fClusterMatchNHit(p.get<int>("ClusterMatchNHit")),
-    fClusterMatchCharge(p.get<double>("ClusterMatchCharge")),
-    fClusterInd0MatchTime(p.get<double>("ClusterInd0MatchTime")),
-    fClusterInd1MatchTime(p.get<double>("ClusterInd1MatchTime")),
-    fClusterMatchTime(p.get<double>("ClusterMatchTime")),
-    fClusterPreselectionNHits(p.get<int>("ClusterPreselectionNHits")),
-    fAdjClusterRad(p.get<double>("AdjClusterRad"))
+  : fHitLabel(p.get<std::string>("HitLabel", "hitfd")),
+    fClusterAlgoTime(p.get<double>("ClusterAlgoTime", 12.5)), // Time threshold for clustering [us]
+    fClusterAlgoAdjChannel(p.get<int>("ClusterAlgoAdjChannel", 3)), // Channel threshold for clustering
+    fClusterChargeVariable(p.get<std::string>("ClusterChargeVariable", "Integral")), // Variable to use for charge calculation
+    fClusterMatchNHit(p.get<int>("ClusterMatchNHit", 2)), // NHit fraction to match clusters. abs(NHitsCol - NHitsInd) / NHitsCol < ClusterMatchNHit.
+    fClusterMatchCharge(p.get<double>("ClusterMatchCharge", 0.6)), // Charge fraction to match clusters. abs(ChargeCol - ChargeInd) / ChargeCol < ClusterMatchCharge.
+    fClusterInd0MatchTime(p.get<double>("ClusterInd0MatchTime", 0.0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd0MatchTime. [us]
+    fClusterInd1MatchTime(p.get<double>("ClusterInd1MatchTime", 0.0)), // Goal time difference to match clusters. abs(TimeCol - TimeInd) < ClusterInd1MatchTime. [us]
+    fClusterMatchTime(p.get<double>("ClusterMatchTime", 10.0)), // Max time difference to match clusters. abs(TimeCol - TimeInd) < ClusterMatchTime. [us]
+    fClusterPreselectionSignal(p.get<bool>("ClusterPreselectionSignal", false)), // Whether to apply signal (purity > 0) preselection
+    fClusterPreselectionNHits(p.get<int>("ClusterPreselectionNHits", 3)), // Minimum number of hits in a cluster to consider it for further processing
+    fAdjClusterRad(p.get<double>("AdjClusterRad", 100)), // Radius for adjacent cluster search [cm]
+    fAdjClusterSingleMatch(p.get<bool>("AdjClusterSingleMatch", false)), // Whether to match adjacent clusters to the first primary cluster only
+    fAdjOpFlashMinNHitCut(p.get<int>("AdjOpFlashMinNHitCut", 3)),
+    fAdjOpFlashX(p.get<double>("AdjOpFlashX", 100.0)), // X coordinate for flash projection [cm]
+    fAdjOpFlashY(p.get<double>("AdjOpFlashY", 100.0)), // Y coordinate for flash projection [cm]
+    fAdjOpFlashZ(p.get<double>("AdjOpFlashZ", 100.0)), // Z coordinate for flash projection [cm]
+    fAdjOpFlashMinPECut(p.get<double>("AdjOpFlashMinPECut", 0.0)), // Minimum PE for flash selection
+    fAdjOpFlashMaxPERatioCut(p.get<double>("AdjOpFlashMaxPERatioCut", 1.0)), // Maximum PE ratio for flash selection
+    fAdjOpFlashMembraneProjection(p.get<bool>("AdjOpFlashMembraneProjection", false)), // Whether to project flashes onto the membrane
+    fAdjOpFlashEndCapProjection(p.get<bool>("AdjOpFlashEndCapProjection", false)), // Whether to project flashes onto the end cap
+    fAdjOpFlashMinPEAttenuation(p.get<double>("AdjOpFlashMinPEAttenuation", 1)), // PE cut attenuation over drift time [us] to compensate for light attenuation
+    fAdjOpFlashMinPEAttenuate(p.get<std::string>("AdjOpFlashMinPEAttenuate", "flat")), // Type of attenuation for minimum PE cut ("light_map", "asymptotic", "linear" or "flat")
+    fAdjOpFlashMinPEAttenuationStrength(p.get<int>("AdjOpFlashMinPEAttenuationStrength", 10)), // Strength of the asymptotic attenuation for minimum PE cut (in powers of 10)
+    fAdjOpFlashMinPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashMinPELightMap", {})), // Light map file and histogram name for light map attenuation
+    producer(new ProducerUtils(p))
   {
+    // Initialize the LowEUtils instance
+    producer->PrintInColor("LowEUtils initialized with parameters from FHiCL configuration.", ProducerUtils::GetColor("green"), "Debug");
   }
 
   void LowEUtils::MakeClusterVector(std::vector<RawPerPlaneCluster> &ClusterVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, art::Event const &evt)
   {
+    mf::LogDebug("LowEUtils") << "Charge variable set to " << fClusterChargeVariable;
     int ID = 0;
     for (std::vector<art::Ptr<recob::Hit>> Cluster : Clusters)
     {
@@ -129,16 +146,14 @@ namespace solar
 
       if (fClusterChargeVariable == "Integral")
       {
-        mf::LogInfo("LowEUtils") << "Charge variable set to 'Integral'";
         StartCharge = StartIntegral;
         EndCharge = EndIntegral;
         Charge = Integral;
         ChargeStdDev = IntegralStdDev;
         ChargeAverage = IntegralAverage;
       }
-      if (fClusterChargeVariable == "SummedADC")
+      else if (fClusterChargeVariable == "SummedADC")
       {
-        mf::LogInfo("LowEUtils") << "Charge variable set to 'SummedADC' (default is 'Integral')";
         ChargeStdDev = sqrt(ChargeStdDev / NHit - Charge * Charge);
         ChargeAverage = Charge / NHit;
       }
@@ -156,7 +171,7 @@ namespace solar
     return;
   }
 
-  void LowEUtils::CalcAdjHits(std::vector<recob::Hit> MyVec, std::vector<std::vector<recob::Hit>> &Clusters, TH1I *MyHist, TH1F *ADCIntHist, bool debug)
+  void LowEUtils::CalcAdjHits(std::vector<recob::Hit> MyVec, std::vector<std::vector<recob::Hit>> &Clusters, TH1I *MyHist, TH1F *ADCIntHist, art::Event const &evt, bool debug)
   /*
   Find adjacent hits in time and space:
   - MyVec is the vector of hits to be clustered
@@ -166,10 +181,13 @@ namespace solar
   - debug is a boolean to turn on/off debugging statements
   */
   {
-    const double TimeRange = fClusterAlgoTime;
-    const int ChanRange = fClusterAlgoAdjChannel;
     unsigned int FilledHits = 0;
     unsigned int NumOriHits = MyVec.size();
+    const double TimeRange = fClusterAlgoTime;
+    const int ChanRange = fClusterAlgoAdjChannel;
+
+    detinfo::DetectorClocksData clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
+    auto TickPeriod = clockData.TPCClock().TickPeriod();
 
     while (NumOriHits != FilledHits)
     {
@@ -191,15 +209,15 @@ namespace solar
             if (debug)
             {
               std::cout << "\t\tLooping though AdjVec " << aL << " and  MyVec " << nL
-                        << " AdjClusterVec - " << AdjClusterVec[aL].Channel() << " & " << AdjClusterVec[aL].PeakTime()
-                        << " MVec - " << MyVec[nL].Channel() << " & " << MyVec[nL].PeakTime()
+                        << " AdjClusterVec - " << AdjClusterVec[aL].Channel() << " & " << AdjClusterVec[aL].PeakTime() * TickPeriod
+                        << " MVec - " << MyVec[nL].Channel() << " & " << MyVec[nL].PeakTime() * TickPeriod
                         << " Channel " << abs((int)AdjClusterVec[aL].Channel() - (int)MyVec[nL].Channel()) << " bool " << (bool)(abs((int)AdjClusterVec[aL].Channel() - (int)MyVec[nL].Channel()) <= ChanRange)
-                        << " Time " << abs(AdjClusterVec[aL].PeakTime() - MyVec[nL].PeakTime()) << " bool " << (bool)(abs((double)AdjClusterVec[aL].PeakTime() - (double)MyVec[nL].PeakTime()) <= TimeRange)
+                        << " Time " << abs(AdjClusterVec[aL].PeakTime() * TickPeriod - MyVec[nL].PeakTime() * TickPeriod) << " bool " << (bool)(abs((double)AdjClusterVec[aL].PeakTime() * TickPeriod - (double)MyVec[nL].PeakTime() * TickPeriod) <= TimeRange)
                         << std::endl;
             }
 
             if (abs((int)AdjClusterVec[aL].Channel() - (int)MyVec[nL].Channel()) <= ChanRange &&
-                abs((double)AdjClusterVec[aL].PeakTime() - (double)MyVec[nL].PeakTime()) <= TimeRange)
+                abs((double)AdjClusterVec[aL].PeakTime() * TickPeriod - (double)MyVec[nL].PeakTime() * TickPeriod) <= TimeRange)
             {
 
               if (debug)
@@ -226,7 +244,7 @@ namespace solar
           if (debug)
           {
             std::cout << "\tRemoving element " << AddNow.size() - 1 - aa << " from MyVec ===> "
-                      << MyVec[AddNow[AddNow.size() - 1 - aa]].Channel() << " & " << MyVec[AddNow[AddNow.size() - 1 - aa]].PeakTime()
+                      << MyVec[AddNow[AddNow.size() - 1 - aa]].Channel() << " & " << MyVec[AddNow[AddNow.size() - 1 - aa]].PeakTime() * TickPeriod
                       << std::endl;
           }
 
@@ -243,7 +261,7 @@ namespace solar
                     << "\nLets see what is in AdjClusterVec...." << std::endl;
           for (size_t aL = 0; aL < AdjClusterVec.size(); ++aL)
           {
-            std::cout << "\tElement " << aL << " is ===> " << AdjClusterVec[aL].Channel() << " & " << AdjClusterVec[aL].PeakTime() << std::endl;
+            std::cout << "\tElement " << aL << " is ===> " << AdjClusterVec[aL].Channel() << " & " << AdjClusterVec[aL].PeakTime() * TickPeriod << std::endl;
           }
         }
       } // while ( LastSize != NewSize )
@@ -278,7 +296,7 @@ namespace solar
 
         for (recob::Hit TPCHit : hits)
         {
-          tick += TPCHit.Integral() * TPCHit.PeakTime();
+          tick += TPCHit.Integral() * TPCHit.PeakTime()*TickPeriod;
           channel += TPCHit.Integral() * TPCHit.Channel();
           adcInt += TPCHit.Integral();
         }
@@ -305,7 +323,7 @@ namespace solar
     return;
   }
 
-  void LowEUtils::CalcAdjHits(std::vector<art::Ptr<recob::Hit>> MyVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, std::vector<std::vector<int>> &ClusterIdx)
+  void LowEUtils::CalcAdjHits(std::vector<art::Ptr<recob::Hit>> MyVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, std::vector<std::vector<int>> &ClusterIdx, art::Event const &evt)
   /*
   Find adjacent hits in time and space:
   - MyVec is the vector of hits to be clustered
@@ -313,11 +331,15 @@ namespace solar
   - ClusterIdx is the vector of indices of the hits in each cluster
   */
   {
-    const double TimeRange = fClusterAlgoTime;
-    const int ChanRange = fClusterAlgoAdjChannel;
+    std::vector<int> HitIdx;
     unsigned int FilledHits = 0;
     unsigned int NumOriHits = MyVec.size();
-    std::vector<int> HitIdx;
+    const double TimeRange = fClusterAlgoTime;
+    const int ChanRange = fClusterAlgoAdjChannel;
+
+    detinfo::DetectorClocksData clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
+    auto TickPeriod = clockData.TPCClock().TickPeriod();
+
     // Fill the hitidx vector with the index from 0 to MyVec.size()
     for (size_t i = 0; i < MyVec.size(); i++)
       HitIdx.push_back(i);
@@ -344,7 +366,7 @@ namespace solar
           for (size_t nL = 0; nL < MyVec.size(); ++nL)
           {
             if (abs((int)AdjClusterVec[aL]->Channel() - (int)MyVec[nL]->Channel()) <= ChanRange &&
-                abs((double)AdjClusterVec[aL]->PeakTime() - (double)MyVec[nL]->PeakTime()) <= TimeRange &&
+                abs((double)AdjClusterVec[aL]->PeakTime() * TickPeriod - (double)MyVec[nL]->PeakTime() * TickPeriod) <= TimeRange &&
                 AdjClusterVec[aL]->View() == MyVec[nL]->View() && 
                 AdjClusterVec[aL]->SignalType() == MyVec[nL]->SignalType())
             {
@@ -415,6 +437,7 @@ namespace solar
     Dir = {};
     // --- Get the wire readout object
     geo::WireReadoutGeom const &wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
+    auto TickPeriod = ClockData.TPCClock().TickPeriod();
     double MaxTime = -1e6;
     double MinTime = 1e6;
     // --- Declare our vectors to fill
@@ -426,14 +449,14 @@ namespace solar
       TPC.push_back(ThisHit.WireID().TPC);
       Channel.push_back(ThisHit.Channel());
       Charge.push_back(ThisHit.Integral());
-      Time.push_back(ThisHit.PeakTime());
-      if (ThisHit.PeakTime() > MaxTime)
+      Time.push_back(ThisHit.PeakTime() * TickPeriod);
+      if (ThisHit.PeakTime() * TickPeriod > MaxTime)
       {
-        MaxTime = ThisHit.PeakTime();
+        MaxTime = ThisHit.PeakTime() * TickPeriod;
       }
-      if (ThisHit.PeakTime() < MinTime)
-      {
-        MinTime = ThisHit.PeakTime();
+      if (ThisHit.PeakTime() * TickPeriod < MinTime)
+      { 
+        MinTime = ThisHit.PeakTime() * TickPeriod;
       }
       const geo::WireGeo *ThisWire = wireReadout.WirePtr(ThisHit.WireID());
       geo::Point_t hXYZ = ThisWire->GetCenter();
@@ -490,12 +513,16 @@ namespace solar
     return RecoY;
   }
 
-  void LowEUtils::FillClusterVariables(std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
-                                       std::vector<std::vector<int>> &ClNHits,
-                                       std::vector<std::vector<float>> &ClT,
-                                       std::vector<std::vector<float>> &ClCharge,
-                                       bool debug)
+  void LowEUtils::FillClusterVariables(
+    std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+    std::vector<std::vector<int>> &ClNHits,
+    std::vector<std::vector<float>> &ClT,
+    std::vector<std::vector<float>> &ClCharge,
+    art::Event const &evt,
+    bool debug)
   {
+    detinfo::DetectorClocksData const &clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
+    auto TickPeriod = clockData.TPCClock().TickPeriod();
     for (size_t idx = 0; idx < Clusters.size(); idx++)
     {
       std::vector<std::vector<recob::Hit>> TheseClusters = Clusters[idx];
@@ -507,7 +534,7 @@ namespace solar
         for (recob::Hit hit : ThisCluster)
         {
           clustCharge += hit.Integral();
-          clustT += hit.PeakTime();
+          clustT += hit.PeakTime() * TickPeriod * hit.Integral();
         }
         ClT[idx].push_back(clustT / clustCharge);
         ClCharge[idx].push_back(clustCharge);
@@ -518,7 +545,9 @@ namespace solar
   void LowEUtils::FillClusterVariables(
     std::set<int> SignalTrackIDs,
     std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+    std::vector<std::vector<int>> &ClMainID,
     std::vector<std::vector<int>> &ClNHits,
+    std::vector<std::vector<int>> &ClTPC,
     std::vector<std::vector<int>> &ClChannel,
     std::vector<std::vector<float>> &ClT,
     std::vector<std::vector<float>> &ClY,
@@ -532,12 +561,15 @@ namespace solar
   {
     art::ServiceHandle<cheat::BackTrackerService> bt_serv;
     geo::WireReadoutGeom const &wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
+    auto TickPeriod = clockData.TPCClock().TickPeriod();
     std::vector<float> globalSignalCharge = {0, 0, 0};
     for (int idx = 0; idx < 3; idx++)
     {
       std::vector<std::vector<recob::Hit>> TheseClusters = Clusters[idx];
       for (size_t i = 0; i < TheseClusters.size(); i++)
       {
+        int mainTPC = -1;
+        int mainTrID = -1;
         int mainChannel = -1;
         double mainCharge = 0;
         float clustT = 0, clustY = 0, clustZ = 0, clustDir = 0;
@@ -545,7 +577,7 @@ namespace solar
         std::vector<recob::Hit> ThisCluster = TheseClusters[i];
         for (recob::Hit hit : ThisCluster)
         {
-          int mainTrID = -1;
+          int mainHitTrID = -1;
           double mainEFrac = 0;
           double hitCharge = hit.Integral();
           std::vector<sim::TrackIDE> ThisHitIDE = bt_serv->HitToTrackIDEs(clockData, hit);
@@ -555,7 +587,7 @@ namespace solar
             if (ThisHitIDE[ideL].energyFrac > mainEFrac)
             {
               mainEFrac = ThisHitIDE[ideL].energyFrac;
-              mainTrID = abs(ThisHitIDE[ideL].trackID);
+              mainHitTrID = abs(ThisHitIDE[ideL].trackID);
             }
           }
           const geo::WireGeo *ThisWire = wireReadout.WirePtr(hit.WireID());
@@ -565,21 +597,25 @@ namespace solar
           clustCharge += hitCharge;
           if (clustCharge > mainCharge)
           {
+            mainTrID = mainHitTrID;
             mainCharge = clustCharge;
             mainChannel = hit.Channel();
+            mainTPC = hit.WireID().TPC;
           };
-          clustT += hit.PeakTime() * hitCharge;
+          clustT += hit.PeakTime() * TickPeriod * hitCharge;
           clustY += hXYZ.Y() * hitCharge;
           clustZ += hXYZ.Z() * hitCharge;
           geo::Vector_t Direction = eXYZ - sXYZ;
           clustDir += hitCharge * Direction.Z() / Direction.Y();
-          if (SignalTrackIDs.find(mainTrID) != SignalTrackIDs.end())
+          if (SignalTrackIDs.find(mainHitTrID) != SignalTrackIDs.end())
           {
             globalSignalCharge[idx] += hitCharge;
             clustPurity += hitCharge;
           }
         }
+        ClMainID[idx].push_back(mainTrID);
         ClNHits[idx].push_back(ThisCluster.size());
+        ClTPC[idx].push_back(mainTPC);
         ClChannel[idx].push_back(mainChannel);
         ClCharge[idx].push_back(clustCharge);
         ClT[idx].push_back(clustT / clustCharge);
@@ -601,7 +637,9 @@ namespace solar
       std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
       std::vector<std::vector<int>> ClustersIdx,
       std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+      std::vector<std::vector<int>> &ClMainID,
       std::vector<std::vector<int>> &ClNHits,
+      std::vector<std::vector<int>> &ClTPC,
       std::vector<std::vector<int>> &ClChannel,
       std::vector<std::vector<float>> &ClT,
       std::vector<std::vector<float>> &ClY,
@@ -613,8 +651,8 @@ namespace solar
       detinfo::DetectorClocksData const &clockData,
       bool debug)
   {
-    LowEUtils::FillClusterVariables(SignalTrackIDs, Clusters, ClNHits, ClChannel, ClT, ClY, ClZ, ClDir, ClCharge, ClPurity, ClCompleteness, clockData, debug);
-    std::vector<std::vector<int>> MatchedClNHits = {{}, {}, {}}, MatchedClChannel = {{}, {}, {}};
+    LowEUtils::FillClusterVariables(SignalTrackIDs, Clusters, ClMainID, ClNHits, ClTPC, ClChannel, ClT, ClY, ClZ, ClDir, ClCharge, ClPurity, ClCompleteness, clockData, debug);
+    std::vector<std::vector<int>> MatchedClMainID = {{}, {}, {}}, MatchedClNHits = {{}, {}, {}}, MatchedClTPC = {{}, {}, {}}, MatchedClChannel = {{}, {}, {}};
     std::vector<std::vector<float>> MatchedClT = {{}, {}, {}}, MatchedClY = {{}, {}, {}}, MatchedClZ = {{}, {}, {}}, MatchedClDir = {{}, {}, {}};
     std::vector<std::vector<float>> MatchedClCompleteness = {{}, {}, {}}, MatchedClCharge = {{}, {}, {}}, MatchedClPurity = {{}, {}, {}};
 
@@ -724,7 +762,9 @@ namespace solar
         // std::cout << "\tMatched all three planes" << std::endl;
         MatchedClustersIdx[0].push_back(ClustersIdx[0][MatchInd0Idx]);
         MatchedClusters[0].push_back(Clusters[0][MatchInd0Idx]);
+        MatchedClMainID[0].push_back(ClMainID[0][MatchInd0Idx]);
         MatchedClNHits[0].push_back(ClNHits[0][MatchInd0Idx]);
+        MatchedClTPC[0].push_back(ClTPC[0][MatchInd0Idx]);
         MatchedClChannel[0].push_back(ClChannel[0][MatchInd0Idx]);
         MatchedClT[0].push_back(ClT[0][MatchInd0Idx]);
         MatchedClY[0].push_back(ClY0);
@@ -735,7 +775,9 @@ namespace solar
 
         MatchedClustersIdx[1].push_back(ClustersIdx[1][MatchInd1Idx]);
         MatchedClusters[1].push_back(Clusters[1][MatchInd1Idx]);
+        MatchedClMainID[1].push_back(ClMainID[1][MatchInd1Idx]);
         MatchedClNHits[1].push_back(ClNHits[1][MatchInd1Idx]);
+        MatchedClTPC[1].push_back(ClTPC[1][MatchInd1Idx]);
         MatchedClChannel[1].push_back(ClChannel[1][MatchInd1Idx]);
         MatchedClT[1].push_back(ClT[1][MatchInd1Idx]);
         MatchedClY[1].push_back(ClY1);
@@ -754,7 +796,9 @@ namespace solar
         // std::cout << "\tMatched only Ind0 and Col" << std::endl;
         MatchedClustersIdx[0].push_back(ClustersIdx[0][MatchInd0Idx]);
         MatchedClusters[0].push_back(Clusters[0][MatchInd0Idx]);
+        MatchedClMainID[0].push_back(ClMainID[0][MatchInd0Idx]);
         MatchedClNHits[0].push_back(ClNHits[0][MatchInd0Idx]);
+        MatchedClTPC[0].push_back(ClTPC[0][MatchInd0Idx]);
         MatchedClChannel[0].push_back(ClChannel[0][MatchInd0Idx]);
         MatchedClT[0].push_back(ClT[0][MatchInd0Idx]);
         MatchedClY[0].push_back(ClY0);
@@ -765,7 +809,9 @@ namespace solar
         // Fill missing cluster with empty vector
         MatchedClustersIdx[1].push_back({});
         MatchedClusters[1].push_back({});
+        MatchedClMainID[1].push_back(-1);
         MatchedClNHits[1].push_back(0);
+        MatchedClTPC[1].push_back(-1);
         MatchedClChannel[1].push_back(0);
         MatchedClT[1].push_back(-1e6);
         MatchedClY[1].push_back(-1e6);
@@ -784,7 +830,9 @@ namespace solar
         // std::cout << "\tMatched only Ind1 and Col" << std::endl;
         MatchedClustersIdx[1].push_back(ClustersIdx[1][MatchInd1Idx]);
         MatchedClusters[1].push_back(Clusters[1][MatchInd1Idx]);
+        MatchedClMainID[1].push_back(ClMainID[1][MatchInd1Idx]);
         MatchedClNHits[1].push_back(ClNHits[1][MatchInd1Idx]);
+        MatchedClTPC[1].push_back(ClTPC[1][MatchInd1Idx]);
         MatchedClChannel[1].push_back(ClChannel[1][MatchInd1Idx]);
         MatchedClT[1].push_back(ClT[1][MatchInd1Idx]);
         MatchedClY[1].push_back(ClY1);
@@ -795,7 +843,9 @@ namespace solar
         // Fill missing cluster with empty vector
         MatchedClustersIdx[0].push_back({});
         MatchedClusters[0].push_back({});
+        MatchedClMainID[0].push_back(-1);
         MatchedClNHits[0].push_back(0);
+        MatchedClTPC[0].push_back(-1);
         MatchedClChannel[0].push_back(0);
         MatchedClT[0].push_back(-1e6);
         MatchedClY[0].push_back(-1e6);
@@ -810,7 +860,9 @@ namespace solar
       // Fill the matched collection plane cluster
       MatchedClustersIdx[2].push_back(ClustersIdx[2][index]);
       MatchedClusters[2].push_back(Clusters[2][index]);
+      MatchedClMainID[2].push_back(ClMainID[2][index]);
       MatchedClNHits[2].push_back(ClNHits[2][index]);
+      MatchedClTPC[2].push_back(ClTPC[2][index]);
       MatchedClChannel[2].push_back(ClChannel[2][index]);
       MatchedClT[2].push_back(ClT[2][index]);
       MatchedClY[2].push_back(ClY2);
@@ -819,8 +871,9 @@ namespace solar
       MatchedClPurity[2].push_back(ClPurity[2][index]);
       MatchedClCompleteness[2].push_back(ClCompleteness[2][index]);
     }
-    
+    ClMainID = MatchedClMainID;
     ClNHits = MatchedClNHits;
+    ClTPC = MatchedClTPC;
     ClChannel = MatchedClChannel;
     ClT = MatchedClT;
     ClY = MatchedClY;
@@ -838,9 +891,10 @@ namespace solar
       std::vector<std::vector<int>> &ClNHits,
       std::vector<std::vector<float>> &ClT,
       std::vector<std::vector<float>> &ClCharge,
+      art::Event const &evt,
       bool debug)
   {
-    LowEUtils::FillClusterVariables(Clusters, ClNHits, ClT, ClCharge, debug);
+    LowEUtils::FillClusterVariables(Clusters, ClNHits, ClT, ClCharge, evt, debug);
     std::vector<std::vector<int>> MatchedClNHits = {{}, {}, {}};
     std::vector<std::vector<float>> MatchedClT = {{}, {}, {}};
     std::vector<std::vector<float>> MatchedClCharge = {{}, {}, {}};
@@ -986,20 +1040,20 @@ namespace solar
   {
     // This is the low energy primary cluster algorithm. It groups all input clusters into event candidates by finding the primary clusters (charge > adjacent clusters up to distance fAdjClusterRad).
     // The algorithm outputs vectors of clusters where the first entry is the primary cluster and the rest are the corresponding adjacent clusters.
+    art::ServiceHandle<geo::Geometry> geom;
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
 
     // Initialize the vector of EventCandidateVector and the vector of indices.
+    EventCandidateFound.clear();
     EventCandidateVector.clear();
     EventCandidateIdx.clear();
 
     // Find correct drift time and distance relation from geometry service
-    art::ServiceHandle<geo::Geometry> geom;
-    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
-
     geo::CryostatID c(0);
     const geo::CryostatGeo& cryostat = geom->Cryostat(c);
     const geo::TPCGeo& tpcg = cryostat.TPC(0);
-    const double driftLength = tpcg.DriftDistance();
-    const double driftT = driftLength / detProp.DriftVelocity();
+    const double driftLength = tpcg.DriftDistance(); // in cm
+    const double driftTime = driftLength / detProp.DriftVelocity(); // in microseconds
 
     // Create a sorting index based on the input vector.
     std::vector<int> sortingIndex(SolarClusterVector.size());
@@ -1010,128 +1064,398 @@ namespace solar
     // Create a vector to track if a cluster has been evaluated (found primary or atributted to one).
     std::vector<bool> EvaluatedCluster(SolarClusterVector.size(), false);
 
+    std::string sEventCandidateFinding = "LowEUtils::FindPrimaryClusters " + ProducerUtils::str(SolarClusterVector.size()) + " clusters found in the event\n";
     for (auto it = sortingIndex.begin(); it != sortingIndex.end(); ++it)
     {
-      std::string sEventCandidateFinding = "";
-      std::vector<art::Ptr<solar::LowECluster>> AdjClusterVec = {};
+      if (EvaluatedCluster[*it]) {
+        EventCandidateFound.push_back(false);
+        continue; // Skip if the cluster has already been evaluated
+      }
+      
       std::vector<int> AdjClusterIdx = {};
+      std::vector<art::Ptr<solar::LowECluster>> AdjClusterVec = {};
+      std::vector<bool> EvaluatedAdjCluster(SolarClusterVector.size(), false);
 
       const auto &cluster = SolarClusterVector[*it];
-      if (cluster->getNHits() <= fClusterPreselectionNHits)
+      if (fClusterPreselectionSignal && cluster->getPurity() == 0) {
+        EventCandidateFound.push_back(false);
         continue;
+      }
+
+      if (cluster->getNHits() <= fClusterPreselectionNHits) {
+        EventCandidateFound.push_back(false);
+        continue;
+      }
 
       bool PreselectionCluster = true;
 
       // If a trigger hit is found, start a new cluster with the hits around it that are within the time and radius range
       EvaluatedCluster[*it] = true;
-      AdjClusterVec.push_back(cluster);
       AdjClusterIdx.push_back(*it);
-      sEventCandidateFinding += "Trigger cluster found: NHits " + ProducerUtils::str(cluster->getNHits()) + " channel " + ProducerUtils::str(cluster->getMainChannel()) + " Time " + ProducerUtils::str(cluster->getAverageTime()) + "\n";
-
-      // int refcluster1 = cluster->getMainChannel();
+      AdjClusterVec.push_back(cluster);
+      sEventCandidateFinding += "Trigger cluster found: NHits " + ProducerUtils::str(cluster->getNHits()) + " Channel " + ProducerUtils::str(cluster->getMainChannel()) + " Time " + ProducerUtils::str(cluster->getAverageTime()) + " Charge " + ProducerUtils::str(cluster->getTotalCharge()) + " Purity " + ProducerUtils::str(cluster->getPurity()) + "\n";
       
       // Make use of the fact that the clusters are sorted in time to only consider the clusters that are adjacent in the vector up to a certain time range
-      for (auto it2 = it + 1; it2 != sortingIndex.end(); ++it2)
+      for (auto it2 = it; it2 != sortingIndex.end(); ++it2) // Start from the next element
       {
         // make sure we don't go out of bounds and the pointer is valid
-        if (it == sortingIndex.end())
+        if (it == sortingIndex.end()) {
+          sEventCandidateFinding += "\tBreaking time loop at end of vector\n";
           break;
-        if (it2 == sortingIndex.end())
-          break;
+        }
+        if (it2 == it) {
+          continue; // Skip the current cluster itself
+        }
 
         auto &adjcluster = SolarClusterVector[*it2]; // Update adjcluster here
 
-        // int refcluster2 = adjcluster->getMainChannel();
         float dTcluster1 = adjcluster->getAverageTime() - cluster->getAverageTime();
-        float dXcluster1 = dTcluster1 * driftLength / driftT;
-        if (std::abs(dTcluster1) > fAdjClusterRad * driftT / driftLength)
+        float dXcluster1 = dTcluster1 * driftLength / driftTime;
+        if (std::abs(dTcluster1) > fAdjClusterRad * driftTime / driftLength) {
+          sEventCandidateFinding += "\tBreaking time loop at dT " + ProducerUtils::str(dTcluster1) + " us\n";
           break;
+        }
 
-        // If cluster has already been clustered, skip
-        if (EvaluatedCluster[*it2])
+        // If AdjClusterSingleMatch is true and adjcluster has already been evaluated, skip
+        if (fAdjClusterSingleMatch && EvaluatedCluster[*it2]) {
+          sEventCandidateFinding += "\tSkipping already evaluated adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
           continue;
+        }
+        
+        // If cluster has already been clustered, skip
+        if (EvaluatedAdjCluster[*it2]) {
+          sEventCandidateFinding += "\tSkipping already evaluated cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
+          continue;
+        }
+
+        // If adjcluster is not in the same side of the APA as cluster, skip
+        if (cluster->getTPC()%2 != adjcluster->getTPC()%2) {
+          sEventCandidateFinding += "\tSkipping adjacent cluster in different TPC side: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
+          continue;
+        }
 
         auto ref4 = TVector3(0, cluster->getY(), cluster->getZ()) - TVector3(dXcluster1, adjcluster->getY(), adjcluster->getZ());
-        if (ref4.Mag() < fAdjClusterRad)
-        {
-          if (adjcluster->getTotalCharge() > cluster->getTotalCharge())
-          {
+        if (ref4.Mag() < fAdjClusterRad) {
+          if (adjcluster->getTotalCharge() > cluster->getTotalCharge()) {
+            sEventCandidateFinding += "¡¡¡Found bigger cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
+            EvaluatedCluster[*it] = false;
             PreselectionCluster = false;
-            sEventCandidateFinding += "cluster with charge > TriggerCluster found: Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + "\n";
 
             // Reset the EvaluatedCluster values for the clusters that have been added to the cluster
             for (auto it3 = AdjClusterIdx.begin(); it3 != AdjClusterIdx.end(); ++it3)
             {
+              sEventCandidateFinding += "---Removing cluster: NHits " + ProducerUtils::str(SolarClusterVector[*it3]->getNHits()) + " Channel " + ProducerUtils::str(SolarClusterVector[*it3]->getMainChannel()) + " Time " + ProducerUtils::str(SolarClusterVector[*it3]->getAverageTime()) + " Charge " + ProducerUtils::str(SolarClusterVector[*it3]->getTotalCharge()) + " Purity " + ProducerUtils::str(SolarClusterVector[*it3]->getPurity()) + "\n";
               EvaluatedCluster[*it3] = false;
-              sEventCandidateFinding += "Removing cluster: channel " + ProducerUtils::str(SolarClusterVector[*it3]->getMainChannel()) + " Time " + ProducerUtils::str(SolarClusterVector[*it3]->getAverageTime()) + "\n";
+              EvaluatedAdjCluster[*it3] = false; // Reset the evaluated status for the adjacent clusters
             }
             break;
           }
-          AdjClusterVec.push_back(adjcluster);
-          AdjClusterIdx.push_back(*it2);
-          EvaluatedCluster[*it2] = true;
-          sEventCandidateFinding += "Adding cluster: Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + "\n";
+          else {
+            sEventCandidateFinding += "+++Adding cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
+            AdjClusterVec.push_back(adjcluster);
+            AdjClusterIdx.push_back(*it2);
+            EvaluatedCluster[*it2] = true;
+            EvaluatedAdjCluster[*it2] = true; // Mark this adjacent cluster as evaluated
+          }
         }
       }
 
-      for (auto it4 = it - 1; it4 != sortingIndex.begin(); --it4)
+      if (PreselectionCluster == false) {
+        sEventCandidateFinding += "\tSkipping non-preselected cluster\n";
+        EvaluatedCluster[*it] = false;
+        EventCandidateFound.push_back(false);
+        continue; // Skip if the cluster has been reset
+      }
+
+      for (auto it4 = it; it4 != sortingIndex.begin() - 1 ; --it4) // Start from the previous element
       {
         // make sure we don't go out of bounds and the pointer is valid
-        if (it == sortingIndex.begin())
+        if (it == sortingIndex.begin()) {
+          sEventCandidateFinding += "\tBreaking time loop at beginning of vector\n";
           break;
-        if (it4 == sortingIndex.begin())
-          break;
+        }
+        if (it4 == it) {
+          continue; // Skip the current cluster itself
+        }
         
         auto &adjcluster = SolarClusterVector[*it4];
 
-        // int refcluster2 = adjcluster->getMainChannel();
         float dTcluster2 = cluster->getAverageTime() - adjcluster->getAverageTime();
-        float dXcluster2 = dTcluster2 * driftLength / driftT;
-        if (std::abs(dTcluster2) > fAdjClusterRad * driftT / driftLength)
+        float dXcluster2 = dTcluster2 * driftLength / driftTime;
+        if (std::abs(dTcluster2) > fAdjClusterRad * driftTime / driftLength) {
+          sEventCandidateFinding += "\tBreaking time loop at dT " + ProducerUtils::str(dTcluster2) + " us\n";
           break;
+        }
+
+        // If AdjClusterSingleMatch is true and adjcluster has already been evaluated, skip
+        if (fAdjClusterSingleMatch && EvaluatedCluster[*it4]) {
+          sEventCandidateFinding += "\tSkipping already evaluated adjacent cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
+          continue;
+        }
 
         // if cluster has already been clustered, skip
-        if (EvaluatedCluster[*it4])
+        if (EvaluatedAdjCluster[*it4]) {
+          sEventCandidateFinding += "\tSkipping already evaluated cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
           continue;
+        }
+
+        // If adjcluster is not in the same side of the APA as cluster, skip
+        if (cluster->getTPC()%2 != adjcluster->getTPC()%2) {
+          sEventCandidateFinding += "\tSkipping adjacent cluster in different TPC side: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
+          continue;
+        }
 
         auto ref4 = TVector3(0, cluster->getY(), cluster->getZ()) - TVector3(dXcluster2, adjcluster->getY(), adjcluster->getZ());
         if (ref4.Mag() < fAdjClusterRad)
         {
-          if (adjcluster->getTotalCharge() > cluster->getTotalCharge())
-          {
+          if (adjcluster->getTotalCharge() > cluster->getTotalCharge()) {
+            sEventCandidateFinding += "¡¡¡Found bigger cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
+            EvaluatedCluster[*it] = false;
             PreselectionCluster = false;
-            sEventCandidateFinding += "*** cluster with Charge > TriggerCharge found: Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + "\n";
 
             // Reset the EvaluatedCluster values for the clusters that have been added to the cluster
             for (auto it5 = AdjClusterIdx.begin(); it5 != AdjClusterIdx.end(); ++it5)
             {
+              sEventCandidateFinding += "---Removing cluster: NHits " + ProducerUtils::str(SolarClusterVector[*it5]->getNHits()) + " Channel " + ProducerUtils::str(SolarClusterVector[*it5]->getMainChannel()) + " Time " + ProducerUtils::str(SolarClusterVector[*it5]->getAverageTime()) + " Charge " + ProducerUtils::str(SolarClusterVector[*it5]->getTotalCharge()) + " Purity " + ProducerUtils::str(SolarClusterVector[*it5]->getPurity()) + "\n";
               EvaluatedCluster[*it5] = false;
-              sEventCandidateFinding += "Removing cluster: Channel " + ProducerUtils::str(SolarClusterVector[*it5]->getMainChannel()) + " Time " + ProducerUtils::str(SolarClusterVector[*it5]->getAverageTime()) + "\n";
+              EvaluatedAdjCluster[*it5] = false; // Reset the evaluated status for the adjacent clusters
             }
             break;
           }
-          AdjClusterVec.push_back(adjcluster);
-          AdjClusterIdx.push_back(*it4);
-          EvaluatedCluster[*it4] = true;
-          sEventCandidateFinding += "Adding cluster: Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + "\n";
+          else {
+            sEventCandidateFinding += "+++Adding cluster: NHits " + ProducerUtils::str(adjcluster->getNHits()) + " Channel " + ProducerUtils::str(adjcluster->getMainChannel()) + " Time " + ProducerUtils::str(adjcluster->getAverageTime()) + " Charge " + ProducerUtils::str(adjcluster->getTotalCharge()) + " Purity " + ProducerUtils::str(adjcluster->getPurity()) + "\n";
+            AdjClusterVec.push_back(adjcluster);
+            AdjClusterIdx.push_back(*it4);
+            EvaluatedCluster[*it4] = true;
+            EvaluatedAdjCluster[*it4] = true; // Mark this adjacent cluster as evaluated
+          }
         }
       }
 
-      if (PreselectionCluster)
-      {
-        // Store the original indices of the clustered clusters
-        EventCandidateFound.push_back(true);
-        EventCandidateVector.push_back(std::move(AdjClusterVec));
-        EventCandidateIdx.push_back(std::move(AdjClusterIdx));
-        sEventCandidateFinding += "Cluster size: " + ProducerUtils::str(int(EventCandidateVector.back().size())) + "\n";
-        ProducerUtils::PrintInColor(sEventCandidateFinding, ProducerUtils::GetColor("green"), "Debug");
-      }
-      else
-      {
+      if (PreselectionCluster == false) {
+        sEventCandidateFinding += "\tSkipping non-preselected cluster\n";
+        EvaluatedCluster[*it] = false;
         EventCandidateFound.push_back(false);
-        ProducerUtils::PrintInColor(sEventCandidateFinding, ProducerUtils::GetColor("red"), "Debug");
+        continue; // Skip if the cluster has been reset
       }
+
+      // Store the original indices of the clustered clusters
+      sEventCandidateFinding += "***Preselection cluster: NHits " + ProducerUtils::str(cluster->getNHits()) + " Channel " + ProducerUtils::str(cluster->getMainChannel()) + " Time " + ProducerUtils::str(cluster->getAverageTime()) + " Charge " + ProducerUtils::str(cluster->getTotalCharge()) + " AdjClNum " + ProducerUtils::str(AdjClusterVec.size()-1) + "\n";
+      EventCandidateVector.push_back(std::move(AdjClusterVec));
+      EventCandidateIdx.push_back(std::move(AdjClusterIdx));
+      EventCandidateFound.push_back(true);
     }
+
+    // Check that the EventCandidateFound vector is the same size as the SolarClusterVector
+    if (EventCandidateFound.size() != SolarClusterVector.size()) {
+      producer->PrintInColor("Error: EventCandidateFound vector size does not match SolarClusterVector size", ProducerUtils::GetColor("red"), "Error");
+    }
+
+    sEventCandidateFinding += "Total number of event candidates found: " + ProducerUtils::str(EventCandidateVector.size()) + "\n";
+    ProducerUtils::PrintInColor(sEventCandidateFinding, ProducerUtils::GetColor("blue"), "Debug");
     return;
   }
-} // namespace solar
+
+  int LowEUtils::MatchPDSFlash(
+    const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector,
+    const std::vector<art::Ptr<recob::OpFlash>> &PDSFlashes,
+    const detinfo::DetectorClocksData &clockData,
+    const art::Event &evt,
+    bool debug)
+  {
+    std::string sFlashMatching = "LowEUtils::MatchPDSFlash " + ProducerUtils::str(SolarClusterVector.size()) + " clusters and " + ProducerUtils::str(PDSFlashes.size()) + " flashes found in the event\n";
+    // get drift properties
+    art::ServiceHandle<geo::Geometry> geom;
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
+    double driftLength = 0;
+    double driftTime = 0; // in cm/us, but we will use it as a time variable
+    
+    // Get geometry from the geometry service
+    std::string geoName = geom->DetectorName();
+    // Get the drift length from the geometry service
+    geo::CryostatID c(0);
+    const geo::CryostatGeo &cryostat = geom->Cryostat(c);
+    const geo::TPCGeo &tpcg = cryostat.TPC(0);
+    const double fidVolZ = cryostat.BoundingBox().MaxZ() - cryostat.BoundingBox().MinZ();
+    std::string fGeometry = "Unknown";
+    if (geoName.find("dune10kt") != std::string::npos) {
+        driftLength = tpcg.DriftDistance();
+        driftTime = driftLength / detProp.DriftVelocity(); // in us
+        fGeometry = "HD";
+    }
+    else if(geoName.find("dunevd10kt") != std::string::npos) {
+        driftLength = tpcg.DriftDistance();
+        driftTime = driftLength / detProp.DriftVelocity();
+        fGeometry = "VD";
+    }
+    else {
+        producer->PrintInColor("Unknown geometry: " + geoName, ProducerUtils::GetColor("red"));
+        return -1; // Unknown geometry
+    }
+
+    sFlashMatching += "Drift length: " + ProducerUtils::str(driftLength) + " cm, Drift time: " + ProducerUtils::str(driftTime) + " us, Geometry: " + geoName + "\n";
+    
+    // Match according to the main cluster time and position
+    if (SolarClusterVector.empty() || PDSFlashes.empty()) {
+        return -1; // No clusters or flashes to match
+    }
+    // Assuming the first cluster is the main one
+    const auto &mainCluster = SolarClusterVector.front();
+    // Get the time and position of the main cluster
+    double clusterTime = mainCluster->getAverageTime();
+    double clusterCharge = mainCluster->getTotalCharge();
+    double clusterX = -1e6;    
+    double clusterY = mainCluster->getY();
+    double clusterZ = mainCluster->getZ();
+    
+    int matchedFlashIndex = -1;
+    double matchedFlashPE = 0.0;
+    double matchedRecoX = -1e6;
+    // Loop through the flashes to find the best match
+    for (int i = 0; i < int(PDSFlashes.size()); i++)
+    {
+        // Reset cluster X for each flash
+        const auto &flash = PDSFlashes[i];
+        double flashPE = flash->TotalPE();
+        // double flashR = -1e6;
+        // Check if the flash time is within the acceptable range
+        double flashTime = flash->Time();
+        double dT = clusterTime - flashTime; // Time difference between the cluster and the flash
+        // If dT is bigger that drift time, skip this flash
+        if (dT > driftTime || dT < 0) {
+            continue; // Skip this flash if it's too far in time or in the future
+        }
+        if (int(flash->PEs().size()) < fAdjOpFlashMinNHitCut || *std::max_element(flash->PEs().begin(), flash->PEs().end()) / flash->TotalPE() > fAdjOpFlashMaxPERatioCut) {
+            continue; // Skip flashes with insufficient hits or too much concentration in one XA
+        }
+        if ( SelectPDSFlashPE(driftTime, dT, clusterCharge, flashPE) == false ) {
+            continue; // Skip flashes that don't pass the PE selection
+        }
+
+        // Calculate the distance in space
+        double flashY = flash->YCenter();
+        double flashZ = flash->ZCenter();
+
+        producer->ComputeDistanceX(clusterX, clusterTime, flashTime, driftLength, driftTime);
+        if (fGeometry == "HD") {
+            // For DUNE 10kt geometry, we have different projections based on the plane
+            // Change the sign of clusterX for the collection plane
+            if (flash->Frame() == 0) // Collection plane
+            {
+                clusterX = -clusterX; // Convert to the collection plane coordinate system
+            }
+            if (pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1)
+            {
+                continue;
+            }
+            // flashR = sqrt(pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
+        }
+        else if (fGeometry == "VD") {
+          // Convert clusterX to the VD geometry [-driftLength/2, driftLength/2]
+          if (flash->Frame() == 0) {// Cathode flashes
+              if (pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1)
+              {
+                  continue;
+              }
+              // flashR = sqrt(pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
+          }
+          else if (flash->Frame() == 1 || flash->Frame() == 2) {// Membrane flashes
+              if (fAdjOpFlashMembraneProjection) {
+                  if (clusterY * flashY < 0) {continue;}
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1) {
+                      continue;
+                  }
+              }
+              else {
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1) {
+                      continue;
+                  }
+              }
+              // flashR = sqrt(pow(clusterX, 2) + pow(clusterZ - flashZ, 2));
+          } 
+          else if (flash->Frame() == 3 || flash->Frame() == 4) {// End-Cap flashes
+              if (fAdjOpFlashEndCapProjection) {
+                  if (clusterZ < fidVolZ/2 && flash->Frame() == 3) {continue;} // Skip if the cluster is in the bottom half and the flash is in the top end-cap
+                  if (clusterZ > fidVolZ/2 && flash->Frame() == 4) {continue;} // Skip if the cluster is in the top half and the flash is in the bottom end-cap
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) > 1) {
+                      continue;
+                  }
+              }
+              else {
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1) {
+                      continue;
+                  }
+              }
+              // flashR = sqrt(pow(clusterX, 2) + pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
+          } 
+          clusterX = driftLength / 2 - clusterX; // Convert to the VD geometry coordinate system
+        }
+        else {
+            continue; // Unknown geometry, skip this matching
+        }
+
+        if (flashPE > matchedFlashPE || matchedFlashIndex == -1) {
+            // If this flash has more PE than the previous best match, update the match
+            matchedFlashPE = flashPE;
+            matchedFlashIndex = i;
+            matchedRecoX = clusterX;
+        }
+    }
+    if (debug) {
+        if (matchedFlashIndex != -1) {
+            sFlashMatching += "Matched flash: Index " + ProducerUtils::str(matchedFlashIndex) + " PE " + ProducerUtils::str(matchedFlashPE) + " Time " + ProducerUtils::str(PDSFlashes[matchedFlashIndex]->Time()) + " Y " + ProducerUtils::str(PDSFlashes[matchedFlashIndex]->YCenter()) + " Z " + ProducerUtils::str(PDSFlashes[matchedFlashIndex]->ZCenter()) + "\n";
+            // Print recon info of the cluster
+            sFlashMatching += "Cluster: Time " + ProducerUtils::str(mainCluster->getAverageTime()) + " Vertex " + ProducerUtils::str(matchedRecoX) + ", " + ProducerUtils::str(mainCluster->getY()) + ", " + ProducerUtils::str(mainCluster->getZ()) + "\n";
+        }
+        else {
+            sFlashMatching += "No flash matched to cluster: NHits " + ProducerUtils::str(mainCluster->getNHits()) + " Channel " + ProducerUtils::str(mainCluster->getMainChannel()) + " Time " + ProducerUtils::str(mainCluster->getAverageTime()) + " Charge " + ProducerUtils::str(mainCluster->getTotalCharge()) + "\n";
+        }
+        ProducerUtils::PrintInColor(sFlashMatching, ProducerUtils::GetColor("blue"), "Debug");
+    }
+    return matchedFlashIndex; // Return the index of the matched flash or -1 if no match found
+  } // MatchPDSFlash
+
+
+  bool LowEUtils::SelectPDSFlashPE(
+    const float &TPCDriftTime,
+    const float &MatchedDriftTime,
+    const float &ClusterCharge,
+    const float &OpFlashPE)
+  {
+    if (fAdjOpFlashMinPEAttenuate == "light_map") {
+      double a, b, c;
+      for (int i = 0; i < int(fAdjOpFlashMinPELightMap.size()); i++) {
+        if (fAdjOpFlashMinPELightMap[i].first == "Amplitude") {
+          a = fAdjOpFlashMinPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMinPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMinPELightMap[i].second[2];
+        }
+        else if (fAdjOpFlashMinPELightMap[i].first == "Attenuation") {
+          b = fAdjOpFlashMinPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMinPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMinPELightMap[i].second[2];
+        }
+        else if (fAdjOpFlashMinPELightMap[i].first == "Correction") {
+          c = fAdjOpFlashMinPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMinPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMinPELightMap[i].second[2];
+        }
+      }
+      double MinPE = pow(10, a - a * b * MatchedDriftTime / TPCDriftTime + c * pow(MatchedDriftTime / TPCDriftTime, 2));
+      if (OpFlashPE < MinPE) { return false; }
+      else { return true; }
+    }
+    else if (fAdjOpFlashMinPEAttenuate == "asymptotic") {
+      if (OpFlashPE < fAdjOpFlashMinPECut - fAdjOpFlashMinPEAttenuation * (1-pow(pow(10,fAdjOpFlashMinPEAttenuationStrength), -MatchedDriftTime / TPCDriftTime)) * fAdjOpFlashMinPECut) { return false; }
+      else { return true; }
+    } 
+    else if (fAdjOpFlashMinPEAttenuate == "linear") {
+      if (OpFlashPE < fAdjOpFlashMinPECut - fAdjOpFlashMinPEAttenuation * pow(MatchedDriftTime / TPCDriftTime, 2) * fAdjOpFlashMinPECut) { return false; }
+      else { return true; }
+    }
+    else if (fAdjOpFlashMinPEAttenuate == "flat") {
+      if (OpFlashPE < fAdjOpFlashMinPECut) { return false; }
+      else { return true; }
+    }
+    else {
+      ProducerUtils::PrintInColor("Warning: Unknown fAdjOpFlashMinPEAttenuate option " + fAdjOpFlashMinPEAttenuate + ", using flat cut", ProducerUtils::GetColor("red"), "Warning");
+      if (OpFlashPE < fAdjOpFlashMinPECut) { return false; }
+      else { return true; }
+    }
+    return true;
+  } // SelectPDSFlashPE
+} // namespace lowe
