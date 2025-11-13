@@ -30,7 +30,10 @@ local params = params_maker(fcl_params) {
 };
 
 
-local tools = tools_maker(params);
+local tools_all = tools_maker(params);
+local tools = tools_all {
+  anodes: [tools_all.anodes[5]]
+};
 
 local sim_maker = import 'pgrapher/experiment/dune10kt-1x2x6/sim.jsonnet';
 local sim = sim_maker(params, tools);
@@ -39,6 +42,7 @@ local nanodes = std.length(tools.anodes);
 local anode_iota = std.range(0, nanodes - 1);
 
 
+local inputTag = 'IonAndScint';
 local output = 'wct-sim-ideal-sig.npz';
 
 
@@ -49,8 +53,18 @@ local output = 'wct-sim-ideal-sig.npz';
 local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 local wcls_input = {
-  depos: wcls.input.depos(name='', art_tag='IonAndScint'),
-  // depos: wcls.input.depos(name='electron'),  // default art_tag="blopper"
+  depos: wcls.input.depos(name='', art_tag=inputTag),
+  deposet: g.pnode({
+    type: 'wclsSimDepoSetSource',
+    name: "",
+    data: {
+      model: "",
+      scale: -1, //scale is -1 to correct a sign error in the SimDepoSource converter.
+      art_tag: inputTag, //name of upstream art producer of depos "label:instance:processName"
+      id_is_track: false,
+      assn_art_tag: "",
+    },
+  }, nin=0, nout=1),
 };
 
 // Collect all the wc/ls output converters for use below.  Note the
@@ -108,6 +122,14 @@ local wcls_output = {
 
 //local deposio = io.numpy.depos(output);
 local drifter = sim.drifter;
+local setdrifter = g.pnode({
+            type: 'DepoSetDrifter',
+            data: {
+                drifter: "Drifter"
+            }
+        }, nin=1, nout=1,
+        uses=[drifter]);
+
 local bagger = sim.make_bagger();
 // local bagger = g.pnode({
 //   type: 'DepoBagger',
@@ -167,17 +189,35 @@ local wcls_simchannel_sink = g.pnode({
   },
 }, nin=1, nout=1, uses=tools.anodes);
 
+local wcls_depoflux_writer = g.pnode({
+  type: 'wclsDepoFluxWriter',
+  name: 'postdrift',
+  data: {
+    anodes: [wc.tn(anode) for anode in tools.anodes],
+    field_response: wc.tn(tools.field),
+    tick: 0.5 * wc.us,
+    window_start: 0.0 * wc.ms,
+    window_duration: self.tick * 6000,
+    nsigma: 3.0,
+    reference_time: fcl_params.G4RefTime,
+    energy: 1, # equivalent to use_energy = true
+    simchan_label: 'simpleSC',
+    sed_label: 'IonAndScint',
+    sparse: false,
+  },
+}, nin=1, nout=1, uses=tools.anodes + [tools.field]);
+
 local magoutput = 'protodune-data-check.root';
-local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
+local magnify = import 'pgrapher/experiment/dune-vd/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
 local multipass = [
   g.pipeline([
-               // wcls_simchannel_sink[n],
                sn_pipes[n],
                // sinks.orig_pipe[n],
                // nf_pipes[n],
                sp_pipes[n],
+               sinks.decon_pipe[n],
              ],
              'multipass%d' % n)
   for n in anode_iota
@@ -192,7 +232,8 @@ local tag_rules = {
         + {['threshold%d' % anode.data.ident]: ['threshold%d' % anode.data.ident] for anode in tools.anodes}
         + {['dnnsp%d' % anode.data.ident]: ['dnnsp%d' % anode.data.ident] for anode in tools.anodes},
 };
-local bi_manifold = f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,2], [2,6], [1,2], [2,6], 'sn_mag_nf', outtags, tag_rules);
+// local bi_manifold = f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,2], [2,6], [1,2], [2,6], 'sn_mag_nf', outtags, tag_rules);
+local bi_manifold = f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,1], [1,1], [1,1], [1,1], 'sn_mag_nf', outtags, tag_rules);
 // local bi_manifold = f.fanpipe('DepoSetFanout', multipass, 'FrameFanin', 'sn_mag_nf', outtags, tag_rules);
 // local bi_manifold = f.fanpipe('DepoFanout', multipass, 'FrameFanin', 'sn_mag_nf', outtags, tag_rules);
 
@@ -217,7 +258,7 @@ local retagger = g.pnode({
 //local frameio = io.numpy.frames(output);
 local sink = sim.frame_sink;
 
-local graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, bi_manifold, retagger, wcls_output.sp_signals, sink]);
+local graph = g.pipeline([wcls_input.deposet, setdrifter, wcls_depoflux_writer, bi_manifold, retagger, wcls_output.sp_signals, sink]);
 
 local app = {
   type: std.extVar('engine'), //Pgrapher, TbbFlow
