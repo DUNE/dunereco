@@ -9,12 +9,18 @@
 local g = import 'pgraph.jsonnet';
 local f = import 'pgrapher/experiment/dune-vd/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
-
 local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local params_maker = import 'pgrapher/experiment/dune10kt-1x2x6/simparams.jsonnet';
+
+
 local fcl_params = {
     G4RefTime: std.extVar('G4RefTime') * wc.us,
+    use_hydra: true,
+    use_dnnroi: true,
+    inference_service: "TorchService", // "TorchService" or "TritonService"
+    nchunks: 1,
+    model: "ts-model/CP49_mobilenetv3.ts",
 };
 local params = params_maker(fcl_params) {
   lar: super.lar {
@@ -162,8 +168,53 @@ local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n
 
 // local sigoutform = std.extVar('signal_output_form');  // eg "sparse" or "dense"
 local sp_maker = import 'pgrapher/experiment/dune10kt-1x2x6/sp.jsonnet';
-local sp = sp_maker(params, tools, { sparse: true });
+local sp_override = if fcl_params.use_dnnroi then
+{
+    sparse: false,
+    use_roi_debug_mode: true,
+    m_save_negative_charge: false,
+    use_multi_plane_protection: true,
+    mp_tick_resolution: 10,
+    tight_lf_tag: "",
+    cleanup_roi_tag: "",
+    break_roi_loop1_tag: "",
+    break_roi_loop2_tag: "",
+    shrink_roi_tag: "",
+    extend_roi_tag: "",
+}
+else
+{
+    sparse: false,
+    use_roi_debug_mode: false,
+    m_save_negative_charge: false,
+    use_multi_plane_protection: false,
+    mp_tick_resolution: 10,
+};
+local sp = sp_maker(params, tools, sp_override);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
+
+local dnnroi = import 'pgrapher/experiment/dune-vd/dnnroi.jsonnet';
+local ts =
+if fcl_params.inference_service == "TorchService" then
+{
+    type: "TorchService",
+    name: "dnnroi",
+    data: {
+        model: fcl_params.model,
+        device: "cpu",
+        concurrency: 1,
+    },
+}
+else if fcl_params.inference_service == "TritonService" then
+{
+    type: "TritonService",
+    name: "dnnroi",
+    data: {
+        url: "ailab01.fnal.gov:8001",
+        model: fcl_params.model, // "dnn"
+    },
+}
+else error("unsupported inference_service: " + fcl_params.inference_service);
 
 local rng = tools.random;
 local wcls_simchannel_sink = g.pnode({
@@ -218,7 +269,10 @@ local multipass = [
                // nf_pipes[n],
                sp_pipes[n],
                sinks.decon_pipe[n],
-             ],
+             ] + if fcl_params.use_dnnroi then [
+               dnnroi(tools.anodes[n], ts, output_scale=1.0, nchunks=fcl_params.nchunks),
+               sinks.dnnroi_pipe[n],
+             ] else [],
              'multipass%d' % n)
   for n in anode_iota
 ];
@@ -232,10 +286,46 @@ local tag_rules = {
         + {['threshold%d' % anode.data.ident]: ['threshold%d' % anode.data.ident] for anode in tools.anodes}
         + {['dnnsp%d' % anode.data.ident]: ['dnnsp%d' % anode.data.ident] for anode in tools.anodes},
 };
+
+
+local make_switch_pipe = function(d2f, anode ) {
+    local ds_filter = g.pnode({
+        type: "DepoSetFilter",
+        name: "ds-filter-switch-%d" % anode.data.ident,
+        data: {anode: wc.tn(anode)},
+        }, nin=1, nout=1, uses=[anode]),
+    local dorb = g.pnode({
+        type: "DeposOrBust",
+        name: "dorb-switch-%d" % anode.data.ident,
+        }, nin=1, nout=2),
+    local frame_sync = g.pnode({
+        type: "FrameSync",
+        name: "frame-sync-switch-%d" % anode.data.ident,
+        }, nin=2, nout=1),
+    ret1: g.intern(
+        innodes=[ds_filter],
+        outnodes=[frame_sync],
+        centernodes=[dorb, d2f],
+        edges=
+            [g.edge(ds_filter, dorb, 0, 0),
+            g.edge(dorb, d2f, 0, 0),
+            g.edge(d2f, frame_sync, 0, 0),
+            g.edge(dorb, frame_sync, 1, 1)]),
+    ret2: g.pipeline([ds_filter, d2f]),
+}.ret1;
+
+local switch_pipes = [
+    make_switch_pipe(multipass[n], tools.anodes[n]),
+    for n in std.range(0, std.length(tools.anodes) - 1)
+];
+
 // local bi_manifold = f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,2], [2,6], [1,2], [2,6], 'sn_mag_nf', outtags, tag_rules);
 local bi_manifold = f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,1], [1,1], [1,1], [1,1], 'sn_mag_nf', outtags, tag_rules);
-// local bi_manifold = f.fanpipe('DepoSetFanout', multipass, 'FrameFanin', 'sn_mag_nf', outtags, tag_rules);
-// local bi_manifold = f.fanpipe('DepoFanout', multipass, 'FrameFanin', 'sn_mag_nf', outtags, tag_rules);
+// local bi_manifold =
+// if fcl_params.use_hydra then
+//     f.multifanpipe('DepoSetFanout', switch_pipes, 'FrameFanin', [1,2], [2,6], [1,2], [2,6], 'sn_mag_nf', outtags, tag_rules)
+// else
+//     f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,2], [2,6], [1,2], [2,6], 'sn_mag_nf', outtags, tag_rules);
 
 local retagger = g.pnode({
   type: 'Retagger',
@@ -250,6 +340,7 @@ local retagger = g.pnode({
       merge: {
         'gauss\\d+': 'gauss',
         'wiener\\d+': 'wiener',
+        'dnnsp\\d+': 'dnnsp',
       },
     }],
   },
