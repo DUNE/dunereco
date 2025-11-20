@@ -719,6 +719,8 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
         params: {
             # Pgrapher, TbbFlow
             engine: "TbbFlow"
+            dnn_model: "ts-model/CP49_mobilenetv3.ts"
+            apa_sparsity: "hydra" # apa0, all, hydra
         }
         structs: {
           elecGain: @local::ASICGainInMVPerFC_standard
@@ -735,8 +737,7 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
           driftSpeed: 1.60563
           # G4RefTime [us]
           G4RefTime: @local::dunefd_detectorclocks.G4RefTime
-
-
+          use_dnnroi: false
         }
     }
 }

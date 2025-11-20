@@ -16,11 +16,12 @@ local params_maker = import 'pgrapher/experiment/dune10kt-1x2x6/simparams.jsonne
 
 local fcl_params = {
     G4RefTime: std.extVar('G4RefTime') * wc.us,
-    use_hydra: true,
-    use_dnnroi: true,
+    apa_sparsity: std.extVar('apa_sparsity'),
+    use_dnnroi: std.extVar('use_dnnroi'),
+    dnn_model: std.extVar('dnn_model'), // "ts-model/CP49_mobilenetv3.ts",
     inference_service: "TorchService", // "TorchService" or "TritonService"
     nchunks: 1,
-    model: "ts-model/CP49_mobilenetv3.ts",
+    dnn_output_sparcify: true,
 };
 local params = params_maker(fcl_params) {
   lar: super.lar {
@@ -37,9 +38,13 @@ local params = params_maker(fcl_params) {
 
 
 local tools_all = tools_maker(params);
-local tools = tools_all {
-  anodes: [tools_all.anodes[5]]
-};
+local tools = 
+if fcl_params.apa_sparsity == "apa0" then
+tools_all {
+  anodes: [tools_all.anodes[0]]
+}
+else
+  tools_all;
 
 local sim_maker = import 'pgrapher/experiment/dune10kt-1x2x6/sim.jsonnet';
 local sim = sim_maker(params, tools);
@@ -200,7 +205,7 @@ if fcl_params.inference_service == "TorchService" then
     type: "TorchService",
     name: "dnnroi",
     data: {
-        model: fcl_params.model,
+        model: fcl_params.dnn_model,
         device: "cpu",
         concurrency: 1,
     },
@@ -211,7 +216,7 @@ else if fcl_params.inference_service == "TritonService" then
     name: "dnnroi",
     data: {
         url: "ailab01.fnal.gov:8001",
-        model: fcl_params.model, // "dnn"
+        model: fcl_params.dnn_model, // "dnn"
     },
 }
 else error("unsupported inference_service: " + fcl_params.inference_service);
@@ -270,7 +275,12 @@ local multipass = [
                sp_pipes[n],
                sinks.decon_pipe[n],
              ] + if fcl_params.use_dnnroi then [
-               dnnroi(tools.anodes[n], ts, output_scale=1.0, nchunks=fcl_params.nchunks),
+               dnnroi(
+                tools.anodes[n],
+                ts,
+                output_scale=1.0,
+                nchunks=fcl_params.nchunks,
+                sparcify=fcl_params.dnn_output_sparcify,),
                sinks.dnnroi_pipe[n],
              ] else [],
              'multipass%d' % n)
@@ -319,13 +329,16 @@ local switch_pipes = [
     for n in std.range(0, std.length(tools.anodes) - 1)
 ];
 
-// local bi_manifold = f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,2], [2,6], [1,2], [2,6], 'sn_mag_nf', outtags, tag_rules);
-local bi_manifold = f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,1], [1,1], [1,1], [1,1], 'sn_mag_nf', outtags, tag_rules);
-// local bi_manifold =
-// if fcl_params.use_hydra then
-//     f.multifanpipe('DepoSetFanout', switch_pipes, 'FrameFanin', [1,2], [2,6], [1,2], [2,6], 'sn_mag_nf', outtags, tag_rules)
-// else
-//     f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,2], [2,6], [1,2], [2,6], 'sn_mag_nf', outtags, tag_rules);
+// local bi_manifold = 
+local bi_manifold =
+if fcl_params.apa_sparsity == "apa0" then
+    f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,1], [1,1], [1,1], [1,1], 'sn_mag_nf', outtags, tag_rules)
+else if fcl_params.apa_sparsity == "hydra" then
+    f.multifanpipe('DepoSetFanout', switch_pipes, 'FrameFanin', [1,2], [2,6], [1,2], [2,6], 'sn_mag_nf', outtags, tag_rules)
+else if fcl_params.apa_sparsity == "all" then
+    f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,2], [2,6], [1,2], [2,6], 'sn_mag_nf', outtags, tag_rules)
+else
+    error("unsupported apa_sparsity: " + fcl_params.apa_sparsity);
 
 local retagger = g.pnode({
   type: 'Retagger',
