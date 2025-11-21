@@ -26,6 +26,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Vertex.h"
+#include "lardataalg/Utilities/TrackingTypeUtils.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "larsim/MCCheater/ParticleInventoryService.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
