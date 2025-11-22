@@ -137,8 +137,8 @@ local nfsp_pipes = [
              [
                chsel_pipes[n],
                sinks.orig_pipe[n],
-               // nf_pipes[n],
-               // sinks.raw_pipe[n],
+               nf_pipes[n],
+               sinks.raw_pipe[n],
                sp_pipes[n],
                sinks.decon_pipe[n],
                // sinks.threshold_pipe[n],

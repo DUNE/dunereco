@@ -6,7 +6,7 @@ local wc = import 'wirecell.jsonnet';
 function(params, anode, chndbobj, n, name='')
   {
     local single = {
-      type: 'duneCrpOneChannelNoise',
+      type: 'PDVDOneChannelNoise',
       name: name,
       data: {
         noisedb: wc.tn(chndbobj),
@@ -14,7 +14,7 @@ function(params, anode, chndbobj, n, name='')
       },
     },
     local grouped = {
-      type: 'mbCoherentNoiseSub',
+      type: 'PDVDCoherentNoiseSub',
       name: name,
       data: {
         noisedb: wc.tn(chndbobj),
@@ -22,6 +22,17 @@ function(params, anode, chndbobj, n, name='')
         rms_threshold: 0.0,
       },
     },
+    local shieldcoupling_grouped = {
+         type: 'PDVDShieldCouplingSub',
+         name: name,
+         uses: [anode],
+         data: {
+             anode: wc.tn(anode),
+             noisedb: wc.tn(chndbobj),
+             strip_length: params.files.strip_length,
+             rms_threshold: 0.0,
+         },
+     },
 
     local obnf = g.pnode({
       type: 'OmnibusNoiseFilter',
@@ -37,8 +48,24 @@ function(params, anode, chndbobj, n, name='')
         channel_filters: [
           wc.tn(single),
         ],
+             multigroup_chanfilters: [
+
+            {
+               channelgroups: chndbobj.data.groups,
+               filters: [wc.tn(grouped)],
+             },
+
+            ]
+            // only apply to top
+            +if anode.data.ident > 3 then[
+              {
+                channelgroups: chndbobj.data.top_u_groups,
+                filters: [wc.tn(shieldcoupling_grouped)],
+              },
+            ]else []
+            ,       
         grouped_filters: [
-          wc.tn(grouped),
+          // wc.tn(grouped),
         ],
         channel_status_filters: [
         ],
@@ -46,7 +73,7 @@ function(params, anode, chndbobj, n, name='')
         intraces: 'orig%d' % anode.data.ident,  // frame tag get all traces
         outtraces: 'raw%d' % anode.data.ident,
       },
-    }, uses=[chndbobj, anode, single, grouped], nin=1, nout=1),
+    }, uses=[chndbobj, anode, single, grouped,shieldcoupling_grouped], nin=1, nout=1),
 
 
     pipe: g.pipeline([obnf], name=name),

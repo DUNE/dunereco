@@ -114,7 +114,7 @@ base {
       super.elec { // bottom drifter
         postgain: 1.1365, 
         shaping: 2.2 * wc.us,
-        gain: 7.8*wc.mV/wc.fC,
+        gain:7.8*wc.mV/wc.fC,
       },
       super.elec { // top
         type: "JsonElecResponse",
@@ -155,6 +155,7 @@ base {
 
     files: {
         wires: "protodunevd-wires-larsoft-v3.json.bz2",
+        strip_length: "PDVD_strip_length.json.bz2",
 
         fields: [
             // "dunevdcrp2-FR-fixcoll-adjustind.json.bz2",
