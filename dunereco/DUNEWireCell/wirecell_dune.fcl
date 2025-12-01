@@ -881,6 +881,8 @@ tpcrawdecoder_dunefd_vertdrift_3view: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 36
+          # hydra: APA-wise sparse processing
+          use_hydra: true
         }
     }
 }
@@ -913,6 +915,8 @@ tpcrawdecoder_dunefd_vertdrift_1x8x6_3view: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 48
+          # hydra: APA-wise sparse processing
+          use_hydra: true
         }
     }
 }
@@ -945,6 +949,8 @@ tpcrawdecoder_dunefd_vertdrift_1x8x14_3view: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 112
+          # hydra: APA-wise sparse processing
+          use_hydra: true
         }
     }
 }
@@ -978,6 +984,8 @@ tpcrawdecoder_dunefd_vertdrift_3view_30deg: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 36
+          # hydra: APA-wise sparse processing
+          use_hydra: true
         }
     }
 }
@@ -1010,6 +1018,8 @@ tpcrawdecoder_dunefd_vertdrift_1x8x6_3view_30deg: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 48
+          # hydra: APA-wise sparse processing
+          use_hydra: true
         }
     }
 }

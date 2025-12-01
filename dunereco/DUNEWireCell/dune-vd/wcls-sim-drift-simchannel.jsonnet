@@ -17,7 +17,8 @@ local fcl_params = {
     G4RefTime: std.extVar('G4RefTime') * wc.us,
     response_plane: std.extVar('response_plane')*wc.cm,
     nticks: std.extVar('nticks'),
-    ncrm: std.extVar('ncrm')
+    ncrm: std.extVar('ncrm'),
+    use_hydra: std.extVar('use_hydra'),
 };
 local params = params_maker(fcl_params) {
   lar: super.lar {
@@ -169,7 +170,7 @@ local magoutput = 'dune-vd-sim-check.root';
 local magnify = import 'pgrapher/experiment/pdsp/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
-local multipass = [
+local apa_dense_pipes = [
   g.pipeline([
                 sn_pipes[n],
                 // sinks.orig_pipe[n],
@@ -178,9 +179,45 @@ local multipass = [
                 // sinks.decon_pipe[n],
                 // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
              ],
-             'multipass%d' % n)
+             'apa_dense_pipes%d' % n)
   for n in anode_iota
 ];
+
+local make_switch_pipe = function(d2f, anode ) {
+    local ds_filter = g.pnode({
+        type: "DepoSetFilter",
+        name: "ds-filter-switch-%d" % anode.data.ident,
+        data: {anode: wc.tn(anode)},
+        }, nin=1, nout=1, uses=[anode]),
+    local dorb = g.pnode({
+        type: "DeposOrBust",
+        name: "dorb-switch-%d" % anode.data.ident,
+        }, nin=1, nout=2),
+    local frame_sync = g.pnode({
+        type: "FrameSync",
+        name: "frame-sync-switch-%d" % anode.data.ident,
+        }, nin=2, nout=1),
+    ret1: g.intern(
+        innodes=[ds_filter],
+        outnodes=[frame_sync],
+        centernodes=[dorb, d2f],
+        edges=
+            [g.edge(ds_filter, dorb, 0, 0),
+            g.edge(dorb, d2f, 0, 0),
+            g.edge(d2f, frame_sync, 0, 0),
+            g.edge(dorb, frame_sync, 1, 1)]),
+    ret2: g.pipeline([ds_filter, d2f]),
+}.ret1;
+
+local switch_pipes = [
+    make_switch_pipe(apa_dense_pipes[n], tools.anodes[n]),
+    for n in std.range(0, std.length(tools.anodes) - 1)
+];
+
+local multipass =
+if fcl_params.use_hydra
+then switch_pipes
+else apa_dense_pipes;
 
 // assert (fcl_params.ncrm == 36 || fcl_params.ncrm == 112) : "only ncrm == 36 or 112 are configured";
 local f = import 'pgrapher/experiment/dune-vd/funcs.jsonnet';
