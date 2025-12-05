@@ -10,7 +10,7 @@ local g = import 'pgraph.jsonnet';
 local f = import 'pgrapher/common/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
 // Note: better switch to layers
-local dnnroi = import 'dnnroi.jsonnet';
+local dnnroi = import 'pgrapher/experiment/dune-vd/dnnroi.jsonnet';
 
 local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';

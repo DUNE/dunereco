@@ -846,6 +846,9 @@ tpcrawdecoder_dunefd_vertdrift_2view : {
         response_plane: 18.92
         # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
         ncrm: 36
+        use_dnnroi: false
+        use_hydra: true
+        save_rawdigits: false
       }
    }
 }
