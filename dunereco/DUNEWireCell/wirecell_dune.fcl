@@ -792,8 +792,7 @@ tpcrawdecoder_dunefd_vertdrift_2view : {
    module_type : WireCellToolkit
    wcls_main: {
       tool_type: WCLS
-      apps: ["Pgrapher"]
-      # apps: ["TbbFlow"]
+      apps: ["TbbFlow"] # TbbFlow, Pgrapher. hydra only works with TbbFlow
 
       logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
       loglevels: ["debug"]
@@ -883,6 +882,9 @@ tpcrawdecoder_dunefd_vertdrift_3view: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 36
+          use_dnnroi: false
+          use_hydra: true
+          save_rawdigits: false
         }
     }
 }
@@ -915,6 +917,9 @@ tpcrawdecoder_dunefd_vertdrift_1x8x6_3view: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 48
+          use_dnnroi: false
+          use_hydra: true
+          save_rawdigits: false
         }
     }
 }
@@ -947,6 +952,9 @@ tpcrawdecoder_dunefd_vertdrift_1x8x14_3view: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 112
+          use_dnnroi: false
+          use_hydra: true
+          save_rawdigits: false
         }
     }
 }
@@ -980,6 +988,9 @@ tpcrawdecoder_dunefd_vertdrift_3view_30deg: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 36
+          use_dnnroi: false
+          use_hydra: true
+          save_rawdigits: false
         }
     }
 }
@@ -1012,6 +1023,9 @@ tpcrawdecoder_dunefd_vertdrift_1x8x6_3view_30deg: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 48
+          use_dnnroi: false
+          use_hydra: true
+          save_rawdigits: false
         }
     }
 }
