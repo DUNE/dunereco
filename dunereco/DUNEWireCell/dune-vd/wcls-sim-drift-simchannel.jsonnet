@@ -197,7 +197,7 @@ local full_sim_pipes = [
                 sn_pipes[n],
                 // sinks.orig_pipe[n],
              ],
-             'multipass%d' % n)
+             'apa_dense_pipes%d' % n)
   for n in anode_iota
 ];
 
