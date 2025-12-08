@@ -465,16 +465,16 @@ wirecell_protodunevd_sim_deposplat:
         ]
         params: {
         }
-	structs: {
-        Nbit: @local::Nbit_standard 
-        elecGain:    14 # probably not, will  have to change
-        nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
-        lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
-        DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
-        DT: @local::dunefd_largeantparameters.TransverseDiffusion
-        efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
-        temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
-	}
+        structs: {
+            Nbit: @local::Nbit_standard 
+            elecGain:    14 # probably not, will  have to change
+            nticks: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
+            lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
+            DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+            DT: @local::dunefd_largeantparameters.TransverseDiffusion
+            efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
+            temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
+        }
     }
 }
 
@@ -493,12 +493,22 @@ wirecell_pdhd_sim_deposplat:
         ]
         params: {
         }
-	structs: {
-        Nbit: @local::Nbit_standard
-        elecGain:    14 # changed in July, need database
-	}
+        structs: {
+            Nbit: @local::Nbit_standard
+            elecGain:    14 # changed in July, need database
+        }
     }
 }
+
+wirecell_pdhd_sim_depos: @wirecell_pdhd_sim_deposplat
+wirecell_pdhd_sim_depos.wcls_main.configs: ["pgrapher/experiment/pdhd/wcls-sim-drift-depos.jsonnet"]
+#We can choose to look at all anodes or just one
+wirecell_pdhd_sim_depos.wcls_main.structs.anode_index = -1
+
+wirecell_protodunevd_sim_depos: @wirecell_protodunevd_sim_deposplat
+wirecell_protodunevd_sim_depos.wcls_main.configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-depos.jsonnet"]
+#We can choose to look at all anodes or just one
+wirecell_protodunevd_sim_depos.wcls_main.structs.anode_index = -1
 
 
 
