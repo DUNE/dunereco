@@ -194,12 +194,16 @@ namespace lowe
             event.setPtrClusters(EventCandidateVector[i]); // Set the clusters from the vector of Ptr<solar::LowECluster>
             event.setPtrFlashes(FlashPtr); // Set the flashes from the vector of Ptr<recob::OpFlash>
 
-            if (fFlashAlgoType=="SolarFlashMatch") {
                
-               int matchedFlashIndex = -1;
+            int matchedFlashIndex = -1;
             
                if (!FlashPtr.empty()) {
-                   matchedFlashIndex = lowe->MatchPDSFlash(EventCandidateVector[i], FlashPtr, clockData, evt, fDebug);
+                   if (fFlashAlgoType=="SolarFlashMatch") {
+                       matchedFlashIndex = lowe->MatchPDSFlash(EventCandidateVector[i], FlashPtr, clockData, evt, fDebug);
+                    }
+                   else if (fFlashAlgoType == "likelihoodFlashMatch") {
+                       std::cout << "likelihoodFlashmatch!!! "<< std ::endl;
+                    }
                 
                    if (matchedFlashIndex >= 0) {
                        art::Ptr<recob::OpFlash> matchedFlashPtr = FlashPtr[matchedFlashIndex];
@@ -224,11 +228,8 @@ namespace lowe
                else {
                    sSolarEventErrors += "Matched flash is not valid.\n";
                 }
-            }
+           
 
-            else if (fFlashAlgoType == "likelihoodFlashMatch") {
-                std::cout << "likelihoodFlashmatch!!! "<< std ::endl;
-            }
             
             // Add the event to the SolarEventPtr vector
             SolarEventPtr->push_back(event);
