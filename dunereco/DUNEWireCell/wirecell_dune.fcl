@@ -719,6 +719,8 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
         params: {
             # Pgrapher, TbbFlow
             engine: "TbbFlow"
+            dnn_model: "ts-model/CP49_mobilenetv3.ts"
+            apa_sparsity: "hydra" # apa0, all, hydra
         }
         structs: {
           elecGain: @local::ASICGainInMVPerFC_standard
@@ -735,8 +737,7 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
           driftSpeed: 1.60563
           # G4RefTime [us]
           G4RefTime: @local::dunefd_detectorclocks.G4RefTime
-
-
+          use_dnnroi: false
         }
     }
 }
@@ -792,8 +793,7 @@ tpcrawdecoder_dunefd_vertdrift_2view : {
    module_type : WireCellToolkit
    wcls_main: {
       tool_type: WCLS
-      apps: ["Pgrapher"]
-      # apps: ["TbbFlow"]
+      apps: ["TbbFlow"] # TbbFlow, Pgrapher. hydra only works with TbbFlow
 
       logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
       loglevels: ["debug"]
@@ -846,6 +846,9 @@ tpcrawdecoder_dunefd_vertdrift_2view : {
         response_plane: 18.92
         # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
         ncrm: 36
+        use_dnnroi: false
+        use_hydra: true
+        save_rawdigits: false
       }
    }
 }
@@ -880,6 +883,9 @@ tpcrawdecoder_dunefd_vertdrift_3view: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 36
+          use_dnnroi: false
+          use_hydra: true
+          save_rawdigits: false
         }
     }
 }
@@ -912,6 +918,9 @@ tpcrawdecoder_dunefd_vertdrift_1x8x6_3view: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 48
+          use_dnnroi: false
+          use_hydra: true
+          save_rawdigits: false
         }
     }
 }
@@ -944,6 +953,9 @@ tpcrawdecoder_dunefd_vertdrift_1x8x14_3view: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 112
+          use_dnnroi: false
+          use_hydra: true
+          save_rawdigits: false
         }
     }
 }
@@ -977,6 +989,9 @@ tpcrawdecoder_dunefd_vertdrift_3view_30deg: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 36
+          use_dnnroi: false
+          use_hydra: true
+          save_rawdigits: false
         }
     }
 }
@@ -1009,6 +1024,9 @@ tpcrawdecoder_dunefd_vertdrift_1x8x6_3view_30deg: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 48
+          use_dnnroi: false
+          use_hydra: true
+          save_rawdigits: false
         }
     }
 }
@@ -2110,4 +2128,81 @@ dune10kt_horizdrift_sim_nfsp : {
     }
 }
 
+dune10kt_vertdrift_sim_nfsp : {
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["TbbFlow"] # Pgrapher, TbbFlow
+
+        logsinks: ["stdout"]
+        loglevels: ["debug"]
+
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"
+        ,"WireCellTbb"
+        # , "WireCellPytorch"
+        ]
+
+        // needs to be found via your WIRECELL_PATH
+        configs: ["pgrapher/experiment/dune10kt-vd/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
+
+
+        // Contract note: these exact "type:name" must be used to identify
+        // the configuration data structures for these components in the Jsonnet.
+
+        inputers: ["wclsSimDepoSource:"]
+        outputers: [
+            "wclsSimChannelSink:postdrift",
+            "wclsFrameSaver:spsignals"
+            , "wclsFrameSaver:simdigits"
+        ]
+
+        // Make available parameters via Jsonnet's std.extVar()
+        params: {
+            # file: wires
+            # dunevd10kt_3view_30deg_v6_refactored.json.bz2
+            # files_wires: "dunevd10kt_3view_30deg_v5_refactored_1x8x6ref.json.bz2"
+            files_wires: "dunevd10kt_3view_30deg_v6_refactored.json.bz2"
+            # file: fields
+            # dunevd-resp-isoc3views-18d92.json.bz2 30,-30,90
+            # pcbro-response-avg-12d50.json.bz2 2view prototype
+            files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
+            # file: noise
+            # dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2
+            # dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2
+            # dunevd10kt-1x6x6-2view-noise-spectra-v1.json.bz2
+            files_noise: "dunevd10kt-1x6x6-3view-noise-spectra-v1.json.bz2"
+            # set mapping between internal wct plane ids and larsoft
+            # default is to assume WireCell::kU->geo::kU, kV->kV, kW->kW
+            # 3view-30deg: default, 3view: dunevd_3view
+            geo_planeid_labels: "default"
+            # process pratial or all CRMs: all or test2
+            process_crm: "all"
+        }
+        structs: {
+            elecGain: @local::ASICGainInMVPerFC_standard
+            Nbit: @local::Nbit_standard 
+            # number of time samples
+            nticks: @local::dunefdvd_detproperties.NumberTimeSamples
+            # Longitudinal diffusion constant [cm2/ns] 4.0e-9
+            DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
+            # Transverse diffusion constant [cm2/ns] 8.8e-9
+            DT: @local::dunefd_largeantparameters.TransverseDiffusion
+            # Electron lifetime [us] #10.4e3
+            lifetime: 10.4e3 #@local::dunefdvd_detproperties.Electronlifetime
+            # Electron drift speed, assumes a certain applied E-field [mm/us]
+            driftSpeed: 1.60563 # 1.60563, 1.565
+            # G4RefTime [us]
+            G4RefTime: @local::dunefd_detectorclocks.G4RefTime
+            # response plane [cm]
+            response_plane: 18.92
+            # number of CRMs, 24 for 1x8x6, 320 for 2x8x40
+            ncrm: 320
+            use_hydra: true
+            save_rawdigits: false
+            # use dnn_roi or not
+            use_dnnroi: false
+            adc_resolution: 12
+        }
+    }
+}
 END_PROLOG
