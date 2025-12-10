@@ -16,6 +16,7 @@ art_make( BASENAME_ONLY
   Boost::filesystem
   TensorFlow::framework
   TensorFlow::cc
+  ROOT::Hist
   DICT_LIBRARIES   lardataobj::RecoBase
   RegCNNFunc
   )
