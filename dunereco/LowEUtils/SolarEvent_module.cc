@@ -35,10 +35,11 @@ namespace lowe
     
     private:
         // The parameters we'll read from the .fcl file.
-        std::string fSignalLabel;  // Input tag for MCTruth label
-        std::string fGEANTLabel;   // Input tag for GEANT label
-        std::string fClusterLabel; // Input tag for LowECluster collection
-        std::string fOpFlashLabel; // Input tag for OpFlash collection
+        std::string fSignalLabel;   // Input tag for MCTruth label
+        std::string fGEANTLabel;    // Input tag for GEANT label
+        std::string fClusterLabel;  // Input tag for LowECluster collection
+        std::string fOpFlashLabel;  // Input tag for OpFlash collection
+        std::string fFlashAlgoType; //Choose the type of algorithm for the Flashmatch
         bool fDebug;
         lowe::LowEUtils *lowe;
         producer::ProducerUtils *producer;
@@ -66,6 +67,7 @@ namespace lowe
         fGEANTLabel(p.get<std::string>("GEANTLabel", "largeant")),
         fClusterLabel(p.get<std::string>("ClusterLabel", "solarcluster")),
         fOpFlashLabel(p.get<std::string>("OpFlashLabel", "solarflash")),
+        fFlashAlgoType(p.get<std::string>("FlashAlgoType")),  
         fDebug(p.get<bool>("Debug", false)),      
         lowe(new lowe::LowEUtils(p)),
         producer(new producer::ProducerUtils(p))
@@ -192,35 +194,42 @@ namespace lowe
             event.setPtrClusters(EventCandidateVector[i]); // Set the clusters from the vector of Ptr<solar::LowECluster>
             event.setPtrFlashes(FlashPtr); // Set the flashes from the vector of Ptr<recob::OpFlash>
 
-            int matchedFlashIndex = -1;
+            if (fFlashAlgoType=="SolarFlashMatch") {
+               
+               int matchedFlashIndex = -1;
             
-            if (!FlashPtr.empty()) {
-                matchedFlashIndex = lowe->MatchPDSFlash(EventCandidateVector[i], FlashPtr, clockData, evt, fDebug);
+               if (!FlashPtr.empty()) {
+                   matchedFlashIndex = lowe->MatchPDSFlash(EventCandidateVector[i], FlashPtr, clockData, evt, fDebug);
                 
-                if (matchedFlashIndex >= 0) {
-                    art::Ptr<recob::OpFlash> matchedFlashPtr = FlashPtr[matchedFlashIndex];
-                    event.setPtrMatchedFlash(matchedFlashPtr); // Set the matched flash from a Ptr<recob::OpFlash>
-                    sSolarEventFinding += "Matched flash index: " + ProducerUtils::str(matchedFlashIndex) + "\n";
-                }
+                   if (matchedFlashIndex >= 0) {
+                       art::Ptr<recob::OpFlash> matchedFlashPtr = FlashPtr[matchedFlashIndex];
+                       event.setPtrMatchedFlash(matchedFlashPtr); // Set the matched flash from a Ptr<recob::OpFlash>
+                       sSolarEventFinding += "Matched flash index: " + ProducerUtils::str(matchedFlashIndex) + "\n";
+                    }
                 
-                else {
-                    sSolarEventFinding += "No flash candidate matched to the cluster.\n";
+                   else {
+                       sSolarEventFinding += "No flash candidate matched to the cluster.\n";
+                    }
+                }
+
+               else {
+                   sSolarEventFinding += "No OpFlashes available for matching.\n";
+               }
+
+               // Check that method isMatchedFlashValid() returns true
+               if (event.isMatchedFlashValid()) {
+                   sSolarEventFinding += "Matched flash is valid.\n";
+                }
+
+               else {
+                   sSolarEventErrors += "Matched flash is not valid.\n";
                 }
             }
 
-            else {
-                sSolarEventFinding += "No OpFlashes available for matching.\n";
+            else if (fFlashAlgoType == "likelihoodFlashMatch") {
+                std::cout << "likelihoodFlashmatch!!! "<< std ::endl;
             }
-
-            // Check that method isMatchedFlashValid() returns true
-            if (event.isMatchedFlashValid()) {
-                sSolarEventFinding += "Matched flash is valid.\n";
-            }
-
-            else {
-                sSolarEventErrors += "Matched flash is not valid.\n";
-            }
-
+            
             // Add the event to the SolarEventPtr vector
             SolarEventPtr->push_back(event);
         }
@@ -259,4 +268,3 @@ namespace lowe
         }
     }
 } // namespace lowe
-
