@@ -273,7 +273,7 @@ local multipass = [
                // sinks.orig_pipe[n],
                // nf_pipes[n],
                sp_pipes[n],
-               sinks.decon_pipe[n],
+               // sinks.decon_pipe[n],
              ] + if fcl_params.use_dnnroi then [
                dnnroi(
                 tools.anodes[n],
@@ -281,7 +281,7 @@ local multipass = [
                 output_scale=1.0,
                 nchunks=fcl_params.nchunks,
                 sparcify=fcl_params.dnn_output_sparcify,),
-               sinks.dnnroi_pipe[n],
+                // sinks.dnnroi_pipe[n],
              ] else [],
              'multipass%d' % n)
   for n in anode_iota
