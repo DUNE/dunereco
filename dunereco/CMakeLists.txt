@@ -16,6 +16,9 @@ add_subdirectory(TransformerCVN)
 add_subdirectory(VLNets)
 add_subdirectory(PointResTree)
 add_subdirectory(WireFilter)
+execute_process(COMMAND sh setup.sh dune
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Supera )
+add_subdirectory(Supera)
 # these two were not built in dunetpc at the time of the split
 # add_subdirectory(SNSlicer)
 # add_subdirectory(SNUtils)
