@@ -23,13 +23,18 @@ namespace lowe
     fAdjOpFlashY(p.get<double>("AdjOpFlashY", 100.0)), // Y coordinate for flash projection [cm]
     fAdjOpFlashZ(p.get<double>("AdjOpFlashZ", 100.0)), // Z coordinate for flash projection [cm]
     fAdjOpFlashMinPECut(p.get<double>("AdjOpFlashMinPECut", 0.0)), // Minimum PE for flash selection
+    fAdjOpFlashMaxPECut(p.get<double>("AdjOpFlashMaxPECut", 1e10)), // Maximum PE for flash selection
     fAdjOpFlashMaxPERatioCut(p.get<double>("AdjOpFlashMaxPERatioCut", 1.0)), // Maximum PE ratio for flash selection
     fAdjOpFlashMembraneProjection(p.get<bool>("AdjOpFlashMembraneProjection", false)), // Whether to project flashes onto the membrane
     fAdjOpFlashEndCapProjection(p.get<bool>("AdjOpFlashEndCapProjection", false)), // Whether to project flashes onto the end cap
     fAdjOpFlashMinPEAttenuation(p.get<double>("AdjOpFlashMinPEAttenuation", 1)), // PE cut attenuation over drift time [us] to compensate for light attenuation
+    fAdjOpFlashMaxPEAttenuation(p.get<double>("AdjOpFlashMaxPEAttenuation", 1)), // PE cut attenuation over drift time [us] to compensate for light attenuation
     fAdjOpFlashMinPEAttenuate(p.get<std::string>("AdjOpFlashMinPEAttenuate", "flat")), // Type of attenuation for minimum PE cut ("light_map", "asymptotic", "linear" or "flat")
+    fAdjOpFlashMaxPEAttenuate(p.get<std::string>("AdjOpFlashMaxPEAttenuate", "flat")), // Type of attenuation for maximum PE cut ("light_map", "asymptotic", "linear" or "flat")
     fAdjOpFlashMinPEAttenuationStrength(p.get<int>("AdjOpFlashMinPEAttenuationStrength", 10)), // Strength of the asymptotic attenuation for minimum PE cut (in powers of 10)
+    fAdjOpFlashMaxPEAttenuationStrength(p.get<int>("AdjOpFlashMaxPEAttenuationStrength", 10)), // Strength of the asymptotic attenuation for maximum PE cut (in powers of 10)
     fAdjOpFlashMinPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashMinPELightMap", {})), // Light map file and histogram name for light map attenuation
+    fAdjOpFlashMaxPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashMaxPELightMap", {})), // Light map file and histogram name for light map attenuation
     producer(new ProducerUtils(p))
   {
     // Initialize the LowEUtils instance
@@ -1422,6 +1427,16 @@ namespace lowe
     const float &ClusterCharge,
     const float &OpFlashPE)
   {
+    return CutPDSFlashMinPE(TPCDriftTime, MatchedDriftTime, ClusterCharge, OpFlashPE) &&
+           CutPDSFlashMaxPE(TPCDriftTime, MatchedDriftTime, ClusterCharge, OpFlashPE);
+  } // SelectPDSFlashPE
+
+  bool LowEUtils::CutPDSFlashMinPE(
+    const float &TPCDriftTime,
+    const float &MatchedDriftTime,
+    const float &ClusterCharge,
+    const float &OpFlashPE)
+  {
     if (fAdjOpFlashMinPEAttenuate == "light_map") {
       double a, b, c;
       for (int i = 0; i < int(fAdjOpFlashMinPELightMap.size()); i++) {
@@ -1457,5 +1472,48 @@ namespace lowe
       else { return true; }
     }
     return true;
-  } // SelectPDSFlashPE
+  }
+
+  bool LowEUtils::CutPDSFlashMaxPE(
+    const float &TPCDriftTime,
+    const float &MatchedDriftTime,
+    const float &ClusterCharge,
+    const float &OpFlashPE)
+  {
+    if (fAdjOpFlashMaxPEAttenuate == "light_map") {
+      double a, b, c;
+      for (int i = 0; i < int(fAdjOpFlashMaxPELightMap.size()); i++) {
+        if (fAdjOpFlashMaxPELightMap[i].first == "Amplitude") {
+          a = fAdjOpFlashMaxPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMaxPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMaxPELightMap[i].second[2];
+        }
+        else if (fAdjOpFlashMaxPELightMap[i].first == "Attenuation") {
+          b = fAdjOpFlashMaxPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMaxPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMaxPELightMap[i].second[2];
+        }
+        else if (fAdjOpFlashMaxPELightMap[i].first == "Correction") {
+          c = fAdjOpFlashMaxPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMaxPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMaxPELightMap[i].second[2];
+        }
+      }
+      double MaxPE = pow(10, a - a * b * MatchedDriftTime / TPCDriftTime + c * pow(MatchedDriftTime / TPCDriftTime, 2));
+      if (OpFlashPE > MaxPE) { return false; }
+      else { return true; }
+    }
+    else if (fAdjOpFlashMaxPEAttenuate == "asymptotic") {
+      if (OpFlashPE > fAdjOpFlashMaxPECut - fAdjOpFlashMaxPEAttenuation * (1-pow(pow(10,fAdjOpFlashMaxPEAttenuationStrength), -MatchedDriftTime / TPCDriftTime)) * fAdjOpFlashMaxPECut) { return false; }
+      else { return true; }
+    } 
+    else if (fAdjOpFlashMaxPEAttenuate == "linear") {
+      if (OpFlashPE > fAdjOpFlashMaxPECut - fAdjOpFlashMaxPEAttenuation * pow(MatchedDriftTime / TPCDriftTime, 2) * fAdjOpFlashMaxPECut) { return false; }
+      else { return true; }
+    }
+    else if (fAdjOpFlashMaxPEAttenuate == "flat") {
+      if (OpFlashPE > fAdjOpFlashMaxPECut) { return false; }
+      else { return true; }
+    }
+    else {
+      ProducerUtils::PrintInColor("Warning: Unknown fAdjOpFlashMaxPEAttenuate option " + fAdjOpFlashMaxPEAttenuate + ", using flat cut", ProducerUtils::GetColor("red"), "Warning");
+      if (OpFlashPE > fAdjOpFlashMaxPECut) { return false; }
+      else { return true; }
+    }
+    return true;
+  }
 } // namespace lowe
