@@ -230,6 +230,18 @@ namespace lowe
                 const float &ClusterCharge,
                 const float &OpFlashPE);
 
+            bool CutPDSFlashMinPE(
+                const float &TPCDriftTime,
+                const float &MatchedDriftTime,
+                const float &ClusterCharge,
+                const float &OpFlashPE);
+
+            bool CutPDSFlashMaxPE(
+                const float &TPCDriftTime,
+                const float &MatchedDriftTime,
+                const float &ClusterCharge,
+                const float &OpFlashPE);
+
         // Declare member data here.
         private:
             // From fhicl configuration
@@ -251,13 +263,18 @@ namespace lowe
             const double fAdjOpFlashY;                         // Maximum Y distance for adjacent flash matching [cm]
             const double fAdjOpFlashZ;                         // Maximum Z distance for adjacent flash matching [cm]
             const double fAdjOpFlashMinPECut;                  // Minimum photoelectrons for adjacent flash
+            const double fAdjOpFlashMaxPECut;                  // Maximum photoelectrons for adjacent flash
             const double fAdjOpFlashMaxPERatioCut;             // Maximum photoelectrons ratio for adjacent flash
             const bool fAdjOpFlashMembraneProjection;          // If true, project the TPC reco onto the membrane
             const bool fAdjOpFlashEndCapProjection;            // If true, project the TPC reco onto the end cap
             const double fAdjOpFlashMinPEAttenuation;          // Attenuation factor for minimum PE cut based on drift time [us]
+            const double fAdjOpFlashMaxPEAttenuation;          // Attenuation factor for maximum PE cut based on drift time [us]
             const std::string fAdjOpFlashMinPEAttenuate;       // Type of attenuation for minimum PE cut ("light_map", "asymptotic", "linear" or "flat")
+            const std::string fAdjOpFlashMaxPEAttenuate;       // Type of attenuation for maximum PE cut ("light_map", "asymptotic", "linear" or "flat")
             const int fAdjOpFlashMinPEAttenuationStrength;     // Strength of the asymptotic attenuation for minimum PE cut (in powers of 10)
+            const int fAdjOpFlashMaxPEAttenuationStrength;     // Strength of the asymptotic attenuation for maximum PE cut (in powers of 10)
             const std::vector<std::pair<std::string, std::vector<double>>> fAdjOpFlashMinPELightMap; // Light map file and histogram name for light map attenuation
+            const std::vector<std::pair<std::string, std::vector<double>>> fAdjOpFlashMaxPELightMap; // Light map file and histogram name for light map attenuation
             std::unique_ptr<producer::ProducerUtils> producer; // Pointer to the ProducerUtils instance
     };
 } // namespace lowe
