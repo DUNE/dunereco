@@ -9,10 +9,15 @@ art_make( BASENAME_ONLY
   LIBRARY_NAME     RegCNNFunc
   LIB_LIBRARIES    nusimdata::SimulationBase
   lardataobj::RecoBase
+  larcorealg::Geometry
   larsim::MCCheater_BackTrackerService_service
   larsim::MCCheater_ParticleInventoryService_service
   messagefacility::MF_MessageLogger
   cetlib::cetlib cetlib_except::cetlib_except
+  ${ROOT_HIST}
+  ${ROOT_CORE}
+  ${ROOT_GRAF}
+  ${ROOT_GRAF3D}
   Boost::filesystem
   TensorFlow::framework
   TensorFlow::cc

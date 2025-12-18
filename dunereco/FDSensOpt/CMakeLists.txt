@@ -16,6 +16,7 @@ cet_build_plugin(NueAna   art::module LIBRARIES
                         larcorealg::Geometry
                         larcore::Geometry_Geometry_service
                         lardata::Utilities
+                        lardataalg::UtilitiesHeaders
                         larsim::Simulation 
                         nug4::ParticleNavigation 
                         lardataobj::Simulation
