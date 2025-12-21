@@ -1,0 +1,28 @@
+# This defines the local DUNE version of the 3d space point builder tool for Cluster3D
+
+BEGIN_PROLOG
+
+standard_snippethit3dbuilderDUNE:
+{
+  tool_type:             SnippetHit3DBuilderDUNE
+  HitFinderTagVec:       ["gaushit"]
+  EnableMonitoring:      true    # enable monitoring of functions
+  HitWidthScaleFactor:   3.0     #
+  RangeNumSigma:         3.0     #
+  LongHitsStretchFactor: 1.5     # Allows to stretch long hits widths if desired
+  PulseHeightFraction:   0.4     # If multiple hits are under this fraction of the peak hit amplitude consider rejecting
+  PHLowSelection:        8.      # If matching the above then require hits larger than this
+  MinPHFor2HitPoints:    4.      # Don't consider hits less than this for 2 hit space points
+  DeltaPeakTimeSig:      1.75    # "Significance" of agreement between 2 hit peak times
+  ZPosOffset:            0.00
+  MaxHitChiSquare:       6.00
+  WirePitchScaleFactor:  1.9
+  SaveBadChannelPairs:   true    # Create and save space points with one channel "bad"
+  SaveMythicalPoints:    true    # Create and save 2 hit combinations
+  MaxMythicalChiSquare:  25.     # Cut on 2 hit points
+  UseT0Offsets:          false
+  OutputHistograms:      false
+  MakeAssociations:      false
+}
+
+END_PROLOG
