@@ -1913,6 +1913,7 @@ protodunevd_nfsp : {
       structs: {
         Nbit: @local::Nbit_standard
         elecGain: 14 # probably will change
+        use_dnnroi: false
       }
    }
 }
