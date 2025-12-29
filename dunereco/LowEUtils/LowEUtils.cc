@@ -1326,7 +1326,8 @@ namespace lowe
         if (dT > driftTime || dT < 0) {
             continue; // Skip this flash if it's too far in time or in the future
         }
-        if (int(flash->PEs().size()) < fAdjOpFlashMinNHitCut || *std::max_element(flash->PEs().begin(), flash->PEs().end()) / flash->TotalPE() > fAdjOpFlashMaxPERatioCut) {
+        int n_channels_with_pe = std::count_if(flash->PEs().begin(), flash->PEs().end(), [](double pe) { return pe > 0; });
+        if (n_channels_with_pe < fAdjOpFlashMinNHitCut || *std::max_element(flash->PEs().begin(), flash->PEs().end()) / flash->TotalPE() > fAdjOpFlashMaxPERatioCut) {
             continue; // Skip flashes with insufficient hits or too much concentration in one XA
         }
         if ( SelectPDSFlashPE(driftTime, dT, clusterCharge, flashPE) == false ) {
@@ -1488,7 +1489,8 @@ namespace lowe
         if (dT > driftTime || dT < 0) {
             continue; // Skip this flash if it's too far in time or in the future
         }
-        if (int(flash->PEs().size()) < fAdjOpFlashMinNHitCut || *std::max_element(flash->PEs().begin(), flash->PEs().end()) / flash->TotalPE() > fAdjOpFlashMaxPERatioCut) {
+        int n_channels_with_pe = std::count_if(flash->PEs().begin(), flash->PEs().end(), [](double pe) { return pe > 0; });
+        if (n_channels_with_pe < fAdjOpFlashMinNHitCut || *std::max_element(flash->PEs().begin(), flash->PEs().end()) / flash->TotalPE() > fAdjOpFlashMaxPERatioCut) {
             continue; // Skip flashes with insufficient hits or too much concentration in one XA
         }
         if ( SelectPDSFlashPE(driftTime, dT, clusterCharge, flashPE) == false ) {
