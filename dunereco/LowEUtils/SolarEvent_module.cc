@@ -10,6 +10,9 @@
 // Can be used as template for other LowEEvent producers (radiological, supernova) //
 /////////////////////////////////////////////////////////////////////////////////////
 
+#include "LikelihoodComputer.h"
+#include <cstddef>
+#include <filesystem>
 #ifndef SolarEvent_H
 #define SolarEvent_H 1
 
@@ -29,6 +32,7 @@ namespace lowe
         void beginJob();
         void endJob();
         void reconfigure(fhicl::ParameterSet const &p);
+        void SetLikelihoodComputer(const double& fElectronScintYield, const std::string& fVisibilityFilename);
     
         // The producer routine, called once per event.
         void produce(art::Event &);
@@ -40,6 +44,10 @@ namespace lowe
         std::string fClusterLabel;  // Input tag for LowECluster collection
         std::string fOpFlashLabel;  // Input tag for OpFlash collection
         std::string fFlashAlgoType; //Choose the type of algorithm for the Flashmatch
+        // double      fElectronScintYield; // Electron scintillation yield (photons/MeV)
+        // std::string fVisibilityFilename;// Visibility file for likelihood flash matching
+        LikelihoodComputer fLikelihoodComputer; // Likelihood computer for flash matching
+        
         bool fDebug;
         lowe::LowEUtils *lowe;
         producer::ProducerUtils *producer;
@@ -67,7 +75,7 @@ namespace lowe
         fGEANTLabel(p.get<std::string>("GEANTLabel", "largeant")),
         fClusterLabel(p.get<std::string>("ClusterLabel", "solarcluster")),
         fOpFlashLabel(p.get<std::string>("OpFlashLabel", "solarflash")),
-        fFlashAlgoType(p.get<std::string>("FlashAlgoType")),  
+        fFlashAlgoType(p.get<std::string>("FlashAlgoType")),
         fDebug(p.get<bool>("Debug", false)),      
         lowe(new lowe::LowEUtils(p)),
         producer(new producer::ProducerUtils(p))
@@ -76,6 +84,12 @@ namespace lowe
         produces<std::vector<lowe::LowEEvent>>();
         produces<art::Assns<lowe::LowEEvent, solar::LowECluster>>("LowEClusterAssns");
         produces<art::Assns<lowe::LowEEvent, recob::OpFlash>>("LowEFlashAssns");
+        
+        double fElectronScintYield(p.get<double>("ElectronScintYield", 20000.0));
+        std::string fVisibilityFilename(p.get<std::string>("VisibilityFilename", ""));
+        if (fFlashAlgoType == "likelihoodFlashMatch") {
+            SetLikelihoodComputer(fElectronScintYield, fVisibilityFilename);
+        }
     }
 
     //--------------------------------------------------------------------------
@@ -83,7 +97,59 @@ namespace lowe
     {
         // Reconfigure the parameters from the FHiCL file
     }
+    
+    //--------------------------------------------------------------------------
+    void SolarEvent::SetLikelihoodComputer(const double& fElectronScintYield, const std::string& fVisibilityFilename)
+    {
+        if (fFlashAlgoType == "likelihoodFlashMatch") {
+            double LY_times_PDE = fElectronScintYield*0.03; // 3% PDE assumed
+            TFile* parametrizer_file = TFile::Open("/exp/dune/app/users/fgalizzi/flashmatch_larsoft/work/fm_module_inputs/fm_parametrizer.root", "READ");
+            TF1* f_reco_prob = static_cast<TF1*>(parametrizer_file->Get("f_reco_prob"));
+            TF1* f_lognormal = static_cast<TF1*>(parametrizer_file->Get("f_lognormal"));
+            TF1* f_logms_trend = static_cast<TF1*>(parametrizer_file->Get("f_logms_trend"));
+            TF1* f_sigmas_trend = static_cast<TF1*>(parametrizer_file->Get("f_sigmas_trend"));
+            TH2D* h2_exp_reco = static_cast<TH2D*>(parametrizer_file->Get("h2_exp_reco"));
+            TGraphErrors* g_logms = static_cast<TGraphErrors*>(parametrizer_file->Get("g_logms"));
+            TGraphErrors* g_sigmas = static_cast<TGraphErrors*>(parametrizer_file->Get("g_sigmas"));
+            double trend_thr = 20.0;
 
+            TFile* calib_file = TFile::Open("/exp/dune/app/users/fgalizzi/flashmatch_larsoft/work/fm_module_inputs/calibrator.root", "READ");
+            TTree* calib_tree = static_cast<TTree*>(calib_file->Get("calib_tree"));
+            Float_t calib_c = 0.;         Float_t calib_slope = 0.;
+            Float_t corr_lambda = 0.0;
+            calib_tree->SetBranchAddress("calib_c", &calib_c);
+            calib_tree->SetBranchAddress("calib_slope", &calib_slope);
+            calib_tree->SetBranchAddress("corr_lambda", &corr_lambda);
+            calib_tree->GetEntry(0);
+
+
+
+            // check visibility file exists
+            std::cout << fVisibilityFilename << std::endl;
+            if(!std::filesystem::exists(fVisibilityFilename)){
+                throw std::runtime_error("Visibility file " + fVisibilityFilename + " does not exist!");
+            }
+            
+            fLikelihoodComputer = LikelihoodComputer(
+               TString(fVisibilityFilename),      // Visibility file name
+               LY_times_PDE,          // Light yield times photo detector efficiency
+               f_reco_prob,           // Reconstruction probability function
+               f_lognormal,           // Lognormal function for extrapolation
+               f_logms_trend,         // Trend function for logm
+               f_sigmas_trend,        // Trend function for sigma
+               g_logms,               // Graph for logm values
+               g_sigmas,              // Graph for sigma values
+               trend_thr,             // Threshold for trend
+               calib_c,               // Calibration constant
+               calib_slope,           // Calibration slope
+               corr_lambda,            // Correction lambda value
+               h2_exp_reco
+            );
+
+            std::cout << "T" << std::endl;
+        }
+
+    }
     //--------------------------------------------------------------------------
     // Destructor
     SolarEvent::~SolarEvent()
@@ -185,6 +251,10 @@ namespace lowe
 
         sSolarEventFinding += "Found " + ProducerUtils::str(EventCandidateVector.size()) + " event candidates.\n";
 
+
+        auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
+        fLikelihoodComputer.drift_velocity = float(detProp.DriftVelocity());
+
         // Fill the LowEEvent object with the found clusters
         for (size_t i = 0; i < EventCandidateVector.size(); ++i)
         {
@@ -203,6 +273,8 @@ namespace lowe
                     }
                    else if (fFlashAlgoType == "likelihoodFlashMatch") {
                        std::cout << "likelihoodFlashmatch!!! "<< std ::endl;
+                       int matchedFlashIndex2 = lowe->MatchPDSFlashML(EventCandidateVector[i], FlashPtr, clockData, evt, fLikelihoodComputer, fDebug);
+                       std::cout << "index " << matchedFlashIndex << " " << matchedFlashIndex2 << std::endl;
                     }
                 
                    if (matchedFlashIndex >= 0) {

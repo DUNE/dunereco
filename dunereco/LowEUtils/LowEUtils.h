@@ -53,6 +53,7 @@
 #include <limits>
 #include <vector>
 
+#include "LikelihoodComputer.h"
 using namespace producer;
 
 namespace lowe
@@ -224,6 +225,14 @@ namespace lowe
                 const art::Event &evt,
                 bool debug = false);
 
+            int MatchPDSFlashML(
+                const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector,
+                const std::vector<art::Ptr<recob::OpFlash>> &PDSFlashes,
+                const detinfo::DetectorClocksData &clockData,
+                const art::Event &evt,
+                LikelihoodComputer &likelihoodComputer,
+                bool debug = false);
+            
             bool SelectPDSFlashPE(
                 const float &TPCDriftTime,
                 const float &MatchedDriftTime,

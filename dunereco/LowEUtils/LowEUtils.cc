@@ -1,4 +1,5 @@
 #include "LowEUtils.h"
+#include "LikelihoodComputer.h"
 
 using namespace producer;
 
@@ -1415,6 +1416,169 @@ namespace lowe
     return matchedFlashIndex; // Return the index of the matched flash or -1 if no match found
   } // MatchPDSFlash
 
+
+  int LowEUtils::MatchPDSFlashML(
+    const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector,
+    const std::vector<art::Ptr<recob::OpFlash>> &PDSFlashes,
+    const detinfo::DetectorClocksData &clockData,
+    const art::Event &evt,
+    LikelihoodComputer &likelihoodComputer,
+    bool debug)
+  {
+    std::string sFlashMatching = "LowEUtils::MatchPDSFlash " + ProducerUtils::str(SolarClusterVector.size()) + " clusters and " + ProducerUtils::str(PDSFlashes.size()) + " flashes found in the event\n";
+    // get drift properties
+    art::ServiceHandle<geo::Geometry> geom;
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt, clockData);
+    double driftLength = 0;
+    double driftTime = 0; // in cm/us, but we will use it as a time variable
+    
+    // Get geometry from the geometry service
+    std::string geoName = geom->DetectorName();
+    // Get the drift length from the geometry service
+    geo::CryostatID c(0);
+    const geo::CryostatGeo &cryostat = geom->Cryostat(c);
+    const geo::TPCGeo &tpcg = cryostat.TPC(0);
+    const double fidVolZ = cryostat.BoundingBox().MaxZ() - cryostat.BoundingBox().MinZ();
+    std::string fGeometry = "Unknown";
+    if (geoName.find("dune10kt") != std::string::npos) {
+        driftLength = tpcg.DriftDistance();
+        driftTime = driftLength / detProp.DriftVelocity(); // in us
+        fGeometry = "HD";
+    }
+    else if(geoName.find("dunevd10kt") != std::string::npos) {
+        driftLength = tpcg.DriftDistance();
+        driftTime = driftLength / detProp.DriftVelocity();
+        fGeometry = "VD";
+    }
+    else {
+        producer->PrintInColor("Unknown geometry: " + geoName, ProducerUtils::GetColor("red"));
+        return -1; // Unknown geometry
+    }
+
+    sFlashMatching += "Drift length: " + ProducerUtils::str(driftLength) + " cm, Drift time: " + ProducerUtils::str(driftTime) + " us, Geometry: " + geoName + "\n";
+    
+    // Match according to the main cluster time and position
+    if (SolarClusterVector.empty() || PDSFlashes.empty()) {
+        return -1; // No clusters or flashes to match
+    }
+    // Assuming the first cluster is the main one
+    const auto &mainCluster = SolarClusterVector.front();
+    // Get the time and position of the main cluster
+    double clusterTime = mainCluster->getAverageTime();
+    double clusterCharge = mainCluster->getTotalCharge();
+    double clusterX = -1e6;    
+    double clusterY = mainCluster->getY();
+    double clusterZ = mainCluster->getZ();
+    
+    int matchedFlashIndex = -1;
+    double matchedFlashPE = 0.0;
+    double matchedRecoX = -1e6;
+    float matchedLogMLL = 1e6;
+    // Loop through the flashes to find the best match
+    for (int i = 0; i < int(PDSFlashes.size()); i++)
+    {
+        // Reset cluster X for each flash
+        const auto &flash = PDSFlashes[i];
+        double flashPE = flash->TotalPE();
+        // double flashR = -1e6;
+        // Check if the flash time is within the acceptable range
+        double flashTime = flash->Time();
+        double dT = clusterTime - flashTime; // Time difference between the cluster and the flash
+        // If dT is bigger that drift time, skip this flash
+        if (dT > driftTime || dT < 0) {
+            continue; // Skip this flash if it's too far in time or in the future
+        }
+        if (int(flash->PEs().size()) < fAdjOpFlashMinNHitCut || *std::max_element(flash->PEs().begin(), flash->PEs().end()) / flash->TotalPE() > fAdjOpFlashMaxPERatioCut) {
+            continue; // Skip flashes with insufficient hits or too much concentration in one XA
+        }
+        if ( SelectPDSFlashPE(driftTime, dT, clusterCharge, flashPE) == false ) {
+            continue; // Skip flashes that don't pass the PE selection
+        }
+
+        // Calculate the distance in space
+        double flashY = flash->YCenter();
+        double flashZ = flash->ZCenter();
+
+        producer->ComputeDistanceX(clusterX, clusterTime, flashTime, driftLength, driftTime);
+        if (fGeometry == "HD") {
+            // For DUNE 10kt geometry, we have different projections based on the plane
+            // Change the sign of clusterX for the collection plane
+            if (flash->Frame() == 0) // Collection plane
+            {
+                clusterX = -clusterX; // Convert to the collection plane coordinate system
+            }
+            if (pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1)
+            {
+                continue;
+            }
+            // flashR = sqrt(pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
+        }
+        else if (fGeometry == "VD") {
+          // Convert clusterX to the VD geometry [-driftLength/2, driftLength/2]
+          if (flash->Frame() == 0) {// Cathode flashes
+              if (pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1)
+              {
+                  continue;
+              }
+              // flashR = sqrt(pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
+          }
+          else if (flash->Frame() == 1 || flash->Frame() == 2) {// Membrane flashes
+              if (fAdjOpFlashMembraneProjection) {
+                  if (clusterY * flashY < 0) {continue;}
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1) {
+                      continue;
+                  }
+              }
+              else {
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1) {
+                      continue;
+                  }
+              }
+              // flashR = sqrt(pow(clusterX, 2) + pow(clusterZ - flashZ, 2));
+          } 
+          else if (flash->Frame() == 3 || flash->Frame() == 4) {// End-Cap flashes
+              if (fAdjOpFlashEndCapProjection) {
+                  if (clusterZ < fidVolZ/2 && flash->Frame() == 3) {continue;} // Skip if the cluster is in the bottom half and the flash is in the top end-cap
+                  if (clusterZ > fidVolZ/2 && flash->Frame() == 4) {continue;} // Skip if the cluster is in the top half and the flash is in the bottom end-cap
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) > 1) {
+                      continue;
+                  }
+              }
+              else {
+                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1) {
+                      continue;
+                  }
+              }
+              // flashR = sqrt(pow(clusterX, 2) + pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
+          } 
+          clusterX = driftLength / 2 - clusterX; // Convert to the VD geometry coordinate system
+        }
+        else {
+            continue; // Unknown geometry, skip this matching
+        }
+
+        float logMLL = likelihoodComputer.GetLogLikelihoodMatch(mainCluster, flash);
+
+        if (logMLL > matchedLogMLL || matchedFlashIndex == -1) {
+            // If this flash has more PE than the previous best match, update the match
+            matchedFlashPE = flashPE;
+            matchedFlashIndex = i;
+            matchedRecoX = clusterX;
+        }
+    }
+    if (debug) {
+        if (matchedFlashIndex != -1) {
+            sFlashMatching += "Matched flash: Index " + ProducerUtils::str(matchedFlashIndex) + " PE " + ProducerUtils::str(matchedFlashPE) + " Time " + ProducerUtils::str(PDSFlashes[matchedFlashIndex]->Time()) + " Y " + ProducerUtils::str(PDSFlashes[matchedFlashIndex]->YCenter()) + " Z " + ProducerUtils::str(PDSFlashes[matchedFlashIndex]->ZCenter()) + "\n";
+            // Print recon info of the cluster
+            sFlashMatching += "Cluster: Time " + ProducerUtils::str(mainCluster->getAverageTime()) + " Vertex " + ProducerUtils::str(matchedRecoX) + ", " + ProducerUtils::str(mainCluster->getY()) + ", " + ProducerUtils::str(mainCluster->getZ()) + "\n";
+        }
+        else {
+            sFlashMatching += "No flash matched to cluster: NHits " + ProducerUtils::str(mainCluster->getNHits()) + " Channel " + ProducerUtils::str(mainCluster->getMainChannel()) + " Time " + ProducerUtils::str(mainCluster->getAverageTime()) + " Charge " + ProducerUtils::str(mainCluster->getTotalCharge()) + "\n";
+        }
+        ProducerUtils::PrintInColor(sFlashMatching, ProducerUtils::GetColor("blue"), "Debug");
+    }
+    return matchedFlashIndex; // Return the index of the matched flash or -1 if no match found
+  }
 
   bool LowEUtils::SelectPDSFlashPE(
     const float &TPCDriftTime,
