@@ -63,6 +63,7 @@ cet_build_plugin(MVASelect   art::module LIBRARIES
 
 cet_build_plugin(IniSegReco art::module LIBRARIES
                       lardataalg::DetectorInfo
+                      lardataalg::UtilitiesHeaders
                       lardataobj::RawData
                       lardataobj::RecoBase
                       larreco::RecoAlg
@@ -94,6 +95,7 @@ cet_build_plugin(IniSegReco art::module LIBRARIES
 )
 
 cet_build_plugin(ShSeg   art::module LIBRARIES
+                        lardataalg::UtilitiesHeaders
                         lardataalg::DetectorInfo
                         lardataobj::RawData
                         lardataobj::RecoBase
