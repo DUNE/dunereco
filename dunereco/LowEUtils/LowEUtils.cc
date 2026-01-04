@@ -22,26 +22,35 @@ namespace lowe
     fAdjOpFlashX(p.get<double>("AdjOpFlashX", 100.0)), // X coordinate for flash projection [cm]
     fAdjOpFlashY(p.get<double>("AdjOpFlashY", 100.0)), // Y coordinate for flash projection [cm]
     fAdjOpFlashZ(p.get<double>("AdjOpFlashZ", 100.0)), // Z coordinate for flash projection [cm]
-    fAdjOpFlashMinPECut(p.get<double>("AdjOpFlashMinPECut", 0.0)), // Minimum PE for flash selection
-    fAdjOpFlashMaxPECut(p.get<double>("AdjOpFlashMaxPECut", 1e10)), // Maximum PE for flash selection
     fAdjOpFlashMaxPERatioCut(p.get<double>("AdjOpFlashMaxPERatioCut", 1.0)), // Maximum PE ratio for flash selection
+    fAdjOpFlashMinPECut(p.get<double>("AdjOpFlashMinPECut", 0.0)), // Minimum PE for flash selection
+    fAdjOpFlashMaxPECut(p.get<double>("AdjOpFlashMaxPECut", 1e9)), // Maximum PE for flash selection
     fAdjOpFlashMembraneProjection(p.get<bool>("AdjOpFlashMembraneProjection", false)), // Whether to project flashes onto the membrane
     fAdjOpFlashEndCapProjection(p.get<bool>("AdjOpFlashEndCapProjection", false)), // Whether to project flashes onto the end cap
-    fAdjOpFlashMinPEAttenuation(p.get<double>("AdjOpFlashMinPEAttenuation", 1)), // PE cut attenuation over drift time [us] to compensate for light attenuation
-    fAdjOpFlashMaxPEAttenuation(p.get<double>("AdjOpFlashMaxPEAttenuation", 1)), // PE cut attenuation over drift time [us] to compensate for light attenuation
+    fAdjOpFlashMinPEAttenuation(p.get<double>("AdjOpFlashMinPEAttenuation", 0.0)), // PE cut attenuation over drift time [us] to compensate for light attenuation
+    fAdjOpFlashMaxPEAttenuation(p.get<double>("AdjOpFlashMaxPEAttenuation", 0.0)), // PE cut attenuation over drift time [us] to compensate for light attenuation
     fAdjOpFlashMinPEAttenuate(p.get<std::string>("AdjOpFlashMinPEAttenuate", "flat")), // Type of attenuation for minimum PE cut ("light_map", "asymptotic", "linear" or "flat")
     fAdjOpFlashMaxPEAttenuate(p.get<std::string>("AdjOpFlashMaxPEAttenuate", "flat")), // Type of attenuation for maximum PE cut ("light_map", "asymptotic", "linear" or "flat")
-    fAdjOpFlashMinPEAttenuationStrength(p.get<int>("AdjOpFlashMinPEAttenuationStrength", 10)), // Strength of the asymptotic attenuation for minimum PE cut (in powers of 10)
-    fAdjOpFlashMaxPEAttenuationStrength(p.get<int>("AdjOpFlashMaxPEAttenuationStrength", 10)), // Strength of the asymptotic attenuation for maximum PE cut (in powers of 10)
+    fAdjOpFlashMinPEAttenuationStrength(p.get<int>("AdjOpFlashMinPEAttenuationStrength", 0)), // Strength of the asymptotic attenuation for minimum PE cut (in powers of 10)
+    fAdjOpFlashMaxPEAttenuationStrength(p.get<int>("AdjOpFlashMaxPEAttenuationStrength", 0)), // Strength of the asymptotic attenuation for maximum PE cut (in powers of 10)
     fAdjOpFlashMinPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashMinPELightMap", {})), // Light map file and histogram name for light map attenuation
     fAdjOpFlashMaxPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashMaxPELightMap", {})), // Light map file and histogram name for light map attenuation
+    fAdjOpFlashPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashPELightMap", {})), // Light map file and histogram name for PE attenuation
+    fFlashMatchBy(p.get<std::string>("FlashMatchBy", "maximum")), // Method to match flashes ("maximum" or "light_map")
     producer(new ProducerUtils(p))
   {
     // Initialize the LowEUtils instance
     producer->PrintInColor("LowEUtils initialized with parameters from FHiCL configuration.", ProducerUtils::GetColor("green"), "Debug");
   }
 
-  void LowEUtils::MakeClusterVector(std::vector<RawPerPlaneCluster> &ClusterVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, art::Event const &evt)
+  //......................................................
+  void LowEUtils::MakeClusterVector(
+    std::vector<RawPerPlaneCluster> &ClusterVec,
+    std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters,
+    art::Event const &evt)
+  /*
+  Create a vector of RawPerPlaneCluster from a vector of clusters of hits
+  */
   {
     mf::LogDebug("LowEUtils") << "Charge variable set to " << fClusterChargeVariable;
     int ID = 0;
@@ -176,9 +185,15 @@ namespace lowe
     return;
   }
 
-  void LowEUtils::CalcAdjHits(std::vector<recob::Hit> MyVec, std::vector<std::vector<recob::Hit>> &Clusters, TH1I *MyHist, TH1F *ADCIntHist, art::Event const &evt, bool debug)
+  //......................................................
+  void LowEUtils::CalcAdjHits(
+    std::vector<recob::Hit> MyVec,
+    std::vector<std::vector<recob::Hit>> &Clusters,
+    TH1I *MyHist, TH1F *ADCIntHist,
+    art::Event const &evt,
+    bool debug)
   /*
-  Find adjacent hits in time and space:
+  Find adjacent hits in time and space. Obsolete (kept for backwards compatibility), use the other overload!
   - MyVec is the vector of hits to be clustered
   - Clusters is the vector of clusters
   - MyHist is the histogram to be filled with the number of hits in each cluster
@@ -328,7 +343,10 @@ namespace lowe
     return;
   }
 
-  void LowEUtils::CalcAdjHits(std::vector<art::Ptr<recob::Hit>> MyVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, std::vector<std::vector<int>> &ClusterIdx, art::Event const &evt)
+  void LowEUtils::CalcAdjHits(std::vector<art::Ptr<recob::Hit>> MyVec,
+  std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters,
+  std::vector<std::vector<int>> &ClusterIdx,
+  art::Event const &evt)
   /*
   Find adjacent hits in time and space:
   - MyVec is the vector of hits to be clustered
@@ -430,6 +448,18 @@ namespace lowe
     std::vector<double> &Dir,
     detinfo::DetectorClocksData ClockData)
   /*
+  Fill hit-level vectors for a given cluster of hits
+  - Cluster: vector of hits in the cluster
+  - TPC: output vector of TPC numbers
+  - Channel: output vector of channel numbers
+  - Charge: output vector of hit charges
+  - Time: output vector of hit times
+  - SigmaTime: output cluster time standard deviation
+  - DeltaTime: output cluster time span
+  - Y: output vector of hit Y positions
+  - Z: output vector of hit Z positions
+  - Dir: output vector of hit directions (dZ/dY)
+  - ClockData: detector clock data for time conversion
    */
   {
     // --- Clear the vectors
@@ -481,16 +511,25 @@ namespace lowe
 
   //......................................................
   std::vector<double> LowEUtils::ComputeRecoY(
-      int Event,
-      std::vector<int> &HIndTPC,
-      std::vector<double> &Z,
-      std::vector<double> &Time,
-      std::vector<double> &IndZ,
-      std::vector<double> &IndY,
-      std::vector<double> &IndT,
-      std::vector<double> &IndDir,
-      bool debug)
+    int Event,
+    std::vector<int> &HIndTPC,
+    std::vector<double> &Z,
+    std::vector<double> &Time,
+    std::vector<double> &IndZ,
+    std::vector<double> &IndY,
+    std::vector<double> &IndT,
+    std::vector<double> &IndDir,
+    bool debug)
   /*
+  Compute the reconstructed Y positions for a set of hits given the induction plane cluster reference points
+  - Event: event number (for debugging purposes)
+  - HIndTPC: vector of TPC numbers for the hits
+  - Z: vector of Z positions for the hits
+  - Time: vector of times for the hits
+  - IndZ: vector of Z reference positions for the induction plane cluster
+  - IndY: vector of Y reference positions for the induction plane cluster
+  - IndT: vector of time reference positions for the induction plane cluster
+  - IndDir: vector of direction cosines (dZ/dY) for the induction plane cluster
    */
   {
     // Create the interpolator
@@ -518,6 +557,7 @@ namespace lowe
     return RecoY;
   }
 
+  //......................................................
   void LowEUtils::FillClusterVariables(
     std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
     std::vector<std::vector<int>> &ClNHits,
@@ -525,6 +565,13 @@ namespace lowe
     std::vector<std::vector<float>> &ClCharge,
     art::Event const &evt,
     bool debug)
+  /*
+  Fill basic cluster variables: number of hits, time, charge
+  - Clusters: input vector of clusters of hits
+  - ClNHits: output vector of number of hits per cluster
+  - ClT: output vector of cluster times
+  - ClCharge: output vector of cluster charges
+  */
   {
     detinfo::DetectorClocksData const &clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
     auto TickPeriod = clockData.TPCClock().TickPeriod();
@@ -547,6 +594,7 @@ namespace lowe
       } // End of loop over clusters
     } // End of loop over planes
   }
+
   void LowEUtils::FillClusterVariables(
     std::set<int> SignalTrackIDs,
     std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
@@ -563,6 +611,22 @@ namespace lowe
     std::vector<std::vector<float>> &ClCompleteness,
     detinfo::DetectorClocksData const &clockData,
     bool debug)
+  /*
+  Fill detailed cluster variables: main track ID, number of hits, TPC, channel, time, Y, Z, direction, charge, purity, completeness
+  - SignalTrackIDs: set of signal track IDs for purity/completeness calculation
+  - Clusters: input vector of clusters of hits
+  - ClMainID: output vector of main track IDs per cluster
+  - ClNHits: output vector of number of hits per cluster
+  - ClTPC: output vector of TPC numbers per cluster
+  - ClChannel: output vector of channel numbers per cluster
+  - ClT: output vector of cluster times
+  - ClY: output vector of cluster Y positions
+  - ClZ: output vector of cluster Z positions
+  - ClDir: output vector of cluster directions (dZ/dY)
+  - ClCharge: output vector of cluster charges
+  - ClPurity: output vector of cluster purities
+  - ClCompleteness: output vector of cluster completenesses
+  */
   {
     art::ServiceHandle<cheat::BackTrackerService> bt_serv;
     geo::WireReadoutGeom const &wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
@@ -636,25 +700,45 @@ namespace lowe
     } // End of loop over planes
   }
 
+  //......................................................
   void LowEUtils::MatchClusters(
-      std::set<int> SignalTrackIDs,
-      std::vector<std::vector<int>> &MatchedClustersIdx,
-      std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
-      std::vector<std::vector<int>> ClustersIdx,
-      std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
-      std::vector<std::vector<int>> &ClMainID,
-      std::vector<std::vector<int>> &ClNHits,
-      std::vector<std::vector<int>> &ClTPC,
-      std::vector<std::vector<int>> &ClChannel,
-      std::vector<std::vector<float>> &ClT,
-      std::vector<std::vector<float>> &ClY,
-      std::vector<std::vector<float>> &ClZ,
-      std::vector<std::vector<float>> &ClDir,
-      std::vector<std::vector<float>> &ClCharge,
-      std::vector<std::vector<float>> &ClPurity,
-      std::vector<std::vector<float>> &ClCompleteness,
-      detinfo::DetectorClocksData const &clockData,
-      bool debug)
+    std::set<int> SignalTrackIDs,
+    std::vector<std::vector<int>> &MatchedClustersIdx,
+    std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
+    std::vector<std::vector<int>> ClustersIdx,
+    std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+    std::vector<std::vector<int>> &ClMainID,
+    std::vector<std::vector<int>> &ClNHits,
+    std::vector<std::vector<int>> &ClTPC,
+    std::vector<std::vector<int>> &ClChannel,
+    std::vector<std::vector<float>> &ClT,
+    std::vector<std::vector<float>> &ClY,
+    std::vector<std::vector<float>> &ClZ,
+    std::vector<std::vector<float>> &ClDir,
+    std::vector<std::vector<float>> &ClCharge,
+    std::vector<std::vector<float>> &ClPurity,
+    std::vector<std::vector<float>> &ClCompleteness,
+    detinfo::DetectorClocksData const &clockData,
+    bool debug)
+  /*
+  Match clusters across the three planes based on time and other criteria
+  - SignalTrackIDs: set of signal track IDs for purity/completeness calculation
+  - MatchedClustersIdx: output vector of matched cluster indices
+  - MatchedClusters: output vector of matched clusters of hits
+  - ClustersIdx: input vector of cluster indices
+  - Clusters: input vector of clusters of hits
+  - ClMainID: input vector of main track IDs per cluster
+  - ClNHits: input vector of number of hits per cluster
+  - ClTPC: input vector of TPC numbers per cluster
+  - ClChannel: input vector of channel numbers per cluster
+  - ClT: input vector of cluster times
+  - ClY: input vector of cluster Y positions
+  - ClZ: input vector of cluster Z positions
+  - ClDir: input vector of cluster directions (dZ/dY)
+  - ClCharge: input vector of cluster charges
+  - ClPurity: input vector of cluster purities
+  - ClCompleteness: input vector of cluster completenesses
+  */
   {
     LowEUtils::FillClusterVariables(SignalTrackIDs, Clusters, ClMainID, ClNHits, ClTPC, ClChannel, ClT, ClY, ClZ, ClDir, ClCharge, ClPurity, ClCompleteness, clockData, debug);
     std::vector<std::vector<int>> MatchedClMainID = {{}, {}, {}}, MatchedClNHits = {{}, {}, {}}, MatchedClTPC = {{}, {}, {}}, MatchedClChannel = {{}, {}, {}};
@@ -891,13 +975,21 @@ namespace lowe
   }
 
   void LowEUtils::MatchClusters(
-      std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
-      std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
-      std::vector<std::vector<int>> &ClNHits,
-      std::vector<std::vector<float>> &ClT,
-      std::vector<std::vector<float>> &ClCharge,
-      art::Event const &evt,
-      bool debug)
+    std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
+    std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+    std::vector<std::vector<int>> &ClNHits,
+    std::vector<std::vector<float>> &ClT,
+    std::vector<std::vector<float>> &ClCharge,
+    art::Event const &evt,
+    bool debug)
+  /*
+  Match clusters across the three planes based on time and other criteria
+  - MatchedClusters: output vector of matched clusters of hits
+  - Clusters: input vector of clusters of hits
+  - ClNHits: output vector of number of hits per cluster
+  - ClT: output vector of cluster times
+  - ClCharge: output vector of cluster charges
+  */
   {
     LowEUtils::FillClusterVariables(Clusters, ClNHits, ClT, ClCharge, evt, debug);
     std::vector<std::vector<int>> MatchedClNHits = {{}, {}, {}};
@@ -1023,7 +1115,12 @@ namespace lowe
   }
 
   //......................................................
-  double LowEUtils::STD(const std::vector<double>& Vec)
+  double LowEUtils::STD(
+    const std::vector<double>& Vec)
+  /*
+  Calculate the standard deviation of a vector of doubles
+  - Vec: input vector of doubles
+  */
   {
     if (Vec.size() == 0)
     {
@@ -1041,7 +1138,22 @@ namespace lowe
   }
 
   //......................................................
-  void LowEUtils::FindPrimaryClusters(const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector, std::vector<bool> &EventCandidateFound, std::vector<std::vector<art::Ptr<solar::LowECluster>>> &EventCandidateVector, std::vector<std::vector<int>> &EventCandidateIdx, const detinfo::DetectorClocksData &clockData, const art::Event &evt)
+  void LowEUtils::FindPrimaryClusters(
+    const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector,
+    std::vector<bool> &EventCandidateFound,
+    std::vector<std::vector<art::Ptr<solar::LowECluster>>> &EventCandidateVector,
+    std::vector<std::vector<int>> &EventCandidateIdx,
+    const detinfo::DetectorClocksData &clockData,
+    const art::Event &evt)
+  /*
+  Find primary clusters and group adjacent clusters into event candidates
+  - SolarClusterVector: input vector of LowECluster pointers
+  - EventCandidateFound: output vector of booleans indicating if an event candidate was found for each cluster
+  - EventCandidateVector: output vector of vectors of LowECluster pointers for each event candidate
+  - EventCandidateIdx: output vector of vectors of indices for each event candidate
+  - clockData: detector clocks data
+  - evt: art event
+  */
   {
     // This is the low energy primary cluster algorithm. It groups all input clusters into event candidates by finding the primary clusters (charge > adjacent clusters up to distance fAdjClusterRad).
     // The algorithm outputs vectors of clusters where the first entry is the primary cluster and the rest are the corresponding adjacent clusters.
@@ -1261,12 +1373,22 @@ namespace lowe
     return;
   }
 
+
   int LowEUtils::MatchPDSFlash(
     const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector,
     const std::vector<art::Ptr<recob::OpFlash>> &PDSFlashes,
     const detinfo::DetectorClocksData &clockData,
     const art::Event &evt,
     bool debug)
+  /*
+  Match the main cluster in SolarClusterVector to the best matching PDS flash in PDSFlashes.
+  Returns the index of the matched flash, or -1 if no match is found.
+  - SolarClusterVector: vector of LowECluster pointers to match
+  - PDSFlashes: vector of OpFlash pointers to match against
+  - clockData: detector clocks data for time conversions
+  - evt: art event for geometry and detector properties
+  - debug: if true, print debug information
+  */
   {
     std::string sFlashMatching = "LowEUtils::MatchPDSFlash " + ProducerUtils::str(SolarClusterVector.size()) + " clusters and " + ProducerUtils::str(PDSFlashes.size()) + " flashes found in the event\n";
     // get drift properties
@@ -1319,24 +1441,22 @@ namespace lowe
     // Loop through the flashes to find the best match
     for (int i = 0; i < int(PDSFlashes.size()); i++)
     {
-        // Reset cluster X for each flash
-        const auto &flash = PDSFlashes[i];
-        double flashPE = flash->TotalPE();
-        // double flashR = -1e6;
-        // Check if the flash time is within the acceptable range
-        double flashTime = flash->Time();
-        double dT = clusterTime - flashTime; // Time difference between the cluster and the flash
-        // If dT is bigger that drift time, skip this flash
-        if (dT > driftTime || dT < 0) {
-            continue; // Skip this flash if it's too far in time or in the future
-        }
-        if (int(flash->PEs().size()) < fAdjOpFlashMinNHitCut || *std::max_element(flash->PEs().begin(), flash->PEs().end()) / flash->TotalPE() > fAdjOpFlashMaxPERatioCut) {
-            continue; // Skip flashes with insufficient hits or too much concentration in one XA
-        }
-        if ( SelectPDSFlashPE(driftTime, dT, clusterCharge, flashPE) == false ) {
-            continue; // Skip flashes that don't pass the PE selection
-        }
-
+      // Reset cluster X for each flash
+      const auto &flash = PDSFlashes[i];
+      double flashPE = flash->TotalPE();
+      // double flashR = -1e6;
+      // Check if the flash time is within the acceptable range
+      double flashTime = flash->Time();
+      double dT = clusterTime - flashTime; // Time difference between the cluster and the flash
+      // If dT is bigger that drift time, skip this flash
+      if (dT > driftTime || dT < 0) {
+          continue; // Skip this flash if it's too far in time or in the future
+      }
+      if (int(flash->PEs().size()) < fAdjOpFlashMinNHitCut || *std::max_element(flash->PEs().begin(), flash->PEs().end()) / flash->TotalPE() > fAdjOpFlashMaxPERatioCut) {
+          continue; // Skip flashes with insufficient hits or too much concentration in one XA
+      }
+      if ( SelectPDSFlashPE(driftTime, dT, clusterCharge, flashPE) )
+      {
         // Calculate the distance in space
         double flashY = flash->YCenter();
         double flashZ = flash->ZCenter();
@@ -1396,7 +1516,7 @@ namespace lowe
           clusterX = driftLength / 2 - clusterX; // Convert to the VD geometry coordinate system
         }
         else {
-            continue; // Unknown geometry, skip this matching
+          continue; // Unknown geometry, skip this matching
         }
 
         if (flashPE > matchedFlashPE || matchedFlashIndex == -1) {
@@ -1405,6 +1525,7 @@ namespace lowe
             matchedFlashIndex = i;
             matchedRecoX = clusterX;
         }
+      }
     }
     if (debug) {
         if (matchedFlashIndex != -1) {
@@ -1426,30 +1547,46 @@ namespace lowe
     const float &MatchedDriftTime,
     const float &ClusterCharge,
     const float &OpFlashPE)
+  /*
+  Select PDS flash based on PE cuts
+  - TPCDriftTime: total drift time in the TPC
+  - MatchedDriftTime: drift time corresponding to the matched flash
+  - ClusterCharge: charge of the cluster
+  - OpFlashPE: total PE of the flash
+  */
   {
     return CutPDSFlashMinPE(TPCDriftTime, MatchedDriftTime, ClusterCharge, OpFlashPE) &&
            CutPDSFlashMaxPE(TPCDriftTime, MatchedDriftTime, ClusterCharge, OpFlashPE);
   } // SelectPDSFlashPE
+
 
   bool LowEUtils::CutPDSFlashMinPE(
     const float &TPCDriftTime,
     const float &MatchedDriftTime,
     const float &ClusterCharge,
     const float &OpFlashPE)
+  /*
+  Apply minimum PE cut to PDS flash
+  - TPCDriftTime: total drift time in the TPC
+  - MatchedDriftTime: drift time corresponding to the matched flash
+  - ClusterCharge: charge of the cluster
+  - OpFlashPE: total PE of the flash
+  */
   {
     if (fAdjOpFlashMinPEAttenuate == "light_map") {
-      double a, b, c;
-      for (int i = 0; i < int(fAdjOpFlashMinPELightMap.size()); i++) {
-        if (fAdjOpFlashMinPELightMap[i].first == "Amplitude") {
-          a = fAdjOpFlashMinPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMinPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMinPELightMap[i].second[2];
-        }
-        else if (fAdjOpFlashMinPELightMap[i].first == "Attenuation") {
-          b = fAdjOpFlashMinPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMinPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMinPELightMap[i].second[2];
-        }
-        else if (fAdjOpFlashMinPELightMap[i].first == "Correction") {
-          c = fAdjOpFlashMinPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMinPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMinPELightMap[i].second[2];
-        }
-      }
+      float a, b, c;
+      GetLightMapParameters("min", ClusterCharge, a, b, c);
+      // for (int i = 0; i < int(fAdjOpFlashMinPELightMap.size()); i++) {
+      //   if (fAdjOpFlashMinPELightMap[i].first == "Amplitude") {
+      //     a = fAdjOpFlashMinPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMinPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMinPELightMap[i].second[2];
+      //   }
+      //   else if (fAdjOpFlashMinPELightMap[i].first == "Attenuation") {
+      //     b = fAdjOpFlashMinPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMinPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMinPELightMap[i].second[2];
+      //   }
+      //   else if (fAdjOpFlashMinPELightMap[i].first == "Correction") {
+      //     c = fAdjOpFlashMinPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMinPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMinPELightMap[i].second[2];
+      //   }
+      // }
       double MinPE = pow(10, a - a * b * MatchedDriftTime / TPCDriftTime + c * pow(MatchedDriftTime / TPCDriftTime, 2));
       if (OpFlashPE < MinPE) { return false; }
       else { return true; }
@@ -1474,25 +1611,34 @@ namespace lowe
     return true;
   }
 
+
   bool LowEUtils::CutPDSFlashMaxPE(
     const float &TPCDriftTime,
     const float &MatchedDriftTime,
     const float &ClusterCharge,
     const float &OpFlashPE)
+  /*
+  Apply maximum PE cut to PDS flash
+  - TPCDriftTime: total drift time in the TPC
+  - MatchedDriftTime: drift time corresponding to the matched flash
+  - ClusterCharge: charge of the cluster
+  - OpFlashPE: total PE of the flash
+  */
   {
     if (fAdjOpFlashMaxPEAttenuate == "light_map") {
-      double a, b, c;
-      for (int i = 0; i < int(fAdjOpFlashMaxPELightMap.size()); i++) {
-        if (fAdjOpFlashMaxPELightMap[i].first == "Amplitude") {
-          a = fAdjOpFlashMaxPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMaxPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMaxPELightMap[i].second[2];
-        }
-        else if (fAdjOpFlashMaxPELightMap[i].first == "Attenuation") {
-          b = fAdjOpFlashMaxPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMaxPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMaxPELightMap[i].second[2];
-        }
-        else if (fAdjOpFlashMaxPELightMap[i].first == "Correction") {
-          c = fAdjOpFlashMaxPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMaxPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMaxPELightMap[i].second[2];
-        }
-      }
+      float a, b, c;
+      GetLightMapParameters("max", ClusterCharge, a, b, c);
+      // for (int i = 0; i < int(fAdjOpFlashMaxPELightMap.size()); i++) {
+      //   if (fAdjOpFlashMaxPELightMap[i].first == "Amplitude") {
+      //     a = fAdjOpFlashMaxPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMaxPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMaxPELightMap[i].second[2];
+      //   }
+      //   else if (fAdjOpFlashMaxPELightMap[i].first == "Attenuation") {
+      //     b = fAdjOpFlashMaxPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMaxPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMaxPELightMap[i].second[2];
+      //   }
+      //   else if (fAdjOpFlashMaxPELightMap[i].first == "Correction") {
+      //     c = fAdjOpFlashMaxPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMaxPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMaxPELightMap[i].second[2];
+      //   }
+      // }
       double MaxPE = pow(10, a - a * b * MatchedDriftTime / TPCDriftTime + c * pow(MatchedDriftTime / TPCDriftTime, 2));
       if (OpFlashPE > MaxPE) { return false; }
       else { return true; }
@@ -1515,5 +1661,93 @@ namespace lowe
       else { return true; }
     }
     return true;
+  }
+
+  void LowEUtils::GetLightMapParameters(
+      const std::string &LightMapType,
+      const float &ClusterCharge,
+      float &a,
+      float &b,
+      float &c)
+  /*
+  Store light map parameters for flash selection
+  - LightMapType: type of light map ("min", "max", "med")
+  - a: Amplitude parameters
+  - b: Attenuation parameters
+  - c: Correction parameters
+  */
+  {
+    std::vector<std::pair<std::string, std::vector<double>>> SelectedLightMap;
+    if (LightMapType == "min") {
+      SelectedLightMap = fAdjOpFlashMinPELightMap;
+    }
+    else if (LightMapType == "max") {
+      SelectedLightMap = fAdjOpFlashMaxPELightMap;
+    }
+    else {
+      if (LightMapType != "med") {
+        producer->PrintInColor("Warning: Unknown light map type " + LightMapType + ", using med", ProducerUtils::GetColor("red"), "Warning");
+      }
+      SelectedLightMap = fAdjOpFlashPELightMap;
+    }
+    for (int i = 0; i < int(SelectedLightMap.size()); i++) {
+      if (SelectedLightMap[i].first == "Amplitude") {
+        a = SelectedLightMap[i].second[0] * pow(ClusterCharge, 2) + SelectedLightMap[i].second[1] * ClusterCharge + SelectedLightMap[i].second[2];
+      }
+      else if (SelectedLightMap[i].first == "Attenuation") {
+        b = SelectedLightMap[i].second[0] * pow(ClusterCharge, 2) + SelectedLightMap[i].second[1] * ClusterCharge + SelectedLightMap[i].second[2];
+      }
+      else if (SelectedLightMap[i].first == "Correction") {
+        c = SelectedLightMap[i].second[0] * pow(ClusterCharge, 2) + SelectedLightMap[i].second[1] * ClusterCharge + SelectedLightMap[i].second[2];
+      }
+    }
+    return;
+  }
+
+  bool LowEUtils::SelectPDSFlash(
+    const float &TPCDriftTime,
+    const float &ClusterTime,
+    const float &ClusterCharge,
+    const float &RefOpFlashTime,
+    const float &RefOpFlashPE,
+    const float &OpFlashTime,
+    const float &OpFlashPE)
+  /*
+  Select PDS flash based on time and PE. There are 2 options: "maximum" or "light_map"
+  - TPCDriftTime: total drift time in the TPC
+  - ClusterTime: time of the cluster
+  - ClusterCharge: charge of the cluster
+  - RefOpFlashTime: time of the reference flash
+  - RefOpFlashTime: time of the reference flash
+  - OpFlashPE: total PE of the flash
+  - OpFlashPE: total PE of the flash
+  */
+  {
+    if (fFlashMatchBy == "light_map") {
+      float a, b, c;
+      GetLightMapParameters("med", ClusterCharge, a, b, c);
+      double RefPE = pow(10, a - a * b * std::abs(ClusterTime - RefOpFlashTime) / TPCDriftTime + c * pow(std::abs(ClusterTime - RefOpFlashTime) / TPCDriftTime, 2));
+      double SelectedPE = pow(10, a - a * b * std::abs(ClusterTime - OpFlashTime) / TPCDriftTime + c * pow(std::abs(ClusterTime - OpFlashTime) / TPCDriftTime, 2));
+      // If the flash PE is closer to the selected PE, than the reference flash PE, select it
+      if (std::abs(OpFlashPE - SelectedPE) < std::abs(RefOpFlashPE - RefPE)) {
+        return true;
+      }
+      else {
+        return false;
+      }
+    }
+    else {
+      // If the flashMatchBy is not "maximum" print a warning
+      if (fFlashMatchBy != "maximum") {
+        ProducerUtils::PrintInColor("Warning: Unknown fFlashMatchBy option " + fFlashMatchBy + ", using maximum PE selection", ProducerUtils::GetColor("red"), "Warning");
+      }
+      // If the flash PE is bigger than the reference flash PE, select it
+      if (OpFlashPE > RefOpFlashPE) {
+        return true;
+      }
+      else {
+        return false;
+      }
+    }
   }
 } // namespace lowe
