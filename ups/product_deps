@@ -179,8 +179,10 @@ wpdir	product_dir	wire-cell-cfg
 # Add the dependent product and version
 
 product          version
-cetmodules	 v3_24_01	-	only_for_build
-dunecore         v10_15_00d00
+cetmodules       v3_24_01   -   only_for_build
+dunecore         v10_16_00d00
+duneprototypes   v10_16_00d00
+larcv2           v2_2_6
 end_product_list
 
 
@@ -235,11 +237,11 @@ end_product_list
 #   case it is optional.
 #
 ####################################
-qualifier	dunecore	notes
-c14:debug	c14:debug
-c14:prof	c14:prof
-e26:debug	e26:debug
-e26:prof	e26:prof
+qualifier   dunecore    duneprototypes   larcv2           notes
+c14:debug   c14:debug   c14:debug        c14:debug:p3915
+c14:prof    c14:prof    c14:prof         c14:prof:p3915
+e26:debug   e26:debug   e26:debug        e26:debug:p3915
+e26:prof    e26:prof    e26:prof         e26:prof:p3915
 end_qualifier_list
 ####################################
 

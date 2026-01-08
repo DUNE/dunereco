@@ -247,15 +247,15 @@ wirecell_protodunespmc:
 
         // needs to be found via your WIRECELL_PATH 
         # configs: ["pgrapher/experiment/pdsp/wcls-sim-drift-simchannel.jsonnet"]
-        configs: ["pgrapher/experiment/pdsp/wcls-sim-drift-simchannel-priorSCE.jsonnet"]
+        configs: ["pgrapher/experiment/pdsp/wcls-sim-drift-simchannel-priorSCE-depoflux.jsonnet"]
 
 
         // Contract note: these exact "type:name" must be used to identify
         // the configuration data structures for these components in the Jsonnet.
 
-        inputers: ["wclsSimDepoSource:"]
+        inputers: ["wclsSimDepoSetSource:electron"]
         outputers: [
-            "wclsSimChannelSink:postdrift",
+            "wclsDepoFluxWriter:postdrift",
             "wclsFrameSaver:simdigits"
         ]
 
@@ -278,7 +278,7 @@ wirecell_protodunespmc:
 }
 
 wirecell_protodunehdmc: @local::wirecell_protodunespmc
-wirecell_protodunehdmc.wcls_main.configs: ["pgrapher/experiment/pdhd/wcls-sim-drift-simchannel-priorSCE.jsonnet"]
+wirecell_protodunehdmc.wcls_main.configs: ["pgrapher/experiment/pdhd/wcls-sim-drift-simchannel-priorSCE-depoflux.jsonnet"]
 wirecell_protodunehdmc.wcls_main.structs.elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
 wirecell_protodunehdmc.wcls_main.structs.Nbit: @local::Nbit_standard 
 
@@ -390,16 +390,14 @@ wirecell_protodunevd_mc:
         loglevels: ["debug"]
 
         // needs to be found via your WIRECELL_PATH 
-        configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-simchannel.jsonnet"]
-        inputers: ["wclsSimDepoSource:electron"]
+        configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-depoflux.jsonnet"]
+        inputers: ["wclsSimDepoSetSource:electron"]
         outputers: [
-            "wclsSimChannelSink:postdrift",
+            "wclsDepoFluxWriter:postdrift",
             "wclsFrameSaver:simdigits"
         ]
 
         // Make available parameters via Jsonnet's std.extVar()
-        params: {
-        }
 	structs: {
            Nbit: @local::Nbit_standard 
            elecGain:    14 # probably not, will have to change
@@ -710,9 +708,9 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
         configs: ["pgrapher/experiment/dune10kt-1x2x6/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
         # Contract note: these exact "type:name" must be used to identify
         # the configuration data structures for these components in the Jsonnet.
-        inputers: ["wclsSimDepoSource:"]
+        inputers: ["wclsSimDepoSetSource:"]
         outputers: [
-            "wclsSimChannelSink:postdrift",
+            "wclsDepoFluxWriter:postdrift",
             "wclsFrameSaver:spsignals"
         ]
         # Make available parameters via Jsonnet's std.extVar()
@@ -1933,6 +1931,7 @@ protodunevd_nfsp : {
       structs: {
         Nbit: @local::Nbit_standard
         elecGain: 14 # probably will change
+        use_dnnroi: false
       }
    }
 }

@@ -9,7 +9,7 @@ cmake_minimum_required (VERSION 3.20 FATAL_ERROR)
 
 find_package(cetmodules 3.12.00 REQUIRED)
 project(dunereco LANGUAGES CXX)
-set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 10.15.00d00)
+set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 10.16.00d00)
 
 # cetbuildtools contains our cmake modules
 
@@ -45,6 +45,7 @@ find_package( canvas REQUIRED EXPORT)
 find_package(ROOT REQUIRED)
 find_package( dunecore REQUIRED EXPORT )
 find_package( dunepdlegacy REQUIRED EXPORT )
+find_package( duneprototypes REQUIRED EXPORT )
 find_package( larcore REQUIRED EXPORT )
 find_package( larcoreobj REQUIRED EXPORT )
 find_package( larcorealg REQUIRED EXPORT )
