@@ -93,7 +93,8 @@ cet_build_plugin(IniSegReco art::module LIBRARIES
               BASENAME_ONLY
 )
 
-cet_build_plugin(ShSeg   art::module LIBRARIES
+cet_build_plugin(ShSeg  art::module LIBRARIES
+                        lardataalg::UtilitiesHeaders
                         lardataalg::DetectorInfo
                         lardataobj::RawData
                         lardataobj::RecoBase
