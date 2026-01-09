@@ -254,6 +254,7 @@ namespace lowe
                 float &c);
 
             bool SelectPDSFlash(
+                const bool &IsFirstFlash,
                 const float &TPCDriftTime,
                 const float &ClusterTime,
                 const float &ClusterCharge,
@@ -296,7 +297,8 @@ namespace lowe
             const std::vector<std::pair<std::string, std::vector<double>>> fAdjOpFlashMinPELightMap; // Light map file and histogram name for light map attenuation
             const std::vector<std::pair<std::string, std::vector<double>>> fAdjOpFlashMaxPELightMap; // Light map file and histogram name for light map attenuation
             const std::vector<std::pair<std::string, std::vector<double>>> fAdjOpFlashPELightMap;    // Light map file and histogram name for PE attenuation
-            const std::string fFlashMatchBy;                    // Method to match flashes ("maximum" or "light_map")
+            const std::string fFlashMatchBy;                   // Method to match flashes ("maximum" or "light_map")
+            const int fFlashMatchByPELightMapExponent;         // Exponent for PE weighting in light map flash matching
             std::unique_ptr<producer::ProducerUtils> producer; // Pointer to the ProducerUtils instance
     };
 } // namespace lowe

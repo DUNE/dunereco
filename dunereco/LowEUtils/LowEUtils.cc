@@ -37,6 +37,7 @@ namespace lowe
     fAdjOpFlashMaxPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashMaxPELightMap", {})), // Light map file and histogram name for light map attenuation
     fAdjOpFlashPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashPELightMap", {})), // Light map file and histogram name for PE attenuation
     fFlashMatchBy(p.get<std::string>("FlashMatchBy", "maximum")), // Method to match flashes ("maximum" or "light_map")
+    fFlashMatchByPELightMapExponent(p.get<int>("FlashMatchByPELightMapExponent", 1)), // 0 implies matching against absolute PE error, 1 against relative PE error, 2 adds an additional weight to higher PE flashes.
     producer(new ProducerUtils(p))
   {
     // Initialize the LowEUtils instance
@@ -1463,60 +1464,60 @@ namespace lowe
 
         producer->ComputeDistanceX(clusterX, clusterTime, flashTime, driftLength, driftTime);
         if (fGeometry == "HD") {
-            // For DUNE 10kt geometry, we have different projections based on the plane
-            // Change the sign of clusterX for the collection plane
-            if (flash->Frame() == 0) // Collection plane
-            {
-                clusterX = -clusterX; // Convert to the collection plane coordinate system
-            }
+          // For DUNE 10kt geometry, we have different projections based on the plane
+          // Change the sign of clusterX for the collection plane
+          if (flash->Frame() == 0) // Collection plane
+          {
+              clusterX = -clusterX; // Convert to the collection plane coordinate system
+          }
+          if (pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1)
+          {
+              continue;
+          }
+          // flashR = sqrt(pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
+        }
+        else if (fGeometry == "VD") {
+          // Convert clusterX to the VD geometry [-driftLength/2, driftLength/2]
+          if (flash->Frame() == 0) {// Cathode flashes
             if (pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1)
             {
                 continue;
             }
             // flashR = sqrt(pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
-        }
-        else if (fGeometry == "VD") {
-          // Convert clusterX to the VD geometry [-driftLength/2, driftLength/2]
-          if (flash->Frame() == 0) {// Cathode flashes
-              if (pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1)
-              {
-                  continue;
-              }
-              // flashR = sqrt(pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
           }
           else if (flash->Frame() == 1 || flash->Frame() == 2) {// Membrane flashes
-              if (fAdjOpFlashMembraneProjection) {
-                  if (clusterY * flashY < 0) {continue;}
-                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1) {
-                      continue;
-                  }
-              }
-              else {
-                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1) {
-                      continue;
-                  }
-              }
-              // flashR = sqrt(pow(clusterX, 2) + pow(clusterZ - flashZ, 2));
+            if (fAdjOpFlashMembraneProjection) {
+                if (clusterY * flashY < 0) {continue;}
+                if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1) {
+                    continue;
+                }
+            }
+            else {
+                if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1) {
+                    continue;
+                }
+            }
+            // flashR = sqrt(pow(clusterX, 2) + pow(clusterZ - flashZ, 2));
           } 
           else if (flash->Frame() == 3 || flash->Frame() == 4) {// End-Cap flashes
-              if (fAdjOpFlashEndCapProjection) {
-                  if (clusterZ < fidVolZ/2 && flash->Frame() == 3) {continue;} // Skip if the cluster is in the bottom half and the flash is in the top end-cap
-                  if (clusterZ > fidVolZ/2 && flash->Frame() == 4) {continue;} // Skip if the cluster is in the top half and the flash is in the bottom end-cap
-                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) > 1) {
-                      continue;
-                  }
-              }
-              else {
-                  if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1) {
-                      continue;
-                  }
-              }
-              // flashR = sqrt(pow(clusterX, 2) + pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
+            if (fAdjOpFlashEndCapProjection) {
+                if (clusterZ < fidVolZ/2 && flash->Frame() == 3) {continue;} // Skip if the cluster is in the bottom half and the flash is in the top end-cap
+                if (clusterZ > fidVolZ/2 && flash->Frame() == 4) {continue;} // Skip if the cluster is in the top half and the flash is in the bottom end-cap
+                if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) > 1) {
+                    continue;
+                }
+            }
+            else {
+                if (pow(clusterX, 2) / pow(fAdjOpFlashX, 2) + pow(clusterY - flashY, 2) / pow(fAdjOpFlashY, 2) + pow(clusterZ - flashZ, 2) / pow(fAdjOpFlashZ, 2) > 1) {
+                    continue;
+                }
+            }
+            // flashR = sqrt(pow(clusterX, 2) + pow(clusterY - flashY, 2) + pow(clusterZ - flashZ, 2));
           } 
           clusterX = driftLength / 2 - clusterX; // Convert to the VD geometry coordinate system
         }
         else {
-          continue; // Unknown geometry, skip this matching
+        continue; // Unknown geometry, skip this matching
         }
 
         if (flashPE > matchedFlashPE || matchedFlashIndex == -1) {
@@ -1670,11 +1671,17 @@ namespace lowe
       float &b,
       float &c)
   /*
-  Store light map parameters for flash selection
-  - LightMapType: type of light map ("min", "max", "med")
-  - a: Amplitude parameters
-  - b: Attenuation parameters
-  - c: Correction parameters
+  Retrieve light map parameters for flash selection
+  - LightMapType: type of light map to use ("min", "max", "med"), selecting which set  
+      of polynomial coefficients to apply.  
+  - ClusterCharge: reconstructed charge of the cluster used to evaluate the light map  
+      parameter polynomials.  
+  - a: amplitude parameter (output), computed from the "Amplitude" light map polynomial  
+      evaluated at ClusterCharge and used to scale the predicted flash amplitude.  
+  - b: attenuation parameter (output), computed from the "Attenuation" light map  
+      polynomial evaluated at ClusterCharge and used to describe light attenuation.  
+  - c: correction parameter (output), computed from the "Correction" light map  
+      polynomial evaluated at ClusterCharge and used as an additional correction factor. 
   */
   {
     std::vector<std::pair<std::string, std::vector<double>>> SelectedLightMap;
@@ -1705,6 +1712,7 @@ namespace lowe
   }
 
   bool LowEUtils::SelectPDSFlash(
+    const bool &IsFirstFlash,
     const float &TPCDriftTime,
     const float &ClusterTime,
     const float &ClusterCharge,
@@ -1718,18 +1726,26 @@ namespace lowe
   - ClusterTime: time of the cluster
   - ClusterCharge: charge of the cluster
   - RefOpFlashTime: time of the reference flash
-  - RefOpFlashTime: time of the reference flash
-  - OpFlashPE: total PE of the flash
+  - RefOpFlashPE: total PE of the reference flash
+  - OpFlashTime: time of the flash to evaluate
   - OpFlashPE: total PE of the flash
   */
   {
+    // If this is the first flash, always select it
+    if (IsFirstFlash) {
+      return true;
+    }
     if (fFlashMatchBy == "light_map") {
       float a, b, c;
       GetLightMapParameters("med", ClusterCharge, a, b, c);
-      double RefPE = pow(10, a - a * b * std::abs(ClusterTime - RefOpFlashTime) / TPCDriftTime + c * pow(std::abs(ClusterTime - RefOpFlashTime) / TPCDriftTime, 2));
-      double SelectedPE = pow(10, a - a * b * std::abs(ClusterTime - OpFlashTime) / TPCDriftTime + c * pow(std::abs(ClusterTime - OpFlashTime) / TPCDriftTime, 2));
+      double RefPE = pow(10, a - a * b * (ClusterTime - RefOpFlashTime) / TPCDriftTime + c * pow((ClusterTime - RefOpFlashTime) / TPCDriftTime, 2));
+      double SelectedPE = pow(10, a - a * b * (ClusterTime - OpFlashTime) / TPCDriftTime + c * pow((ClusterTime - OpFlashTime) / TPCDriftTime, 2));
       // If the flash PE is closer to the selected PE, than the reference flash PE, select it
-      if (std::abs(OpFlashPE - SelectedPE) < std::abs(RefOpFlashPE - RefPE)) {
+      float SelectedError = std::abs((OpFlashPE - SelectedPE) / pow(OpFlashPE, fFlashMatchByPELightMapExponent));
+      float RefError = std::abs((RefOpFlashPE - RefPE) / pow(RefOpFlashPE, fFlashMatchByPELightMapExponent));
+      if (SelectedError < RefError) {
+        // std::cout << "Selecting flash with PE " << OpFlashPE << " closer to predicted PE " << SelectedPE << " than reference flash PE " << RefOpFlashPE << " predicted PE " << RefPE << std::endl;
+        // std::cout << "The differences are " << SelectedError << " and " << RefError << std::endl;
         return true;
       }
       else {
