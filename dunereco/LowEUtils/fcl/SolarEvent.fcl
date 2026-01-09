@@ -30,6 +30,7 @@ solar_event_dune10kt_1x2x6:
     AdjOpFlashMaxPELightMap:  @local::light_map_data_dune10kt_1x2x6_AdjOpFlashMaxPELightMap
     AdjOpFlashPELightMap:     @local::light_map_data_dune10kt_1x2x6_AdjOpFlashPELightMap
     FlashMatchBy:            "light_map"     # Match flashes by residual. Alternative is to match by MaxFlashPE.
+    FlashMatchByPELightMapExponent: 1        # Exponent for PE light map matching.
     Debug: true
 }
 
