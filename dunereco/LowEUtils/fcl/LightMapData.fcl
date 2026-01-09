@@ -1,39 +1,39 @@
 BEGIN_PROLOG
 
 light_map_data_dune10kt_1x2x6_AdjOpFlashMinPELightMap: [
-      ["Amplitude", [-1.2723e-07, 7.1570e-04, 7.1178e-01]],
-      ["Attenuation", [1.4256e-07, -4.7368e-04, 8.9290e-01]],
-      ["Correction", [-4.0734e-08, 3.7639e-04, -1.0007e+00]]
+      ["Amplitude",   [-1.2043e-07, 6.8624e-04, 7.3629e-01]],
+      ["Attenuation", [1.3162e-07, -6.0140e-04, 1.3823e+00]],
+      ["Correction",  [-3.7917e-08, 1.6326e-04, -4.3063e-01]]
     ]
 
 light_map_data_dune10kt_1x2x6_AdjOpFlashMaxPELightMap: [
-      ["Amplitude", [-1.1814e-07, 5.7685e-04, 2.8689e+00]],
-      ["Attenuation", [3.4830e-08, -1.3746e-04, 3.9619e-01]],
-      ["Correction", [6.1369e-08, -2.1512e-04, 1.2846e-01]]
+      ["Amplitude",   [-1.1345e-07, 5.6632e-04, 2.8691e+00]],
+      ["Attenuation", [2.5484e-08, -1.2190e-04, 4.8002e-01]],
+      ["Correction",  [4.7424e-08, -2.1438e-04, 2.7895e-01]]
     ]
 
 light_map_data_dune10kt_1x2x6_AdjOpFlashPELightMap: [
-      ["Amplitude", [-1.2784e-07, 6.5108e-04, 2.3573e+00]],
-      ["Attenuation", [2.5445e-08, -1.2782e-04, 4.4181e-01]],
-      ["Correction", [-1.1812e-08, -1.6604e-05, -6.5942e-02]]
+      ["Amplitude",   [-1.2095e-07, 6.4042e-04, 2.3421e+00]],
+      ["Attenuation", [1.0674e-08, -9.3331e-05, 5.2349e-01]],
+      ["Correction",  [-4.1823e-08, 6.1425e-05, 2.3361e-02]]
     ]
 
 light_map_data_dunevd10kt_1x8x14_3view_30deg_AdjOpFlashMinPELightMap: [
-        ["Amplitude", [2.5276e-08, 2.9590e-04, -7.2231e-02]],
-        ["Attenuation", [-1.1732e-06, 8.1172e-03, -1.5276e+01]],
-        ["Correction", [7.6294e-07, -2.8500e-03, 1.9332e+00]]
+        ["Amplitude", [5.2745e-08, 1.9580e-04, -4.6346e-02]],
+        ["Attenuation", [4.0968e-07, 3.3389e-03, -1.2823e+01]],
+        ["Correction", [8.3383e-07, -3.1493e-03, 2.2614e+00]]
     ]
 
 light_map_data_dunevd10kt_1x8x14_3view_30deg_AdjOpFlashMaxPELightMap: [
-        ["Amplitude", [-8.8197e-08, 5.2212e-04, 2.1964e+00]],
-        ["Attenuation", [4.8050e-08, -9.5364e-05, -5.7437e-01]],
-        ["Correction", [3.7871e-07, -1.2702e-03, 7.0594e-01]]
+        ["Amplitude", [8.3383e-07, -3.1493e-03, 2.2614e+00]],
+        ["Attenuation", [5.9746e-08, -1.5539e-04, -5.1042e-01]],
+        ["Correction", [3.3565e-07, -1.1742e-03, 7.2596e-01]]
     ]
 
 light_map_data_dunevd10kt_1x8x14_3view_30deg_AdjOpFlashPELightMap: [
-        ["Amplitude", [-1.2053e-07, 7.1549e-04, 7.2371e-01]],
-        ["Attenuation", [-7.9112e-08, 4.6725e-04, -1.7473e+00]],
-        ["Correction", [2.5340e-07, -1.0071e-03, 5.7146e-01]]
+        ["Amplitude", [-1.2489e-07, 7.2077e-04, 6.7834e-01]],
+        ["Attenuation", [-1.4162e-08, 2.2639e-04, -1.5893e+00]],
+        ["Correction", [2.4396e-07, -1.0174e-03, 6.4482e-01]]
     ]
 
 END_PROLOG
