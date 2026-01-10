@@ -37,7 +37,7 @@ namespace lowe
     fAdjOpFlashMaxPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashMaxPELightMap", {})), // Light map file and histogram name for light map attenuation
     fAdjOpFlashPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashPELightMap", {})), // Light map file and histogram name for PE attenuation
     fFlashMatchBy(p.get<std::string>("FlashMatchBy", "maximum")), // Method to match flashes ("maximum" or "light_map")
-    fFlashMatchByPELightMapExponent(p.get<int>("FlashMatchByPELightMapExponent", 1)), // 0 implies matching against absolute PE error, 1 against relative PE error, 2 adds an additional weight to higher PE flashes.
+    fFlashMatchByPELightMapExponent(p.get<float>("FlashMatchByPELightMapExponent", 1)), // 0 implies matching against absolute PE error, 1 against relative PE error, 2 adds an additional weight to higher PE flashes.
     producer(new ProducerUtils(p))
   {
     // Initialize the LowEUtils instance
