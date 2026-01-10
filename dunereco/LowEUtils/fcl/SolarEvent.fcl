@@ -1,4 +1,4 @@
-#include LightMapData.fcl
+#include "LightMapData.fcl"
 
 BEGIN_PROLOG
 
