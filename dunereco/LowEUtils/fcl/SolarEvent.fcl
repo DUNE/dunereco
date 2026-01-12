@@ -7,8 +7,8 @@ solar_event_dune10kt_1x2x6:
     GEANT4Label:        "largeant"           # The label for the GEANT4 process
     ClusterLabel:       "solarcluster"       # The label for the input clusters
     OpFlashLabel:       "solarflash"         # The label for the optical flash
-    # FlashAlgoType:      "likelihoodFlashMatch"
-    FlashAlgoType:      "SolarFlashMatch"     # The flash matching algorithm to use
+    FlashAlgoType:      "likelihoodFlashMatch"     # The flash matching algorithm to use
+    VisibilityFilename: "/exp/dune/app/users/fgalizzi/flashmatch_larsoft/work/fm_module_inputs/dunevis_fdhd_1x2x6_test_float.root"
 
 
     ClusterPreselectionSignal:     true      # If true, the cluster must be signal particle to be saved.

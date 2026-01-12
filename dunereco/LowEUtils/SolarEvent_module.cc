@@ -145,10 +145,7 @@ namespace lowe
                corr_lambda,            // Correction lambda value
                h2_exp_reco
             );
-
-            std::cout << "T" << std::endl;
         }
-
     }
     //--------------------------------------------------------------------------
     // Destructor
@@ -273,8 +270,7 @@ namespace lowe
                     }
                    else if (fFlashAlgoType == "likelihoodFlashMatch") {
                        std::cout << "likelihoodFlashmatch!!! "<< std ::endl;
-                       int matchedFlashIndex2 = lowe->MatchPDSFlashML(EventCandidateVector[i], FlashPtr, clockData, evt, fLikelihoodComputer, fDebug);
-                       std::cout << "index " << matchedFlashIndex << " " << matchedFlashIndex2 << std::endl;
+                       matchedFlashIndex = lowe->MatchPDSFlashML(EventCandidateVector[i], FlashPtr, clockData, evt, fLikelihoodComputer, fDebug);
                     }
                 
                    if (matchedFlashIndex >= 0) {
