@@ -25,7 +25,7 @@ light_map_data_dunevd10kt_1x8x14_3view_30deg_AdjOpFlashMinPELightMap: [
     ]
 
 light_map_data_dunevd10kt_1x8x14_3view_30deg_AdjOpFlashMaxPELightMap: [
-        ["Amplitude", [8.3383e-07, -3.1493e-03, 2.2614e+00]],
+        ["Amplitude", [-1.1320e-07, 5.9340e-04, 2.1169e+00]],
         ["Attenuation", [5.9746e-08, -1.5539e-04, -5.1042e-01]],
         ["Correction", [3.3565e-07, -1.1742e-03, 7.2596e-01]]
     ]
