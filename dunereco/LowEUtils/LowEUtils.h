@@ -113,11 +113,24 @@ namespace lowe
                 std::vector<int> ClusterIdxVec;
             };
             
-            void CalcAdjHits(std::vector<recob::Hit> MyVec, std::vector<std::vector<recob::Hit>> &Clusters, TH1I *MyHist, TH1F *ADCIntHist, art::Event const &evt, bool debug);
+            void CalcAdjHits(
+                std::vector<recob::Hit> MyVec,
+                std::vector<std::vector<recob::Hit>> &Clusters,
+                TH1I *MyHist,
+                TH1F *ADCIntHist,
+                art::Event const &evt,
+                bool debug);
             
-            void CalcAdjHits(std::vector<art::Ptr<recob::Hit>> MyVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, std::vector<std::vector<int>> &ClusterIdx, art::Event const &evt);
+            void CalcAdjHits(
+                std::vector<art::Ptr<recob::Hit>> MyVec,
+                std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters,
+                std::vector<std::vector<int>> &ClusterIdx,
+                art::Event const &evt);
             
-            void MakeClusterVector(std::vector<RawPerPlaneCluster> &ClusterVec, std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters, art::Event const &evt);
+            void MakeClusterVector(
+                std::vector<RawPerPlaneCluster> &ClusterVec,
+                std::vector<std::vector<art::Ptr<recob::Hit>>> &Clusters,
+                art::Event const &evt);
 
             void FillClusterVariables(
                 std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
@@ -197,7 +210,8 @@ namespace lowe
                 std::vector<double> &IndDir,
                 bool debug = false);
             
-            double STD(const std::vector<double>& Vec);
+            double STD(
+                const std::vector<double>& Vec);
 
             void FindPrimaryClusters(
                 const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector,
@@ -207,16 +221,6 @@ namespace lowe
                 const detinfo::DetectorClocksData &clockData,
                 const art::Event &evt);
 
-            /**
-            * @brief MatchPDSFlash matches a vector of LowEClusters with a vector of PDS flashes.
-            * @param SolarClusterVector Vector of LowEClusters to match.
-            * @param PDSFlashes Vector of PDS flashes to match against.
-            * @param clockData DetectorClocksData for time calculations.
-            * @param debug If true, enables debug output.
-            * @return Returns the index of the matched flash, or -1 if no match is found.
-            * @note This function uses the time and charge of the clusters to find the best matching flash.
-            *       It assumes that the clusters are already sorted by time.
-            */
             int MatchPDSFlash(
                 const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector,
                 const std::vector<art::Ptr<recob::OpFlash>> &PDSFlashes,
@@ -228,6 +232,35 @@ namespace lowe
                 const float &TPCDriftTime,
                 const float &MatchedDriftTime,
                 const float &ClusterCharge,
+                const float &OpFlashPE);
+
+            bool CutPDSFlashMinPE(
+                const float &TPCDriftTime,
+                const float &MatchedDriftTime,
+                const float &ClusterCharge,
+                const float &OpFlashPE);
+
+            bool CutPDSFlashMaxPE(
+                const float &TPCDriftTime,
+                const float &MatchedDriftTime,
+                const float &ClusterCharge,
+                const float &OpFlashPE);
+
+            void GetLightMapParameters(
+                const std::string &LightMapType,
+                const float &ClusterCharge,
+                float &a,
+                float &b,
+                float &c);
+
+            bool SelectPDSFlash(
+                const bool &IsFirstFlash,
+                const float &TPCDriftTime,
+                const float &ClusterTime,
+                const float &ClusterCharge,
+                const float &RefOpFlashTime,
+                const float &RefOpFlashPe,
+                const float &OpFlashTime,
                 const float &OpFlashPE);
 
         // Declare member data here.
@@ -250,14 +283,22 @@ namespace lowe
             const double fAdjOpFlashX;                         // Maximum X distance for adjacent flash matching [cm]
             const double fAdjOpFlashY;                         // Maximum Y distance for adjacent flash matching [cm]
             const double fAdjOpFlashZ;                         // Maximum Z distance for adjacent flash matching [cm]
-            const double fAdjOpFlashMinPECut;                  // Minimum photoelectrons for adjacent flash
             const double fAdjOpFlashMaxPERatioCut;             // Maximum photoelectrons ratio for adjacent flash
+            const double fAdjOpFlashMinPECut;                  // Minimum photoelectrons for adjacent flash
+            const double fAdjOpFlashMaxPECut;                  // Maximum photoelectrons for adjacent flash
             const bool fAdjOpFlashMembraneProjection;          // If true, project the TPC reco onto the membrane
             const bool fAdjOpFlashEndCapProjection;            // If true, project the TPC reco onto the end cap
             const double fAdjOpFlashMinPEAttenuation;          // Attenuation factor for minimum PE cut based on drift time [us]
+            const double fAdjOpFlashMaxPEAttenuation;          // Attenuation factor for maximum PE cut based on drift time [us]
             const std::string fAdjOpFlashMinPEAttenuate;       // Type of attenuation for minimum PE cut ("light_map", "asymptotic", "linear" or "flat")
+            const std::string fAdjOpFlashMaxPEAttenuate;       // Type of attenuation for maximum PE cut ("light_map", "asymptotic", "linear" or "flat")
             const int fAdjOpFlashMinPEAttenuationStrength;     // Strength of the asymptotic attenuation for minimum PE cut (in powers of 10)
+            const int fAdjOpFlashMaxPEAttenuationStrength;     // Strength of the asymptotic attenuation for maximum PE cut (in powers of 10)
             const std::vector<std::pair<std::string, std::vector<double>>> fAdjOpFlashMinPELightMap; // Light map file and histogram name for light map attenuation
+            const std::vector<std::pair<std::string, std::vector<double>>> fAdjOpFlashMaxPELightMap; // Light map file and histogram name for light map attenuation
+            const std::vector<std::pair<std::string, std::vector<double>>> fAdjOpFlashPELightMap;    // Light map file and histogram name for PE attenuation
+            const std::string fFlashMatchBy;                   // Method to match flashes ("maximum" or "light_map")
+            const float fFlashMatchByPELightMapExponent;         // Exponent for PE weighting in light map flash matching
             std::unique_ptr<producer::ProducerUtils> producer; // Pointer to the ProducerUtils instance
     };
 } // namespace lowe
