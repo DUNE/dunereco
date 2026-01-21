@@ -26,14 +26,7 @@
             <tool type = "LArStitchingCosmicRayMerging"><ThreeDStitchingMode>false</ThreeDStitchingMode></tool>
         </StitchingTools>
         <CosmicRayTaggingTools>
-	    <!-- <tool type = "LArCosmicRayTagging"/> -->
-            <tool type = "LArTestBeamCosmicRayTagging">
-                <TagTopEntering>true</TagTopEntering>
-                <TagTopToBottom>true</TagTopToBottom>
-                <TagIsOutOfTime>true</TagIsOutOfTime>
-                <TagInVetoedTPCs>true</TagInVetoedTPCs>
-                <!--<VetoedTPCs>2 6</VetoedTPCs>-->
-            </tool>
+	    <tool type = "LArCosmicRayTagging"/>
         </CosmicRayTaggingTools>
         <SliceIdTools>
 		<tool type = "LArSimpleNeutrinoId"/>
