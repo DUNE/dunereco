@@ -270,7 +270,9 @@ namespace lowe
                 const float &RefOpFlashTime,
                 const float &RefOpFlashPe,
                 const float &OpFlashTime,
-                const float &OpFlashPE);
+                const float &OpFlashPE,
+                const float &MFlashResidual,
+                const float &OpFlashResidual);
 
         // Declare member data here.
         private:

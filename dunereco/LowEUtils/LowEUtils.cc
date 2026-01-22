@@ -1884,7 +1884,9 @@ namespace lowe
     const float &RefOpFlashTime,
     const float &RefOpFlashPE,
     const float &OpFlashTime,
-    const float &OpFlashPE)
+    const float &OpFlashPE,
+    const float &MFlashResidual=0.0,
+    const float &OpFlashResidual=0.0)
   /*
   Select PDS flash based on time and PE. There are 2 options: "maximum" or "light_map"
   - TPCDriftTime: total drift time in the TPC
@@ -1911,6 +1913,15 @@ namespace lowe
       if (SelectedError < RefError) {
         // std::cout << "Selecting flash with PE " << OpFlashPE << " closer to predicted PE " << SelectedPE << " than reference flash PE " << RefOpFlashPE << " predicted PE " << RefPE << std::endl;
         // std::cout << "The differences are " << SelectedError << " and " << RefError << std::endl;
+        return true;
+      }
+      else {
+        return false;
+      }
+    }
+    else if (fFlashMatchBy == "maximulikelihood") {
+      // If the flash likelihood (residual) is smaller than the reference flash residual, select it
+      if (OpFlashResidual < MFlashResidual) {
         return true;
       }
       else {
