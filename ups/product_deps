@@ -180,8 +180,8 @@ wpdir	product_dir	wire-cell-cfg
 
 product          version
 cetmodules       v3_24_01   -   only_for_build
-dunecore         v10_17_00d00
-duneprototypes   v10_17_00d00
+dunecore         v10_17_01d00
+duneprototypes   v10_17_01d00
 larcv2           v2_2_6
 end_product_list
 
