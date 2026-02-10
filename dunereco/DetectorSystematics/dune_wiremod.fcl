@@ -1,0 +1,33 @@
+BEGIN_PROLOG
+
+
+dune_wiremod:{
+
+  module_type: "WireModifier"
+
+  WireInputTag: "butcher"
+  SimEdepShiftedInputTag: "ionization"
+  SimEdepOrigInputTag: "largeant:TPCActive"
+  HitInputTag: "gaushit"
+             
+  MakeRawDigitAssn: true
+
+  UseCollectiveEdepsForScales: false
+
+  ApplyXScale: true
+  ApplyYScale: false
+  ApplyZScale: false
+  ApplyYZScale: true
+  ApplyXZAngleScale: true
+  ApplyYZAngleScale: true
+  ApplydEdXScale: true
+  ApplyOverallScale: false
+
+  # Use this for applying an offset or not.  Default is to not use an offset (the BNB).  Using an offset is for the NuMI systematics.
+  ApplyAdditionalTickOffset: false
+  ApplyAngleYZSigmaSpline: false
+  
+  GainScale: 1.02
+}
+
+END_PROLOG
