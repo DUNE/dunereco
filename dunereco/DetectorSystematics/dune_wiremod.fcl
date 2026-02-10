@@ -25,7 +25,6 @@ dune_wiremod:{
 
   # Use this for applying an offset or not.  Default is to not use an offset (the BNB).  Using an offset is for the NuMI systematics.
   ApplyAdditionalTickOffset: false
-  ApplyAngleYZSigmaSpline: false
   
   GainScale: 1.02
 }

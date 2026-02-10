@@ -114,7 +114,7 @@ private:
 
   bool fFillScaleCheckTree;
   bool fApplyAdditionalTickOffset;
-  bool fApplyAngleYZSigmaSpline;
+  //bool fApplyAngleYZSigmaSpline;
   double fGainScale;  
 
   //useful math things
@@ -832,7 +832,7 @@ sys::WireModifier::WireModifier(fhicl::ParameterSet const& p)
   fOverallScale(p.get< std::vector<double> >("OverallScale",std::vector<double>(3,1.))),
   fFillScaleCheckTree(p.get<bool>("FillScaleCheckTree",false)),
   fApplyAdditionalTickOffset(p.get<bool>("ApplyAdditionalTickOffset", false)),
-  fApplyAngleYZSigmaSpline(p.get<bool>("ApplyAngleYZSigmaSpline", false)),
+  //fApplyAngleYZSigmaSpline(p.get<bool>("ApplyAngleYZSigmaSpline", false)),
   fGainScale(p.get<double>("GainScale", 1.0))
 {
   produces< std::vector< recob::Wire > >();
