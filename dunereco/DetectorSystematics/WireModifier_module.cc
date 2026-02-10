@@ -82,6 +82,8 @@ private:
   bool fApplydEdXScale;
   bool fApplyOverallScale;
 
+//We are not using splines here
+/*
   std::string fSplinesFileName;
   std::vector<std::string> fSplineNames_Charge_X;
   std::vector<std::string> fSplineNames_Sigma_X;
@@ -103,7 +105,7 @@ private:
   std::vector<TSpline3*> fTSplines_Charge_YZAngle;
   std::vector<TSpline3*> fTSplines_Sigma_YZAngle;
   std::vector<TSpline3*> fTSplines_Charge_dEdX;
-  std::vector<TSpline3*> fTSplines_Sigma_dEdX;
+  std::vector<TSpline3*> fTSplines_Sigma_dEdX;*/
   std::vector<double> fOverallScale;
 
   //output ana trees
@@ -113,6 +115,7 @@ private:
   bool fFillScaleCheckTree;
   bool fApplyAdditionalTickOffset;
   bool fApplyAngleYZSigmaSpline;
+  double fGainScale;  
 
   //useful math things
   //static constexpr double ONE_OVER_SQRT_2PI = 1./std::sqrt(2*util::pi());
@@ -690,103 +693,15 @@ sys::WireModifier::GetScaleValues(sys::WireModifier::TruthProperties_t const& tr
 {
   ScaleValues_t scales;
   
-  scales.r_Q=1.;
+  scales.r_Q=fGainScale;
   scales.r_sigma=1.;
   
-  double temp_scale=1.;
+  //double temp_scale=1.;
 
+  //replace spline rescaling by analytical rescaling
   //get scales here
-  if(plane==0){
-    if(fApplyXScale){
-      scales.r_Q *= fTSplines_Charge_X[plane]->Eval(truth_props.x);
-      scales.r_sigma *= fTSplines_Sigma_X[plane]->Eval(truth_props.x);
-    }
-    if(fApplyYScale){    
-    }
-    if(fApplyZScale){    
-    }
-    if(fApplyYZScale){    
-      temp_scale = fTGraph2Ds_Charge_YZ[plane]->Interpolate(truth_props.z,truth_props.y); //confirmed order is (z,y) by Aruturo, 1/24/20
-      if(temp_scale>0.001) scales.r_Q *= temp_scale;
-
-      temp_scale = fTGraph2Ds_Sigma_YZ[plane]->Interpolate(truth_props.z,truth_props.y);
-      if(temp_scale>0.001) scales.r_sigma *= temp_scale;
-    }
-    if(fApplyXZAngleScale){    
-      scales.r_Q     *= fTSplines_Charge_XZAngle[plane]->Eval(ThetaXZ_U(truth_props.dxdr,truth_props.dydr,truth_props.dzdr));
-      scales.r_sigma *= fTSplines_Sigma_XZAngle[plane]->Eval(ThetaXZ_U(truth_props.dxdr,truth_props.dydr,truth_props.dzdr));
-    }
-    if(fApplyYZAngleScale){    
-      scales.r_Q *= fTSplines_Charge_YZAngle[plane]->Eval(ThetaYZ_U(truth_props.dxdr,truth_props.dydr,truth_props.dzdr));
-      if ( fApplyAngleYZSigmaSpline )
-	scales.r_sigma *= fTSplines_Sigma_YZAngle[plane]->Eval(ThetaYZ_U(truth_props.dxdr,truth_props.dydr,truth_props.dzdr));
-    }
-    if(fApplydEdXScale){
-      scales.r_Q *= fTSplines_Charge_dEdX[plane]->Eval(truth_props.dedr);
-      scales.r_sigma *= fTSplines_Sigma_dEdX[plane]->Eval(truth_props.dedr);
-    }
-
-  }
-  else if(plane==1){
-    if(fApplyXScale){
-      scales.r_Q *= fTSplines_Charge_X[plane]->Eval(truth_props.x);
-      scales.r_sigma *= fTSplines_Sigma_X[plane]->Eval(truth_props.x);
-    }
-    if(fApplyYScale){    
-    }
-    if(fApplyZScale){    
-    }
-    if(fApplyYZScale){    
-      temp_scale = fTGraph2Ds_Charge_YZ[plane]->Interpolate(truth_props.z,truth_props.y);
-      if(temp_scale>0.001) scales.r_Q *= temp_scale;
-
-      temp_scale = fTGraph2Ds_Sigma_YZ[plane]->Interpolate(truth_props.z,truth_props.y);
-      if(temp_scale>0.001) scales.r_sigma *= temp_scale;
-    }
-    if(fApplyXZAngleScale){    
-      scales.r_Q     *= fTSplines_Charge_XZAngle[plane]->Eval(ThetaXZ_V(truth_props.dxdr,truth_props.dydr,truth_props.dzdr));
-      scales.r_sigma *= fTSplines_Sigma_XZAngle[plane]->Eval(ThetaXZ_V(truth_props.dxdr,truth_props.dydr,truth_props.dzdr));
-    }
-    if(fApplyYZAngleScale){    
-      scales.r_Q *= fTSplines_Charge_YZAngle[plane]->Eval(ThetaYZ_V(truth_props.dxdr,truth_props.dydr,truth_props.dzdr));
-      if ( fApplyAngleYZSigmaSpline )
-	scales.r_sigma *= fTSplines_Sigma_YZAngle[plane]->Eval(ThetaYZ_V(truth_props.dxdr,truth_props.dydr,truth_props.dzdr));
-    }
-    if(fApplydEdXScale){    
-      scales.r_Q *= fTSplines_Charge_dEdX[plane]->Eval(truth_props.dedr);
-      scales.r_sigma *= fTSplines_Sigma_dEdX[plane]->Eval(truth_props.dedr);
-    }
-  }
-  else if(plane==2){
-    if(fApplyXScale){
-      scales.r_Q *= fTSplines_Charge_X[plane]->Eval(truth_props.x);
-      scales.r_sigma *= fTSplines_Sigma_X[plane]->Eval(truth_props.x);
-    }
-    if(fApplyYScale){    
-    }
-    if(fApplyZScale){    
-    }
-    if(fApplyYZScale){    
-      temp_scale = fTGraph2Ds_Charge_YZ[plane]->Interpolate(truth_props.z,truth_props.y);
-      if(temp_scale>0.001) scales.r_Q *= temp_scale;
-
-      temp_scale = fTGraph2Ds_Sigma_YZ[plane]->Interpolate(truth_props.z,truth_props.y);
-      if(temp_scale>0.001) scales.r_sigma *= temp_scale;
-    }
-    if(fApplyXZAngleScale){    
-      scales.r_Q     *= fTSplines_Charge_XZAngle[plane]->Eval(ThetaXZ_Y(truth_props.dxdr,truth_props.dydr,truth_props.dzdr));
-      scales.r_sigma *= fTSplines_Sigma_XZAngle[plane]->Eval(ThetaXZ_Y(truth_props.dxdr,truth_props.dydr,truth_props.dzdr));
-    }
-    if(fApplyYZAngleScale){    
-      scales.r_Q *= fTSplines_Charge_YZAngle[plane]->Eval(ThetaYZ_Y(truth_props.dxdr,truth_props.dydr,truth_props.dzdr));
-      if ( fApplyAngleYZSigmaSpline )
-	scales.r_sigma *= fTSplines_Sigma_YZAngle[plane]->Eval(ThetaYZ_Y(truth_props.dxdr,truth_props.dydr,truth_props.dzdr));
-    }
-    if(fApplydEdXScale){    
-      scales.r_Q *= fTSplines_Charge_dEdX[plane]->Eval(truth_props.dedr);
-      scales.r_sigma *= fTSplines_Sigma_dEdX[plane]->Eval(truth_props.dedr);
-    }
-  }
+  // example of attenuation
+ 
   return scales;
 }
 
@@ -903,7 +818,7 @@ sys::WireModifier::WireModifier(fhicl::ParameterSet const& p)
   fApplyYZAngleScale(p.get<bool>("ApplyYZAngleScale",true)),
   fApplydEdXScale(p.get<bool>("ApplydEdXScale",true)),
   fApplyOverallScale(p.get<bool>("ApplyOverallScale",false)),
-  fSplinesFileName(p.get<std::string>("SplinesFileName")),
+  /*fSplinesFileName(p.get<std::string>("SplinesFileName")),
   fSplineNames_Charge_X(p.get< std::vector<std::string> >("SplineNames_Charge_X")),
   fSplineNames_Sigma_X(p.get< std::vector<std::string> >("SplineNames_Sigma_X")),
   fGraph2DNames_Charge_YZ(p.get< std::vector<std::string> >("Graph2DNames_Charge_YZ")),
@@ -913,19 +828,20 @@ sys::WireModifier::WireModifier(fhicl::ParameterSet const& p)
   fSplineNames_Charge_YZAngle(p.get< std::vector<std::string> >("SplineNames_Charge_YZAngle")),
   fSplineNames_Sigma_YZAngle(p.get< std::vector<std::string> >("SplineNames_Sigma_YZAngle")),
   fSplineNames_Charge_dEdX(p.get< std::vector<std::string> >("SplineNames_Charge_dEdX")),
-  fSplineNames_Sigma_dEdX(p.get< std::vector<std::string> >("SplineNames_Sigma_dEdX")),
+  fSplineNames_Sigma_dEdX(p.get< std::vector<std::string> >("SplineNames_Sigma_dEdX")),*/
   fOverallScale(p.get< std::vector<double> >("OverallScale",std::vector<double>(3,1.))),
   fFillScaleCheckTree(p.get<bool>("FillScaleCheckTree",false)),
   fApplyAdditionalTickOffset(p.get<bool>("ApplyAdditionalTickOffset", false)),
-  fApplyAngleYZSigmaSpline(p.get<bool>("ApplyAngleYZSigmaSpline", false))
+  fApplyAngleYZSigmaSpline(p.get<bool>("ApplyAngleYZSigmaSpline", false)),
+  fGainScale(p.get<double>("GainScale", 1.0))
 {
   produces< std::vector< recob::Wire > >();
     
   if(fMakeRawDigitAssn)
     produces< art::Assns<raw::RawDigit,recob::Wire> >();
 
-
-  fSplinesFileName = std::string(std::getenv("UBOONEDATA_DIR"))+"/systematics/det_sys/"+fSplinesFileName;
+  //We do not use splines here
+  /*fSplinesFileName = std::string(std::getenv("UBOONEDATA_DIR"))+"/systematics/det_sys/"+fSplinesFileName;
   std::cout << "Spline file is " << fSplinesFileName;
 
   TFile f_splines(fSplinesFileName.c_str(),"r");
@@ -978,7 +894,7 @@ sys::WireModifier::WireModifier(fhicl::ParameterSet const& p)
     fTSplines_Sigma_dEdX.resize(fSplineNames_Sigma_dEdX.size());
     for(size_t i_s=0; i_s<fSplineNames_Sigma_dEdX.size(); ++i_s)
       f_splines.GetObject(fSplineNames_Sigma_dEdX[i_s].c_str(),fTSplines_Sigma_dEdX[i_s]);
-  }
+  }*/
 
   art::ServiceHandle<art::TFileService> tfs;
   fNt = tfs->make<TNtuple>("nt","Ana Ntuple","edep_e:subroi_q");
