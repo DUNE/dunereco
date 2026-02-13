@@ -24,9 +24,6 @@
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/RawData/RawDigit.h"
 #include "lardataobj/RecoBase/Wire.h"
-//Will need a replacement for these two following
-//#include "sbnobj/ICARUS/TPC/ChannelROI.h"
-//#include "icaruscode/TPC/Utilities/ChannelROICreator.h"
 
 
 #include "Utility/WireModUtility.hh"
@@ -41,8 +38,6 @@ namespace wiremod
       explicit WireModifier(fhicl::ParameterSet const& pset);
       void reconfigure(fhicl::ParameterSet const& pset);
       void produce(art::Event& evt) override;
-      //Remove produceData for DUNE implementation
-      //void produceData(art::Event& evt);
 
    private:
       const geo::GeometryCore* fGeometry = lar::providerFrom<geo::Geometry>(); // get the geometry
@@ -65,12 +60,8 @@ namespace wiremod
       art::InputTag fHitLabel;      // which hits are we pulling in?
       art::InputTag fEDepOrigLabel; // which are the unshifted EDeps?
       art::InputTag fEDepShftLabel; // which are the shifted EDeps?
-      bool fApplyChannel;           // do we apply the channel scaling?
-      bool fApplyX;                 // do we apply the X scaling?
-      bool fApplyYZ;                // do we apply the YZ scaling?
-      bool fApplyXZAngle;           // do we apply the XZ angle scaling?
-      bool fApplyYZAngle;           // do we apply the YZ angle scaling?
-      bool fApplydEdX;              // do we apply the dEdX scaling?
+      bool fApplyGainScale;
+      double fGainScale;
       //The three following are probably not needed
       bool fSaveHistsByChannel;     // save modified signals by channel?
       bool fSaveHistsByWire;        // save modified signals by wire?
@@ -100,232 +91,19 @@ namespace wiremod
     // try to read in the graphs/splines from a file
     //     // if that file does not exist then fake them
     fRatioFileName = pset.get<std::string>("RatioFileName", "NOFILE");
-    fApplyChannel = pset.get<bool>("ApplyChannelScale", false);
-    fApplyX       = pset.get<bool>("ApplyXScale"      , false);
-    fApplyYZ      = pset.get<bool>("ApplyYZScale"     , false);
-    fApplyXZAngle = pset.get<bool>("ApplyXZAngleScale", false);
-    fApplyYZAngle = pset.get<bool>("ApplyYZAngleScale", false);
-    fApplydEdX    = pset.get<bool>("ApplydEdXscale"   , false);
-    //TODO: replace this part. Should not need a file to extract weight. Maybe this part can be completely erased after all. 
-    if (fRatioFileName == "NOFILE")
+    fApplyGainScale    = pset.get<bool>("ApplyGainScale"   , false);
+    if (fApplyGainScale)
     {
-      mf::LogVerbatim("WireModifier")
-        << "WireModifier::reconfigure - No ratio file given. No scaling is applied...";
-    } else {
-      TFile* ratioFile = new TFile(fRatioFileName.c_str(), "READ"); // read only
-      // the file exists! pull the ratios
-      if (fApplyChannel)
-      {
-        mf::LogVerbatim("WireModifier")
-          << "WireModifier::reconfigure - Getting Channel Scales...";
-        std::string name_charge_Channel = pset.get<std::string>("ChannelScaleHeight");
-        std::string name_sigma_Channel  = pset.get<std::string>("ChannelScaleWidth");
-        fSpline_charge_Channel = ratioFile->Get<TSpline3>(name_charge_Channel.c_str());
-        fSpline_sigma_Channel  = ratioFile->Get<TSpline3>(name_sigma_Channel .c_str());
-      }
-      if (fApplyX)
-      {
-        mf::LogVerbatim("WireModifier")
-          << "WireModifier::reconfigure - Getting X Scales...";
-        std::vector<std::string> nameVec_charge_X = pset.get<std::vector<std::string>>("XScaleHeight");
-        for (auto const& name : nameVec_charge_X)
-        {
-          mf::LogDebug("WireModifier")
-            << "WireModifier::reconfigure - Looking for " << name << " in TFile " << fRatioFileName << "...";
-          TSpline3* temp = ratioFile->Get<TSpline3>(name.c_str());
-          if (temp != nullptr)
-          {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...found";
-            fSpline_charge_X.push_back(temp);
-          } else {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...not found";
-          }
-        }
-        std::vector<std::string> nameVec_sigma_X = pset.get<std::vector<std::string>>("XScaleHeight");
-        for (auto const& name : nameVec_sigma_X)
-        {
-          mf::LogDebug("WireModifier")
-            << "WireModifier::reconfigure - Looking for " << name << " in TFile " << fRatioFileName << "...";
-          TSpline3* temp = ratioFile->Get<TSpline3>(name.c_str());
-          if (temp != nullptr)
-          {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...found";
-            fSpline_sigma_X.push_back(temp);
-          } else {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...not found";
-          }
-        }
-      }
-      if (fApplyYZ)
-      {
-        mf::LogVerbatim("WireModifier")
-          << "WireModifier::reconfigure - Getting YZ Scales...";
-        std::vector<std::string> nameVec_charge_YZ = pset.get<std::vector<std::string>>("YZScaleHeight");
-        for (auto const& name : nameVec_charge_YZ)
-        {
-          mf::LogDebug("WireModifier")
-            << "WireModifier::reconfigure - Looking for " << name << " in TFile " << fRatioFileName << "...";
-          TGraph2D* temp = ratioFile->Get<TGraph2D>(name.c_str());
-          if (temp != nullptr)
-          {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...found";
-            fGraph_charge_YZ.push_back(temp);
-          } else {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...not found";
-          }
-        }
-        std::vector<std::string> nameVec_sigma_YZ = pset.get<std::vector<std::string>>("YZScaleHeight");
-        for (auto const& name : nameVec_sigma_YZ)
-        {
-          mf::LogDebug("WireModifier")
-            << "WireModifier::reconfigure - Looking for " << name << " in TFile " << fRatioFileName << "...";
-          TGraph2D* temp = ratioFile->Get<TGraph2D>(name.c_str());
-          if (temp != nullptr)
-          {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...found";
-            fGraph_sigma_YZ.push_back(temp);
-          } else {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...not found";
-          }
-        }
-      }
-      if (fApplyXZAngle)
-      {
-        mf::LogVerbatim("WireModifier")
-          << "WireModifier::reconfigure - Getting XZ Angle Scales...";
-        std::vector<std::string> nameVec_charge_XZAngle = pset.get<std::vector<std::string>>("XZAngleScaleHeight");
-        for (auto const& name : nameVec_charge_XZAngle)
-        {
-          mf::LogDebug("WireModifier")
-            << "WireModifier::reconfigure - Looking for " << name << " in TFile " << fRatioFileName << "...";
-          TSpline3* temp = ratioFile->Get<TSpline3>(name.c_str());
-          if (temp != nullptr)
-          {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...found";
-            fSpline_charge_XZAngle.push_back(temp);
-          } else {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...not found";
-          }
-        }
-        std::vector<std::string> nameVec_sigma_XZAngle = pset.get<std::vector<std::string>>("XZAngleScaleHeight");
-        for (auto const& name : nameVec_sigma_XZAngle)
-        {
-          mf::LogDebug("WireModifier")
-            << "WireModifier::reconfigure - Looking for " << name << " in TFile " << fRatioFileName << "...";
-          TSpline3* temp = ratioFile->Get<TSpline3>(name.c_str());
-          if (temp != nullptr)
-          {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...found";
-            fSpline_sigma_XZAngle.push_back(temp);
-          } else {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...not found";
-          }
-        }
-      }
-      if (fApplyYZAngle)
-      {
-        mf::LogVerbatim("WireModifier")
-          << "WireModifier::reconfigure - Getting YZ Angle Scales...";
-        std::vector<std::string> nameVec_charge_YZAngle = pset.get<std::vector<std::string>>("YZAngleScaleHeight");
-        for (auto const& name : nameVec_charge_YZAngle)
-        {
-          mf::LogDebug("WireModifier")
-            << "WireModifier::reconfigure - Looking for " << name << " in TFile " << fRatioFileName << "...";
-          TSpline3* temp = ratioFile->Get<TSpline3>(name.c_str());
-          if (temp != nullptr)
-          {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...found";
-            fSpline_charge_YZAngle.push_back(temp);
-          } else {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...not found";
-          }
-        }
-        std::vector<std::string> nameVec_sigma_YZAngle = pset.get<std::vector<std::string>>("YZAngleScaleHeight");
-        for (auto const& name : nameVec_sigma_YZAngle)
-        {
-          mf::LogDebug("WireModifier")
-            << "WireModifier::reconfigure - Looking for " << name << " in TFile " << fRatioFileName << "...";
-          TSpline3* temp = ratioFile->Get<TSpline3>(name.c_str());
-          if (temp != nullptr)
-          {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...found";
-            fSpline_sigma_YZAngle.push_back(temp);
-          } else {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...not found";
-          }
-        }
-      }
-      if (fApplydEdX)
-      {
-        mf::LogVerbatim("WireModifier")
-          << "WireModifier::reconfigure - Getting dEdX Scales...";
-        std::vector<std::string> nameVec_charge_dEdX = pset.get<std::vector<std::string>>("dEdXScaleHeight");
-        for (auto const& name : nameVec_charge_dEdX)
-        {
-          mf::LogDebug("WireModifier")
-            << "WireModifier::reconfigure - Looking for " << name << " in TFile " << fRatioFileName << "...";
-          TSpline3* temp = ratioFile->Get<TSpline3>(name.c_str());
-          if (temp != nullptr)
-          {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...found";
-            fSpline_charge_dEdX.push_back(temp);
-          } else {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...not found";
-          }
-        }
-        std::vector<std::string> nameVec_sigma_dEdX = pset.get<std::vector<std::string>>("dEdXScaleHeight");
-        for (auto const& name : nameVec_sigma_dEdX)
-        {
-          mf::LogDebug("WireModifier")
-            << "WireModifier::reconfigure - Looking for " << name << " in TFile " << fRatioFileName << "...";
-          TSpline3* temp = ratioFile->Get<TSpline3>(name.c_str());
-          if (temp != nullptr)
-          {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...found";
-            fSpline_sigma_dEdX.push_back(temp);
-          } else {
-            mf::LogDebug("WireModifier")
-              << "WireModifier::reconfigure -  ...not found";
-          }
-        }
-      }
+      fGainScale = pset.get<double>("ElectronicsGainScale");
     }
-    
     // we make these things
     produces<std::vector<recob::Wire      >>();
-    //produces<std::vector<recob::ChannelROI>>(); //remove because necessitates sbnobj library
-    //produces<art::Assns<raw::RawDigit, recob::Wire>>();
   }
 
- // removed the produceData from ICARUS wiremod module because it uses experimental data, not simulation
  
 
   void WireModifier::produce(art::Event& evt)
   {
-    /*if (fIsData)
-      {
-         this->produceData(evt);
-             return;
-      }*/
 
     // here's where the "magic" happens
     art::ServiceHandle<art::TFileService> tfs;
@@ -354,60 +132,21 @@ namespace wiremod
 
     // put the new stuff somewhere
     std::unique_ptr<std::vector<recob::Wire      >> new_wires(new std::vector<recob::Wire      >());
-    //std::unique_ptr<std::vector<recob::ChannelROI>> new_crois(new std::vector<recob::ChannelROI>());
-    //std::unique_ptr<art::Assns<raw::RawDigit, recob::Wire>> new_digit_assn(new art::Assns<raw::RawDigit, recob::Wire>());
 
 
     //TODO: modify for DUNE implementation! (correct flags, correct if loops etc.)
     sys::WireModUtility wmUtil(fGeometry, fWireReadout, detProp); // detector geometry & properties
-    wmUtil.applyChannelScale = fApplyChannel;
-    wmUtil.applyXScale       = fApplyX;
-    wmUtil.applyYZScale      = fApplyYZ;
-    wmUtil.applyXZAngleScale = fApplyXZAngle;
-    wmUtil.applyYZAngleScale = fApplyYZAngle;
-    wmUtil.applydEdXScale    = fApplydEdX;
-    //TODO: remove and replace by things useful for DUNE
-    /*if (wmUtil.applyChannelScale)
+    wmUtil.applyGainScale    = fGainScale;
+    if (wmUtil.applyGainScale)
     {
-      wmUtil.spline_Charge_Channel = fSpline_charge_Channel;
-      wmUtil.spline_Sigma_Channel  = fSpline_sigma_Channel;
+      wmUtil.gainScale = fGainScale;
     }
-    if (wmUtil.applyXScale)
-    {
-      wmUtil.splines_Charge_X = fSpline_charge_X;
-      wmUtil.splines_Sigma_X  = fSpline_sigma_X;
-    }
-    if (wmUtil.applyYZScale)
-    {
-      wmUtil.graph2Ds_Charge_YZ = fGraph_charge_YZ;
-      wmUtil.graph2Ds_Sigma_YZ  = fGraph_sigma_YZ;
-    }
-    if (wmUtil.applyXZAngleScale)
-    {
-      wmUtil.splines_Charge_XZAngle = fSpline_charge_XZAngle;
-      wmUtil.splines_Sigma_XZAngle  = fSpline_sigma_XZAngle;
-    }
-    if (wmUtil.applyYZAngleScale)
-    {
-      wmUtil.splines_Charge_YZAngle = fSpline_charge_YZAngle;
-      wmUtil.splines_Sigma_YZAngle  = fSpline_sigma_YZAngle;
-    }
-    if (wmUtil.applydEdXScale)
-    {
-      wmUtil.splines_Charge_dEdX = fSpline_charge_dEdX;
-      wmUtil.splines_Sigma_dEdX  = fSpline_sigma_dEdX;
-    }
-    */
+
     // add some debugging here
     MF_LOG_VERBATIM("WireModifier")
       << "DUMP CONFIG:" << '\n'
       << "---------------------------------------------------" << '\n'
-      << "  applyChannelScale:  " << wmUtil.applyChannelScale  << '\n'
-      << "  applyXScale:        " << wmUtil.applyXScale        << '\n'
-      << "  applyYZScale:       " << wmUtil.applyYZScale       << '\n'
-      << "  applyXZAngleScale:  " << wmUtil.applyXZAngleScale  << '\n'
-      << "  applyYZAngleScale:  " << wmUtil.applyYZAngleScale  << '\n'
-      << "  applydEdXScale:     " << wmUtil.applydEdXScale     << '\n'
+      << "  applyGainScale:     " << wmUtil.applyGainScale     << '\n'
       << "  readoutWindowTicks: " << wmUtil.readoutWindowTicks << '\n'
       << "  tickOffset:         " << wmUtil.tickOffset         << '\n'
       << "---------------------------------------------------";
@@ -434,9 +173,7 @@ namespace wiremod
 
 
       recob::Wire::RegionsOfInterest_t new_rois;
-      //recob::ChannelROI::RegionsOfInterest_t new_rois_ints;
       new_rois     .resize(wire.SignalROI().size());
-      //new_rois_ints.resize(wire.SignalROI().size());
 
       unsigned int my_plane = geo::kUnknown;
       if (wire.View() == fWireReadout->Plane(geo::PlaneID(0, 0, 0)).View())
@@ -476,7 +213,6 @@ namespace wiremod
         auto it_map = wmUtil.ROIMatchedEdepMap.find(roi_key);
         if(it_map==wmUtil.ROIMatchedEdepMap.end()){
           new_rois     .add_range(range.begin_index(), modified_data);
-          //new_rois_ints.add_range(range.begin_index(), modified_data);
           MF_LOG_DEBUG("WireModifier")
             << "    Could not find matching Edep. Skip";
           continue;
@@ -485,7 +221,6 @@ namespace wiremod
         if(matchedEdepIdxVec.size() == 0)
         {
           new_rois     .add_range(range.begin_index(), modified_data);
-          //new_rois_ints.add_range(range.begin_index(), modified_data);
           MF_LOG_DEBUG("WireModifier")
             << "    No indices for Edep. Skip";
           continue;
@@ -578,13 +313,11 @@ namespace wiremod
 
         wmUtil.ModifyROI(modified_data, roi_properties, subROIPropVec, SubROIMatchedScalesMap);
         new_rois     .add_range(roi_properties.begin, modified_data);
-        //new_rois_ints.add_range(roi_properties.begin, modified_data);
       }
 
         
 
       new_wires->emplace_back(new_rois,      wire.Channel(), wire.View());
-      //new_crois->emplace_back(new_rois_ints, wire.Channel()             );
 
       if (fSaveHistsByChannel && isModified)
       {
@@ -639,14 +372,9 @@ namespace wiremod
         }
       }
 
-      //auto const& rd_ptrs = digit_assn.at(i_w);
-      //      //for(auto const& rd_ptr : rd_ptrs)
-      //            //  util::CreateAssn(*this, evt, *new_wires, rd_ptr, *new_digit_assn, new_wires->size() - 1);
     } // end loop over wires
 
     evt.put(std::move(new_wires));
-    //evt.put(std::move(new_crois)); //We do not manipulate ChannelROIs
-    //evt.put(std::move(new_digit_assn));
   }
   DEFINE_ART_MODULE(WireModifier)
 } // end namespace
