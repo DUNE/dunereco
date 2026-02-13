@@ -1,7 +1,9 @@
-BEGIN_PROLOG
+#include "standard_reco1_dune10kt_1x2x6.fcl"
 
+# change process name, to be able to rerun it
+process_name: reco1Again
 
-dune_wiremod:{
+physics.producers.duneWiremod: {
 
   module_type: "WireModifier"
 
@@ -17,7 +19,11 @@ dune_wiremod:{
 
 
   ApplyGainScale: true  
-  GainScale: 1.02
+ 
+  ElectronicsGainScale: 1.02
+
 }
 
-END_PROLOG
+
+physics.wiremod_path: [ duneWiremod, gaushit ]
+physics.trigger_paths: [ wiremod_path, reco ]
