@@ -5,27 +5,18 @@ dune_wiremod:{
 
   module_type: "WireModifier"
 
-  WireInputTag: "butcher"
-  SimEdepShiftedInputTag: "ionization"
-  SimEdepOrigInputTag: "largeant:TPCActive"
-  HitInputTag: "gaushit"
              
-  MakeRawDigitAssn: true
-
-  UseCollectiveEdepsForScales: false
-
-  ApplyXScale: true
-  ApplyYScale: false
-  ApplyZScale: false
-  ApplyYZScale: true
-  ApplyXZAngleScale: true
-  ApplyYZAngleScale: true
-  ApplydEdXScale: true
-  ApplyOverallScale: false
+  
+  WireLabel:           "tpcrawdecoder:gauss"
+  HitLabel:            "gaushit"
+  EDepOrigLabel:       "IonAndScint"
+  EDepShftLabel:       "largeant:LArG4DetectorServicevolTPCActiveOuter"
 
   # Use this for applying an offset or not.  Default is to not use an offset (the BNB).  Using an offset is for the NuMI systematics.
   ApplyAdditionalTickOffset: false
-  
+
+
+  ApplyGainScale: true  
   GainScale: 1.02
 }
 
