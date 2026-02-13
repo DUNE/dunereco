@@ -492,12 +492,12 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetChannelScaleValues(sy
 
   if (applyChannelScale)
   {
-    if (spline_Charge_Channel == nullptr ||
+    /*if (spline_Charge_Channel == nullptr ||
         spline_Sigma_Channel  == nullptr  )
       throw cet::exception("WireModUtility")
         << "Tried to apply channel scale factor, but could not find splines. Check that you have set those in the utility.";
-    //scales.r_Q     *= spline_Charge_Channel->Eval(channel);
-    //scales.r_sigma *= spline_Sigma_Channel ->Eval(channel); Replace by DUNE specifics (e.g. a linear rescaling of gain)
+    scales.r_Q     *= spline_Charge_Channel->Eval(channel);
+    scales.r_sigma *= spline_Sigma_Channel ->Eval(channel);*/ //Replace by DUNE specifics (e.g. a linear rescaling of gain)
   }
 
   return scales;
@@ -512,7 +512,7 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
   scales.r_Q     = 1.0;
   scales.r_sigma = 1.0;
   
-  double temp_scale=1.0;
+  //double temp_scale=1.0; //Apparently unused, to check why?
   
   // try to get geo
   //   // if not in a TPC return default values
@@ -522,9 +522,9 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
     return scales;
 
   // get the plane number by the view
-  auto const& plane_obj = wireReadout->Plane(curTPCGeomPtr->ID(), view);
-  unsigned int plane = plane_obj.ID().Plane;
-
+  //auto const& plane_obj = wireReadout->Plane(curTPCGeomPtr->ID(), view);
+  //unsigned int plane = plane_obj.ID().Plane;
+  //Apparently unused, to check why?
 
   //The type of flags will be modified for DUNE. Instead of rescaling per coordinate type, apply rescaing by effect type
   /*if (applyXScale)

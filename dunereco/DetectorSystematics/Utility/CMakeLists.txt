@@ -1,5 +1,5 @@
 cet_make_library(
-  LIBRARY_NAME dunereco_WireMod_Utility
+  LIBRARY_NAME WireModUtility
 
   SOURCE
     WireModUtility.cc
@@ -7,21 +7,16 @@ cet_make_library(
   LIBRARIES
     # LArSoft geometry
     larcorealg::Geometry
-    larcorealg::Geometry::WireReadoutGeom
 
     # Detector properties
-    lardataalg::DetectorInfo::DetectorPropertiesData
+    lardataalg::DetectorInfo
 
     # RecoBase data objects
-    lardataobj::RecoBase::Track
-    lardataobj::RecoBase::TrackHitMeta
-    lardataobj::RecoBase::Hit
-    lardataobj::RecoBase::Wire
+    lardataobj::RecoBase
 
     # Simulation objects
-    lardataobj::Simulation::SimEnergyDeposit
-    nusimdata::SimulationBase::MCParticle
-    nusimdata::SimulationBase::MCTruth
+    lardataobj::Simulation
+    nusimdata::SimulationBase
 
     # Utilities
     lardata::Utilities
@@ -36,11 +31,9 @@ cet_make_library(
     ROOT::Core
     ROOT::Hist
     ROOT::Graf
-    ROOT::Graf2d
     ROOT::Graf3d
     ROOT::Gpad
     ROOT::Tree
-  BASENAME_ONLY
 )
 
 install_headers()
