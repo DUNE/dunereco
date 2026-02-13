@@ -490,16 +490,10 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetChannelScaleValues(sy
   if (curTPCGeomPtr == nullptr)
     return scales;
 
-  if (applyChannelScale)
+  if (applyGainScale)
   {
-    /*if (spline_Charge_Channel == nullptr ||
-        spline_Sigma_Channel  == nullptr  )
-      throw cet::exception("WireModUtility")
-        << "Tried to apply channel scale factor, but could not find splines. Check that you have set those in the utility.";
-    scales.r_Q     *= spline_Charge_Channel->Eval(channel);
-    scales.r_sigma *= spline_Sigma_Channel ->Eval(channel);*/ //Replace by DUNE specifics (e.g. a linear rescaling of gain)
+    scales.r_Q *= gainScale; //changing only amplitude for electronics gain. Should I also change sigma?
   }
-
   return scales;
 }
 
@@ -512,8 +506,6 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
   scales.r_Q     = 1.0;
   scales.r_sigma = 1.0;
   
-  //double temp_scale=1.0; //Apparently unused, to check why?
-  
   // try to get geo
   //   // if not in a TPC return default values
   double const truth_coords[3] = {truth_props.x, truth_props.y, truth_props.z};
@@ -521,103 +513,7 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
   if (curTPCGeomPtr == nullptr)
     return scales;
 
-  // get the plane number by the view
-  //auto const& plane_obj = wireReadout->Plane(curTPCGeomPtr->ID(), view);
-  //unsigned int plane = plane_obj.ID().Plane;
-  //Apparently unused, to check why?
-
-  //The type of flags will be modified for DUNE. Instead of rescaling per coordinate type, apply rescaing by effect type
-  /*if (applyXScale)
-  {
-    if (splines_Charge_X[plane] == nullptr || 
-        splines_Sigma_X [plane] == nullptr  )
-      throw cet::exception("WireModUtility")
-        << "Tried to apply X scale factor, but could not find splines. Check that you have set those in the utility.";
-    scales.r_Q     *= splines_Charge_X[plane]->Eval(truth_props.x);
-    scales.r_sigma *= splines_Sigma_X [plane]->Eval(truth_props.x);
-  }
-  
-  if (applyYZScale)
-  {
-    if (graph2Ds_Charge_YZ[plane] == nullptr || 
-        graph2Ds_Sigma_YZ [plane] == nullptr  )
-      throw cet::exception("WireModUtility")
-        << "Tried to apply YZ scale factor, but could not find graphs. Check that you have set those in the utility.";
-    temp_scale = graph2Ds_Charge_YZ[plane]->Interpolate(truth_props.z, truth_props.y);
-    if(temp_scale>0.001) scales.r_Q *= temp_scale;
-
-    temp_scale  = graph2Ds_Sigma_YZ [plane]->Interpolate(truth_props.z, truth_props.y);
-    if(temp_scale>0.001) scales.r_sigma *= temp_scale;
-  }
-
-  if (applyXZAngleScale)
-  {
-    if (splines_Charge_XZAngle[plane] == nullptr || 
-        splines_Sigma_XZAngle [plane] == nullptr  )
-      throw cet::exception("WireModUtility")
-        << "Tried to apply XZ-angle scale factor, but could not find splines. Check that you have set those in the utility.";
-    scales.r_Q     *= splines_Charge_XZAngle[plane]->Eval(ThetaXZ_PlaneRel(truth_props.dxdr, truth_props.dydr, truth_props.dzdr, plane_obj.ThetaZ()));
-    scales.r_sigma *= splines_Sigma_XZAngle [plane]->Eval(ThetaXZ_PlaneRel(truth_props.dxdr, truth_props.dydr, truth_props.dzdr, plane_obj.ThetaZ()));
-  }
-  if (applyYZAngleScale)
-  {
-    if (splines_Charge_YZAngle[plane] == nullptr || 
-        splines_Sigma_YZAngle [plane] == nullptr  )
-      throw cet::exception("WireModUtility")
-        << "Tried to apply YZ-angle scale factor, but could not find splines. Check that you have set those in the utility.";
-    scales.r_Q     *= splines_Charge_YZAngle[plane]->Eval(ThetaYZ_PlaneRel(truth_props.dxdr, truth_props.dydr, truth_props.dzdr, plane_obj.ThetaZ()));
-    scales.r_sigma *= splines_Sigma_YZAngle [plane]->Eval(ThetaYZ_PlaneRel(truth_props.dxdr, truth_props.dydr, truth_props.dzdr, plane_obj.ThetaZ()));
-  }
-
-  if (applydEdXScale)
-  {
-    if (splines_Charge_dEdX[plane] == nullptr || 
-        splines_Sigma_dEdX [plane] == nullptr  )
-      throw cet::exception("WireModUtility")
-        << "Tried to apply dEdX scale factor, but could not find splines. Check that you have set those in the utility.";
-    scales.r_Q     *= splines_Charge_dEdX[plane]->Eval(truth_props.dedr);
-    scales.r_sigma *= splines_Sigma_dEdX [plane]->Eval(truth_props.dedr);
-  }
-
-  if (applyXXZAngleScale)
-  {
-    if (graph2Ds_Charge_XXZAngle[plane] == nullptr || 
-        graph2Ds_Sigma_XXZAngle [plane] == nullptr  )
-      throw cet::exception("WireModUtility")
-        << "Tried to apply XXZAngle scale factor, but could not find graphs. Check that you have set those in the utility.";
-    temp_scale = graph2Ds_Charge_XXZAngle[plane]->Interpolate(truth_props.x, ThetaXZ_PlaneRel(truth_props.dxdr, truth_props.dydr, truth_props.dzdr, plane_obj.ThetaZ()));
-    if(temp_scale>0.001) scales.r_Q *= temp_scale;
-
-    temp_scale = graph2Ds_Sigma_XXZAngle [plane]->Interpolate(truth_props.x, ThetaXZ_PlaneRel(truth_props.dxdr, truth_props.dydr, truth_props.dzdr, plane_obj.ThetaZ()));
-    if(temp_scale>0.001) scales.r_sigma *= temp_scale;
-  }
-
-  if (applyXdQdXScale)
-  {
-    if (graph2Ds_Charge_XdQdX[plane] == nullptr || 
-        graph2Ds_Sigma_XdQdX [plane] == nullptr  )
-      throw cet::exception("WireModUtility")
-        << "Tried to apply XdQdX scale factor, but could not find graphs. Check that you have set those in the utility.";
-    temp_scale = graph2Ds_Charge_XdQdX[plane]->Interpolate(truth_props.x, truth_props.dqdr); 
-    if(temp_scale>0.001) scales.r_Q *= temp_scale;
-
-    temp_scale = graph2Ds_Sigma_XdQdX [plane]->Interpolate(truth_props.x, truth_props.dqdr); 
-    if(temp_scale>0.001) scales.r_sigma *= temp_scale;
-  }
-
-  if (applyXZAngledQdXScale)
-  {
-    if (graph2Ds_Charge_XZAngledQdX[plane] == nullptr || 
-        graph2Ds_Sigma_XZAngledQdX [plane] == nullptr  )
-      throw cet::exception("WireModUtility")
-        << "Tried to apply XZAngledQdX scale factor, but could not find graphs. Check that you have set those in the utility.";
-    temp_scale = graph2Ds_Charge_XZAngledQdX[plane]->Interpolate(ThetaXZ_PlaneRel(truth_props.dxdr, truth_props.dydr, truth_props.dzdr, plane_obj.ThetaZ()), truth_props.dqdr);
-    if(temp_scale>0.001) scales.r_Q *= temp_scale;
-
-    temp_scale = graph2Ds_Sigma_XZAngledQdX [plane]->Interpolate(ThetaXZ_PlaneRel(truth_props.dxdr, truth_props.dydr, truth_props.dzdr, plane_obj.ThetaZ()), truth_props.dqdr);
-    if(temp_scale>0.001) scales.r_sigma *= temp_scale;
-  }
-*/
+  //empty for now. Will then apply scaling for recombination, attenuation etc. here
   return scales;
 }
 
