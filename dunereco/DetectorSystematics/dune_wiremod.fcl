@@ -10,7 +10,7 @@ physics.producers.duneWiremod: {
              
   
   WireLabel:           "tpcrawdecoder:gauss"
-  HitLabel:            "gaushit"
+  #HitLabel:            "gaushit"
   EDepOrigLabel:       "IonAndScint"
   EDepShftLabel:       "largeant:LArG4DetectorServicevolTPCActiveOuter"
 
@@ -22,8 +22,25 @@ physics.producers.duneWiremod: {
  
   ElectronicsGainScale: 1.02
 
+
 }
 
+#physics.wiremod_path: [ duneWiremod, gaushit ]
+#physics.trigger_paths: [ wiremod_path, reco ]
 
-physics.wiremod_path: [ duneWiremod, gaushit ]
-physics.trigger_paths: [ wiremod_path, reco ]
+# --- NEW: clone gaushit and make it read Wiremod output ---
+physics.producers.gaushitWireMod: @local::physics.producers.gaushit
+physics.producers.gaushitWireMod.CalDataModuleLabel: "duneWiremod"
+
+physics.reco: [
+  duneWiremod,
+  gaushitWireMod #,
+#  spsolve,
+#  hitfd,
+#  rns
+]
+
+physics.trigger_paths: [ reco ]
+
+services.Geometry: @local::dune10kt_1x2x6_v5_refactored_geo
+services.AuxDetGeometry: @local::dune10kt_1x2x6_v5_refactored_auxdet_geo
