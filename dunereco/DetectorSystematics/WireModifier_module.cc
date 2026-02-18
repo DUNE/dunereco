@@ -78,7 +78,7 @@ namespace wiremod
   void WireModifier::reconfigure(fhicl::ParameterSet const& pset)
   {
     fWireLabel     = pset.get<art::InputTag>("WireLabel", "roifinder:PHYSCRATEDATATPCEE");
-    //fHitLabel      = pset.get<art::InputTag>("HitLabel", "gaushitTPCEE");
+    fHitLabel      = pset.get<art::InputTag>("HitLabel", "gaushit");
     fEDepOrigLabel = pset.get<art::InputTag>("EDepOrigLabel", "ionization");
     fEDepShftLabel = pset.get<art::InputTag>("EDepShftLabel", "largeant:TPCActive");
 
@@ -126,10 +126,10 @@ namespace wiremod
     evt.getByLabel(fEDepShftLabel, edepShiftedHandle);
     auto const& edepShiftedVec(*edepShiftedHandle);
 
-    /*art::Handle< std::vector<recob::Hit> > hitHandle;
+    art::Handle< std::vector<recob::Hit> > hitHandle;
     evt.getByLabel(fHitLabel, hitHandle);
     auto const& hitVec(*hitHandle);
-*/
+
     // put the new stuff somewhere
     std::unique_ptr<std::vector<recob::Wire      >> new_wires(new std::vector<recob::Wire      >());
 
@@ -158,10 +158,10 @@ namespace wiremod
     wmUtil.FillROIMatchedEdepMap(edepShiftedVec, wireVec, offset_ADC);
     MF_LOG_VERBATIM("WireModifier")
       << "Got Edep Map." << '\n'
-    /*  << "Get Hit Map";
+      << "Get Hit Map";
     wmUtil.FillROIMatchedHitMap(hitVec, wireVec);
     MF_LOG_VERBATIM("WireModifier")
-      << "Got Hit Map."*/;
+      << "Got Hit Map.";
 
     // loop-de-loop
     for(size_t i_w = 0; i_w < wireVec.size(); ++i_w)
@@ -204,7 +204,6 @@ namespace wiremod
       {
         MF_LOG_DEBUG("WireModifier")
           << "  Checking ROI " << i_r;
-
         auto const& range = wire.SignalROI().get_ranges()[i_r];
         sys::WireModUtility::ROI_Key_t roi_key(wire.Channel(), i_r);
 
@@ -236,7 +235,7 @@ namespace wiremod
           << "  Found " << matchedShiftedEdepPtrVec.size() << " shifted Edeps";
 
         std::vector<const recob::Hit*> matchedHitPtrVec;
-        /*auto it_hit_map = wmUtil.ROIMatchedHitMap.find(roi_key);
+        auto it_hit_map = wmUtil.ROIMatchedHitMap.find(roi_key);
         if( it_hit_map != wmUtil.ROIMatchedHitMap.end() ) {
           for( auto i_h : it_hit_map->second )
             matchedHitPtrVec.push_back(&hitVec[i_h]);
@@ -244,7 +243,7 @@ namespace wiremod
 
         MF_LOG_DEBUG("WireModifier")
           << "    Found " << matchedHitPtrVec.size() << " matching hits";
-*/
+
         auto roi_properties = wmUtil.CalcROIProperties(wire, i_r);
         MF_LOG_DEBUG("WireModifier")
           << "    ROI Properties:" << '\n'
