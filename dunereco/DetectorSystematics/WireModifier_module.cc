@@ -77,10 +77,10 @@ namespace wiremod
 
   void WireModifier::reconfigure(fhicl::ParameterSet const& pset)
   {
-    fWireLabel     = pset.get<art::InputTag>("WireLabel", "roifinder:PHYSCRATEDATATPCEE");
+    fWireLabel     = pset.get<art::InputTag>("WireLabel", "tpcrawdecoder:gauss");
     fHitLabel      = pset.get<art::InputTag>("HitLabel", "gaushit");
-    fEDepOrigLabel = pset.get<art::InputTag>("EDepOrigLabel", "ionization");
-    fEDepShftLabel = pset.get<art::InputTag>("EDepShftLabel", "largeant:TPCActive");
+    fEDepOrigLabel = pset.get<art::InputTag>("EDepOrigLabel", "IonAndScint");
+    fEDepShftLabel = pset.get<art::InputTag>("EDepShftLabel", "largeant:LArG4DetectorServicevolTPCActiveInner");
 
     // what, if anything, are we putting in the histogram files
     //     //fSaveHistsByChannel = pset.get<bool>("SaveByChannel", false);
