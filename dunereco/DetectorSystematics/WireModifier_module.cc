@@ -111,6 +111,7 @@ namespace wiremod
     // get a clock and det props for the event
     const detinfo::DetectorPropertiesData detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
 
+
     // get the things to do the things on
     art::Handle< std::vector<recob::Wire> > wireHandle;
     evt.getByLabel(fWireLabel, wireHandle);
@@ -136,6 +137,13 @@ namespace wiremod
 
     //TODO: modify for DUNE implementation! (correct flags, correct if loops etc.)
     sys::WireModUtility wmUtil(fGeometry, fWireReadout, detProp); // detector geometry & properties
+
+    //Get the simulated particles to get the PDG ID for debugging purposes
+    art::Handle<std::vector<simb::MCParticle>> mcPartHandle;
+    evt.getByLabel("largeant", mcPartHandle);  // adjust label if needed
+    auto const& mcParticles(*mcPartHandle);
+    wmUtil.MakeTrackIDtoPDGMap(mcParticles); //map is created and will be used to get Edeps PDG plot
+
     wmUtil.applyGainScale    = fGainScale;
     if (wmUtil.applyGainScale)
     {
@@ -199,7 +207,7 @@ namespace wiremod
 
       // keep track of if this wire is modified
       bool isModified = false;
-
+      
       for(size_t i_r = 0; i_r < wire.SignalROI().get_ranges().size(); ++i_r)
       {
         MF_LOG_DEBUG("WireModifier")
@@ -290,17 +298,17 @@ namespace wiremod
           if ( key_it != SubROIMatchedEdepMap.end() && key_it->second.size() > 0 ) {
             auto truth_vals = wmUtil.CalcPropertiesFromEdeps(key_it->second, offset_ADC);
 
-            if ( truth_vals.total_energy < 0.3 && subroi_prop.total_q > 80 ) {
+            /*if ( truth_vals.total_energy < 0.3 && subroi_prop.total_q > 80 ) {
               scale_vals.r_Q     = 1.;
               scale_vals.r_sigma = 1.;
             } 
-            else {
+            else {*/
               scale_vals = wmUtil.GetScaleValues(truth_vals, roi_properties);
               mf::LogDebug("WireModifier")
                 << "Scaling! Q scale: " << scale_vals.r_Q
                 << "     sigma scale: " << scale_vals.r_sigma;
               isModified = true;
-            }
+            //}
           }
           else {
             scale_vals.r_Q     = 1.;
@@ -309,7 +317,6 @@ namespace wiremod
 
           SubROIMatchedScalesMap[key] = scale_vals;
         }
-
         wmUtil.ModifyROI(modified_data, roi_properties, subROIPropVec, SubROIMatchedScalesMap);
         new_rois     .add_range(roi_properties.begin, modified_data);
       }
@@ -370,7 +377,6 @@ namespace wiremod
             << "             and " << newWireHist_toSave->GetName();
         }
       }
-
     } // end loop over wires
 
     evt.put(std::move(new_wires));
