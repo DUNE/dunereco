@@ -3,6 +3,7 @@
 # change process name, to be able to rerun it
 process_name: reco1Again
 
+
 physics.producers.duneWiremod: {
 
   module_type: "WireModifier"
@@ -10,9 +11,9 @@ physics.producers.duneWiremod: {
              
   
   WireLabel:           "tpcrawdecoder:gauss"
-  #HitLabel:            "gaushit"
+  HitLabel:            "gaushit"
   EDepOrigLabel:       "IonAndScint"
-  EDepShftLabel:       "largeant:LArG4DetectorServicevolTPCActiveOuter"
+  EDepShftLabel:       "largeant:LArG4DetectorServicevolTPCActiveInner"
 
   # Use this for applying an offset or not.  Default is to not use an offset (the BNB).  Using an offset is for the NuMI systematics.
   ApplyAdditionalTickOffset: false
@@ -20,7 +21,7 @@ physics.producers.duneWiremod: {
 
   ApplyGainScale: true  
  
-  ElectronicsGainScale: 1.02
+  ElectronicsGainScale: 2.00
 
 
 }
@@ -33,6 +34,7 @@ physics.producers.gaushitWireMod: @local::physics.producers.gaushit
 physics.producers.gaushitWireMod.CalDataModuleLabel: "duneWiremod"
 
 physics.reco: [
+  gaushit,
   duneWiremod,
   gaushitWireMod #,
 #  spsolve,
