@@ -1,5 +1,21 @@
 #include "WireModUtility.hh"
 #include "lardataalg/DetectorInfo/DetectorPropertiesData.h"
+#include "TCanvas.h"
+#include "TH2F.h"
+#include "TH1F.h"
+#include "TStyle.h"
+
+
+//For debugging purposes
+//--- MakeTrackIDtoPDGMap ---
+void sys::WireModUtility::MakeTrackIDtoPDGMap(
+        const std::vector<simb::MCParticle>& mcParticles)
+{
+    trackID_to_PDG.clear();
+    for (const auto& p : mcParticles) {
+        trackID_to_PDG[p.TrackId()] = p.PdgCode();
+    }
+}
 
 //--- CalcROIProperties ---
 sys::WireModUtility::ROIProperties_t sys::WireModUtility::CalcROIProperties(recob::Wire const& wire, size_t const& roi_idx)
@@ -57,25 +73,30 @@ sys::WireModUtility::GetTargetROIs(sim::SimEnergyDeposit const& shifted_edep, do
 
   geo::TPCGeo const* curTPCGeomPtr = geometry->PositionToTPCptr(shifted_edep.MidPoint());
   if (curTPCGeomPtr == nullptr)
-  return target_roi_vec;
-
+  {
+    return target_roi_vec;
+  }
 // DUNE_MOD: Iterate<PlaneGeo> assumes plane ordering compatible with SBN.
 // // Verify plane indexing and orientation in DUNE.
   for (auto const& plane : wireReadout->Iterate<geo::PlaneGeo>(curTPCGeomPtr->ID())) {
 
     int wireNumber = int(0.5 + plane.WireCoordinate(shifted_edep.MidPoint()));
     if ((wireNumber < 0) || (wireNumber >= (int)plane.Nwires()))
+    {
       continue;
+    }
 
     geo::WireID edep_wireID = plane.NearestWireID(shifted_edep.MidPoint());
 
     // DUNE_MOD: planeXInWindow and planeXToTick rely on detector timing model.
     // // Confirm tickOffset and drift/timing calibration in DUNE.
     if (planeXInWindow(shifted_edep.X(), plane, *curTPCGeomPtr, offset + tickOffset))
+    {
       target_roi_vec.emplace_back(
         wireReadout->PlaneWireToChannel(edep_wireID),
         std::round(planeXToTick(shifted_edep.X(), plane, *curTPCGeomPtr, offset + tickOffset))
     );
+    }
   }
 
   return target_roi_vec;
@@ -105,33 +126,179 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
   // DUNE_MOD: Assumes channel numbering consistent between geometry and wireVec.
   ROIMatchedEdepMap.clear();
 
+  
+
   std::unordered_map<unsigned int,unsigned int> wireChannelMap;
   for (size_t i_w = 0; i_w < wireVec.size(); ++i_w)
     wireChannelMap[wireVec[i_w].Channel()] = i_w;
 
+  event_counter++;
+  float xmin=1e6, xmax=-1e6, zmin=1e6, zmax=1e-6;
+
+
+  TCanvas* c1 = new TCanvas("c1","Edep XZ Display",800,600);
+  TH2F* hMatched = new TH2F("hMatched","Matched Edeps X vs Z;X [cm];Z [cm]", 1500, -350, 350, 3000, 0, 1500);  
+  TH2F* hUnMatched = new TH2F("hUnMatched","Non matched Edeps X vs Z;X [cm];Z [cm]", 1500, -350, 350, 3000, 0, 1500);
+  TH1F* hMatchedE = new TH1F("hMatchedE","Matched Edeps energy; Energy; Counts", 100, 0, 2);
+  TH1F* hUnMatchedE = new TH1F("hUnMatchedE","Non matched Edeps energy; Energy; Counts", 100, 0, 2);
+  TH1F* hMatchedPDG = new TH1F("hMatchedPDG", "Matched edeps PDG code; PDG code; Counts",12, -0.5, 11.5);
+  TH1F* hUnMatchedPDG = new TH1F("hUnMatchedPDG", "Non matched edeps PDG code; PDG code; Counts",12, -0.5, 11.5);
+
+  hMatchedPDG->GetXaxis()->SetBinLabel(1, "PDG=0");
+  hMatchedPDG->GetXaxis()->SetBinLabel(2, "e^{#pm}");
+  hMatchedPDG->GetXaxis()->SetBinLabel(3, "#mu^{#pm}");
+  hMatchedPDG->GetXaxis()->SetBinLabel(10, "#gamma");
+  hMatchedPDG->GetXaxis()->SetBinLabel(4, "p");
+  hMatchedPDG->GetXaxis()->SetBinLabel(5, "n");
+  hMatchedPDG->GetXaxis()->SetBinLabel(6, "#pi^{#pm}");
+  hMatchedPDG->GetXaxis()->SetBinLabel(7, "#pi^{0}");
+  hMatchedPDG->GetXaxis()->SetBinLabel(8, "K^{#pm}");
+  hMatchedPDG->GetXaxis()->SetBinLabel(9, "K^{0}");
+  hMatchedPDG->GetXaxis()->SetBinLabel(11, "Nuclei");
+  hMatchedPDG->GetXaxis()->SetBinLabel(12,"Other");
+
+  hUnMatchedPDG->GetXaxis()->SetBinLabel(1, "PDG=0");
+  hUnMatchedPDG->GetXaxis()->SetBinLabel(2, "e^{#pm}");
+  hUnMatchedPDG->GetXaxis()->SetBinLabel(3, "#mu^{#pm}");
+  hUnMatchedPDG->GetXaxis()->SetBinLabel(10, "#gamma");
+  hUnMatchedPDG->GetXaxis()->SetBinLabel(4, "p");
+  hUnMatchedPDG->GetXaxis()->SetBinLabel(5, "n");
+  hUnMatchedPDG->GetXaxis()->SetBinLabel(6, "#pi^{#pm}");
+  hUnMatchedPDG->GetXaxis()->SetBinLabel(7, "#pi^{0}");
+  hUnMatchedPDG->GetXaxis()->SetBinLabel(8, "K^{#pm}");
+  hUnMatchedPDG->GetXaxis()->SetBinLabel(9, "K^{0}");
+  hUnMatchedPDG->GetXaxis()->SetBinLabel(11, "Nuclei");
+  hUnMatchedPDG->GetXaxis()->SetBinLabel(12,"Other");
+
+  hMatched->SetMarkerStyle(2);
+  hMatched->SetMarkerColor(kBlue);
+  hMatched->SetStats(0);
+  hMatchedE->SetLineColor(kBlue);
+  hMatchedE->SetStats(0);
+  hMatchedPDG->SetLineColor(kBlue);
+  hMatchedPDG->SetStats(0);
+
+  hUnMatched->SetMarkerStyle(5);
+  hUnMatched->SetMarkerColor(kRed);
+  hUnMatched->SetStats(0);
+  hUnMatchedE->SetLineColor(kRed);
+  hUnMatchedE->SetStats(0);
+  hUnMatchedPDG->SetLineColor(kRed);
+  hUnMatchedPDG->SetStats(0);
+
   for (size_t i_e = 0; i_e < edepVec.size(); ++i_e)
   {
+    bool isMatched=false;
+    auto const& edep = edepVec[i_e];
+    
+    int trackID=std::abs(edep.TrackID());
+    int pdg=0, pdg_rebin=11;
+    auto it = trackID_to_PDG.find(trackID);
+        if (it != trackID_to_PDG.end()) pdg = it->second; 
+    if (pdg==-11 || pdg==11) pdg_rebin=1; //electron, positron
+    if (pdg==-13 || pdg==13) pdg_rebin=2; //muons
+    if (pdg==-2212 || pdg==2212) pdg_rebin=3; //protons
+    if (pdg==-2112 || pdg==2112) pdg_rebin=4; //neutrons
+    if (pdg==-211 || pdg==211) pdg_rebin=5; //charged pions
+    if (pdg==-111 || pdg==111) pdg_rebin=6; //neutral pions
+    if (pdg==-321 || pdg==321) pdg_rebin=7; //charged kaons
+    if (pdg==310 || pdg==130) pdg_rebin=8; //neutral kaons
+    if (pdg==22) pdg_rebin=9; //gamma
+    if (pdg>1e9) pdg_rebin=10; //nuclei
+    if (pdg==0) pdg_rebin=0;
     auto target_rois = GetTargetROIs(edepVec[i_e], offset);
-
     for (auto const& target_roi : target_rois)
     {
+      
       if (wireChannelMap.find(target_roi.first) == wireChannelMap.end())
+      {  
         continue;
-
+      }
       auto const& target_wire = wireVec.at(wireChannelMap[target_roi.first]);
 
-      if (not target_wire.SignalROI().is_valid() ||
-        target_wire.SignalROI().empty() ||
-        target_wire.SignalROI().n_ranges() == 0 ||
-        target_wire.SignalROI().size() <= target_roi.second ||
-        target_wire.SignalROI().is_void(target_roi.second))
+      if (not target_wire.SignalROI().is_valid())
+      {
+        //std::cout<<"invalid Signal ROI for this wire"<<std::endl;
         continue;
+      }
+      if (target_wire.SignalROI().empty())
+      {
+        //std::cout<<"empty signal ROI for this wire"<<std::endl;
+        continue;
+      }
+      if (target_wire.SignalROI().n_ranges() == 0)
+      {
+        /*std::cout<<"0 ranges for this wire's signal ROI"<<std::endl;
+        for (int delta = -2; delta <= 2; ++delta) {
+          int neigh_channel = target_roi.first + delta;
+          auto const& neigh_wire = wireVec.at(wireChannelMap[neigh_channel]);  // however you access wires
+          if (neigh_wire.SignalROI().n_ranges() >0)
+          {
+            std::cout<<"Neighbour channel at "<<delta<<" has signal ROIs"<<std::endl;
+          }
+        }*/
+       
+        continue;
+      }
+
+
+      if (target_wire.SignalROI().size() <= target_roi.second)
+      {
+        //std::cout<<"signa ROI size smaller than target_roi tick"<<std::endl;
+        continue;
+      }
+      if (target_wire.SignalROI().is_void(target_roi.second))
+      {
+        continue;
+      }
 
       auto range_number = target_wire.SignalROI().find_range_iterator(target_roi.second) - target_wire.SignalROI().begin_range();
     
       ROIMatchedEdepMap[std::make_pair(target_wire.Channel(),range_number)].push_back(i_e);
+      isMatched=true;
+    }
+    if (edep.X()>xmax) xmax=edep.X();
+    else if(edep.X()<xmin) xmin=edep.X();
+    if (edep.Z()>zmax) zmax=edep.Z();
+    else if(edep.Z()<zmin) zmin=edep.Z();    
+    if (isMatched){
+      hMatched->Fill(edep.X(), edep.Z());
+      hMatchedE->Fill(edep.Energy());
+      hMatchedPDG->Fill(pdg_rebin);
+      //std::cout<<"matched edep PDG: "<<pdg<<std::endl;
+    }
+    else{
+      hUnMatched->Fill(edep.X(), edep.Z()); 
+      hUnMatchedE->Fill(edep.Energy());
+      hUnMatchedPDG->Fill(pdg_rebin);
+      //std::cout<<"unmatched edep PDG: "<<pdg<<std::endl;
     }
   }
+
+  std::cout<<"xmin = "<<xmin<<", xmax = "<<xmax<<", zmin = "<<zmin<<", zmax = "<<zmax<<std::endl;
+
+  hMatched->GetXaxis()->SetRangeUser(xmin-5, xmax-5);
+  hMatched->GetYaxis()->SetRangeUser(zmin-5, zmax-5);
+  hUnMatched->GetXaxis()->SetRangeUser(xmin-5, xmax-5);
+  hUnMatched->GetYaxis()->SetRangeUser(zmin-5, zmax-5);
+
+  std::ostringstream filename;
+  filename << "Edep_XZ_event_" << event_counter << ".pdf";
+  std::string fname = filename.str(); 
+
+  hMatched->Draw("P");
+  hUnMatched->Draw("Psame");
+  c1->SaveAs((fname+"(").c_str());
+  
+  hMatchedE->Draw();
+  hUnMatchedE->Draw("same");
+  c1->SaveAs(fname.c_str());
+
+  c1->SetLogy();
+  hMatchedPDG->Draw();
+  hUnMatchedPDG->Draw("same");
+  c1->SaveAs((fname+")").c_str());
+  delete c1;
 }
 
 // DUNE_MOD: Remaining functions follow the same pattern.

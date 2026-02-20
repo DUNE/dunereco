@@ -28,7 +28,7 @@ namespace sys {
       const geo::WireReadoutGeom* wireReadout;            // new for LarSoft v10
       const detinfo::DetectorPropertiesData& detPropData; // save the detector property data
       bool applyGainScale; //for electronics gain systematics
-      double gainScale;
+      double lifetime_var; //new lifetime value for given variation, in microseconds
       double readoutWindowTicks;                          // how many ticks are in the readout window?
       double tickOffset;                                  // do we want an offset in the ticks?
 
@@ -42,6 +42,9 @@ namespace sys {
       std::vector<TGraph2D*> graph2Ds_Charge_XZAngledQdX; // the graphs for charge correction in XZ angle vs dQ/dX
       std::vector<TGraph2D*> graph2Ds_Sigma_XZAngledQdX;  // the graphs for width correction in XZ angle vs dQ/dX
 
+      //for debugging purposes: adding a map between the trackID and the PDG code
+      std::map<int,int> trackID_to_PDG;
+      unsigned int event_counter; 
    
     //constructor
       WireModUtility(const geo::GeometryCore* geom, 
@@ -56,7 +59,8 @@ namespace sys {
         applyGainScale(arg_ApplyGainScale),
         gainScale(arg_gainScale),
         readoutWindowTicks(detProp.ReadOutWindowSize()),                                               // the default A2795 (ICARUS TPC readout board) readout window is 4096 samples
-        tickOffset(arg_TickOffset)                                                                     // tick offset is for MC truth, default to zero and set only as necessary
+        tickOffset(arg_TickOffset),                                                                     // tick offset is for MC truth, default to zero and set only as necessary
+        event_counter(0)
       {
       }
       
@@ -106,7 +110,7 @@ namespace sys {
         float tick_max;
         float y;
         float z;
-        //What are those? I guess r is the coordiante along the track?
+        //Direction cosines
         double dxdr;
         double dydr;
         double dzdr;
@@ -117,6 +121,7 @@ namespace sys {
     
       std::map< ROI_Key_t,std::vector<size_t> > ROIMatchedEdepMap;
       std::map< ROI_Key_t,std::vector<size_t> > ROIMatchedHitMap;
+
 
       //useful functions
       //geometry functions
@@ -169,6 +174,8 @@ namespace sys {
       }
 
       //Defined in the .cc
+      void MakeTrackIDtoPDGMap(const std::vector<simb::MCParticle>& mcParticles);      
+
       ROIProperties_t CalcROIProperties(recob::Wire const&, size_t const&);
 
       std::vector<std::pair<unsigned int, unsigned int>> GetTargetROIs(sim::SimEnergyDeposit const&, double offset);
