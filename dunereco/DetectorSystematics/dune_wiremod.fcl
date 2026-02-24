@@ -14,14 +14,16 @@ physics.producers.duneWiremod: {
   HitLabel:            "gaushit"
   EDepOrigLabel:       "IonAndScint"
   EDepShftLabel:       "largeant:LArG4DetectorServicevolTPCActiveInner"
-
+  #EDepShftLabel:       "largeant:LArG4DetectorServicevolTPCActiveInner1" #add 1 when using v10 of larsoft?
   # Use this for applying an offset or not.  Default is to not use an offset (the BNB).  Using an offset is for the NuMI systematics.
   ApplyAdditionalTickOffset: false
 
 
-  ApplyGainScale: true  
- 
+  ApplyGainScale: false 
   ElectronicsGainScale: 2.00
+
+  ApplyLifetimeVar: true
+  LifetimeVar: 11440 # in microseconds
 
 
 }
@@ -43,6 +45,6 @@ physics.reco: [
 ]
 
 physics.trigger_paths: [ reco ]
-
+# for running on v5 geometry
 services.Geometry: @local::dune10kt_1x2x6_v5_refactored_geo
 services.AuxDetGeometry: @local::dune10kt_1x2x6_v5_refactored_auxdet_geo
