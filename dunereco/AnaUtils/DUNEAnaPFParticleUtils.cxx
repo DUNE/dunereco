@@ -190,6 +190,26 @@ bool DUNEAnaPFParticleUtils::IsShower(const art::Ptr<recob::PFParticle> &pPartic
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
 
+bool DUNEAnaPFParticleUtils::HasTrack(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &particleLabel, const std::string &trackLabel)
+{
+    // This function needs to fail if GetTrack would fail
+    const std::vector<art::Ptr<recob::Track>> theseTracks = DUNEAnaPFParticleUtils::GetAssocProductVector<recob::Track>(pParticle,evt,particleLabel,trackLabel);
+
+    return !theseTracks.empty();
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
+bool DUNEAnaPFParticleUtils::HasShower(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &particleLabel, const std::string &showerLabel)
+{
+    // This function needs to fail if GetShower would fail
+    const std::vector<art::Ptr<recob::Shower>> theseShowers = DUNEAnaPFParticleUtils::GetAssocProductVector<recob::Shower>(pParticle,evt,particleLabel,showerLabel);
+
+    return !theseShowers.empty();
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
 bool DUNEAnaPFParticleUtils::IsClearCosmic(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &particleLabel)
 {
     const art::Ptr<larpandoraobj::PFParticleMetadata> pMetadata = DUNEAnaPFParticleUtils::GetMetadata(pParticle,evt,particleLabel);
