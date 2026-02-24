@@ -28,6 +28,8 @@ namespace sys {
       const geo::WireReadoutGeom* wireReadout;            // new for LarSoft v10
       const detinfo::DetectorPropertiesData& detPropData; // save the detector property data
       bool applyGainScale; //for electronics gain systematics
+      double gainScale;
+      bool applyLifetimeVar;
       double lifetime_var; //new lifetime value for given variation, in microseconds
       double readoutWindowTicks;                          // how many ticks are in the readout window?
       double tickOffset;                                  // do we want an offset in the ticks?

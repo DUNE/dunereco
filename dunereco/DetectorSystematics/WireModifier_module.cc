@@ -62,6 +62,8 @@ namespace wiremod
       art::InputTag fEDepShftLabel; // which are the shifted EDeps?
       bool fApplyGainScale;
       double fGainScale;
+      bool fApplyLifetimeVar;
+      double fLifetimeVar;
       //The three following are probably not needed
       bool fSaveHistsByChannel;     // save modified signals by channel?
       bool fSaveHistsByWire;        // save modified signals by wire?
@@ -95,6 +97,11 @@ namespace wiremod
     if (fApplyGainScale)
     {
       fGainScale = pset.get<double>("ElectronicsGainScale");
+    }
+    fApplyLifetimeVar    = pset.get<bool>("ApplyLifetimeVar"   , false);
+    if (fApplyLifetimeVar)
+    {
+      fLifetimeVar = pset.get<double>("LifetimeVar");
     }
     // we make these things
     produces<std::vector<recob::Wire      >>();
@@ -139,22 +146,30 @@ namespace wiremod
     sys::WireModUtility wmUtil(fGeometry, fWireReadout, detProp); // detector geometry & properties
 
     //Get the simulated particles to get the PDG ID for debugging purposes
-    art::Handle<std::vector<simb::MCParticle>> mcPartHandle;
+    /*art::Handle<std::vector<simb::MCParticle>> mcPartHandle;
     evt.getByLabel("largeant", mcPartHandle);  // adjust label if needed
     auto const& mcParticles(*mcPartHandle);
     wmUtil.MakeTrackIDtoPDGMap(mcParticles); //map is created and will be used to get Edeps PDG plot
+    */
 
-    wmUtil.applyGainScale    = fGainScale;
+    wmUtil.applyGainScale    = fApplyGainScale;
     if (wmUtil.applyGainScale)
     {
+      std::cout<<"Will apply gain scale"<<std::endl;
       wmUtil.gainScale = fGainScale;
     }
-
+    wmUtil.applyLifetimeVar    = fApplyLifetimeVar;
+    if (wmUtil.applyLifetimeVar)
+    {
+      std::cout<<"Will apply lifetime variation scaling"<<std::endl;
+      wmUtil.lifetime_var = fLifetimeVar;
+    }
     // add some debugging here
     MF_LOG_VERBATIM("WireModifier")
       << "DUMP CONFIG:" << '\n'
       << "---------------------------------------------------" << '\n'
       << "  applyGainScale:     " << wmUtil.applyGainScale     << '\n'
+      << "  applyLifetimeVar:     " << wmUtil.applyLifetimeVar     << '\n'
       << "  readoutWindowTicks: " << wmUtil.readoutWindowTicks << '\n'
       << "  tickOffset:         " << wmUtil.tickOffset         << '\n'
       << "---------------------------------------------------";

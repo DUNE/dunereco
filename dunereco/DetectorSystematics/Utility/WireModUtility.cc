@@ -133,7 +133,7 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
     wireChannelMap[wireVec[i_w].Channel()] = i_w;
 
   event_counter++;
-  float xmin=1e6, xmax=-1e6, zmin=1e6, zmax=1e-6;
+  /*float xmin=1e6, xmax=-1e6, zmin=1e6, zmax=1e-6;
 
 
   TCanvas* c1 = new TCanvas("c1","Edep XZ Display",800,600);
@@ -185,10 +185,10 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
   hUnMatchedE->SetStats(0);
   hUnMatchedPDG->SetLineColor(kRed);
   hUnMatchedPDG->SetStats(0);
-
+*/
   for (size_t i_e = 0; i_e < edepVec.size(); ++i_e)
   {
-    bool isMatched=false;
+    /*bool isMatched=false;
     auto const& edep = edepVec[i_e];
     
     int trackID=std::abs(edep.TrackID());
@@ -205,7 +205,7 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
     if (pdg==310 || pdg==130) pdg_rebin=8; //neutral kaons
     if (pdg==22) pdg_rebin=9; //gamma
     if (pdg>1e9) pdg_rebin=10; //nuclei
-    if (pdg==0) pdg_rebin=0;
+    if (pdg==0) pdg_rebin=0;*/
     auto target_rois = GetTargetROIs(edepVec[i_e], offset);
     for (auto const& target_roi : target_rois)
     {
@@ -255,9 +255,9 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
       auto range_number = target_wire.SignalROI().find_range_iterator(target_roi.second) - target_wire.SignalROI().begin_range();
     
       ROIMatchedEdepMap[std::make_pair(target_wire.Channel(),range_number)].push_back(i_e);
-      isMatched=true;
+      //isMatched=true;
     }
-    if (edep.X()>xmax) xmax=edep.X();
+    /*if (edep.X()>xmax) xmax=edep.X();
     else if(edep.X()<xmin) xmin=edep.X();
     if (edep.Z()>zmax) zmax=edep.Z();
     else if(edep.Z()<zmin) zmin=edep.Z();    
@@ -272,10 +272,10 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
       hUnMatchedE->Fill(edep.Energy());
       hUnMatchedPDG->Fill(pdg_rebin);
       //std::cout<<"unmatched edep PDG: "<<pdg<<std::endl;
-    }
+    }*/
   }
 
-  std::cout<<"xmin = "<<xmin<<", xmax = "<<xmax<<", zmin = "<<zmin<<", zmax = "<<zmax<<std::endl;
+  /*std::cout<<"xmin = "<<xmin<<", xmax = "<<xmax<<", zmin = "<<zmin<<", zmax = "<<zmax<<std::endl;
 
   hMatched->GetXaxis()->SetRangeUser(xmin-5, xmax-5);
   hMatched->GetYaxis()->SetRangeUser(zmin-5, zmax-5);
@@ -298,7 +298,7 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
   hMatchedPDG->Draw();
   hUnMatchedPDG->Draw("same");
   c1->SaveAs((fname+")").c_str());
-  delete c1;
+  delete c1;*/
 }
 
 // DUNE_MOD: Remaining functions follow the same pattern.
@@ -680,7 +680,14 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
   if (curTPCGeomPtr == nullptr)
     return scales;
 
-  //empty for now. Will then apply scaling for recombination, attenuation etc. here
+  if (applyLifetimeVar)
+  {
+    double drift_velocity = detPropData.DriftVelocity();
+    double t = truth_coords[0] / drift_velocity;
+    double lifetime_nom = detPropData.ElectronLifetime();
+    double scale_lifetime = exp(-t*(1./lifetime_var-1./lifetime_nom));
+    scales.r_Q *= scale_lifetime;
+  }
   return scales;
 }
 
