@@ -163,33 +163,6 @@ art::Ptr<larpandoraobj::PFParticleMetadata> DUNEAnaPFParticleUtils::GetMetadata(
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
 
-bool DUNEAnaPFParticleUtils::IsTrack(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &particleLabel, const std::string &trackLabel)
-{
-    // This function needs to fail if GetTrack would fail
-    const std::vector<art::Ptr<recob::Track>> theseTracks = DUNEAnaPFParticleUtils::GetAssocProductVector<recob::Track>(pParticle,evt,particleLabel,trackLabel);
-    if (theseTracks.empty())
-    {
-        return false;
-    }
-
-    return lar_pandora::LArPandoraHelper::IsTrack(pParticle);
-}
-
-//-----------------------------------------------------------------------------------------------------------------------------------------
-
-bool DUNEAnaPFParticleUtils::IsShower(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &particleLabel, const std::string &showerLabel)
-{
-    const std::vector<art::Ptr<recob::Shower>> theseShowers = DUNEAnaPFParticleUtils::GetAssocProductVector<recob::Shower>(pParticle,evt,particleLabel,showerLabel);
-    if (theseShowers.empty())
-    {
-        return false;
-    }
-
-    return lar_pandora::LArPandoraHelper::IsShower(pParticle);
-}
-
-//-----------------------------------------------------------------------------------------------------------------------------------------
-
 bool DUNEAnaPFParticleUtils::HasTrack(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &particleLabel, const std::string &trackLabel)
 {
     // This function needs to fail if GetTrack would fail
@@ -206,6 +179,26 @@ bool DUNEAnaPFParticleUtils::HasShower(const art::Ptr<recob::PFParticle> &pParti
     const std::vector<art::Ptr<recob::Shower>> theseShowers = DUNEAnaPFParticleUtils::GetAssocProductVector<recob::Shower>(pParticle,evt,particleLabel,showerLabel);
 
     return !theseShowers.empty();
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
+bool DUNEAnaPFParticleUtils::IsTrack(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &particleLabel, const std::string &trackLabel)
+{
+    if (!DUNEAnaPFParticleUtils::HasTrack(pParticle, evt, particleLabel, trackLabel))
+        return false;
+
+    return lar_pandora::LArPandoraHelper::IsTrack(pParticle);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------
+
+bool DUNEAnaPFParticleUtils::IsShower(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &particleLabel, const std::string &showerLabel)
+{
+    if (!DUNEAnaPFParticleUtils::HasShower(pParticle, evt, particleLabel, showerLabel))
+        return false;
+
+    return lar_pandora::LArPandoraHelper::IsShower(pParticle);
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------

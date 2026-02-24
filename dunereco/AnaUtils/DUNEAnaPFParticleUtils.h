@@ -162,6 +162,30 @@ public:
     static art::Ptr<larpandoraobj::PFParticleMetadata> GetMetadata(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &label);
 
     /**
+    * @brief Check if this particle has an associated track object
+    *
+    * @param pParticle particle for which we want the track-like confirmation
+    * @param evt is the underlying art event
+    * @param particleLabel is the label for the PFParticle producer
+    * @param trackLabel is the label for the track producer
+    *
+    * @return bool stating if the object has an associated track object
+    */
+    static bool HasTrack(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &pParticleLabel, const std::string &trackLabel);
+
+    /**
+    * @brief Check if this particle has an associated shower object
+    *
+    * @param pParticle particle for which we want the shower-like confirmation
+    * @param evt is the underlying art event
+    * @param particleLabel is the label for the PFParticle producer
+    * @param showerLabel is the label for the shower producer
+    *
+    * @return bool stating if the object has an associated shower object
+    */
+    static bool HasShower(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &pParticleLabel, const std::string &showerLabel);
+
+    /**
     * @brief Check if this particle is a track
     *
     * @param pParticle particle for which we want the track-like confirmation
@@ -184,30 +208,6 @@ public:
     * @return bool stating if the object is shower-like
     */
     static bool IsShower(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &pParticleLabel, const std::string &showerLabel);
-
-    /**
-    * @brief Check if this particle has an associated track
-    *
-    * @param pParticle particle for which we want the track-like confirmation
-    * @param evt is the underlying art event
-    * @param particleLabel is the label for the PFParticle producer
-    * @param trackLabel is the label for the track producer
-    *
-    * @return bool stating if the object is track-like
-    */
-    static bool HasTrack(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &pParticleLabel, const std::string &trackLabel);
-
-    /**
-    * @brief Check if this particle has an associated shower
-    *
-    * @param pParticle particle for which we want the shower-like confirmation
-    * @param evt is the underlying art event
-    * @param particleLabel is the label for the PFParticle producer
-    * @param showerLabel is the label for the shower producer
-    *
-    * @return bool stating if the object is shower-like
-    */
-    static bool HasShower(const art::Ptr<recob::PFParticle> &pParticle, const art::Event &evt, const std::string &pParticleLabel, const std::string &showerLabel);
 
     /**
     * @brief Check if this particle is a clear cosmic ray
