@@ -83,7 +83,7 @@ namespace ctp
   
     std::vector<std::vector<float>> netInputs;
 
-    if(!dune_ana::DUNEAnaPFParticleUtils::IsTrack(part,evt,fParticleLabel,fTrackLabel)){
+    if(!dune_ana::DUNEAnaPFParticleUtils::HasTrack(part,evt,fParticleLabel,fTrackLabel)){
 //      std::cout << "CTPHelper: this PFParticle is not track-like... returning empty vector." << std::endl;
       return std::vector<std::vector<float>>();
     }
@@ -283,8 +283,8 @@ namespace ctp
     std::vector<art::Ptr<recob::PFParticle>> children = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(part,evt,fParticleLabel);
 
     for(const art::Ptr<recob::PFParticle> child : children){
-      nTrack += dune_ana::DUNEAnaPFParticleUtils::IsTrack(child,evt,fParticleLabel,fTrackLabel);
-      nShower += dune_ana::DUNEAnaPFParticleUtils::IsShower(child,evt,fParticleLabel,fShowerLabel);
+      nTrack += dune_ana::DUNEAnaPFParticleUtils::HasTrack(child,evt,fParticleLabel,fTrackLabel);
+      nShower += dune_ana::DUNEAnaPFParticleUtils::HasShower(child,evt,fParticleLabel,fShowerLabel);
       nGrand += child->NumDaughters();
     }
 //    std::cout << "Children = " << children.size() << "( " << nTrack << ", " << nShower << ") and grand children = " << nGrand << std::endl;

@@ -174,7 +174,7 @@ void CTPEvaluator::produce(art::Event &evt)
       
         // Get the track if this particle is track-like
         unsigned int nCaloPoints = 0;
-        if (dune_ana::DUNEAnaPFParticleUtils::IsTrack(particle,evt,fParticleLabel,trkLabel))
+        if (dune_ana::DUNEAnaPFParticleUtils::HasTrack(particle,evt,fParticleLabel,trkLabel))
         {
             const art::Ptr<recob::Track> trk = dune_ana::DUNEAnaPFParticleUtils::GetTrack(particle,evt,fParticleLabel,trkLabel);
             const std::string caloLabel = fHelperPars.get<std::string>("CalorimetryLabel");
