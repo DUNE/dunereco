@@ -85,8 +85,8 @@ namespace wiremod
     fEDepShftLabel = pset.get<art::InputTag>("EDepShftLabel", "largeant:LArG4DetectorServicevolTPCActiveInner");
 
     // what, if anything, are we putting in the histogram files
-    //     //fSaveHistsByChannel = pset.get<bool>("SaveByChannel", false);
-    fSaveHistsByChannel = pset.get<bool>("SaveByChannel", true);
+    fSaveHistsByChannel = pset.get<bool>("SaveByChannel", false);
+    //fSaveHistsByChannel = pset.get<bool>("SaveByChannel", true);
     fSaveHistsByWire    = pset.get<bool>("SaveByWire"   , false);
     fIsData             = pset.get<bool>("IsData"       , false);
 
