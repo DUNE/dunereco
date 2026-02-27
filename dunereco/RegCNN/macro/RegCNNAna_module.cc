@@ -728,7 +728,7 @@ art::Ptr<recob::Track> myana::RegCNNAna::GetLongestTrack(const art::Event &event
   double longestLength(std::numeric_limits<double>::lowest());
   for (const art::Ptr<recob::PFParticle> &particle : particles) {
 // Get the track if this particle is track-like
-if (dune_ana::DUNEAnaPFParticleUtils::IsTrack(particle, event, fParticleLabel, fTrackLabel)) {
+if (dune_ana::DUNEAnaPFParticleUtils::HasTrack(particle, event, fParticleLabel, fTrackLabel)) {
 const art::Ptr<recob::Track> trk = dune_ana::DUNEAnaPFParticleUtils::GetTrack(particle, event, fParticleLabel, fTrackLabel);
 const double length(trk->Length());
 if (length-longestLength > std::numeric_limits<double>::epsilon()) {
@@ -777,7 +777,7 @@ art::Ptr<recob::Shower> myana::RegCNNAna::GetHighestChargeShower(detinfo::Detect
   double maxCharge(std::numeric_limits<double>::lowest());
   for (const art::Ptr<recob::PFParticle> &particle : particles) {
 // Get the shower if this particle is shower-like
-if (dune_ana::DUNEAnaPFParticleUtils::IsShower(particle, event, fParticleLabel, fShowerLabel)) {
+if (dune_ana::DUNEAnaPFParticleUtils::HasShower(particle, event, fParticleLabel, fShowerLabel)) {
 const art::Ptr<recob::Shower> shower = dune_ana::DUNEAnaPFParticleUtils::GetShower(particle, event, fParticleLabel, fShowerLabel);
 const std::vector<art::Ptr<recob::Hit> > showerHits(dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(dune_ana::DUNEAnaShowerUtils::GetHits(shower, event, fShowerToHitLabel), 2));
 const double showerCharge(dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(showerHits));
