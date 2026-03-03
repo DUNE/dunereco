@@ -313,17 +313,17 @@ namespace wiremod
           if ( key_it != SubROIMatchedEdepMap.end() && key_it->second.size() > 0 ) {
             auto truth_vals = wmUtil.CalcPropertiesFromEdeps(key_it->second, offset_ADC);
 
-            /*if ( truth_vals.total_energy < 0.3 && subroi_prop.total_q > 80 ) {
+            if ( truth_vals.total_energy < 0.3 && subroi_prop.total_q > 80 ) {
               scale_vals.r_Q     = 1.;
               scale_vals.r_sigma = 1.;
             } 
-            else {*/
+            else {
               scale_vals = wmUtil.GetScaleValues(truth_vals, roi_properties);
               mf::LogDebug("WireModifier")
                 << "Scaling! Q scale: " << scale_vals.r_Q
                 << "     sigma scale: " << scale_vals.r_sigma;
               isModified = true;
-            //}
+            }
           }
           else {
             scale_vals.r_Q     = 1.;
