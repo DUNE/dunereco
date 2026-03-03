@@ -3,6 +3,10 @@
 # change process name, to be able to rerun it
 process_name: reco1Again
 
+source: {
+   module_type: RootInput
+   maxEvents: -1
+}
 
 physics.producers.duneWiremod: {
 
@@ -38,10 +42,10 @@ physics.producers.gaushitWireMod.CalDataModuleLabel: "duneWiremod"
 physics.reco: [
   gaushit,
   duneWiremod,
-  gaushitWireMod #,
-#  spsolve,
-#  hitfd,
-#  rns
+  gaushitWireMod,
+  spsolve,
+  hitfd,
+  rns
 ]
 
 physics.trigger_paths: [ reco ]
