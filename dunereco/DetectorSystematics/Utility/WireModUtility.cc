@@ -428,8 +428,17 @@ std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDepo
   {
     // get EDep properties
     auto edep_ptr  = edepPtrVec[i_e];
-    const geo::TPCGeo& curTPCGeom = geometry->PositionToTPC(edep_ptr->MidPoint());
-    const auto plane0 = wireReadout->FirstPlane(curTPCGeom.ID());
+    //const geo::TPCGeo& curTPCGeom = geometry->PositionToTPC(edep_ptr->MidPoint());
+    const geo::TPCGeo* curTPCGeom = nullptr;
+    try{
+     curTPCGeom = &geometry->PositionToTPC(edep_ptr->MidPoint());
+    }
+    catch(cet::exception const& e) {
+      //std::cout<<"No TPC at this position"<<std::endl;
+      continue;
+    } 
+
+    const auto plane0 = wireReadout->FirstPlane(curTPCGeom->ID());
     double ticksPercm = detPropData.GetXTicksCoefficient(); // this should be by TPCID, but isn't building right now
     double zeroTick = detPropData.ConvertXToTicks(0, plane0.ID());
     auto edep_tick = ticksPercm * edep_ptr->X() + (zeroTick + offset) + tickOffset;
@@ -530,8 +539,17 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
 
     total_energy_all += edep_ptr->E();
 
-    const geo::TPCGeo& curTPCGeom = geometry->PositionToTPC(edep_ptr->MidPoint());
-    for (auto const& plane : wireReadout->Iterate<geo::PlaneGeo>(curTPCGeom.ID())) {
+    //const geo::TPCGeo& curTPCGeom = geometry->PositionToTPC(edep_ptr->MidPoint());
+    const geo::TPCGeo* curTPCGeom = nullptr;
+    try{
+      curTPCGeom = &geometry->PositionToTPC(edep_ptr->MidPoint());
+    }
+    catch(cet::exception const& e) {
+      //std::cout<<"No TPC at this position"<<std::endl;
+      continue;
+    }    
+
+    for (auto const& plane : wireReadout->Iterate<geo::PlaneGeo>(curTPCGeom->ID())) {
       int i_p = plane.ID().Plane;
       auto scales = GetViewScaleValues(edep_props, plane.View());
       scales_e_weighted[i_p].r_Q     += edep_ptr->E()*scales.r_Q;
@@ -617,8 +635,17 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
   if (total_energy > 0)
     edep_col_properties.x_rms = std::sqrt(edep_col_properties.x_rms/total_energy);
 
-  const geo::TPCGeo& tpcGeom = geometry->PositionToTPC({edep_col_properties.x, edep_col_properties.y, edep_col_properties.z});
-  const auto plane0 = wireReadout->FirstPlane(tpcGeom.ID());
+  //const geo::TPCGeo& tpcGeom = geometry->PositionToTPC({edep_col_properties.x, edep_col_properties.y, edep_col_properties.z});
+  const geo::TPCGeo* tpcGeom = nullptr;
+  try{
+    tpcGeom = &geometry->PositionToTPC({edep_col_properties.x, edep_col_properties.y, edep_col_properties.z});
+  }
+  catch(cet::exception const& e) {
+    //std::cout<<"No TPC at this position"<<std::endl;
+    return edep_col_properties;
+  }
+
+  const auto plane0 = wireReadout->FirstPlane(tpcGeom->ID());
   double ticksPercm = detPropData.GetXTicksCoefficient(); // this should be by TPCID, but isn't building right now
   edep_col_properties.tick              = detPropData.ConvertXToTicks(edep_col_properties.x    , plane0.ID()) + offset + tickOffset;
   edep_col_properties.tick_rms          = ticksPercm*edep_col_properties.x_rms;
