@@ -87,7 +87,6 @@ sys::WireModUtility::GetTargetROIs(sim::SimEnergyDeposit const& shifted_edep, do
     }
 
     geo::WireID edep_wireID = plane.NearestWireID(shifted_edep.MidPoint());
-
     // DUNE_MOD: planeXInWindow and planeXToTick rely on detector timing model.
     // // Confirm tickOffset and drift/timing calibration in DUNE.
     if (planeXInWindow(shifted_edep.X(), plane, *curTPCGeomPtr, offset + tickOffset))
@@ -186,6 +185,15 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
   hUnMatchedPDG->SetLineColor(kRed);
   hUnMatchedPDG->SetStats(0);
 */
+ 
+  int nNoTargetROI=0;
+  int nSignalROIInvalid=0;
+  int nSignalROIEmpty=0;
+  int nSignalROIRange0=0;
+  int nSignalROISize=0;
+  int nSignalROINoSecond=0; 
+  int nCloseROI=0;
+  int nMissingWire=0;
   for (size_t i_e = 0; i_e < edepVec.size(); ++i_e)
   {
     /*bool isMatched=false;
@@ -207,27 +215,32 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
     if (pdg>1e9) pdg_rebin=10; //nuclei
     if (pdg==0) pdg_rebin=0;*/
     auto target_rois = GetTargetROIs(edepVec[i_e], offset);
+    bool hasTargetROIs=false;
     for (auto const& target_roi : target_rois)
     {
-      
+      hasTargetROIs=true; 
       if (wireChannelMap.find(target_roi.first) == wireChannelMap.end())
-      {  
+      { 
+        nMissingWire++; 
         continue;
       }
       auto const& target_wire = wireVec.at(wireChannelMap[target_roi.first]);
 
       if (not target_wire.SignalROI().is_valid())
       {
+        nSignalROIInvalid++;
         //std::cout<<"invalid Signal ROI for this wire"<<std::endl;
         continue;
       }
       if (target_wire.SignalROI().empty())
       {
+        nSignalROIEmpty++;
         //std::cout<<"empty signal ROI for this wire"<<std::endl;
         continue;
       }
       if (target_wire.SignalROI().n_ranges() == 0)
       {
+        nSignalROIRange0++;
         /*std::cout<<"0 ranges for this wire's signal ROI"<<std::endl;
         for (int delta = -2; delta <= 2; ++delta) {
           int neigh_channel = target_roi.first + delta;
@@ -244,11 +257,31 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
 
       if (target_wire.SignalROI().size() <= target_roi.second)
       {
+        nSignalROISize++;
         //std::cout<<"signa ROI size smaller than target_roi tick"<<std::endl;
         continue;
       }
       if (target_wire.SignalROI().is_void(target_roi.second))
       {
+        nSignalROINoSecond++;
+        int min_distance = std::numeric_limits<int>::max();
+
+        for (size_t r = 0; r < target_wire.SignalROI().n_ranges(); ++r) {
+
+          auto const& range = target_wire.SignalROI().range(r);
+          int start = range.begin_index();
+          int end   = range.end_index();
+
+          if (static_cast<int>(target_roi.second) < start)
+            min_distance = std::min(min_distance, start - static_cast<int>(target_roi.second));
+
+          else if (static_cast<int>(target_roi.second) > end)
+            min_distance = std::min(min_distance, static_cast<int>(target_roi.second) - end);
+
+          else
+            min_distance = 100;  // shouldn't happen since is_void == true
+        }
+        if (min_distance<5) nCloseROI++;
         continue;
       }
 
@@ -257,6 +290,7 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
       ROIMatchedEdepMap[std::make_pair(target_wire.Channel(),range_number)].push_back(i_e);
       //isMatched=true;
     }
+    if (!hasTargetROIs) nNoTargetROI++;
     /*if (edep.X()>xmax) xmax=edep.X();
     else if(edep.X()<xmin) xmin=edep.X();
     if (edep.Z()>zmax) zmax=edep.Z();
@@ -274,7 +308,14 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
       //std::cout<<"unmatched edep PDG: "<<pdg<<std::endl;
     }*/
   }
-
+  std::cout<<"no corresponding wire: "<<nMissingWire<<std::endl;
+  //std::cout<<"no target ROI: "<<nNoTargetROI<<std::endl;
+  //std::cout<<"invalid signal ROI: "<<nSignalROIInvalid<<std::endl;
+  //std::cout<<"empty signal ROI: "<<nSignalROIEmpty<<std::endl;
+  std::cout<<"signal ROI range=0: "<<nSignalROIRange0<<std::endl;
+  //std::cout<<"invalid signal ROI size: "<<nSignalROISize<<std::endl;
+  std::cout<<"tick outside an ROI: "<<nSignalROINoSecond<<std::endl;
+  std::cout<<"tick close to an ROI (distance inferior to 5): "<<nCloseROI<<std::endl;
   /*std::cout<<"xmin = "<<xmin<<", xmax = "<<xmax<<", zmin = "<<zmin<<", zmax = "<<zmax<<std::endl;
 
   hMatched->GetXaxis()->SetRangeUser(xmin-5, xmax-5);
@@ -707,10 +748,12 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
   if (curTPCGeomPtr == nullptr)
     return scales;
 
+  const auto plane0 = wireReadout->FirstPlane(curTPCGeomPtr->ID());
   if (applyLifetimeVar)
   {
     double drift_velocity = detPropData.DriftVelocity();
-    double t = truth_coords[0] / drift_velocity;
+    double x_plane = plane0.GetCenter().X();
+    double t = std::abs(x_plane - truth_coords[0]) / drift_velocity;
     double lifetime_nom = detPropData.ElectronLifetime();
     double scale_lifetime = exp(-t*(1./lifetime_var-1./lifetime_nom));
     scales.r_Q *= scale_lifetime;
