@@ -1,5 +1,7 @@
 #include "LowEUtils.h"
 #include "LikelihoodComputer.h"
+#include "LowECluster.h"
+#include "lardataobj/RecoBase/OpFlash.h"
 
 using namespace producer;
 
@@ -39,6 +41,11 @@ namespace lowe
     fAdjOpFlashPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashPELightMap", {})), // Light map file and histogram name for PE attenuation
     fFlashMatchBy(p.get<std::string>("FlashMatchBy", "maximum")), // Method to match flashes ("maximum" or "light_map")
     fFlashMatchByPELightMapExponent(p.get<float>("FlashMatchByPELightMapExponent", 1)), // 0 implies matching against absolute PE error, 1 against relative PE error, 2 adds an additional weight to higher PE flashes.
+  
+    // fVisibilityFilename(p.get<std::string>("VisibilityFilename", "/exp/dune/app/users/fgalizzi/flashmatch_larsoft/work/fm_module_inputs/dunevis_fdhd_1x2x6_test_float.root")),
+    // fLikelihoodInputDir(p.get<std::string>("LikelihoodInputDir", "/exp/dune/data/users/jdelgadg/data_solar/Fit_cut/")),
+    // fTrendThreshold(p.get<double>("TrendThreshold", 20)),
+    
     producer(new ProducerUtils(p))
   {
     // Initialize the LowEUtils instance
@@ -1544,7 +1551,7 @@ namespace lowe
   } // MatchPDSFlash
 
 
-  int LowEUtils::MatchPDSFlashML(
+  int LowEUtils::MatchPDSFlashMLL(
     const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector,
     const std::vector<art::Ptr<recob::OpFlash>> &PDSFlashes,
     const detinfo::DetectorClocksData &clockData,
@@ -1684,8 +1691,7 @@ namespace lowe
         else {
             continue; // Unknown geometry, skip this matching
         }
-
-        float logMLL = likelihoodComputer.GetLogLikelihoodMatch(mainCluster, flash);
+        float logMLL = likelihoodComputer.GetLogLikelihoodMatch(*mainCluster.get(), *flash.get());
 
         if (logMLL > matchedLogMLL || matchedFlashIndex == -1) {
             // If this flash has more PE than the previous best match, update the match
@@ -1706,6 +1712,26 @@ namespace lowe
         ProducerUtils::PrintInColor(sFlashMatching, ProducerUtils::GetColor("blue"), "Debug");
     }
     return matchedFlashIndex; // Return the index of the matched flash or -1 if no match found
+  }
+
+float LowEUtils::GetLikelihoodFlashMatch(
+    const double &clusterTime,
+    const double &clusterCharge,
+    const double &clusterY,
+    const double &clusterZ,
+    const double &flashTime,
+    const std::vector<double> &flashPEperOpDet,
+    LikelihoodComputer &likelihoodComputer)
+  {
+    // Create temporary cluster and flash objects
+    solar::LowECluster cluster = solar::LowECluster();
+    cluster.initialize({0, static_cast<float>(clusterY), static_cast<float>(clusterZ)}, 0, 0, 0, 0,
+                        clusterCharge, clusterTime, 0, 0., {});
+    auto flash = recob::OpFlash(flashTime, 0., 0., 0.,
+                                flashPEperOpDet, false, 0, 0., 0., 0., 0., 0., 0., 0., {}, {});
+
+    
+    return likelihoodComputer.GetLogLikelihoodMatch(cluster, flash);
   }
 
   bool LowEUtils::SelectPDSFlashPE(
@@ -1885,8 +1911,8 @@ namespace lowe
     const float &RefOpFlashPE,
     const float &OpFlashTime,
     const float &OpFlashPE,
-    const float &MFlashResidual=0.0,
-    const float &OpFlashResidual=0.0)
+    const float &MFlashResidual,
+    const float &OpFlashResidual)
   /*
   Select PDS flash based on time and PE. There are 2 options: "maximum" or "light_map"
   - TPCDriftTime: total drift time in the TPC
@@ -1919,12 +1945,15 @@ namespace lowe
         return false;
       }
     }
-    else if (fFlashMatchBy == "maximulikelihood") {
+    else if (fFlashMatchBy == "maximumlikelihood") {
       // If the flash likelihood (residual) is smaller than the reference flash residual, select it
+      std::cout << "Comparing this residual " << OpFlashResidual << " to reference residual " << MFlashResidual;
       if (OpFlashResidual < MFlashResidual) {
+        std::cout << " ->OK!" << std::endl;
         return true;
       }
       else {
+        std::cout << " ->Not selected!" << std::endl;
         return false;
       }
     }
@@ -1941,5 +1970,58 @@ namespace lowe
         return false;
       }
     }
+  }
+  
+  void LowEUtils::SetLikelihoodComputer(
+    const double& fElectronScintYield,
+    const std::string& fVisibilityFilename,
+    LikelihoodComputer& likelihood_computer,
+    std::string input_dir,
+    double trend_thr,
+    double driftvelocity)
+  {
+    std::cout << "inStart setting..." << std::endl;
+    std::cerr << "inStart setting..." << std::endl;
+    double LY_times_PDE = fElectronScintYield*0.03; // 3% PDE assumed
+    TFile* parametrizer_file = TFile::Open((input_dir+"MLL_Parametrizer.root").c_str(), "READ");
+    TF1* f_reco_prob       = static_cast<TF1*>(parametrizer_file->Get("f_reco_prob"));
+    TF1* f_lognormal       = static_cast<TF1*>(parametrizer_file->Get("f_lognormal"));
+    TF1* f_logms_trend     = static_cast<TF1*>(parametrizer_file->Get("f_logms_trend"));
+    TF1* f_sigmas_trend    = static_cast<TF1*>(parametrizer_file->Get("f_sigmas_trend"));
+    TGraphErrors* g_logms  = static_cast<TGraphErrors*>(parametrizer_file->Get("g_logms"));
+    TGraphErrors* g_sigmas = static_cast<TGraphErrors*>(parametrizer_file->Get("g_sigmas"));
+
+    TFile* calib_file = TFile::Open((input_dir+"MLL_Calibrator.root").c_str(), "READ");
+    TTree* calib_tree = static_cast<TTree*>(calib_file->Get("calib_tree"));
+    Float_t calib_c = 0.;         Float_t calib_slope = 0.;
+    Float_t corr_lambda = 0.0;    Float_t drift_velocity = 0.0;
+    calib_tree->SetBranchAddress("calib_c", &calib_c);
+    calib_tree->SetBranchAddress("calib_slope", &calib_slope);
+    calib_tree->SetBranchAddress("drift_velocity", &drift_velocity);
+    calib_tree->SetBranchAddress("corr_lambda", &corr_lambda);
+    calib_tree->GetEntry(0);
+    std::cout << "new calib_c = " << calib_c << std::endl;
+
+
+
+
+    likelihood_computer = LikelihoodComputer(
+      TString(fVisibilityFilename),      // Visibility file name
+      LY_times_PDE,          // Light yield times photo detector efficiency
+      f_reco_prob,           // Reconstruction probability function
+      f_lognormal,           // Lognormal function for extrapolation
+      f_logms_trend,         // Trend function for logm
+      f_sigmas_trend,        // Trend function for sigma
+      driftvelocity,         // Drift velocity
+      g_logms,               // Graph for logm values
+      g_sigmas,              // Graph for sigma values
+      trend_thr,             // Threshold for trend
+      calib_c,               // Calibration constant
+      calib_slope,           // Calibration slope
+      corr_lambda            // Correction lambda value
+    );
+      std::cout << "inLikelihoodComputer properly set" << std::endl;
+      std::cerr << "inLikelihoodComputer properly set" << std::endl;
+    return;
   }
 } // namespace lowe

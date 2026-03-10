@@ -9,13 +9,14 @@
 #include <TH2.h>
 #include <TTree.h>
 #include <canvas/Persistency/Common/Ptr.h>
+#include <filesystem>
 #include <lardataobj/RecoBase/OpFlash.h>
 
 // FUNCTIONS ------------------------------------------------------------------
-inline float give_me_Erecoz(float calib_c, float calib_slope, float corr_lambda,
-                    float time_tpc, float charge){
+inline float give_me_Ereco(float calib_c, float calib_slope, float corr_lambda,
+                           float dt, float charge){
   
-  float q_corr = charge * exp(time_tpc * corr_lambda);
+  float q_corr = charge * exp(dt * corr_lambda);
   float E_reco = (q_corr - calib_c) / calib_slope;
   
   return E_reco;
@@ -72,53 +73,59 @@ class LikelihoodComputer{
     float x_reco;
     float drift_velocity;
     TGraphErrors* g_logms;
+    TGraphErrors* g_sigmas;
+    TF1* f_lognormal;
+    TF1* f_logms_trend;
+    TF1* f_sigmas_trend;
+    double trend_thr;
     TF1* f_reco_prob;
 
-    float GetLogLikelihoodMatch(const art::Ptr<solar::LowECluster> &tpc_cluster,
-                             const art::Ptr<recob::OpFlash> &pds_cluster)
+    float GetLogLikelihoodMatch(const solar::LowECluster &tpc_cluster,
+                                const recob::OpFlash &pds_cluster)
     {
-      // float delta_time = pds_cluster.time_pds-tpc_cluster.time_tpc;
-      double clusterTime = tpc_cluster->getAverageTime();
-      double flashTime = pds_cluster->Time();
+      double clusterTime = tpc_cluster.getAverageTime();
+      double flashTime = pds_cluster.Time();
       float delta_time = float(clusterTime - flashTime);
-      E_reco = give_me_Erecoz(calib_c, calib_slope, corr_lambda, delta_time, tpc_cluster->getTotalCharge());
+      E_reco = give_me_Ereco(calib_c, calib_slope, corr_lambda, delta_time, tpc_cluster.getTotalCharge());
       float reco_pe, exp_ph;
       x_reco = delta_time*drift_velocity;
-      float vertex_coor[3] = {x_reco, tpc_cluster->getY(), tpc_cluster->getZ()};
+      float vertex_coor[3] = {x_reco, tpc_cluster.getY(), tpc_cluster.getZ()};
+      vertex_coor[0] = std::max(vertex_coor[0], tpc_min[0]+15); vertex_coor[0] = std::min(vertex_coor[0], tpc_max[0]-15); // HARD CODE
+      vertex_coor[1] = std::max(vertex_coor[1], tpc_min[1]+15); vertex_coor[1] = std::min(vertex_coor[1], tpc_max[1]-15);
+      vertex_coor[2] = std::max(vertex_coor[2], tpc_min[2]+15); vertex_coor[2] = std::min(vertex_coor[2], tpc_max[2]-15);
       int tpc_index = GetTPCIndex(vertex_coor, hgrid, cryo_to_tpc);
 
-      float log_likelihood = 0.;
-
-      if (n_opdet != pds_cluster->PEs().size()){
-        throw std::runtime_error("LikelihoodComputer: number of optical detectors in visibility file (" + std::to_string(n_opdet) + ") does not match the number of optical detectors in the OpFlash (" + std::to_string(pds_cluster->PEs().size()) + ").");
+      if (n_opdet != pds_cluster.PEs().size()){
+        throw std::runtime_error("LikelihoodComputer: number of optical detectors in visibility file (" + std::to_string(n_opdet) + ") does not match the number of optical detectors in the OpFlash (" + std::to_string(pds_cluster.PEs().size()) + ").");
       }
-      for (size_t idx_opdet=0; idx_opdet<pds_cluster->PEs().size(); idx_opdet++){
+
+      float log_likelihood = 0.;
+      for (size_t idx_opdet=0; idx_opdet<pds_cluster.PEs().size(); idx_opdet++){
         float voxel_vis = opDet_visMapDirect[tpc_index][idx_opdet];// + opDet_visMapReflct[tpc_index][idx_opdet];
 
         exp_ph = E_reco*LY_times_PDE*voxel_vis;
         if(exp_ph==0) exp_ph = E_reco*LY_times_PDE*1.e-15;
         float P_hit_mu = f_reco_prob->Eval(exp_ph);
+        if (P_hit_mu==0){
+          std::cerr << "Warning: P_hit_mu is zero for exp_ph = " << exp_ph << " and reco_pe = " << reco_pe << std::endl;
+        }
 
-        reco_pe = pds_cluster->PEs().at(idx_opdet);
+        reco_pe = pds_cluster.PEs().at(idx_opdet);
+        float term = 0.;
 
         if (reco_pe>0.0){
           if (reco_pe > trend_thr){
-            f_lognormal->SetParameters(f_logms_trend->Eval(reco_pe), f_sigmas_trend->Eval(reco_pe));
+            f_lognormal->SetParameters(f_logms_trend->Eval(exp_ph), f_sigmas_trend->Eval(exp_ph));
+            term = P_hit_mu*f_lognormal->Eval(reco_pe);
+            log_likelihood += log(term);
           } else {
-            f_lognormal->SetParameters(g_logms->Eval(reco_pe), g_sigmas->Eval(reco_pe));
+            f_lognormal->SetParameters(g_logms->Eval(exp_ph), g_sigmas->Eval(exp_ph));
+            term = P_hit_mu*f_lognormal->Eval(reco_pe);
+            log_likelihood += log(term);
           }
-          if (P_hit_mu==0){
-            std::cerr << "Warning: P_hit_mu is zero for exp_ph = " << exp_ph << " and reco_pe = " << reco_pe << std::endl;
-          }
-          if (h2_exp_reco->GetBinContent(h2_exp_reco->FindBin(reco_pe, exp_ph))==0){
-            std::cerr << "Warning: h2_exp_reco bin content is zero for reco_pe = " << reco_pe << " and exp_ph = " << exp_ph << std::endl;
-          }
-          log_likelihood += log(P_hit_mu*h2_exp_reco->GetBinContent(h2_exp_reco->FindBin(reco_pe, exp_ph)));
         } else {
-          if (1.-P_hit_mu == 0){
-            std::cerr << "Warning: " << idx_opdet << "  1-P_hit_mu is negative for exp_ph = " << exp_ph << std::endl;
-          }
-          log_likelihood += log(1. - P_hit_mu);
+          term = 1 - P_hit_mu;
+          log_likelihood += log(term);
         }
       }
 
@@ -134,48 +141,92 @@ class LikelihoodComputer{
         TF1* f_lognormal,
         TF1* f_logms_trend,
         TF1* f_sigmas_trend,
+        float drift_velocity,
         TGraphErrors* g_logms,
         TGraphErrors* g_sigmas,
         double trend_thr,
         float calib_c, 
         float calib_slope, 
-        float corr_lambda,
-        TH2D* h2_exp_reco = nullptr)
-      : g_logms(g_logms),
-      f_reco_prob(f_reco_prob),
-      visibility_file_name(visibility_file_name),
-      LY_times_PDE(LY_times_PDE),
+        float corr_lambda)
+      : drift_velocity(drift_velocity), 
+      g_logms(g_logms),
+      g_sigmas(g_sigmas),
       f_lognormal(f_lognormal),
       f_logms_trend(f_logms_trend),
       f_sigmas_trend(f_sigmas_trend),
       trend_thr(trend_thr),
-      g_sigmas(g_sigmas),
+      f_reco_prob(f_reco_prob),
+      visibility_file_name(visibility_file_name),
+      LY_times_PDE(LY_times_PDE),
       calib_c(calib_c), 
       calib_slope(calib_slope), 
       corr_lambda(corr_lambda) {
-        this->h2_exp_reco = h2_exp_reco;
-        setptivatemembers();
+        setprivatemembers();
       } // LikelihoodComputer constructor
+    
+  LikelihoodComputer CreateLikelihoodComputer(const double& fElectronScintYield, const std::string& fVisibilityFilename, double driftvelocity)
+  {
+    double LY_times_PDE = fElectronScintYield*0.03; // 3% PDE assumed
+    TFile* parametrizer_file = TFile::Open("/exp/dune/app/users/fgalizzi/flashmatch_larsoft/work/fm_module_inputs/fm_parametrizer.root", "READ");
+    TF1* f_reco_prob = static_cast<TF1*>(parametrizer_file->Get("f_reco_prob"));
+    TF1* f_lognormal = static_cast<TF1*>(parametrizer_file->Get("f_lognormal"));
+    TF1* f_logms_trend = static_cast<TF1*>(parametrizer_file->Get("f_logms_trend"));
+    TF1* f_sigmas_trend = static_cast<TF1*>(parametrizer_file->Get("f_sigmas_trend"));
+    TGraphErrors* g_logms = static_cast<TGraphErrors*>(parametrizer_file->Get("g_logms"));
+    TGraphErrors* g_sigmas = static_cast<TGraphErrors*>(parametrizer_file->Get("g_sigmas"));
+    double trend_thr = 20.0;
 
-  private:
-    // take in input
+    TFile* calib_file = TFile::Open("/exp/dune/app/users/fgalizzi/flashmatch_larsoft/work/fm_module_inputs/calibrator.root", "READ");
+    TTree* calib_tree = static_cast<TTree*>(calib_file->Get("calib_tree"));
+    Float_t calib_c = 0.;         Float_t calib_slope = 0.;
+    Float_t corr_lambda = 0.0;
+    calib_tree->SetBranchAddress("calib_c", &calib_c);
+    calib_tree->SetBranchAddress("calib_slope", &calib_slope);
+    calib_tree->SetBranchAddress("corr_lambda", &corr_lambda);
+    calib_tree->GetEntry(0);
+
+
+
+    // check visibility file exists
+    std::cout << fVisibilityFilename << std::endl;
+    if(!std::filesystem::exists(fVisibilityFilename)){
+      throw std::runtime_error("Visibility file " + fVisibilityFilename + " does not exist!");
+    }
+
+    LikelihoodComputer LC = LikelihoodComputer(
+      TString(fVisibilityFilename),      // Visibility file name
+      LY_times_PDE,          // Light yield times photo detector efficiency
+      f_reco_prob,           // Reconstruction probability function
+      f_lognormal,           // Lognormal function for extrapolation
+      f_logms_trend,         // Trend function for logm
+      f_sigmas_trend,        // Trend function for sigma
+      driftvelocity,         // Drift velocity
+      g_logms,               // Graph for logm values
+      g_sigmas,              // Graph for sigma values
+      trend_thr,             // Threshold for trend
+      calib_c,               // Calibration constant
+      calib_slope,           // Calibration slope
+      corr_lambda            // Correction lambda value
+    );
+
+    return LC;
+  }
+
+private:
+  // take in input
     TString visibility_file_name;
     size_t n_opdet;
     float LY_times_PDE;
     std::vector<std::vector<float>> opDet_visMapDirect;
-    TF1* f_lognormal;
-    TF1* f_logms_trend;
-    TF1* f_sigmas_trend;
-    double trend_thr;
-    TGraphErrors* g_sigmas;
     float calib_c, calib_slope, corr_lambda;
-    TH2D* h2_exp_reco = nullptr; // Optional, can be nullptr
 
     // set inside the class
     TH1D* hgrid[3] = {nullptr};
     std::vector<int> cryo_to_tpc;
+    float tpc_min[3];
+    float tpc_max[3];
 
-    void setptivatemembers(){
+    void setprivatemembers(){
       TFile* visibility_file = TFile::Open(visibility_file_name, "READ");
 
       hgrid[0] = (TH1D*)visibility_file->Get("photovisAr/hgrid0")->Clone("hclone_hgrid0");
@@ -186,9 +237,9 @@ class LikelihoodComputer{
       Double_t coor_dim[3] = {0.};
       tDimensions->SetBranchAddress("dimension", coor_dim);
       tDimensions->GetEntry(0);
-      float tpc_min[3] = {float(coor_dim[0]), float(coor_dim[1]), float(coor_dim[2])}; // x,y,z
+      tpc_min[0] = float(coor_dim[0]); tpc_min[1] = float(coor_dim[1]); tpc_min[2] = float(coor_dim[2]); // x,y,z
       tDimensions->GetEntry(1);
-      float tpc_max[3] = {float(coor_dim[0]), float(coor_dim[1]), float(coor_dim[2])}; // x,y,z
+      tpc_max[0] = float(coor_dim[0]); tpc_max[1] = float(coor_dim[1]); tpc_max[2] = float(coor_dim[2]); // x,y,z
       std::cout << "TPC min: " << tpc_min[0] << ", " << tpc_min[1] << ", " << tpc_min[2] << std::endl;
       cryo_to_tpc = GetCryoToTPCMap(hgrid, tpc_min, tpc_max);
 
@@ -198,12 +249,18 @@ class LikelihoodComputer{
       n_opdet = b_opDet_visDirect->GetLeaf("opDet_visDirect")->GetLen();
       std::vector<float> opDet_visDirect(n_opdet, 0.);
       photoVisMap->SetBranchAddress("opDet_visDirect", opDet_visDirect.data());
+      std::cout << "resizing" << std::endl;
+      std::cerr << "resizing" << std::endl;
       opDet_visMapDirect.resize(n_entriesmap, std::vector<float>(n_opdet, 0.));
+      std::cout << "resiz" << std::endl;
+      std::cerr << "resiz" << std::endl;
 
       for (size_t VisMapEntry = 0; VisMapEntry < n_entriesmap; VisMapEntry++){
         photoVisMap->GetEntry(VisMapEntry);
         opDet_visMapDirect[VisMapEntry] = opDet_visDirect;
       }
+      std::cout << "riz" << std::endl;
+      std::cerr << "riz" << std::endl;
 
       visibility_file->Close();
       return;

@@ -229,13 +229,22 @@ namespace lowe
                 const art::Event &evt,
                 bool debug = false);
 
-            int MatchPDSFlashML(
+            int MatchPDSFlashMLL(
                 const std::vector<art::Ptr<solar::LowECluster>> &SolarClusterVector,
                 const std::vector<art::Ptr<recob::OpFlash>> &PDSFlashes,
                 const detinfo::DetectorClocksData &clockData,
                 const art::Event &evt,
                 LikelihoodComputer &likelihoodComputer,
                 bool debug = false);
+
+            float GetLikelihoodFlashMatch(
+                const double &clusterTime,
+                const double &clusterCharge,
+                const double &clusterY,
+                const double &clusterZ,
+                const double &flashTime,
+                const std::vector<double> &flashPEperOpDet,
+                LikelihoodComputer &likelihoodComputer);
             
             bool SelectPDSFlashPE(
                 const float &TPCDriftTime,
@@ -273,6 +282,14 @@ namespace lowe
                 const float &OpFlashPE,
                 const float &MFlashResidual,
                 const float &OpFlashResidual);
+        
+            void SetLikelihoodComputer(
+                const double& fElectronScintYield,
+                const std::string& fVisibilityFilename,
+                LikelihoodComputer& likelihood_computer,
+                std::string input_dir="/exp/dune/data/users/jdelgadg/data_solar/Fit_cut/",
+                double trend_thr=20,
+                double driftvelocity=0.160396);
 
         // Declare member data here.
         private:
