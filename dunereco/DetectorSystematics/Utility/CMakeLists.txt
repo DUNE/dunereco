@@ -17,6 +17,7 @@ cet_make_library(
     # Simulation objects
     lardataobj::Simulation
     nusimdata::SimulationBase
+    larsim::Simulation
 
     # Utilities
     lardata::Utilities
