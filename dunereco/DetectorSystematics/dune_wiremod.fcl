@@ -26,18 +26,32 @@ physics.producers.duneWiremod: {
   ApplyGainScale: false 
   ElectronicsGainScale: 2.00
 
-  ApplyLifetimeVar: true
-  LifetimeVar: 11440 # in microseconds
+  ApplyLifetimeVar: false
+  LifetimeVar: 3000 # in microseconds
 
+  ApplyModBoxVar: true
+  ModBoxAlphaVar: 0.87
+  ModBoxBetaVar: 0.218 
 
 }
-
-#physics.wiremod_path: [ duneWiremod, gaushit ]
-#physics.trigger_paths: [ wiremod_path, reco ]
 
 # --- NEW: clone gaushit and make it read Wiremod output ---
 physics.producers.gaushitWireMod: @local::physics.producers.gaushit
 physics.producers.gaushitWireMod.CalDataModuleLabel: "duneWiremod"
+
+physics.producers.spsolve.HitLabel: "gaushitWireMod"
+physics.producers.hitfd.HitModuleLabel: "gaushitWireMod"
+
+physics.producers.energyrecnc.HitLabel: "gaushitWireMod"
+physics.producers.energyrecnue.HitLabel: "gaushitWireMod"
+physics.producers.energyrecnumu.HitLabel: "gaushitWireMod"
+physics.producers.energyrecnumumcs.HitLabel: "gaushitWireMod"
+physics.producers.energyrecnumurange.HitLabel: "gaushitWireMod"
+
+physics.producers.anglereconue.HitLabel: "gaushitWireMod"
+physics.producers.anglereconuepfps.HitLabel: "gaushitWireMod"
+physics.producers.anglereconumu.HitLabel: "gaushitWireMod"
+physics.producers.anglereconumupfps.HitLabel: "gaushitWireMod"
 
 physics.reco: [
   gaushit,
@@ -49,6 +63,11 @@ physics.reco: [
 ]
 
 physics.trigger_paths: [ reco ]
-# for running on v5 geometry
-services.Geometry: @local::dune10kt_1x2x6_v5_refactored_geo
-services.AuxDetGeometry: @local::dune10kt_1x2x6_v5_refactored_auxdet_geo
+
+services:
+{
+  @table::services
+  @table::dunefd_1x2x6_simulation_services
+  Geometry: @local::dune10kt_1x2x6_v5_refactored_geo
+  AuxDetGeometry: @local::dune10kt_1x2x6_v5_refactored_auxdet_geo
+}

@@ -1,5 +1,7 @@
 #include "WireModUtility.hh"
 #include "lardataalg/DetectorInfo/DetectorPropertiesData.h"
+#include "larsim/Simulation/LArG4Parameters.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "TCanvas.h"
 #include "TH2F.h"
 #include "TH1F.h"
@@ -757,6 +759,17 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
     double lifetime_nom = detPropData.ElectronLifetime();
     double scale_lifetime = exp(-t*(1./lifetime_var-1./lifetime_nom));
     scales.r_Q *= scale_lifetime;
+  }
+
+  if (applyModBoxVar)
+  {
+    art::ServiceHandle<sim::LArG4Parameters const> larG4Params;    
+    double alpha_nom=larG4Params->ModBoxA();
+    double beta_nom=larG4Params->ModBoxB();
+    double E=detPropData.Efield();
+    double rho=detPropData.Density();
+    double scale_recomb=beta_nom/ModBoxBetaVar*log(ModBoxAlphaVar+ModBoxBetaVar/E/rho*truth_props.dedr)/log(alpha_nom+beta_nom/E/rho*truth_props.dedr);
+    scales.r_Q *= scale_recomb;
   }
   return scales;
 }
