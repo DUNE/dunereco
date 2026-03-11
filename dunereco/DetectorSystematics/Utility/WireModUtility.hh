@@ -31,6 +31,9 @@ namespace sys {
       double gainScale;
       bool applyLifetimeVar;
       double lifetime_var; //new lifetime value for given variation, in microseconds
+      bool applyModBoxVar;
+      double ModBoxAlphaVar;
+      double ModBoxBetaVar;
       double readoutWindowTicks;                          // how many ticks are in the readout window?
       double tickOffset;                                  // do we want an offset in the ticks?
 
