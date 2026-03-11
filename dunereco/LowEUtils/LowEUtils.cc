@@ -414,7 +414,7 @@ namespace lowe
         for (size_t aa = 0; aa < AddNow.size(); ++aa)
         {
           AdjClusterVec.push_back(MyVec[AddNow[AddNow.size() - 1 - aa]]);
-          MyVec.erase(MyVec.begin() + AddNow[AddNow.size() - 1 - aa]); // This line creates segmentation fault
+          MyVec.erase(MyVec.begin() + AddNow[AddNow.size() - 1 - aa]);
           // Remove the corresponding index from the HitIdx vector
           AdjClusterIdx.push_back(HitIdx[AddNow[AddNow.size() - 1 - aa]]);
           HitIdx.erase(HitIdx.begin() + AddNow[AddNow.size() - 1 - aa]);
@@ -437,7 +437,7 @@ namespace lowe
 
   //......................................................
   void LowEUtils::FillClusterHitVectors(
-    std::vector<recob::Hit> Cluster,
+    std::vector<recob::Hit> &Cluster,
     std::vector<int> &TPC,
     std::vector<int> &Channel,
     std::vector<double> &Charge,
@@ -480,7 +480,7 @@ namespace lowe
     std::vector<int> TrackID;
     TrackID = {};
 
-    for (recob::Hit ThisHit : Cluster)
+    for (const recob::Hit &ThisHit : Cluster)
     {
       TPC.push_back(ThisHit.WireID().TPC);
       Channel.push_back(ThisHit.Channel());
@@ -560,7 +560,7 @@ namespace lowe
 
   //......................................................
   void LowEUtils::FillClusterVariables(
-    const std::vector<std::vector<std::vector<recob::Hit>>> &Clusters,
+    std::vector<std::vector<std::vector<recob::Hit>>> &Clusters,
     std::vector<std::vector<int>> &ClNHits,
     std::vector<std::vector<float>> &ClT,
     std::vector<std::vector<float>> &ClCharge,
@@ -598,7 +598,7 @@ namespace lowe
 
   void LowEUtils::FillClusterVariables(
     std::set<int> SignalTrackIDs,
-    std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+    std::vector<std::vector<std::vector<recob::Hit>>> &Clusters,
     std::vector<std::vector<int>> &ClMainID,
     std::vector<std::vector<int>> &ClNHits,
     std::vector<std::vector<int>> &ClTPC,
@@ -635,7 +635,7 @@ namespace lowe
     std::vector<float> globalSignalCharge = {0, 0, 0};
     for (int idx = 0; idx < 3; idx++)
     {
-      std::vector<std::vector<recob::Hit>> TheseClusters = Clusters[idx];
+      const std::vector<std::vector<recob::Hit>> &TheseClusters = Clusters[idx];
       for (size_t i = 0; i < TheseClusters.size(); i++)
       {
         int mainTPC = -1;
@@ -644,8 +644,8 @@ namespace lowe
         double mainCharge = 0;
         float clustT = 0, clustY = 0, clustZ = 0, clustDir = 0;
         float clustCharge = 0, clustPurity = 0;
-        std::vector<recob::Hit> ThisCluster = TheseClusters[i];
-        for (recob::Hit hit : ThisCluster)
+        const std::vector<recob::Hit> &ThisCluster = TheseClusters[i];
+        for (const recob::Hit &hit : ThisCluster)
         {
           int mainHitTrID = -1;
           double mainEFrac = 0;
@@ -707,7 +707,7 @@ namespace lowe
     std::vector<std::vector<int>> &MatchedClustersIdx,
     std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
     std::vector<std::vector<int>> ClustersIdx,
-    std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+    std::vector<std::vector<std::vector<recob::Hit>>> &Clusters,
     std::vector<std::vector<int>> &ClMainID,
     std::vector<std::vector<int>> &ClNHits,
     std::vector<std::vector<int>> &ClTPC,
@@ -977,7 +977,7 @@ namespace lowe
 
   void LowEUtils::MatchClusters(
     std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
-    std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+    std::vector<std::vector<std::vector<recob::Hit>>> &Clusters,
     std::vector<std::vector<int>> &ClNHits,
     std::vector<std::vector<float>> &ClT,
     std::vector<std::vector<float>> &ClCharge,
@@ -1451,10 +1451,10 @@ namespace lowe
       double dT = clusterTime - flashTime; // Time difference between the cluster and the flash
       // If dT is bigger that drift time, skip this flash
       if (dT > driftTime || dT < 0) {
-          continue; // Skip this flash if it's too far in time or in the future
+        continue; // Skip this flash if it's too far in time or in the future
       }
       if (int(flash->PEs().size()) < fAdjOpFlashMinNHitCut || *std::max_element(flash->PEs().begin(), flash->PEs().end()) / flash->TotalPE() > fAdjOpFlashMaxPERatioCut) {
-          continue; // Skip flashes with insufficient hits or too much concentration in one XA
+        continue; // Skip flashes with insufficient hits or too much concentration in one XA
       }
       if ( SelectPDSFlashPE(driftTime, dT, clusterCharge, flashPE) )
       {
@@ -1577,17 +1577,6 @@ namespace lowe
     if (fAdjOpFlashMinPEAttenuate == "light_map") {
       float a, b, c;
       GetLightMapParameters("min", ClusterCharge, a, b, c);
-      // for (int i = 0; i < int(fAdjOpFlashMinPELightMap.size()); i++) {
-      //   if (fAdjOpFlashMinPELightMap[i].first == "Amplitude") {
-      //     a = fAdjOpFlashMinPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMinPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMinPELightMap[i].second[2];
-      //   }
-      //   else if (fAdjOpFlashMinPELightMap[i].first == "Attenuation") {
-      //     b = fAdjOpFlashMinPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMinPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMinPELightMap[i].second[2];
-      //   }
-      //   else if (fAdjOpFlashMinPELightMap[i].first == "Correction") {
-      //     c = fAdjOpFlashMinPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMinPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMinPELightMap[i].second[2];
-      //   }
-      // }
       double MinPE = pow(10, a - a * b * MatchedDriftTime / TPCDriftTime + c * pow(MatchedDriftTime / TPCDriftTime, 2));
       if (OpFlashPE < MinPE) { return false; }
       else { return true; }
@@ -1629,17 +1618,6 @@ namespace lowe
     if (fAdjOpFlashMaxPEAttenuate == "light_map") {
       float a, b, c;
       GetLightMapParameters("max", ClusterCharge, a, b, c);
-      // for (int i = 0; i < int(fAdjOpFlashMaxPELightMap.size()); i++) {
-      //   if (fAdjOpFlashMaxPELightMap[i].first == "Amplitude") {
-      //     a = fAdjOpFlashMaxPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMaxPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMaxPELightMap[i].second[2];
-      //   }
-      //   else if (fAdjOpFlashMaxPELightMap[i].first == "Attenuation") {
-      //     b = fAdjOpFlashMaxPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMaxPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMaxPELightMap[i].second[2];
-      //   }
-      //   else if (fAdjOpFlashMaxPELightMap[i].first == "Correction") {
-      //     c = fAdjOpFlashMaxPELightMap[i].second[0] * pow(ClusterCharge, 2) + fAdjOpFlashMaxPELightMap[i].second[1] * ClusterCharge + fAdjOpFlashMaxPELightMap[i].second[2];
-      //   }
-      // }
       double MaxPE = pow(10, a - a * b * MatchedDriftTime / TPCDriftTime + c * pow(MatchedDriftTime / TPCDriftTime, 2));
       if (OpFlashPE > MaxPE) { return false; }
       else { return true; }
