@@ -560,7 +560,7 @@ namespace lowe
 
   //......................................................
   void LowEUtils::FillClusterVariables(
-    std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+    const std::vector<std::vector<std::vector<recob::Hit>>> &Clusters,
     std::vector<std::vector<int>> &ClNHits,
     std::vector<std::vector<float>> &ClT,
     std::vector<std::vector<float>> &ClCharge,
@@ -578,13 +578,13 @@ namespace lowe
     auto TickPeriod = clockData.TPCClock().TickPeriod();
     for (size_t idx = 0; idx < Clusters.size(); idx++)
     {
-      std::vector<std::vector<recob::Hit>> TheseClusters = Clusters[idx];
+      const std::vector<std::vector<recob::Hit>> &TheseClusters = Clusters[idx];
       for (size_t i = 0; i < TheseClusters.size(); i++)
       {
         float clustT = 0;
         float clustCharge = 0;
-        std::vector<recob::Hit> ThisCluster = TheseClusters[i];
-        for (recob::Hit hit : ThisCluster)
+        const std::vector<recob::Hit> &ThisCluster = TheseClusters[i];
+        for (const recob::Hit &hit : ThisCluster)
         {
           clustCharge += hit.Integral();
           clustT += hit.PeakTime() * TickPeriod * hit.Integral();
