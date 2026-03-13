@@ -558,6 +558,7 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
   //first, let's loop over all edeps and get an average weight scale...
   sys::WireModUtility::TruthProperties_t edep_props;
   double total_energy_all = 0.0;
+  
   sys::WireModUtility::ScaleValues_t scales_e_weighted[3];
   for(size_t i_p = 0; i_p < 3; ++i_p)
   {
@@ -579,6 +580,7 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
     edep_props.dzdr = (edep_ptr->EndZ() - edep_ptr->StartZ()) / edep_ptr->StepLength();
 
     edep_props.dedr = edep_ptr->E() / edep_ptr->StepLength();
+    edep_props.dedx = edep_ptr->E() / edep_ptr->StepLength();
 
     total_energy_all += edep_ptr->E();
 
@@ -636,8 +638,10 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
   edep_col_properties.dzdr = 0.;
 
   edep_col_properties.dedr = 0.;
+  edep_col_properties.dedx = 0.;
 
   double total_energy = 0.0;
+  double total_length = 0.0;
   for (auto const& edep_ptr : edepPtrVecMaxE)
   {
     edep_col_properties.x += edep_ptr->X()*edep_ptr->E();
@@ -650,6 +654,7 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
     if (edep_ptr->StepLength() == 0)
       continue;
 
+    total_length += edep_ptr->StepLength();
     edep_col_properties.dxdr += edep_ptr->E()*(edep_ptr->EndX() - edep_ptr->StartX()) / edep_ptr->StepLength();
     edep_col_properties.dydr += edep_ptr->E()*(edep_ptr->EndY() - edep_ptr->StartY()) / edep_ptr->StepLength();
     edep_col_properties.dzdr += edep_ptr->E()*(edep_ptr->EndZ() - edep_ptr->StartZ()) / edep_ptr->StepLength();
@@ -667,7 +672,7 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
 
     edep_col_properties.dedr = edep_col_properties.dedr / total_energy;
   }
-
+  if (total_length > 0) edep_col_properties.dedx = total_energy / total_length;
   for (auto const& edep_ptr : edepPtrVecMaxE)
   {
     edep_col_properties.x_rms          += (edep_ptr->X()-edep_col_properties.x)*(edep_ptr->X()-edep_col_properties.x)*edep_ptr->E();
@@ -768,9 +773,11 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
     double beta_nom=larG4Params->ModBoxB();
     double E=detPropData.Efield();
     double rho=detPropData.Density();
-    double scale_recomb=beta_nom/ModBoxBetaVar*log(ModBoxAlphaVar+ModBoxBetaVar/E/rho*truth_props.dedr)/log(alpha_nom+beta_nom/E/rho*truth_props.dedr);
+    //double scale_recomb=beta_nom/ModBoxBetaVar*log(ModBoxAlphaVar+ModBoxBetaVar/E/rho*truth_props.dedr)/log(alpha_nom+beta_nom/E/rho*truth_props.dedr);
+    double scale_recomb=beta_nom/ModBoxBetaVar*log(ModBoxAlphaVar+ModBoxBetaVar/E/rho*truth_props.dedx)/log(alpha_nom+beta_nom/E/rho*truth_props.dedx);
     scales.r_Q *= scale_recomb;
   }
+  //std::cout<<"scaling factor: "<<scales.r_Q<<std::endl;
   return scales;
 }
 
