@@ -121,6 +121,7 @@ namespace sys {
         double dzdr;
         double dqdr;
         double dedr;
+        double dedx;
         ScaleValues_t scales_avg[3];
       } TruthProperties_t;
     
