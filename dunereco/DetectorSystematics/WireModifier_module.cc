@@ -177,6 +177,7 @@ namespace wiremod
       std::cout<<"Will apply lifetime variation scaling"<<std::endl;
       wmUtil.lifetime_var = fLifetimeVar;
     }
+    wmUtil.applyModBoxVar = fApplyModBoxVar;
     if (wmUtil.applyModBoxVar)
     {
       std::cout<<"Will apply modified box variation scaling"<<std::endl;
