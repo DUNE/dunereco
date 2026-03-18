@@ -30,8 +30,9 @@ physics :{
 
             inputers: ["wclsSimDepoSource:"]
             outputers: [
-                "wclsSimChannelSink:postdrift",
-                "wclsFrameSaver:spsignals"
+                "wclsSimChannelSink:postdrift"
+                , "wclsFrameSaver:simdigits"
+                , "wclsFrameSaver:spsignals"
             ]
 
             // Make available parameters via Jsonnet's std.extVar()
@@ -51,7 +52,7 @@ physics :{
                 # 3view-30deg: default, 3view: dunevd_3view
                 geo_planeid_labels: "dunevd_3view"
                 # process pratial or all CRMs: all or partial
-                process_mode: "single-sp"
+                process_mode: "single-sim-sp"
             }
             structs: {
                 elecGain: @local::ASICGainInMVPerFC_standard

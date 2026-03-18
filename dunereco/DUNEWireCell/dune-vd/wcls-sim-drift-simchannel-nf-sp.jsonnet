@@ -224,11 +224,45 @@ local magoutput = 'mag-sim-sp.root';
 local magnify = import 'pgrapher/experiment/dune-vd/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
+
+
+local sim_retagger_fanins = [g.pnode({
+    type: "FrameFanin",
+    name: "sim_retagger_fanin%d" % n,
+    data: {
+        multiplicity: 1,
+        tags: ["daq%d" % n],
+        tag_rules: [{
+            frame: {".*": "daq%d" % [n]},
+            trace: {".*": "daq%d" % [n]},
+        }]
+    },
+}, nin=1, nout=1), for n in [fcl_params.process_apa_index]];
+local sim_retaggers = [
+    g.pnode(
+        {
+            type: 'Retagger',
+            name: 'retagger-sim-%d' % n,
+            data:
+            {
+                tag_rules:
+                [{
+                  frame: {'.*': 'daq%d' % n,},
+                  merge: {'.*': 'daq%d' % n,},
+                }]
+            },
+        },
+        nin=1, nout=1)
+    for n in [fcl_params.process_apa_index]
+];
+
 local full_sim_pipes = [
   g.pipeline([
                 sn_pipes[n],
                 // sinks.orig_pipe[n],
-             ],
+             ] + if fcl_params.process_mode == "single-sim"
+                 || fcl_params.process_mode == "single-sim-sp"
+                 then [sim_retagger_fanins[n], sim_retaggers[n], wcls_output.sim_digits] else [],
              'multipass%d' % n)
   for n in anode_iota
 ];
