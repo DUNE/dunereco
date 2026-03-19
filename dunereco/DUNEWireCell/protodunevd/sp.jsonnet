@@ -54,7 +54,8 @@ function(params, tools, override = {}) {
                     then wc.tn(tools.elec_resps[0])
                     else wc.tn(tools.elec_resps[1]),
       ftoffset: 0.0, // default 0.0
-      ctoffset: 1.0*wc.microsecond, // default -8.0
+      // ctoffset: 1.0*wc.microsecond, // default -8.0
+      ctoffset: 4*wc.microsecond, //consistent with FR: protodunvd_FR_3view_xn_new.json.bz2
       per_chan_resp: pc.name,
       fft_flag: 0,  // 1 is faster but higher memory, 0 is slightly slower but lower memory
       postgain: 1.0,  // default 1.2
