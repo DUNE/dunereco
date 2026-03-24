@@ -54,7 +54,7 @@ local wcls = wcls_maker(params, tools);
 //local chndb_maker = import "pgrapher/experiment/pdsp/chndb.jsonnet";
 
 local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
-local sp_override = if use_dnnroi == 'true' then
+local sp_override = if use_dnnroi then
 {
     sparse: false,
     use_roi_debug_mode: true,
@@ -241,7 +241,7 @@ local nfsp_pipes = [
                 // mio.threshold_pipe[n],
                 // mio.debug_pipe[n]
                ] else [ ])
-             + (if use_dnnroi == 'true' then [
+             + (if use_dnnroi then [
                 dnnroi(tools.anodes[n], ts, output_scale=1.0, nchunks=nchunks),
                 mio.dnnroi_pipe[n],
                ] else []),
