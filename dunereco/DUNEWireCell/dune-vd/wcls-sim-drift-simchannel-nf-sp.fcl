@@ -51,7 +51,7 @@ physics :{
                 # default is to assume WireCell::kU->geo::kU, kV->kV, kW->kW
                 # 3view-30deg: default, 3view: dunevd_3view
                 geo_planeid_labels: "dunevd_3view"
-                # process pratial or all CRMs: all or partial
+                # single-sp, single-sim, single-sim-sp, full
                 process_mode: "single-sim-sp"
             }
             structs: {
