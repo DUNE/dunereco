@@ -14,7 +14,7 @@ function(params) base {
         // Only one CRP is defined in this geometry 
         // CRMs are oneside anodes     
         
-        local ncrm = if std.objectHas(params, 'ncrm') then params.ncrm else 36,
+        local ncrm = if std.objectHas(params, 'ncrm') then params.ncrm else 320,
 
         response_plane: params.response_plane,
 
