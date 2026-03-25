@@ -19,16 +19,14 @@ local fcl_params = {
     G4RefTime: std.extVar('G4RefTime') * wc.us,
     response_plane: std.extVar('response_plane')*wc.cm,
     nticks: std.extVar('nticks'),
-    ncrm: std.extVar('ncrm'),
     use_dnnroi: std.extVar('use_dnnroi'),
-    process_crm: std.extVar('process_crm'),
+    process_mode: std.extVar('process_mode'),
+    process_apa_index: std.extVar('process_apa_index'),
     use_hydra: std.extVar('use_hydra'),
     save_rawdigits: std.extVar('save_rawdigits'),
     adc_resolution: std.extVar('adc_resolution'),
 };
-local params_maker =
-if fcl_params.ncrm == 320 then import 'pgrapher/experiment/dune10kt-vd/params-10kt.jsonnet'
-else import 'pgrapher/experiment/dune10kt-vd/params.jsonnet';
+local params_maker = import 'pgrapher/experiment/dune10kt-vd/params-10kt.jsonnet';
 local params = params_maker(fcl_params) {
   lar: super.lar {
     // Longitudinal diffusion constant
@@ -49,12 +47,10 @@ local params = params_maker(fcl_params) {
 
 local tools_all = tools_maker(params);
 local tools =
-if fcl_params.process_crm == "partial"
-then tools_all {anodes: [tools_all.anodes[n] for n in std.range(32, 79)]}
-else if fcl_params.process_crm == "test1"
-then tools_all {anodes: [tools_all.anodes[n] for n in [5]]}
-else if fcl_params.process_crm == "test2"
-then tools_all {anodes: [tools_all.anodes[n] for n in [0,1,4,5]]}
+if fcl_params.process_mode == "single-sim"
+    || fcl_params.process_mode == "single-sp"
+    || fcl_params.process_mode == "single-sim-sp"
+then tools_all {anodes: [tools_all.anodes[n] for n in [fcl_params.process_apa_index]]}
 else tools_all;
 
 local sim_maker = import 'pgrapher/experiment/dune10kt-vd/sim.jsonnet';
@@ -116,7 +112,12 @@ local wcls_output = {
       // anode: wc.tn(tools.anode),
       anode: wc.tn(mega_anode),
       digitize: true,  // true means save as RawDigit, else recob::Wire
-      frame_tags: ['daq'],
+      frame_tags:
+      if fcl_params.process_mode == "single-sim"
+      || fcl_params.process_mode == "single-sp"
+      || fcl_params.process_mode == "single-sim-sp"
+      then ['daq%d' % fcl_params.process_apa_index]
+      else ['daq'],
       // nticks: params.daq.nticks,
       // chanmaskmaps: ['bad'],
       pedestal_mean: 'native',
@@ -135,7 +136,14 @@ local wcls_output = {
       plane_map: planemap,
       anode: wc.tn(mega_anode),
       digitize: false,  // true means save as RawDigit, else recob::Wire
-      frame_tags: ['gauss', 'wiener','dnnsp'],
+      frame_tags:
+      if fcl_params.process_mode == "single-sim"
+      || fcl_params.process_mode == "single-sp"
+      || fcl_params.process_mode == "single-sim-sp"
+      then ['gauss%d' % fcl_params.process_apa_index,
+            'wiener%d' % fcl_params.process_apa_index,
+            'dnnsp%d' % fcl_params.process_apa_index]
+      else ['gauss', 'wiener','dnnsp'],
       frame_scale: [0.005, 0.005, 0.005],
       chanmaskmaps: [],
       nticks: params.daq.nticks,
@@ -227,12 +235,43 @@ local magoutput = 'mag.root';
 local magnify = import 'pgrapher/experiment/dune-vd/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
+local sim_retagger_fanins = [g.pnode({
+    type: "FrameFanin",
+    name: "sim_retagger_fanin%d" % n,
+    data: {
+        multiplicity: 1,
+        tags: ["daq%d" % n],
+        tag_rules: [{
+            frame: {".*": "daq%d" % [n]},
+            trace: {".*": "daq%d" % [n]},
+        }]
+    },
+}, nin=1, nout=1), for n in [fcl_params.process_apa_index]];
+local sim_retaggers = [
+    g.pnode(
+        {
+            type: 'Retagger',
+            name: 'retagger-sim-%d' % n,
+            data:
+            {
+                tag_rules:
+                [{
+                  frame: {'.*': 'daq%d' % n,},
+                  merge: {'.*': 'daq%d' % n,},
+                }]
+            },
+        },
+        nin=1, nout=1)
+    for n in [fcl_params.process_apa_index]
+];
 
 local full_sim_pipes = [
   g.pipeline([
                 sn_pipes[n],
                 // sinks.orig_pipe[n],
-             ],
+             ] + if fcl_params.process_mode == "single-sim"
+                 || fcl_params.process_mode == "single-sim-sp"
+                 then [sim_retagger_fanins[n], sim_retaggers[n], wcls_output.sim_digits] else [],
              'multipass%d' % n)
   for n in anode_iota
 ];
@@ -356,8 +395,10 @@ local switch_pipes = [
 local process_pipes = if fcl_params.use_hydra then switch_pipes else multipass;
 
 local bi_manifold =
-    if fcl_params.process_crm == "test2"
-    then f.multifanpipe('DepoSetFanout', process_pipes, 'FrameFanin', [1,4], [4,1], [1,4], [4,1], 'sn_mag', outtags, tag_rules)
+    if fcl_params.process_mode == "single-sim"
+        || fcl_params.process_mode == "single-sp"
+        || fcl_params.process_mode == "single-sim-sp"
+    then f.multifanpipe('DepoSetFanout', process_pipes, 'FrameFanin', [1,1], [1,1], [1,1], [1,1], 'sn_mag', outtags, tag_rules)
     else f.multifanpipe('DepoSetFanout', process_pipes, 'FrameFanin', [1,2,8,32], [2,4,4,10], [1,2,8,32], [2,4,4,10], 'sn_mag', outtags, tag_rules);
 
 
@@ -371,7 +412,15 @@ local retagger = g.pnode({
       frame: {
         '.*': 'retagger',
       },
-      merge: {
+      merge: 
+      if fcl_params.process_mode == "single-sim"
+      || fcl_params.process_mode == "single-sp"
+      || fcl_params.process_mode == "single-sim-sp"
+        then {
+        'gauss\\d+': 'gauss%d' % fcl_params.process_apa_index,
+        'wiener\\d+': 'wiener%d' % fcl_params.process_apa_index,
+        'dnnsp\\d+': 'dnnsp%d' % fcl_params.process_apa_index,
+      } else {
         'gauss\\d+': 'gauss',
         'wiener\\d+': 'wiener',
         'dnnsp\\d+': 'dnnsp',
@@ -394,7 +443,7 @@ local sink = sim.frame_sink;
 //     } 
 // }, nin=std.length(tools.anodes), nout=1);
 local osimfanin = 
-if fcl_params.process_crm == "test2"
+if fcl_params.process_mode == "test2"
 then f.multifanin('FrameFanin', [1,4], [4,1], 'osimfanin', ['orig%d' % n for n in anode_iota])
 else f.multifanin('FrameFanin', [1,2,8,32], [2,4,4,10], 'osimfanin', ['orig%d' % n for n in anode_iota]);
 local osimdump = g.pnode({ type: 'DumpFrames', name:"osimdump", data:{} }, nin=1, nout=0);
