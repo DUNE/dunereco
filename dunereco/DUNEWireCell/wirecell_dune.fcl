@@ -1643,7 +1643,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
             # default is to assume WireCell::kU->geo::kU, kV->kV, kW->kW
             # 3view-30deg: default, 3view: dunevd_3view
             geo_planeid_labels: "dunevd_3view"
-            # process pratial or full CRMs: full or partial
+            # single-sp, single-sim, single-sim-sp, full
             process_mode: "single-sp"
         }
         structs: {
@@ -1665,6 +1665,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
             response_plane: 18.92
             # used in single APA mode, which APA to process
             process_apa_index: 0
+            use_hydra: true
             # use dnn_roi or not
             use_dnnroi: false
         }
@@ -1682,7 +1683,7 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_sim_nfsp : {
         }
         structs: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main.structs
-            ncrm: 48
+            process_apa_index: 0
         }
     }
 }
@@ -1701,7 +1702,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp : {
         }
         structs: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main.structs
-            ncrm: 112
+            process_apa_index: 0
         }
     }
 }
@@ -1717,7 +1718,7 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_30deg_sim_nfsp : {
         }
         structs: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp.wcls_main.structs
-            ncrm: 48
+            process_apa_index: 0
         }
     }
 }
@@ -1750,7 +1751,7 @@ dune10kt_dunefd_vertdrift_1x8x6_2view_data_nfsp : {
         }
         structs: {
             @table::dune10kt_dunefd_vertdrift_1x6x6_2view_data_nfsp.wcls_main.structs
-            ncrm: 48
+            process_apa_index: 0
         }
     }
 }
