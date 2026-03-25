@@ -73,6 +73,7 @@ physics :{
                 response_plane: 18.92
                 # used in single APA mode, which APA to process
                 process_apa_index: 1
+                use_hydra: true
                 # use dnn_roi or not
                 use_dnnroi: false
             }
