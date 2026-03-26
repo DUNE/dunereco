@@ -47,6 +47,7 @@ art_make( BASENAME_ONLY
         larcoreobj::SummaryData
         larcorealg::Geometry
         larcore::Geometry_Geometry_service
+        nusimdata::SimulationBase     
 
         # Pandora Interface (as you already listed)
         larpandora::LArPandoraInterface
