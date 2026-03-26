@@ -34,6 +34,8 @@ namespace sys {
       bool applyModBoxVar;
       double ModBoxAlphaVar;
       double ModBoxBetaVar;
+      double applyLongitudinalDiffusion;
+      double DLnew;      
       double readoutWindowTicks;                          // how many ticks are in the readout window?
       double tickOffset;                                  // do we want an offset in the ticks?
 

@@ -777,6 +777,13 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
     double scale_recomb=beta_nom/ModBoxBetaVar*log(ModBoxAlphaVar+ModBoxBetaVar/E/rho*truth_props.dedx)/log(alpha_nom+beta_nom/E/rho*truth_props.dedx);
     scales.r_Q *= scale_recomb;
   }
+
+  if (applyLongitudinalDiffusion){
+   art::ServiceHandle<sim::LArG4Parameters const> larG4Params;
+   double Dnom=larG4Params->LongitudinalDiffusion();
+   double scale_DL=sqrt(Dnom/DLnew);
+   scales.r_sigma *= scale_DL; 
+  }
   //std::cout<<"scaling factor: "<<scales.r_Q<<std::endl;
   return scales;
 }
