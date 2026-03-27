@@ -38,6 +38,7 @@ namespace sys {
       double DLnew;      
       double readoutWindowTicks;                          // how many ticks are in the readout window?
       double tickOffset;                                  // do we want an offset in the ticks?
+      int nNeighbourWires; //Number of neighbouring wires to consider for matching edeps to ROI
       bool SaveEdepMatchingPlots;
       TH1F *hMatchedE = nullptr;
       TH1F *hUnMatchedE = nullptr;
@@ -63,7 +64,8 @@ namespace sys {
                      const detinfo::DetectorPropertiesData& detProp,
                      const bool& arg_ApplyGainScale = false,
                      const double& arg_gainScale = 1, //relative gain scale. Default is 1, no bias.
-                     const double& arg_TickOffset = 0)
+                     const double& arg_TickOffset = 0,
+                     const int& arg_nNeighbourWires = 0)
       : geometry(geom),
         wireReadout(wireRead),
         detPropData(detProp),
@@ -71,6 +73,7 @@ namespace sys {
         gainScale(arg_gainScale),
         readoutWindowTicks(detProp.ReadOutWindowSize()),                                               // the default A2795 (ICARUS TPC readout board) readout window is 4096 samples
         tickOffset(arg_TickOffset),                                                                     // tick offset is for MC truth, default to zero and set only as necessary
+        nNeighbourWires(arg_nNeighbourWires),
         event_counter(0)
       {
       }

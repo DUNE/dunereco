@@ -83,21 +83,25 @@ sys::WireModUtility::GetTargetROIs(sim::SimEnergyDeposit const& shifted_edep, do
 // // Verify plane indexing and orientation in DUNE.
   for (auto const& plane : wireReadout->Iterate<geo::PlaneGeo>(curTPCGeomPtr->ID())) {
 
-    int wireNumber = int(0.5 + plane.WireCoordinate(shifted_edep.MidPoint()));
-    if ((wireNumber < 0) || (wireNumber >= (int)plane.Nwires()))
-    {
-      continue;
-    }
+    int wireCentral = int(0.5 + plane.WireCoordinate(shifted_edep.MidPoint()));
+    for (int wireNumber = wireCentral-nNeighbourWires; wireNumber < wireCentral+nNeighbourWires+1; wireNumber++){
+      if ((wireNumber < 0) || (wireNumber >= (int)plane.Nwires()))
+      {
+        continue;
+      }
 
-    geo::WireID edep_wireID = plane.NearestWireID(shifted_edep.MidPoint());
-    // DUNE_MOD: planeXInWindow and planeXToTick rely on detector timing model.
-    // // Confirm tickOffset and drift/timing calibration in DUNE.
-    if (planeXInWindow(shifted_edep.X(), plane, *curTPCGeomPtr, offset + tickOffset))
-    {
-      target_roi_vec.emplace_back(
-        wireReadout->PlaneWireToChannel(edep_wireID),
-        std::round(planeXToTick(shifted_edep.X(), plane, *curTPCGeomPtr, offset + tickOffset))
-    );
+
+      //geo::WireID edep_wireID = plane.NearestWireID(shifted_edep.MidPoint());
+      //geo::WireID edep_wireID(plane.ID().Plane, static_cast<geo::WireID>(wireNumber));
+      geo::WireID edep_wireID(plane.ID(),
+                        static_cast<geo::WireID::WireID_t>(wireNumber));
+      if (planeXInWindow(shifted_edep.X(), plane, *curTPCGeomPtr, offset + tickOffset))
+      {
+        target_roi_vec.emplace_back(
+          wireReadout->PlaneWireToChannel(edep_wireID),
+          std::round(planeXToTick(shifted_edep.X(), plane, *curTPCGeomPtr, offset + tickOffset))
+        );
+      }
     }
   }
 
