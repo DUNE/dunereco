@@ -36,7 +36,8 @@ physics.producers.duneWiremod: {
   ApplyLongitudinalDiffusionVar: false
   DLvar: 12e-9
 
-  SaveChargeRatioPlot: true
+  SaveChargeRatioPlot: false
+  SaveEdepMatchingPlots: true
 
 }
 
