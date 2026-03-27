@@ -262,6 +262,7 @@ namespace wiremod
       << "Got Hit Map.";
 
 
+    //Some numbers to calculate ROI-edep matching efficiency
     int nROIs=0;
     int nROIs_mod=0;
     int nROIs_lowQ_mod=0;
@@ -343,9 +344,6 @@ namespace wiremod
           new_rois     .add_range(range.begin_index(), modified_data);
           MF_LOG_DEBUG("WireModifier")
             << "    Could not find matching Edep. Skip";
-          //nNoMatch++;
-          //hUnMatched->Fill(roi_properties.end-roi_properties.begin, roi_properties.total_q);
-          //hUnMatched->Fill(roi_properties.sigma, roi_properties.total_q);
           continue;
         }
         //hMatched->Fill(roi_properties.sigma, roi_properties.total_q);
@@ -369,6 +367,7 @@ namespace wiremod
           << "  Found " << matchedShiftedEdepPtrVec.size() << " shifted Edeps";
 
         std::vector<const recob::Hit*> matchedHitPtrVec;
+        //Moving the following line before to have the hit matching also for ROIs that are not matched to an edep
         //auto it_hit_map = wmUtil.ROIMatchedHitMap.find(roi_key);
         if( it_hit_map != wmUtil.ROIMatchedHitMap.end() ) {
           for( auto i_h : it_hit_map->second )
@@ -378,7 +377,7 @@ namespace wiremod
         MF_LOG_DEBUG("WireModifier")
           << "    Found " << matchedHitPtrVec.size() << " matching hits";
 
-        //Moving the following line before to have roi_properties also for unmatched ROIs
+        //Moving the following line before to have roi_properties also for ROIs that are not matched to an edep
         //auto roi_properties = wmUtil.CalcROIProperties(wire, i_r);
         MF_LOG_DEBUG("WireModifier")
           << "    ROI Properties:" << '\n'
@@ -528,22 +527,12 @@ namespace wiremod
         }
       }
     } // end loop over wires
-    std::cout<<"Modified "<<nROIs_mod<<" ROIs over a total of "<<nROIs<<std::endl;
-    //std::cout<<"Modified "<<nsubROIs_mod<<" subROIs over a total of "<<nsubROIs<<std::endl;
-    //std::cout<<nNoMatch<<" ROIs could not be associated to an edep"<<std::endl;
-    std::cout<<"Modified "<<nROIs_lowQ_mod<<" low charge ROIs over a total of "<<nROIs_lowQ<<std::endl;
-    std::cout<<"Modified "<<nROIs_hit_mod<<" ROIs over a total of "<<nROIs_hit<<" leading to an hit"<<std::endl;
-    std::cout<<"Modified "<<nROIs_hit_highQ_mod<<" ROIs over a total of "<<nROIs_hit_highQ<<" ROIS with high charge leading to an hit"<<std::endl;
-    //std::cout<<nNoIndex<<" no index found for the edep"<<std::endl;
-    /*hMatched->SetMarkerStyle(2);
-    hMatched->SetMarkerColor(kBlue);
-    hMatched->SetStats(0);
-    hUnMatched->SetMarkerStyle(5);
-    hUnMatched->SetMarkerColor(kRed);
-    hUnMatched->SetStats(0);
-    hMatched->Draw("P");
-    hUnMatched->Draw("Psame");
-    c1->SaveAs("ROI_properties.pdf");*/
+    std::cout<<"--- Printing ROI-edep matching efficiencies for that event ---"<<std::endl;
+    std::cout<<"Total efficiency: "<<double(nROIs_mod)/double(nROIs)<<nROIs<<std::endl;
+    std::cout<<"Efficiency for total charge below 80: "<<double(nROIs_lowQ_mod)/double(nROIs_lowQ)<<std::endl;
+    std::cout<<"Efficiency for matched to at least one hit: "<<double(nROIs_hit_mod)/double(nROIs_hit)<<std::endl;
+    std::cout<<"Efficiency for ROIs matched to at least one hit and total charge above 80: "<<double(nROIs_hit_highQ_mod)/double(nROIs_hit_highQ)<<std::endl;
+    
     if (fSaveChargeRatioPlots){
       TCanvas *c1 = new TCanvas("c1", "ROI properties", 800, 600);
       grChargeRatExp->SetLineWidth(2);
