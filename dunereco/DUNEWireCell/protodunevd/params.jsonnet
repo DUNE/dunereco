@@ -160,8 +160,10 @@ base {
         fields: [
             // "dunevdcrp2-FR-fixcoll-adjustind.json.bz2",
             // "dunevdcrp2-FR-fixcoll-adjustind.json.bz2", // repeat for top drifter
-            "protodunevd_FR_3view_speed1d55.json.bz2", // remember to sync response plane position above
-            "protodunevd_FR_3view_speed1d55.json.bz2",
+            // "protodunevd_FR_3view_speed1d55.json.bz2", // remember to sync response plane position above
+            // "protodunevd_FR_3view_speed1d55.json.bz2",
+            "protodunevd_FR_norminal_260324.json.bz2", //updated by xning,03/24/2026
+            "protodunevd_FR_norminal_260324.json.bz2",
         ],
 
         noises: [
