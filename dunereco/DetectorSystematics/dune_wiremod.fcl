@@ -26,12 +26,17 @@ physics.producers.duneWiremod: {
   ApplyGainScale: false 
   ElectronicsGainScale: 2.00
 
-  ApplyLifetimeVar: false
+  ApplyLifetimeVar: true
   LifetimeVar: 3000 # in microseconds
 
-  ApplyModBoxVar: true
+  ApplyModBoxVar: false
   ModBoxAlphaVar: 0.87
-  ModBoxBetaVar: 0.218 
+  ModBoxBetaVar: 0.218
+
+  ApplyLongitudinalDiffusionVar: false
+  DLvar: 12e-9
+
+  SaveChargeRatioPlot: true
 
 }
 
@@ -42,24 +47,13 @@ physics.producers.gaushitWireMod.CalDataModuleLabel: "duneWiremod"
 physics.producers.spsolve.HitLabel: "gaushitWireMod"
 physics.producers.hitfd.HitModuleLabel: "gaushitWireMod"
 
-physics.producers.energyrecnc.HitLabel: "gaushitWireMod"
-physics.producers.energyrecnue.HitLabel: "gaushitWireMod"
-physics.producers.energyrecnumu.HitLabel: "gaushitWireMod"
-physics.producers.energyrecnumumcs.HitLabel: "gaushitWireMod"
-physics.producers.energyrecnumurange.HitLabel: "gaushitWireMod"
-
-physics.producers.anglereconue.HitLabel: "gaushitWireMod"
-physics.producers.anglereconuepfps.HitLabel: "gaushitWireMod"
-physics.producers.anglereconumu.HitLabel: "gaushitWireMod"
-physics.producers.anglereconumupfps.HitLabel: "gaushitWireMod"
-
 physics.reco: [
   gaushit,
   duneWiremod,
-  gaushitWireMod,
-  spsolve,
-  hitfd,
-  rns
+  gaushitWireMod #,
+#  spsolve,
+#  hitfd,
+#  rns
 ]
 
 physics.trigger_paths: [ reco ]
