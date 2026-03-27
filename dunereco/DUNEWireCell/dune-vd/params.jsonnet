@@ -6,6 +6,9 @@ local base = import "pgrapher/dune/params.jsonnet";
 
 function(params) base {
     // This section will be overwritten in simparams.jsonnet
+    lar: super.lar {
+        drift_speed: if std.objectHas(params, 'drift_speed') then params.drift_speed else super.drift_speed,
+    },
     det : {
 
         // The current DUNE-VD goemetry has only one CRP composed by 36
@@ -69,6 +72,10 @@ function(params) base {
         shaping: 2.2 * wc.us,
         postgain: 1.1365,
         start: 0,
+        fields: super.fields {
+            start_dx: $.det.response_plane,
+            drift_dt: self.start_dx / $.lar.drift_speed,
+        },
     },
 
     sim: super.sim {

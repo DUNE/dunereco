@@ -54,8 +54,8 @@ physics :{
                 # default is to assume WireCell::kU->geo::kU, kV->kV, kW->kW
                 # 3view-30deg: default, 3view: dunevd_3view
                 geo_planeid_labels: "default"
-                # process pratial or all CRMs: all or test2
-                process_crm: "all"
+                # single-sp, single-sim, single-sim-sp, full
+                process_mode: "single-sp"
             }
             structs: {
                 # number of time samples
@@ -72,8 +72,8 @@ physics :{
                 G4RefTime: @local::dunefd_detectorclocks.G4RefTime
                 # response plane [cm]
                 response_plane: 18.92
-                # number of CRMs, 24 for 1x8x6, 320 for 2x8x40
-                ncrm: 320
+                # when process_mode is single-*, this specifies which APA to process (0-319)
+                process_apa_index: 0
                 use_hydra: true
                 save_rawdigits: false
                 # use dnn_roi or not
