@@ -310,14 +310,14 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
       //std::cout<<"unmatched edep PDG: "<<pdg<<std::endl;
     }*/
   }
-  std::cout<<"no corresponding wire: "<<nMissingWire<<std::endl;
+  /*std::cout<<"no corresponding wire: "<<nMissingWire<<std::endl;
   //std::cout<<"no target ROI: "<<nNoTargetROI<<std::endl;
   //std::cout<<"invalid signal ROI: "<<nSignalROIInvalid<<std::endl;
   //std::cout<<"empty signal ROI: "<<nSignalROIEmpty<<std::endl;
   std::cout<<"signal ROI range=0: "<<nSignalROIRange0<<std::endl;
   //std::cout<<"invalid signal ROI size: "<<nSignalROISize<<std::endl;
   std::cout<<"tick outside an ROI: "<<nSignalROINoSecond<<std::endl;
-  std::cout<<"tick close to an ROI (distance inferior to 5): "<<nCloseROI<<std::endl;
+  std::cout<<"tick close to an ROI (distance inferior to 5): "<<nCloseROI<<std::endl;*/
   /*std::cout<<"xmin = "<<xmin<<", xmax = "<<xmax<<", zmin = "<<zmin<<", zmax = "<<zmax<<std::endl;
 
   hMatched->GetXaxis()->SetRangeUser(xmin-5, xmax-5);

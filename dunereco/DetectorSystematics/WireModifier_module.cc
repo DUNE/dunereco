@@ -532,7 +532,8 @@ namespace wiremod
     std::cout<<"Efficiency for total charge below 80: "<<double(nROIs_lowQ_mod)/double(nROIs_lowQ)<<std::endl;
     std::cout<<"Efficiency for matched to at least one hit: "<<double(nROIs_hit_mod)/double(nROIs_hit)<<std::endl;
     std::cout<<"Efficiency for ROIs matched to at least one hit and total charge above 80: "<<double(nROIs_hit_highQ_mod)/double(nROIs_hit_highQ)<<std::endl;
-    
+    std::cout<<"--- Finished printing efficiencies --"<<std::endl;
+ 
     if (fSaveChargeRatioPlots){
       TCanvas *c1 = new TCanvas("c1", "ROI properties", 800, 600);
       grChargeRatExp->SetLineWidth(2);
