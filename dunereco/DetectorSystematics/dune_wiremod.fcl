@@ -39,6 +39,7 @@ physics.producers.duneWiremod: {
   SaveChargeRatioPlot: false
   SaveEdepMatchingPlots: true
 
+  nNeighbourWires: 2 #Number of neighbour wires to consider for matching an edep to an ROI 
 }
 
 # --- NEW: clone gaushit and make it read Wiremod output ---
