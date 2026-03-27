@@ -66,7 +66,7 @@ local wcls_output = {
       anode: wc.tn(mega_anode),
       digitize: true,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['sig'],
-      frame_scale: [1.170214286e10], // convert mV to ADC: 1e9 * 4095 / 1400
+      frame_scale: [1.170214286e10], // convert mV to ADC: 1e9 * 16383 / 1400
     },
   }, nin=1, nout=1, uses=[mega_anode]),
 
