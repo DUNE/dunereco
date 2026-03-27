@@ -10,6 +10,7 @@
 #include "TH2F.h"
 #include "TStyle.h"
 #include "TLegend.h"
+#include "TLatex.h"
 
 // art includes
 #include "art/Framework/Core/EDProducer.h"
@@ -132,7 +133,7 @@ namespace wiremod
       const int N=200;
       double xs[N], ys[N];
       if (fApplyModBoxVar){ 
-        hRat = new TH2F("hRatRecomb", "Total charge after/before scaling vs dE/dx; dE/dx; charge ratio", 200, 1, 3, 200, 0, 1);
+        hRat = new TH2F("hRatRecomb", "Total ROI charge after/before scaling vs dE/dx; dE/dx [MeV/cm]; Charge ratio", 200, 1, 3, 200, 0, 1);
         double beta_nom=0.212;
         double alpha_nom=0.93;
         double E=0.5;
@@ -146,7 +147,7 @@ namespace wiremod
         }
       }
       else{ 
-        hRat = new TH2F("hRatRecomb", "Total charge after/before scaling vs drift_distance; drift_distance [cm]; charge ratio", 200, 0, 350, 200, 0, 1);   
+        hRat = new TH2F("hRatRecomb", "Total ROI charge after/before scaling vs drift distance; Drift distance [cm]; Charge ratio", 200, 0, 350, 200, 0, 1);   
         double factor=1./160.563*(1./3.-1/10.4);
         double xmin=0., step=350./N;
         for (int i = 0; i < N; i++) {
@@ -550,14 +551,21 @@ namespace wiremod
       hRat->SetStats(0);
       hRat->SetLineColor(kBlack);
       grChargeRatExp->SetTitle(hRat->GetTitle());
+      grChargeRatExp->GetXaxis()->SetTitle(hRat->GetXaxis()->GetTitle());
+      grChargeRatExp->GetYaxis()->SetTitle(hRat->GetYaxis()->GetTitle());
       grChargeRatExp->Draw("AL");
       hRat->Draw("Psame");
-      TLegend *leg = new TLegend(0.1, 0.1, 0.9, 0.4);
+      TLegend *leg = new TLegend(0.15, 0.12, 0.85, 0.3);
       if (fApplyModBoxVar) leg->SetHeader(Form("#splitline{Nominal Mod. Box A: %.2f, Nominal Mod. Box B: %.3f (g.kV)/(MeV.cm^{2})}{Varied Mod. Box A: %.2f, Varied Mod. Box B: %.3f (g.kV)/(MeV.cm^{2})}", 0.93, 0.212, fModBoxAlphaVar, fModBoxBetaVar), "C");
-      else leg->SetHeader(Form("Nominal lifetime: %.2f ms, Varied lifetime: %.2f", 10.4, fLifetimeVar/1000.), "C");
+      else leg->SetHeader(Form("Nominal lifetime: %.2f ms, Varied lifetime: %.2f ms", 10.4, fLifetimeVar/1000.), "C");
       leg->AddEntry(hRat, "ROI total charge ratio");
       leg->AddEntry(grChargeRatExp, "Analytical ratio");
       leg->Draw("same");  
+      TLatex latex;
+      latex.SetNDC();                 // use normalized coordinates (0 → 1)
+      latex.SetTextSize(0.04);        // adjust size
+      latex.SetTextFont(42);          // nice standard font
+      latex.DrawLatex(0.15, 0.85, "DUNE Work in Progress");
       c1->SaveAs("ROI_charge_modification.pdf");
       delete c1;
     }
