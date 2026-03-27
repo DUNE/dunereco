@@ -77,6 +77,7 @@ namespace wiremod
       bool fSaveChargeRatioPlots; //plot showing the ratio of ROI total charge after/before modification
       TH2F *hRat = nullptr;
       TGraph *grChargeRatExp = nullptr;
+      bool fSaveEdepMatchingPlots; //Plot showing the energy distirbutions and PDG code of edeps that were matched or not to an ROI
       //The three following are probably not needed
       bool fSaveHistsByChannel;     // save modified signals by channel?
       bool fSaveHistsByWire;        // save modified signals by wire?
@@ -157,6 +158,7 @@ namespace wiremod
       }
       grChargeRatExp = new TGraph(N, xs, ys);   
     }
+    fSaveEdepMatchingPlots = pset.get<bool>("SaveEdepMatchingPlots"   , false);
     // we make these things
     produces<std::vector<recob::Wire      >>();
   }
@@ -208,11 +210,14 @@ namespace wiremod
     sys::WireModUtility wmUtil(fGeometry, fWireReadout, detProp); // detector geometry & properties
 
     //Get the simulated particles to get the PDG ID for debugging purposes
-    /*art::Handle<std::vector<simb::MCParticle>> mcPartHandle;
-    evt.getByLabel("largeant", mcPartHandle);  // adjust label if needed
-    auto const& mcParticles(*mcPartHandle);
-    wmUtil.MakeTrackIDtoPDGMap(mcParticles); //map is created and will be used to get Edeps PDG plot
-    */
+    if (fSaveEdepMatchingPlots){
+      art::Handle<std::vector<simb::MCParticle>> mcPartHandle;
+      evt.getByLabel("largeant", mcPartHandle);  // adjust label if needed
+      auto const& mcParticles(*mcPartHandle);
+      wmUtil.MakeTrackIDtoPDGMap(mcParticles); //map is created and will be used to get Edeps PDG plot
+    }
+
+    wmUtil.SaveEdepMatchingPlots = fSaveEdepMatchingPlots;
 
     wmUtil.applyGainScale    = fApplyGainScale;
     if (wmUtil.applyGainScale)

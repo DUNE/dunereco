@@ -38,7 +38,11 @@ namespace sys {
       double DLnew;      
       double readoutWindowTicks;                          // how many ticks are in the readout window?
       double tickOffset;                                  // do we want an offset in the ticks?
-
+      bool SaveEdepMatchingPlots;
+      TH1F *hMatchedE = nullptr;
+      TH1F *hUnMatchedE = nullptr;
+      TH1F *hMatchedPDG = nullptr;
+      TH1F *hUnMatchedPDG = nullptr;
       //removed members related to splines
 
       //graphs could still be needed, to be tuned

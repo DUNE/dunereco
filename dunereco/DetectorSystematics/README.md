@@ -28,6 +28,13 @@ Then, the HitLabel of spsolve and hitfd are changed from "gaushit" to "gaushitWi
 
 ## Making closure tests plots
 
+### Simulated energy deposits matching plots
+
+These plots allow to investigate the efficiency of matching a simulated energy deposits to  a signal ROI as a function of its energy or associated PDG code. 
+The blue distirbutions represent energy deposits that were succesfully matched whereas the red distirbutions are for unmatched energy deposits. 
+To produce this plot, set the boolean SaveEdepMatchingPlots to true in the fhicl file. 
+The plots will be saved in a PDF file called Edep_matching_plots.pdf.
+
 ### Charge ratio plots
 
 These plots serve as closure tests to make sure the charge modifcation of the ROI makes sense. 
