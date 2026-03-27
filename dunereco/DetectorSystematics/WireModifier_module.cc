@@ -73,6 +73,9 @@ namespace wiremod
       double fModBoxBetaVar;
       bool fApplyLongitudinalDiffusion;
       double fDLnew;
+      bool fSaveChargeRatioPlots; //plot showing the ratio of ROI total charge after/before modification
+      TH2F *hRat = nullptr;
+      TGraph *grChargeRatExp = nullptr;
       //The three following are probably not needed
       bool fSaveHistsByChannel;     // save modified signals by channel?
       bool fSaveHistsByWire;        // save modified signals by wire?
@@ -121,6 +124,37 @@ namespace wiremod
     fApplyLongitudinalDiffusion = pset.get<bool>("ApplyLongitudinalDiffusionVar"   , false);
     if (fApplyLongitudinalDiffusion){
       fDLnew = pset.get<double>("DLvar");
+    }
+
+    fSaveChargeRatioPlots = pset.get<bool>("SaveChargeRatioPlot"   , false);
+    if (!fApplyModBoxVar and !fApplyLifetimeVar) fSaveChargeRatioPlots = false; //for now only consider recombination and attenuation for charge ration plots
+    if (fSaveChargeRatioPlots){
+      const int N=200;
+      double xs[N], ys[N];
+      if (fApplyModBoxVar){ 
+        hRat = new TH2F("hRatRecomb", "Total charge after/before scaling vs dE/dx; dE/dx; charge ratio", 200, 1, 3, 200, 0, 1);
+        double beta_nom=0.212;
+        double alpha_nom=0.93;
+        double E=0.5;
+        double rho=1.39295;
+        double Bnom=beta_nom/rho/E;
+        double Bvar=fModBoxBetaVar/rho/E;
+        double xmin=1., step=2./N;
+        for (int i = 0; i < N; i++) {
+          xs[i] = xmin + i * step;
+          ys[i] = std::log(fModBoxAlphaVar+Bvar*xs[i])/std::log(alpha_nom+Bnom*xs[i])*beta_nom/fModBoxBetaVar;
+        }
+      }
+      else{ 
+        hRat = new TH2F("hRatRecomb", "Total charge after/before scaling vs drift_distance; drift_distance [cm]; charge ratio", 200, 0, 350, 200, 0, 1);   
+        double factor=1./160.563*(1./3.-1/10.4);
+        double xmin=0., step=350./N;
+        for (int i = 0; i < N; i++) {
+          xs[i] = xmin + i * step;
+          ys[i] = std::exp(-xs[i] * factor);
+        }   
+      }
+      grChargeRatExp = new TGraph(N, xs, ys);   
     }
     // we make these things
     produces<std::vector<recob::Wire      >>();
@@ -235,31 +269,9 @@ namespace wiremod
     int nROIs_hit_mod=0;
     int nROIs_hit_highQ=0;
     int nROIs_hit_highQ_mod=0;
-    /*TCanvas *c1 = new TCanvas("c1", "ROI properties", 800, 600);
-    TH2F *hMod = new TH2F("hMod", "Modified total charge vs dE/dx; dEdx; charge", 200, 1, 3, 200, 0, 1000);
-    TH2F *hRaw = new TH2F("hRaw", "Total charge vs dE/dx; dE/dx; charge", 200, 1, 3, 200, 0, 1000);    
-    TH2F *hRat = new TH2F("hRat", "Total charge after/before scaling vs dE/dx; dE/dx; charge ratio", 200, 1, 3, 200, 0, 1);
-    const int N=200;
-    double xs[N], ys[N];
-    double beta_nom=0.212;
-    double alpha_nom=0.93;
-    double E=0.5;
-    double rho=1.39295;
-    double Bnom=beta_nom/rho/E;
-    double Bvar=fModBoxBetaVar/rho/E;
-    double xmin=1., step=2./N;
-    for (int i = 0; i < N; i++) {
-        xs[i] = xmin + i * step;
-        ys[i] = std::log(fModBoxAlphaVar+Bvar*xs[i])/std::log(alpha_nom+Bnom*xs[i])*beta_nom/fModBoxBetaVar;
-    }*/
-    /*double factor=1./160.563*(1./3.-1/10.4);
-    double xmin=-350., step=350./N;
-    for (int i = 0; i < N; i++) {
-        xs[i] = xmin + i * step;
-        ys[i] = std::exp(xs[i] * factor);
-    }*/ 
-    //TGraph *exp = new TGraph(N, xs, ys);
-    //exp->SetTitle("Total charge after/before scaling vs dE/dx; dE/dx; charge ratio"); 
+
+
+
     // loop-de-loop
     for(size_t i_w = 0; i_w < wireVec.size(); ++i_w)
     {
@@ -437,9 +449,8 @@ namespace wiremod
           
           SubROIMatchedScalesMap[key] = scale_vals;
         }
-        drift_distance=drift_distance/total_E;
+        drift_distance=abs(drift_distance/total_E);
         dedx_avg=dedx_avg/total_E;
-        //hRaw->Fill(dedx_avg, roi_properties.total_q);
         if (isModified){ 
           nROIs_mod++;
           if (roi_properties.total_q<80) nROIs_lowQ_mod++;
@@ -449,12 +460,13 @@ namespace wiremod
           }
         }
         wmUtil.ModifyROI(modified_data, roi_properties, subROIPropVec, SubROIMatchedScalesMap);
-        /*double charge = 0;
+        double charge = 0;
         for (auto const& adc : modified_data)
           charge += adc;
-        hMod->Fill(dedx_avg, charge);
-        hRat->Fill(dedx_avg, charge/roi_properties.total_q);
-        */
+        if (fSaveChargeRatioPlots){ 
+          if (fApplyLifetimeVar) hRat->Fill(drift_distance, charge/roi_properties.total_q);
+          else hRat->Fill(dedx_avg, charge/roi_properties.total_q);
+        }
         new_rois     .add_range(roi_properties.begin, modified_data);
       }
 
@@ -531,27 +543,24 @@ namespace wiremod
     hMatched->Draw("P");
     hUnMatched->Draw("Psame");
     c1->SaveAs("ROI_properties.pdf");*/
-    /*hRaw->SetMarkerStyle(2);
-    hRaw->SetMarkerColor(kBlue);
-    hRaw->SetStats(0);
-    hMod->SetMarkerStyle(5);
-    hMod->SetMarkerColor(kRed);
-    hMod->SetStats(0);
-    hRaw->Draw("P");
-    hMod->Draw("Psame");
-    c1->SaveAs("ROI_charge_modification.pdf(");
-    //hRat->Draw("P");
-    exp->SetLineWidth(2);
-    exp->SetLineColor(kRed);
-    //exp->Draw("Lsame");
-    exp->Draw("AL");
-    hRat->Draw("Psame");
-    TLegend *leg = new TLegend();
-    leg->AddEntry(hRat, "ROI total charge ratio");
-    leg->AddEntry(exp, "Analytical ratio");
-    leg->Draw("same");  
-    c1->SaveAs("ROI_charge_modification.pdf)");
-    delete c1;*/
+    if (fSaveChargeRatioPlots){
+      TCanvas *c1 = new TCanvas("c1", "ROI properties", 800, 600);
+      grChargeRatExp->SetLineWidth(2);
+      grChargeRatExp->SetLineColor(kRed);
+      hRat->SetStats(0);
+      hRat->SetLineColor(kBlack);
+      grChargeRatExp->SetTitle(hRat->GetTitle());
+      grChargeRatExp->Draw("AL");
+      hRat->Draw("Psame");
+      TLegend *leg = new TLegend(0.1, 0.1, 0.9, 0.4);
+      if (fApplyModBoxVar) leg->SetHeader(Form("#splitline{Nominal Mod. Box A: %.2f, Nominal Mod. Box B: %.3f (g.kV)/(MeV.cm^{2})}{Varied Mod. Box A: %.2f, Varied Mod. Box B: %.3f (g.kV)/(MeV.cm^{2})}", 0.93, 0.212, fModBoxAlphaVar, fModBoxBetaVar), "C");
+      else leg->SetHeader(Form("Nominal lifetime: %.2f ms, Varied lifetime: %.2f", 10.4, fLifetimeVar/1000.), "C");
+      leg->AddEntry(hRat, "ROI total charge ratio");
+      leg->AddEntry(grChargeRatExp, "Analytical ratio");
+      leg->Draw("same");  
+      c1->SaveAs("ROI_charge_modification.pdf");
+      delete c1;
+    }
     evt.put(std::move(new_wires));
   }
   DEFINE_ART_MODULE(WireModifier)
