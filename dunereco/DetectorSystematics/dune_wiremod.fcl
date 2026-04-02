@@ -26,7 +26,7 @@ physics.producers.duneWiremod: {
   ApplyGainScale: false 
   ElectronicsGainScale: 2.00
 
-  ApplyLifetimeVar: true
+  ApplyLifetimeVar: false
   LifetimeVar: 3000 # in microseconds
 
   ApplyModBoxVar: false
@@ -36,8 +36,11 @@ physics.producers.duneWiremod: {
   ApplyLongitudinalDiffusionVar: false
   DLvar: 12e-9
 
+  ApplyTransverseDiffusionVar: true
+  DTvar: 12e-9
+
   SaveChargeRatioPlot: false
-  SaveEdepMatchingPlots: true
+  SaveEdepMatchingPlots: false
 
   nNeighbourWires: 2 #Number of neighbour wires to consider for matching an edep to an ROI 
 }
