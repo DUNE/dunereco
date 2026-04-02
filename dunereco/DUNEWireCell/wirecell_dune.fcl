@@ -967,6 +967,8 @@ tpcrawdecoder_dunefd_vertdrift_3view_30deg: {
           files_wires: "dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2"
           files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
           files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
+          process_mode: "single-sim"
+
         }
         structs: {
           elecGain: @local::ASICGainInMVPerFC_standard
@@ -987,6 +989,8 @@ tpcrawdecoder_dunefd_vertdrift_3view_30deg: {
           response_plane: 18.92
           # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
           ncrm: 36
+          process_apa_index: 0
+
           use_dnnroi: false
           use_hydra: true
           save_rawdigits: false
@@ -1002,6 +1006,8 @@ tpcrawdecoder_dunefd_vertdrift_1x8x6_3view_30deg: {
           files_wires: "dunevd10kt_3view_30deg_v3_refactored_1x8x6ref.json.bz2"
           files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
           files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
+          process_mode: "single-sim"
+
         }
         structs: {
           elecGain: @local::ASICGainInMVPerFC_standard
@@ -1611,6 +1617,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
 
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"
         ,"WireCellTbb"
+    
         # , "WireCellPytorch"
         ]
 
@@ -1684,6 +1691,7 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_sim_nfsp : {
         structs: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main.structs
             process_apa_index: 0
+
         }
     }
 }
@@ -1692,17 +1700,26 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp : {
     @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp
     wcls_main: {
         @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main
+        outputers: [
+                    "wclsSimChannelSink:postdrift",
+                    # "wclsFrameSaver:spsignals",
+                    "wclsFrameSaver:simdigits"
+        ]
         params: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main.params
             files_wires: "dunevd10kt_3view_30deg_v7_refactored_1x8x14.json.bz2"
             files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
             files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
             geo_planeid_labels: "default"
-            process_mode: "full"
+            # process_mode: "single-sim"
+            process_mode: "single-sim"
         }
         structs: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main.structs
             process_apa_index: 0
+            use_hydra: false
+            save_rawdigits: false
+            ncrm: 112
         }
     }
 }
@@ -1714,11 +1731,13 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_30deg_sim_nfsp : {
         params: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp.wcls_main.params
             files_wires: "dunevd10kt_3view_30deg_v3_refactored_1x8x6ref.json.bz2"
-            process_mode: "full"
+            process_mode: "single-sim-sp"
         }
         structs: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp.wcls_main.structs
             process_apa_index: 0
+            use_hydra: true
+            save_rawdigits: true
         }
     }
 }
