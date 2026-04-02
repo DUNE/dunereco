@@ -74,6 +74,8 @@ namespace wiremod
       double fModBoxBetaVar;
       bool fApplyLongitudinalDiffusion;
       double fDLnew;
+      bool fApplyTransverseDiffusion;
+      double fDTnew;
       bool fSaveChargeRatioPlots; //plot showing the ratio of ROI total charge after/before modification
       TH2F *hRat = nullptr;
       TGraph *grChargeRatExp = nullptr;
@@ -127,6 +129,11 @@ namespace wiremod
     fApplyLongitudinalDiffusion = pset.get<bool>("ApplyLongitudinalDiffusionVar"   , false);
     if (fApplyLongitudinalDiffusion){
       fDLnew = pset.get<double>("DLvar");
+    }
+
+    fApplyTransverseDiffusion = pset.get<bool>("ApplyTransverseDiffusionVar"   , false);
+    if (fApplyTransverseDiffusion){
+      fDTnew = pset.get<double>("DTvar");
     }
 
     fSaveChargeRatioPlots = pset.get<bool>("SaveChargeRatioPlot"   , false);
@@ -241,8 +248,8 @@ namespace wiremod
       wmUtil.ModBoxAlphaVar = fModBoxAlphaVar;
       wmUtil.ModBoxBetaVar = fModBoxBetaVar;
     }
-    wmUtil.applyLongitudinalDiffusion = fApplyLongitudinalDiffusion;
-    if (wmUtil.applyLongitudinalDiffusion){
+    wmUtil.applyLongitudinalDiffusionVar = fApplyLongitudinalDiffusion;
+    if (wmUtil.applyLongitudinalDiffusionVar){
       std::cout<<"Will apply longitudinal diffusion scaling"<<std::endl;
       wmUtil.DLnew = fDLnew;
     }
@@ -317,12 +324,21 @@ namespace wiremod
           << "Wire is on unsupported plane. Skip.";
       }
 
+      std::vector<geo::WireID> wireIDs = fWireReadout->ChannelToWire(wire.Channel());
+      geo::WireID wireID = wireIDs.at(0); 
+      auto const& geoWire = fWireReadout->Wire(wireID);
+      auto const& center = geoWire.GetCenter();
+      //auto const& center = wire.GetCenter();
+      double y_wire = center.Y();
+      double z_wire = center.Z();
+ 
       // keep track of if this wire is modified
       bool isModified = false;
       
       for(size_t i_r = 0; i_r < wire.SignalROI().get_ranges().size(); ++i_r)
       {
         nROIs++;
+        bool isROIModified = false;
         MF_LOG_DEBUG("WireModifier")
           << "  Checking ROI " << i_r;
         auto const& range = wire.SignalROI().get_ranges()[i_r];
@@ -402,7 +418,7 @@ namespace wiremod
         MF_LOG_DEBUG("WireModifier")
           << "    have " << subROIPropVec.size() << " SubROT";
 
-        auto SubROIMatchedShiftedEdepMap = wmUtil.MatchEdepsToSubROIs(subROIPropVec, matchedShiftedEdepPtrVec, offset_ADC);
+        auto SubROIMatchedShiftedEdepMap = wmUtil.MatchEdepsToSubROIs(subROIPropVec, matchedShiftedEdepPtrVec, offset_ADC, y_wire, z_wire);
         MF_LOG_DEBUG("WireModifier")
           << "    size of SubROIMatchedShiftedEdepMap: " << SubROIMatchedShiftedEdepMap.size();
         std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDeposit*>> SubROIMatchedEdepMap;
@@ -434,7 +450,7 @@ namespace wiremod
           auto key_it =  SubROIMatchedEdepMap.find(key);
 
           if ( key_it != SubROIMatchedEdepMap.end() && key_it->second.size() > 0 ) {
-            auto truth_vals = wmUtil.CalcPropertiesFromEdeps(key_it->second, offset_ADC);
+            auto truth_vals = wmUtil.CalcPropertiesFromEdeps(key_it->second, offset_ADC, y_wire, z_wire);
             total_E+=truth_vals.total_energy;
             drift_distance+=truth_vals.total_energy*truth_vals.x;
             dedx_avg+=truth_vals.total_energy*truth_vals.dedx;
@@ -443,11 +459,12 @@ namespace wiremod
               scale_vals.r_sigma = 1.;
             } 
             else {*/
-              scale_vals = wmUtil.GetScaleValues(truth_vals, roi_properties);
+              scale_vals = wmUtil.GetScaleValues(truth_vals, roi_properties, y_wire, z_wire);
               mf::LogDebug("WireModifier")
                 << "Scaling! Q scale: " << scale_vals.r_Q
                 << "     sigma scale: " << scale_vals.r_sigma;
               isModified = true;
+              isROIModified = true;
             //}
           }
           else {
@@ -459,7 +476,7 @@ namespace wiremod
         }
         drift_distance=abs(drift_distance/total_E);
         dedx_avg=dedx_avg/total_E;
-        if (isModified){ 
+        if (isROIModified){ 
           nROIs_mod++;
           if (roi_properties.total_q<80) nROIs_lowQ_mod++;
           if (hasHit){ 
@@ -538,8 +555,9 @@ namespace wiremod
     std::cout<<"--- Printing ROI-edep matching efficiencies for that event ---"<<std::endl;
     std::cout<<"Total efficiency: "<<double(nROIs_mod)/double(nROIs)<<nROIs<<std::endl;
     std::cout<<"Efficiency for total charge below 80: "<<double(nROIs_lowQ_mod)/double(nROIs_lowQ)<<std::endl;
+    std::cout<<"Percentage of ROIs matched to at least one hit: "<<double(nROIs_hit)/double(nROIs)<<std::endl;
     std::cout<<"Efficiency for matched to at least one hit: "<<double(nROIs_hit_mod)/double(nROIs_hit)<<std::endl;
-    std::cout<<"Efficiency for ROIs matched to at least one hit and total charge above 80: "<<double(nROIs_hit_highQ_mod)/double(nROIs_hit_highQ)<<std::endl;
+    std::cout<<"nROIs matched to edep / nROIs matched to an hit: "<<double(nROIs_hit_mod)/double(nROIs_mod)<<std::endl;
     std::cout<<"--- Finished printing efficiencies --"<<std::endl;
  
     if (fSaveChargeRatioPlots){

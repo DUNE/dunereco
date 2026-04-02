@@ -34,8 +34,10 @@ namespace sys {
       bool applyModBoxVar;
       double ModBoxAlphaVar;
       double ModBoxBetaVar;
-      double applyLongitudinalDiffusion;
+      double applyLongitudinalDiffusionVar;
       double DLnew;      
+      double applyTransverseDiffusionVar;
+      double DTnew;
       double readoutWindowTicks;                          // how many ticks are in the readout window?
       double tickOffset;                                  // do we want an offset in the ticks?
       int nNeighbourWires; //Number of neighbouring wires to consider for matching edeps to ROI
@@ -201,16 +203,16 @@ namespace sys {
 
       std::vector<SubROIProperties_t> CalcSubROIProperties(ROIProperties_t const&, std::vector<const recob::Hit*> const&);
 
-      std::map<SubROI_Key_t, std::vector<const sim::SimEnergyDeposit*>> MatchEdepsToSubROIs(std::vector<SubROIProperties_t> const&, std::vector<const sim::SimEnergyDeposit*> const&, double offset);
+      std::map<SubROI_Key_t, std::vector<const sim::SimEnergyDeposit*>> MatchEdepsToSubROIs(std::vector<SubROIProperties_t> const&, std::vector<const sim::SimEnergyDeposit*> const&, double offset, double y_wire, double z_wire);
 
-      TruthProperties_t CalcPropertiesFromEdeps(std::vector<const sim::SimEnergyDeposit*> const&, double offset);
+      TruthProperties_t CalcPropertiesFromEdeps(std::vector<const sim::SimEnergyDeposit*> const&, double offset, double y_wire, double z_wire);
 
       //product of view scale and channel scale
-      ScaleValues_t GetScaleValues(TruthProperties_t const&, ROIProperties_t const&);
+      ScaleValues_t GetScaleValues(TruthProperties_t const&, ROIProperties_t const&, double y_wire, double z_wire);
       //scaling factors not dependent on thruth properties (e.g., electronics gain)
       ScaleValues_t GetChannelScaleValues(TruthProperties_t const&, raw::ChannelID_t const&);
       //scaling factors dependent on truth properties (e.g., recombination, attenuation)
-      ScaleValues_t GetViewScaleValues(TruthProperties_t const&, geo::View_t const&);
+      ScaleValues_t GetViewScaleValues(TruthProperties_t const&, geo::View_t const&, double y_wire, double z_wire);
 
       void ModifyROI(std::vector<float> &,
                      ROIProperties_t const &,

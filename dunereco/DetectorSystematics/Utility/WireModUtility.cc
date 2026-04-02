@@ -386,6 +386,7 @@ void sys::WireModUtility::FillROIMatchedHitMap(std::vector<recob::Hit> const& hi
   for (size_t i_w = 0; i_w < wireVec.size(); ++i_w)
     wireChannelMap[wireVec[i_w].Channel()] = i_w;
 
+  double nHitsMatched = 0;
   // loop over hits
   for (size_t i_h = 0; i_h < hitVec.size(); ++i_h)
   {
@@ -413,11 +414,12 @@ void sys::WireModUtility::FillROIMatchedHitMap(std::vector<recob::Hit> const& hi
 
       // which range is it?
       auto range_number = target_wire.SignalROI().find_range_iterator(target_roi.second) - target_wire.SignalROI().begin_range();
-
+      nHitsMatched++;
       // pupluate the map
       ROIMatchedHitMap[std::make_pair(target_wire.Channel(),range_number)].push_back(i_h);
     }
   }
+  std::cout<<"Efficiency of matching hits to an ROI: "<<nHitsMatched/double(hitVec.size())<<std::endl;
 }
 
 //--- CalcSubROIProperties ---
@@ -455,7 +457,7 @@ std::vector<sys::WireModUtility::SubROIProperties_t> sys::WireModUtility::CalcSu
 
 //--- MatchEdepsToSubROIs ---
 std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDeposit*>> sys::WireModUtility::MatchEdepsToSubROIs(std::vector<sys::WireModUtility::SubROIProperties_t> const& subROIPropVec, 
-                                                                                                                  std::vector<const sim::SimEnergyDeposit*> const& edepPtrVec, double offset)
+                                                                                                                  std::vector<const sim::SimEnergyDeposit*> const& edepPtrVec, double offset, double y_wire, double z_wire)
 {
   // for each TrackID, which EDeps are associated with it? keys are TrackIDs
   std::map<int, std::vector<const sim::SimEnergyDeposit*>> TrackIDMatchedEDepMap;
@@ -473,7 +475,7 @@ std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDepo
   // calculate EDep properties by TrackID
   std::map<int, sys::WireModUtility::TruthProperties_t> TrackIDMatchedPropertyMap;
   for (auto const& track_edeps : TrackIDMatchedEDepMap)
-    TrackIDMatchedPropertyMap[track_edeps.first] = CalcPropertiesFromEdeps(track_edeps.second, offset);
+    TrackIDMatchedPropertyMap[track_edeps.first] = CalcPropertiesFromEdeps(track_edeps.second, offset, y_wire, z_wire);
 
   // map it all out
   std::map<unsigned int, std::vector<unsigned int>> EDepMatchedSubROIMap;        // keys are indexes of edepPtrVec, values are vectors of indexes of subROIPropVec
@@ -546,7 +548,7 @@ std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDepo
 
 
 //--- CalcPropertiesFromEdeps ---
-sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEdeps(std::vector<const sim::SimEnergyDeposit*> const& edepPtrVec, double offset)
+sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEdeps(std::vector<const sim::SimEnergyDeposit*> const& edepPtrVec, double offset, double y_wire, double z_wire)
 {
   //split the edeps by TrackID
   std::map< int, std::vector<const sim::SimEnergyDeposit*> > edepptrs_by_trkid;
@@ -611,7 +613,7 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
 
     for (auto const& plane : wireReadout->Iterate<geo::PlaneGeo>(curTPCGeom->ID())) {
       int i_p = plane.ID().Plane;
-      auto scales = GetViewScaleValues(edep_props, plane.View());
+      auto scales = GetViewScaleValues(edep_props, plane.View(), y_wire, z_wire);
       scales_e_weighted[i_p].r_Q     += edep_ptr->E()*scales.r_Q;
       scales_e_weighted[i_p].r_sigma += edep_ptr->E()*scales.r_sigma; 
     }
@@ -721,11 +723,11 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
 }
 
 //--- GetScaleValues ---
-sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetScaleValues(sys::WireModUtility::TruthProperties_t const& truth_props, sys::WireModUtility::ROIProperties_t const& roi_vals)
+sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetScaleValues(sys::WireModUtility::TruthProperties_t const& truth_props, sys::WireModUtility::ROIProperties_t const& roi_vals, double y_wire, double z_wire)
 {
   sys::WireModUtility::ScaleValues_t scales;
   sys::WireModUtility::ScaleValues_t channelScales = GetChannelScaleValues(truth_props, roi_vals.channel);
-  sys::WireModUtility::ScaleValues_t viewScales    = GetViewScaleValues(truth_props, roi_vals.view);
+  sys::WireModUtility::ScaleValues_t viewScales    = GetViewScaleValues(truth_props, roi_vals.view, y_wire, z_wire);
   scales.r_Q     = channelScales.r_Q     * viewScales.r_Q;
   scales.r_sigma = channelScales.r_sigma * viewScales.r_sigma;
   return scales;
@@ -756,7 +758,7 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetChannelScaleValues(sy
 
 //--- GetViewScaleValues ---
 // Rescaling depending on truth info of the event (recombination, attenuation etc.). To modify for DUNE using analytical formula
-sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::WireModUtility::TruthProperties_t const& truth_props, geo::View_t const& view)
+sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::WireModUtility::TruthProperties_t const& truth_props, geo::View_t const& view, double y_wire, double z_wire)
 {
   // initialize return
   sys::WireModUtility::ScaleValues_t scales;
@@ -793,11 +795,27 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
     scales.r_Q *= scale_recomb;
   }
 
-  if (applyLongitudinalDiffusion){
-   art::ServiceHandle<sim::LArG4Parameters const> larG4Params;
-   double Dnom=larG4Params->LongitudinalDiffusion();
-   double scale_DL=sqrt(Dnom/DLnew);
-   scales.r_sigma *= scale_DL; 
+  if (applyLongitudinalDiffusionVar){
+    art::ServiceHandle<sim::LArG4Parameters const> larG4Params;
+    double Dnom=larG4Params->LongitudinalDiffusion();
+    double scale_DL=sqrt(Dnom/DLnew);
+    scales.r_sigma *= scale_DL; 
+  }
+
+  if (applyTransverseDiffusionVar){
+    std::cout<<"applying transverse diffusion rescaling"<<std::endl;
+    art::ServiceHandle<sim::LArG4Parameters const> larG4Params;
+    double Dnom=larG4Params->TransverseDiffusion();
+    double scale_DT=Dnom/DTnew;
+
+    double drift_velocity = detPropData.DriftVelocity();
+    double x_plane = plane0.GetCenter().X();
+    double t = std::abs(x_plane - truth_coords[0]) / drift_velocity;
+    double dT2 = (truth_coords[1]-y_wire)*(truth_coords[1]-y_wire)+(truth_coords[2]-z_wire)*(truth_coords[2]-z_wire);
+
+    scale_DT *= exp(-dT2/(16*t*t)*(1/(DTnew*DTnew)-1/(Dnom*Dnom)));
+    
+    scales.r_Q *= scale_DT;
   }
   //std::cout<<"scaling factor: "<<scales.r_Q<<std::endl;
   return scales;
