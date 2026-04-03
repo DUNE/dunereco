@@ -157,8 +157,8 @@ namespace wiremod
       }
       else{ 
         hRat = new TH2F("hRatRecomb", "Total ROI charge after/before scaling vs drift distance; Drift distance [cm]; Charge ratio", 200, 0, 350, 200, 0, 1);   
-        double factor=1./160.563*(1./3.-1/10.4);
-        double xmin=0., step=350./N;
+        double factor=1./160.563*(1000./fLifetimeVar-1/10.4);
+        double xmin=0., step=500./N;
         for (int i = 0; i < N; i++) {
           xs[i] = xmin + i * step;
           ys[i] = std::exp(-xs[i] * factor);
@@ -252,6 +252,11 @@ namespace wiremod
     if (wmUtil.applyLongitudinalDiffusionVar){
       std::cout<<"Will apply longitudinal diffusion scaling"<<std::endl;
       wmUtil.DLnew = fDLnew;
+    }
+    wmUtil.applyTransverseDiffusionVar = fApplyTransverseDiffusion;
+    if (wmUtil.applyTransverseDiffusionVar){
+      std::cout<<"Will apply transverse diffusion scaling"<<std::endl;
+      wmUtil.DTnew = fDTnew;
     }
     // add some debugging here
     MF_LOG_VERBATIM("WireModifier")

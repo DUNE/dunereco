@@ -803,7 +803,7 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
   }
 
   if (applyTransverseDiffusionVar){
-    std::cout<<"applying transverse diffusion rescaling"<<std::endl;
+    //std::cout<<"applying transverse diffusion rescaling"<<std::endl;
     art::ServiceHandle<sim::LArG4Parameters const> larG4Params;
     double Dnom=larG4Params->TransverseDiffusion();
     double scale_DT=Dnom/DTnew;
