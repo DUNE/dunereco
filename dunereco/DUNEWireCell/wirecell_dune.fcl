@@ -718,7 +718,7 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
             # Pgrapher, TbbFlow
             engine: "TbbFlow"
             dnn_model: "ts-model/CP49_mobilenetv3.ts"
-            apa_sparsity: "hydra" # apa0, all, hydra
+            apa_sparsity: "hydra" # apa0, full, hydra
         }
         structs: {
           elecGain: @local::ASICGainInMVPerFC_standard
@@ -1643,8 +1643,8 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
             # default is to assume WireCell::kU->geo::kU, kV->kV, kW->kW
             # 3view-30deg: default, 3view: dunevd_3view
             geo_planeid_labels: "dunevd_3view"
-            # process pratial or all CRMs: all or partial
-            process_crm: "full"
+            # single-sp, single-sim, single-sim-sp, full
+            process_mode: "single-sp"
         }
         structs: {
             elecGain: @local::ASICGainInMVPerFC_standard
@@ -1663,8 +1663,9 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
             G4RefTime: @local::dunefd_detectorclocks.G4RefTime
             # response plane [cm]
             response_plane: 18.92
-            # number of CRMs, 36 for 1x6x6, 112 for 1x8x14
-            ncrm: 112
+            # used in single APA mode, which APA to process
+            process_apa_index: 0
+            use_hydra: true
             # use dnn_roi or not
             use_dnnroi: false
         }
@@ -1678,11 +1679,11 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_sim_nfsp : {
         params: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main.params
             files_wires: "dunevd10kt_3view_v2_refactored_1x8x6ref.json.bz2"
-            process_crm: "all"
+            process_mode: "full"
         }
         structs: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main.structs
-            ncrm: 48
+            process_apa_index: 0
         }
     }
 }
@@ -1697,11 +1698,11 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp : {
             files_fields: "dunevd-resp-isoc3views-18d92.json.bz2"
             files_noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2"
             geo_planeid_labels: "default"
-            process_crm: "full"
+            process_mode: "full"
         }
         structs: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main.structs
-            ncrm: 112
+            process_apa_index: 0
         }
     }
 }
@@ -1713,11 +1714,11 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_30deg_sim_nfsp : {
         params: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp.wcls_main.params
             files_wires: "dunevd10kt_3view_30deg_v3_refactored_1x8x6ref.json.bz2"
-            process_crm: "all"
+            process_mode: "full"
         }
         structs: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp.wcls_main.structs
-            ncrm: 48
+            process_apa_index: 0
         }
     }
 }
@@ -1750,7 +1751,7 @@ dune10kt_dunefd_vertdrift_1x8x6_2view_data_nfsp : {
         }
         structs: {
             @table::dune10kt_dunefd_vertdrift_1x6x6_2view_data_nfsp.wcls_main.structs
-            ncrm: 48
+            process_apa_index: 0
         }
     }
 }
@@ -2174,8 +2175,8 @@ dune10kt_vertdrift_sim_nfsp : {
             # default is to assume WireCell::kU->geo::kU, kV->kV, kW->kW
             # 3view-30deg: default, 3view: dunevd_3view
             geo_planeid_labels: "default"
-            # process pratial or all CRMs: all or test2
-            process_crm: "all"
+            # single-sp, single-sim, single-sim-sp, full
+            process_mode: "single-sp"
         }
         structs: {
             elecGain: @local::ASICGainInMVPerFC_standard
@@ -2194,8 +2195,8 @@ dune10kt_vertdrift_sim_nfsp : {
             G4RefTime: @local::dunefd_detectorclocks.G4RefTime
             # response plane [cm]
             response_plane: 18.92
-            # number of CRMs, 24 for 1x8x6, 320 for 2x8x40
-            ncrm: 320
+            # when process_mode is single-*, this specifies which APA to process (0-319)
+            process_apa_index: 0
             use_hydra: true
             save_rawdigits: false
             # use dnn_roi or not
