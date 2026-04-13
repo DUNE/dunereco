@@ -280,8 +280,8 @@ namespace lowe
                 const float &RefOpFlashPe,
                 const float &OpFlashTime,
                 const float &OpFlashPE,
-                const float &MFlashResidual,
-                const float &OpFlashResidual);
+                const float &MFlashNegativeLogLikelihood,
+                const float &OpFlashNegativeLogLikelihood);
         
             void SetLikelihoodComputer(
                 const double& fElectronScintYield,

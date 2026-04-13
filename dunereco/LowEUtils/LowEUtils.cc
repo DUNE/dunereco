@@ -1911,8 +1911,8 @@ float LowEUtils::GetLikelihoodFlashMatch(
     const float &RefOpFlashPE,
     const float &OpFlashTime,
     const float &OpFlashPE,
-    const float &MFlashResidual,
-    const float &OpFlashResidual)
+    const float &MFlashNegativeLogLikelihood,
+    const float &OpFlashNegativeLogLikelihood)
   /*
   Select PDS flash based on time and PE. There are 2 options: "maximum" or "light_map"
   - TPCDriftTime: total drift time in the TPC
@@ -1946,14 +1946,10 @@ float LowEUtils::GetLikelihoodFlashMatch(
       }
     }
     else if (fFlashMatchBy == "maximumlikelihood") {
-      // If the flash likelihood (residual) is smaller than the reference flash residual, select it
-      std::cout << "Comparing this residual " << OpFlashResidual << " to reference residual " << MFlashResidual;
-      if (OpFlashResidual < MFlashResidual) {
-        std::cout << " ->OK!" << std::endl;
+      if (OpFlashNegativeLogLikelihood < MFlashNegativeLogLikelihood) {
         return true;
       }
       else {
-        std::cout << " ->Not selected!" << std::endl;
         return false;
       }
     }
