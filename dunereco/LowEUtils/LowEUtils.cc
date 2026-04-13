@@ -2,6 +2,7 @@
 #include "LikelihoodComputer.h"
 #include "LowECluster.h"
 #include "lardataobj/RecoBase/OpFlash.h"
+#include <TEfficiency.h>
 
 using namespace producer;
 
@@ -1980,12 +1981,12 @@ float LowEUtils::GetLikelihoodFlashMatch(
     std::cerr << "inStart setting..." << std::endl;
     double LY_times_PDE = fElectronScintYield*0.03; // 3% PDE assumed
     TFile* parametrizer_file = TFile::Open((input_dir+"MLL_Parametrizer_"+geom_identifier+".root").c_str(), "READ");
-    TF1* f_reco_prob       = static_cast<TF1*>(parametrizer_file->Get("f_reco_prob"));
-    TF1* f_lognormal       = static_cast<TF1*>(parametrizer_file->Get("f_lognormal"));
-    TF1* f_logms_trend     = static_cast<TF1*>(parametrizer_file->Get("f_logms_trend"));
-    TF1* f_sigmas_trend    = static_cast<TF1*>(parametrizer_file->Get("f_sigmas_trend"));
-    TGraphErrors* g_logms  = static_cast<TGraphErrors*>(parametrizer_file->Get("g_logms"));
-    TGraphErrors* g_sigmas = static_cast<TGraphErrors*>(parametrizer_file->Get("g_sigmas"));
+    TF1* f_RecoExpDistr       = static_cast<TF1*>(parametrizer_file->Get("f_RecoExpDistr"));
+    TF1* f_par1_trend         = static_cast<TF1*>(parametrizer_file->Get("f_par1_trend"));
+    TF1* f_par2_trend         = static_cast<TF1*>(parametrizer_file->Get("f_par2_trend"));
+    TGraphErrors* g_par1      = static_cast<TGraphErrors*>(parametrizer_file->Get("g_par1"));
+    TGraphErrors* g_par2      = static_cast<TGraphErrors*>(parametrizer_file->Get("g_par2"));
+    TEfficiency* he_hit_prob = static_cast<TEfficiency*>(parametrizer_file->Get("he_hit_prob"));
 
     TFile* calib_file = TFile::Open((input_dir+"MLL_Calibrator_"+geom_identifier+".root").c_str(), "READ");
     TTree* calib_tree = static_cast<TTree*>(calib_file->Get("calib_tree"));
@@ -2004,13 +2005,13 @@ float LowEUtils::GetLikelihoodFlashMatch(
     likelihood_computer = LikelihoodComputer(
       TString((input_dir+"dunevis_"+geom_identifier+".root").c_str()),      // Visibility file name
       LY_times_PDE,          // Light yield times photo detector efficiency
-      f_reco_prob,           // Reconstruction probability function
-      f_lognormal,           // Lognormal function for extrapolation
-      f_logms_trend,         // Trend function for logm
-      f_sigmas_trend,        // Trend function for sigma
+      he_hit_prob,           // Reconstruction probability TEfficiency
+      f_RecoExpDistr,       // PDF for extrapolation
+      f_par1_trend,         // Trend function for par1
+      f_par2_trend,         // Trend function for par2
       driftvelocity,         // Drift velocity
-      g_logms,               // Graph for logm values
-      g_sigmas,              // Graph for sigma values
+      g_par1,               // Graph for par1 values
+      g_par2,               // Graph for par2 values
       trend_thr,             // Threshold for trend
       calib_c,               // Calibration constant
       calib_slope,           // Calibration slope
