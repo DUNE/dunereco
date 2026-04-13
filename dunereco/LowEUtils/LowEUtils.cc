@@ -1970,7 +1970,7 @@ float LowEUtils::GetLikelihoodFlashMatch(
   
   void LowEUtils::SetLikelihoodComputer(
     const double& fElectronScintYield,
-    const std::string& fVisibilityFilename,
+    const std::string& geom_identifier,
     LikelihoodComputer& likelihood_computer,
     std::string input_dir,
     double trend_thr,
@@ -1979,7 +1979,7 @@ float LowEUtils::GetLikelihoodFlashMatch(
     std::cout << "inStart setting..." << std::endl;
     std::cerr << "inStart setting..." << std::endl;
     double LY_times_PDE = fElectronScintYield*0.03; // 3% PDE assumed
-    TFile* parametrizer_file = TFile::Open((input_dir+"MLL_Parametrizer.root").c_str(), "READ");
+    TFile* parametrizer_file = TFile::Open((input_dir+"MLL_Parametrizer_"+geom_identifier+".root").c_str(), "READ");
     TF1* f_reco_prob       = static_cast<TF1*>(parametrizer_file->Get("f_reco_prob"));
     TF1* f_lognormal       = static_cast<TF1*>(parametrizer_file->Get("f_lognormal"));
     TF1* f_logms_trend     = static_cast<TF1*>(parametrizer_file->Get("f_logms_trend"));
@@ -1987,7 +1987,7 @@ float LowEUtils::GetLikelihoodFlashMatch(
     TGraphErrors* g_logms  = static_cast<TGraphErrors*>(parametrizer_file->Get("g_logms"));
     TGraphErrors* g_sigmas = static_cast<TGraphErrors*>(parametrizer_file->Get("g_sigmas"));
 
-    TFile* calib_file = TFile::Open((input_dir+"MLL_Calibrator.root").c_str(), "READ");
+    TFile* calib_file = TFile::Open((input_dir+"MLL_Calibrator_"+geom_identifier+".root").c_str(), "READ");
     TTree* calib_tree = static_cast<TTree*>(calib_file->Get("calib_tree"));
     Float_t calib_c = 0.;         Float_t calib_slope = 0.;
     Float_t corr_lambda = 0.0;    Float_t drift_velocity = 0.0;
@@ -2002,7 +2002,7 @@ float LowEUtils::GetLikelihoodFlashMatch(
 
 
     likelihood_computer = LikelihoodComputer(
-      TString(fVisibilityFilename),      // Visibility file name
+      TString((input_dir+"dunevis_"+geom_identifier+".root").c_str()),      // Visibility file name
       LY_times_PDE,          // Light yield times photo detector efficiency
       f_reco_prob,           // Reconstruction probability function
       f_lognormal,           // Lognormal function for extrapolation

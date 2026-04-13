@@ -285,7 +285,7 @@ namespace lowe
         
             void SetLikelihoodComputer(
                 const double& fElectronScintYield,
-                const std::string& fVisibilityFilename,
+                const std::string& geom_identifier,
                 LikelihoodComputer& likelihood_computer,
                 std::string input_dir="/exp/dune/data/users/jdelgadg/data_solar/Fit_cut/",
                 double trend_thr=20,
