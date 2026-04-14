@@ -287,9 +287,9 @@ namespace lowe
                 const double& fElectronScintYield,
                 const std::string& geom_identifier,
                 LikelihoodComputer& likelihood_computer,
-                std::string input_dir="/exp/dune/data/users/jdelgadg/data_solar/Fit_cut/",
-                double trend_thr=20,
-                double driftvelocity=0.160396);
+                std::string input_dir,
+                double trend_thr,
+                double driftvelocity);
 
         // Declare member data here.
         private:
