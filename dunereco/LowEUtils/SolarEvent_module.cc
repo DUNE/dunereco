@@ -42,7 +42,7 @@ namespace lowe
         std::string fGEANTLabel;    // Input tag for GEANT label
         std::string fClusterLabel;  // Input tag for LowECluster collection
         std::string fOpFlashLabel;  // Input tag for OpFlash collection
-        std::string fFlashAlgoType; //Choose the type of algorithm for the Flashmatch
+        std::string fFlashMatchBy; //Choose the type of algorithm for the Flashmatch
         // double      fElectronScintYield; // Electron scintillation yield (photons/MeV)
         // std::string fVisibilityFilename;// Visibility file for likelihood flash matching
         LikelihoodComputer fLikelihoodComputer; // Likelihood computer for flash matching
@@ -74,7 +74,7 @@ namespace lowe
         fGEANTLabel(p.get<std::string>("GEANTLabel", "largeant")),
         fClusterLabel(p.get<std::string>("ClusterLabel", "solarcluster")),
         fOpFlashLabel(p.get<std::string>("OpFlashLabel", "solarflash")),
-        fFlashAlgoType(p.get<std::string>("FlashAlgoType")),
+        fFlashMatchBy(p.get<std::string>("FlashMatchBy")),
         fDebug(p.get<bool>("Debug", false)),      
         lowe(new lowe::LowEUtils(p)),
         producer(new producer::ProducerUtils(p))
@@ -86,7 +86,7 @@ namespace lowe
         
         double fElectronScintYield(p.get<double>("ElectronScintYield", 20000.0));
         std::string fVisibilityFilename(p.get<std::string>("VisibilityFilename", ""));
-        if (fFlashAlgoType == "likelihoodFlashMatch") {
+        if (fFlashMatchBy == "likelihoodFlashMatch") {
             lowe->SetLikelihoodComputer(fElectronScintYield, fVisibilityFilename, fLikelihoodComputer);
         }
     }
@@ -107,7 +107,7 @@ namespace lowe
     //--------------------------------------------------------------------------
     void SolarEvent::beginJob()
     {
-      if (fFlashAlgoType ==  "DD") {
+      if (fFlashMatchBy ==  "DD") {
         producer->PrintInColor("SolarEvent::beginJob: Using DD flash matching algorithm", producer::ProducerUtils::GetColor("cyan"));
   }
         // Initialization code if needed
@@ -218,10 +218,10 @@ namespace lowe
             int matchedFlashIndex = -1;
             
                if (!FlashPtr.empty()) {
-                   if (fFlashAlgoType=="SolarFlashMatch") {
+                   if (fFlashMatchBy=="SolarFlashMatch") {
                        matchedFlashIndex = lowe->MatchPDSFlash(EventCandidateVector[i], FlashPtr, clockData, evt, fDebug);
                     }
-                   else if (fFlashAlgoType == "likelihoodFlashMatch") {
+                   else if (fFlashMatchBy == "likelihoodFlashMatch") {
                        std::cout << "likelihoodFlashmatch!!! "<< std ::endl;
                        matchedFlashIndex = lowe->MatchPDSFlashMLL(EventCandidateVector[i], FlashPtr, clockData, evt, fLikelihoodComputer, fDebug);
                     }
