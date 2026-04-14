@@ -13,18 +13,21 @@
 #include <canvas/Persistency/Common/Ptr.h>
 #include <lardataobj/RecoBase/OpFlash.h>
 
-// using namespace TMVA;
 
 // FUNCTIONS ------------------------------------------------------------------
+// Compute the reconstructed energy from the charge, drift time and calibration parameters
+// of the LikelihoodComputer class. The first three parameters belong to the class,
+// while the last two are the charge of a cluster and the time difference between the candidate flash.
 inline float give_me_Ereco(float calib_c, float calib_slope, float corr_lambda,
                            float dt, float charge){
-  
   float q_corr = charge * exp(dt * corr_lambda);
   float E_reco = (q_corr - calib_c) / calib_slope;
   
   return E_reco;
 }
 
+// Returns the index of the TPC voxel corresponding to the input coordinates.
+// The returned index is the one to be used to access the visibility map.
 template <typename T>
 int GetTPCIndex(T vertex_coor[3], TH1D* hgrid[3], std::vector<int>& total_to_tpc){
  int bin_x = hgrid[0]->FindBin(vertex_coor[0]);
