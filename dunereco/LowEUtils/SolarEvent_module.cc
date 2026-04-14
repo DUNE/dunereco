@@ -84,10 +84,24 @@ namespace lowe
         produces<art::Assns<lowe::LowEEvent, solar::LowECluster>>("LowEClusterAssns");
         produces<art::Assns<lowe::LowEEvent, recob::OpFlash>>("LowEFlashAssns");
         
-        double fElectronScintYield(p.get<double>("ElectronScintYield", 20000.0));
-        std::string fVisibilityFilename(p.get<std::string>("VisibilityFilename", ""));
-        if (fFlashMatchBy == "likelihoodFlashMatch") {
-            lowe->SetLikelihoodComputer(fElectronScintYield, fVisibilityFilename, fLikelihoodComputer);
+        if (fFlashMatchBy == "maximumlikelihood") {
+            float drift_velocity = 0.160396; // HARDCODED HARD-CODE 
+            double fElectronScintYield(p.get<double>("ElectronScintYield", 20000.0));
+            std::string fLikelihoodInputDir(p.get<std::string>("LikelihoodInputDir", "/exp/dune/data/users/fgalizzi/public/LikelihoodInputDir/"));
+            double fTrendTrheshold(p.get<double>("TrendThreshold", 20.0));
+            art::ServiceHandle<geo::Geometry> geom;
+            std::string geoName = geom->DetectorName();
+            std::string geom_identifier;
+            if (geoName.find("dune10kt") != std::string::npos) {
+              geom_identifier = "dune10kt";
+            }
+            else if(geoName.find("dunevd10kt") != std::string::npos) {
+              geom_identifier = "dunevd10kt";
+            }
+            else {
+              throw cet::exception("SolarNuAna") << "Geometry " << geoName << " not supported. Only dune10kt and dunevd10kt are supported.\n";
+            }
+            lowe->SetLikelihoodComputer(fElectronScintYield, geom_identifier, fLikelihoodComputer, fLikelihoodInputDir, fTrendTrheshold, drift_velocity);
         }
     }
 
