@@ -94,9 +94,9 @@ class LikelihoodComputer{
       float reco_pe, exp_ph;
       x_reco = delta_time*drift_velocity;
       float vertex_coor[3] = {x_reco, tpc_cluster.getY(), tpc_cluster.getZ()};
-      vertex_coor[0] = std::max(vertex_coor[0], tpc_min[0]+15); vertex_coor[0] = std::min(vertex_coor[0], tpc_max[0]-15); // HARD CODE
-      vertex_coor[1] = std::max(vertex_coor[1], tpc_min[1]+15); vertex_coor[1] = std::min(vertex_coor[1], tpc_max[1]-15);
-      vertex_coor[2] = std::max(vertex_coor[2], tpc_min[2]+15); vertex_coor[2] = std::min(vertex_coor[2], tpc_max[2]-15);
+      vertex_coor[0] = std::max(vertex_coor[0], tpc_min[0]+voxel_width); vertex_coor[0] = std::min(vertex_coor[0], tpc_max[0]-voxel_width);
+      vertex_coor[1] = std::max(vertex_coor[1], tpc_min[1]+voxel_width); vertex_coor[1] = std::min(vertex_coor[1], tpc_max[1]-voxel_width);
+      vertex_coor[2] = std::max(vertex_coor[2], tpc_min[2]+voxel_width); vertex_coor[2] = std::min(vertex_coor[2], tpc_max[2]-voxel_width);
       int tpc_index = GetTPCIndex(vertex_coor, hgrid, cryo_to_tpc);
 
       if (n_opdet != pds_cluster.PEs().size()){
@@ -190,6 +190,7 @@ private:
     std::vector<int> cryo_to_tpc;
     float tpc_min[3];
     float tpc_max[3];
+    float voxel_width;
 
     TMVA::TSpline1* g_he = nullptr;
     float xprob_max = 0.;
@@ -201,6 +202,7 @@ private:
       hgrid[0] = (TH1D*)visibility_file->Get("photovisAr/hgrid0")->Clone("hclone_hgrid0");
       hgrid[1] = (TH1D*)visibility_file->Get("photovisAr/hgrid1")->Clone("hclone_hgrid1");
       hgrid[2] = (TH1D*)visibility_file->Get("photovisAr/hgrid2")->Clone("hclone_hgrid2");
+      voxel_width = 1.5*hgrid[0]->GetBinWidth(1); // HARD CODED: 1.5 factor to avoid edge effects in the visibility map
 
       TTree* tDimensions = (TTree*)visibility_file->Get("photovisAr/tDimensions");
       Double_t coor_dim[3] = {0.};
