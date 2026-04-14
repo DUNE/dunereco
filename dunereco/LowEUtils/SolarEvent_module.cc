@@ -107,9 +107,6 @@ namespace lowe
     //--------------------------------------------------------------------------
     void SolarEvent::beginJob()
     {
-      if (fFlashMatchBy ==  "DD") {
-        producer->PrintInColor("SolarEvent::beginJob: Using DD flash matching algorithm", producer::ProducerUtils::GetColor("cyan"));
-  }
         // Initialization code if needed
     }
     
