@@ -26,7 +26,7 @@ art::Ptr<recob::Track> FDSelectionTools::LongestRecoVertexTrackSelector::SelectT
 
   for (art::Ptr<recob::PFParticle> childPFP : nuChildren) 
   {
-    if (!dune_ana::DUNEAnaPFParticleUtils::IsTrack(childPFP, evt, fPFParticleModuleLabel, fTrackModuleLabel))
+    if (!dune_ana::DUNEAnaPFParticleUtils::HasTrack(childPFP, evt, fPFParticleModuleLabel, fTrackModuleLabel))
       continue;
 
     art::Ptr<recob::Track> childTrack = dune_ana::DUNEAnaPFParticleUtils::GetTrack(childPFP, evt, fPFParticleModuleLabel, fTrackModuleLabel);

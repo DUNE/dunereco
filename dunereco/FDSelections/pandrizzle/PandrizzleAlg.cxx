@@ -314,7 +314,7 @@ void FDSelection::PandrizzleAlg::ProcessPFParticle(const art::Ptr<recob::PFParti
   FillTruthInfo(pfp, evt);
 
   // Fill the MVA Info
-  if (!dune_ana::DUNEAnaPFParticleUtils::IsShower(pfp, evt, fPFParticleModuleLabel, fShowerModuleLabel))
+  if (!dune_ana::DUNEAnaPFParticleUtils::HasShower(pfp, evt, fPFParticleModuleLabel, fShowerModuleLabel))
     return;
     
   art::Ptr<recob::Shower> pShower = dune_ana::DUNEAnaPFParticleUtils::GetShower(pfp, evt, fPFParticleModuleLabel, fShowerModuleLabel);

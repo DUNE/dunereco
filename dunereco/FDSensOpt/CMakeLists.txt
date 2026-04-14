@@ -16,6 +16,7 @@ cet_build_plugin(NueAna   art::module LIBRARIES
                         larcorealg::Geometry
                         larcore::Geometry_Geometry_service
                         lardata::Utilities
+                        lardataalg::UtilitiesHeaders
                         larsim::Simulation 
                         nug4::ParticleNavigation 
                         lardataobj::Simulation
@@ -92,7 +93,8 @@ cet_build_plugin(IniSegReco art::module LIBRARIES
               BASENAME_ONLY
 )
 
-cet_build_plugin(ShSeg   art::module LIBRARIES
+cet_build_plugin(ShSeg  art::module LIBRARIES
+                        lardataalg::UtilitiesHeaders
                         lardataalg::DetectorInfo
                         lardataobj::RawData
                         lardataobj::RecoBase

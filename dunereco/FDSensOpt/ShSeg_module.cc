@@ -42,6 +42,7 @@
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/AssociationUtil.h"
+#include "lardataalg/Utilities/TrackingTypeUtils.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
 #include "larsim/MCCheater/ParticleInventoryService.h"

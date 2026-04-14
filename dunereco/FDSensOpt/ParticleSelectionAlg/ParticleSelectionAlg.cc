@@ -640,7 +640,7 @@ namespace dune
         if (!shower.isAvailable())
             return art::Ptr<recob::Track>{};
         const art::Ptr<recob::PFParticle> pfp(dune_ana::DUNEAnaShowerUtils::GetPFParticle(shower, event, fShowerLabel));
-        if (dune_ana::DUNEAnaPFParticleUtils::IsTrack(pfp, event, fPFParticleLabel, fTrackLabel))
+        if (dune_ana::DUNEAnaPFParticleUtils::HasTrack(pfp, event, fPFParticleLabel, fTrackLabel))
         {
             return dune_ana::DUNEAnaPFParticleUtils::GetTrack(pfp, event, fPFParticleLabel, fTrackLabel);
 

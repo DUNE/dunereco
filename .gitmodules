@@ -1,0 +1,4 @@
+[submodule "dunereco/Supera"]
+	path = dunereco/Supera
+	url = https://github.com/DeepLearnPhysics/Supera.git
+	branch = dune

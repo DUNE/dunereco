@@ -134,7 +134,7 @@ namespace lowe
                 art::Event const &evt);
 
             void FillClusterVariables(
-                std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+                std::vector<std::vector<std::vector<recob::Hit>>> &Clusters,
                 std::vector<std::vector<int>> &ClNHits,
                 std::vector<std::vector<float>> &ClT,
                 std::vector<std::vector<float>> &ClCharge,
@@ -143,7 +143,7 @@ namespace lowe
             
             void FillClusterVariables(
                 std::set<int> SignalTrackIDs,
-                std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+                std::vector<std::vector<std::vector<recob::Hit>>> &Clusters,
                 std::vector<std::vector<int>> &ClMainID,
                 std::vector<std::vector<int>> &ClNHits,
                 std::vector<std::vector<int>> &ClTPC,
@@ -159,7 +159,7 @@ namespace lowe
                 bool debug);
             
             void FillClusterHitVectors(
-                std::vector<recob::Hit> Cluster,
+                std::vector<recob::Hit> &Cluster,
                 std::vector<int> &TPC,
                 std::vector<int> &Channel,
                 std::vector<double> &Charge,
@@ -173,7 +173,7 @@ namespace lowe
 
             void MatchClusters(
                 std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
-                std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+                std::vector<std::vector<std::vector<recob::Hit>>> &Clusters,
                 std::vector<std::vector<int>> &ClNHits,
                 std::vector<std::vector<float>> &ClT,
                 std::vector<std::vector<float>> &ClCharge,
@@ -185,7 +185,7 @@ namespace lowe
                 std::vector<std::vector<int>> &MatchedClustersIdx,
                 std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
                 std::vector<std::vector<int>> ClustersIdx,
-                std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+                std::vector<std::vector<std::vector<recob::Hit>>> &Clusters,
                 std::vector<std::vector<int>> &ClMainID,
                 std::vector<std::vector<int>> &ClNHits,
                 std::vector<std::vector<int>> &ClTPC,

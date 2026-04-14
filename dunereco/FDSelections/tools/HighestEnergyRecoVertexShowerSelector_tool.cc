@@ -36,7 +36,7 @@ art::Ptr<recob::Shower> FDSelectionTools::HighestEnergyRecoVertexShowerSelector:
 
   for (art::Ptr<recob::PFParticle> childPFP : nuChildren) 
   {
-    if (!dune_ana::DUNEAnaPFParticleUtils::IsShower(childPFP, evt, fPFParticleModuleLabel, fShowerModuleLabel))
+    if (!dune_ana::DUNEAnaPFParticleUtils::HasShower(childPFP, evt, fPFParticleModuleLabel, fShowerModuleLabel))
       continue;
 
     art::Ptr<recob::Shower> childShower = dune_ana::DUNEAnaPFParticleUtils::GetShower(childPFP, evt, fPFParticleModuleLabel, fShowerModuleLabel);

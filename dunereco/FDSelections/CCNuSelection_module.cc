@@ -1696,7 +1696,7 @@ void FDSelection::CCNuSelection::GetRecoTrackInfo(art::Event const & evt)
     if (trackCounter == kDefMaxNRecoTracks)
       break;
 
-    if (!dune_ana::DUNEAnaPFParticleUtils::IsTrack(pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel))
+    if (!dune_ana::DUNEAnaPFParticleUtils::HasTrack(pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel))
       continue;
 
     for (art::Ptr<recob::PFParticle> nuChild : nuChildren)
@@ -2093,7 +2093,7 @@ void FDSelection::CCNuSelection::GetRecoShowerInfo(art::Event const & evt)
     if (showerCounter == kDefMaxNRecoShowers)
       break;
 
-    if (!dune_ana::DUNEAnaPFParticleUtils::IsShower(pfp, evt, fPFParticleModuleLabel, fShowerModuleLabel))
+    if (!dune_ana::DUNEAnaPFParticleUtils::HasShower(pfp, evt, fPFParticleModuleLabel, fShowerModuleLabel))
       continue;
 
     for (art::Ptr<recob::PFParticle> nuChild : nuChildren)
