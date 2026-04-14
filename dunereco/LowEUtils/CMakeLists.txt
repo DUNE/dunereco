@@ -19,6 +19,7 @@ art_make(BASENAME_ONLY ALLOW_UNDERSCORES
     art::Framework_Services_Registry
     art_root_io::tfile_support
     ROOT::Core
+    ROOT::TMVA
     art_root_io::TFileService_service
     art::Framework_Services_Optional_RandomNumberGenerator_service
     art::Persistency_Common

@@ -1,6 +1,7 @@
 #ifndef FLASH_MATCHER_HPP
 #define FLASH_MATCHER_HPP
 
+#include <TEfficiency.h>
 #include <TF1.h>
 #include <TFile.h>
 #include "LowECluster.h"
@@ -8,9 +9,12 @@
 #include "TLeaf.h"
 #include <TH2.h>
 #include <TTree.h>
+#include <TMVA/TSpline1.h>
 #include <canvas/Persistency/Common/Ptr.h>
 #include <filesystem>
 #include <lardataobj/RecoBase/OpFlash.h>
+
+// using namespace TMVA;
 
 // FUNCTIONS ------------------------------------------------------------------
 inline float give_me_Ereco(float calib_c, float calib_slope, float corr_lambda,
@@ -78,7 +82,7 @@ class LikelihoodComputer{
     TF1* f_logms_trend;
     TF1* f_sigmas_trend;
     double trend_thr;
-    TF1* f_reco_prob;
+    TEfficiency* he_hit_prob;
 
     float GetLogLikelihoodMatch(const solar::LowECluster &tpc_cluster,
                                 const recob::OpFlash &pds_cluster)
@@ -105,10 +109,11 @@ class LikelihoodComputer{
 
         exp_ph = E_reco*LY_times_PDE*voxel_vis;
         if(exp_ph==0) exp_ph = E_reco*LY_times_PDE*1.e-15;
-        float P_hit_mu = f_reco_prob->Eval(exp_ph);
-        if (P_hit_mu==0){
-          std::cerr << "Warning: P_hit_mu is zero for exp_ph = " << exp_ph << " and reco_pe = " << reco_pe << std::endl;
-        }
+        float P_hit_mu = (exp_ph<xprob_max) ? g_he->Eval(exp_ph) : 1.; // Avoid weird extrapolation where we
+        //                                                             // have no points in the efficiency graph,
+        //                                                             // and just assume that the hit probability is 1 for very high expected PE.
+        if (P_hit_mu <= 0.) P_hit_mu = 1.e-4;
+        if (P_hit_mu >= 1.) P_hit_mu = 1. - 1.e-4;
 
         reco_pe = pds_cluster.PEs().at(idx_opdet);
         float term = 0.;
@@ -137,7 +142,7 @@ class LikelihoodComputer{
     // LikelihoodComputer constructor
     LikelihoodComputer(TString visibility_file_name,
         float LY_times_PDE,
-        TF1* f_reco_prob,
+        TEfficiency* he_hit_prob,
         TF1* f_lognormal,
         TF1* f_logms_trend,
         TF1* f_sigmas_trend,
@@ -155,7 +160,7 @@ class LikelihoodComputer{
       f_logms_trend(f_logms_trend),
       f_sigmas_trend(f_sigmas_trend),
       trend_thr(trend_thr),
-      f_reco_prob(f_reco_prob),
+      he_hit_prob(he_hit_prob),
       visibility_file_name(visibility_file_name),
       LY_times_PDE(LY_times_PDE),
       calib_c(calib_c), 
@@ -166,49 +171,9 @@ class LikelihoodComputer{
     
   LikelihoodComputer CreateLikelihoodComputer(const double& fElectronScintYield, const std::string& fVisibilityFilename, double driftvelocity)
   {
-    double LY_times_PDE = fElectronScintYield*0.03; // 3% PDE assumed
-    TFile* parametrizer_file = TFile::Open("/exp/dune/app/users/fgalizzi/flashmatch_larsoft/work/fm_module_inputs/fm_parametrizer.root", "READ");
-    TF1* f_reco_prob = static_cast<TF1*>(parametrizer_file->Get("f_reco_prob"));
-    TF1* f_lognormal = static_cast<TF1*>(parametrizer_file->Get("f_lognormal"));
-    TF1* f_logms_trend = static_cast<TF1*>(parametrizer_file->Get("f_logms_trend"));
-    TF1* f_sigmas_trend = static_cast<TF1*>(parametrizer_file->Get("f_sigmas_trend"));
-    TGraphErrors* g_logms = static_cast<TGraphErrors*>(parametrizer_file->Get("g_logms"));
-    TGraphErrors* g_sigmas = static_cast<TGraphErrors*>(parametrizer_file->Get("g_sigmas"));
-    double trend_thr = 20.0;
-
-    TFile* calib_file = TFile::Open("/exp/dune/app/users/fgalizzi/flashmatch_larsoft/work/fm_module_inputs/calibrator.root", "READ");
-    TTree* calib_tree = static_cast<TTree*>(calib_file->Get("calib_tree"));
-    Float_t calib_c = 0.;         Float_t calib_slope = 0.;
-    Float_t corr_lambda = 0.0;
-    calib_tree->SetBranchAddress("calib_c", &calib_c);
-    calib_tree->SetBranchAddress("calib_slope", &calib_slope);
-    calib_tree->SetBranchAddress("corr_lambda", &corr_lambda);
-    calib_tree->GetEntry(0);
-
-
-
-    // check visibility file exists
-    std::cout << fVisibilityFilename << std::endl;
-    if(!std::filesystem::exists(fVisibilityFilename)){
-      throw std::runtime_error("Visibility file " + fVisibilityFilename + " does not exist!");
-    }
-
-    LikelihoodComputer LC = LikelihoodComputer(
-      TString(fVisibilityFilename),      // Visibility file name
-      LY_times_PDE,          // Light yield times photo detector efficiency
-      f_reco_prob,           // Reconstruction probability function
-      f_lognormal,           // Lognormal function for extrapolation
-      f_logms_trend,         // Trend function for logm
-      f_sigmas_trend,        // Trend function for sigma
-      driftvelocity,         // Drift velocity
-      g_logms,               // Graph for logm values
-      g_sigmas,              // Graph for sigma values
-      trend_thr,             // Threshold for trend
-      calib_c,               // Calibration constant
-      calib_slope,           // Calibration slope
-      corr_lambda            // Correction lambda value
-    );
-
+    std::cout << fElectronScintYield << fVisibilityFilename << driftvelocity << std::endl;
+    std::cout << "\n\n----------------------------\n FIX THE CREATION OF THE LIKELIHOOD COMPURER \n dunereco/LowEUtils/LikelihoodComputer.f \n.-----------------------------\n\n" << std::endl;
+    LikelihoodComputer LC = LikelihoodComputer();
     return LC;
   }
 
@@ -225,6 +190,10 @@ private:
     std::vector<int> cryo_to_tpc;
     float tpc_min[3];
     float tpc_max[3];
+
+    TMVA::TSpline1* g_he = nullptr;
+    float xprob_max = 0.;
+
 
     void setprivatemembers(){
       TFile* visibility_file = TFile::Open(visibility_file_name, "READ");
@@ -261,6 +230,10 @@ private:
       }
       std::cout << "riz" << std::endl;
       std::cerr << "riz" << std::endl;
+
+      TGraph* g_he_graph = (TGraph*)he_hit_prob->CreateGraph();
+      xprob_max = g_he_graph->GetX()[g_he_graph->GetN()-1];
+      g_he = new TMVA::TSpline1("spline", g_he_graph);
 
       visibility_file->Close();
       return;
