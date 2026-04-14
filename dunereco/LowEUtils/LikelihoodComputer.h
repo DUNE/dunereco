@@ -11,7 +11,6 @@
 #include <TTree.h>
 #include <TMVA/TSpline1.h>
 #include <canvas/Persistency/Common/Ptr.h>
-#include <filesystem>
 #include <lardataobj/RecoBase/OpFlash.h>
 
 // using namespace TMVA;
@@ -223,18 +222,12 @@ private:
       n_opdet = b_opDet_visDirect->GetLeaf("opDet_visDirect")->GetLen();
       std::vector<float> opDet_visDirect(n_opdet, 0.);
       photoVisMap->SetBranchAddress("opDet_visDirect", opDet_visDirect.data());
-      std::cout << "resizing" << std::endl;
-      std::cerr << "resizing" << std::endl;
       opDet_visMapDirect.resize(n_entriesmap, std::vector<float>(n_opdet, 0.));
-      std::cout << "resiz" << std::endl;
-      std::cerr << "resiz" << std::endl;
 
       for (size_t VisMapEntry = 0; VisMapEntry < n_entriesmap; VisMapEntry++){
         photoVisMap->GetEntry(VisMapEntry);
         opDet_visMapDirect[VisMapEntry] = opDet_visDirect;
       }
-      std::cout << "riz" << std::endl;
-      std::cerr << "riz" << std::endl;
 
       TGraph* g_he_graph = (TGraph*)he_hit_prob->CreateGraph();
       xprob_max = g_he_graph->GetX()[g_he_graph->GetN()-1];
