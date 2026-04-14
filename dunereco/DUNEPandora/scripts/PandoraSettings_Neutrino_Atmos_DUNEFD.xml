@@ -109,6 +109,21 @@
         <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
     </algorithm>
 
+    <algorithm type = "LArDLTwoDShowerGrowing">
+        <ClusterListNames>ClustersU ClustersV ClustersW</ClusterListNames>
+        <VertexListName>NeutrinoVertices3D</VertexListName>
+        <ModelEncoderFileName>PandoraNetworkData/PandoraNet_ShowerGrowing_DUNEFD_HD_Encoder_v05_00_00.pt</ModelEncoderFileName>
+        <ModelAttnFileName>PandoraNetworkData/PandoraNet_ShowerGrowing_DUNEFD_HD_Attn_v05_00_00.pt</ModelAttnFileName>
+        <ModelSimFileName>PandoraNetworkData/PandoraNet_ShowerGrowing_DUNEFD_HD_Sim_v05_00_00.pt</ModelSimFileName>
+        <SimilarityThreshold>0.60</SimilarityThreshold>
+        <SimilarityThresholdBeta>1.0</SimilarityThresholdBeta>
+        <AccessoryClusterMaxHits>2</AccessoryClusterMaxHits>
+        <MaxIterations>10</MaxIterations>
+        <PolarRScaleFactor>0.0005044863</PolarRScaleFactor>
+        <CartesianXScaleFactor>0.001378694</CartesianXScaleFactor>
+        <CartesianZScaleFactor>0.0007171852</CartesianZScaleFactor>
+    </algorithm>
+
     <!-- ThreeDTrackAlgorithms -->
     <algorithm type = "LArThreeDTransverseTracks">
         <InputClusterListNameU>ClustersU</InputClusterListNameU>
@@ -139,17 +154,6 @@
             <tool type = "LArMatchedEndPoints"/>
         </TrackTools>
     </algorithm>
-    <algorithm type = "LArThreeDTrackFragments">
-        <MinClusterLength>5.</MinClusterLength>
-        <InputClusterListNameU>ClustersU</InputClusterListNameU>
-        <InputClusterListNameV>ClustersV</InputClusterListNameV>
-        <InputClusterListNameW>ClustersW</InputClusterListNameW>
-        <OutputPfoListName>TrackParticles3D</OutputPfoListName>
-        <TrackTools>
-            <tool type = "LArClearTrackFragments"/>
-        </TrackTools>
-        <algorithm type = "LArSimpleClusterCreation" description = "ClusterRebuilding"/>
-    </algorithm>
 
     <!-- ThreeDShowerAlgorithms -->
     <algorithm type = "LArCutPfoCharacterisation">
@@ -169,9 +173,6 @@
         <VertexDistanceRatioCut>500.</VertexDistanceRatioCut>
         <PathLengthRatioCut>1.012</PathLengthRatioCut>
         <ShowerWidthRatioCut>0.2</ShowerWidthRatioCut>
-    </algorithm>
-    <algorithm type = "LArShowerGrowing">
-        <InputClusterListNames>ClustersU ClustersV ClustersW</InputClusterListNames>
     </algorithm>
     <algorithm type = "LArThreeDShowers">
         <InputClusterListNameU>ClustersU</InputClusterListNameU>
