@@ -40,12 +40,10 @@ namespace lowe
     fAdjOpFlashMinPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashMinPELightMap", {})), // Light map file and histogram name for light map attenuation
     fAdjOpFlashMaxPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashMaxPELightMap", {})), // Light map file and histogram name for light map attenuation
     fAdjOpFlashPELightMap(p.get<std::vector<std::pair<std::string, std::vector<double>>>>("AdjOpFlashPELightMap", {})), // Light map file and histogram name for PE attenuation
-    fFlashMatchBy(p.get<std::string>("FlashMatchBy", "maximum")), // Method to match flashes ("maximum" or "light_map")
-    fFlashMatchByPELightMapExponent(p.get<float>("FlashMatchByPELightMapExponent", 1)), // 0 implies matching against absolute PE error, 1 against relative PE error, 2 adds an additional weight to higher PE flashes.
-  
-    // fVisibilityFilename(p.get<std::string>("VisibilityFilename", "/exp/dune/app/users/fgalizzi/flashmatch_larsoft/work/fm_module_inputs/dunevis_fdhd_1x2x6_test_float.root")),
-    // fLikelihoodInputDir(p.get<std::string>("LikelihoodInputDir", "/exp/dune/data/users/jdelgadg/data_solar/Fit_cut/")),
-    // fTrendThreshold(p.get<double>("TrendThreshold", 20)),
+    fFlashMatchBy(p.get<std::string>("FlashMatchBy", "maximum")), // Method to match flashes ("maximum" or "light_map" or "maximumlikelihood")
+    fLikelihoodInputDir(p.get<std::string>("LikelihoodInputDir", "/exp/dune/data/users/fgalizzi/public/LikelihoodInputDir/")), // Directory for likelihood input files
+    fTrendThreshold(p.get<double>("TrendThreshold", 20)), // Threshold for data->trend transition in likelihood computation
+    fFlashMatchByPELightMapExponent(p.get<float>("FlashMatchByPELightMapExponent", 1)),
     
     producer(new ProducerUtils(p))
   {
@@ -1955,8 +1953,6 @@ float LowEUtils::GetLikelihoodFlashMatch(
     double trend_thr,
     double driftvelocity)
   {
-    std::cout << "inStart setting..." << std::endl;
-    std::cerr << "inStart setting..." << std::endl;
     double LY_times_PDE = fElectronScintYield*0.03; // 3% PDE assumed
     TFile* parametrizer_file = TFile::Open((input_dir+"MLL_Parametrizer_"+geom_identifier+".root").c_str(), "READ");
     TF1* f_RecoExpDistr       = static_cast<TF1*>(parametrizer_file->Get("f_RecoExpDistr"));
@@ -1975,10 +1971,6 @@ float LowEUtils::GetLikelihoodFlashMatch(
     calib_tree->SetBranchAddress("drift_velocity", &drift_velocity);
     calib_tree->SetBranchAddress("corr_lambda", &corr_lambda);
     calib_tree->GetEntry(0);
-    std::cout << "new calib_c = " << calib_c << std::endl;
-
-
-
 
     likelihood_computer = LikelihoodComputer(
       TString((input_dir+"dunevis_"+geom_identifier+".root").c_str()),      // Visibility file name
@@ -1995,8 +1987,6 @@ float LowEUtils::GetLikelihoodFlashMatch(
       calib_slope,           // Calibration slope
       corr_lambda            // Correction lambda value
     );
-      std::cout << "inLikelihoodComputer properly set" << std::endl;
-      std::cerr << "inLikelihoodComputer properly set" << std::endl;
     return;
   }
 } // namespace lowe

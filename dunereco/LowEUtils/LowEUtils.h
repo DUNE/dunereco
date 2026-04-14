@@ -325,8 +325,10 @@ namespace lowe
             const std::vector<std::pair<std::string, std::vector<double>>> fAdjOpFlashMinPELightMap; // Light map file and histogram name for light map attenuation
             const std::vector<std::pair<std::string, std::vector<double>>> fAdjOpFlashMaxPELightMap; // Light map file and histogram name for light map attenuation
             const std::vector<std::pair<std::string, std::vector<double>>> fAdjOpFlashPELightMap;    // Light map file and histogram name for PE attenuation
-            const std::string fFlashMatchBy;                   // Method to match flashes ("maximum" or "light_map")
-            const float fFlashMatchByPELightMapExponent;         // Exponent for PE weighting in light map flash matching
+            const std::string fFlashMatchBy;                   // Method to match flashes ("maximum" or "light_map" or "maximumlikelihood")
+            const std::string fLikelihoodInputDir;             // Directory for likelihood input files
+            const double fTrendThreshold;                      // Threshold for data->trend transition in likelihood computation
+            const float fFlashMatchByPELightMapExponent;       // Exponent for PE weighting in light map flash matching
             std::unique_ptr<producer::ProducerUtils> producer; // Pointer to the ProducerUtils instance
     };
 } // namespace lowe
