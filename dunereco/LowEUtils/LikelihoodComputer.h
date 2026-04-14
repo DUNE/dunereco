@@ -103,6 +103,9 @@ class LikelihoodComputer{
         throw std::runtime_error("LikelihoodComputer: number of optical detectors in visibility file (" + std::to_string(n_opdet) + ") does not match the number of optical detectors in the OpFlash (" + std::to_string(pds_cluster.PEs().size()) + ").");
       }
 
+      float n_hit = std::count_if(pds_cluster.PEs().begin(), pds_cluster.PEs().end(), [](float pe){ return pe > 0; });
+      float weight = 1./(n_hit*n_hit);
+
       float log_likelihood = 0.;
       for (size_t idx_opdet=0; idx_opdet<pds_cluster.PEs().size(); idx_opdet++){
         float voxel_vis = opDet_visMapDirect[tpc_index][idx_opdet];// + opDet_visMapReflct[tpc_index][idx_opdet];
@@ -134,7 +137,7 @@ class LikelihoodComputer{
         }
       }
 
-      return log_likelihood;
+      return log_likelihood*weight;
     } // GetLogLikelihoodMatch
 
     // Default constructor
