@@ -42,7 +42,7 @@ namespace lowe
         std::string fGEANTLabel;    // Input tag for GEANT label
         std::string fClusterLabel;  // Input tag for LowECluster collection
         std::string fOpFlashLabel;  // Input tag for OpFlash collection
-        std::string fFlashAlgoType; //Choose the type of algorithm for the Flashmatch
+        std::string fFlashMatchBy; //Choose the type of algorithm for the Flashmatch
         // double      fElectronScintYield; // Electron scintillation yield (photons/MeV)
         // std::string fVisibilityFilename;// Visibility file for likelihood flash matching
         LikelihoodComputer fLikelihoodComputer; // Likelihood computer for flash matching
@@ -74,7 +74,7 @@ namespace lowe
         fGEANTLabel(p.get<std::string>("GEANTLabel", "largeant")),
         fClusterLabel(p.get<std::string>("ClusterLabel", "solarcluster")),
         fOpFlashLabel(p.get<std::string>("OpFlashLabel", "solarflash")),
-        fFlashAlgoType(p.get<std::string>("FlashAlgoType")),
+        fFlashMatchBy(p.get<std::string>("FlashMatchBy")),
         fDebug(p.get<bool>("Debug", false)),      
         lowe(new lowe::LowEUtils(p)),
         producer(new producer::ProducerUtils(p))
@@ -84,10 +84,24 @@ namespace lowe
         produces<art::Assns<lowe::LowEEvent, solar::LowECluster>>("LowEClusterAssns");
         produces<art::Assns<lowe::LowEEvent, recob::OpFlash>>("LowEFlashAssns");
         
-        double fElectronScintYield(p.get<double>("ElectronScintYield", 20000.0));
-        std::string fVisibilityFilename(p.get<std::string>("VisibilityFilename", ""));
-        if (fFlashAlgoType == "likelihoodFlashMatch") {
-            lowe->SetLikelihoodComputer(fElectronScintYield, fVisibilityFilename, fLikelihoodComputer);
+        if (fFlashMatchBy == "maximumlikelihood") {
+            float drift_velocity = 0.160396; // HARDCODED HARD-CODE 
+            double fElectronScintYield(p.get<double>("ElectronScintYield", 20000.0));
+            std::string fLikelihoodInputDir(p.get<std::string>("LikelihoodInputDir", "/exp/dune/data/users/fgalizzi/public/LikelihoodInputDir/"));
+            double fTrendTrheshold(p.get<double>("TrendThreshold", 20.0));
+            art::ServiceHandle<geo::Geometry> geom;
+            std::string geoName = geom->DetectorName();
+            std::string geom_identifier;
+            if (geoName.find("dune10kt") != std::string::npos) {
+              geom_identifier = "dune10kt";
+            }
+            else if(geoName.find("dunevd10kt") != std::string::npos) {
+              geom_identifier = "dunevd10kt";
+            }
+            else {
+              throw cet::exception("SolarNuAna") << "Geometry " << geoName << " not supported. Only dune10kt and dunevd10kt are supported.\n";
+            }
+            lowe->SetLikelihoodComputer(fElectronScintYield, geom_identifier, fLikelihoodComputer, fLikelihoodInputDir, fTrendTrheshold, drift_velocity);
         }
     }
 
@@ -107,9 +121,6 @@ namespace lowe
     //--------------------------------------------------------------------------
     void SolarEvent::beginJob()
     {
-      if (fFlashAlgoType ==  "DD") {
-        producer->PrintInColor("SolarEvent::beginJob: Using DD flash matching algorithm", producer::ProducerUtils::GetColor("cyan"));
-  }
         // Initialization code if needed
     }
     
@@ -218,10 +229,10 @@ namespace lowe
             int matchedFlashIndex = -1;
             
                if (!FlashPtr.empty()) {
-                   if (fFlashAlgoType=="SolarFlashMatch") {
+                   if (fFlashMatchBy=="SolarFlashMatch") {
                        matchedFlashIndex = lowe->MatchPDSFlash(EventCandidateVector[i], FlashPtr, clockData, evt, fDebug);
                     }
-                   else if (fFlashAlgoType == "likelihoodFlashMatch") {
+                   else if (fFlashMatchBy == "likelihoodFlashMatch") {
                        std::cout << "likelihoodFlashmatch!!! "<< std ::endl;
                        matchedFlashIndex = lowe->MatchPDSFlashMLL(EventCandidateVector[i], FlashPtr, clockData, evt, fLikelihoodComputer, fDebug);
                     }

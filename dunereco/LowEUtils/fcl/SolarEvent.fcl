@@ -9,8 +9,6 @@ solar_event_dune10kt_1x2x6:
     GEANT4Label:        "largeant"           # The label for the GEANT4 process
     ClusterLabel:       "solarcluster"       # The label for the input clusters
     OpFlashLabel:       "solarflash"         # The label for the optical flash
-    FlashAlgoType:      "likelihoodFlashMatch"     # The flash matching algorithm to use
-    VisibilityFilename: "/exp/dune/app/users/fgalizzi/flashmatch_larsoft/work/fm_module_inputs/dunevis_fdhd_1x2x6_test_float.root"
 
 
     ClusterPreselectionSignal:     true      # If true, the cluster must be signal particle to be saved.
@@ -32,8 +30,11 @@ solar_event_dune10kt_1x2x6:
     AdjOpFlashMinPELightMap:  @local::light_map_data_dune10kt_1x2x6_AdjOpFlashMinPELightMap
     AdjOpFlashMaxPELightMap:  @local::light_map_data_dune10kt_1x2x6_AdjOpFlashMaxPELightMap
     AdjOpFlashPELightMap:     @local::light_map_data_dune10kt_1x2x6_AdjOpFlashPELightMap
-    FlashMatchBy:            "light_map"     # Match flashes by residual. Alternative is to match by MaxFlashPE.
+    FlashMatchBy:            "light_map"     # Match flashes by residual. Alternative is to match by MaxFlashPE / maximumlikelihood
     FlashMatchByPELightMapExponent: 1        # Exponent for PE light map matching.
+
+    LikelihoodInputDir: "/exp/dune/data/users/fgalizzi/public/LikelihoodInputDir/" # Directory containing the MLL input file.root
+    TrendThreshold: 20.0                     # Transition value [PE] to use extrapolated PDF parameters in the maximumlikelihood alg.
     Debug: true
 }
 

@@ -134,7 +134,7 @@ namespace lowe
                 art::Event const &evt);
 
             void FillClusterVariables(
-                std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+                std::vector<std::vector<std::vector<recob::Hit>>> &Clusters,
                 std::vector<std::vector<int>> &ClNHits,
                 std::vector<std::vector<float>> &ClT,
                 std::vector<std::vector<float>> &ClCharge,
@@ -143,7 +143,7 @@ namespace lowe
             
             void FillClusterVariables(
                 std::set<int> SignalTrackIDs,
-                std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+                std::vector<std::vector<std::vector<recob::Hit>>> &Clusters,
                 std::vector<std::vector<int>> &ClMainID,
                 std::vector<std::vector<int>> &ClNHits,
                 std::vector<std::vector<int>> &ClTPC,
@@ -159,7 +159,7 @@ namespace lowe
                 bool debug);
             
             void FillClusterHitVectors(
-                std::vector<recob::Hit> Cluster,
+                std::vector<recob::Hit> &Cluster,
                 std::vector<int> &TPC,
                 std::vector<int> &Channel,
                 std::vector<double> &Charge,
@@ -173,7 +173,7 @@ namespace lowe
 
             void MatchClusters(
                 std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
-                std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+                std::vector<std::vector<std::vector<recob::Hit>>> &Clusters,
                 std::vector<std::vector<int>> &ClNHits,
                 std::vector<std::vector<float>> &ClT,
                 std::vector<std::vector<float>> &ClCharge,
@@ -185,7 +185,7 @@ namespace lowe
                 std::vector<std::vector<int>> &MatchedClustersIdx,
                 std::vector<std::vector<std::vector<recob::Hit>>> &MatchedClusters,
                 std::vector<std::vector<int>> ClustersIdx,
-                std::vector<std::vector<std::vector<recob::Hit>>> Clusters,
+                std::vector<std::vector<std::vector<recob::Hit>>> &Clusters,
                 std::vector<std::vector<int>> &ClMainID,
                 std::vector<std::vector<int>> &ClNHits,
                 std::vector<std::vector<int>> &ClTPC,
@@ -287,9 +287,9 @@ namespace lowe
                 const double& fElectronScintYield,
                 const std::string& geom_identifier,
                 LikelihoodComputer& likelihood_computer,
-                std::string input_dir="/exp/dune/data/users/jdelgadg/data_solar/Fit_cut/",
-                double trend_thr=20,
-                double driftvelocity=0.160396);
+                std::string input_dir,
+                double trend_thr,
+                double driftvelocity);
 
         // Declare member data here.
         private:
@@ -325,8 +325,10 @@ namespace lowe
             const std::vector<std::pair<std::string, std::vector<double>>> fAdjOpFlashMinPELightMap; // Light map file and histogram name for light map attenuation
             const std::vector<std::pair<std::string, std::vector<double>>> fAdjOpFlashMaxPELightMap; // Light map file and histogram name for light map attenuation
             const std::vector<std::pair<std::string, std::vector<double>>> fAdjOpFlashPELightMap;    // Light map file and histogram name for PE attenuation
-            const std::string fFlashMatchBy;                   // Method to match flashes ("maximum" or "light_map")
-            const float fFlashMatchByPELightMapExponent;         // Exponent for PE weighting in light map flash matching
+            const std::string fFlashMatchBy;                   // Method to match flashes ("maximum" or "light_map" or "maximumlikelihood")
+            const std::string fLikelihoodInputDir;             // Directory for likelihood input files
+            const double fTrendThreshold;                      // Threshold for data->trend transition in likelihood computation
+            const float fFlashMatchByPELightMapExponent;       // Exponent for PE weighting in light map flash matching
             std::unique_ptr<producer::ProducerUtils> producer; // Pointer to the ProducerUtils instance
     };
 } // namespace lowe

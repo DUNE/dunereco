@@ -11,21 +11,23 @@
 #include <TTree.h>
 #include <TMVA/TSpline1.h>
 #include <canvas/Persistency/Common/Ptr.h>
-#include <filesystem>
 #include <lardataobj/RecoBase/OpFlash.h>
 
-// using namespace TMVA;
 
 // FUNCTIONS ------------------------------------------------------------------
+// Compute the reconstructed energy from the charge, drift time and calibration parameters
+// of the LikelihoodComputer class. The first three parameters belong to the class,
+// while the last two are the charge of a cluster and the time difference between the candidate flash.
 inline float give_me_Ereco(float calib_c, float calib_slope, float corr_lambda,
                            float dt, float charge){
-  
   float q_corr = charge * exp(dt * corr_lambda);
   float E_reco = (q_corr - calib_c) / calib_slope;
   
   return E_reco;
 }
 
+// Returns the index of the TPC voxel corresponding to the input coordinates.
+// The returned index is the one to be used to access the visibility map.
 template <typename T>
 int GetTPCIndex(T vertex_coor[3], TH1D* hgrid[3], std::vector<int>& total_to_tpc){
  int bin_x = hgrid[0]->FindBin(vertex_coor[0]);
@@ -223,18 +225,12 @@ private:
       n_opdet = b_opDet_visDirect->GetLeaf("opDet_visDirect")->GetLen();
       std::vector<float> opDet_visDirect(n_opdet, 0.);
       photoVisMap->SetBranchAddress("opDet_visDirect", opDet_visDirect.data());
-      std::cout << "resizing" << std::endl;
-      std::cerr << "resizing" << std::endl;
       opDet_visMapDirect.resize(n_entriesmap, std::vector<float>(n_opdet, 0.));
-      std::cout << "resiz" << std::endl;
-      std::cerr << "resiz" << std::endl;
 
       for (size_t VisMapEntry = 0; VisMapEntry < n_entriesmap; VisMapEntry++){
         photoVisMap->GetEntry(VisMapEntry);
         opDet_visMapDirect[VisMapEntry] = opDet_visDirect;
       }
-      std::cout << "riz" << std::endl;
-      std::cerr << "riz" << std::endl;
 
       TGraph* g_he_graph = (TGraph*)he_hit_prob->CreateGraph();
       xprob_max = g_he_graph->GetX()[g_he_graph->GetN()-1];
