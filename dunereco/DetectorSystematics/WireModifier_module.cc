@@ -567,6 +567,8 @@ namespace wiremod
  
     if (fSaveChargeRatioPlots){
       TCanvas *c1 = new TCanvas("c1", "ROI properties", 800, 600);
+      c1->SetTicky();
+      c1->SetTickx();
       grChargeRatExp->SetLineWidth(2);
       grChargeRatExp->SetLineColor(kRed);
       hRat->SetStats(0);
@@ -574,10 +576,18 @@ namespace wiremod
       grChargeRatExp->SetTitle(hRat->GetTitle());
       grChargeRatExp->GetXaxis()->SetTitle(hRat->GetXaxis()->GetTitle());
       grChargeRatExp->GetYaxis()->SetTitle(hRat->GetYaxis()->GetTitle());
+      grChargeRatExp->GetYaxis()->CenterTitle();
+      grChargeRatExp->GetXaxis()->CenterTitle();
       grChargeRatExp->Draw("AL");
+      hRat->SetLineColor(0);
+      hRat->SetMarkerColor(kBlack);
+      hRat->SetMarkerStyle(kPlus);
       hRat->Draw("Psame");
       TLegend *leg = new TLegend(0.15, 0.12, 0.85, 0.3);
-      if (fApplyModBoxVar) leg->SetHeader(Form("#splitline{Nominal Mod. Box A: %.2f, Nominal Mod. Box B: %.3f (g.kV)/(MeV.cm^{2})}{Varied Mod. Box A: %.2f, Varied Mod. Box B: %.3f (g.kV)/(MeV.cm^{2})}", 0.93, 0.212, fModBoxAlphaVar, fModBoxBetaVar), "C");
+      if (fApplyModBoxVar){ 
+        leg = new TLegend(0.15, 0.12, 0.85, 0.35);
+        leg->SetHeader(Form("#splitline{Nominal Mod. Box A: %.2f, Nominal Mod. Box B: %.3f (g.kV)/(MeV.cm^{2})}{Varied Mod. Box A: %.2f, Varied Mod. Box B: %.3f (g.kV)/(MeV.cm^{2})}", 0.93, 0.212, fModBoxAlphaVar, fModBoxBetaVar), "C");
+      }
       else leg->SetHeader(Form("Nominal lifetime: %.2f ms, Varied lifetime: %.2f ms", 10.4, fLifetimeVar/1000.), "C");
       leg->AddEntry(hRat, "ROI total charge ratio");
       leg->AddEntry(grChargeRatExp, "Analytical ratio");
@@ -586,7 +596,7 @@ namespace wiremod
       latex.SetNDC();                 // use normalized coordinates (0 → 1)
       latex.SetTextSize(0.04);        // adjust size
       latex.SetTextFont(42);          // nice standard font
-      latex.DrawLatex(0.15, 0.85, "DUNE Work in Progress");
+      latex.DrawLatex(0.15, 0.85, "#bf{DUNE} Work in Progress");
       c1->SaveAs("ROI_charge_modification.pdf");
       delete c1;
     }
