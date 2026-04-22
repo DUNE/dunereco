@@ -457,7 +457,7 @@ std::vector<sys::WireModUtility::SubROIProperties_t> sys::WireModUtility::CalcSu
 
 //--- MatchEdepsToSubROIs ---
 std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDeposit*>> sys::WireModUtility::MatchEdepsToSubROIs(std::vector<sys::WireModUtility::SubROIProperties_t> const& subROIPropVec, 
-                                                                                                                  std::vector<const sim::SimEnergyDeposit*> const& edepPtrVec, double offset, double y_wire, double z_wire)
+                                                                                                                  std::vector<const sim::SimEnergyDeposit*> const& edepPtrVec, double offset, double y_wire, double z_wire, std::vector<geo::WireID> wireIDs)
 {
   // for each TrackID, which EDeps are associated with it? keys are TrackIDs
   std::map<int, std::vector<const sim::SimEnergyDeposit*>> TrackIDMatchedEDepMap;
@@ -503,6 +503,22 @@ std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDepo
     double zeroTick = detPropData.ConvertXToTicks(0, plane0.ID());
     auto edep_tick = ticksPercm * edep_ptr->X() + (zeroTick + offset) + tickOffset;
     edep_tick = detPropData.ConvertXToTicks(edep_ptr->X(), plane0.ID()) + offset + tickOffset;
+    //geo::Point_t xyz(edep_ptr->X(), edep_ptr->Y(), edep_ptr->Z());
+    auto const& xyz = edep_ptr->MidPoint();
+
+    int best_wire_dist = 1e8;
+    for (auto const& wireID : wireIDs){
+      int wire_index = wireID.Wire;
+      auto const& plane = wireReadout->Plane(wireID);
+      int wireProj = int(0.5+wireReadout->Plane(plane.ID()).WireCoordinate(xyz));
+      int wire_dist = std::abs(wire_index - wireProj);
+    
+      if (wire_dist < best_wire_dist) best_wire_dist = wire_dist;
+    }
+    if (best_wire_dist > nNeighbourWires){
+      std::cout<<"Distance larger than maximum allowed: "<<best_wire_dist<<std::endl;
+      continue;
+    }
 
     // loop over subROIs
     unsigned int closest_hit = std::numeric_limits<unsigned int>::max();
@@ -510,6 +526,12 @@ std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDepo
     for (unsigned int i_h = 0; i_h < subROIPropVec.size(); ++i_h)
     {
       auto subroi_prop = subROIPropVec[i_h];
+
+      if (subroi_prop.total_q < 40 && best_wire_dist>1){
+        //std::cout<<"Rejected because of too high distance for low charge"<<std::endl;
+        continue;
+      }
+
       if (edep_tick > subroi_prop.center-subroi_prop.sigma && edep_tick < subroi_prop.center+subroi_prop.sigma)
       {
         EDepMatchedSubROIMap[i_e].push_back(i_h);
