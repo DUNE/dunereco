@@ -65,6 +65,7 @@ namespace wiremod
       art::InputTag fHitLabel;      // which hits are we pulling in?
       art::InputTag fEDepOrigLabel; // which are the unshifted EDeps?
       art::InputTag fEDepShftLabel; // which are the shifted EDeps?
+      bool fApplyLowECut;
       bool fApplyGainScale;
       double fGainScale;
       bool fApplyLifetimeVar;
@@ -110,6 +111,7 @@ namespace wiremod
     // try to read in the graphs/splines from a file
     //     // if that file does not exist then fake them
     fRatioFileName = pset.get<std::string>("RatioFileName", "NOFILE");
+    fApplyLowECut = pset.get<bool>("ApplyLowECut"   , false);
     fApplyGainScale    = pset.get<bool>("ApplyGainScale"   , false);
     if (fApplyGainScale)
     {
@@ -336,6 +338,8 @@ namespace wiremod
       //auto const& center = wire.GetCenter();
       double y_wire = center.Y();
       double z_wire = center.Z();
+      //auto const& plane = fWireReadout->Plane(wireID);
+      //int wire_index = wireID.Wire;
  
       // keep track of if this wire is modified
       bool isModified = false;
@@ -423,7 +427,7 @@ namespace wiremod
         MF_LOG_DEBUG("WireModifier")
           << "    have " << subROIPropVec.size() << " SubROT";
 
-        auto SubROIMatchedShiftedEdepMap = wmUtil.MatchEdepsToSubROIs(subROIPropVec, matchedShiftedEdepPtrVec, offset_ADC, y_wire, z_wire);
+        auto SubROIMatchedShiftedEdepMap = wmUtil.MatchEdepsToSubROIs(subROIPropVec, matchedShiftedEdepPtrVec, offset_ADC, y_wire, z_wire, wireIDs);
         MF_LOG_DEBUG("WireModifier")
           << "    size of SubROIMatchedShiftedEdepMap: " << SubROIMatchedShiftedEdepMap.size();
         std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDeposit*>> SubROIMatchedEdepMap;
@@ -459,18 +463,18 @@ namespace wiremod
             total_E+=truth_vals.total_energy;
             drift_distance+=truth_vals.total_energy*truth_vals.x;
             dedx_avg+=truth_vals.total_energy*truth_vals.dedx;
-            /*if ( truth_vals.total_energy < 0.3 && subroi_prop.total_q > 80 ) {
+            if ( fApplyLowECut && truth_vals.total_energy < 0.3 && subroi_prop.total_q > 80 ) {
               scale_vals.r_Q     = 1.;
               scale_vals.r_sigma = 1.;
-            } 
-            else {*/
+            }
+            else {
               scale_vals = wmUtil.GetScaleValues(truth_vals, roi_properties, y_wire, z_wire);
               mf::LogDebug("WireModifier")
                 << "Scaling! Q scale: " << scale_vals.r_Q
                 << "     sigma scale: " << scale_vals.r_sigma;
               isModified = true;
               isROIModified = true;
-            //}
+            }
           }
           else {
             scale_vals.r_Q     = 1.;
