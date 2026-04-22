@@ -48,7 +48,7 @@ function(params, anode, field, n, rms_cuts=[])
         min_adc_limit: 200, // 50,
         roi_min_max_ratio: 0.8, // default 0.8
         min_rms_cut: 1.0,  // units???
-        max_rms_cut: 30.0,  // units???
+        max_rms_cut: 50.0,  // units???
 
         // parameter used to make "rcrc" spectrum
         rcrc: 1.1 * wc.millisecond, // 1.1 for collection, 3.3 for induction
