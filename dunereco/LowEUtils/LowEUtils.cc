@@ -1606,7 +1606,7 @@ namespace lowe
     int matchedFlashIndex = -1;
     double matchedFlashPE = 0.0;
     double matchedRecoX = -1e6;
-    float matchedLogMLL = 1e6;
+    float matchedNLL = 1e9;
     // Loop through the flashes to find the best match
     for (int i = 0; i < int(PDSFlashes.size()); i++)
     {
@@ -1690,10 +1690,9 @@ namespace lowe
         else {
             continue; // Unknown geometry, skip this matching
         }
-        float logMLL = likelihoodComputer.GetLogLikelihoodMatch(*mainCluster.get(), *flash.get());
+        float NLL = likelihoodComputer.GetNegativeLogLikelihoodMatch(*mainCluster.get(), *flash.get());
 
-        if (logMLL > matchedLogMLL || matchedFlashIndex == -1) {
-            // If this flash has more PE than the previous best match, update the match
+        if (NLL < matchedNLL || matchedFlashIndex == -1) {
             matchedFlashPE = flashPE;
             matchedFlashIndex = i;
             matchedRecoX = clusterX;
@@ -1730,7 +1729,7 @@ float LowEUtils::GetLikelihoodFlashMatch(
                                 flashPEperOpDet, false, 0, 0., 0., 0., 0., 0., 0., 0., {}, {});
 
     
-    return likelihoodComputer.GetLogLikelihoodMatch(cluster, flash);
+    return likelihoodComputer.GetNegativeLogLikelihoodMatch(cluster, flash);
   }
 
   bool LowEUtils::SelectPDSFlashPE(
@@ -1974,6 +1973,7 @@ float LowEUtils::GetLikelihoodFlashMatch(
 
     likelihood_computer = LikelihoodComputer(
       TString((input_dir+"dunevis_"+geom_identifier+".root").c_str()),      // Visibility file name
+      geom_identifier,         // Geometry identifier
       LY_times_PDE,          // Light yield times photo detector efficiency
       he_hit_prob,           // Reconstruction probability TEfficiency
       f_RecoExpDistr,       // PDF for extrapolation
