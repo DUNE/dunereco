@@ -71,8 +71,8 @@ PandoraNuSelection::PandoraNuSelection(fhicl::ParameterSet const& pset) :
   EDProducer{pset},
   fRecoShowerSelector{art::make_tool<FDSelectionTools::RecoShowerSelector>(pset.get<fhicl::ParameterSet>("RecoShowerSelectorTool"))},
   fRecoTrackSelector{art::make_tool<FDSelectionTools::RecoTrackSelector>(pset.get<fhicl::ParameterSet>("RecoTrackSelectorTool"))},
-  fPandizzleAlg(pset),
-  fPandrizzleAlg(pset)
+  fPandizzleAlg(pset.get<fhicl::ParameterSet>("PandizzleConfig")),
+  fPandrizzleAlg(pset.get<fhicl::ParameterSet>("PandrizzleConfig"))      
 {
   produces<pandoranusel::PandoraNuSelection>();
 }
@@ -120,7 +120,6 @@ bool PandoraNuSelection::GetSelectedTrack(art::Event& evt, art::Ptr<recob::Track
 void PandoraNuSelection::SetPandizzleScores(art::Event& evt, art::Ptr<recob::Track> selTrack, std::unique_ptr<pandoranusel::PandoraNuSelection> &pandoraNuSelection)
 {
   FDSelection::PandizzleAlg::Record pandizzleRecord(fPandizzleAlg.RunPID(selTrack, evt));
-
   pandoraNuSelection->selTrackPandizzleScore = pandizzleRecord.GetMVAScore();
   pandoraNuSelection->selTrackMichelNHits = (double)pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kMichelNHits);
   pandoraNuSelection->selTrackMichelElectronMVA = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kMichelElectronMVA);
@@ -181,10 +180,8 @@ void PandoraNuSelection::SetPandrizzleScores(art::Event& evt, art::Ptr<recob::Sh
   FDSelection::PandrizzleAlg::Record pandrizzleRecord(fPandrizzleAlg.RunPID(selShower, evt));
   float pandrizzleBDTMethod(pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kBDTMethod));
   float pandrizzleScore(pandrizzleRecord.GetMVAScore());
-
   pandoraNuSelection->selShowerBackupPandrizzleScore = (std::fabs(pandrizzleBDTMethod - 1.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
   pandoraNuSelection->selShowerEnhancedPandrizzleScore = (std::fabs(pandrizzleBDTMethod - 2.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
-
   pandoraNuSelection->selShowerEvalRatio = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kEvalRatio);
   pandoraNuSelection->selShowerConcentration = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kConcentration);
   pandoraNuSelection->selShowerCoreHaloRatio = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kCoreHaloRatio);

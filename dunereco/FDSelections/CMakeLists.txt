@@ -29,7 +29,6 @@ MODULE_LIBRARIES FDSelection
 	  	           art::Persistency_Common
 	  	           art::Persistency_Provenance 
 	  	           art::Utilities canvas::canvas
-                   dunereco_TrackPID_algorithms
         )
 
     endif ()
