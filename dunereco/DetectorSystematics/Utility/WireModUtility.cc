@@ -457,7 +457,7 @@ std::vector<sys::WireModUtility::SubROIProperties_t> sys::WireModUtility::CalcSu
 
 //--- MatchEdepsToSubROIs ---
 std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDeposit*>> sys::WireModUtility::MatchEdepsToSubROIs(std::vector<sys::WireModUtility::SubROIProperties_t> const& subROIPropVec, 
-                                                                                                                  std::vector<const sim::SimEnergyDeposit*> const& edepPtrVec, double offset, double y_wire, double z_wire, std::vector<geo::WireID> wireIDs)
+                                                                                                                  std::vector<const sim::SimEnergyDeposit*> const& edepPtrVec, double offset, std::vector<geo::WireID> wireIDs)
 {
   // for each TrackID, which EDeps are associated with it? keys are TrackIDs
   std::map<int, std::vector<const sim::SimEnergyDeposit*>> TrackIDMatchedEDepMap;
@@ -475,7 +475,7 @@ std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDepo
   // calculate EDep properties by TrackID
   std::map<int, sys::WireModUtility::TruthProperties_t> TrackIDMatchedPropertyMap;
   for (auto const& track_edeps : TrackIDMatchedEDepMap)
-    TrackIDMatchedPropertyMap[track_edeps.first] = CalcPropertiesFromEdeps(track_edeps.second, offset, y_wire, z_wire);
+    TrackIDMatchedPropertyMap[track_edeps.first] = CalcPropertiesFromEdeps(track_edeps.second, offset, wireIDs);
 
   // map it all out
   std::map<unsigned int, std::vector<unsigned int>> EDepMatchedSubROIMap;        // keys are indexes of edepPtrVec, values are vectors of indexes of subROIPropVec
@@ -515,8 +515,9 @@ std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDepo
     
       if (wire_dist < best_wire_dist) best_wire_dist = wire_dist;
     }
+    //std::cout<<"Wire distance :"<<best_wire_dist<<std::endl;
     if (best_wire_dist > nNeighbourWires){
-      std::cout<<"Distance larger than maximum allowed: "<<best_wire_dist<<std::endl;
+      std::cout<<"Distance larger than maximum allowed, this should not happen: "<<best_wire_dist<<std::endl;
       continue;
     }
 
@@ -527,7 +528,7 @@ std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDepo
     {
       auto subroi_prop = subROIPropVec[i_h];
 
-      if (subroi_prop.total_q < 40 && best_wire_dist>1){
+      if (subroi_prop.total_q < 5 && best_wire_dist>2){
         //std::cout<<"Rejected because of too high distance for low charge"<<std::endl;
         continue;
       }
@@ -570,7 +571,7 @@ std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDepo
 
 
 //--- CalcPropertiesFromEdeps ---
-sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEdeps(std::vector<const sim::SimEnergyDeposit*> const& edepPtrVec, double offset, double y_wire, double z_wire)
+sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEdeps(std::vector<const sim::SimEnergyDeposit*> const& edepPtrVec, double offset, std::vector<geo::WireID> wireIDs)
 {
   //split the edeps by TrackID
   std::map< int, std::vector<const sim::SimEnergyDeposit*> > edepptrs_by_trkid;
@@ -635,7 +636,7 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
 
     for (auto const& plane : wireReadout->Iterate<geo::PlaneGeo>(curTPCGeom->ID())) {
       int i_p = plane.ID().Plane;
-      auto scales = GetViewScaleValues(edep_props, plane.View(), y_wire, z_wire);
+      auto scales = GetViewScaleValues(edep_props, plane.View(), wireIDs);
       scales_e_weighted[i_p].r_Q     += edep_ptr->E()*scales.r_Q;
       scales_e_weighted[i_p].r_sigma += edep_ptr->E()*scales.r_sigma; 
     }
@@ -745,11 +746,11 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
 }
 
 //--- GetScaleValues ---
-sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetScaleValues(sys::WireModUtility::TruthProperties_t const& truth_props, sys::WireModUtility::ROIProperties_t const& roi_vals, double y_wire, double z_wire)
+sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetScaleValues(sys::WireModUtility::TruthProperties_t const& truth_props, sys::WireModUtility::ROIProperties_t const& roi_vals, std::vector<geo::WireID> wireIDs)
 {
   sys::WireModUtility::ScaleValues_t scales;
   sys::WireModUtility::ScaleValues_t channelScales = GetChannelScaleValues(truth_props, roi_vals.channel);
-  sys::WireModUtility::ScaleValues_t viewScales    = GetViewScaleValues(truth_props, roi_vals.view, y_wire, z_wire);
+  sys::WireModUtility::ScaleValues_t viewScales    = GetViewScaleValues(truth_props, roi_vals.view, wireIDs);
   scales.r_Q     = channelScales.r_Q     * viewScales.r_Q;
   scales.r_sigma = channelScales.r_sigma * viewScales.r_sigma;
   return scales;
@@ -780,7 +781,7 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetChannelScaleValues(sy
 
 //--- GetViewScaleValues ---
 // Rescaling depending on truth info of the event (recombination, attenuation etc.). To modify for DUNE using analytical formula
-sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::WireModUtility::TruthProperties_t const& truth_props, geo::View_t const& view, double y_wire, double z_wire)
+sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::WireModUtility::TruthProperties_t const& truth_props, geo::View_t const& view, std::vector<geo::WireID> wireIDs)
 {
   // initialize return
   sys::WireModUtility::ScaleValues_t scales;
@@ -833,10 +834,28 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
     double drift_velocity = detPropData.DriftVelocity();
     double x_plane = plane0.GetCenter().X();
     double t = std::abs(x_plane - truth_coords[0]) / drift_velocity;
-    double dT2 = (truth_coords[1]-y_wire)*(truth_coords[1]-y_wire)+(truth_coords[2]-z_wire)*(truth_coords[2]-z_wire);
-
-    scale_DT *= exp(-dT2/(16*t*t)*(1/(DTnew*DTnew)-1/(Dnom*Dnom)));
+ 
+    geo::Point_t xyz(truth_coords[0], truth_coords[1], truth_coords[2]);
     
+    double best_dT = 1e8;
+    for (auto const& wireID : wireIDs){
+      int wire_index = wireID.Wire;
+      auto const& plane = wireReadout->Plane(wireID);
+      int wireProj = int(0.5+wireReadout->Plane(plane.ID()).WireCoordinate(xyz));
+      int wire_dist = std::abs(wire_index - wireProj);
+      double wire_pitch = plane.WirePitch();
+      double dT=wire_dist*wire_pitch;
+  
+      if (dT < best_dT){ 
+        best_dT = dT;
+      }
+    }
+
+    //std::cout<<"Best transverse distance: "<<best_dT<<" cm"<<std::endl;
+    double dT2=best_dT*best_dT;
+    
+    double exponent=-dT2/(4*t)*(1/DTnew-1/Dnom)/1e3; //diffusion coefficients are in cm^2/ns but typical units cm and mus
+    scale_DT *= Dnom/DTnew*exp(exponent);
     scales.r_Q *= scale_DT;
   }
   //std::cout<<"scaling factor: "<<scales.r_Q<<std::endl;

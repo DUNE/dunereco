@@ -332,15 +332,7 @@ namespace wiremod
       }
 
       std::vector<geo::WireID> wireIDs = fWireReadout->ChannelToWire(wire.Channel());
-      geo::WireID wireID = wireIDs.at(0); 
-      auto const& geoWire = fWireReadout->Wire(wireID);
-      auto const& center = geoWire.GetCenter();
-      //auto const& center = wire.GetCenter();
-      double y_wire = center.Y();
-      double z_wire = center.Z();
-      //auto const& plane = fWireReadout->Plane(wireID);
-      //int wire_index = wireID.Wire;
- 
+      
       // keep track of if this wire is modified
       bool isModified = false;
       
@@ -427,7 +419,7 @@ namespace wiremod
         MF_LOG_DEBUG("WireModifier")
           << "    have " << subROIPropVec.size() << " SubROT";
 
-        auto SubROIMatchedShiftedEdepMap = wmUtil.MatchEdepsToSubROIs(subROIPropVec, matchedShiftedEdepPtrVec, offset_ADC, y_wire, z_wire, wireIDs);
+        auto SubROIMatchedShiftedEdepMap = wmUtil.MatchEdepsToSubROIs(subROIPropVec, matchedShiftedEdepPtrVec, offset_ADC, wireIDs);
         MF_LOG_DEBUG("WireModifier")
           << "    size of SubROIMatchedShiftedEdepMap: " << SubROIMatchedShiftedEdepMap.size();
         std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDeposit*>> SubROIMatchedEdepMap;
@@ -459,7 +451,7 @@ namespace wiremod
           auto key_it =  SubROIMatchedEdepMap.find(key);
 
           if ( key_it != SubROIMatchedEdepMap.end() && key_it->second.size() > 0 ) {
-            auto truth_vals = wmUtil.CalcPropertiesFromEdeps(key_it->second, offset_ADC, y_wire, z_wire);
+            auto truth_vals = wmUtil.CalcPropertiesFromEdeps(key_it->second, offset_ADC, wireIDs);
             total_E+=truth_vals.total_energy;
             drift_distance+=truth_vals.total_energy*truth_vals.x;
             dedx_avg+=truth_vals.total_energy*truth_vals.dedx;
@@ -468,7 +460,7 @@ namespace wiremod
               scale_vals.r_sigma = 1.;
             }
             else {
-              scale_vals = wmUtil.GetScaleValues(truth_vals, roi_properties, y_wire, z_wire);
+              scale_vals = wmUtil.GetScaleValues(truth_vals, roi_properties, wireIDs);
               mf::LogDebug("WireModifier")
                 << "Scaling! Q scale: " << scale_vals.r_Q
                 << "     sigma scale: " << scale_vals.r_sigma;
