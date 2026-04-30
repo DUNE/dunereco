@@ -203,16 +203,16 @@ namespace sys {
 
       std::vector<SubROIProperties_t> CalcSubROIProperties(ROIProperties_t const&, std::vector<const recob::Hit*> const&);
 
-      std::map<SubROI_Key_t, std::vector<const sim::SimEnergyDeposit*>> MatchEdepsToSubROIs(std::vector<SubROIProperties_t> const&, std::vector<const sim::SimEnergyDeposit*> const&, double offset, double y_wire, double z_wire, std::vector<geo::WireID> wireIDs);
+      std::map<SubROI_Key_t, std::vector<const sim::SimEnergyDeposit*>> MatchEdepsToSubROIs(std::vector<SubROIProperties_t> const&, std::vector<const sim::SimEnergyDeposit*> const&, double offset, std::vector<geo::WireID> wireIDs);
 
-      TruthProperties_t CalcPropertiesFromEdeps(std::vector<const sim::SimEnergyDeposit*> const&, double offset, double y_wire, double z_wire);
+      TruthProperties_t CalcPropertiesFromEdeps(std::vector<const sim::SimEnergyDeposit*> const&, double offset, std::vector<geo::WireID> wireIDs);
 
       //product of view scale and channel scale
-      ScaleValues_t GetScaleValues(TruthProperties_t const&, ROIProperties_t const&, double y_wire, double z_wire);
+      ScaleValues_t GetScaleValues(TruthProperties_t const&, ROIProperties_t const&, std::vector<geo::WireID> wireIDs);
       //scaling factors not dependent on thruth properties (e.g., electronics gain)
       ScaleValues_t GetChannelScaleValues(TruthProperties_t const&, raw::ChannelID_t const&);
       //scaling factors dependent on truth properties (e.g., recombination, attenuation)
-      ScaleValues_t GetViewScaleValues(TruthProperties_t const&, geo::View_t const&, double y_wire, double z_wire);
+      ScaleValues_t GetViewScaleValues(TruthProperties_t const&, geo::View_t const&, std::vector<geo::WireID> wireIDs);
 
       void ModifyROI(std::vector<float> &,
                      ROIProperties_t const &,
