@@ -528,10 +528,10 @@ std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDepo
     {
       auto subroi_prop = subROIPropVec[i_h];
 
-      if (subroi_prop.total_q < 5 && best_wire_dist>2){
+      /*if (subroi_prop.total_q < 5 && best_wire_dist>2){
         //std::cout<<"Rejected because of too high distance for low charge"<<std::endl;
         continue;
-      }
+      }*/
 
       if (edep_tick > subroi_prop.center-subroi_prop.sigma && edep_tick < subroi_prop.center+subroi_prop.sigma)
       {
