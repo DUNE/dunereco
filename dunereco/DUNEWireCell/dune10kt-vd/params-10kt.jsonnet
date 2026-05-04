@@ -18,7 +18,7 @@ function(params) base {
 
         response_plane: params.response_plane,
 
-        local bot_crp_x = -3.97*wc.cm,
+        local bot_crp_x = -651.90*wc.cm,
         local bot_resp_x = bot_crp_x+self.response_plane,
         local bot_cathode_x = bot_crp_x+650.06*wc.cm,
         local bot_face = {
@@ -26,7 +26,7 @@ function(params) base {
             response: bot_resp_x,
             cathode:  bot_cathode_x},
 
-        local top_crp_x = 1300.13*wc.cm,
+        local top_crp_x = 652.15*wc.cm,
         local top_resp_x = top_crp_x-self.response_plane,
         local top_cathode_x = top_crp_x - 650.06*wc.cm,
         local top_face = {
