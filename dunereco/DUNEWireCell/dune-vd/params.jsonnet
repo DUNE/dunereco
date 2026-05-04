@@ -11,7 +11,7 @@ function(params) base {
     },
     det : {
 
-        // The current DUNE-VD goemetry has only one CRP composed by 36
+        // The current DUNE-VD goemetry has only one CRP composed by 112
         // independent CRM with side 
         // CRP is on y-z while drift is on x 
         // Only one CRP is defined in this geometry 
@@ -22,7 +22,7 @@ function(params) base {
         local upper_crp_x = 325.00*wc.cm, //300.507*wc.cm,
         local upper_resp_x = upper_crp_x-self.response_plane,
         local cathode_x = -325.00*wc.cm,
-        local ncrm = if std.objectHas(params, 'ncrm') then params.ncrm else 36,
+        local ncrm = if std.objectHas(params, 'ncrm') then params.ncrm else 112,
        
         volumes: [
             {
