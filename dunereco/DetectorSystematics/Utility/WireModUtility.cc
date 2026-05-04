@@ -855,7 +855,7 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
     double dT2=best_dT*best_dT;
     
     double exponent=-dT2/(4*t)*(1/DTnew-1/Dnom)/1e3; //diffusion coefficients are in cm^2/ns but typical units cm and mus
-    scale_DT *= Dnom/DTnew*exp(exponent);
+    scale_DT *= exp(exponent);
     scales.r_Q *= scale_DT;
   }
   //std::cout<<"scaling factor: "<<scales.r_Q<<std::endl;
