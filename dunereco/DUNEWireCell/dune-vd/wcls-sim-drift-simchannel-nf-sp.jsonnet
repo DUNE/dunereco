@@ -15,6 +15,7 @@ local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local params_maker = import 'pgrapher/experiment/dune-vd/params.jsonnet';
 local response_plane = std.extVar('response_plane')*wc.cm;
+local process_mode = std.extVar('process_mode');
 local fcl_params = {
     G4RefTime: std.extVar('G4RefTime') * wc.us,
     response_plane: std.extVar('response_plane')*wc.cm,
@@ -23,7 +24,11 @@ local fcl_params = {
     use_hydra: std.extVar('use_hydra'),
     save_rawdigits: false,
     use_dnnroi: std.extVar('use_dnnroi'),
-    process_mode: std.extVar('process_mode'),
+    process_mode: process_mode,
+    // ncrm is consumed by params.jsonnet (defaults 36 for 1x6x6)
+    ncrm: if process_mode == "full" || process_mode == "1x8x14" then 112
+          else if process_mode == "1x8x6" then 48
+          else 112,
 };
 local params = params_maker(fcl_params) {
   lar: super.lar {
@@ -379,14 +384,15 @@ local switch_pipes = [
 local process_pipes = if fcl_params.use_hydra then switch_pipes else multipass;
 
 local bi_manifold =
-    if fcl_params.process_apa_index == "1x8x14"
+    if process_mode == "full" || process_mode == "1x8x14"
         then f.multifanpipe('DepoSetFanout', process_pipes, 'FrameFanin', [1,8,16], [8,2,7], [1,8,16], [8,2,7], 'sn_mag', outtags, tag_rules)
     else if fcl_params.process_mode == "1x8x6" || fcl_params.process_mode == "1x8x14_partial"
         then f.multifanpipe('DepoSetFanout', process_pipes, 'FrameFanin', [1,8], [8,6], [1,8], [8,6], 'sn_mag', outtags, tag_rules)
     else if fcl_params.process_mode == "single-sim"
         || fcl_params.process_mode == "single-sp"
         || fcl_params.process_mode == "single-sim-sp"
-    then f.multifanpipe('DepoSetFanout', process_pipes, 'FrameFanin', [1,1], [1,1], [1,1], [1,1], 'sn_mag', outtags, tag_rules); 
+    then f.multifanpipe('DepoSetFanout', process_pipes, 'FrameFanin', [1,1], [1,1], [1,1], [1,1], 'sn_mag', outtags, tag_rules)
+    else error "unsupported process_mode: " + fcl_params.process_mode;
 
 local retagger = g.pnode({
   type: 'Retagger',
