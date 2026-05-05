@@ -21,7 +21,7 @@ local fcl_params = {
     nticks: std.extVar('nticks'),
     use_dnnroi: std.extVar('use_dnnroi'),
     process_mode: std.extVar('process_mode'),
-    process_apa_index: std.extVar('process_apa_index'),
+    process_tpc_index: std.extVar('process_tpc_index'),
     use_hydra: std.extVar('use_hydra'),
     save_rawdigits: std.extVar('save_rawdigits'),
     adc_resolution: std.extVar('adc_resolution'),
@@ -50,7 +50,7 @@ local tools =
 if fcl_params.process_mode == "single-sim"
     || fcl_params.process_mode == "single-sp"
     || fcl_params.process_mode == "single-sim-sp"
-then tools_all {anodes: [tools_all.anodes[n] for n in [fcl_params.process_apa_index]]}
+then tools_all {anodes: [tools_all.anodes[n] for n in [fcl_params.process_tpc_index]]}
 else tools_all;
 
 local sim_maker = import 'pgrapher/experiment/dune10kt-vd/sim.jsonnet';
@@ -116,7 +116,7 @@ local wcls_output = {
       if fcl_params.process_mode == "single-sim"
       || fcl_params.process_mode == "single-sp"
       || fcl_params.process_mode == "single-sim-sp"
-      then ['daq%d' % fcl_params.process_apa_index]
+      then ['daq%d' % fcl_params.process_tpc_index]
       else ['daq'],
       // nticks: params.daq.nticks,
       // chanmaskmaps: ['bad'],
@@ -140,9 +140,9 @@ local wcls_output = {
       if fcl_params.process_mode == "single-sim"
       || fcl_params.process_mode == "single-sp"
       || fcl_params.process_mode == "single-sim-sp"
-      then ['gauss%d' % fcl_params.process_apa_index,
-            'wiener%d' % fcl_params.process_apa_index,
-            'dnnsp%d' % fcl_params.process_apa_index]
+      then ['gauss%d' % fcl_params.process_tpc_index,
+            'wiener%d' % fcl_params.process_tpc_index,
+            'dnnsp%d' % fcl_params.process_tpc_index]
       else ['gauss', 'wiener','dnnsp'],
       frame_scale: [0.005, 0.005, 0.005],
       chanmaskmaps: [],
@@ -239,7 +239,7 @@ local sim_retagger_fanins = [g.pnode({
             trace: {".*": "daq%d" % [n]},
         }]
     },
-}, nin=1, nout=1), for n in [fcl_params.process_apa_index]];
+}, nin=1, nout=1), for n in [fcl_params.process_tpc_index]];
 local sim_retaggers = [
     g.pnode(
         {
@@ -255,7 +255,7 @@ local sim_retaggers = [
             },
         },
         nin=1, nout=1)
-    for n in [fcl_params.process_apa_index]
+    for n in [fcl_params.process_tpc_index]
 ];
 
 local full_sim_pipes = [
@@ -402,9 +402,9 @@ local retagger = g.pnode({
       || fcl_params.process_mode == "single-sp"
       || fcl_params.process_mode == "single-sim-sp"
         then {
-        'gauss\\d+': 'gauss%d' % fcl_params.process_apa_index,
-        'wiener\\d+': 'wiener%d' % fcl_params.process_apa_index,
-        'dnnsp\\d+': 'dnnsp%d' % fcl_params.process_apa_index,
+        'gauss\\d+': 'gauss%d' % fcl_params.process_tpc_index,
+        'wiener\\d+': 'wiener%d' % fcl_params.process_tpc_index,
+        'dnnsp\\d+': 'dnnsp%d' % fcl_params.process_tpc_index,
       } else {
         'gauss\\d+': 'gauss',
         'wiener\\d+': 'wiener',
