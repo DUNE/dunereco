@@ -207,29 +207,22 @@ local ts = {
 };
 
 local rng = tools.random;
-local wcls_simchannel_sink = g.pnode({
-  type: 'wclsSimChannelSink',
+local wcls_depoflux_writer = g.pnode({
+  type: 'wclsDepoFluxWriter',
   name: 'postdrift',
   data: {
-    artlabel: 'simpleSC',  // where to save in art::Event
-    anodes_tn: [wc.tn(anode) for anode in tools.anodes],
-    rng: wc.tn(rng),
+    anodes: [wc.tn(anode) for anode in tools.anodes],
+    field_response: wc.tn(tools.field),
     tick: params.daq.tick,
-    start_time: -0.25 * wc.ms,
-    readout_time: params.daq.readout_time,
+    window_start: 0,
+    window_duration: params.daq.readout_time,
     nsigma: 3.0,
-    drift_speed: params.lar.drift_speed,
-    u_to_rp: response_plane,  // 90.58 * wc.mm,
-    v_to_rp: response_plane,  // 95.29 * wc.mm,
-    y_to_rp: response_plane,
-    u_time_offset: 0.0 * wc.us,
-    v_time_offset: 0.0 * wc.us,
-    y_time_offset: 0.0 * wc.us,
-    g4_ref_time: fcl_params.G4RefTime,
-    use_energy: true,
-    response_plane: response_plane,
+    reference_time: 0,
+    simchan_label: 'simpleSC',
+    # sed_label: "IonAndScint",
+    sparse: false,
   },
-}, nin=1, nout=1, uses=tools.anodes);
+}, nin=1, nout=1, uses=tools.anodes + [tools.field]);
 
 local magoutput = 'mag.root';
 local magnify = import 'pgrapher/experiment/dune-vd/magnify-sinks.jsonnet';
@@ -425,7 +418,7 @@ local retagger = g.pnode({
 local sink = sim.frame_sink;
 
 
-local graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, bi_manifold, retagger, wcls_output.sp_signals, sink]);
+local graph = g.pipeline([wcls_input.deposet, setdrifter, wcls_depoflux_writer, bi_manifold, retagger, wcls_output.sp_signals, sink]);
 
 local app = {
     type: 'TbbFlow', //Pgrapher, TbbFlow
