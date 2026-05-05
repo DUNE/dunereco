@@ -291,17 +291,9 @@ local full_sp_pipes = [
 
 local multipass = [
   g.pipeline([
-                // wcls_simchannel_sink[n],
-                sn_pipes[n],
-                // sinks.orig_pipe[n],
-                // nf_pipes[n],
-                sp_pipes[n],
-                sinks.decon_pipe[n],
-                // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
-             ] + if fcl_params.use_dnnroi then [
-                 dnnroi(tools.anodes[n], ts, output_scale=1.2),
-                //  sinks.dnnroi_pipe[n],
-             ] else [],
+                full_sim_pipes[n],
+                full_sp_pipes[n],
+             ],
              'multipass%d' % n)
   for n in anode_iota
 ];
@@ -433,44 +425,7 @@ local retagger = g.pnode({
 local sink = sim.frame_sink;
 
 
-// Build an incomplete subgraph ending to be spliced for saving out frames 
-// local osimfanin = g.pnode({ 
-//     type: 'FrameFanin',
-//     name:"osimfanin",
-//     data:{
-//         multiplicity: std.length(tools.anodes),
-//         tags: ['orig%d' % n for n in anode_iota],
-//     } 
-// }, nin=std.length(tools.anodes), nout=1);
-local osimfanin = 
-if fcl_params.process_mode == "test2"
-then f.multifanin('FrameFanin', [1,4], [4,1], 'osimfanin', ['orig%d' % n for n in anode_iota])
-else f.multifanin('FrameFanin', [1,2,8,32], [2,4,4,10], 'osimfanin', ['orig%d' % n for n in anode_iota]);
-local osimdump = g.pnode({ type: 'DumpFrames', name:"osimdump", data:{} }, nin=1, nout=0);
-local osimtagger = g.pnode({
-  type: 'Retagger',
-  name: 'osimtagger',
-  data: {
-    tag_rules: [{
-      frame: {'.*': 'daq',},
-      merge: {
-        'orig\\d': 'orig',
-      },
-    }],
-  },
-}, nin=1, nout=1);
-local osimsaver = g.pipeline([osimfanin, osimtagger, wcls_output.sim_digits, osimdump]);
-
-local edge_selector(e) = std.startsWith(e.tail.node, "FrameSync:frame-sync-switch-rawdigits");
-// local fanout_factory(n,e) = { type:'FrameFanout', name:"splice%d"%n };
-local fanout_factory(n,e) = { type:'FrameFanout', name:"splice%d"%n, data:{multiplicity: 2} }; // "2-wire" splice
-
-
-
-local main_graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, bi_manifold, retagger, wcls_output.sp_signals, sink]);
-// local graph = g.pipeline([wcls_input.deposet, setdrifter, wcls_simchannel_sink, bi_manifold, retagger, wcls_output.sp_signals, sink]);
-
-local graph = g.splice(main_graph, osimsaver, edge_selector, fanout_factory);
+local graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, bi_manifold, retagger, wcls_output.sp_signals, sink]);
 
 local app = {
     type: 'TbbFlow', //Pgrapher, TbbFlow
