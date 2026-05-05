@@ -2151,9 +2151,9 @@ dune10kt_vertdrift_sim_nfsp : {
         // Contract note: these exact "type:name" must be used to identify
         // the configuration data structures for these components in the Jsonnet.
 
-        inputers: ["wclsSimDepoSource:"]
+        inputers: ["wclsSimDepoSetSource:"]
         outputers: [
-            "wclsSimChannelSink:postdrift",
+            "wclsDepoFluxWriter:postdrift",
             "wclsFrameSaver:spsignals"
             # , "wclsFrameSaver:simdigits" # !!!needed for single-sim, single-sim-sp
         ]
