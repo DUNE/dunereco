@@ -73,7 +73,7 @@ physics :{
                 # response plane [cm]
                 response_plane: 18.92
                 # when process_mode is single-*, this specifies which APA to process (0-319)
-                process_apa_index: 0
+                process_tpc_index: 0
                 use_hydra: true
                 save_rawdigits: false
                 # use dnn_roi or not
