@@ -1606,7 +1606,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
         # apps: ["Pgrapher"]
         apps: ["TbbFlow"]
 
-        logsinks: ["stdout:info", "wcls-sim-drift-simchannel-nf-sp.log:debug"]
+        logsinks: ["stdout"]
         loglevels: ["debug"]
 
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"
@@ -1621,9 +1621,9 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
         // Contract note: these exact "type:name" must be used to identify
         // the configuration data structures for these components in the Jsonnet.
 
-        inputers: ["wclsSimDepoSource:"]
+        inputers: ["wclsSimDepoSetSource:"]
         outputers: [
-            "wclsSimChannelSink:postdrift",
+            "wclsDepoFluxWriter:postdrift",
             "wclsFrameSaver:spsignals"
             # , "wclsFrameSaver:simdigits" # !!!needed for single-sim, single-sim-sp
         ]
@@ -1644,9 +1644,8 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
             # default is to assume WireCell::kU->geo::kU, kV->kV, kW->kW
             # 3view-30deg: default, 3view: dunevd_3view
             geo_planeid_labels: "dunevd_3view"
-            # single-sp, single-sim, single-sim-sp, full or 1x8x14, 1x8x6
-            # tested: single-sim-sp 1x8x14 w/o hydra
-            process_mode: "single-sp"
+            # single-sp, single-sim-sp, full
+            process_mode: "full"
         }
         structs: {
             elecGain: @local::ASICGainInMVPerFC_standard
@@ -2177,8 +2176,8 @@ dune10kt_vertdrift_sim_nfsp : {
             # default is to assume WireCell::kU->geo::kU, kV->kV, kW->kW
             # 3view-30deg: default, 3view: dunevd_3view
             geo_planeid_labels: "default"
-            # single-sp, single-sim, single-sim-sp, full
-            process_mode: "single-sp"
+            # single-sp, single-sim-sp, full
+            process_mode: "full"
         }
         structs: {
             elecGain: @local::ASICGainInMVPerFC_standard
