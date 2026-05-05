@@ -256,7 +256,7 @@ local wcls_depoflux_writer = g.pnode({
     window_duration: self.tick * 6000,
     nsigma: 3.0,
     reference_time: fcl_params.G4RefTime,
-    energy: 1, # equivalent to use_energy = true
+    energy: 0,
     simchan_label: 'simpleSC',
     sed_label: 'IonAndScint',
     sparse: false,
