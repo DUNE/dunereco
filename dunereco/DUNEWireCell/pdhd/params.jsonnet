@@ -166,7 +166,8 @@ base {
                else "protodunehd-noise-spectra-7d8mVfC-v1.json.bz2",
 
 
-        chresp: null,
+        //chresp: null,
+        chresp: "protodunehd-params-channel-response-30413-no_avg_3.json.bz2"
     },
 
 }
