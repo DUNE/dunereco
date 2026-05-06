@@ -117,7 +117,7 @@ local wcls_output = {
       if fcl_params.process_mode == "single-sim"
       || fcl_params.process_mode == "single-sp"
       || fcl_params.process_mode == "single-sim-sp"
-      then ['daq%d' % fcl_params.process_tpc_index]
+      then ['daqtpc%d' % fcl_params.process_tpc_index]
       else ['daq'],
       // nticks: params.daq.nticks,
       // chanmaskmaps: ['bad'],
@@ -141,9 +141,9 @@ local wcls_output = {
       if fcl_params.process_mode == "single-sim"
       || fcl_params.process_mode == "single-sp"
       || fcl_params.process_mode == "single-sim-sp"
-      then ['gauss%d' % fcl_params.process_tpc_index,
-            'wiener%d' % fcl_params.process_tpc_index,
-            'dnnsp%d' % fcl_params.process_tpc_index]
+      then ['gausstpc%d' % fcl_params.process_tpc_index,
+            'wienertpc%d' % fcl_params.process_tpc_index,
+            'dnnsptpc%d' % fcl_params.process_tpc_index]
       else ['gauss', 'wiener','dnnsp'],
       frame_scale: [0.005, 0.005, 0.005],
       chanmaskmaps: [],
@@ -223,7 +223,7 @@ local wcls_depoflux_writer = g.pnode({
         if fcl_params.process_mode == "single-sim"
         || fcl_params.process_mode == "single-sp"
         || fcl_params.process_mode == "single-sim-sp"
-        then 'simpleSC%d' % fcl_params.process_tpc_index
+        then 'simpleSCtpc%d' % fcl_params.process_tpc_index
         else "simpleSC",
     sed_label: 'IonAndScint',
     sparse: false,
@@ -408,9 +408,9 @@ local retagger = g.pnode({
       || fcl_params.process_mode == "single-sp"
       || fcl_params.process_mode == "single-sim-sp"
         then {
-        'gauss\\d+': 'gauss%d' % fcl_params.process_tpc_index,
-        'wiener\\d+': 'wiener%d' % fcl_params.process_tpc_index,
-        'dnnsp\\d+': 'dnnsp%d' % fcl_params.process_tpc_index,
+        'gauss\\d+': 'gausstpc%d' % fcl_params.process_tpc_index,
+        'wiener\\d+': 'wienertpc%d' % fcl_params.process_tpc_index,
+        'dnnsp\\d+': 'dnnsptpc%d' % fcl_params.process_tpc_index,
       } else {
         'gauss\\d+': 'gauss',
         'wiener\\d+': 'wiener',
