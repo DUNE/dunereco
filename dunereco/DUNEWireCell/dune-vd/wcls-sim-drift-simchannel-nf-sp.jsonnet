@@ -85,6 +85,7 @@ local wcls_input = {
               scale: -1, //scale is -1 to correct a sign error in the SimDepoSource converter.
               art_tag: "IonAndScint", //name of upstream art producer of depos "label:instance:processName"
               assn_art_tag: "",
+              id_is_track: false,
           },
       }, nin=0, nout=1),
 };
@@ -231,7 +232,13 @@ local wcls_depoflux_writer = g.pnode({
     window_duration: params.daq.readout_time,
     nsigma: 3.0,
     reference_time: 0,
-    simchan_label: 'simpleSC',
+    simchan_label:
+        if fcl_params.process_mode == "single-sim"
+        || fcl_params.process_mode == "single-sp"
+        || fcl_params.process_mode == "single-sim-sp"
+        then 'simpleSC%d' % fcl_params.process_tpc_index
+        else "simpleSC",
+    sed_label: 'IonAndScint',
     sparse: false,
   },
 }, nin=1, nout=1, uses=tools.anodes + [tools.field]);
