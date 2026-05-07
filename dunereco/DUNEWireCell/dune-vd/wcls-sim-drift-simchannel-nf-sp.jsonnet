@@ -26,8 +26,7 @@ local fcl_params = {
     use_dnnroi: std.extVar('use_dnnroi'),
     process_mode: process_mode,
     // ncrm is consumed by params.jsonnet (defaults 36 for 1x6x6)
-    ncrm: if process_mode == "full" || process_mode == "1x8x14" then 112
-          else if process_mode == "1x8x6" then 48
+    ncrm: if process_mode == "1x8x6" || process_mode == "1x8x14_partial" then 48
           else 112,
 };
 local params = params_maker(fcl_params) {
@@ -56,7 +55,11 @@ else if fcl_params.process_mode == "single-sim"
     || fcl_params.process_mode == "single-sp"
     || fcl_params.process_mode == "single-sim-sp"
 then tools_all {anodes: [tools_all.anodes[n] for n in [fcl_params.process_tpc_index]]}
-else tools_all;
+else if fcl_params.process_mode == "full"
+     || fcl_params.process_mode == "full-sim-sp"
+     || fcl_params.process_mode == "1x8x14"
+then tools_all
+else error "unsupported process_mode: " + fcl_params.process_mode;
 
 local sim_maker = import 'pgrapher/experiment/dune-vd/sim.jsonnet';
 local sim = sim_maker(params, tools);
@@ -130,6 +133,20 @@ local wcls_output = {
       pedestal_mean: 'native',
     },
   }, nin=1, nout=1, uses=[mega_anode]),
+
+  multi_sim_digits: [g.pnode({
+    type: 'wclsFrameSaver',
+    name: 'simdigits%d'%n,
+    data: {
+      // anode: wc.tn(tools.anode),
+      anode: wc.tn(mega_anode),
+      digitize: true,  // true means save as RawDigit, else recob::Wire
+      frame_tags: ['daqtpc%d' % n],
+      // nticks: params.daq.nticks,
+      // chanmaskmaps: ['bad'],
+      pedestal_mean: 'native',
+    },
+  }, nin=1, nout=1, uses=[mega_anode]) for n in anode_iota],
 
   // The output of signal processing.  Note, there are two signal
   // sets each created with its own filter.  The "gauss" one is best
@@ -251,32 +268,32 @@ local sinks = magnify(tools, magoutput);
 
 local sim_retagger_fanins = [g.pnode({
     type: "FrameFanin",
-    name: "sim_retagger_fanin%d" % n,
+    name: "sim_retagger_fanin%d" % a.data.ident,
     data: {
         multiplicity: 1,
-        tags: ["daq%d" % n],
+        tags: ["daqtpc%d" % a.data.ident],
         tag_rules: [{
-            frame: {".*": "daq%d" % [n]},
-            trace: {".*": "daq%d" % [n]},
+            frame: {".*": "daqtpc%d" % [a.data.ident]},
+            trace: {".*": "daqtpc%d" % [a.data.ident]},
         }]
     },
-}, nin=1, nout=1), for n in [fcl_params.process_tpc_index]];
+}, nin=1, nout=1), for a in tools.anodes];
 local sim_retaggers = [
     g.pnode(
         {
             type: 'Retagger',
-            name: 'retagger-sim-%d' % n,
+            name: 'retagger-sim-%d' % a.data.ident,
             data:
             {
                 tag_rules:
                 [{
-                  frame: {'.*': 'daq%d' % n,},
-                  merge: {'.*': 'daq%d' % n,},
+                  frame: {'.*': 'daqtpc%d' % a.data.ident,},
+                  merge: {'.*': 'daqtpc%d' % a.data.ident,},
                 }]
             },
         },
         nin=1, nout=1)
-    for n in [fcl_params.process_tpc_index]
+    for a in tools.anodes
 ];
 
 local full_sim_pipes = [
@@ -285,7 +302,10 @@ local full_sim_pipes = [
                 // sinks.orig_pipe[n],
              ] + if fcl_params.process_mode == "single-sim"
                  || fcl_params.process_mode == "single-sim-sp"
-                 then [sim_retagger_fanins[n], sim_retaggers[n], wcls_output.sim_digits] else [],
+                 then [sim_retagger_fanins[n], sim_retaggers[n], wcls_output.sim_digits]
+                 else if fcl_params.process_mode == "full-sim-sp"
+                 then [sim_retagger_fanins[n], sim_retaggers[n], wcls_output.multi_sim_digits[n]]
+                 else [],
              'multipass%d' % n)
   for n in anode_iota
 ];
@@ -400,7 +420,7 @@ local switch_pipes = [
 local process_pipes = if fcl_params.use_hydra then switch_pipes else multipass;
 
 local bi_manifold =
-    if process_mode == "full" || process_mode == "1x8x14"
+    if process_mode == "full" || process_mode == "full-sim-sp" || process_mode == "1x8x14"
         then f.multifanpipe('DepoSetFanout', process_pipes, 'FrameFanin', [1,8,16], [8,2,7], [1,8,16], [8,2,7], 'sn_mag', outtags, tag_rules)
     else if fcl_params.process_mode == "1x8x6" || fcl_params.process_mode == "1x8x14_partial"
         then f.multifanpipe('DepoSetFanout', process_pipes, 'FrameFanin', [1,8], [8,6], [1,8], [8,6], 'sn_mag', outtags, tag_rules)
