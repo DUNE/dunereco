@@ -239,10 +239,10 @@ local sim_retagger_fanins = [g.pnode({
     name: "sim_retagger_fanin%d" % n,
     data: {
         multiplicity: 1,
-        tags: ["daq%d" % n],
+        tags: ["daqtpc%d" % n],
         tag_rules: [{
-            frame: {".*": "daq%d" % [n]},
-            trace: {".*": "daq%d" % [n]},
+            frame: {".*": "daqtpc%d" % [n]},
+            trace: {".*": "daqtpc%d" % [n]},
         }]
     },
 }, nin=1, nout=1), for n in [fcl_params.process_tpc_index]];
@@ -255,8 +255,8 @@ local sim_retaggers = [
             {
                 tag_rules:
                 [{
-                  frame: {'.*': 'daq%d' % n,},
-                  merge: {'.*': 'daq%d' % n,},
+                  frame: {'.*': 'daqtpc%d' % n,},
+                  merge: {'.*': 'daqtpc%d' % n,},
                 }]
             },
         },
