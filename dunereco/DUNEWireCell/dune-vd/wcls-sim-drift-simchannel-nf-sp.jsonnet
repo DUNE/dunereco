@@ -136,17 +136,17 @@ local wcls_output = {
 
   multi_sim_digits: [g.pnode({
     type: 'wclsFrameSaver',
-    name: 'simdigits%d'%n,
+    name: 'simdigits%d'%a.data.ident,
     data: {
       // anode: wc.tn(tools.anode),
-      anode: wc.tn(mega_anode),
+      anode: wc.tn(a),
       digitize: true,  // true means save as RawDigit, else recob::Wire
-      frame_tags: ['daqtpc%d' % n],
+      frame_tags: ['daqtpc%d' % a.data.ident],
       // nticks: params.daq.nticks,
       // chanmaskmaps: ['bad'],
       pedestal_mean: 'native',
     },
-  }, nin=1, nout=1, uses=[mega_anode]) for n in anode_iota],
+  }, nin=1, nout=1, uses=[a]) for a in tools.anodes],
 
   // The output of signal processing.  Note, there are two signal
   // sets each created with its own filter.  The "gauss" one is best
