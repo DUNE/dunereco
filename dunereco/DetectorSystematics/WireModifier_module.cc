@@ -151,16 +151,16 @@ namespace wiremod
         double rho=1.39295;
         double Bnom=beta_nom/rho/E;
         double Bvar=fModBoxBetaVar/rho/E;
-        double xmin=1., step=2./N;
+        double xmin=1., step=2.2/N;
         for (int i = 0; i < N; i++) {
           xs[i] = xmin + i * step;
           ys[i] = std::log(fModBoxAlphaVar+Bvar*xs[i])/std::log(alpha_nom+Bnom*xs[i])*beta_nom/fModBoxBetaVar;
         }
       }
       else{ 
-        hRat = new TH2F("hRatRecomb", "Total ROI charge after/before scaling vs drift distance; Drift distance [cm]; Charge ratio", 200, 0, 350, 200, 0, 1);   
+        hRat = new TH2F("hRatRecomb", "Total ROI charge after/before scaling vs drift distance; Drift distance [cm]; Charge ratio", 200, 0, 370, 200, 0, 1);   
         double factor=1./160.563*(1000./fLifetimeVar-1/10.4);
-        double xmin=0., step=500./N;
+        double xmin=0., step=370./N;
         for (int i = 0; i < N; i++) {
           xs[i] = xmin + i * step;
           ys[i] = std::exp(-xs[i] * factor);
@@ -579,20 +579,34 @@ namespace wiremod
       hRat->SetMarkerColor(kBlack);
       hRat->SetMarkerStyle(kPlus);
       hRat->Draw("Psame");
-      TLegend *leg = new TLegend(0.15, 0.12, 0.85, 0.3);
+      
+      TLegend *leg1 = new TLegend(0.15, 0.2, 0.45, 0.3);
+      TLegend *leg2 = new TLegend(0.55, 0.7, 0.9, 0.9);
       if (fApplyModBoxVar){ 
-        leg = new TLegend(0.15, 0.12, 0.85, 0.35);
-        leg->SetHeader(Form("#splitline{Nominal Mod. Box A: %.2f, Nominal Mod. Box B: %.3f (g.kV)/(MeV.cm^{2})}{Varied Mod. Box A: %.2f, Varied Mod. Box B: %.3f (g.kV)/(MeV.cm^{2})}", 0.93, 0.212, fModBoxAlphaVar, fModBoxBetaVar), "C");
+        leg1 = new TLegend(0.55, 0.2, 0.85, 0.3);
+        leg2 = new TLegend(0.2, 0.25, 0.95, 0.55);
+        leg2->SetHeader(Form("#splitline{Nominal Mod. Box A: %.2f, Nominal Mod. Box B: %.3f (g.kV)/(MeV.cm^{2})}{Varied Mod. Box A: %.2f, Varied Mod. Box B: %.3f (g.kV)/(MeV.cm^{2})}", 0.93, 0.212, fModBoxAlphaVar, fModBoxBetaVar), "C");
       }
-      else leg->SetHeader(Form("Nominal lifetime: %.2f ms, Varied lifetime: %.2f ms", 10.4, fLifetimeVar/1000.), "C");
-      leg->AddEntry(hRat, "ROI total charge ratio");
-      leg->AddEntry(grChargeRatExp, "Analytical ratio");
-      leg->Draw("same");  
+      else leg2->SetHeader(Form("#splitline{Nominal lifetime: %.2f ms}{Varied lifetime: %.2f ms}", 10.4, fLifetimeVar/1000.), "C");
+      leg1->SetFillColor(0);   // not strictly needed if FillStyle=0
+      leg1->SetFillStyle(0);
+      leg1->SetLineColor(0);   // removes border color
+      leg1->SetBorderSize(0);
+      leg1->AddEntry(hRat, "ROI total charge ratio");
+      leg1->AddEntry(grChargeRatExp, "Analytical ratio");
+      leg1->Draw("same");
+      leg2->SetFillColor(0);   // not strictly needed if FillStyle=0
+      leg2->SetFillStyle(0);
+      leg2->SetLineColor(0);   // removes border color
+      leg2->SetBorderSize(0);
+      leg2->Draw("same");
+      
       TLatex latex;
       latex.SetNDC();                 // use normalized coordinates (0 → 1)
       latex.SetTextSize(0.04);        // adjust size
       latex.SetTextFont(42);          // nice standard font
       latex.DrawLatex(0.15, 0.85, "#bf{DUNE} Work in Progress");
+      
       c1->SaveAs("ROI_charge_modification.pdf");
       delete c1;
     }
