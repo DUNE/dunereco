@@ -179,9 +179,9 @@ wpdir	product_dir	wire-cell-cfg
 # Add the dependent product and version
 
 product          version
-cetmodules       v3_24_01   -   only_for_build
-dunecore         v10_20_06d01
-duneprototypes   v10_20_06d01
+cetmodules       v3_27_04   -   only_for_build
+dunecore         v10_20_07d00
+duneprototypes   v10_20_07d00
 larcv2           v2_2_6
 end_product_list
 
