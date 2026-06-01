@@ -1,4 +1,3 @@
-
 local g = import 'pgraph.jsonnet';
 local f = import 'pgrapher/common/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
@@ -22,7 +21,7 @@ local sim = sim_maker(params, tools);
 // plane: 1 pitch dir: (0 -0.866026 0.5)
 // plane: 2 pitch dir: (0 0 1)
 
-local thetaXZ = 0*wc.deg;
+local thetaXZ = 0 * wc.deg;
 
 local stubby_top = {
   tail: wc.point(300, 100, 100, wc.cm),
@@ -36,18 +35,95 @@ local stubby_bottom = {
   head: wc.point(-300, 100, 100.0001, wc.cm),
 };
 
+// TPC 0, Plane 0
+local cosmic_dir_0 = [0.000000, 0.500000, 0.866026];
+local cosmic_center_0 = [-104.1510, -250.0, 0.50];
+local track0 = {
+  head: wc.point(cosmic_center_0[0], cosmic_center_0[1], cosmic_center_0[2], wc.cm),
+  tail: wc.point(cosmic_center_0[0] + 500.0 * cosmic_dir_0[0], cosmic_center_0[1] + 500.0 * cosmic_dir_0[1], cosmic_center_0[2] + 500.0 * cosmic_dir_0[2], wc.cm),
+};
+
+// TPC top, Plane 0
+local cosmic_dir_1 = [0.000000, 0.500000, 0.866026];
+local cosmic_center_1 = [104.1510, -250.0, 0.50];
+local track1 = {
+  head: wc.point(cosmic_center_1[0], cosmic_center_1[1], cosmic_center_1[2], wc.cm),
+  tail: wc.point(cosmic_center_1[0] + 500.0 * cosmic_dir_1[0], cosmic_center_1[1] + 500.0 * cosmic_dir_1[1], cosmic_center_1[2] + 500.0 * cosmic_dir_1[2], wc.cm),
+};
+
+// Track 4: TPC top, Plane 1
+local cosmic_dir_4 = [0.000000, -0.500018, 0.866015];
+local cosmic_center_4 = [104.1510, -78.10, 0.50];
+local track4 = {
+  head: wc.point(cosmic_center_4[0], cosmic_center_4[1], cosmic_center_4[2], wc.cm),
+  tail: wc.point(cosmic_center_4[0] + 500.0 * cosmic_dir_4[0], cosmic_center_4[1] + 500.0 * cosmic_dir_4[1], cosmic_center_4[2] + 500.0 * cosmic_dir_4[2], wc.cm),
+};
+
+// Track 5: TPC 0, Plane 1
+local cosmic_dir_5 = [0.000000, -0.500018, 0.866015];
+local cosmic_center_5 = [-104.1510, -78.10, 0.50];
+local track5 = {
+  head: wc.point(cosmic_center_5[0], cosmic_center_5[1], cosmic_center_5[2], wc.cm),
+  tail: wc.point(cosmic_center_5[0] + 500.0 * cosmic_dir_5[0], cosmic_center_5[1] + 500.0 * cosmic_dir_5[1], cosmic_center_5[2] + 500.0 * cosmic_dir_5[2], wc.cm),
+};
+
+// Track 9: TPC top, Plane 2
+local cosmic_dir_9 = [0.000000, 0.000000, 1.000000];
+local cosmic_center_9 = [-104.1510, -250.0, 0.50];
+local track9 = {
+  head: wc.point(cosmic_center_9[0], cosmic_center_9[1], cosmic_center_9[2], wc.cm),
+  tail: wc.point(cosmic_center_9[0] + 500.0 * cosmic_dir_9[0], cosmic_center_9[1] + 500.0 * cosmic_dir_9[1], cosmic_center_9[2] + 500.0 * cosmic_dir_9[2], wc.cm),
+};
+
+// Track 10: TPC 0, Plane 2
+local cosmic_dir_10 = [0.000000, 0.000000, 1.000000];
+local cosmic_center_10 = [-104.1510, -250.0, 0.50];
+local track10 = {
+  head: wc.point(cosmic_center_10[0], cosmic_center_10[1], cosmic_center_10[2], wc.cm),
+  tail: wc.point(cosmic_center_10[0] + 1000.0 * cosmic_dir_10[0], cosmic_center_10[1] + 500.0 * cosmic_dir_10[1], cosmic_center_10[2] + 500.0 * cosmic_dir_10[2], wc.cm),
+};
+
+local cosmic_dir_11 = [0.000000, 0.000000, 1.000000];
+local cosmic_center_11 = [-104.1510, -78.10, 0.50];
+local track11 = {
+  head: wc.point(cosmic_center_11[0], cosmic_center_11[1], cosmic_center_11[2], wc.cm),
+  tail: wc.point(cosmic_center_11[0] + 500.0 * cosmic_dir_11[0], cosmic_center_11[1] + 500.0 * cosmic_dir_11[1], cosmic_center_11[2] + 500.0 * cosmic_dir_11[2], wc.cm),
+};
+
+local track_data = {
+  //head: wc.point(-20.1, -22.2, 58.5, wc.cm),
+  //tail: wc.point(-61.1, -102.4, 13.4, wc.cm),
+  head: wc.point(216.7 - 300, -102.4, 13.4, wc.cm),
+  tail: wc.point(172.9 - 300, -17.5, 60.4, wc.cm),
+};
+
+local track_data_top = {
+  //head: wc.point(-20.1, -22.2, 58.5, wc.cm),
+  //tail: wc.point(-61.1, -102.4, 13.4, wc.cm),
+  head: wc.point(340.5 - 100, -128.1, 207.8, wc.cm),
+  tail: wc.point(304.6 - 100, -134.7, 250.9, wc.cm),
+};
+
+
 local tracklist = [
 
+  // {
+  //   time: 0 * wc.us,
+  //   // charge: -25000, // 5000 e/mm
+  //   charge: -500,  // 2000 e/mm
+  //   ray: track_data,  // params.det.bounds,
+  // },
+  // {
+  //  time: 0 * wc.us,
+  //  // charge: -25000, // 5000 e/mm
+  //  charge: -500,  // 2000 e/mm
+  //  ray: track_data_top,  // params.det.bounds,
+  // },
   {
     time: 0 * wc.us,
-    charge: -25000, // 5000 e/mm
-    ray: stubby_top, // params.det.bounds,
-  },
-
-  {
-    time: 0 * wc.us,
-    charge: -25000,
-    ray: stubby_bottom,
+    // charge: -25000, // 5000 e/mm
+    charge: -500,  // 2000 e/mm
+    ray: track9,  // params.det.bounds,
   },
 
 ];
@@ -56,7 +132,7 @@ local tracklist = [
 local depos = sim.tracks(tracklist, step=0.1 * wc.mm);
 
 local nanodes = std.length(tools.anodes);
-local anode_iota = std.range(0, nanodes-1);
+local anode_iota = std.range(0, nanodes - 1);
 local anode_idents = [anode.data.ident for anode in tools.anodes];
 
 // local output = 'wct-sim-ideal-sig.npz';
@@ -71,7 +147,7 @@ local perfect = import 'pgrapher/experiment/protodunevd/chndb-base.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
-  data: perfect(params, tools.anodes[n], tools.field, n){dft:wc.tn(tools.dft)},
+  data: perfect(params, tools.anodes[n], tools.field, n) { dft: wc.tn(tools.dft) },
   uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in anode_iota];
 
@@ -79,10 +155,10 @@ local nf_maker = import 'pgrapher/experiment/protodunevd/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp_override = {
-    sparse: true,
-    use_roi_debug_mode: false,
-    use_multi_plane_protection: true,
-    process_planes: [0, 1, 2]
+  sparse: true,
+  use_roi_debug_mode: false,
+  use_multi_plane_protection: true,
+  process_planes: [0, 1, 2],
 };
 
 local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
@@ -96,7 +172,7 @@ local magnifyio = magnify(tools, magoutput);
 local parallel_pipes = [
   g.pipeline([
                sn_pipes[n],
-               // magnifyio.orig_pipe[n],
+               magnifyio.orig_pipe[n],
                nf_pipes[n],
                magnifyio.raw_pipe[n],
                sp_pipes[n],
@@ -106,10 +182,8 @@ local parallel_pipes = [
              'parallel_pipe_%d' % n)
   for n in std.range(0, std.length(tools.anodes) - 1)
 ];
-local outtags = ['raw%d' % n for n in std.range(0, std.length(tools.anodes) - 1)];
+local outtags = ['raw%d' % tools.anodes[n].data.ident for n in std.range(0, std.length(tools.anodes) - 1)];
 local parallel_graph = f.fanpipe('DepoSetFanout', parallel_pipes, 'FrameFanin', 'sn_mag_nf', outtags);
-
-
 
 
 // // fixme: see https://github.com/WireCell/wire-cell-gen/issues/29
@@ -148,7 +222,7 @@ local parallel_graph = f.fanpipe('DepoSetFanout', parallel_pipes, 'FrameFanin', 
 //     // }}, nin=1, nout=1, uses=[tools.random, tools.dft, model]);
 //     }}, nin=1, nout=1, uses=[tools.random, model]);
 // local noises = [add_noise(noise_model, n) for n in std.range(0,7)];
-// 
+//
 // // local digitizer = sim.digitizer(mega_anode, name="digitizer", tag="orig");
 // // "AnodePlane:anode110"
 // // "AnodePlane:anode120"
@@ -157,7 +231,7 @@ local parallel_graph = f.fanpipe('DepoSetFanout', parallel_pipes, 'FrameFanin', 
 // local digitizers = [
 //     sim.digitizer(mega_anode, name="digitizer%d-" %n + mega_anode.name, tag="orig%d"%n)
 //     for n in std.range(0,7)];
-// 
+//
 // local frame_summers = [
 //     g.pnode({
 //         type: 'FrameSummer',
@@ -167,16 +241,16 @@ local parallel_graph = f.fanpipe('DepoSetFanout', parallel_pipes, 'FrameFanin', 
 //             offset: 0.0*wc.s,
 //         },
 //     }, nin=2, nout=1) for n in std.range(0, 7)];
-// 
+//
 // local actpipes = [g.pipeline([noises[n], digitizers[n]], name="noise-digitizer%d" %n) for n in std.range(0,7)];
 // local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
 // local pipe_reducer = util.fansummer('DepoSetFanout', analog_pipes, frame_summers, actpipes, 'FrameFanin');
-// 
-// 
+//
+//
 // local magoutput = 'protodunevd-sim-check.root';
 // local magnify = import 'pgrapher/experiment/protodunevd/magnify-sinks.jsonnet';
 // local magnifyio = magnify(tools, magoutput);
-// 
+//
 // // local fansel = g.pnode({
 // //     type: "ChannelSplitter",
 // //     name: "peranode",
@@ -189,7 +263,7 @@ local parallel_graph = f.fanpipe('DepoSetFanout', parallel_pipes, 'FrameFanin', 
 // //         } for ind in anode_idents/*anode_iota*/],
 // //     },
 // // }, nin=1, nout=nanodes, uses=tools.anodes);
-// 
+//
 // local chsel = [
 //   g.pnode({
 //     type: 'ChannelSelector',
@@ -201,15 +275,15 @@ local parallel_graph = f.fanpipe('DepoSetFanout', parallel_pipes, 'FrameFanin', 
 //   }, nin=1, nout=1)
 //   for n in std.range(0, std.length(tools.anodes) - 1)
 // ];
-// 
+//
 // local pipelines = [
 //     g.pipeline([
 //         chsel[n],
 //         // magnifyio.orig_pipe[n],
-// 
+//
 //         // nf_pipes[n],
 //         // magnifyio.raw_pipe[n],
-// 
+//
 //         sp_pipes[n],
 //         magnifyio.decon_pipe[n],
 //         // magnifyio.threshold_pipe[n],
@@ -218,7 +292,7 @@ local parallel_graph = f.fanpipe('DepoSetFanout', parallel_pipes, 'FrameFanin', 
 //                'nfsp_pipe_%d' % n)
 //     for n in anode_iota
 //     ];
-// 
+//
 // // local fanpipe = f.fanpipe('FrameFanout', pipelines, 'FrameFanin', 'sn_mag_nf');
 // local fanout_tag_rules = [
 //           {
@@ -233,7 +307,7 @@ local parallel_graph = f.fanpipe('DepoSetFanout', parallel_pipes, 'FrameFanin', 
 //           }
 //           for n in std.range(0, std.length(tools.anodes) - 1)
 //         ];
-// 
+//
 // local anode_ident = [tools.anodes[n].data.ident for n in std.range(0, std.length(tools.anodes) - 1)];
 // local fanin_tag_rules = [
 //           {
@@ -246,12 +320,12 @@ local parallel_graph = f.fanpipe('DepoSetFanout', parallel_pipes, 'FrameFanin', 
 //               ['wiener%d'%ind]:'wiener%d'%ind,
 //               ['threshold%d'%ind]:'threshold%d'%ind,
 //             },
-// 
+//
 //           }
 //           for ind in anode_ident
 //         ];
 // local fanpipe = util.fanpipe('FrameFanout', pipelines, 'FrameFanin', 'nfsp', [], fanout_tag_rules, fanin_tag_rules);
-// 
+//
 // // local fanin = g.pnode({
 // //     type: 'FrameFanin',
 // //     name: 'sigmerge',
@@ -267,7 +341,7 @@ local parallel_graph = f.fanpipe('DepoSetFanout', parallel_pipes, 'FrameFanin', 
 // //         } for ind in anode_iota],
 // //     },
 // // }, nin=nanodes, nout=1);
-// 
+//
 // local retagger = g.pnode({
 //     type: 'Retagger',
 //     data: {
@@ -287,7 +361,7 @@ local parallel_graph = f.fanpipe('DepoSetFanout', parallel_pipes, 'FrameFanin', 
 //         }],
 //     },
 // }, nin=1, nout=1);
-// 
+//
 // // local fanpipe = g.intern(innodes=[fansel],
 // //                          outnodes=[fanin],
 // //                          centernodes=pipelines,
@@ -312,11 +386,11 @@ local app = {
 };
 
 local cmdline = {
-    type: "wire-cell",
-    data: {
-        plugins: ["WireCellGen", "WireCellPgraph", "WireCellSio", "WireCellSigProc", "WireCellRoot"],
-        apps: ["Pgrapher"]
-    }
+  type: 'wire-cell',
+  data: {
+    plugins: ['WireCellGen', 'WireCellPgraph', 'WireCellSio', 'WireCellSigProc', 'WireCellRoot'],
+    apps: ['Pgrapher'],
+  },
 };
 
 

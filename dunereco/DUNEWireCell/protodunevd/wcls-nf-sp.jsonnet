@@ -48,6 +48,18 @@ local params = if reality == 'data' then data_params else simu_params;
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local tools = tools_maker(params);
 
+// local tools_all = tools_maker(params);
+// local tools = tools_all
+//  + {
+//     anodes : [
+//               // tools_all.anodes[4]
+//               // tools_all.anodes[5] // problem one
+//               tools_all.anodes[4] // good one
+//               ]
+// }
+// ;
+
+
 local wcls_maker = import 'pgrapher/ui/wcls/nodes.jsonnet';
 local wcls = wcls_maker(params, tools);
 
@@ -56,7 +68,7 @@ local wcls = wcls_maker(params, tools);
 local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
 local sp_override = if use_dnnroi then
 {
-    sparse: false,
+    sparse: sigoutform == 'sparse',
     use_roi_debug_mode: true,
     m_save_negative_charge: false,
     use_multi_plane_protection: true,
@@ -70,11 +82,7 @@ local sp_override = if use_dnnroi then
 }
 else
 {
-    sparse: false,
-    use_roi_debug_mode: false,
-    m_save_negative_charge: false,
-    use_multi_plane_protection: false,
-    mp_tick_resolution: 10,
+    sparse: false,  // L1SP requires dense output (1:1 ADC/signal trace match)
 };
 
 //local chndbm = chndb_maker(params, tools);
@@ -159,12 +167,12 @@ local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
   // data: perfect(params, tools.anodes[n], tools.field, n) { dft:wc.tn(tools.dft) },
-  data: base(params, tools.anodes[n], tools.field, n) { dft:wc.tn(tools.dft) },
+  data: base(params, tools.anodes[n], tools.field, tools.anodes[n].data.ident) { dft:wc.tn(tools.dft) },
   uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local nf_maker = import 'pgrapher/experiment/protodunevd/nf.jsonnet';
-local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
+local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], tools.anodes[n].data.ident, name='nf%d' % tools.anodes[n].data.ident) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp = sp_maker(params, tools, sp_override);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
@@ -198,10 +206,10 @@ local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
 local chsel_pipes = [
   g.pnode({
     type: 'ChannelSelector',
-    name: 'chsel%d' % n,
+    name: 'chsel%d' % tools.anodes[n].data.ident,
     data: {
-      channels: util.anode_channels(n),
-      //tags: ['orig%d' % n], // traces tag
+      channels: util.anode_channels(tools.anodes[n].data.ident),
+      //tags: ['orig%d' % tools.anodes[n].data.ident], // traces tag
     },
   }, nin=1, nout=1)
   for n in std.range(0, std.length(tools.anodes) - 1)
@@ -223,7 +231,7 @@ local resamplers = load_resamplers.resamplers;
 // ];
 
 local magoutput = 'protodune-data-check.root';
-local magnify = import 'pgrapher/experiment/dune-vd/magnify-sinks.jsonnet';
+local magnify = import 'pgrapher/experiment/protodunevd/magnify-sinks.jsonnet';
 local mio = magnify(tools, magoutput);
 
 local use_magnify = std.extVar("use_magnify");
@@ -250,7 +258,7 @@ local nfsp_pipes = [
 ];
 
 // local fanpipe = util.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'sn_mag_nf');
-local fanout_tag_rules = [ 
+local fanout_tag_rules = [
           {
             frame: {
               '.*': 'orig%d' % tools.anodes[n].data.ident,
@@ -282,7 +290,7 @@ local fanin_tag_rules = [
           }
           for ind in anode_ident
         ];
-local fanpipe = util.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'nfsp', [], fanout_tag_rules, fanin_tag_rules);
+local fanpipe = util.fanpipe('FrameFanout', nfsp_pipes, 'FrameFanin', 'nfsp', [], [], fanin_tag_rules);
 
 
 local retagger = g.pnode({
