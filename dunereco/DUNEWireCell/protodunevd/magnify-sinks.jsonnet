@@ -52,7 +52,12 @@ function(tools, outputfile) {
         output_filename: outputfile,
         root_file_mode: 'UPDATE',
         // frames: ['gauss%d' % tools.anodes[n].data.ident, 'wiener%d' % tools.anodes[n].data.ident],
-        frames: ['gauss%d' % tools.anodes[n].data.ident],
+        frames: ['gauss%d' % tools.anodes[n].data.ident,
+        'wiener%d' % tools.anodes[n].data.ident,
+        // 'rawdecon%d' is a special-mode tag (off in production);
+        // MagnifySink silently skips tags absent from the input frame.
+        'rawdecon%d' % tools.anodes[n].data.ident,
+        ],
         trace_has_tag: true,
         anode: wc.tn(tools.anodes[n]),
       },
@@ -85,7 +90,13 @@ function(tools, outputfile) {
         frames: ['tight_lf%d' % tools.anodes[n].data.ident, 'loose_lf%d' % tools.anodes[n].data.ident, 'cleanup_roi%d' % tools.anodes[n].data.ident,
                  'break_roi_1st%d' % tools.anodes[n].data.ident, 'break_roi_2nd%d' % tools.anodes[n].data.ident,
                  'shrink_roi%d' % tools.anodes[n].data.ident, 'extend_roi%d' % tools.anodes[n].data.ident,
-                 'gauss%d' % tools.anodes[n].data.ident, 'mp2_roi%d' % tools.anodes[n].data.ident, 'mp3_roi%d' % tools.anodes[n].data.ident],
+                 'decon_charge%d' % tools.anodes[n].data.ident,
+                //  'gauss%d' % tools.anodes[n].data.ident,
+                 'wiener%d' % tools.anodes[n].data.ident
+                //  'decon%d' % tools.anodes[n].data.ident
+                  // 'mp2_roi%d' % tools.anodes[n].data.ident, 'mp3_roi%d' % tools.anodes[n].data.ident
+                  
+                  ],
         // frames: ['gauss%d' % tools.anodes[n].data.ident,
         //          'loose_lf%d' % tools.anodes[n].data.ident,
         //          'mp2_roi%d' % tools.anodes[n].data.ident,

@@ -180,7 +180,7 @@ local wcls_depoflux_writer = g.pnode({
     window_duration: self.tick * 6000,
     nsigma: 3.0,
     reference_time: -250 * wc.us,
-    energy: 0,
+    energy: 1, # equivalent to use_energy = true
     simchan_label: 'simpleSC',
     sed_label: 'IonAndScint',
     sparse: false,

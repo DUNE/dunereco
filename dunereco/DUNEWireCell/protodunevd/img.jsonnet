@@ -103,11 +103,12 @@ local img = {
             data: {
                 tick_span: span,
                 wiener_tag: "wiener%d" % anode.data.ident,
+                summary_tag: 'wiener%d' % anode.data.ident,
                 charge_tag: "gauss%d" % anode.data.ident,
                 error_tag: "gauss_error%d" % anode.data.ident,
                 anode: wc.tn(anode),
                 min_tbin: 0,
-                max_tbin: 8500,
+                max_tbin: 8000,
                 active_planes: active_planes,
                 masked_planes: masked_planes,
                 dummy_planes: dummy_planes,
@@ -165,7 +166,7 @@ local img = {
         local tilings = [$.tiling(anode, name+"_%d"%n)
             for n in iota],
         local multipass = [g.pipeline([slicings[n],tilings[n]]) for n in iota],
-        ret: f.fanpipe("FrameFanout", multipass, "BlobSetMerge", "multi_active_slicing_tiling"),
+        ret: f.fanpipe("FrameFanout", multipass, "BlobSetMerge", "multi_active_slicing_tiling_%s"%name),
     }.ret,
 
     //
@@ -179,7 +180,7 @@ local img = {
         local tilings = [$.tiling(anode, name+"_%d"%n)
             for n in iota],
         local multipass = [g.pipeline([slicings[n],tilings[n]]) for n in iota],
-        ret: f.fanpipe("FrameFanout", multipass, "BlobSetMerge", "multi_masked_slicing_tiling"),
+        ret: f.fanpipe("FrameFanout", multipass, "BlobSetMerge", "multi_masked_slicing_tiling_%s"%name),
     }.ret,
 
     local clustering_policy = "uboone", // uboone, simple
@@ -194,7 +195,7 @@ local img = {
     }.ret,
 
     // in: IBlobSet out: ICluster
-    solving :: function(anode, aname) {
+    solving :: function(anode, aname, solving_type = "simple") {
 
         local bc = g.pnode({
             type: "BlobClustering",
@@ -277,8 +278,12 @@ local img = {
         local cs3 = self.solving("3rd"),
         local ld3 = self.local_deghosting(3,"3rd"),
 
-        // ret: g.pipeline([bc, gd1, cs1, ld1, gd2, cs2, ld2, cs3, ld3, gc],"uboone-solving"),
-        ret: g.pipeline([bc, cs1, ld1, gc],"simple-solving"),
+        ret: 
+        if solving_type == "full"
+        then g.pipeline([bc, gd1, cs1, ld1, gd2, cs2, ld2, cs3, ld3, gc],"uboone-solving")
+        // then g.pipeline([bc, gd1, cs1, gd2, cs2,  cs3,  gc],"uboone-solving")
+        // else g.pipeline([bc, cs1, ld1, gc],"simple-solving"),
+        else g.pipeline([bc, cs1, gc],"simple-solving"),
     }.ret,
 
     dump :: function(anode, aname, drift_speed) {
@@ -302,12 +307,22 @@ function() {
             // img.slicing(anode, anode.name, 1916, active_planes=[], masked_planes=[0,1],dummy_planes=[2]), // 109*22*4
             img.slicing(anode, anode.name, 4, active_planes=[0,1,2], masked_planes=[],dummy_planes=[]), // 109*22*4
             img.tiling(anode, anode.name),
-            img.solving(anode, anode.name),
+            // img.solving(anode, anode.name, "full"),
+            img.solving(anode, anode.name, "simple"),
+            // img.clustering(anode, anode.name),
+            img.dump(anode, anode.name, params.lar.drift_speed),])
+    else if multi_slicing == "pdhd1"
+    then g.pipeline([
+            // img.slicing(anode, anode.name, 109, active_planes=[0,1,2], masked_planes=[],dummy_planes=[]), // 109*22*4
+            // img.slicing(anode, anode.name, 1916, active_planes=[], masked_planes=[0,1],dummy_planes=[2]), // 109*22*4
+            img.slicing(anode, anode.name, 4, active_planes=[0,1], masked_planes=[],dummy_planes=[2]), // 109*22*4
+            img.tiling(anode, anode.name),
+            img.solving(anode, anode.name, "full"),
             // img.clustering(anode, anode.name),
             img.dump(anode, anode.name, params.lar.drift_speed),])
     else if multi_slicing == "active"
     then g.pipeline([
-            img.multi_active_slicing_tiling(anode, anode.name+"-ms-active", 4),
+            img.multi_active_slicing_tiling(anode, anode.name+"-ms-active", 8),
             img.solving(anode, anode.name+"-ms-active"),
             // img.clustering(anode, anode.name+"-ms-active"),
             img.dump(anode, anode.name+"-ms-active", params.lar.drift_speed)])
@@ -319,19 +334,21 @@ function() {
     else {
         local active_fork = g.pipeline([
             img.multi_active_slicing_tiling(anode, anode.name+"-ms-active", 4),
-            img.solving(anode, anode.name+"-ms-active"),
+            img.solving(anode, anode.name+"-ms-active", "full"),
+            // img.solving(anode, anode.name+"-ms-active", "simple"),
             img.dump(anode, anode.name+"-ms-active", params.lar.drift_speed),
         ]),
         local masked_fork = g.pipeline([
-            img.multi_masked_2view_slicing_tiling(anode, anode.name+"-ms-masked", 500), // 109, 1744 (total 9592)
+            img.multi_masked_2view_slicing_tiling(anode, anode.name+"-ms-masked", 100), // 109, 1744 (total 9592)
             img.clustering(anode, anode.name+"-ms-masked"),
             img.dump(anode, anode.name+"-ms-masked", params.lar.drift_speed),
         ]),
-        ret: g.fan.fanout("FrameFanout",[active_fork,masked_fork], "fan_active_masked"),
+        ret: g.fan.fanout("FrameFanout",[active_fork,masked_fork], "fan_active_masked-%s"%anode.name),
     }.ret,
 
-    per_anode(anode) :: g.pipeline([
+    per_anode(anode, pipe_type = "single") :: g.pipeline([
+    // per_anode(anode, pipe_type = "multi") :: g.pipeline([
         img.pre_proc(anode, anode.name),
-        imgpipe(anode, "single"),
+        imgpipe(anode, pipe_type),
         ], "per_anode"),
 }
