@@ -1,0 +1,103 @@
+#include "services_dune.fcl"
+#include "CCNuSelection.fcl"
+
+process_name: CCNuSelection
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService:            { fileName: "%ifb_ccnutree.root"
+                             closeFileFast: false }
+  message:                @local::dune_message_services
+  FileCatalogMetadata:    @local::art_file_catalog_mc
+  RandomNumberGenerator:   {} #ART native random number generator
+                          @table::dunefd_1x2x6_services
+}
+
+# For new beam file
+
+services.Geometry: @local::dune10kt_geo
+services.Geometry.Name: "dune10kt_v5_1x2x6"
+services.Geometry.ROOT: "dune10kt_v5_refactored_1x2x6.gdml"
+services.Geometry.GDML: "dune10kt_v5_refactored_1x2x6.gdml"
+
+# Input source is a ROOT file 
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1        # Number of events to create
+}
+
+# Define and configure some modules to do work on each event.
+# First modules are defined; they are scheduled later.
+# Modules are grouped by type.
+physics:
+{
+  producers:
+  {
+    warwickPID: 
+    {
+        module_type:		"MVAPID"
+
+        HitLabel:		    "hitfd"
+        TrackLabel:		    "pandoraTrack"
+        ShowerLabel:        "pandoraShower"
+        SpacePointLabel:	"pandora"
+
+        CalorimetryAlg:    @local::dune10kt_calorimetryalgmc
+        MVAMethods:		    ["electron", "muon", "photon", "pich", "proton"]
+        WeightFiles:		["mvapid_weights/electron_all_BDT.weights.xml",
+          "mvapid_weights/muon_all_BDT.weights.xml",
+          "mvapid_weights/photon_all_BDT.weights.xml",
+          "mvapid_weights/pich_all_BDT.weights.xml",
+          "mvapid_weights/proton_all_BDT.weights.xml"]
+    }
+  }
+
+  analyzers:
+  { 
+    ccnuselection:     @local::CCNuSelection
+  }
+
+  reco: [ warwickPID ]
+  trigger_paths: [ reco ]
+
+  stream1: [ ccnuselection ]
+  end_paths: [ stream1 ]
+}
+
+# CCNuSelection config
+physics.analyzers.ccnuselection.TrackModuleLabel:            "pandoraTrack"
+physics.analyzers.ccnuselection.ShowerModuleLabel:           "pandoraShower"
+physics.analyzers.ccnuselection.RecoModuleLabel:             "pandora"
+physics.analyzers.ccnuselection.VertexModuleLabel:           "pandora"
+physics.analyzers.ccnuselection.SpacePointModuleLabel:       "pandora"
+physics.analyzers.ccnuselection.ClusterModuleLabel:          "pandora"
+physics.analyzers.ccnuselection.MakeSelectionTrainingTrees:   false
+
+# Pandizzle config
+physics.analyzers.ccnuselection.PandizzleConfig.PandizzleWeightFileName:    "MCC11_FHC_Pandizzle_TMVAClassification_BDTG_standard.weights.xml"
+physics.analyzers.ccnuselection.PandizzleConfig.ShowerModuleLabel:          "pandoraShower"
+physics.analyzers.ccnuselection.PandizzleConfig.TrackModuleLabel:           "pandoraTrack"
+physics.analyzers.ccnuselection.PandizzleConfig.PIDModuleLabel:             "warwickPID"
+physics.analyzers.ccnuselection.PandizzleConfig.RecoModuleLabel:            "pandora"
+physics.analyzers.ccnuselection.PandizzleConfig.MakeSelectionTrainingTrees:  false
+
+# Pandrizzle config
+physics.analyzers.ccnuselection.PandrizzleConfig.RecoModuleLabel:                  "pandora"
+physics.analyzers.ccnuselection.PandrizzleConfig.ShowerModuleLabel:                "pandoraShower"
+physics.analyzers.ccnuselection.PandrizzleConfig.PIDModuleLabel:                   "warwickPID"
+physics.analyzers.ccnuselection.PandrizzleConfig.UseBDTVariables:                   false
+#physics.analyzers.ccnuselection.PandrizzleConfig.UseBDTVariables:                   true
+physics.analyzers.ccnuselection.PandrizzleConfig.UseConcentration:                  true
+physics.analyzers.ccnuselection.PandrizzleConfig.UseDisplacement:                   true
+physics.analyzers.ccnuselection.PandrizzleConfig.UseDCA:                            true
+#physics.analyzers.ccnuselection.PandrizzleConfig.UseConcentration:                  false
+#physics.analyzers.ccnuselection.PandrizzleConfig.UseDisplacement:                   false
+#physics.analyzers.ccnuselection.PandrizzleConfig.UseDCA:                            false
+physics.analyzers.ccnuselection.PandrizzleConfig.UseModularShowerVariables:         false
+physics.analyzers.ccnuselection.PandrizzleConfig.EnhancedPandrizzleWeightFileName: ""
+physics.analyzers.ccnuselection.PandrizzleConfig.PandrizzleWeightFileName:         "MCC11_FHC_Pandrizzle_TMVAClassification_BDTG_standard.weights.xml"
+physics.analyzers.ccnuselection.PandrizzleConfig.MakeSelectionTrainingTrees:        false
+########################################################################
+

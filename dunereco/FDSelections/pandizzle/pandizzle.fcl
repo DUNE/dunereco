@@ -1,0 +1,19 @@
+#include "showeralgorithms.fcl"
+
+BEGIN_PROLOG
+
+pandizzle:
+{ 
+    ShowerModuleLabel:              "pandoraShower"
+    TrackModuleLabel:               "pandoraTrack"
+    PIDModuleLabel:                 "warwickPID"
+    RecoModuleLabel:                "pandora"
+
+    PandizzleWeightFileName:        "MCC11_FHC_Pandizzle_TMVAClassification_BDTG_standard.weights.xml"
+    MichelCandidateDistance:         4
+    ShowerEnergyAlg:                 @local::dune10kt_showerenergy
+    MakeSelectionTrainingTrees:      false
+    ReducedTreeMode:                 true
+}
+
+END_PROLOG
