@@ -25,7 +25,7 @@ local reality = std.extVar('reality');
 local sigoutform = std.extVar('signal_output_form');  // eg "sparse" or "dense"
 
 local wc = import 'wirecell.jsonnet';
-local g = import 'pgrapher/common/pgraph.jsonnet'; // FIXME: use system-wide pgraph.jsonnet
+local g = import 'pgraph.jsonnet';
 
 local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
 

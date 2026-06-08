@@ -147,6 +147,7 @@
         <SimilarityThreshold>0.60</SimilarityThreshold>
         <SimilarityThresholdBeta>1.0</SimilarityThresholdBeta>
         <AccessoryClusterMaxHits>2</AccessoryClusterMaxHits>
+        <IncludeDistToXGapFeature>false</IncludeDistToXGapFeature>
         <MaxIterations>10</MaxIterations>
         <PolarRScaleFactor>0.0005742559</PolarRScaleFactor>
         <CartesianXScaleFactor>0.001538462</CartesianXScaleFactor>

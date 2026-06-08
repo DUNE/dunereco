@@ -3,9 +3,9 @@
 #include "dunereco/AnaUtils/DUNEAnaPFParticleUtils.h"
 
 FDSelectionTools::HighestPandizzleScoreRecoVertexTrackSelector::HighestPandizzleScoreRecoVertexTrackSelector(fhicl::ParameterSet const& ps) :
-    fTrackModuleLabel(ps.get< std::string> ("ModuleLabels.TrackModuleLabel")),
-    fPFParticleModuleLabel(ps.get< std::string> ("ModuleLabels.PFParticleModuleLabel")),
-    fPandizzleAlg(ps)
+    fTrackModuleLabel(ps.get< std::string> ("TrackModuleLabel")),
+    fPFParticleModuleLabel(ps.get< std::string>("PFPModuleLabel")),
+    fPandizzleAlg(ps.get<fhicl::ParameterSet>("PandizzleConfig"))
 {
 }
 
@@ -26,7 +26,7 @@ art::Ptr<recob::Track> FDSelectionTools::HighestPandizzleScoreRecoVertexTrackSel
 
   for (art::Ptr<recob::PFParticle> childPFP : nuChildren) 
   {
-    if (!dune_ana::DUNEAnaPFParticleUtils::HasTrack(childPFP, evt, fPFParticleModuleLabel, fTrackModuleLabel))
+    if (!dune_ana::DUNEAnaPFParticleUtils::IsTrack(childPFP, evt, fPFParticleModuleLabel, fTrackModuleLabel))
       continue;
 
     art::Ptr<recob::Track> childTrack = dune_ana::DUNEAnaPFParticleUtils::GetTrack(childPFP, evt, fPFParticleModuleLabel, fTrackModuleLabel);

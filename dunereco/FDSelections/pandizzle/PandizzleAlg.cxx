@@ -45,32 +45,30 @@ FDSelection::PandizzleAlg::Record::Record(const InputVarsToReader &inputVarsToRe
 
 FDSelection::PandizzleAlg::PandizzleAlg(const fhicl::ParameterSet& pset) :
   fShowerEnergyAlg(pset.get<fhicl::ParameterSet>("ShowerEnergyAlg")),
-  fTrackModuleLabel(pset.get<std::string>("ModuleLabels.TrackModuleLabel")),
-  fShowerModuleLabel(pset.get<std::string>("ModuleLabels.ShowerModuleLabel")),
-  fPIDModuleLabel(pset.get<std::string>("ModuleLabels.PIDModuleLabel")),
-  fPFParticleModuleLabel(pset.get<std::string>("ModuleLabels.PFParticleModuleLabel")),
-  fSpacePointModuleLabel( pset.get<std::string>("ModuleLabels.SpacePointModuleLabel")),
-  fClusterModuleLabel(pset.get<std::string>("ModuleLabels.ClusterModuleLabel")),
+  fTrackModuleLabel(pset.get<std::string>("TrackModuleLabel")),
+  fShowerModuleLabel(pset.get<std::string>("ShowerModuleLabel")),
+  fPIDModuleLabel(pset.get<std::string>("PIDModuleLabel")),
+  fRecoModuleLabel(pset.get<std::string>("RecoModuleLabel")),
   fIPMichelCandidateDistance(pset.get<double>("MichelCandidateDistance")),
   fMakeSelectionTrainingTrees(pset.get<bool>("MakeSelectionTrainingTrees")),
-  fReducedTreeMode(pset.get<bool>("ReducedTreeMode", true)),
+  fReducedTreeMode(pset.get<bool>("ReducedTreeMode")),
   fPandizzleWeightFileName(pset.get< std::string > ("PandizzleWeightFileName")),
   fPandizzleReader("", 0)
 {
   Reset(fInputsToReader);
 
-  fPandizzleReader.AddVariable("PFPMichelNHits", GetVarPtr(kMichelNHits));
-  fPandizzleReader.AddVariable("PFPMichelElectronMVA", GetVarPtr(kMichelElectronMVA)); 
-  fPandizzleReader.AddVariable("PFPMichelRecoEnergyPlane2", GetVarPtr(kMichelRecoEnergyPlane2));
-  fPandizzleReader.AddVariable("PFPTrackDeflecAngleSD", GetVarPtr(kTrackDeflecAngleSD));
-  fPandizzleReader.AddVariable("PFPTrackLength", GetVarPtr(kTrackLength));
-  fPandizzleReader.AddVariable("PFPTrackEvalRatio", GetVarPtr(kEvalRatio));
-  fPandizzleReader.AddVariable("PFPTrackConcentration", GetVarPtr(kConcentration));
-  fPandizzleReader.AddVariable("PFPTrackCoreHaloRatio", GetVarPtr(kCoreHaloRatio));
-  fPandizzleReader.AddVariable("PFPTrackConicalness", GetVarPtr(kConicalness));
-  fPandizzleReader.AddVariable("PFPTrackdEdxStart", GetVarPtr(kdEdxStart));
-  fPandizzleReader.AddVariable("PFPTrackdEdxEnd", GetVarPtr(kdEdxEnd));
-  fPandizzleReader.AddVariable("PFPTrackdEdxEndRatio", GetVarPtr(kdEdxEndRatio));
+  fPandizzleReader.AddVariable("MichelNHits", GetVarPtr(kMichelNHits));
+  fPandizzleReader.AddVariable("MichelElectronMVA", GetVarPtr(kMichelElectronMVA)); 
+  fPandizzleReader.AddVariable("MichelRecoEnergyPlane2", GetVarPtr(kMichelRecoEnergyPlane2));
+  fPandizzleReader.AddVariable("DeflecAngleSD", GetVarPtr(kTrackDeflecAngleSD));
+  fPandizzleReader.AddVariable("Length", GetVarPtr(kTrackLength));
+  fPandizzleReader.AddVariable("EvalRatio", GetVarPtr(kEvalRatio));
+  fPandizzleReader.AddVariable("Concentration", GetVarPtr(kConcentration));
+  fPandizzleReader.AddVariable("CoreHaloRatio", GetVarPtr(kCoreHaloRatio));
+  fPandizzleReader.AddVariable("Conicalness", GetVarPtr(kConicalness));
+  fPandizzleReader.AddVariable("dEdxStart", GetVarPtr(kdEdxStart));
+  fPandizzleReader.AddVariable("dEdxEnd", GetVarPtr(kdEdxEnd));
+  fPandizzleReader.AddVariable("dEdxEndRatio", GetVarPtr(kdEdxEndRatio));
 
   const std::string weightFileName(fPandizzleWeightFileName);
   std::string weightFilePath;
@@ -170,20 +168,20 @@ void FDSelection::PandizzleAlg::BookTreeBool(TTree *tree, std::string branch_nam
 
 void FDSelection::PandizzleAlg::Run(const art::Event& evt) 
 {
-  if (!dune_ana::DUNEAnaEventUtils::HasNeutrino(evt, fPFParticleModuleLabel))
+  if (!dune_ana::DUNEAnaEventUtils::HasNeutrino(evt, fRecoModuleLabel))
     return;
   
-  art::Ptr<recob::PFParticle> neutrinoPFP = dune_ana::DUNEAnaEventUtils::GetNeutrino(evt, fPFParticleModuleLabel);
-  std::vector<art::Ptr<recob::PFParticle>> childPFPs = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(neutrinoPFP, evt, fPFParticleModuleLabel);
+  art::Ptr<recob::PFParticle> neutrinoPFP = dune_ana::DUNEAnaEventUtils::GetNeutrino(evt, fRecoModuleLabel);
+  std::vector<art::Ptr<recob::PFParticle>> childPFPs = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(neutrinoPFP, evt, fRecoModuleLabel);
 
   for (art::Ptr<recob::PFParticle> childPFP : childPFPs)
   {
-    if (childPFP->PdgCode() != 13)
+    if (!dune_ana::DUNEAnaPFParticleUtils::IsTrack(childPFP, evt, fRecoModuleLabel, fTrackModuleLabel))
       continue;
 
+    ResetTreeVariables();
     ProcessPFParticle(childPFP, evt);
     FillTree();
-    ResetTreeVariables();
   }
   
   return;
@@ -202,11 +200,11 @@ void FDSelection::PandizzleAlg::ProcessPFParticle(const art::Ptr<recob::PFPartic
   fVarHolder.IntVars["PFPPDG"] = pfp->PdgCode();
 
   // Get the PFP hits
-  std::vector<art::Ptr<recob::Hit>> pfp_hits = dune_ana::DUNEAnaPFParticleUtils::GetHits(pfp, evt, fClusterModuleLabel);
+  std::vector<art::Ptr<recob::Hit>> pfp_hits = dune_ana::DUNEAnaPFParticleUtils::GetHits(pfp, evt, fRecoModuleLabel);
   fVarHolder.IntVars["PFPNHits"] = pfp_hits.size();
 
   //Count all of the children
-  std::vector<art::Ptr<recob::PFParticle>> child_pfps = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(pfp, evt, fPFParticleModuleLabel);
+  std::vector<art::Ptr<recob::PFParticle>> child_pfps = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(pfp, evt, fRecoModuleLabel);
   fVarHolder.IntVars["PFPNChildren"] = pfp->NumDaughters();
   fVarHolder.IntVars["PFPNShowerChildren"] = CountPFPWithPDG(child_pfps, 11);
   fVarHolder.IntVars["PFPNTrackChildren"] = CountPFPWithPDG(child_pfps, 13);
@@ -215,8 +213,7 @@ void FDSelection::PandizzleAlg::ProcessPFParticle(const art::Ptr<recob::PFPartic
 
   FillMVAVariables(pfp, evt);
 
-  if (child_pfps.size() != 0)
-    FillMichelElectronVariables(pfp, evt);
+  FillMichelElectronVariables(pfp, evt);
 
   FillTrackVariables(pfp, evt);
 
@@ -243,7 +240,7 @@ int FDSelection::PandizzleAlg::CountPFPWithPDG(const std::vector<art::Ptr<recob:
 
 void FDSelection::PandizzleAlg::FillTruthInfo(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt)
 {
-  std::vector<art::Ptr<recob::Hit> > pfp_hits = dune_ana::DUNEAnaPFParticleUtils::GetHits(pfp, evt, fClusterModuleLabel);
+  std::vector<art::Ptr<recob::Hit> > pfp_hits = dune_ana::DUNEAnaPFParticleUtils::GetHits(pfp, evt, fRecoModuleLabel);
 
   simb::MCParticle* matchedMCParticle = nullptr;
 
@@ -287,10 +284,10 @@ void FDSelection::PandizzleAlg::FillTruthInfo(const art::Ptr<recob::PFParticle> 
 void FDSelection::PandizzleAlg::FillMVAVariables(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt)
 {
 
-  if (!dune_ana::DUNEAnaPFParticleUtils::HasTrack(pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel))
+  if (!dune_ana::DUNEAnaPFParticleUtils::IsTrack(pfp, evt, fRecoModuleLabel, fTrackModuleLabel))
     return;
 
-  art::Ptr<recob::Track> pfp_track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel);
+  art::Ptr<recob::Track> pfp_track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(pfp, evt, fRecoModuleLabel, fTrackModuleLabel);
   art::FindOneP<anab::MVAPIDResult> findPIDResult(std::vector<art::Ptr<recob::Track> >{pfp_track}, evt, fPIDModuleLabel);
   art::Ptr<anab::MVAPIDResult> pid(findPIDResult.at(0));
 
@@ -325,8 +322,11 @@ void FDSelection::PandizzleAlg::FillMichelElectronVariables(const art::Ptr<recob
   fVarHolder.FloatVars["PFPMichelRecoEnergyPlane1"] = -2;
   fVarHolder.FloatVars["PFPMichelRecoEnergyPlane2"] = -2;
 
-  std::vector<art::Ptr<recob::PFParticle>> child_pfps = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(mu_pfp, evt, fPFParticleModuleLabel);
-  
+  std::vector<art::Ptr<recob::PFParticle>> child_pfps = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(mu_pfp, evt, fRecoModuleLabel);
+
+  if (child_pfps.empty())
+      return;
+
   //Get the shower handle
   art::Handle< std::vector<recob::Shower> > showerListHandle;
   if (!(evt.getByLabel(fShowerModuleLabel, showerListHandle))){
@@ -345,7 +345,7 @@ void FDSelection::PandizzleAlg::FillMichelElectronVariables(const art::Ptr<recob
   art::FindManyP<anab::MVAPIDResult> fmpids(showerListHandle, evt, fPIDModuleLabel);
 
   // Find closest particle to end of track
-  art::Ptr<recob::Track> mu_track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(mu_pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel);
+  art::Ptr<recob::Track> mu_track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(mu_pfp, evt, fRecoModuleLabel, fTrackModuleLabel);
   TVector3 mu_end_position(mu_track->End().X(), mu_track->End().Y(), mu_track->End().Z());;
   art::Ptr<recob::PFParticle> closest_child_pfp;
   art::Ptr<anab::MVAPIDResult> closest_child_pfp_mva_pid_result;
@@ -356,16 +356,16 @@ void FDSelection::PandizzleAlg::FillMichelElectronVariables(const art::Ptr<recob
     art::Ptr<anab::MVAPIDResult> child_pfp_mva_pid_result;
     TVector3 child_start_pos;
 
-    if (dune_ana::DUNEAnaPFParticleUtils::HasTrack(child_pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel))
+    if (dune_ana::DUNEAnaPFParticleUtils::IsTrack(child_pfp, evt, fRecoModuleLabel, fTrackModuleLabel))
     {
-      art::Ptr<recob::Track> child_track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(child_pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel);
+      art::Ptr<recob::Track> child_track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(child_pfp, evt, fRecoModuleLabel, fTrackModuleLabel);
       child_start_pos.SetXYZ(child_track->Start().X(), child_track->Start().Y(), child_track->Start().Z());
       std::vector<art::Ptr<anab::MVAPIDResult> > pids = fmpidt.at(child_track.key());
       child_pfp_mva_pid_result = pids.at(0);
     }
-    else if (dune_ana::DUNEAnaPFParticleUtils::HasShower(child_pfp, evt, fPFParticleModuleLabel, fShowerModuleLabel))
+    else if (dune_ana::DUNEAnaPFParticleUtils::IsShower(child_pfp, evt, fRecoModuleLabel, fShowerModuleLabel))
     {
-      art::Ptr<recob::Shower> child_shower = dune_ana::DUNEAnaPFParticleUtils::GetShower(child_pfp, evt, fPFParticleModuleLabel, fShowerModuleLabel);
+      art::Ptr<recob::Shower> child_shower = dune_ana::DUNEAnaPFParticleUtils::GetShower(child_pfp, evt, fRecoModuleLabel, fShowerModuleLabel);
       child_start_pos.SetXYZ(child_shower->ShowerStart().X(), child_shower->ShowerStart().Y(), child_shower->ShowerStart().Z());
       std::vector<art::Ptr<anab::MVAPIDResult> > pids = fmpids.at(child_shower.key());
       child_pfp_mva_pid_result = pids.at(0);
@@ -389,7 +389,7 @@ void FDSelection::PandizzleAlg::FillMichelElectronVariables(const art::Ptr<recob
 
   fVarHolder.FloatVars["PFPMichelDist"] = closest_distance;
 
-  std::vector<art::Ptr<recob::Hit> > michel_hits = dune_ana::DUNEAnaPFParticleUtils::GetHits(closest_child_pfp, evt, fClusterModuleLabel);
+  std::vector<art::Ptr<recob::Hit> > michel_hits = dune_ana::DUNEAnaPFParticleUtils::GetHits(closest_child_pfp, evt, fRecoModuleLabel);
   fVarHolder.IntVars["PFPMichelNHits"] = std::min((int)(michel_hits.size()), 100);
 
   simb::MCParticle* matchedMCParticle = nullptr;
@@ -422,10 +422,10 @@ void FDSelection::PandizzleAlg::FillMichelElectronVariables(const art::Ptr<recob
 
 void FDSelection::PandizzleAlg::FillTrackVariables(const art::Ptr<recob::PFParticle> pfp, const art::Event& evt)
 {
-  if (!dune_ana::DUNEAnaPFParticleUtils::HasTrack(pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel))
+  if (!dune_ana::DUNEAnaPFParticleUtils::IsTrack(pfp, evt, fRecoModuleLabel, fTrackModuleLabel))
     return;
 
-  art::Ptr<recob::Track> pfp_track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel);
+  art::Ptr<recob::Track> pfp_track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(pfp, evt, fRecoModuleLabel, fTrackModuleLabel);
 
   CalculateTrackDeflection(pfp_track);
   CalculateTrackLengthVariables(pfp, evt);
@@ -509,18 +509,18 @@ void FDSelection::PandizzleAlg::CalculateTrackDeflection(const art::Ptr<recob::T
 
 void FDSelection::PandizzleAlg::CalculateTrackLengthVariables(const art::Ptr<recob::PFParticle> track_pfp, const art::Event& evt)
 {
-  if (!dune_ana::DUNEAnaPFParticleUtils::HasTrack(track_pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel))
+  if (!dune_ana::DUNEAnaPFParticleUtils::IsTrack(track_pfp, evt, fRecoModuleLabel, fTrackModuleLabel))
     return;
 
-  art::Ptr<recob::Track> track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(track_pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel);
+  art::Ptr<recob::Track> track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(track_pfp, evt, fRecoModuleLabel, fTrackModuleLabel);
 
   double average_length = 0;
   int ntracks = 0;
   double candidate_track_length = track->Length(); 
   bool is_longest_track = 1;
 
-  art::Ptr<recob::PFParticle> neutrinoPFP = dune_ana::DUNEAnaEventUtils::GetNeutrino(evt, fPFParticleModuleLabel);
-  std::vector<art::Ptr<recob::PFParticle>> childPFPs = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(neutrinoPFP, evt, fPFParticleModuleLabel);
+  art::Ptr<recob::PFParticle> neutrinoPFP = dune_ana::DUNEAnaEventUtils::GetNeutrino(evt, fRecoModuleLabel);
+  std::vector<art::Ptr<recob::PFParticle>> childPFPs = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(neutrinoPFP, evt, fRecoModuleLabel);
 
   //Now grab the primary children of these PFP
   for (art::Ptr<recob::PFParticle> child_pfp : childPFPs)
@@ -528,10 +528,10 @@ void FDSelection::PandizzleAlg::CalculateTrackLengthVariables(const art::Ptr<rec
     //Don't assess the particle we care about in the average
     if (child_pfp->Self() == track_pfp->Self()) continue;
 
-    if (!dune_ana::DUNEAnaPFParticleUtils::HasTrack(child_pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel))
+    if (!dune_ana::DUNEAnaPFParticleUtils::IsTrack(child_pfp, evt, fRecoModuleLabel, fTrackModuleLabel))
       continue;
 
-    art::Ptr<recob::Track> matched_track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(child_pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel);
+    art::Ptr<recob::Track> matched_track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(child_pfp, evt, fRecoModuleLabel, fTrackModuleLabel);
     const double matched_track_length = matched_track->Length();
 
     if (matched_track_length > candidate_track_length)

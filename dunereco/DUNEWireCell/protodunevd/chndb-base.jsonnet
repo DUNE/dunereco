@@ -2,11 +2,43 @@
 // This does not include any run dependent RMS cuts.
 // See chndb.jsonnet
 
-local handmade = import 'chndb-resp.jsonnet';
+local resp_bot = import 'chndb-resp-bot.jsonnet';
+local resp_top = import 'chndb-resp-top.jsonnet';
 local wc = import 'wirecell.jsonnet';
 local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
 
-function(params, anode, field, n, rms_cuts=[])
+function(params, anode, field, n, rms_cuts=[], use_freqmask=true)
+  // Per-plane channel ranges derived from funcs.anode_channels() layout:
+  //   even anode: U=0-475,   V=952-1427,  W=1904-2487  (all + 3072*crp)
+  //   odd  anode: U=476-951, V=1428-1903, W=2488-3071  (all + 3072*crp)
+  // Matches top_u_groups which uses the same 0-475 / 476-951 offsets.
+  local crp = (n - n % 2) / 2;
+  local offset = 3072 * crp;
+  local u_local = if n % 2 == 0 then std.range(0, 475)    else std.range(476, 951);
+  local v_local = if n % 2 == 0 then std.range(952, 1427)  else std.range(1428, 1903);
+  local w_local = if n % 2 == 0 then std.range(1904, 2487) else std.range(2488, 3071);
+  local u_chans = [x + offset for x in u_local];
+  local v_chans = [x + offset for x in v_local];
+  local w_chans = [x + offset for x in w_local];
+  // ADC-domain thresholds below are tuned for FE amplifier gain = 7.8 mV/fC
+  // on the bottom electronics (anodes 0-3). Top electronics (anodes 4-7)
+  // gain is fixed by elecs[1] (JsonElecResponse + postgain 1.52, no scalar
+  // gain knob), so top cuts must not move when bottom gain changes.
+  // Bottom cuts scale linearly with params.elec.gain (= elecs[0].gain).
+  local gain_scale = if n >= 4 then 1.0
+                     else params.elec.gain / (7.8 * wc.mV / wc.fC);
+  // chndb-resp-{bot,top}.jsonnet store the FR⊗ER kernel at reference gain.
+  // scale_resp applies gain_scale element-wise so the kernel tracks runtime gain.
+  // Top electronics (n>=4) has gain_scale=1.0 (no scalar gain knob).
+  local scale_resp(arr) = std.map(function(x) x * gain_scale, arr);
+  local u_resp_arr = if n >= 4 then resp_top.u_resp else resp_bot.u_resp;
+  local v_resp_arr = if n >= 4 then resp_top.v_resp else resp_bot.v_resp;
+  // response_offset = argmin of FR⊗ER kernel (from chndb-resp-{bot,top}.jsonnet headers)
+  local u_offset = if n >= 4 then 240 else 239;  // top U=240, bottom U=239
+  local v_offset = if n >= 4 then 243 else 245;  // top V=243, bottom V=245
+  // Frequency-mask helper: use wc.freqbinner(...).freqmasks_mirror([freqs], delta)
+  // in per-channel channel_info[] entries and gate on this local.
+  local freqmask_enabled = use_freqmask;
   {
     anode: wc.tn(anode),
     field_response: wc.tn(field),
@@ -396,7 +428,69 @@ top_u_groups:
 ,
 
     // Externally determined "bad" channels.
-    bad: [],
+    // NP02 CRP4 + CRP5 disconnected channels (bottom electronics); (p)-marked included.
+    // Top electronics bad channels appended at end.
+    bad: [
+        // top electronics
+        293, 955, 1482, 2657, 2705, 2727, 4242, 4243, 5471,
+        11701, 11702, 11703, 11893, 11895, 11996,
+        // CRP4 U
+        188, 422, 423, 432, 433, 434, 435, 452, 453, 454, 455,
+        464, 465, 466, 467, 471, 472, 473, 474, 475,
+        494, 495, 496, 497, 498, 499, 500, 501, 502, 503,
+        // CRP4 V
+        528, 529, 530, 531, 544, 545, 546, 547, 548, 549, 550, 551, 665, 666,
+        // CRP4 U hand scan (anode 0, run 039324, low-RMS bad signals)
+        4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 20, 21, 25,
+        // CRP4 V hand scan (anode 0, run 039324)
+        962,
+        1365, 1366,
+        1402, 1403, 1412, 1413, 1416, 1417, 1418, 1419, 1420,
+        1421, 1422, 1423, 1424, 1425, 1426, 1427,
+        // CRP4 Z
+        972, 973, 1143, 1243, 1610, 1799, 1800, 1801, 1802,
+        2172, 2197, 2199, 2294, 2370,
+        // CRP5 U
+        3180, 3181, 3186, 3187, 3197, 3427, 3445,
+        3452, 3453, 3454, 3455,
+        3520, 3521, 3522, 3523, 3524, 3525, 3526, 3527,
+        3535, 3536, 3537, 3538, 3539,
+        3552, 3553, 3556, 3557, 3558, 3559,
+        3570, 3571, 3582, 3583, 3584,
+        3618, 3619, 3620, 3621, 3628, 3629, 3630, 3631,
+        3636, 3637, 3640, 3641, 3642, 3643,
+        3794, 3919,
+        // CRP5 V
+        4026, 4027, 4028, 4029, 4030, 4031, 4032, 4033, 4034, 4035,
+        4036, 4037, 4038, 4039, 4040, 4041, 4042, 4043, 4044, 4045,
+        4046, 4047, 4048, 4049, 4050, 4051, 4052, 4053, 4054, 4055,
+        4084, 4085, 4086, 4087,
+        4892, 4893, 4894, 4895, 4896, 4897, 4898, 4899,
+        // CRP5 Z
+        5193, 5239, 5265, 5266, 5267, 5344, 5821, 5824, 5825,
+        // anode 4 top U hand scan (run 039324, collection-like bad signals)
+        6248, 6406, 6407,
+        // anode 4 top W hand scan (run 039324, weird smaller signals)
+        8123, 8124, 8414, 8507,
+        // that the new RMS cut still misses (mostly dead with normal RMS).
+        // Bottom (CRP4/5):
+        928, 929, 964, 3072, 3073, 3074, 4001, 4707, 4791,
+        // Top (anodes 4-7) — 84 channels:
+        6604, 6620, 6621, 6622, 6623, 6624, 6625, 6626, 6628, 6629,
+        6724, 6725, 6744, 6771, 6776, 6961, 7094,
+        7341, 7346, 7442, 7572, 7573, 7574, 7817,
+        7952, 7954, 7955, 7956, 7957, 7958, 7959, 7960, 7961, 7962, 7963,
+        8316, 8772, 8899, 8914,
+        9081, 9121, 9122, 9132, 9163, 9262,
+        9724, 9725, 9784, 9785, 9786, 9787,
+        10066, 10705, 10922,
+        11044, 11045, 11046, 11047, 11048, 11049, 11050, 11051,
+        11054, 11055, 11056, 11057,
+        11410, 11411, 11458, 11463, 11464, 11467, 11468,
+        11556, 11558, 11652,
+        11727, 11730, 11731, 11773, 11848,
+        12210, 12216, 12217,
+    ],
 
     // Overide defaults for specific channels.  If an info is
     // mentioned for a particular channel in multiple objects in this
@@ -413,14 +507,15 @@ top_u_groups:
         nominal_baseline: 2048.0,  // adc count
         gain_correction: 1.0,  // unitless
         response_offset: 0.0,  // ticks?
-        pad_window_front: 20,  // ticks?
-        pad_window_back: 20,  // ticks?
-        decon_limit: 0.02,
-        decon_limit1: 0.09,
-        adc_limit: 15,
+        pad_window_front: 20,  // ticks
+        pad_window_back: 20,  // ticks
+        decon_limit: 0.005,
+        decon_limit1: 0.008,
+        adc_limit: 60 * gain_scale,
+        min_adc_limit: if n >= 4 then 60 else 50 * gain_scale,
         roi_min_max_ratio: 0.8, // default 0.8
-        min_rms_cut: 1.0,  // units???
-        max_rms_cut: 60.0,  // units???
+        min_rms_cut: 1.0 * gain_scale,  // ADC at 7.8 mV/fC
+        max_rms_cut: 60.0 * gain_scale,  // ADC at 7.8 mV/fC
 
         // parameter used to make "rcrc" spectrum
         rcrc: 1.1 * wc.millisecond, // 1.1 for collection, 3.3 for induction
@@ -437,5 +532,117 @@ top_u_groups:
 
       },
 
-    ] + rms_cuts,
+      {
+        channels: u_chans,
+        response: { waveform: scale_resp(u_resp_arr), waveformid: wc.Ulayer },
+        response_offset: u_offset,
+        decon_limit: if n >= 4 then 0.002 else 0.001,
+        decon_limit1: 0.007,
+        adc_limit: if n >= 4 then 20 else 15 * gain_scale,
+      },
+
+      {
+        channels: v_chans,
+        response: { waveform: scale_resp(v_resp_arr), waveformid: wc.Vlayer },
+        response_offset: v_offset,
+        decon_limit: if n >= 4 then 0.002 else 0.001,
+        decon_limit1: 0.007,
+        adc_limit: if n >= 4 then 20 else 15 * gain_scale,
+      },
+
+      {
+        channels: w_chans,
+        adc_limit: 20 * gain_scale,
+      },
+
+      // W-plane harmonic noise on anode 0: f0=23.5 kHz, harmonics n=2..12
+      // (47-282 kHz). Diagnosed from run 040475 evt 0 fft_w histogram;
+      // both clusters share the same spectral pattern.
+      // Only active when freqmask_enabled=true (use_freqmask TLA).
+      // {
+      //   // Channels belong to bottom anode 0 only; gate on n==0 so other anodes
+      //   // don't ask OmniChannelNoiseDB to look up channels they don't own.
+      //   channels: if n == 0 then std.range(2188, 2195) + std.range(2480, 2485) else [],
+      //   // Physical-frequency form: bins are resolved at runtime from the
+      //   // live frame size, so the same entries work for 6400/8000-tick frames.
+      //   freqmasks: if freqmask_enabled && n == 0 then
+      //     wc.freqmasks_phys(
+      //       [ 47.0*wc.kilohertz,
+      //         70.5*wc.kilohertz,
+      //         94.0*wc.kilohertz,
+      //        117.5*wc.kilohertz,
+      //        141.0*wc.kilohertz,
+      //        164.5*wc.kilohertz,
+      //        188.0*wc.kilohertz,
+      //        211.5*wc.kilohertz,
+      //        235.0*wc.kilohertz,
+      //        258.5*wc.kilohertz,
+      //        282.0*wc.kilohertz ],
+      //       1.0*wc.kilohertz)
+      //     else [],
+      // },
+
+      // Top-anode (4-7) CW lines diagnosed from run 040475 evt 0 anode-4 scan:
+      //   23.5 kHz fundamental — universal LF line, present on all planes,
+      //     max ~20 ADC on U/W; notching before coherent removal protects
+      //     downstream RMS-based bad-channel cuts from LF contamination.
+      //   ~711 kHz doublet (709.6 + 712.1 kHz) — RF pickup on all planes;
+      //     strongest on V/W (mean 0.6/1.0 ADC, ~half channels), weaker on U
+      //     (0.35 ADC mean, 32% channels); all three planes masked.
+      // Weaker U-plane harmonics (70.5, 117.5 kHz) are left to coherent removal.
+      {
+        channels: u_chans + v_chans + w_chans,
+        freqmasks: if freqmask_enabled && n >= 4 then
+          wc.freqmasks_phys([ 23.5*wc.kilohertz ], 0.5*wc.kilohertz)
+          else [],
+      },
+      {
+        channels: u_chans + v_chans + w_chans,
+        freqmasks: if freqmask_enabled && n >= 4 then
+          wc.freqmasks_phys([ 711.0*wc.kilohertz ], 2.0*wc.kilohertz)
+          else [],
+      },
+
+      // Per-anode-group, per-plane RMS cuts for PDVD.
+      // Top TPCs (anodes 4-7): flat (8, 30) ADC on all planes.
+      // Bottom TPCs (anodes 0-3): W plane flat (5, 15) ADC; U and V
+      //   planes use a linear min cut anchored at (0 cm, 2.6 ADC) and
+      //   (180 cm, 6.3 ADC), clamped at endpoints, with flat max 15 ADC.
+      //   The linear mode is evaluated per channel from summed wire length
+      //   (via OmniChannelNoiseDB "linear_in_wirelength" mode).
+    ] + (
+      if n >= 4 then [
+        // Top TPCs.
+        // U/V: piecewise-linear-in-wirelength min — flat at short L, then
+        //   linear up at long L because longer-than-typical induction wires
+        //   pick up extra capacitive noise. Max stays per-plane flat.
+        // W: flat per-plane (collection: ~uniform length).
+        { channels: u_chans,
+          min_rms_cut: { type: 'piecewise_linear_in_wirelength',
+                         points: [
+                           { l:   0.0, v:  9.0 * gain_scale },
+                           { l: 120.0, v:  9.0 * gain_scale },
+                           { l: 172.0, v: 10.0 * gain_scale },
+                         ] },
+          max_rms_cut: 50.0 * gain_scale },
+        { channels: v_chans,
+          min_rms_cut: { type: 'piecewise_linear_in_wirelength',
+                         points: [
+                           { l:   0.0, v:  9.1 * gain_scale },
+                           { l: 120.0, v:  9.1 * gain_scale },
+                           { l: 172.0, v: 11.0 * gain_scale },
+                         ] },
+          max_rms_cut: 30.0 * gain_scale },
+        { channels: w_chans, min_rms_cut: 10.0 * gain_scale, max_rms_cut: 30.0 * gain_scale },
+      ] else [
+        // Bottom TPCs: W flat; U and V linear-in-wirelength on min
+        { channels: w_chans, min_rms_cut: 5.0 * gain_scale, max_rms_cut: 15.0 * gain_scale },
+        { channels: u_chans,
+          min_rms_cut: { type: 'linear_in_wirelength', l0: 0.0, v0: 2.7 * gain_scale, l1: 180.0, v1: 6.5 * gain_scale },
+          max_rms_cut: 30.0 * gain_scale },
+        { channels: v_chans,
+          min_rms_cut: { type: 'linear_in_wirelength', l0: 0.0, v0: 2.6 * gain_scale, l1: 180.0, v1: 6.3 * gain_scale },
+          max_rms_cut: 30.0 * gain_scale },
+      ]
+    ) + rms_cuts,
   }

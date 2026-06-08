@@ -299,12 +299,14 @@ local img = {
         else g.pipeline([bc, cs1, ld1, gc],"simple-solving"),
     }.ret,
 
-    dump :: function(anode, aname, drift_speed) {
+    dump :: function(anode, aname, drift_speed, output_dir='') {
+        local outname = if output_dir == '' then "clusters-apa-"+aname+".tar.gz"
+                        else output_dir+"/clusters-apa-"+aname+".tar.gz",
         local cs = g.pnode({
             type: "ClusterFileSink",
             name: "clustersink-"+aname,
             data: {
-                outname: "clusters-apa-"+aname+".tar.gz",
+                outname: outname,
                 format: "json", // json, numpy, dummy
             }
         }, nin=1, nout=0),
@@ -313,52 +315,45 @@ local img = {
 };
 
 {
-    local imgpipe(anode, multi_slicing) =
+    local imgpipe(anode, multi_slicing, output_dir='') =
     if multi_slicing == "single"
     then g.pipeline([
-            // img.slicing(anode, anode.name, 109, active_planes=[0,1,2], masked_planes=[],dummy_planes=[]), // 109*22*4
-            // img.slicing(anode, anode.name, 1916, active_planes=[], masked_planes=[0,1],dummy_planes=[2]), // 109*22*4
-            img.slicing(anode, anode.name, 4, active_planes=[0,1,2], masked_planes=[],dummy_planes=[]), // 109*22*4
+            img.slicing(anode, anode.name, 4, active_planes=[0,1,2], masked_planes=[],dummy_planes=[]),
             img.tiling(anode, anode.name),
             img.solving(anode, anode.name, "full"),
-            // img.clustering(anode, anode.name),
-            img.dump(anode, anode.name, params.lar.drift_speed),])
+            img.dump(anode, anode.name, params.lar.drift_speed, output_dir),])
     else if multi_slicing == "pdhd1"
     then g.pipeline([
-            // img.slicing(anode, anode.name, 109, active_planes=[0,1,2], masked_planes=[],dummy_planes=[]), // 109*22*4
-            // img.slicing(anode, anode.name, 1916, active_planes=[], masked_planes=[0,1],dummy_planes=[2]), // 109*22*4
-            img.slicing(anode, anode.name, 4, active_planes=[0,1], masked_planes=[],dummy_planes=[2]), // 109*22*4
+            img.slicing(anode, anode.name, 4, active_planes=[0,1], masked_planes=[],dummy_planes=[2]),
             img.tiling(anode, anode.name),
             img.solving(anode, anode.name, "full"),
-            // img.clustering(anode, anode.name),
-            img.dump(anode, anode.name, params.lar.drift_speed),])
+            img.dump(anode, anode.name, params.lar.drift_speed, output_dir),])
     else if multi_slicing == "active"
     then g.pipeline([
             img.multi_active_slicing_tiling(anode, anode.name+"-ms-active", 4),
             img.solving(anode, anode.name+"-ms-active"),
-            // img.clustering(anode, anode.name+"-ms-active"),
-            img.dump(anode, anode.name+"-ms-active", params.lar.drift_speed)])
+            img.dump(anode, anode.name+"-ms-active", params.lar.drift_speed, output_dir)])
     else if multi_slicing == "masked"
     then g.pipeline([
             img.multi_masked_2view_slicing_tiling(anode, anode.name+"-ms-masked", 500),
             img.clustering(anode, anode.name+"-ms-masked"),
-            img.dump(anode, anode.name+"-ms-masked", params.lar.drift_speed)])
+            img.dump(anode, anode.name+"-ms-masked", params.lar.drift_speed, output_dir)])
     else {
         local active_fork = g.pipeline([
             img.multi_active_slicing_tiling(anode, anode.name+"-ms-active", 4),
             img.solving(anode, anode.name+"-ms-active", "full"),
-            img.dump(anode, anode.name+"-ms-active", params.lar.drift_speed),
+            img.dump(anode, anode.name+"-ms-active", params.lar.drift_speed, output_dir),
         ]),
         local masked_fork = g.pipeline([
-            img.multi_masked_2view_slicing_tiling(anode, anode.name+"-ms-masked", 500), // 109, 1744 (total 9592)
+            img.multi_masked_2view_slicing_tiling(anode, anode.name+"-ms-masked", 500),
             img.clustering(anode, anode.name+"-ms-masked"),
-            img.dump(anode, anode.name+"-ms-masked", params.lar.drift_speed),
+            img.dump(anode, anode.name+"-ms-masked", params.lar.drift_speed, output_dir),
         ]),
         ret: g.fan.fanout("FrameFanout",[active_fork,masked_fork], "fan_active_masked-%s"%anode.name),
     }.ret,
 
-    per_anode(anode, pipe_type = "multi") :: g.pipeline([
+    per_anode(anode, pipe_type = "multi", output_dir='') :: g.pipeline([
         img.pre_proc(anode, anode.name),
-        imgpipe(anode, pipe_type),
+        imgpipe(anode, pipe_type, output_dir),
     ], "per_anode"),
 }

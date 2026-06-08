@@ -1,0 +1,15 @@
+#include "pandizzle.fcl"
+
+BEGIN_PROLOG
+
+highest_pandizzle_selector:
+{ 
+    tool_type:             "HighestPandizzleScoreRecoVertexTrackSelector"
+
+    PFPModuleLabel:        "pandora"
+    TrackModuleLabel:      "pandoraTrack"
+
+    PandizzleConfig:        @local::pandizzle
+}
+
+END_PROLOG

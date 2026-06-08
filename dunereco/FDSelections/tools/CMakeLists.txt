@@ -43,3 +43,5 @@ simple_plugin(HighestEnergyRecoVertexShowerSelector "tool"
 
                        
              )
+             
+install_fhicl()

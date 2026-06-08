@@ -4,6 +4,20 @@
 local wc = import "wirecell.jsonnet";
 local base = import "pgrapher/dune/params.jsonnet";
 
+// Bottom-drift electronics-noise file, selected by the front-end gain.  The
+// cold electronics has four gain settings -- 4.7 / 7.8 / 14 / 25 mV/fC -- and
+// noise-spectra files currently exist only for 7.8 and 14.  Any other gain
+// (a setting with no file, or a value that is not a valid setting) aborts the
+// configuration rather than silently using a wrong-gain spectrum.  See
+// pdvd/nf_plot/electronics_gain_and_noise.md.
+local pdvd_bottom_noise(gain) =
+    local g = gain / (wc.mV / wc.fC);
+    if std.abs(g - 7.8) < 0.05 then "pdvd-bottom-noise-spectra-7d8mVfC-v1.json.bz2"
+    else if std.abs(g - 14.0) < 0.05 then "pdvd-bottom-noise-spectra-14mVfC-v1.json.bz2"
+    else error ("PDVD bottom noise: no spectra file for elec.gain = " + g
+                + " mV/fC.  Valid cold-electronics gain settings are"
+                + " 4.7/7.8/14/25 mV/fC; spectra files exist only for 7.8 and 14.");
+
 base {
     // This section will be overwritten in simparams.jsonnet
     det : {
@@ -90,7 +104,16 @@ base {
     },
 
     daq: super.daq {
-        nticks: 6000,
+        nticks: 10000,
+    },
+
+    // Real data frames are 8000 ticks after the 512->500 ns Resampler
+    // (7813 raw ticks * 512/500 -> 8000).  OmnibusNoiseFilter now pushes
+    // the actual frame size into OmniChannelNoiseDB on first frame, so this
+    // override is no longer load-bearing — but it is kept as a documented
+    // default and to pre-size freqbinner() calls in chndb-base.jsonnet.
+    nf: super.nf {
+        nsamples: 8000,
     },
 
     adc: super.adc {
@@ -112,14 +135,14 @@ base {
     // also, see later overwriting in simparams.jsonnet
     elecs: [
       super.elec { // bottom drifter
-        postgain: 1.1365, 
+        postgain: 1.0,
         shaping: 2.2 * wc.us,
         gain:7.8*wc.mV/wc.fC,
       },
       super.elec { // top
         type: "JsonElecResponse",
         filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
-        postgain: 1.52, // 11mV/fC, 1.94 -> 14mV/fC
+        postgain: 1.36, // 11mV/fC, 1.94 -> 14mV/fC
       },
     ],
     elec: $.elecs[0], // nominal 
@@ -162,13 +185,17 @@ base {
             // "dunevdcrp2-FR-fixcoll-adjustind.json.bz2", // repeat for top drifter
             // "protodunevd_FR_3view_speed1d55.json.bz2", // remember to sync response plane position above
             // "protodunevd_FR_3view_speed1d55.json.bz2",
-            "protodunevd_FR_norminal_260324.json.bz2", //updated by xning,03/24/2026
-            "protodunevd_FR_norminal_260324.json.bz2",
+            "protodunevd_FR_imbalance3p_260501.json.bz2",
+            "protodunevd_FR_imbalance3p_260501.json.bz2",
         ],
 
+        // Electronics-noise spectra.  Bottom: selected by front-end gain
+        // (`pdvd_bottom_noise`, above -- set the gain in $.elecs[0]); the
+        // 7.8 mV/fC file is data-retuned from run039324, see
+        // noise_spectrum_comparison.md.  Top: single gain setting.
         noises: [
-            "pdvd-bottom-noise-spectra-v1.json.bz2",
-            "pdvd-top-noise-spectra-v2.json.bz2",
+            pdvd_bottom_noise($.elec.gain),
+            "pdvd-top-noise-spectra-v3.json.bz2",
         ],
 
         // chresp: "protodunevd-params-channel-responses-v0.json.bz2",
