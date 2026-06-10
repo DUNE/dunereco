@@ -737,6 +737,7 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
 
   edep_col_properties.dedr = 0.;
   edep_col_properties.dedx = 0.;
+  edep_col_properties.dT2 = 0.;
 
   double total_energy = 0.0;
   double total_length = 0.0;
@@ -758,6 +759,22 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
     edep_col_properties.dzdr += edep_ptr->E()*(edep_ptr->EndZ() - edep_ptr->StartZ()) / edep_ptr->StepLength();
 
     edep_col_properties.dedr += edep_ptr->E()*edep_ptr->E() / edep_ptr->StepLength();
+  
+    auto const& xyz = edep_ptr->MidPoint();
+    double best_dT=1e8;
+    for (auto const& wireID : wireIDs){
+      int wire_index = wireID.Wire;
+      auto const& plane = wireReadout->Plane(wireID);
+      int wireProj = int(0.5+wireReadout->Plane(plane.ID()).WireCoordinate(xyz));
+      int wire_dist = std::abs(wire_index - wireProj);
+      double wire_pitch = plane.WirePitch();
+      double dT=wire_dist*wire_pitch;
+  
+      if (dT < best_dT){ 
+        best_dT = dT;
+      }
+    }
+    edep_col_properties.dT2=best_dT*best_dT*edep_ptr->E();
   }
   if (total_energy > 0)
   {
@@ -769,6 +786,7 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
     edep_col_properties.dzdr = edep_col_properties.dzdr / total_energy;
 
     edep_col_properties.dedr = edep_col_properties.dedr / total_energy;
+    edep_col_properties.dT2 = edep_col_properties.dT2 / total_energy;
   }
   if (total_length > 0) edep_col_properties.dedx = total_energy / total_length;
   for (auto const& edep_ptr : edepPtrVecMaxE)
@@ -893,7 +911,7 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
     double x_plane = plane0.GetCenter().X();
     double t = std::abs(x_plane - truth_coords[0]) / drift_velocity;
  
-    geo::Point_t xyz(truth_coords[0], truth_coords[1], truth_coords[2]);
+    /*geo::Point_t xyz(truth_coords[0], truth_coords[1], truth_coords[2]);
     
     double best_dT = 1e8;
     for (auto const& wireID : wireIDs){
@@ -907,11 +925,12 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
       if (dT < best_dT){ 
         best_dT = dT;
       }
-    }
+    }*/
 
-    //std::cout<<"Best transverse distance: "<<best_dT<<" cm"<<std::endl;
-    double dT2=best_dT*best_dT;
-    
+    //double dT2=best_dT*best_dT;
+    double dT2 = truth_props.dT2;    
+    //std::cout<<"Square transverse distance: "<<dT2<<" cm^2"<<std::endl;
+
     double exponent=-dT2/(4*t)*(1/DTnew-1/Dnom)/1e3; //diffusion coefficients are in cm^2/ns but typical units cm and mus
     scale_DT *= exp(exponent);
     scales.r_Q *= scale_DT;
