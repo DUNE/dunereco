@@ -82,7 +82,9 @@ namespace wiremod
       TGraph *grChargeRatExp = nullptr;
       bool fSaveEdepMatchingPlots; //Plot showing the energy distirbutions and PDG code of edeps that were matched or not to an ROI
       int fnNeighbourWires; //Number of Neighbour wires o consider for matchoing edeps to an ROI
-      //The three following are probably not needed
+      int fnTickTolerance;
+
+       //The three following are probably not needed
       bool fSaveHistsByChannel;     // save modified signals by channel?
       bool fSaveHistsByWire;        // save modified signals by wire?
       bool fIsData;                 // DEBUG: get data wires
@@ -170,6 +172,8 @@ namespace wiremod
     }
     fSaveEdepMatchingPlots = pset.get<bool>("SaveEdepMatchingPlots"   , false);
     fnNeighbourWires = pset.get<int>("nNeighbourWires"   , 0);
+    fnTickTolerance = pset.get<int>("nTickTolerance" , 0);
+
     // we make these things
     produces<std::vector<recob::Wire      >>();
   }
@@ -230,6 +234,7 @@ namespace wiremod
 
     wmUtil.SaveEdepMatchingPlots = fSaveEdepMatchingPlots;
     wmUtil.nNeighbourWires = fnNeighbourWires;    
+    wmUtil.nTickTolerance = fnTickTolerance;
 
     wmUtil.applyGainScale    = fApplyGainScale;
     if (wmUtil.applyGainScale)

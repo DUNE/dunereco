@@ -284,33 +284,8 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
         //std::cout<<"signa ROI size smaller than target_roi tick"<<std::endl;
         continue;
       }
-      /*if (target_wire.SignalROI().is_void(target_roi.second))
-      {
-        nSignalROINoSecond++;
-        int min_distance = std::numeric_limits<int>::max();
-
-        for (size_t r = 0; r < target_wire.SignalROI().n_ranges(); ++r) {
-
-          auto const& range = target_wire.SignalROI().range(r);
-          int start = range.begin_index();
-          int end   = range.end_index();
-
-          if (static_cast<int>(target_roi.second) < start)
-            min_distance = std::min(min_distance, start - static_cast<int>(target_roi.second));
-
-          else if (static_cast<int>(target_roi.second) > end)
-            min_distance = std::min(min_distance, static_cast<int>(target_roi.second) - end);
-
-          else
-            min_distance = 100;  // shouldn't happen since is_void == true
-        }
-        if (min_distance<5) nCloseROI++;
-        if (SaveEdepMatchingPlots) hUnMatchedClosest->Fill(min_distance);
-        continue;
-      }*/
+      
       int min_distance = std::numeric_limits<int>::max();
-      int closest_range = -1;
-
       for (size_t r = 0; r < target_wire.SignalROI().n_ranges(); ++r){
         auto const& range = target_wire.SignalROI().range(r);
 
@@ -324,36 +299,24 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
         else if (static_cast<int>(target_roi.second) > end) distance = static_cast<int>(target_roi.second) - end;
 
         else distance = 0;  // inside ROI
-
+        if (SaveEdepMatchingPlots) hUnMatchedClosest->Fill(distance);
+        if (distance < nTickTolerance+1){
+          ROIMatchedEdepMap[std::make_pair(target_wire.Channel(),r)].push_back(i_e);
+          isMatched=true;
+        }
         if (distance < min_distance)
         {
           min_distance = distance;
-          closest_range = r;
         }
+        
       }
       if (min_distance<5) nCloseROI++;
-      if (SaveEdepMatchingPlots) hUnMatchedClosest->Fill(min_distance);
-      constexpr int kTickTolerance = 0; //set to > 0  to introduce a tolerance
-
-      if (min_distance > kTickTolerance){
-        nSignalROINoSecond++;
-        continue;
-      }
-      //auto range_number = target_wire.SignalROI().find_range_iterator(target_roi.second) - target_wire.SignalROI().begin_range();
-    
-      //ROIMatchedEdepMap[std::make_pair(target_wire.Channel(),range_number)].push_back(i_e);
-      ROIMatchedEdepMap[std::make_pair(target_wire.Channel(),closest_range)].push_back(i_e);
-      isMatched=true;
+      if (!isMatched) nSignalROINoSecond++;
       if (SaveEdepMatchingPlots) hMatchedWD->Fill(best_delta_wire);
     }
     if (!hasTargetROIs) nNoTargetROI++;
-    /*if (edep.X()>xmax) xmax=edep.X();
-    else if(edep.X()<xmin) xmin=edep.X();
-    if (edep.Z()>zmax) zmax=edep.Z();
-    else if(edep.Z()<zmin) zmin=edep.Z();*/    
     if (isMatched){
       if (SaveEdepMatchingPlots){
-        //hMatched->Fill(edep.X(), edep.Z());
         hMatchedE->Fill(edep.Energy());
         hMatchedPDG->Fill(pdg_rebin);
         //std::cout<<"matched edep PDG: "<<pdg<<std::endl;
@@ -361,7 +324,6 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
     }
     else{
       if (SaveEdepMatchingPlots){
-        //hUnMatched->Fill(edep.X(), edep.Z()); 
         hUnMatchedE->Fill(edep.Energy());
         hUnMatchedPDG->Fill(pdg_rebin);
         //std::cout<<"unmatched edep PDG: "<<pdg<<std::endl;
@@ -380,12 +342,6 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
 
   if (SaveEdepMatchingPlots){
     TCanvas* c1 = new TCanvas("c1","Edep XZ Display",800,600);
-    /*
-    hMatched->GetXaxis()->SetRangeUser(xmin-5, xmax-5);
-    hMatched->GetYaxis()->SetRangeUser(zmin-5, zmax-5);
-    hUnMatched->GetXaxis()->SetRangeUser(xmin-5, xmax-5);
-    hUnMatched->GetYaxis()->SetRangeUser(zmin-5, zmax-5);
-    */
 
     c1->SetGridy();
 
@@ -911,23 +867,6 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
     double x_plane = plane0.GetCenter().X();
     double t = std::abs(x_plane - truth_coords[0]) / drift_velocity;
  
-    /*geo::Point_t xyz(truth_coords[0], truth_coords[1], truth_coords[2]);
-    
-    double best_dT = 1e8;
-    for (auto const& wireID : wireIDs){
-      int wire_index = wireID.Wire;
-      auto const& plane = wireReadout->Plane(wireID);
-      int wireProj = int(0.5+wireReadout->Plane(plane.ID()).WireCoordinate(xyz));
-      int wire_dist = std::abs(wire_index - wireProj);
-      double wire_pitch = plane.WirePitch();
-      double dT=wire_dist*wire_pitch;
-  
-      if (dT < best_dT){ 
-        best_dT = dT;
-      }
-    }*/
-
-    //double dT2=best_dT*best_dT;
     double dT2 = truth_props.dT2;    
     //std::cout<<"Square transverse distance: "<<dT2<<" cm^2"<<std::endl;
 
