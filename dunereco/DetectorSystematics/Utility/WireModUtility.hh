@@ -44,8 +44,10 @@ namespace sys {
       bool SaveEdepMatchingPlots;
       TH1F *hMatchedE = nullptr;
       TH1F *hUnMatchedE = nullptr;
+      TH1F *hMatchedWD = nullptr;
       TH1F *hMatchedPDG = nullptr;
       TH1F *hUnMatchedPDG = nullptr;
+      TH1F *hUnMatchedClosest = nullptr;
       //removed members related to splines
 
       //graphs could still be needed, to be tuned
