@@ -135,6 +135,7 @@ namespace sys {
         double dqdr;
         double dedr;
         double dedx;
+        double dT2; //square of transverse distance between matched edeps and wire
         ScaleValues_t scales_avg[3];
       } TruthProperties_t;
     
