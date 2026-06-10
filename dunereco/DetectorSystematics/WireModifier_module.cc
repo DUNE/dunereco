@@ -144,7 +144,7 @@ namespace wiremod
       const int N=200;
       double xs[N], ys[N];
       if (fApplyModBoxVar){ 
-        hRat = new TH2F("hRatRecomb", "Total ROI charge after/before scaling vs dE/dx; dE/dx [MeV/cm]; Charge ratio", 200, 1, 3, 200, 0, 1);
+        hRat = new TH2F("hRatRecomb", "Total ROI charge after/before scaling vs dE/dx; dE/dx [MeV/cm]; Charge ratio", 200, 1, 3, 200, 0.76, 0.96);
         double beta_nom=0.212;
         double alpha_nom=0.93;
         double E=0.5;
@@ -158,7 +158,7 @@ namespace wiremod
         }
       }
       else{ 
-        hRat = new TH2F("hRatRecomb", "Total ROI charge after/before scaling vs drift distance; Drift distance [cm]; Charge ratio", 200, 0, 370, 200, 0, 1);   
+        hRat = new TH2F("hRatRecomb", "Total ROI charge after/before scaling vs drift distance; Drift distance [cm]; Charge ratio", 37, 0, 370, 200, 0.8, 1);   
         double factor=1./160.563*(1000./fLifetimeVar-1/10.4);
         double xmin=0., step=370./N;
         for (int i = 0; i < N; i++) {
@@ -339,7 +339,6 @@ namespace wiremod
       for(size_t i_r = 0; i_r < wire.SignalROI().get_ranges().size(); ++i_r)
       {
         nROIs++;
-        bool isROIModified = false;
         MF_LOG_DEBUG("WireModifier")
           << "  Checking ROI " << i_r;
         auto const& range = wire.SignalROI().get_ranges()[i_r];
@@ -390,7 +389,15 @@ namespace wiremod
         }
         MF_LOG_DEBUG("WireModifier")
           << "  Found " << matchedShiftedEdepPtrVec.size() << " shifted Edeps";
-
+        
+        if (matchedShiftedEdepPtrVec.size()>0){
+          nROIs_mod++;
+          if (roi_properties.total_q<80) nROIs_lowQ_mod++;
+          if (hasHit){
+            nROIs_hit_mod++;
+            if (hasHighQ) nROIs_hit_highQ_mod++;
+          }
+        }
         std::vector<const recob::Hit*> matchedHitPtrVec;
         //Moving the following line before to have the hit matching also for ROIs that are not matched to an edep
         //auto it_hit_map = wmUtil.ROIMatchedHitMap.find(roi_key);
@@ -453,7 +460,8 @@ namespace wiremod
           if ( key_it != SubROIMatchedEdepMap.end() && key_it->second.size() > 0 ) {
             auto truth_vals = wmUtil.CalcPropertiesFromEdeps(key_it->second, offset_ADC, wireIDs);
             total_E+=truth_vals.total_energy;
-            drift_distance+=truth_vals.total_energy*truth_vals.x;
+            //drift_distance+=truth_vals.total_energy*truth_vals.x;
+            drift_distance+=truth_vals.x;
             dedx_avg+=truth_vals.total_energy*truth_vals.dedx;
             if ( fApplyLowECut && truth_vals.total_energy < 0.3 && subroi_prop.total_q > 80 ) {
               scale_vals.r_Q     = 1.;
@@ -465,7 +473,6 @@ namespace wiremod
                 << "Scaling! Q scale: " << scale_vals.r_Q
                 << "     sigma scale: " << scale_vals.r_sigma;
               isModified = true;
-              isROIModified = true;
             }
           }
           else {
@@ -475,16 +482,9 @@ namespace wiremod
           
           SubROIMatchedScalesMap[key] = scale_vals;
         }
-        drift_distance=abs(drift_distance/total_E);
+        //drift_distance=abs(drift_distance/total_E);
+        drift_distance=abs(drift_distance/subROIPropVec.size());
         dedx_avg=dedx_avg/total_E;
-        if (isROIModified){ 
-          nROIs_mod++;
-          if (roi_properties.total_q<80) nROIs_lowQ_mod++;
-          if (hasHit){ 
-            nROIs_hit_mod++;
-            if (hasHighQ) nROIs_hit_highQ_mod++;
-          }
-        }
         wmUtil.ModifyROI(modified_data, roi_properties, subROIPropVec, SubROIMatchedScalesMap);
         double charge = 0;
         for (auto const& adc : modified_data)
@@ -565,6 +565,9 @@ namespace wiremod
       TCanvas *c1 = new TCanvas("c1", "ROI properties", 800, 600);
       c1->SetTicky();
       c1->SetTickx();
+      gPad->SetLeftMargin(0.15);
+      gPad->SetBottomMargin(0.15);
+
       grChargeRatExp->SetLineWidth(2);
       grChargeRatExp->SetLineColor(kRed);
       hRat->SetStats(0);
@@ -572,16 +575,27 @@ namespace wiremod
       grChargeRatExp->SetTitle(hRat->GetTitle());
       grChargeRatExp->GetXaxis()->SetTitle(hRat->GetXaxis()->GetTitle());
       grChargeRatExp->GetYaxis()->SetTitle(hRat->GetYaxis()->GetTitle());
-      grChargeRatExp->GetYaxis()->CenterTitle();
-      grChargeRatExp->GetXaxis()->CenterTitle();
-      grChargeRatExp->Draw("AL");
+      grChargeRatExp->SetLineStyle(2);
+      grChargeRatExp->SetLineWidth(4);
+      //grChargeRatExp->Draw("AL");
+      hRat->GetYaxis()->CenterTitle();
+      hRat->GetXaxis()->CenterTitle();
+      hRat->GetYaxis()->SetTitleSize(0.055);
+      hRat->GetYaxis()->SetLabelSize(0.045);
+      hRat->GetYaxis()->SetTitleOffset(1.1);
+      hRat->GetXaxis()->SetTitleSize(0.055);
+      hRat->GetXaxis()->SetLabelSize(0.045);
+      hRat->GetXaxis()->SetTitleOffset(1.1);
       hRat->SetLineColor(0);
       hRat->SetMarkerColor(kBlack);
       hRat->SetMarkerStyle(kPlus);
-      hRat->Draw("Psame");
-      
+      hRat->Draw("COLZ");
+      grChargeRatExp->Draw("Lsame");
+
       TLegend *leg1 = new TLegend(0.15, 0.2, 0.45, 0.3);
-      TLegend *leg2 = new TLegend(0.55, 0.7, 0.9, 0.9);
+      TLegend *leg2 = new TLegend(0.45, 0.65, 0.9, 0.85);
+      leg1->SetTextSize(0.05);
+      leg2->SetTextSize(0.05);
       if (fApplyModBoxVar){ 
         leg1 = new TLegend(0.55, 0.2, 0.85, 0.3);
         leg2 = new TLegend(0.2, 0.25, 0.95, 0.55);
@@ -592,7 +606,7 @@ namespace wiremod
       leg1->SetFillStyle(0);
       leg1->SetLineColor(0);   // removes border color
       leg1->SetBorderSize(0);
-      leg1->AddEntry(hRat, "ROI total charge ratio");
+      //leg1->AddEntry(hRat, "ROI total charge ratio");
       leg1->AddEntry(grChargeRatExp, "Analytical ratio");
       leg1->Draw("same");
       leg2->SetFillColor(0);   // not strictly needed if FillStyle=0
@@ -605,7 +619,7 @@ namespace wiremod
       latex.SetNDC();                 // use normalized coordinates (0 → 1)
       latex.SetTextSize(0.04);        // adjust size
       latex.SetTextFont(42);          // nice standard font
-      latex.DrawLatex(0.15, 0.85, "#bf{DUNE} Work in Progress");
+      latex.DrawLatex(0.23, 0.85, "#bf{DUNE} Work in Progress");
       
       c1->SaveAs("ROI_charge_modification.pdf");
       delete c1;
