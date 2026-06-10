@@ -144,10 +144,13 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
   if (SaveEdepMatchingPlots){
     //TH2F* hMatched = new TH2F("hMatched","Matched Edeps X vs Z;X [cm];Z [cm]", 1500, -350, 350, 3000, 0, 1500);  
     //TH2F* hUnMatched = new TH2F("hUnMatched","Non matched Edeps X vs Z;X [cm];Z [cm]", 1500, -350, 350, 3000, 0, 1500);
+    
+    hMatchedWD = new TH1F("hMatchedWD","Wire distance between target ROI and simulated edep; Wire distance; Counts/(# sim edep)", 21, -10, 10);
     hMatchedE = new TH1F("hMatchedE","Simulated Energy Deposits Energy; Energy [MeV]; Counts/(# sim edep)", 50, 0, 1);
     hUnMatchedE = new TH1F("hUnMatchedE","Simulated Energy Deposits Energy; Energy [MeV]; Counts/(# sim edep)", 50, 0, 1);
     hMatchedPDG = new TH1F("hMatchedPDG", "Simulated Energy Deposits PDG code; PDG code; Counts/(# sim edep)",12, -0.5, 11.5);
     hUnMatchedPDG = new TH1F("hUnMatchedPDG", "Simulated Energy Deposits PDG code; PDG code/(# sim edep); Counts",12, -0.5, 11.5);
+    hUnMatchedClosest = new TH1F("hUnMatchedClosest", "Tick distance to closest signal ROI on target wire; Tick distance; Counts/(# sim edep)", 100, 0, 100);
 
     hMatchedPDG->GetXaxis()->SetBinLabel(1, "PDG=0");
     hMatchedPDG->GetXaxis()->SetBinLabel(2, "e^{#pm}");
@@ -204,7 +207,8 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
   {
     bool isMatched=false;
     auto const& edep = edepVec[i_e];
-    
+    geo::Point_t xyz = edep.MidPoint();
+
     int trackID=std::abs(edep.TrackID());
     int pdg=0, pdg_rebin=11;
     auto it = trackID_to_PDG.find(trackID);
@@ -232,7 +236,19 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
         continue;
       }
       auto const& target_wire = wireVec.at(wireChannelMap[target_roi.first]);
-
+     
+      int best_delta_wire = 11;
+     
+      auto wireIDs = wireReadout->ChannelToWire(target_wire.Channel());
+      for (auto const& wireID : wireIDs){
+        int wire_index = wireID.Wire;
+        auto const& plane = wireReadout->Plane(wireID);
+        int wireProj = int(0.5+wireReadout->Plane(plane.ID()).WireCoordinate(xyz));
+        int delta = wireProj - wire_index;
+        //std::cout<<"Tentative distance between target roi and edep: "<<delta<<std::endl;
+        if (std::abs(delta)<std::abs(best_delta_wire)) best_delta_wire = delta;
+      }
+      //std::cout<<"Best distance between target roi and edep: "<<best_delta_wire<<std::endl;
       if (not target_wire.SignalROI().is_valid())
       {
         nSignalROIInvalid++;
@@ -268,7 +284,7 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
         //std::cout<<"signa ROI size smaller than target_roi tick"<<std::endl;
         continue;
       }
-      if (target_wire.SignalROI().is_void(target_roi.second))
+      /*if (target_wire.SignalROI().is_void(target_roi.second))
       {
         nSignalROINoSecond++;
         int min_distance = std::numeric_limits<int>::max();
@@ -289,13 +305,46 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
             min_distance = 100;  // shouldn't happen since is_void == true
         }
         if (min_distance<5) nCloseROI++;
+        if (SaveEdepMatchingPlots) hUnMatchedClosest->Fill(min_distance);
+        continue;
+      }*/
+      int min_distance = std::numeric_limits<int>::max();
+      int closest_range = -1;
+
+      for (size_t r = 0; r < target_wire.SignalROI().n_ranges(); ++r){
+        auto const& range = target_wire.SignalROI().range(r);
+
+        int start = range.begin_index();
+        int end   = range.end_index();
+
+        int distance;
+
+        if (static_cast<int>(target_roi.second) < start) distance = start - static_cast<int>(target_roi.second);
+
+        else if (static_cast<int>(target_roi.second) > end) distance = static_cast<int>(target_roi.second) - end;
+
+        else distance = 0;  // inside ROI
+
+        if (distance < min_distance)
+        {
+          min_distance = distance;
+          closest_range = r;
+        }
+      }
+      if (min_distance<5) nCloseROI++;
+      if (SaveEdepMatchingPlots) hUnMatchedClosest->Fill(min_distance);
+      constexpr int kTickTolerance = 0; //set to > 0  to introduce a tolerance
+
+      if (min_distance > kTickTolerance){
+        nSignalROINoSecond++;
         continue;
       }
-
-      auto range_number = target_wire.SignalROI().find_range_iterator(target_roi.second) - target_wire.SignalROI().begin_range();
+      //auto range_number = target_wire.SignalROI().find_range_iterator(target_roi.second) - target_wire.SignalROI().begin_range();
     
-      ROIMatchedEdepMap[std::make_pair(target_wire.Channel(),range_number)].push_back(i_e);
+      //ROIMatchedEdepMap[std::make_pair(target_wire.Channel(),range_number)].push_back(i_e);
+      ROIMatchedEdepMap[std::make_pair(target_wire.Channel(),closest_range)].push_back(i_e);
       isMatched=true;
+      if (SaveEdepMatchingPlots) hMatchedWD->Fill(best_delta_wire);
     }
     if (!hasTargetROIs) nNoTargetROI++;
     /*if (edep.X()>xmax) xmax=edep.X();
@@ -344,6 +393,8 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
     hUnMatchedE->Scale(1./edepVec.size());
     hMatchedPDG->Scale(1./edepVec.size());
     hUnMatchedPDG->Scale(1./edepVec.size());
+    hMatchedWD->Scale(1./edepVec.size());
+    hUnMatchedClosest->Scale(1./edepVec.size());   
 
     TLegend *leg = new TLegend(0.6, 0.7, 0.85, 0.85);
     leg->AddEntry(hMatchedE, "Matched");
@@ -363,6 +414,13 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
     leg->Draw("same");
     latex.DrawLatex(0.2, 0.85, "DUNE Work in Progress");
     c1->SaveAs("Edep_matching_plots.pdf(");
+
+    hMatchedWD->Draw("HIST");
+    c1->SaveAs("Edep_matching_plots.pdf");
+    
+    //hUnMatchedClosest->SetLineColor(kRed);
+    hUnMatchedClosest->Draw("HIST");
+    c1->SaveAs("Edep_matching_plots.pdf");
 
     c1->SetLogy();
     hMatchedPDG->Draw("HIST");
