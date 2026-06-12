@@ -1,6 +1,12 @@
 function(cfg={})
 local config = {
     use_dnn_img: false,
+    // Per-plane slicing activity threshold in units of channel RMS.
+    // Default 3.6 sigma.  To slice on any positive charge use 1e-6: a
+    // literal 0 would trip MaskSlice's `if(threshold==0)` fallback to a
+    // default threshold (a HIGH MicroBooNE bar), so 1e-6 is the charge>0
+    // surrogate (used by the standalone pdhd chain, see pdhd/wct-img-all.jsonnet).
+    nthreshold: [3.6, 3.6, 3.6],
 } + cfg;
 
 local wc = import "wirecell.jsonnet";
@@ -122,13 +128,17 @@ local img = {
                 charge_tag: tags.signal % anode.data.ident,
                 error_tag: tags.error_tag % anode.data.ident,
                 anode: wc.tn(anode),
+                // Both 0 = MaskSlice auto-derives the window from the input
+                // frame.  A hard max_tbin beyond the readout fabricates
+                // phantom dead slices past the frame end, and one below a
+                // longer readout truncates real activity (see
+                // pdvd/docs/sp-img-readout-window-truncation.md).
                 min_tbin: 0,
-                max_tbin: 8500,
+                max_tbin: 0,
                 active_planes: active_planes,
                 masked_planes: masked_planes,
                 dummy_planes: dummy_planes,
-                // nthreshold: [1e-6, 1e-6, 1e-6],
-                nthreshold: [3.6, 3.6, 3.6],
+                nthreshold: config.nthreshold,
             },
         }, nin=1, nout=1, uses=[anode]),
     }.ret,
@@ -307,7 +317,7 @@ local img = {
             name: "clustersink-"+aname,
             data: {
                 outname: outname,
-                format: "json", // json, numpy, dummy
+                format: "numpy", // json, numpy, dummy; numpy avoids the jsoncpp DOM on load (~90% of clustering live heap, see clus/docs/imgclus-optimization-log.md entry 20)
             }
         }, nin=1, nout=0),
         ret: cs
@@ -345,7 +355,7 @@ local img = {
             img.dump(anode, anode.name+"-ms-active", params.lar.drift_speed, output_dir),
         ]),
         local masked_fork = g.pipeline([
-            img.multi_masked_2view_slicing_tiling(anode, anode.name+"-ms-masked", 500),
+            img.multi_masked_2view_slicing_tiling(anode, anode.name+"-ms-masked", 1500), // was 500; masked fork carries geometry only (no charge solving), coarse span cuts masked blob count/memory ~3x
             img.clustering(anode, anode.name+"-ms-masked"),
             img.dump(anode, anode.name+"-ms-masked", params.lar.drift_speed, output_dir),
         ]),

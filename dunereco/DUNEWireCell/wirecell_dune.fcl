@@ -153,6 +153,39 @@ protodunehd_nfsp:
 protodunehd_nfsp_mc: @local::protodunehd_nfsp
 protodunehd_nfsp_mc.wcls_main.params.reality: "sim"
 
+# NF + SP + DNN-ROI + L1SP-after-DNN (hybrid) for ProtoDUNE-HD.
+# DNN-ROI runs on CPU; L1SP-after-DNN runs in 'hybrid' mode by default
+# (both wired in pgrapher/experiment/pdhd/wcls-nf-sp-dnnroi.jsonnet).
+# Requires WireCellPytorch for the TorchService inference nodes.
+protodunehd_nfsp_dnnroi:
+{
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["Pgrapher"]
+        logsinks: ["stdout"]
+        loglevels: ["debug", "pgraph:info"]
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellLarsoft","WireCellPytorch"]
+        inputers: ["wclsRawFrameSource"]
+        outputers: ["wclsFrameSaver:spsaver"]
+        configs: ["pgrapher/experiment/pdhd/wcls-nf-sp-dnnroi.jsonnet"]
+        params : {
+            raw_input_label: "tpcrawdecoder:daq"
+            reality: "data" # vs. "sim"
+            epoch: "after"
+            signal_output_form: "dense" # DNN-ROI / L1SP want dense (1:1 ADC/signal)
+            use_resampler: "false"
+        }
+        structs: {
+            Nbit: @local::Nbit_standard
+            elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
+            use_dnnroi: true
+        }
+    }
+}
+protodunehd_nfsp_dnnroi_mc: @local::protodunehd_nfsp_dnnroi
+protodunehd_nfsp_dnnroi_mc.wcls_main.params.reality: "sim"
+
 protodunehd_nf : {
    module_type : WireCellToolkit
    wcls_main: {
@@ -1935,6 +1968,39 @@ protodunevd_nfsp : {
       }
    }
 }
+
+# NF + SP + DNN-ROI + L1SP-after-DNN (hybrid) for ProtoDUNE-VD.
+# DNN-ROI runs on CPU; L1SP-after-DNN runs in 'hybrid' mode by default
+# (both wired in pgrapher/experiment/protodunevd/wcls-nf-sp-dnnroi.jsonnet).
+# Requires WireCellPytorch for the TorchService inference nodes.
+protodunevd_nfsp_dnnroi : {
+   module_type : WireCellToolkit
+   wcls_main: {
+      tool_type: WCLS
+      apps: ["Pgrapher"]
+      logsinks: ["stdout"]
+      loglevels: ["debug", "pgraph:info"]
+      plugins: ["WireCellGen", "WireCellSigProc", "WireCellSio", "WireCellRoot", "WireCellPgraph", "WireCellLarsoft", "WireCellPytorch"]
+      inputers: ["wclsRawFrameSource"]
+      outputers: ["wclsFrameSaver:spsaver"]
+      configs: ["pgrapher/experiment/protodunevd/wcls-nf-sp-dnnroi.jsonnet"]
+      params : {
+         raw_input_label: "tpcrawdecoder:daq"
+         reality: "data"
+         epoch: "after"
+         signal_output_form: "dense" # DNN-ROI / L1SP want dense (1:1 ADC/signal)
+         use_magnify: "false"
+         use_resampler: "false"
+      }
+      structs: {
+        Nbit: @local::Nbit_standard
+        elecGain: 14 # probably will change
+        use_dnnroi: true
+      }
+   }
+}
+protodunevd_nfsp_dnnroi_mc: @local::protodunevd_nfsp_dnnroi
+protodunevd_nfsp_dnnroi_mc.wcls_main.params.reality: "sim"
 
 protodunevd_nf : {
    module_type : WireCellToolkit
