@@ -49,7 +49,7 @@ local wcls = wcls_maker(params, tools);
 local use_dnnroi = std.extVar('use_dnnroi');
 
 // FP32 best KD (6-ch) PDVD model.  Resolved via WIRECELL_PATH.
-local dnnroi_model = 'dnnroi/pdvd/pipe_distill_nestedunet_6ch.ts';
+local dnnroi_model = 'dnnroi/pdvd/pipe_distill_transformer_6ch.ts';
 local dnnroi_device = 'cpu';                  // 'cpu' or 'gpu'.  INT8 graph is CPU-only.
 local dnnroi_nchan = 6;                        // PDVD 6-ch deployment
 local dnnroi_concurrency = 1;
