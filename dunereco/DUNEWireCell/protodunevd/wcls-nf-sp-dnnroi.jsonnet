@@ -48,8 +48,8 @@ local wcls = wcls_maker(params, tools);
 // FHiCL structs to fall back to bare NF+SP.
 local use_dnnroi = std.extVar('use_dnnroi');
 
-// FP32 best KD (6-ch) PDVD model.  Resolved via WIRECELL_PATH.
-local dnnroi_model = 'dnnroi/pdvd/pipe_distill_transformer_6ch.ts';
+// FP32 best KD (6-ch) PDVD model.  Resolved via WIRECELL_PATH, located in Hugging face.
+local dnnroi_model = 'dnn-roi/pdvd/20260615/pipe_distill_transformer_6ch.ts';
 local dnnroi_device = 'cpu';                  // 'cpu' or 'gpu'.  INT8 graph is CPU-only.
 local dnnroi_nchan = 6;                        // PDVD 6-ch deployment
 local dnnroi_concurrency = 1;
@@ -68,8 +68,8 @@ local l1sp_pd_planes = null;                   // null -> envelope default [0,1]
 local l1sp_pd_dump_path = '';
 local l1sp_pd_wf_dump_path = '';
 local l1sp_pd_dump_all_rois = false;
-// L1SP DNN tagger (mode 'dnn'||'hybrid').  Model resolved via WIRECELL_PATH.
-local l1sp_pd_dnn_model = 'l1sp/pdvd/l1sp_dnn_pdvd_v1.ts';
+// L1SP DNN tagger (mode 'dnn'||'hybrid').  Model resolved via WIRECELL_PATH, located in Hugging face.
+local l1sp_pd_dnn_model = 'l1sp/pdvd/20260615/l1sp_dnn_pdvd_v1.ts';
 local l1sp_pd_dnn_device = 'cpu';
 local l1sp_pd_dnn_concurrency = 1;
 local l1sp_pd_dnn_threshold = 0.5;             // single-threshold fallback
