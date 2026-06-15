@@ -28,6 +28,13 @@ function(anode, ts, prefix='dnnroi',
          output_scale=1.0,
          nticks=6000,
          tick_per_slice=4,
+         // The MobileNetV3-UNet has 4 down/up stages, so the time dimension
+         // *after* the tick_per_slice downsample must be divisible by 2^4=16.
+         // Therefore model_ticks must be a multiple of tick_per_slice*16.
+         // Padding only to tick_per_slice (the C++ default) leaves an odd
+         // post-downsample length and the decoder skip-connection torch.cat
+         // mismatches (e.g. "Expected size 263 but got size 264").
+         tick_pad_multiple=tick_per_slice * 16,
          nchunks=1,
          mask_thresh=0.2,
          nchan=6,
@@ -77,6 +84,7 @@ function(anode, ts, prefix='dnnroi',
       forward: wc.tn(ts),
       nticks: nticks,
       tick_per_slice: tick_per_slice,
+      tick_pad_multiple: tick_pad_multiple,
       nchunks: nchunks,
       debugfile: _dbg(dbg_suffix),
     },
