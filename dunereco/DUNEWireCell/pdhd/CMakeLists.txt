@@ -13,5 +13,5 @@ install_wp(LIST ${jsonbz2_file})
 # pdhd jsonnet refers to (dnnroi_model = 'dnnroi/pdhd/...',
 # l1sp_pd_dnn_model = 'l1sp/pdhd/...' in wcls-nf-sp-dnnroi.jsonnet).
 # Source files are kept flat in this dir; install_wp's SUBDIRNAME places them.
-install_wp(LIST pipe_distill_transformer_6ch.ts SUBDIRNAME dnnroi/pdhd)
-install_wp(LIST l1sp_dnn_pdhd_v1.ts SUBDIRNAME l1sp/pdhd)
+#install_wp(LIST pipe_distill_transformer_6ch.ts SUBDIRNAME dnnroi/pdhd)
+#install_wp(LIST l1sp_dnn_pdhd_v1.ts SUBDIRNAME l1sp/pdhd)
