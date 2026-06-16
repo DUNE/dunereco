@@ -345,6 +345,29 @@ local graph = g.pipeline([wcls_input.adc_digits, fanpipe, retagger, wcls_output.
 // SP frames, merges their gauss%d/wiener%d trace tags, and writes them
 // through wclsFrameSaver:tradspsaver.  Its open input ports are filled
 // by g.splice() below, one per broken OmnibusSigProc output edge.
+//
+// TagSelector is inserted before the FrameFanin so that only the
+// traditional SP tags gauss%d and wiener%d are allowed into the
+// tradsp save branch.  The OmnibusSigProc output carries 12 tagged
+// trace sets (loose_lf, mp2/mp3_roi, tight_lf, decon_charge, the ROI
+// debug sets, etc.); without this selector the full 28800-trace frame
+// per anode is buffered through the fanin, roughly doubling peak SP
+// memory (~8 GB).  Selecting just gauss%d/wiener%d at the tap drops the
+// tradsp branch to ~5 GB.
+local tradsp_preselect = [
+  g.pnode({
+    type: 'TagSelector',
+    name: 'tradsp_preselect%d' % n,
+    data: {
+      tags: [
+        'gauss%d' % n,
+        'wiener%d' % n,
+      ],
+    },
+  }, nin=1, nout=1)
+  for n in std.range(0, std.length(tools.anodes) - 1)
+];
+
 local ofanin = g.pnode({
   type: 'FrameFanin',
   name: 'tradsp_outfanin',
@@ -378,7 +401,31 @@ local outretagger = g.pnode({
 }, nin=1, nout=1);
 
 local osink = g.pnode({ type: 'DumpFrames', name: 'tradsp_outsink', data: {} }, nin=1, nout=0);
-local outgr = g.pipeline([ofanin, outretagger, wcls_output.tradsp_signals, osink]);
+
+// The out-subgraph now has one open input port per anode (each a
+// TagSelector) feeding the fanin, so it is assembled with g.intern
+// rather than g.pipeline.  g.splice() fills tradsp_preselect's input
+// ports from the broken OmnibusSigProc edges.
+local outgr = g.intern(
+  innodes=tradsp_preselect,
+  centernodes=[
+    ofanin,
+    outretagger,
+    wcls_output.tradsp_signals,
+    osink,
+  ],
+  edges=
+    [
+      g.edge(tradsp_preselect[n], ofanin, 0, n)
+      for n in std.range(0, std.length(tools.anodes) - 1)
+    ]
+    + [
+      g.edge(ofanin, outretagger),
+      g.edge(outretagger, wcls_output.tradsp_signals),
+      g.edge(wcls_output.tradsp_signals, osink),
+    ],
+  name='tradsp_outgr'
+);
 
 // Break every OmnibusSigProc output edge (the raw pre-DNN SP frame) and
 // insert a 2-way fanout: one branch continues into the existing DNN-ROI
