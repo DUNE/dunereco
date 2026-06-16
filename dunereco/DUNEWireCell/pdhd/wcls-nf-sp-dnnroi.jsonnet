@@ -26,6 +26,14 @@ local epoch = std.extVar('epoch');  // eg "dynamic", "after", "before", "perfect
 local reality = std.extVar('reality');
 local sigoutform = std.extVar('signal_output_form');  // eg "sparse" or "dense"
 
+// When true, ALSO save the traditional SP output (gauss/wiener) taken
+// BEFORE DNN-ROI, in addition to the post-DNN result.  This is done by
+// splicing a 2-way fanout onto every OmnibusSigProc output edge: one
+// branch continues into the DNN-ROI / L1SP chain (unchanged), the other
+// is fanned-in, retagged and written by wclsFrameSaver:tradspsaver.
+// The matching 'tradspsaver' name must appear in the FHiCL 'outputers'.
+local save_tradsp = true;
+
 
 local wc = import 'wirecell.jsonnet';
 local g = import 'pgraph.jsonnet';
@@ -75,6 +83,7 @@ local l1sp_pd_dump_path = '';
 local l1sp_pd_wf_dump_path = '';
 local l1sp_pd_dump_all_rois = false;
 // L1SP DNN tagger (mode 'dnn'||'hybrid').  Model resolved via WIRECELL_PATH; located in Hugging face.
+// local l1sp_pd_dnn_model = 'l1sp/pdhd/l1sp_dnn_pdhd_v1.ts';
 local l1sp_pd_dnn_model = 'l1sp/pdhd/20260615/l1sp_dnn_pdhd_v1.ts';
 local l1sp_pd_dnn_device = 'cpu';
 local l1sp_pd_dnn_concurrency = 1;
@@ -152,6 +161,26 @@ local wcls_output = {
       anode: wc.tn(mega_anode),
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
+      frame_scale: [0.001, 0.001],
+      chanmaskmaps: [],
+      nticks: -1,
+    },
+  }, nin=1, nout=1, uses=[mega_anode]),
+
+  // Traditional SP output (gauss/wiener) tapped BEFORE DNN-ROI.  Only
+  // wired into the graph when save_tradsp=true (see the splice below).
+  // Mirrors sp_signals but writes a distinct art product so the
+  // pre-DNN and post-DNN SP can be compared event-by-event.
+  tradsp_signals: g.pnode({
+    type: 'wclsFrameSaver',
+    name: 'tradspsaver',
+    data: {
+      anode: wc.tn(mega_anode),
+      digitize: false,  // true means save as RawDigit, else recob::Wire
+      // Use distinct instance names so they don't collide with the
+      // post-DNN spsaver's gauss/wiener art products.
+      // No underscores — art rejects them in product instance names.
+      frame_tags: ['tradspgauss', 'tradspwiener'],
       frame_scale: [0.001, 0.001],
       chanmaskmaps: [],
       nticks: -1,
@@ -306,14 +335,68 @@ local retagger = g.pnode({
 
 local sink = g.pnode({ type: 'DumpFrames' }, nin=1, nout=0);
 
+// Main graph: NF + SP + DNN-ROI (+L1SP) per anode, fanned in, retagged
+// (gauss%d->gauss, wiener%d->wiener) and saved as the POST-DNN result.
 local graph = g.pipeline([wcls_input.adc_digits, fanpipe, retagger, wcls_output.sp_signals, sink]);
+
+// ── Optional second output: traditional SP taken BEFORE DNN-ROI ──────
+//
+// An incomplete sink-like subgraph that fans in the per-anode pre-DNN
+// SP frames, merges their gauss%d/wiener%d trace tags, and writes them
+// through wclsFrameSaver:tradspsaver.  Its open input ports are filled
+// by g.splice() below, one per broken OmnibusSigProc output edge.
+local ofanin = g.pnode({
+  type: 'FrameFanin',
+  name: 'tradsp_outfanin',
+  data: {
+    multiplicity: std.length(tools.anodes),
+    tag_rules: [
+      {
+        frame: { '.*': 'tradsp_outfanin' },
+        trace: {
+          ['gauss%d' % n]: ['gauss%d' % n],
+          ['wiener%d' % n]: ['wiener%d' % n],
+        },
+      }
+      for n in std.range(0, std.length(tools.anodes) - 1)
+    ],
+  },
+}, nin=std.length(tools.anodes), nout=1);
+
+local outretagger = g.pnode({
+  type: 'Retagger',
+  name: 'tradsp_spout',
+  data: {
+    tag_rules: [{
+      frame: { '.*': 'tradsp_spretagger' },
+      merge: {
+        'gauss\\d': 'tradspgauss',
+        'wiener\\d': 'tradspwiener',
+      },
+    }],
+  },
+}, nin=1, nout=1);
+
+local osink = g.pnode({ type: 'DumpFrames', name: 'tradsp_outsink', data: {} }, nin=1, nout=0);
+local outgr = g.pipeline([ofanin, outretagger, wcls_output.tradsp_signals, osink]);
+
+// Break every OmnibusSigProc output edge (the raw pre-DNN SP frame) and
+// insert a 2-way fanout: one branch continues into the existing DNN-ROI
+// / L1SP chain, the other feeds the tradsp save subgraph above.
+local edge_selector(e) = std.startsWith(e.tail.node, 'OmnibusSigProc:');
+local fanout_factory(n, e) = { type: 'FrameFanout', name: 'tradsp_splice%d' % n, data: { multiplicity: 2 } };
+
+local spliced_graph =
+  if save_tradsp
+  then g.splice(graph, outgr, edge_selector, fanout_factory)
+  else graph;
 
 local app = {
   type: 'Pgrapher',
   data: {
-    edges: g.edges(graph),
+    edges: g.edges(spliced_graph),
   },
 };
 
 // Finally, the configuration sequence
-g.uses(graph) + [app]
+g.uses(spliced_graph) + [app]

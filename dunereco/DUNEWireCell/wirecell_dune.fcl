@@ -167,7 +167,9 @@ protodunehd_nfsp_dnnroi:
         loglevels: ["debug", "pgraph:info"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellLarsoft","WireCellPytorch"]
         inputers: ["wclsRawFrameSource"]
-        outputers: ["wclsFrameSaver:spsaver"]
+        # spsaver = SP after DNN-ROI; tradspsaver = traditional SP before
+        # DNN-ROI (save_tradsp=true in the jsonnet wires the second saver).
+        outputers: ["wclsFrameSaver:spsaver", "wclsFrameSaver:tradspsaver"]
         configs: ["pgrapher/experiment/pdhd/wcls-nf-sp-dnnroi.jsonnet"]
         params : {
             raw_input_label: "tpcrawdecoder:daq"
