@@ -59,7 +59,7 @@ local use_dnnroi = std.extVar('use_dnnroi');
 
 // FP32 best KD (6-ch) PDHD model.  Resolved via WIRECELL_PATH, located in Hugging face.
 // local dnnroi_model = 'dnnroi/pdhd/pipe_distill_transformer_6ch.ts';
-local dnnroi_model = 'dnn-roi/pdhd/20260615/pipe_distill_transformer_6ch.ts';
+local dnnroi_model = '/cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/WireCell/dune/dnn-roi/pdhd/20260615/pipe_distill_transformer_6ch.ts';
 local dnnroi_device = 'cpu';                   // 'cpu' or 'gpu'.  INT8 graph is CPU-only.
 local dnnroi_nchan = 6;                        // 6 = production KD/QAT models
 local dnnroi_concurrency = 1;
@@ -84,7 +84,7 @@ local l1sp_pd_wf_dump_path = '';
 local l1sp_pd_dump_all_rois = false;
 // L1SP DNN tagger (mode 'dnn'||'hybrid').  Model resolved via WIRECELL_PATH; located in Hugging face.
 // local l1sp_pd_dnn_model = 'l1sp/pdhd/l1sp_dnn_pdhd_v1.ts';
-local l1sp_pd_dnn_model = 'l1sp/pdhd/20260615/l1sp_dnn_pdhd_v1.ts';
+local l1sp_pd_dnn_model = '/cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/WireCell/dune/l1sp/pdhd/20260615/l1sp_dnn_pdhd_v1.ts';
 local l1sp_pd_dnn_device = 'cpu';
 local l1sp_pd_dnn_concurrency = 1;
 local l1sp_pd_dnn_threshold = 0.5;
