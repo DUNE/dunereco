@@ -14,6 +14,7 @@ art_make( BASENAME_ONLY
         # ART Core
         art::Framework_Core
         art::Framework_Principal
+        art::Framework_Services_Registry
         art::Persistency_Common
         art::Persistency_Provenance
 
@@ -25,6 +26,7 @@ art_make( BASENAME_ONLY
         ROOT::Graf
         ROOT::Graf3d
         ROOT::MathCore
+        canvas::canvas
 
 
         # FHICL
