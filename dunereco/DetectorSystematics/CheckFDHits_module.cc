@@ -54,12 +54,11 @@ public:
   void reset();
 
 private:
-  //const geo::GeometryCore* fGeom;
   const geo::Geometry* fGeom;
   unsigned int fTPCIndex;
   unsigned int fPlaneIndex;
-  std::vector<unsigned int> fChsLocal;
-  std::vector<unsigned int> fChsGlobal;
+  //std::vector<unsigned int> fChsLocal;
+  //std::vector<unsigned int> fChsGlobal;
 
   std::string fSCLabel;
   std::string fWireLabel;
@@ -80,7 +79,7 @@ CheckFDHits::CheckFDHits(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
     fTPCIndex   (p.get<unsigned int> ("TPCIndex")),
     fPlaneIndex (p.get<unsigned int> ("PlaneIndex")),
-    fChsLocal   (p.get<std::vector<unsigned int>> ("ChannelsLocal")),
+    //fChsLocal   (p.get<std::vector<unsigned int>> ("ChannelsLocal")),
     fSCLabel    (p.get<std::string>  ("SCLabel")),
     fWireLabel  (p.get<std::string>  ("WireLabel")),
     fHitLabel   (p.get<std::string>  ("HitLabel"))
@@ -114,9 +113,10 @@ void CheckFDHits::analyze(art::Event const& e)
 
   for (sim::SimChannel simCh : *simChs) {
     raw::ChannelID_t ch = simCh.Channel();
-    if (std::find(fChsGlobal.begin(), fChsGlobal.end(), ch) == fChsGlobal.end()) {
+    /*if (std::find(fChsGlobal.begin(), fChsGlobal.end(), ch) == fChsGlobal.end()) {
       continue;
-    }
+    }*/
+    if (simCh.TDCIDEMap().empty()) continue;
     std::vector<double> respVec(6000, 0.0); // Might be 4492 for VD, not sure
     for (sim::TDCIDE tickIde : simCh.TDCIDEMap()) {
       int tick = (int)tickIde.first;
@@ -124,7 +124,6 @@ void CheckFDHits::analyze(art::Event const& e)
         respVec[tick] += (double)ide.energy;
       }
     }
-    //fChTypes[(int)ch] = fGeom->SignalType(ch);
     bool isCollection = (fPlaneIndex == 2);
     fChTypes[(int)ch] = isCollection ? 1 : 0;
     fSC.push_back(respVec);
@@ -132,9 +131,17 @@ void CheckFDHits::analyze(art::Event const& e)
   }
   for (recob::Wire wire : *wires) {
     raw::ChannelID_t ch = wire.Channel();
-    if (std::find(fChsGlobal.begin(), fChsGlobal.end(), ch) == fChsGlobal.end()) {
+    /*if (std::find(fChsGlobal.begin(), fChsGlobal.end(), ch) == fChsGlobal.end()) {
       continue;
+    }*/
+    bool hasSignal = false;
+    for (float s : wire.Signal()) {
+      if (s != 0.0f) {
+        hasSignal = true;
+        break;
+      }
     }
+    if (!hasSignal) continue;
     std::vector<double> respVec(6000, 0.0); // Might be 4492 for VD, not sure
     int tick = 0;
     for (float mag : wire.Signal()) {
@@ -143,7 +150,6 @@ void CheckFDHits::analyze(art::Event const& e)
       }
       tick++;
     }
-    //fChTypes[(int)ch] = fGeom->SignalType(ch);
     
     bool isCollection = (fPlaneIndex == 2);
     fChTypes[(int)ch] = isCollection ? 1 : 0;
@@ -152,13 +158,16 @@ void CheckFDHits::analyze(art::Event const& e)
   }
 
   std::map<unsigned int, std::vector<double>> hitResps;
-  for (unsigned int ch : fChsGlobal) {
+  /*for (unsigned int ch : fChsGlobal) {
     hitResps[ch] = std::vector<double>(6000, 0.0);
-  }
+  }*/
   for (recob::Hit hit : *hits) {
     raw::ChannelID_t ch = hit.Channel();
-    if (std::find(fChsGlobal.begin(), fChsGlobal.end(), ch) == fChsGlobal.end()) {
+    /*if (std::find(fChsGlobal.begin(), fChsGlobal.end(), ch) == fChsGlobal.end()) {
       continue;
+    }*/
+    if (hitResps.find(ch) == hitResps.end()) {
+      hitResps[ch] = std::vector<double>(6000,0.0);
     }
     for (int tick = hit.StartTick(); tick <= hit.EndTick(); tick++) {
       hitResps[ch][tick] += hit.PeakAmplitude();
@@ -177,22 +186,18 @@ void CheckFDHits::analyze(art::Event const& e)
 
 void CheckFDHits::beginJob()
 {
-  //fGeom = art::ServiceHandle<geo::Geometry>()->provider();
   fGeom = art::ServiceHandle<geo::Geometry>().get();
   const geo::CryostatID cID(0);
   const geo::TPCID tID(cID, fTPCIndex);
   const geo::PlaneID pID(tID, fPlaneIndex);
-  //const readout::ROPID rID = fGeom->WirePlaneToROP(pID);
   std::cout << "TPC " << fTPCIndex
             << " Plane " << fPlaneIndex << " ("
-            //<< (fGeom->SignalType(pID) == geo::SigType_t::kCollection ? "collection" : "induction")
-            //<< ") First Channel in ROP " << fGeom->FirstChannelInROP(rID)
             << "\nChannels:\n";
-  for (unsigned int chLocal : fChsLocal) { 
+  /*for (unsigned int chLocal : fChsLocal) { 
     unsigned int chGlobal = chLocal; //+ fGeom->FirstChannelInROP(rID);
     fChsGlobal.push_back(chGlobal);
     std::cout << chLocal << " -> " << chGlobal << "\n";
-  }
+  }*/
 }
 
 void CheckFDHits::endJob()
