@@ -223,6 +223,24 @@ local wcls_simchannel_sink = g.pnode({
   },
 }, nin=1, nout=1, uses=tools.anodes);
 
+local wcls_depoflux_writer = g.pnode({
+  type: 'wclsDepoFluxWriter',
+  name: 'postdrift',
+  data: {
+    anodes: [wc.tn(anode) for anode in tools.anodes],
+    field_response: wc.tn(tools.field),
+    tick: 0.5 * wc.us,
+    window_start: 0.0 * wc.ms,
+    window_duration: self.tick * 6000,
+    nsigma: 3.0,
+    reference_time: fcl_params.G4RefTime,
+    energy: 1,
+    simchan_label: 'simpleSC',
+    sed_label: 'IonAndScint',
+    sparse: false,
+  },
+}, nin=1, nout=1, uses=tools.anodes + [tools.field]);
+
 local magoutput = 'mag.root';
 local magnify = import 'pgrapher/experiment/dune-vd/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
@@ -418,7 +436,7 @@ local fanout_factory(n,e) = { type:'FrameFanout', name:"splice%d"%n, data:{multi
 
 
 
-local main_graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, bi_manifold, retagger, wcls_output.sp_signals, sink]);
+local main_graph = g.pipeline([wcls_input.depos, drifter, wcls_depoflux_writer, bagger, bi_manifold, retagger, wcls_output.sp_signals, sink]);
 // local graph = g.pipeline([wcls_input.deposet, setdrifter, wcls_simchannel_sink, bi_manifold, retagger, wcls_output.sp_signals, sink]);
 
 local graph = g.splice(main_graph, osimsaver, edge_selector, fanout_factory);
