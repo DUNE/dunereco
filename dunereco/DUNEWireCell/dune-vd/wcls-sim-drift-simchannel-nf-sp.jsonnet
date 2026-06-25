@@ -58,6 +58,7 @@ then tools_all {anodes: [tools_all.anodes[n] for n in [fcl_params.process_tpc_in
 else if fcl_params.process_mode == "full"
      || fcl_params.process_mode == "full-sim-sp"
      || fcl_params.process_mode == "1x8x14"
+     || fcl_params.process_mode == "1x8x6"
 then tools_all
 else error "unsupported process_mode: " + fcl_params.process_mode;
 
