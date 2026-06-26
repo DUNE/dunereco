@@ -3,8 +3,8 @@
 
 # Reusable outputer (wclsFrameSaver) lists per detector/config. The list used
 # by an nfsp block MUST match its jsonnet process_mode (see each file's header).
-#include "dune-vd/wirecell_dune-vd.fcl"
-#include "dune10kt-vd/wirecell_dune10kt-vd.fcl"
+#include "wirecell_dune-vd.fcl"
+#include "wirecell_dune10kt-vd.fcl"
 
 BEGIN_PROLOG
 
