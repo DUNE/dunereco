@@ -51,11 +51,11 @@ nfsp block with a matching `process_mode`.
 New files — reusable, per-detector WireCell fcl fragments holding the outputer
 (wclsFrameSaver) lists:
 
-* `dunereco/DUNEWireCell/dune-vd/wirecell_dune-vd.fcl`
+* `dunereco/DUNEWireCell/wirecell_dune-vd.fcl`
   * `dunevd_nfsp_outputers_nodigits`     — `postdrift`, `spsignals`
   * `dunevd_nfsp_outputers_singledigits` — + `simdigits`
   * `dunevd_nfsp_outputers_multidigits`  — + `simdigits0 .. simdigits111` (1x8x14)
-* `dunereco/DUNEWireCell/dune10kt-vd/wirecell_dune10kt-vd.fcl`
+* `dunereco/DUNEWireCell/wirecell_dune10kt-vd.fcl`
   * `dune10ktvd_nfsp_outputers_nodigits`     — `postdrift`, `spsignals`
   * `dune10ktvd_nfsp_outputers_singledigits` — + `simdigits`
   * (dune10kt-vd jsonnet defines no per-CRM saver, so no `multidigits`)
@@ -70,7 +70,7 @@ Mapping (outputers list ⇔ jsonnet `process_mode`):
 
 `dunereco/DUNEWireCell/wirecell_dune.fcl`:
 
-* `#include "dune-vd/wirecell_dune-vd.fcl"` and `#include "dune10kt-vd/wirecell_dune10kt-vd.fcl"`.
+* `#include "wirecell_dune-vd.fcl"` and `#include "wirecell_dune10kt-vd.fcl"`.
 * Base `dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp` → `outputers =
   @local::dunevd_nfsp_outputers_nodigits`, `process_mode = "full"`. This makes
   the standard `_30deg_sim_nfsp` block (inherits) and the `1x8x6` block
@@ -166,15 +166,18 @@ against `duneopdet` / the PD geometry for these inputs.
 
 ### Status
 
-Changes are staged in the working tree only — **not committed or pushed**
-(pending review). Files touched:
+Files touched (on branch `single-apa`):
 
 * `dunereco/DUNEWireCell/wirecell_dune.fcl` (modified)
 * `dunereco/DUNEWireCell/dune-vd/wcls-sim-drift-simchannel-nf-sp.jsonnet` (modified)
-* `dunereco/DUNEWireCell/dune-vd/wirecell_dune-vd.fcl` (new)
-* `dunereco/DUNEWireCell/dune10kt-vd/wirecell_dune10kt-vd.fcl` (new)
+* `dunereco/DUNEWireCell/wirecell_dune-vd.fcl` (new)
+* `dunereco/DUNEWireCell/wirecell_dune10kt-vd.fcl` (new)
 
-Follow-up for production install (not needed for source-tree validation): ensure
-the new per-detector `wirecell_dune-vd.fcl` / `wirecell_dune10kt-vd.fcl` files are
-installed so `#include "dune-vd/wirecell_dune-vd.fcl"` resolves in an installed
-build (e.g. via the DUNEWireCell `install_fhicl()` rules / subdir CMake).
+Production install: the two new fragments live in the base `DUNEWireCell`
+directory (next to `wirecell_dune.fcl`), so the top-level `install_fhicl()` —
+which globs `[^.]*.fcl` in that directory and is non-recursive (no `SUBDIRS`) —
+installs them into the same `fcl/` product location. Hence
+`#include "wirecell_dune-vd.fcl"` resolves both from the source tree (validation)
+and from an installed UPS product. They were intentionally NOT left in the
+per-detector subfolders, whose `CMakeLists.txt` only `install_wp` jsonnet/json
+(no `.fcl`), so subfolder fcls never reach the product.
