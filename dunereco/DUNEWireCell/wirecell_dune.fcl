@@ -244,6 +244,42 @@ protodunehd_sp:
 protodunehd_sp_mc: @local::protodunehd_sp
 protodunehd_sp_mc.wcls_main.params.reality: "sim"
 
+# SP + DNN-ROI + L1SP-after-DNN (hybrid) for ProtoDUNE-HD, reading an
+# already noise-filtered + resampled RawDigit (the second half of the
+# wcls-nf-sp-dnnroi.jsonnet split: wcls-nf.jsonnet does resampler+NF, this
+# block does SP + DNN-ROI + L1SP).  DNN-ROI runs on CPU; L1SP-after-DNN
+# runs in 'hybrid' mode by default.  Requires WireCellPytorch.
+protodunehd_sp_dnn_l1sp:
+{
+    module_type : WireCellToolkit
+    wcls_main: {
+        tool_type: WCLS
+        apps: ["Pgrapher"]
+        logsinks: ["stdout"]
+        loglevels: ["debug", "pgraph:info"]
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellLarsoft","WireCellPytorch"]
+        inputers: ["wclsRawFrameSource"]
+        # spsaver = SP after DNN-ROI; tradspsaver = traditional SP before
+        # DNN-ROI (save_tradsp=true in the jsonnet wires the second saver).
+        outputers: ["wclsFrameSaver:spsaver", "wclsFrameSaver:tradspsaver"]
+        configs: ["pgrapher/experiment/pdhd/wcls-sp-dnn-l1sp.jsonnet"]
+        params : {
+            # NF stage's RawDigit ("raw" art instance), already resampled.
+            raw_input_label: "wclsdatahdfilter:raw"
+            reality: "data" # vs. "sim"
+            epoch: "after"
+            signal_output_form: "dense" # DNN-ROI / L1SP want dense (1:1 ADC/signal)
+        }
+        structs: {
+            Nbit: @local::Nbit_standard
+            elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database or such, value changed in mid-July 2024
+            use_dnnroi: true
+        }
+    }
+}
+protodunehd_sp_dnn_l1sp_mc: @local::protodunehd_sp_dnn_l1sp
+protodunehd_sp_dnn_l1sp_mc.wcls_main.params.reality: "sim"
+
 protodunehd_dnnsp:
 {
     module_type : WireCellToolkit
