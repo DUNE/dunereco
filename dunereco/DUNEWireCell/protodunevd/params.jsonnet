@@ -104,7 +104,7 @@ base {
     },
 
     daq: super.daq {
-        nticks: 10000,
+        nticks: 6000,
     },
 
     // Real data frames are 8000 ticks after the 512->500 ns Resampler
@@ -177,7 +177,7 @@ base {
     },
 
     files: {
-        wires: "protodunevd-wires-larsoft-v3.json.bz2",
+        wires: "protodunevd-wires-larsoft-v5.json.bz2",
         strip_length: "PDVD_strip_length.json.bz2",
 
         fields: [
