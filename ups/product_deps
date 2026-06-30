@@ -182,7 +182,7 @@ product          version
 cetmodules       v3_27_04   -   only_for_build
 dunecore         v10_21_00d00
 duneprototypes   v10_21_00d00
-larcv2           v2_2_6
+larcv2           v2_4_1
 end_product_list
 
 
