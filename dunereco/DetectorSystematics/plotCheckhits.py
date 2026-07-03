@@ -28,12 +28,13 @@ def main(args):
                 if sum(wire_resp) > args.wires_mag_thres:
                     wires[event.wires_chs[i_resp]] = wire_resp
                     ch_types[event.wires_chs[i_resp]] = event.ch_types[event.wires_chs[i_resp]]
-                    valid_chs.add(event.wires_chs[i_resp])
+                    #valid_chs.add(event.wires_chs[i_resp])
 
         if args.simchannels:
             for i_resp, sc_resp in enumerate(event.simchannels):
                 sc_resp = list(sc_resp)
                 if sum(sc_resp) > args.simchannels_mag_thres:
+                    print("Got a simchannel above threshold with ", sum(sc_resp))
                     simchs[event.simchannels_chs[i_resp]] = sc_resp
                     ch_types[event.simchannels_chs[i_resp]] = (
                         event.ch_types[event.simchannels_chs[i_resp]]
@@ -46,7 +47,7 @@ def main(args):
                 if sum(hits_resp) > args.hits_mag_thres:
                     hits[event.hits_chs[i_resp]] = hits_resp
                     ch_types[event.hits_chs[i_resp]] = event.ch_types[event.hits_chs[i_resp]]
-                    valid_chs.add(event.hits_chs[i_resp])
+                    #valid_chs.add(event.hits_chs[i_resp])
 
         if args.digits:
             for i_resp, digit_resp in enumerate(event.digits):
@@ -94,7 +95,7 @@ def main(args):
                 ax2 = ax.twinx()
 
                 ax2.hist(
-                    ticks, bins=len(ticks), weights=simchs[ch],
+                    ticks, bins=len(ticks), weights=simchs.get(ch, np.zeros(6000)),
                     histtype="step", label="sim::SimChannels", color='g'
                 )
                 ax2.set_ylabel("energy")
