@@ -5,11 +5,12 @@ CheckFDHits:
   module_type: "CheckFDHits"
 
   SCLabel:   "tpcrawdecoder:simpleSC"
+  #WireLabel: "duneWiremod" 
   WireLabel: "tpcrawdecoder:gauss"
   HitLabel:  "gaushit"
 
   TPCIndex:      1
-  PlaneIndex:    0
+  PlaneIndex:    2
 }
 
 END_PROLOG
