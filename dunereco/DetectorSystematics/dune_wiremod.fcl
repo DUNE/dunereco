@@ -20,6 +20,8 @@ physics.producers.duneWiremod: {
   EDepShftLabel:       "IonAndScint"
   #EDepShftLabel:       "largeant:LArG4DetectorServicevolTPCActiveInner"
   #EDepShftLabel:       "largeant:LArG4DetectorServicevolTPCActiveInner1" #add 1 when using v10 of larsoft?
+  SimChannelLabel:     "tpcrawdecoder:simpleSC"
+  G4Label:             "largeant"
   # Use this for applying an offset or not.  Default is to not use an offset (the BNB).  Using an offset is for the NuMI systematics.
   ApplyAdditionalTickOffset: false
 
@@ -44,8 +46,8 @@ physics.producers.duneWiremod: {
   SaveChargeRatioPlot: false
   SaveEdepMatchingPlots: false
 
-  nNeighbourWires: 3 #Number of neighbour wires to consider for matching an edep to an ROI 
-  nTickTolerance: 100 #tolerance for a projected tick to be associated to a signal ROI
+  nNeighbourWires: 0 #Number of neighbour wires to consider for matching an edep to an ROI 
+  nTickTolerance: 0 #tolerance for a projected tick to be associated to a signal ROI
 }
 
 # --- NEW: clone gaushit and make it read Wiremod output ---

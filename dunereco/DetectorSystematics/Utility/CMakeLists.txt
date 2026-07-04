@@ -18,6 +18,7 @@ cet_make_library(
     lardataobj::Simulation
     nusimdata::SimulationBase
     larsim::Simulation
+    larevt::SpaceCharge
 
     # Utilities
     lardata::Utilities
