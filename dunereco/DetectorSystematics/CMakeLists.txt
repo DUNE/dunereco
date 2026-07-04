@@ -50,6 +50,7 @@ art_make( BASENAME_ONLY
         larcorealg::Geometry
         larcore::Geometry_Geometry_service
         nusimdata::SimulationBase     
+        larevt::SpaceCharge
 
         # Pandora Interface (as you already listed)
         larpandora::LArPandoraInterface
