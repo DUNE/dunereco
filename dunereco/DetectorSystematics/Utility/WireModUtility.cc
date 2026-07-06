@@ -1008,9 +1008,6 @@ void sys::WireModUtility::FillROIMatchedIDEMap(std::vector<sim::SimChannel> cons
           }
         }
       }
-      if (isMatched != oldMatched){
-        std::cout<<"Matching changed from "<<oldMatched<<" to "<<isMatched<<std::endl;
-      }
       if (!isMatched) continue;
       ROI_Key_t roi_key = std::make_pair(target_wire.Channel(), range_number);
       isCHmatched=true;
