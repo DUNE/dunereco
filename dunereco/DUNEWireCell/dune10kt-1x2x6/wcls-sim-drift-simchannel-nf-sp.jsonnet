@@ -180,7 +180,8 @@ local sp_override = if fcl_params.use_dnnroi then
     m_save_negative_charge: false,
     use_multi_plane_protection: true,
     mp_tick_resolution: 10,
-    tight_lf_tag: "",
+    // NB: tight_lf%d and decon_charge%d must NOT be blanked — they are
+    // inputs of the 6-channel DNN-ROI model (see dnnroi_pp.jsonnet).
     cleanup_roi_tag: "",
     break_roi_loop1_tag: "",
     break_roi_loop2_tag: "",
@@ -198,16 +199,30 @@ else
 local sp = sp_maker(params, tools, sp_override);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
-local dnnroi = import 'pgrapher/experiment/dune-vd/dnnroi.jsonnet';
+// ── DNN-ROI configuration (protodune style: explicit parameters) ────
+// FD-HD uses the ProtoDUNE-HD 6-channel model (same APA anode design).
+// FP32 best KD (6-ch) PDHD model.  Also resolvable via WIRECELL_PATH as
+// 'dnnroi/pdhd/pipe_distill_transformer_6ch.ts'; located in Hugging Face.
+local dnnroi_model = '/cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/WireCell/dune/dnn-roi/pdhd/20260615/pipe_distill_transformer_6ch.ts';
+local dnnroi_device = 'cpu';                   // 'cpu' or 'gpu'
+local dnnroi_nchan = 6;                        // 6 = production KD/QAT models
+local dnnroi_concurrency = 1;
+local dnnroi_nticks = 6000;
+local dnnroi_tick_per_slice = 4;               // training rebin=4
+local dnnroi_output_scale = 1.0;               // 6-ch .ts bakes normalization; no ad-hoc scale
+local dnnroi_mask_thresh = 0.2;
+
+// Per-anode per-plane 6-channel DNN-ROI subgraph (protodune style).
+local dnnroi = import 'pgrapher/experiment/dune10kt-1x2x6/dnnroi_pp.jsonnet';
 local ts =
 if fcl_params.inference_service == "TorchService" then
 {
     type: "TorchService",
     name: "dnnroi",
     data: {
-        model: fcl_params.dnn_model,
-        device: "cpu",
-        concurrency: 1,
+        model: dnnroi_model,
+        device: dnnroi_device,
+        concurrency: dnnroi_concurrency,
     },
 }
 else if fcl_params.inference_service == "TritonService" then
@@ -256,10 +271,18 @@ local wcls_depoflux_writer = g.pnode({
     window_duration: self.tick * 6000,
     nsigma: 3.0,
     reference_time: fcl_params.G4RefTime,
-    energy: 0,
+    energy: 0, // energy: 0 means use the true depo energy (equivalent to SimChannelSink use_energy=true)
     simchan_label: 'simpleSC',
     sed_label: 'IonAndScint',
     sparse: false,
+    // Smear the truth SimChannel to reco (SP) resolution so the 2D truth labels
+    // register onto the deconvolved reco charge (added in quadrature to the
+    // post-drift depo diffusion). Values = dune10kt-1x2x6 SP-filter recipe
+    // (sp-filters.jsonnet):
+    //   smear_long [ticks] = sigma_t/tick, sigma_t = 1/(2*pi*0.12MHz) = 1.326us
+    //   smear_tran [pitch] = 1/(2*sqrt(pi)*k): Wire_ind k=0.75 (U,V); Wire_col k=3.0 (W)
+    smear_long: 2.6526,
+    smear_tran: [0.37612, 0.37612, 0.09403],
   },
 }, nin=1, nout=1, uses=tools.anodes + [tools.field]);
 
@@ -278,9 +301,12 @@ local multipass = [
                dnnroi(
                 tools.anodes[n],
                 ts,
-                output_scale=1.0,
+                nticks=dnnroi_nticks,
+                tick_per_slice=dnnroi_tick_per_slice,
+                output_scale=dnnroi_output_scale,
+                mask_thresh=dnnroi_mask_thresh,
                 nchunks=fcl_params.nchunks,
-                sparcify=fcl_params.dnn_output_sparcify,),
+                nchan=dnnroi_nchan),
                 // sinks.dnnroi_pipe[n],
              ] else [],
              'multipass%d' % n)
