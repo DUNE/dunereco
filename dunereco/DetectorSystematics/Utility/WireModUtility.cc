@@ -955,13 +955,14 @@ void sys::WireModUtility::ModifyROI(std::vector<float> & roi_data,
 void sys::WireModUtility::FillROIMatchedIDEMap(std::vector<sim::SimChannel> const& simchVec, std::vector<recob::Wire> const& wireVec, detinfo::DetectorClocksData const& clockData, double offset)
 {
 
-  std::cout<<"In FillROIMatchedIDEMap"<<std::endl;
   ROIMatchedIDEMap.clear();
   fIDEVec.clear();
   std::unordered_map<unsigned int, unsigned int> wireChannelMap;
   for (size_t i_w = 0; i_w < wireVec.size(); ++i_w)
     wireChannelMap[wireVec[i_w].Channel()] = i_w;
-
+  
+  int nSimCH_matched = 0;
+  bool isCHmatched = false;
   for (auto const& simch : simchVec)
   {
     raw::ChannelID_t channel = simch.Channel();
@@ -984,21 +985,44 @@ void sys::WireModUtility::FillROIMatchedIDEMap(std::vector<sim::SimChannel> cons
 
       if (not target_wire.SignalROI().is_valid()  ||
           target_wire.SignalROI().empty()         ||
-          target_wire.SignalROI().n_ranges() == 0 ||
-          target_wire.SignalROI().size() <= sample ||
-          target_wire.SignalROI().is_void(sample)  )
+          target_wire.SignalROI().n_ranges() == 0 )
         continue;
-
-      auto range_number = target_wire.SignalROI().find_range_iterator(sample) - target_wire.SignalROI().begin_range();
+      
+      bool isMatched = false;
+      size_t range_number = 0;
+      for (int dt = 0; dt<nTickTolerance+1; dt++){
+        int t = static_cast<int>(sample)-dt;
+        if (t>=0){
+          if (target_wire.SignalROI().size() > static_cast<size_t>(t) && !target_wire.SignalROI().is_void(t)) isMatched = true;
+        }
+        if (isMatched){
+          range_number = target_wire.SignalROI().find_range_iterator(t) - target_wire.SignalROI().begin_range();
+          break;
+        }
+        else{
+          t = static_cast<int>(sample)+dt;
+          if (target_wire.SignalROI().size() > static_cast<size_t>(t) && !target_wire.SignalROI().is_void(t)){
+            range_number = target_wire.SignalROI().find_range_iterator(t) - target_wire.SignalROI().begin_range();
+            isMatched = true;
+            break;
+          }
+        }
+      }
+      if (isMatched != oldMatched){
+        std::cout<<"Matching changed from "<<oldMatched<<" to "<<isMatched<<std::endl;
+      }
+      if (!isMatched) continue;
       ROI_Key_t roi_key = std::make_pair(target_wire.Channel(), range_number);
-
+      isCHmatched=true;
       for (sim::IDE const& ide : tdcide.second)
       {
         fIDEVec.push_back( MatchedIDE_t{channel, wireID, tick, &ide} );
         ROIMatchedIDEMap[roi_key].push_back(fIDEVec.size() - 1);
       }
     }
+    if (isCHmatched) nSimCH_matched++;
   }
+  std::cout<<nSimCH_matched<<" matched simulated channels out of "<<simchVec.size()<<", efficiency: "<<nSimCH_matched/(simchVec.size()*1.0)<<std::endl;
 }
 
 
