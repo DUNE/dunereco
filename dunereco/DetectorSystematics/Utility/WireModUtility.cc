@@ -960,7 +960,12 @@ void sys::WireModUtility::FillROIMatchedIDEMap(std::vector<sim::SimChannel> cons
   std::unordered_map<unsigned int, unsigned int> wireChannelMap;
   for (size_t i_w = 0; i_w < wireVec.size(); ++i_w)
     wireChannelMap[wireVec[i_w].Channel()] = i_w;
-  
+ 
+  if (SaveEdepMatchingPlots){
+    hMatchedE = new TH1F("hMatchedE","Simulated Energy Deposits Energy; Energy [MeV]; Counts/(# sim edep)", 50, 0, 1);
+    hUnMatchedE = new TH1F("hUnMatchedE","Simulated Energy Deposits Energy; Energy [MeV]; Counts/(# sim edep)", 50, 0, 1);
+  }
+ 
   int nSimCH_matched = 0;
   bool isCHmatched = false;
   for (auto const& simch : simchVec)
@@ -1008,20 +1013,47 @@ void sys::WireModUtility::FillROIMatchedIDEMap(std::vector<sim::SimChannel> cons
           }
         }
       }
-      if (!isMatched) continue;
-      ROI_Key_t roi_key = std::make_pair(target_wire.Channel(), range_number);
-      isCHmatched=true;
-      for (sim::IDE const& ide : tdcide.second)
-      {
-        fIDEVec.push_back( MatchedIDE_t{channel, wireID, tick, &ide} );
-        ROIMatchedIDEMap[roi_key].push_back(fIDEVec.size() - 1);
+      if (isMatched){
+        ROI_Key_t roi_key = std::make_pair(target_wire.Channel(), range_number);
+        isCHmatched=true;
+        for (sim::IDE const& ide : tdcide.second)
+        {
+          fIDEVec.push_back( MatchedIDE_t{channel, wireID, tick, &ide} );
+          ROIMatchedIDEMap[roi_key].push_back(fIDEVec.size() - 1);
+          if (SaveEdepMatchingPlots) hMatchedE->Fill(ide.energy);
+        }
+      }
+      else if (SaveEdepMatchingPlots){
+        for (sim::IDE const& ide : tdcide.second)
+        {
+          hUnMatchedE->Fill(ide.energy);
+        }  
       }
     }
     if (isCHmatched) nSimCH_matched++;
   }
   std::cout<<nSimCH_matched<<" matched simulated channels out of "<<simchVec.size()<<", efficiency: "<<nSimCH_matched/(simchVec.size()*1.0)<<std::endl;
-}
+  if (SaveEdepMatchingPlots){
+    TCanvas* c1 = new TCanvas("c1","Edep XZ Display",800,600);
 
+    c1->SetGridy();
+    TLegend *leg = new TLegend(0.6, 0.7, 0.85, 0.85);
+    leg->AddEntry(hMatchedE, "Matched");
+    leg->AddEntry(hUnMatchedE, "Not matched");
+
+    hMatchedE->SetLineColor(kBlue);
+    hMatchedE->SetLineWidth(3);
+    hUnMatchedE->SetLineColor(kRed);
+    hUnMatchedE->SetLineWidth(3);
+
+    hMatchedE->Draw("HIST");
+    hUnMatchedE->Draw("HISTsame");
+    leg->Draw("same");
+
+    c1->SaveAs("Edep_matching_plots.pdf");
+    delete c1;
+  }
+}
 
 //--- MatchIDEsToSubROIs ---
 std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sys::WireModUtility::MatchedIDE_t*>>
