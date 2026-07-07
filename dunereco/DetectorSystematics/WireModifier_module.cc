@@ -417,6 +417,16 @@ namespace wiremod
         //if(it_map==wmUtil.ROIMatchedEdepMap.end()){
         auto it_map = wmUtil.ROIMatchedIDEMap.find(roi_key);
         if(it_map==wmUtil.ROIMatchedIDEMap.end()){
+          if (roi_properties.end-roi_properties.begin > 20){
+            std::cout<<"Unmatched ROI channel: "<<wire.Channel()<<" plane: "<<my_plane<<", view: "<<wire.View()<<", ROI index: "<<i_r<<", begin tick: "<<roi_properties.begin<<
+                     ", end tick: "<<roi_properties.end<<std::endl;
+          /*for (auto const& wid : wireIDs) {
+            std::cout << "WireID: Cryostat=" << wid.Cryostat
+                  << " TPC=" << wid.TPC
+                  << " Plane=" << wid.Plane
+                  << " Wire=" << wid.Wire
+                  << '\n';}*/
+          }
           new_rois     .add_range(range.begin_index(), modified_data);
           MF_LOG_DEBUG("WireModifier")
             //<< "    Could not find matching Edep. Skip";
