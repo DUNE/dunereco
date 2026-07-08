@@ -1102,7 +1102,8 @@ sys::WireModUtility::CalcPropertiesFromIDEs(std::vector<const sys::WireModUtilit
   props.tick_min = std::numeric_limits<float>::max();
   props.tick_max = std::numeric_limits<float>::lowest();
   props.dxdr = props.dydr = props.dzdr = 0.;
-  props.dedr = props.dqdr = 0.;
+  props.dedx = props.dedr = props.dqdr = 0.;
+  props.dT2 = 0;
   props.total_energy = 0.f;
   for (size_t i_p = 0; i_p < 3; ++i_p) { props.scales_avg[i_p].r_Q = 1.; props.scales_avg[i_p].r_sigma = 1.; }
   if (idePtrVec.empty()) return props;
@@ -1186,6 +1187,7 @@ sys::WireModUtility::CalcPropertiesFromIDEs(std::vector<const sys::WireModUtilit
         if (pitch > 0)
         {
           props.dedr = sumE  / pitch; // dE/dx [MeV/cm]
+          props.dedx = sumE  / pitch; // dE/dx [MeV/cm]
           props.dqdr = sumNe / pitch; // dQ/dx [electrons/cm]
         }
       }
