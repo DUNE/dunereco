@@ -34,12 +34,19 @@ def main(args):
             for i_resp, sc_resp in enumerate(event.simchannels):
                 sc_resp = list(sc_resp)
                 if sum(sc_resp) > args.simchannels_mag_thres:
-                    print("Got a simchannel above threshold with ", sum(sc_resp))
+                    #print("Got a simchannel above threshold with ", sum(sc_resp))
                     simchs[event.simchannels_chs[i_resp]] = sc_resp
                     ch_types[event.simchannels_chs[i_resp]] = (
                         event.ch_types[event.simchannels_chs[i_resp]]
                     )
                     valid_chs.add(event.simchannels_chs[i_resp])
+
+        if args.simchannel_number:
+            if args.simchannel_number in valid_chs:
+                valid_chs = {args.simchannel_number}
+            else:
+                print("Channel ",args.simchannel_number," is not in the list of valid channels")
+                valid_chs = set()
 
         if args.hits:
             for i_resp, hits_resp in enumerate(event.hits):
@@ -160,7 +167,7 @@ def parse_arguments():
     parser.add_argument("--ch_offset", type=int, default=0)
     parser.add_argument("--tpc_idx", type=int, default=-1)
     parser.add_argument("--plane_idx", type=int, default=-1)
-
+    parser.add_argument("--simchannel_number", type=int, default=None)
     return parser.parse_args()
 
 
