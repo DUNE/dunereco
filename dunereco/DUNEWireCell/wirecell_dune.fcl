@@ -380,7 +380,7 @@ wirecell_dunevd_coldbox_mc:
         lifetime: @local::vdcb_crp1_top_services.DetectorPropertiesService.Electronlifetime
         DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
         DT: @local::dunefd_largeantparameters.TransverseDiffusion
-        efield: @local::vdcb_crp1_top_services.DetectorPropertiesService.Efield[0] # kV/cm
+        efield: @local::vdcb_crp1_top_services.DetectorPropertiesService.PerPlaneEfield[0] # kV/cm
         temperature: @local::vdcb_services.DetectorPropertiesService.Temperature # K
 	}
     }
@@ -411,7 +411,7 @@ wirecell_dunevd_coldboxcrp2_mc:
         lifetime: @local::vdcb_crp2_services.DetectorPropertiesService.Electronlifetime
         DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
         DT: @local::dunefd_largeantparameters.TransverseDiffusion
-        efield: @local::vdcb_crp2_services.DetectorPropertiesService.Efield[0] # kV/cm
+        efield: @local::vdcb_crp2_services.DetectorPropertiesService.PerPlaneEfield[0] # kV/cm
         temperature: @local::vdcb_services.DetectorPropertiesService.Temperature # K
 	}
     }
@@ -441,7 +441,7 @@ wirecell_dunevd_coldboxcrp4_mc:
         lifetime: @local::vdcb_crp4_services.DetectorPropertiesService.Electronlifetime
         DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
         DT: @local::dunefd_largeantparameters.TransverseDiffusion
-        efield: @local::vdcb_crp4_services.DetectorPropertiesService.Efield[0] # kV/cm
+        efield: @local::vdcb_crp4_services.DetectorPropertiesService.PerPlaneEfield[0] # kV/cm
         temperature: @local::vdcb_services.DetectorPropertiesService.Temperature # K
 	}
     }
@@ -476,7 +476,7 @@ wirecell_protodunevd_mc:
            lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
            DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
            DT: @local::dunefd_largeantparameters.TransverseDiffusion
-           efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
+           efield: @local::protodunevd_services.DetectorPropertiesService.PerPlaneEfield[0] # kV/cm
            temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
 	}
     }
@@ -512,7 +512,7 @@ wirecell_protodunevd_mc_splusn:
         lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
         DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
         DT: @local::dunefd_largeantparameters.TransverseDiffusion
-        efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
+        efield: @local::protodunevd_services.DetectorPropertiesService.PerPlaneEfield[0] # kV/cm
         temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
 	}
     }
@@ -541,7 +541,7 @@ wirecell_protodunevd_sim_deposplat:
         lifetime: @local::protodunevd_services.DetectorPropertiesService.Electronlifetime
         DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
         DT: @local::dunefd_largeantparameters.TransverseDiffusion
-        efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
+        efield: @local::protodunevd_services.DetectorPropertiesService.PerPlaneEfield[0] # kV/cm
         temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
 	}
     }
