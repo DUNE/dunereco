@@ -28,7 +28,7 @@ def main(args):
                 if sum(wire_resp) > args.wires_mag_thres:
                     wires[event.wires_chs[i_resp]] = wire_resp
                     ch_types[event.wires_chs[i_resp]] = event.ch_types[event.wires_chs[i_resp]]
-                    #valid_chs.add(event.wires_chs[i_resp])
+                    valid_chs.add(event.wires_chs[i_resp])
 
         if args.simchannels:
             for i_resp, sc_resp in enumerate(event.simchannels):
