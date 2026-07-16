@@ -22,6 +22,9 @@ physics.producers.duneWiremod: {
   #EDepShftLabel:       "largeant:LArG4DetectorServicevolTPCActiveInner1" #add 1 when using v10 of larsoft?
   SimChannelLabel:     "tpcrawdecoder:simpleSC"
   G4Label:             "largeant"
+
+  useSimChannels: true #set to true to use simChannels and IDEs instead of edeps
+
   # Use this for applying an offset or not.  Default is to not use an offset (the BNB).  Using an offset is for the NuMI systematics.
   ApplyAdditionalTickOffset: false
 
