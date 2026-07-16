@@ -8,7 +8,7 @@ In the current implementation, the modification of the waveforms is meant to mim
  
 ## Running Wiremod
 
-The module can be run on simulated data containing recob:Wire, recob:Hits, original and shifted simulated energy deposits. The label of these objects must be correctly given in the fhicl file. 
+The module can be run on simulated data containing recob:Wire, recob:Hits, original and shifted simulated energy deposits as will as sim channels. The label of these objects must be correctly given in the fhicl file. 
 Wiremod can typically be run on the output of the detsim stage, by running the gaushit module beforehand.
 
 By default, no modification of the waveform is applied. To apply a modification, the fhicl file must set one of the Apply...Var boolean to true. Examples:
@@ -23,6 +23,37 @@ The varied value of the corresponding parameters must be set as well with the co
 
 To run wiremod, then just execute lar:
 ```lar -c wiremod.fcl -o output.root input.root```
+
+### Interesting options
+
+#### Edeps vs simChannels
+
+The modifification of the waveforms requires access to true information. In the default configurayion, this is done by matching the simulated energy deposits to the subROIs and using the properties of the edeps to estimate the truth properties associated to the ROI. 
+This matching requires a projection of the edeps positions in 3D space onto a TPC channel and can lead to ambiguities. 
+
+Another option is to use simChannels and IDEs. The ROIs are matched to the simChannels without ambiguity dur to 3D geometry projection and the IDEs properties are used to estimate ROIs properties.
+
+To use simchannels instead of edeps, set useSimChannels to true in the fcl file. 
+
+ 
+#### Looser matching
+
+The matching of edeps or IDEs to ROIs is quite strict. It requires strict projection of the simulated object inside the ROI (same channel and projected tick inside the ROI). 
+You can loosen this criteria using the nTickTolerance and nNeighbourWires options.
+
+nNeighbourWires: only useful when using edeps. It allows matching of edeps to wires neighbouring the one to chich the edep was projected. By setting it to > 0, you usually get 100% matching efficiency for ROIs leading an hit. Increasing it too much also increases the computing time, there is no need to set it larger than 2-3.
+
+nTickTolerance: can be used for both edeps and simChannels. It sets the maximum distance allowed between the simulated deposit projected tick and the ROI border. Increasing this number typically increases the matching of low charge ROIs. 
+
+NB: It is not clear yet what is causing the inefficiencies in matching ROIs to simulated object. Using these two options make things better but it is not sure that this is a correct solution yet. 
+
+#### Multiplicative vs Additive modification of ROI
+
+Now have two options to modify the ROI: multiply the waveform by the ratio of modified gaussian and old gaussian approximation or add the difference between the two. 
+
+SBND has been using the multiplocative approach but ICARUS noticed that it could lead to explosion of the tails (due to low values of gaussian approximate at the tail, the ratio can explode). The additive approach prevents that. 
+
+NB: The additive approach is being tested, not sure yet which approach better reproduces a detector variation. 
 
 ## Running full reco1 with Wiremod
 
