@@ -78,7 +78,8 @@ if(DEFINED ENV{LIBTORCH_DIR})
   find_package(Torch REQUIRED)
 endif()
 
-find_ups_product( dunepdlegacy )
+find_package( dunepdlegacy REQUIRED )
+find_package( artdaq_core REQUIRED )
 
 find_package(HDF5 REQUIRED EXPORT)
 
