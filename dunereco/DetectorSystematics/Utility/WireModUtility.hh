@@ -46,6 +46,7 @@ namespace sys {
       int nNeighbourWires; //Number of neighbouring wires to consider for matching edeps to ROI
       int nTickTolerance; //Tolerance for the projected tick to be associated to a signal ROI
       bool SaveEdepMatchingPlots;
+      bool additiveModification;
       TH1F *hMatchedE = nullptr;
       TH1F *hUnMatchedE = nullptr;
       TH1F *hMatchedWD = nullptr;

@@ -46,6 +46,8 @@ physics.producers.duneWiremod: {
   SaveChargeRatioPlot: false
   SaveEdepMatchingPlots: false
 
+  AdditiveModification: true #defines how the ROI is modified, additive appraoch prevents explosion of tails
+
   nNeighbourWires: 0 #Number of neighbour wires to consider for matching an edep to an ROI 
   nTickTolerance: 0 #tolerance for a projected tick to be associated to a signal ROI
 }
