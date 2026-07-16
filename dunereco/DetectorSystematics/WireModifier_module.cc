@@ -91,6 +91,7 @@ namespace wiremod
       bool fSaveEdepMatchingPlots; //Plot showing the energy distirbutions and PDG code of edeps that were matched or not to an ROI
       int fnNeighbourWires; //Number of Neighbour wires o consider for matchoing edeps to an ROI
       int fnTickTolerance;
+      bool fAdditiveModification;
 
        //The three following are probably not needed
       bool fSaveHistsByChannel;     // save modified signals by channel?
@@ -184,6 +185,7 @@ namespace wiremod
     fSaveEdepMatchingPlots = pset.get<bool>("SaveEdepMatchingPlots"   , false);
     fnNeighbourWires = pset.get<int>("nNeighbourWires"   , 0);
     fnTickTolerance = pset.get<int>("nTickTolerance" , 0);
+    fAdditiveModification = pset.get<bool>("AdditiveModification"   , false);
 
     // we make these things
     produces<std::vector<recob::Wire      >>();
@@ -275,6 +277,8 @@ namespace wiremod
     }
 
     wmUtil.SaveEdepMatchingPlots = fSaveEdepMatchingPlots;
+    wmUtil.additiveModification = fAdditiveModification;
+    if (wmUtil.additiveModification) std::cout<<"setting additive modification"<<std::endl;
     wmUtil.nNeighbourWires = fnNeighbourWires;    
     wmUtil.nTickTolerance = fnTickTolerance;
 
@@ -417,9 +421,8 @@ namespace wiremod
         //if(it_map==wmUtil.ROIMatchedEdepMap.end()){
         auto it_map = wmUtil.ROIMatchedIDEMap.find(roi_key);
         if(it_map==wmUtil.ROIMatchedIDEMap.end()){
-          if (roi_properties.end-roi_properties.begin > 20){
-            std::cout<<"Unmatched ROI channel: "<<wire.Channel()<<" plane: "<<my_plane<<", view: "<<wire.View()<<", ROI index: "<<i_r<<", begin tick: "<<roi_properties.begin<<
-                     ", end tick: "<<roi_properties.end<<std::endl;
+          if (hasHit){
+            if (my_plane == 2) std::cout<<"Unmatched ROI channel: "<<wire.Channel()<<" plane: "<<my_plane<<", view: "<<wire.View()<<", ROI index: "<<i_r<<", begin tick: "<<roi_properties.begin<<", end tick: "<<roi_properties.end<<std::endl;
           /*for (auto const& wid : wireIDs) {
             std::cout << "WireID: Cryostat=" << wid.Cryostat
                   << " TPC=" << wid.TPC
