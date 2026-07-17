@@ -495,9 +495,9 @@ wirecell_protodunevd_mc_splusn:
 
         // needs to be found via your WIRECELL_PATH 
         configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-simchannel-splusn.jsonnet"]
-        inputers: ["wclsSimDepoSource:electron"]
+        inputers: ["wclsSimDepoSetSource:electron"]
         outputers: [
-           "wclsSimChannelSink:postdrift",
+           "wclsDepoFluxWriter:postdrift",
            "wclsFrameSaver:simsignals",
            "wclsFrameSaver:simdigits"
         ]
@@ -807,6 +807,20 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
           # G4RefTime [us]
           G4RefTime: @local::dunefd_detectorclocks.G4RefTime
           use_dnnroi: false
+        }
+    }
+}
+
+# 6-channel DNN-ROI variant (ProtoDUNE-HD model, see
+# dune10kt-1x2x6/wcls-sim-drift-simchannel-nf-sp.jsonnet + dnnroi_pp.jsonnet)
+dunefd_horizdrift_1x2x6_sim_nfsp_dnnroi : {
+    @table::dunefd_horizdrift_1x2x6_sim_nfsp
+    wcls_main: {
+        @table::dunefd_horizdrift_1x2x6_sim_nfsp.wcls_main
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellRoot","WireCellLarsoft","WireCellTbb","WireCellImg","WireCellPytorch"]
+        structs: {
+            @table::dunefd_horizdrift_1x2x6_sim_nfsp.wcls_main.structs
+            use_dnnroi: true
         }
     }
 }
@@ -1692,9 +1706,9 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
         // Contract note: these exact "type:name" must be used to identify
         // the configuration data structures for these components in the Jsonnet.
 
-        inputers: ["wclsSimDepoSource:"]
+        inputers: ["wclsSimDepoSetSource:"]
         outputers: [
-            "wclsSimChannelSink:postdrift",
+            "wclsDepoFluxWriter:postdrift",
             "wclsFrameSaver:spsignals"
         ]
 
@@ -1738,6 +1752,20 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
             ncrm: 112
             # use dnn_roi or not
             use_dnnroi: false
+        }
+    }
+}
+
+# 6-channel DNN-ROI variant (ProtoDUNE-VD model, see
+# dune-vd/wcls-sim-drift-simchannel-nf-sp.jsonnet + dnnroi_pp.jsonnet)
+dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp_dnnroi : {
+    @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp
+    wcls_main: {
+        @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellRoot","WireCellLarsoft","WireCellTbb","WireCellImg","WireCellPytorch"]
+        structs: {
+            @table::dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp.wcls_main.structs
+            use_dnnroi: true
         }
     }
 }
@@ -2200,9 +2228,9 @@ dune10kt_horizdrift_sim_nfsp : {
         configs: ["pgrapher/experiment/dune10kt-hd/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
         # Contract note: these exact "type:name" must be used to identify
         # the configuration data structures for these components in the Jsonnet.
-        inputers: ["wclsSimDepoSource:"]
+        inputers: ["wclsSimDepoSetSource:"]
         outputers: [
-            "wclsSimChannelSink:postdrift",
+            "wclsDepoFluxWriter:postdrift",
             "wclsFrameSaver:spsignals"
         ]
         # Make available parameters via Jsonnet's std.extVar()
@@ -2227,6 +2255,22 @@ dune10kt_horizdrift_sim_nfsp : {
           G4RefTime: @local::dunefd_detectorclocks.G4RefTime
           # use_hydra / skip processing
           use_hydra: true
+          # use dnn_roi or not
+          use_dnnroi: false
+        }
+    }
+}
+
+# 6-channel DNN-ROI variant (ProtoDUNE-HD model, see
+# dune10kt-hd/wcls-sim-drift-simchannel-nf-sp.jsonnet + dnnroi_pp.jsonnet)
+dune10kt_horizdrift_sim_nfsp_dnnroi : {
+    @table::dune10kt_horizdrift_sim_nfsp
+    wcls_main: {
+        @table::dune10kt_horizdrift_sim_nfsp.wcls_main
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellRoot","WireCellLarsoft","WireCellTbb","WireCellImg","WireCellPytorch"]
+        structs: {
+            @table::dune10kt_horizdrift_sim_nfsp.wcls_main.structs
+            use_dnnroi: true
         }
     }
 }
@@ -2252,9 +2296,9 @@ dune10kt_vertdrift_sim_nfsp : {
         // Contract note: these exact "type:name" must be used to identify
         // the configuration data structures for these components in the Jsonnet.
 
-        inputers: ["wclsSimDepoSource:"]
+        inputers: ["wclsSimDepoSetSource:"]
         outputers: [
-            "wclsSimChannelSink:postdrift",
+            "wclsDepoFluxWriter:postdrift",
             "wclsFrameSaver:spsignals"
             , "wclsFrameSaver:simdigits"
         ]
@@ -2305,6 +2349,20 @@ dune10kt_vertdrift_sim_nfsp : {
             # use dnn_roi or not
             use_dnnroi: false
             adc_resolution: 12
+        }
+    }
+}
+
+# 6-channel DNN-ROI variant (ProtoDUNE-VD model, see
+# dune10kt-vd/wcls-sim-drift-simchannel-nf-sp.jsonnet + dnnroi_pp.jsonnet)
+dune10kt_vertdrift_sim_nfsp_dnnroi : {
+    @table::dune10kt_vertdrift_sim_nfsp
+    wcls_main: {
+        @table::dune10kt_vertdrift_sim_nfsp.wcls_main
+        plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellSigProc","WireCellRoot","WireCellLarsoft","WireCellTbb","WireCellImg","WireCellPytorch"]
+        structs: {
+            @table::dune10kt_vertdrift_sim_nfsp.wcls_main.structs
+            use_dnnroi: true
         }
     }
 }

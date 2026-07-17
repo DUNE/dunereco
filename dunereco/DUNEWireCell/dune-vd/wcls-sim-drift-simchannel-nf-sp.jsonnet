@@ -70,6 +70,19 @@ local wcls = wcls_maker(params, tools);
 local wcls_input = {
   depos: wcls.input.depos(name='', art_tag='IonAndScint'),
   // depos: wcls.input.depos(name='electron'),  // default art_tag="blopper"
+  // DepoSet flavor input: needed by wclsDepoFluxWriter so IDepo::id() is the
+  // SimEnergyDeposit index (id_is_track: false) for correct trackID mapping.
+  deposet: g.pnode({
+    type: 'wclsSimDepoSetSource',
+    name: "",
+    data: {
+      model: "",
+      scale: -1, //scale is -1 to correct a sign error in the SimDepoSource converter.
+      art_tag: "IonAndScint", //name of upstream art producer of depos "label:instance:processName"
+      id_is_track: false,
+      assn_art_tag: "",
+    },
+  }, nin=0, nout=1),
 };
 
 // Collect all the wc/ls output converters for use below.  Note the
@@ -130,6 +143,13 @@ local wcls_output = {
 
 //local deposio = io.numpy.depos(output);
 local drifter = sim.drifter;
+local setdrifter = g.pnode({
+            type: 'DepoSetDrifter',
+            data: {
+                drifter: "Drifter"
+            }
+        }, nin=1, nout=1,
+        uses=[drifter]);
 local bagger = sim.make_bagger();
 // local bagger = g.pnode({
 //   type: 'DepoBagger',
@@ -173,40 +193,59 @@ local sp_override = if fcl_params.use_dnnroi then
 local sp = sp_maker(params, tools, sp_override);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
+// ── DNN-ROI configuration (protodune style: explicit parameters) ────
+// FD-VD uses the ProtoDUNE-VD 6-channel model (same CRP anode design).
+// FP32 best KD (6-ch) PDVD model.  Also resolvable via WIRECELL_PATH as
+// 'dnnroi/pdvd/pipe_distill_transformer_6ch.ts'; located in Hugging Face.
+local dnnroi_model = '/cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/WireCell/dune/dnn-roi/pdvd/20260615/pipe_distill_transformer_6ch.ts';
+local dnnroi_device = 'cpu';                   // 'cpu' or 'gpu'
+local dnnroi_nchan = 6;                        // 6 = production KD/QAT models
+local dnnroi_concurrency = 1;
+local dnnroi_nticks = fcl_params.nticks;
+local dnnroi_tick_per_slice = 4;               // training rebin=4
+local dnnroi_output_scale = 1.0;               // 6-ch .ts bakes normalization; no ad-hoc scale
+local dnnroi_mask_thresh = 0.2;
+local dnnroi_nchunks = 1;
+
 local ts = {
     type: "TorchService",
     name: "dnnroi",
     data: {
-        model: "ts-model/unet-l23-cosmic500-e50.ts",
-        device: "gpucpu",
-        concurrency: 1,
+        model: dnnroi_model,
+        device: dnnroi_device,
+        concurrency: dnnroi_concurrency,
     },
 };
 
-local rng = tools.random;
-local wcls_simchannel_sink = g.pnode({
-  type: 'wclsSimChannelSink',
+// Per-anode per-plane 6-channel DNN-ROI subgraph (protodune style).
+local dnnroi = import 'pgrapher/experiment/dune-vd/dnnroi_pp.jsonnet';
+
+// Truth labeling: wclsDepoFluxWriter (switched from wclsSimChannelSink).
+local wcls_depoflux_writer = g.pnode({
+  type: 'wclsDepoFluxWriter',
   name: 'postdrift',
   data: {
-    artlabel: 'simpleSC',  // where to save in art::Event
-    anodes_tn: [wc.tn(anode) for anode in tools.anodes],
-    rng: wc.tn(rng),
-    tick: params.daq.tick,
-    start_time: -0.25 * wc.ms,
-    readout_time: params.daq.readout_time,
+    anodes: [wc.tn(anode) for anode in tools.anodes],
+    field_response: wc.tn(tools.field),
+    tick: 0.5 * wc.us,
+    window_start: 0.0 * wc.ms,
+    window_duration: self.tick * fcl_params.nticks,
     nsigma: 3.0,
-    drift_speed: params.lar.drift_speed,
-    u_to_rp: response_plane,  // 90.58 * wc.mm,
-    v_to_rp: response_plane,  // 95.29 * wc.mm,
-    y_to_rp: response_plane,
-    u_time_offset: 0.0 * wc.us,
-    v_time_offset: 0.0 * wc.us,
-    y_time_offset: 0.0 * wc.us,
-    g4_ref_time: fcl_params.G4RefTime,
-    use_energy: true,
-    response_plane: response_plane,
+    reference_time: fcl_params.G4RefTime,
+    energy: 0, // energy: 0 means use the true depo energy (equivalent to SimChannelSink use_energy=true)
+    simchan_label: 'simpleSC',
+    sed_label: 'IonAndScint',
+    sparse: false,
+    // Smear the truth SimChannel to reco (SP) resolution so the 2D truth labels
+    // register onto the deconvolved reco charge (added in quadrature to the
+    // post-drift depo diffusion). Values = dune-vd SP-filter recipe
+    // (sp-filters.jsonnet):
+    //   smear_long [ticks] = sigma_t/tick, sigma_t = 1/(2*pi*0.12MHz) = 1.326us
+    //   smear_tran [pitch] = 1/(2*sqrt(pi)*k): Wire_ind k=0.75 (U,V); Wire_col k=3.0 (W)
+    smear_long: 2.6526,
+    smear_tran: [0.37612, 0.37612, 0.09403],
   },
-}, nin=1, nout=1, uses=tools.anodes);
+}, nin=1, nout=1, uses=tools.anodes + [tools.field]);
 
 local magoutput = 'mag-sim-sp.root';
 local magnify = import 'pgrapher/experiment/dune-vd/magnify-sinks.jsonnet';
@@ -222,7 +261,13 @@ local multipass = [
                 // sinks.decon_pipe[n],
                 // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
              ] + if fcl_params.use_dnnroi then [
-                 hs.dnnroi(tools.anodes[n], ts, output_scale=1.2),
+                 dnnroi(tools.anodes[n], ts,
+                        nticks=dnnroi_nticks,
+                        tick_per_slice=dnnroi_tick_per_slice,
+                        output_scale=dnnroi_output_scale,
+                        mask_thresh=dnnroi_mask_thresh,
+                        nchunks=dnnroi_nchunks,
+                        nchan=dnnroi_nchan),
                 //  sinks.dnnroi_pipe[n],
              ] else [],
              'multipass%d' % n)
@@ -275,8 +320,7 @@ local retagger = g.pnode({
 //local frameio = io.numpy.frames(output);
 local sink = sim.frame_sink;
 
-local graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, bi_manifold, retagger, wcls_output.sp_signals, sink]);
-// local graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, multipass[36], retagger, wcls_output.sp_signals, sink]);
+local graph = g.pipeline([wcls_input.deposet, setdrifter, wcls_depoflux_writer, bi_manifold, retagger, wcls_output.sp_signals, sink]);
 
 local app = {
     type: std.extVar('engine'), //Pgrapher, TbbFlow

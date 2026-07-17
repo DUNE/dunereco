@@ -185,10 +185,18 @@ local wcls_depoflux_writer = g.pnode({
     window_duration: self.tick * 6000,
     nsigma: 3.0,
     reference_time: -250 * wc.us,
-    energy: 0,
+    energy: 0, // energy: 0 means use the true depo energy (equivalent to SimChannelSink use_energy=true)
     simchan_label: 'simpleSC',
     sed_label: 'IonAndScint',
     sparse: false,
+    // Smear the truth SimChannel to reco (SP) resolution so the 2D truth labels
+    // register onto the deconvolved reco charge (added in quadrature to the
+    // post-drift depo diffusion). Values = protodunevd SP-filter recipe
+    // (sp-filters.jsonnet):
+    //   smear_long [ticks] = sigma_t/tick, sigma_t = 1/(2*pi*0.12MHz) = 1.326us
+    //   smear_tran [pitch] = 1/(2*sqrt(pi)*k): Wire_ind k=5.0 (U,V); Wire_col k=10.0 (W)
+    smear_long: 2.6526,
+    smear_tran: [0.056419, 0.056419, 0.028209],
   },
 }, nin=1, nout=1, uses=tools.anodes + [tools.field]);
 
