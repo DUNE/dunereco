@@ -9,19 +9,25 @@
 local g = import 'pgraph.jsonnet';
 local f = import 'pgrapher/experiment/dune-vd/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
-local hs = import "pgrapher/common/helpers.jsonnet";
+local dnnroi = import 'pgrapher/experiment/dune-vd/dnnroi.jsonnet';
 
 local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
 local params_maker = import 'pgrapher/experiment/dune-vd/params.jsonnet';
 local response_plane = std.extVar('response_plane')*wc.cm;
+local process_mode = std.extVar('process_mode');
 local fcl_params = {
     G4RefTime: std.extVar('G4RefTime') * wc.us,
     response_plane: std.extVar('response_plane')*wc.cm,
     nticks: std.extVar('nticks'),
-    ncrm: std.extVar('ncrm'),
+    process_tpc_index: std.extVar('process_tpc_index'),
+    use_hydra: std.extVar('use_hydra'),
+    save_rawdigits: false,
     use_dnnroi: std.extVar('use_dnnroi'),
-    process_crm: std.extVar('process_crm'),
+    process_mode: process_mode,
+    // ncrm is consumed by params.jsonnet (defaults 36 for 1x6x6)
+    ncrm: if process_mode == "1x8x6" || process_mode == "1x8x14_partial" then 48
+          else 112,
 };
 local params = params_maker(fcl_params) {
   lar: super.lar {
@@ -43,13 +49,18 @@ local params = params_maker(fcl_params) {
 
 local tools_all = tools_maker(params);
 local tools =
-if fcl_params.process_crm == "partial"
+if fcl_params.process_mode == "1x8x14_partial"
 then tools_all {anodes: [tools_all.anodes[n] for n in std.range(32, 79)]}
-else if fcl_params.process_crm == "test1"
-then tools_all {anodes: [tools_all.anodes[n] for n in [36]]}
-else if fcl_params.process_crm == "test2"
-then tools_all {anodes: [tools_all.anodes[n] for n in [36, 44]]}
-else tools_all;
+else if fcl_params.process_mode == "single-sim"
+    || fcl_params.process_mode == "single-sp"
+    || fcl_params.process_mode == "single-sim-sp"
+then tools_all {anodes: [tools_all.anodes[n] for n in [fcl_params.process_tpc_index]]}
+else if fcl_params.process_mode == "full"
+     || fcl_params.process_mode == "full-sim-sp"
+     || fcl_params.process_mode == "1x8x14"
+     || fcl_params.process_mode == "1x8x6"
+then tools_all
+else error "unsupported process_mode: " + fcl_params.process_mode;
 
 local sim_maker = import 'pgrapher/experiment/dune-vd/sim.jsonnet';
 local sim = sim_maker(params, tools);
@@ -70,6 +81,17 @@ local wcls = wcls_maker(params, tools);
 local wcls_input = {
   depos: wcls.input.depos(name='', art_tag='IonAndScint'),
   // depos: wcls.input.depos(name='electron'),  // default art_tag="blopper"
+  deposet: g.pnode({
+          type: 'wclsSimDepoSetSource',
+          name: "",
+          data: {
+              model: "",
+              scale: -1, //scale is -1 to correct a sign error in the SimDepoSource converter.
+              art_tag: "IonAndScint", //name of upstream art producer of depos "label:instance:processName"
+              assn_art_tag: "",
+              id_is_track: false,
+          },
+      }, nin=0, nout=1),
 };
 
 // Collect all the wc/ls output converters for use below.  Note the
@@ -101,12 +123,31 @@ local wcls_output = {
       // anode: wc.tn(tools.anode),
       anode: wc.tn(mega_anode),
       digitize: true,  // true means save as RawDigit, else recob::Wire
-      frame_tags: ['daq'],
+      frame_tags:
+      if fcl_params.process_mode == "single-sim"
+      || fcl_params.process_mode == "single-sp"
+      || fcl_params.process_mode == "single-sim-sp"
+      then ['daqtpc%d' % fcl_params.process_tpc_index]
+      else ['daq'],
       // nticks: params.daq.nticks,
       // chanmaskmaps: ['bad'],
       pedestal_mean: 'native',
     },
   }, nin=1, nout=1, uses=[mega_anode]),
+
+  multi_sim_digits: [g.pnode({
+    type: 'wclsFrameSaver',
+    name: 'simdigits%d'%a.data.ident,
+    data: {
+      // anode: wc.tn(tools.anode),
+      anode: wc.tn(a),
+      digitize: true,  // true means save as RawDigit, else recob::Wire
+      frame_tags: ['daqtpc%d' % a.data.ident],
+      // nticks: params.daq.nticks,
+      // chanmaskmaps: ['bad'],
+      pedestal_mean: 'native',
+    },
+  }, nin=1, nout=1, uses=[a]) for a in tools.anodes],
 
   // The output of signal processing.  Note, there are two signal
   // sets each created with its own filter.  The "gauss" one is best
@@ -120,7 +161,14 @@ local wcls_output = {
       plane_map: planemap,
       anode: wc.tn(mega_anode),
       digitize: false,  // true means save as RawDigit, else recob::Wire
-      frame_tags: ['gauss', 'wiener','dnnsp'],
+      frame_tags:
+      if fcl_params.process_mode == "single-sim"
+      || fcl_params.process_mode == "single-sp"
+      || fcl_params.process_mode == "single-sim-sp"
+      then ['gausstpc%d' % fcl_params.process_tpc_index,
+            'wienertpc%d' % fcl_params.process_tpc_index,
+            'dnnsptpc%d' % fcl_params.process_tpc_index]
+      else ['gauss', 'wiener','dnnsp'],
       frame_scale: [0.005, 0.005, 0.005],
       chanmaskmaps: [],
       nticks: params.daq.nticks,
@@ -130,6 +178,13 @@ local wcls_output = {
 
 //local deposio = io.numpy.depos(output);
 local drifter = sim.drifter;
+local setdrifter = g.pnode({
+            type: 'DepoSetDrifter',
+            data: {
+                drifter: "Drifter"
+            }
+        }, nin=1, nout=1,
+        uses=[drifter]);
 local bagger = sim.make_bagger();
 // local bagger = g.pnode({
 //   type: 'DepoBagger',
@@ -184,47 +239,96 @@ local ts = {
 };
 
 local rng = tools.random;
-local wcls_simchannel_sink = g.pnode({
-  type: 'wclsSimChannelSink',
+local wcls_depoflux_writer = g.pnode({
+  type: 'wclsDepoFluxWriter',
   name: 'postdrift',
   data: {
-    artlabel: 'simpleSC',  // where to save in art::Event
-    anodes_tn: [wc.tn(anode) for anode in tools.anodes],
-    rng: wc.tn(rng),
+    anodes: [wc.tn(anode) for anode in tools.anodes],
+    field_response: wc.tn(tools.field),
     tick: params.daq.tick,
-    start_time: -0.25 * wc.ms,
-    readout_time: params.daq.readout_time,
+    window_start: 0,
+    window_duration: params.daq.readout_time,
     nsigma: 3.0,
-    drift_speed: params.lar.drift_speed,
-    u_to_rp: response_plane,  // 90.58 * wc.mm,
-    v_to_rp: response_plane,  // 95.29 * wc.mm,
-    y_to_rp: response_plane,
-    u_time_offset: 0.0 * wc.us,
-    v_time_offset: 0.0 * wc.us,
-    y_time_offset: 0.0 * wc.us,
-    g4_ref_time: fcl_params.G4RefTime,
-    use_energy: true,
-    response_plane: response_plane,
+    reference_time: 0,
+    simchan_label:
+        if fcl_params.process_mode == "single-sim"
+        || fcl_params.process_mode == "single-sp"
+        || fcl_params.process_mode == "single-sim-sp"
+        then 'simpleSCtpc%d' % fcl_params.process_tpc_index
+        else "simpleSC",
+    sed_label: 'IonAndScint',
+    sparse: false,
   },
-}, nin=1, nout=1, uses=tools.anodes);
+}, nin=1, nout=1, uses=tools.anodes + [tools.field]);
 
 local magoutput = 'mag-sim-sp.root';
 local magnify = import 'pgrapher/experiment/dune-vd/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
-local multipass = [
+
+
+local sim_retagger_fanins = [g.pnode({
+    type: "FrameFanin",
+    name: "sim_retagger_fanin%d" % a.data.ident,
+    data: {
+        multiplicity: 1,
+        tags: ["daqtpc%d" % a.data.ident],
+        tag_rules: [{
+            frame: {".*": "daqtpc%d" % [a.data.ident]},
+            trace: {".*": "daqtpc%d" % [a.data.ident]},
+        }]
+    },
+}, nin=1, nout=1), for a in tools.anodes];
+local sim_retaggers = [
+    g.pnode(
+        {
+            type: 'Retagger',
+            name: 'retagger-sim-%d' % a.data.ident,
+            data:
+            {
+                tag_rules:
+                [{
+                  frame: {'.*': 'daqtpc%d' % a.data.ident,},
+                  merge: {'.*': 'daqtpc%d' % a.data.ident,},
+                }]
+            },
+        },
+        nin=1, nout=1)
+    for a in tools.anodes
+];
+
+local full_sim_pipes = [
   g.pipeline([
-                // wcls_simchannel_sink[n],
                 sn_pipes[n],
                 // sinks.orig_pipe[n],
-                // nf_pipes[n],
+             ] + if fcl_params.process_mode == "single-sim"
+                 || fcl_params.process_mode == "single-sim-sp"
+                 then [sim_retagger_fanins[n], sim_retaggers[n], wcls_output.sim_digits]
+                 else if fcl_params.process_mode == "full-sim-sp"
+                 then [sim_retagger_fanins[n], sim_retaggers[n], wcls_output.multi_sim_digits[n]]
+                 else [],
+             'multipass%d' % n)
+  for n in anode_iota
+];
+
+local full_sp_pipes = [
+  g.pipeline([
                 sp_pipes[n],
                 // sinks.decon_pipe[n],
                 // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
              ] + if fcl_params.use_dnnroi then [
-                 hs.dnnroi(tools.anodes[n], ts, output_scale=1.2),
+                 dnnroi(tools.anodes[n], ts, output_scale=1.2),
                 //  sinks.dnnroi_pipe[n],
              ] else [],
+             'full_sp_pipes%d' % n)
+  for n in anode_iota
+];
+
+local multipass = [
+  g.pipeline([
+                full_sim_pipes[n],
+                full_sp_pipes[n],
+             ],
              'multipass%d' % n)
   for n in anode_iota
 ];
@@ -241,17 +345,91 @@ local tag_rules = {
         + {['threshold%d' % anode.data.ident]: ['threshold%d' % anode.data.ident] for anode in tools.anodes}
         + {['dnnsp%d' % anode.data.ident]: ['dnnsp%d' % anode.data.ident] for anode in tools.anodes},
 };
+
+local make_switch_pipe = function(sim, sp, anode ) {
+    local d2f = g.pipeline([sim, sp]),
+    local ds_filter = g.pnode({
+        type: "DepoSetFilter",
+        name: "ds-filter-switch-%d" % anode.data.ident,
+        data: {anode: wc.tn(anode)},
+        }, nin=1, nout=1, uses=[anode]),
+    local dorb = g.pnode({
+        type: "DeposOrBust",
+        name: "dorb-switch-%d" % anode.data.ident,
+        }, nin=1, nout=2),
+    local frame_sync = g.pnode({
+        type: "FrameSync",
+        name: "frame-sync-switch-%d" % anode.data.ident,
+        }, nin=2, nout=1),
+    // direct pipe
+    local ret1 = g.pipeline([ds_filter, d2f]),
+    // hydra shortcut
+    local ret2 =  g.intern(
+        innodes=[ds_filter],
+        outnodes=[frame_sync],
+        centernodes=[dorb, d2f],
+        edges=
+            [g.edge(ds_filter, dorb, 0, 0),
+            g.edge(dorb, d2f, 0, 0),
+            g.edge(d2f, frame_sync, 0, 0),
+            g.edge(dorb, frame_sync, 1, 1)]),
+    // special case to tapout and sync rawdigits
+    local fout_bust = g.pnode({
+        type: "FrameFanout",
+        name: "fout-switch-bust-%d" % anode.data.ident,
+        data: {multiplicity: 2},
+        }, nin=1, nout=2),
+    local fout_rawdigits = g.pnode({
+        type: "FrameFanout",
+        name: "fout-switch-rawdigits-%d" % anode.data.ident,
+        data: {multiplicity: 2},
+        }, nin=1, nout=2),
+    local frame_sync_rawdigits = g.pnode({
+        type: "FrameSync",
+        name: "frame-sync-switch-rawdigits-%d" % anode.data.ident,
+        }, nin=2, nout=1),
+    
+    local dump_rawdigits = g.pnode(
+        { type: 'DumpFrames', name:"switch-dump-rawdigits-%d" % anode.data.ident, data:{} },
+        nin=1, nout=0),
+    // hydra shortcut with rawdigits
+    local ret3 = g.intern(
+        innodes=[ds_filter],
+        outnodes=[frame_sync],
+        centernodes=[dorb, sim, sp, fout_bust, fout_rawdigits, frame_sync_rawdigits, dump_rawdigits],
+        edges=
+            [g.edge(ds_filter, dorb, 0, 0),
+            g.edge(dorb, sim, 0, 0),
+            g.edge(dorb, fout_bust, 1, 0),
+            g.edge(sim, fout_rawdigits, 0, 0),
+            g.edge(fout_rawdigits, sp, 0, 0),
+            g.edge(sp, frame_sync, 0, 0),
+            g.edge(fout_bust, frame_sync, 0, 1),
+            g.edge(fout_rawdigits, frame_sync_rawdigits, 1, 0),
+            g.edge(fout_bust, frame_sync_rawdigits, 1, 1),
+            g.edge(frame_sync_rawdigits, dump_rawdigits, 0, 0),
+            ]
+    ),
+    ret: if fcl_params.save_rawdigits then ret3 else ret2,
+}.ret;
+
+local switch_pipes = [
+    make_switch_pipe(full_sim_pipes[n], full_sp_pipes[n], tools.anodes[n]),
+    for n in std.range(0, std.length(tools.anodes) - 1)
+];
+
+local process_pipes = if fcl_params.use_hydra then switch_pipes else multipass;
+
 local bi_manifold =
-    if fcl_params.ncrm == 36
-    then f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,6], [6,6], [1,6], [6,6], 'sn_mag', outtags, tag_rules)
-    else if fcl_params.ncrm == 48 || fcl_params.process_crm == "partial"
-    then f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,8], [8,6], [1,8], [8,6], 'sn_mag', outtags, tag_rules)
-    else if fcl_params.process_crm == "test1"
-    then f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,1], [1,1], [1,1], [1,1], 'sn_mag', outtags, tag_rules)
-    else if fcl_params.process_crm == "test2"
-    then f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,2], [2,1], [1,2], [2,1], 'sn_mag', outtags, tag_rules)
-    else if fcl_params.ncrm == 112
-    then f.multifanpipe('DepoSetFanout', multipass, 'FrameFanin', [1,8,16], [8,2,7], [1,8,16], [8,2,7], 'sn_mag', outtags, tag_rules);
+    if process_mode == "full" || process_mode == "full-sim-sp" || process_mode == "1x8x14"
+        then f.multifanpipe('DepoSetFanout', process_pipes, 'FrameFanin', [1,8,16], [8,2,7], [1,8,16], [8,2,7], 'sn_mag', outtags, tag_rules)
+    else if fcl_params.process_mode == "1x8x6" || fcl_params.process_mode == "1x8x14_partial"
+        then f.multifanpipe('DepoSetFanout', process_pipes, 'FrameFanin', [1,8], [8,6], [1,8], [8,6], 'sn_mag', outtags, tag_rules)
+    else if fcl_params.process_mode == "single-sim"
+        || fcl_params.process_mode == "single-sp"
+        || fcl_params.process_mode == "single-sim-sp"
+    then f.multifanpipe('DepoSetFanout', process_pipes, 'FrameFanin', [1,1], [1,1], [1,1], [1,1], 'sn_mag', outtags, tag_rules)
+    else error "unsupported process_mode: " + fcl_params.process_mode;
 
 local retagger = g.pnode({
   type: 'Retagger',
@@ -263,7 +441,15 @@ local retagger = g.pnode({
       frame: {
         '.*': 'retagger',
       },
-      merge: {
+      merge:
+      if fcl_params.process_mode == "single-sim"
+      || fcl_params.process_mode == "single-sp"
+      || fcl_params.process_mode == "single-sim-sp"
+        then {
+        'gauss\\d+': 'gausstpc%d' % fcl_params.process_tpc_index,
+        'wiener\\d+': 'wienertpc%d' % fcl_params.process_tpc_index,
+        'dnnsp\\d+': 'dnnsptpc%d' % fcl_params.process_tpc_index,
+      } else {
         'gauss\\d+': 'gauss',
         'wiener\\d+': 'wiener',
         'dnnsp\\d+': 'dnnsp',
@@ -275,8 +461,8 @@ local retagger = g.pnode({
 //local frameio = io.numpy.frames(output);
 local sink = sim.frame_sink;
 
-local graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, bi_manifold, retagger, wcls_output.sp_signals, sink]);
-// local graph = g.pipeline([wcls_input.depos, drifter, wcls_simchannel_sink, bagger, multipass[36], retagger, wcls_output.sp_signals, sink]);
+local graph = g.pipeline([wcls_input.deposet, setdrifter, wcls_depoflux_writer, bi_manifold, retagger, wcls_output.sp_signals, sink]);
+// local graph = g.pipeline([wcls_input.deposet, setdrifter, wcls_depoflux_writer, multipass[36], retagger, wcls_output.sp_signals, sink]);
 
 local app = {
     type: std.extVar('engine'), //Pgrapher, TbbFlow
