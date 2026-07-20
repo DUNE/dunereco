@@ -24,7 +24,7 @@ cet_set_compiler_flags(DIAGS CAUTIOUS
   NO_UNDEFINED
   EXTRA_FLAGS -pedantic -Wno-unused-local-typedefs
               -Wno-deprecated-declarations
-              $<$<CXX_COMPILER_ID:GNU>:-Wno-maybe-uninitialized>
+              $<$<CXX_COMPILER_ID:GNU>:-Wno-maybe-uninitialized> -Wno-error=array-bounds
 )
 
 find_package( Boost REQUIRED COMPONENTS system )
@@ -71,8 +71,8 @@ if(DEFINED ENV{LAPACK_LIB})
 endif()
 find_package(TritonCommon EXPORT QUIET)
 find_package(TritonClient EXPORT QUIET)
+find_package(Protobuf EXPORT QUIET)
 find_package( larrecodnn REQUIRED )
-find_package(TensorFlow EXPORT QUIET)
 if(DEFINED ENV{LIBTORCH_DIR})
 #  find_package( libtorch REQUIRED )
   find_package(Torch REQUIRED)
