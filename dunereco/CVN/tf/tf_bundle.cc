@@ -9,7 +9,7 @@
 #include "tf_bundle.h"
 #include "tensorflow/core/public/session_options.h"
 #include "tensorflow/cc/saved_model/loader.h"
-#include "tensorflow/cc/saved_model/tag_constants.h"
+#include "tensorflow/cc/saved_model/constants.h"
 
 
 Bundle::Bundle(const char* bundle_file_name, const std::vector<std::string> & outputs, bool & success, int ninputs, int noutputs)
@@ -19,7 +19,7 @@ Bundle::Bundle(const char* bundle_file_name, const std::vector<std::string> & ou
     tensorflow::SavedModelBundle bundle;
     tensorflow::SessionOptions session_options;
     tensorflow::RunOptions run_options;
-    tensorflow::Status status = tensorflow::LoadSavedModel(session_options, run_options, bundle_file_name, {tensorflow::kSavedModelTagServe}, &bundle);
+    tensorflow::Status status = tensorflow::LoadSavedModel(session_options, run_options, bundle_file_name, {"serve"}, &bundle);
     if(!status.ok()) {
         std::cout << "Failed to load saved model: " << status.ToString() << std::endl;
     }
@@ -54,7 +54,7 @@ std::vector<std::vector<std::vector<float> > >  Bundle::run(const char* bundle_f
     tensorflow::SavedModelBundle bundle;
     tensorflow::SessionOptions session_options;
     tensorflow::RunOptions run_options;
-    tensorflow::Status status = tensorflow::LoadSavedModel(session_options, run_options, bundle_file_name, {tensorflow::kSavedModelTagServe}, &bundle);
+    tensorflow::Status status = tensorflow::LoadSavedModel(session_options, run_options, bundle_file_name, {"serve"}, &bundle);
     std::vector< std::string > fInputNames;
     auto sig_map = bundle.GetSignatures();
     if (!sig_map.contains("serving_default")) {
