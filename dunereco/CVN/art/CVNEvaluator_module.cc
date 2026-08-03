@@ -26,6 +26,7 @@
 #include "dunereco/CVN/func/PixelMap.h"
 //#include "dunereco/CVN/art/CaffeNetHandler.h"
 #include "dunereco/CVN/art/TFNetHandler.h"
+#include "dunereco/CVN/art/TritonHandler.h"
 #include "dunereco/CVN/func/AssignLabels.h"
 #include "dunereco/CVN/func/InteractionType.h"
 
@@ -53,7 +54,7 @@ namespace cvn {
 
     //cvn::CaffeNetHandler fCaffeHandler;
     cvn::TFNetHandler fTFHandler;
-
+    cvn::TritonHandler fTritonHandler;
     /// Number of outputs fron neural net
     //unsigned int fNOutput;
 
@@ -83,6 +84,7 @@ namespace cvn {
     fCVNType     (pset.get<std::string>         ("CVNType")),
     //fCaffeHandler       (pset.get<fhicl::ParameterSet> ("CaffeNetHandler")),
     fTFHandler       (pset.get<fhicl::ParameterSet> ("TFNetHandler")),
+    fTritonHandler   (pset.get<fhicl::ParameterSet> ("TritonHandler")),
     //fNOutput       (fCaffeHandler.NOutput()),
     fMultiplePMs (pset.get<bool> ("MultiplePMs"))
   {
@@ -158,6 +160,7 @@ namespace cvn {
 
       }
     }*/
+    
     if(fCVNType == "TF" || fCVNType == "Tensorflow" || fCVNType == "TensorFlow"){
       // If we have a pixel map then use the TF interface to give us a prediction
       if(pixelmaplist.size() > 0){
@@ -165,6 +168,7 @@ namespace cvn {
         std::vector< std::vector<float> > networkOutput = fTFHandler.Predict(*pixelmaplist[0]);
         // cvn::Result can now take a vector of floats and works out the number of outputs
         resultCol->emplace_back(networkOutput);
+
 
         /*
         for(auto const& resaux: (*resultCol))
@@ -214,9 +218,22 @@ namespace cvn {
         }
 
       }
-    }
-    else{
-      mf::LogError("CVNEvaluator::produce") << "CVN Type not in the allowed list: Tensorflow" << std::endl;
+    }else if(fCVNType == "Triton"){
+  	
+	    
+	if(pixelmaplist.size() > 0){
+		std::vector< std::vector<float> > networkOutput = fTritonHandler.Predict(*pixelmaplist[0]);
+		resultCol->emplace_back(networkOutput);
+
+ 		if(fMultiplePMs){
+   			for(unsigned int p = 1; p < pixelmaplist.size(); ++p){
+        			std::vector< std::vector<float> > output = fTritonHandler.Predict(*pixelmaplist[p]);
+        			resultCol->emplace_back(output);
+      			}
+    		}
+  	}
+    }else{
+      mf::LogError("CVNEvaluator::produce") << "CVN Type not in the allowed list: Tensorflow,Triton" << std::endl;
       mf::LogError("CVNEvaluator::produce") << "Exiting without processing events" << std::endl;
       return;
     }
@@ -323,10 +340,3 @@ namespace cvn {
   DEFINE_ART_MODULE(cvn::CVNEvaluator)
 } // end namespace cvn
 ////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
