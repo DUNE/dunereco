@@ -218,8 +218,7 @@ namespace cvn {
         }
 
       }
-    }else if(fCVNType == "Triton"){
-  	
+    }else if(fCVNType == "Triton"){  	
 	    
 	if(pixelmaplist.size() > 0){
 		std::vector< std::vector<float> > networkOutput = fTritonHandler.Predict(*pixelmaplist[0]);
@@ -232,6 +231,7 @@ namespace cvn {
       			}
     		}
   	}
+
     }else{
       mf::LogError("CVNEvaluator::produce") << "CVN Type not in the allowed list: Tensorflow,Triton" << std::endl;
       mf::LogError("CVNEvaluator::produce") << "Exiting without processing events" << std::endl;
