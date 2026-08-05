@@ -51,6 +51,7 @@ local wcls_input = {
       model: "",
       scale: -1, //scale is -1 to correct a sign error in the SimDepoSource converter.
       art_tag: "IonAndScint", //name of upstream art producer of depos "label:instance:processName"
+      id_is_track: false, // IDepo::id() is the SimEnergyDeposit index, needed by wclsDepoFluxWriter
       assn_art_tag: "",
     },
   }, nin=0, nout=1),
@@ -138,29 +139,32 @@ local sp_maker = import 'pgrapher/experiment/protodunevd/sp.jsonnet';
 local sp = sp_maker(params, tools);
 local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
 
-local rng = tools.random;
-local wcls_simchannel_sink = g.pnode({
-  type: 'wclsDepoSetSimChannelSink',
+// Truth labeling: wclsDepoFluxWriter (switched from wclsDepoSetSimChannelSink).
+local wcls_depoflux_writer = g.pnode({
+  type: 'wclsDepoFluxWriter',
   name: 'postdrift',
   data: {
-    artlabel: 'simpleSC',  // where to save in art::Event
-    anodes_tn: [wc.tn(anode) for anode in tools.anodes],
-    rng: wc.tn(rng),
-    tick: params.daq.tick,
-    start_time: -0.25 * wc.ms, 
-    readout_time: params.daq.readout_time,
+    anodes: [wc.tn(anode) for anode in tools.anodes],
+    field_response: wc.tn(tools.field),
+    tick: 0.5 * wc.us,
+    window_start: 0.0 * wc.ms,
+    window_duration: self.tick * 6000,
     nsigma: 3.0,
-    drift_speed: params.lar.drift_speed,
-    u_to_rp: 189.5 * wc.mm,
-    v_to_rp: 189.5 * wc.mm,
-    y_to_rp: 189.5 * wc.mm,
-    u_time_offset: 0.0 * wc.us,
-    v_time_offset: 0.0 * wc.us,
-    y_time_offset: 0.0 * wc.us,
-    g4_ref_time: -250 * wc.us,
-    use_energy: true,
+    reference_time: -250 * wc.us,
+    energy: 0, // energy: 0 means use the true depo energy (equivalent to SimChannelSink use_energy=true)
+    simchan_label: 'simpleSC',
+    sed_label: 'IonAndScint',
+    sparse: false,
+    // Smear the truth SimChannel to reco (SP) resolution so the 2D truth labels
+    // register onto the deconvolved reco charge (added in quadrature to the
+    // post-drift depo diffusion). Values = protodunevd SP-filter recipe
+    // (sp-filters.jsonnet):
+    //   smear_long [ticks] = sigma_t/tick, sigma_t = 1/(2*pi*0.12MHz) = 1.326us
+    //   smear_tran [pitch] = 1/(2*sqrt(pi)*k): Wire_ind k=5.0 (U,V); Wire_col k=10.0 (W)
+    smear_long: 2.6526,
+    smear_tran: [0.056419, 0.056419, 0.028209],
   },
-}, nin=1, nout=1, uses=tools.anodes);
+}, nin=1, nout=1, uses=tools.anodes + [tools.field]);
 
 // local magoutput = 'protodune-data-check.root';
 // local magnify = import 'pgrapher/experiment/protodunevd/magnify-sinks.jsonnet';
@@ -229,7 +233,7 @@ local deposet_rotate_rev = g.pnode({
     }, nin=1, nout=1);
 
 // FIXME: need a "bagger" to gate depos
-local graph = g.pipeline([wcls_input.deposet, deposet_rotate_rev, setdrifter, wcls_simchannel_sink, bi_manifold, retagger, wcls_output.sim_digits, sink]);
+local graph = g.pipeline([wcls_input.deposet, deposet_rotate_rev, setdrifter, wcls_depoflux_writer, bi_manifold, retagger, wcls_output.sim_digits, sink]);
 
 local app = {
   type: 'Pgrapher',
