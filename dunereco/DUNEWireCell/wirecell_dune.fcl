@@ -392,7 +392,7 @@ wirecell_protodunevd_mc:
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"]
 
         logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
-        loglevels: ["debug"]
+        loglevels: ["info"]
 
         // needs to be found via your WIRECELL_PATH 
         configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-depoflux.jsonnet"]
@@ -425,7 +425,7 @@ wirecell_protodunevd_mc_splusn:
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"]
 
         logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
-        loglevels: ["debug"]
+        loglevels: ["info"]
 
         // needs to be found via your WIRECELL_PATH 
         configs: ["pgrapher/experiment/protodunevd/wcls-sim-drift-simchannel-splusn.jsonnet"]
@@ -660,7 +660,7 @@ tpcrawdecoder_dunefd_horizdrift_1x2x6 : {
       apps: ["Pgrapher"]
 
       logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
-      loglevels: ["debug"]
+      loglevels: ["info"]
 
       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
 
@@ -707,7 +707,7 @@ dunefd_horizdrift_1x2x6_sim_nfsp : {
         tool_type: WCLS
         apps: ["TbbFlow"] # TbbFlow, Pgrapher
         logsinks: ["stdout:info", "wcls-sim-drift-simchannel-nf-sp.log:debug"]
-        loglevels: ["debug"]
+        loglevels: ["info"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
         # needs to be found via your WIRECELL_PATH
         configs: ["pgrapher/experiment/dune10kt-1x2x6/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
@@ -753,7 +753,7 @@ tpcrawdecoder_dunefd_horizdrift_1x2x2 : {
       apps: ["Pgrapher"]
 
       logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
-      loglevels: ["debug"]
+      loglevels: ["info"]
 
       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
 
@@ -799,7 +799,7 @@ tpcrawdecoder_dunefd_vertdrift_2view : {
       apps: ["TbbFlow"] # TbbFlow, Pgrapher. hydra only works with TbbFlow
 
       logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
-      loglevels: ["debug"]
+      loglevels: ["info"]
 
       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
 
@@ -1040,7 +1040,7 @@ tpcrawdecoder_iceberg : {
       tool_type: WCLS
       apps: ["Pgrapher"]
       logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
-      loglevels: ["debug"]
+      loglevels: ["info"]
       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
       configs: ["pgrapher/experiment/iceberg/wcls-sim-drift-simchannel.jsonnet"]
       inputers: ["wclsSimDepoSource:"]
@@ -1072,7 +1072,7 @@ tpcrawdecoder_iceberg_splusn : {
       tool_type: WCLS
       apps: ["Pgrapher"]
       logsinks: ["stdout:info", "wcls-sim-drift-simchannel.log:debug"]
-      loglevels: ["debug"]
+      loglevels: ["info"]
       plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
       configs: ["pgrapher/experiment/iceberg/wcls-sim-drift-simchannel-splusn.jsonnet"]
       inputers: ["wclsSimDepoSource:"]
@@ -1612,7 +1612,7 @@ dune10kt_dunefd_vertdrift_1x8x14_3view_sim_nfsp : {
         apps: ["TbbFlow"]
 
         logsinks: ["stdout"]
-        loglevels: ["debug"]
+        loglevels: ["info"]
 
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"
         ,"WireCellTbb"
@@ -2123,7 +2123,7 @@ dune10kt_horizdrift_sim_nfsp : {
         # TbbFlow, Pgrapher, but only TbbFlow supports hydra
         apps: ["TbbFlow"]
         logsinks: ["stdout:info", "wcls-sim-drift-simchannel-nf-sp.log:debug"]
-        loglevels: ["debug"]
+        loglevels: ["info"]
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft","WireCellTbb"]
         # needs to be found via your WIRECELL_PATH
         configs: ["pgrapher/experiment/dune10kt-hd/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
@@ -2167,7 +2167,7 @@ dune10kt_vertdrift_sim_nfsp : {
         apps: ["TbbFlow"] # Pgrapher, TbbFlow
 
         logsinks: ["stdout"]
-        loglevels: ["debug"]
+        loglevels: ["info"]
 
         plugins: ["WireCellPgraph", "WireCellGen","WireCellSio","WireCellRoot","WireCellLarsoft"
         ,"WireCellTbb"
