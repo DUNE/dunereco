@@ -14,11 +14,11 @@ function(params) base {
         // Only one CRP is defined in this geometry 
         // CRMs are oneside anodes     
         
-        local ncrm = if std.objectHas(params, 'ncrm') then params.ncrm else 36,
+        local ncrm = if std.objectHas(params, 'ncrm') then params.ncrm else 320,
 
         response_plane: params.response_plane,
 
-        local bot_crp_x = -3.97*wc.cm,
+        local bot_crp_x = -651.90*wc.cm,
         local bot_resp_x = bot_crp_x+self.response_plane,
         local bot_cathode_x = bot_crp_x+650.06*wc.cm,
         local bot_face = {
@@ -26,7 +26,7 @@ function(params) base {
             response: bot_resp_x,
             cathode:  bot_cathode_x},
 
-        local top_crp_x = 1300.13*wc.cm,
+        local top_crp_x = 652.15*wc.cm,
         local top_resp_x = top_crp_x-self.response_plane,
         local top_cathode_x = top_crp_x - 650.06*wc.cm,
         local top_face = {
@@ -84,6 +84,28 @@ function(params) base {
 
         // For running in LArSoft, the simulation must be in fixed time mode. 
         fixed: true,
+
+        // The "absolute" time (ie, relative to trigger time?) that the lower edge
+        // of final readout tick #0 should correspond to.  This is a
+        // "fixed" notion.
+        local tick0_time = 0*wc.us,
+
+        // Open the ductor's gate a bit early.
+        local response_time_offset = $.det.response_plane / $.lar.drift_speed,
+        local response_nticks = wc.roundToInt(response_time_offset / $.daq.tick),
+
+        ductor : {
+            nticks: $.daq.nticks + response_nticks,
+            readout_time: self.nticks * $.daq.tick,
+            start_time: tick0_time - response_time_offset,
+        },
+
+        // To counter the enlarged duration of the ductor, a Reframer
+        // chops off the little early, extra time.  Note, tags depend on how 
+        reframer: {
+            tbin: response_nticks,
+            nticks: $.daq.nticks,
+        }
 
     },
 
