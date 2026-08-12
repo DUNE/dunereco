@@ -10,6 +10,20 @@ dune_showerpfpvertexstartposition:                                   @local::sho
 #Direction tools
 dune_showerpcadirection:                                             @local::showerpcadirection
 
+dunefdhd_showerpcadirection: @local::dune_showerpcadirection
+dunefdhd_showerpcadirection.WritePCAxis: false # Refined PCA tool will write the only recob::PCAxis
+
+dunefdvd_showerpcadirection: @local::dune_showerpcadirection
+dunefdvd_showerpcadirection.WritePCAxis: false # Refined PCA tool will write the only recob::PCAxis
+
+dune_showerrefinedpcadirection:                                      @local::showerrefinedpcadirection
+
+dunefdhd_showerrefinedpcadirection: @local::dune_showerrefinedpcadirection
+dunefdhd_showerrefinedpcadirection.WritePCAxis: true
+
+dunefdvd_showerrefinedpcadirection: @local::dune_showerrefinedpcadirection
+dunefdvd_showerrefinedpcadirection.WritePCAxis: true
+
 dune_showertracktrajpointdirection:                                  @local::showertracktrajpointdirection
 
 dune_showerdirectiontopologydecision:                                @local::showerdirectiontopologydecision
