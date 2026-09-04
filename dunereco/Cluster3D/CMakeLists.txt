@@ -56,8 +56,12 @@ set(    MODULE_LIBRARIES
           art_root_io::TFileService_service
           messagefacility::MF_MessageLogger
        )
+       
 cet_build_plugin(SnippetHit3DBuilderDUNE art::tool LIBRARIES ${TOOL_LIBRARIES} SOURCE SnippetHit3DBuilderDUNE_tool.cc)
 set_property(SOURCE SnippetHit3DBuilderDUNE_tool.cc APPEND PROPERTY COMPILE_DEFINITIONS EIGEN_FFTW_DEFAULT)
+       
+cet_build_plugin(SnippetHit3DBuilderDUNEFast art::tool LIBRARIES ${TOOL_LIBRARIES} SOURCE SnippetHit3DBuilderDUNEFast_tool.cc)
+set_property(SOURCE SnippetHit3DBuilderDUNEFast_tool.cc APPEND PROPERTY COMPILE_DEFINITIONS EIGEN_FFTW_DEFAULT)
 
 cet_build_plugin(Cluster3DDUNE art::EDProducer
   LIBRARIES PRIVATE
@@ -79,6 +83,21 @@ cet_build_plugin(Cluster3DDUNE art::EDProducer
   art::Persistency_Common
   cetlib::cetlib
   ROOT::Physics
+  ROOT::Tree
+)
+
+cet_build_plugin(SpacePointBuilderDUNE art::EDProducer
+  LIBRARIES PRIVATE
+  larreco::RecoAlg_Cluster3DAlgs
+  lardata::ArtDataHelper
+  lardata::AssociationUtil
+  lardataobj::RecoBase
+  art_root_io::TFileService_service
+  art::Framework_Services_Registry
+  art::Framework_Principal
+  art_plugin_support::toolMaker
+  art::Persistency_Common
+  cetlib::cetlib
   ROOT::Tree
 )
 
