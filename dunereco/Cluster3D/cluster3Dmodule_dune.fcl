@@ -1,0 +1,35 @@
+#include "hitalgorithms.fcl"
+#include "clusteralgorithms.fcl"
+#include "showeralgorithms.fcl"
+#include "cluster3dalgorithms_dune.fcl"
+
+BEGIN_PROLOG
+
+
+standard_cluster3ddune:
+{
+  module_type:            "Cluster3DDUNE"
+  HitFinderModuleLabel:   "gaushit"
+  EnableMonitoring:       false
+  EnableProduction:       false
+  Hit3DBuilderAlg:        @local::standard_snippethit3dbuilderDUNE
+  ClusterAlg:             @local::standard_cluster3dminSpanTreeAlg
+  ClusterMergeAlg:        @local::standard_cluster3dMergeAlg
+  ClusterPathAlg:         @local::standard_cluster3dPathAlg
+  ClusterParamsBuilder:   @local::standard_cluster3dParamsBuilder
+  PrincipalComponentsAlg: @local::standard_cluster3dprincipalcomponentsalg
+  SkeletonAlg:            @local::standard_cluster3dskeletonalg
+  SeedFinderAlg:          @local::standard_cluster3dhoughseedfinderalg
+  PCASeedFinderAlg:       @local::standard_cluster3dpcaseedfinderalg
+  ParallelHitsAlg:        @local::standard_cluster3dparallelhitsseedfinderalg
+}
+
+standard_spacepointbuilderdune:
+{
+  module_type:       "SpacePointBuilderDUNE"
+  EnableMonitoring:  false
+  Hit3DBuilderAlg:   @local::standard_snippethit3dbuilderDUNEFast
+}
+
+
+END_PROLOG
