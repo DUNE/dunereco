@@ -1817,11 +1817,12 @@ dune10kt_dunefd_vertdrift_1x8x6_3view_30deg_sim_nfsp : {
         params: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp.wcls_main.params
             files_wires: "dunevd10kt_3view_30deg_v3_refactored_1x8x6ref.json.bz2"
-            process_mode: "full"
+            process_mode: "1x8x6"
         }
         structs: {
             @table::dune10kt_dunefd_vertdrift_1x8x14_3view_30deg_sim_nfsp.wcls_main.structs
             process_tpc_index: 0
+            ncrm: 48
         }
     }
 }
