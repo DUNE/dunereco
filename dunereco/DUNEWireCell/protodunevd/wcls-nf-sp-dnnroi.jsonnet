@@ -48,6 +48,21 @@ local wcls = wcls_maker(params, tools);
 // FHiCL structs to fall back to bare NF+SP.
 local use_dnnroi = std.extVar('use_dnnroi');
 
+// ── Active anodes ───────────────────────────────────────────────────
+// Comma-separated list of WCT anode idents to build per-anode pipelines
+// for, e.g. "0,1,2,3" to process only the bottom CRPs of a
+// half-detector run.  "" or "all" selects every anode.  Set from FHiCL
+// via wcls_main.params.active_anodes (params entries arrive as string
+// extVars).  Anodes left out are never built, so no empty frames ever
+// reach SP/DNN-ROI/L1SP and no DNN inference is wasted on absent CRPs.
+local active_anodes_str = std.extVar('active_anodes');
+local active_anode_idxs =
+  if active_anodes_str == '' || active_anodes_str == 'all'
+  then std.range(0, std.length(tools.anodes) - 1)
+  else [std.parseInt(std.stripChars(s, ' '))
+        for s in std.split(active_anodes_str, ',')
+        if std.stripChars(s, ' ') != ''];
+
 // FP32 best KD (6-ch) PDVD model.  Resolved via WIRECELL_PATH, located in Hugging face.
 // local dnnroi_model = '/dnnroi/pdvd/pipe_distill_transformer_6ch.ts';
 local dnnroi_model = '/cvmfs/dune.osgstorage.org/pnfs/fnal.gov/usr/dune/persistent/stash/WireCell/dune/dnn-roi/pdvd/20260615/pipe_distill_transformer_6ch.ts';
@@ -60,8 +75,10 @@ local dnnroi_output_scale = 1.0;
 local dnnroi_mask_thresh = 0.2;
 local dnnroi_nchunks = 1;
 
-// L1SP-after-DNN: enabled by default in 'hybrid' mode.
-local use_l1sp_dnn = true;
+// L1SP-after-DNN in 'hybrid' mode.  Set from FHiCL via
+// wcls_main.structs.use_l1sp_dnn (boolean); false gives SP + DNN-ROI
+// only (dnnsp retagged to gauss, no L1SPFilterPD built).
+local use_l1sp_dnn = std.extVar('use_l1sp_dnn');
 local l1sp_pd_mode = 'hybrid';                 // 'process'|'dump'|'dnn'|'hybrid'|''
 local l1sp_pd_adj_enable = true;
 local l1sp_pd_adj_max_hops = 3;
@@ -119,7 +136,10 @@ local mega_anode = {
   type: 'MegaAnodePlane',
   name: 'meganodes',
   data: {
-    anodes_tn: [wc.tn(anode) for anode in tools.anodes],
+    // only reference active anodes: inactive AnodePlane instances are
+    // never constructed, and a dangling typed name here fails the
+    // NamedFactory lookup at configure time
+    anodes_tn: [wc.tn(tools.anodes[n]) for n in active_anode_idxs],
   },
 };
 
@@ -278,10 +298,10 @@ local nfsp_pipes = [
     + [nf_pipes[n]]
     + sp_dnn_l1sp_segment(n),
     'nfsp_pipe_%d' % n)
-  for n in std.range(0, std.length(tools.anodes) - 1)
+  for n in active_anode_idxs
 ];
 
-local anode_ident = [tools.anodes[n].data.ident for n in std.range(0, std.length(tools.anodes) - 1)];
+local anode_ident = [tools.anodes[n].data.ident for n in active_anode_idxs];
 local fanin_tag_rules = [
   {
     frame: {
