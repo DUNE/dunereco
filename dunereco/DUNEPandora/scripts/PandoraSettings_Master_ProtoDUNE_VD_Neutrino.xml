@@ -19,8 +19,8 @@
 
     <algorithm type = "LArDLMaster">
         <CRSettingsFile>PandoraSettings_Cosmic_ProtoDUNE_VD.xml</CRSettingsFile>
-        <NuSettingsFile>PandoraSettings_Neutrino_DUNEFD_VD.xml</NuSettingsFile>
-        <SlicingSettingsFile>PandoraSettings_Slicing_ProtoDUNE.xml</SlicingSettingsFile>
+        <NuSettingsFile>PandoraSettings_Neutrino_ProtoDUNE_VD.xml</NuSettingsFile>
+        <SlicingSettingsFile>PandoraSettings_Slicing_ProtoDUNE_VD.xml</SlicingSettingsFile>
         <StitchingTools>
             <tool type = "LArStitchingCosmicRayMerging"><ThreeDStitchingMode>true</ThreeDStitchingMode></tool>
             <tool type = "LArStitchingCosmicRayMerging"><ThreeDStitchingMode>false</ThreeDStitchingMode></tool>
