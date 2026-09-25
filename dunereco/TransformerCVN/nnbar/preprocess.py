@@ -180,58 +180,46 @@ def process_file(df, finh, base, model, total_events, out):
         print(f"[skip] {base}: {len(events)} events but {len(evt_start_indices)} event starts", flush=True)
         return 0
 
-    # --- per-prong summary arrays (one entry per event, padded to MAX_PRONGS) ------------
-    png_start_tags = png_tags[png_start_indices]
-    pr = {k: df.get(k)[png_start_indices] for k in
+    # --- per-prong summary arrays: one record per event, prongs grouped by unique_id --------
+    # Only tracks (0 <= tag < MAX_PRONGS) are kept: showers (tag >= 1000) were skipped by the
+    # original code and tracks therefore keep their original tag. Grouping by event replaces the
+    # earlier boundary detection from the tag sequence, which lost the record of an event without
+    # track prongs and then dropped the whole file at the count check.
+    key = evt_ids.astype(np.int64) * 100000 + prong_tag_orig
+    first = np.ones(len(evt_ids), dtype=bool)
+    first[1:] = key[1:] != key[:-1]
+    png_first = np.where(first & (prong_tag_orig >= 0) & (prong_tag_orig < MAX_PRONGS))[0]
+    pr = {k: df.get(k)[png_first] for k in
           ['prong_true_pdg', 'prong_true_pdg_mom', 'prong_tag', 'prong_eng', 'prong_length',
            'prong_startx', 'prong_starty', 'prong_startz', 'prong_px', 'prong_py', 'prong_pz',
            'prong_true_eng', 'prong_true_px', 'prong_true_py', 'prong_true_pz']}
-    per_event = []      # list of dicts, one per event
-    cur = new_event_prongs()
-    for ipng, png in enumerate(png_start_tags):
-        if png >= MAX_PRONGS:
-            continue
-        if ipng != 0:
-            if png == -1 and png_start_tags[ipng - 1] == -1:
-                per_event.append(cur)
-                continue
-            if png == -1:
-                per_event.append(cur)
-                cur = new_event_prongs()
-                per_event.append(cur)
-                continue
-            if png <= png_start_tags[ipng - 1]:
-                per_event.append(cur)
-                cur = new_event_prongs()
+    records = {u: new_event_prongs() for u in events}
+    for j, i in enumerate(png_first):
+        cur = records[evt_ids[i]]
+        png = int(pr['prong_tag'][j])
         cur['pad_mask'][png] = 1
-        label = PDG_LABELS.get(int(abs(pr['prong_true_pdg'][ipng])))
+        label = PDG_LABELS.get(int(abs(pr['prong_true_pdg'][j])))
         if label is None:
             label = 7
-            if pr['prong_true_pdg'][ipng] != -1:
-                print("Unknown pdg: %i" % pr['prong_true_pdg'][ipng], flush=True)
+            if pr['prong_true_pdg'][j] != -1:
+                print("Unknown pdg: %i" % pr['prong_true_pdg'][j], flush=True)
         cur['label'][png] = label
-        cur['mother'][png] = pr['prong_true_pdg_mom'][ipng]
-        cur['E'][png] = pr['prong_true_eng'][ipng]
-        cur['P'][:, png] = [pr['prong_true_px'][ipng], pr['prong_true_py'][ipng], pr['prong_true_pz'][ipng]]
-        length = pr['prong_length'][ipng]
+        cur['mother'][png] = pr['prong_true_pdg_mom'][j]
+        cur['E'][png] = pr['prong_true_eng'][j]
+        cur['P'][:, png] = [pr['prong_true_px'][j], pr['prong_true_py'][j], pr['prong_true_pz'][j]]
+        length = pr['prong_length'][j]
         if length == -1:
             length = 0
-        cur['input'][:, png] = [pr['prong_eng'][ipng], length, pr['prong_startx'][ipng], pr['prong_starty'][ipng],
-                                pr['prong_startz'][ipng], pr['prong_px'][ipng], pr['prong_py'][ipng], pr['prong_pz'][ipng]]
-        if pr['prong_true_pdg'][ipng] == 22 and pr['prong_true_pdg_mom'][ipng] == 111:
+        cur['input'][:, png] = [pr['prong_eng'][j], length, pr['prong_startx'][j], pr['prong_starty'][j],
+                                pr['prong_startz'][j], pr['prong_px'][j], pr['prong_py'][j], pr['prong_pz'][j]]
+        if pr['prong_true_pdg'][j] == 22 and pr['prong_true_pdg_mom'][j] == 111:
             cur['label_split_photons'][png] = 5
-        elif pr['prong_true_pdg'][ipng] == 22 and pr['prong_true_pdg_mom'][ipng] == 2112:
+        elif pr['prong_true_pdg'][j] == 22 and pr['prong_true_pdg_mom'][j] == 2112:
             cur['label_split_photons'][png] = 3
         else:
             cur['label_split_photons'][png] = cur['label'][png]
-        if pr['prong_tag'][ipng] >= 1000:
-            cur['ShwTrk'][png] = 0
-        elif pr['prong_tag'][ipng] >= 0:
-            cur['ShwTrk'][png] = 1
-    per_event.append(cur)
-    if len(per_event) != len(evt_start_indices):
-        print(f"[skip] {base}: {len(per_event)} prong records but {len(evt_start_indices)} events", flush=True)
-        return 0
+        cur['ShwTrk'][png] = 1
+    per_event = [records[u] for u in events]
 
     # --- event images -------------------------------------------------------------------
     evt_image_indices = np.where(prong_tag_orig == -1)[0]
