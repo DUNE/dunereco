@@ -25,6 +25,8 @@ kept in dunereco.
 * `func/` -- data products with ROOT dictionaries:
   `TransformerPixelMap`, `TransformerCVNResult`, `TransformerCVNPID`, and the
   `PType` prong-class enumeration.
+* `nnbar/` -- scripts (ROOT macro, python, shell) of the n-nbar inference
+  chain; installed into `bin`, nothing compiled.
 
 The package is only built when `LIBTORCH_DIR` is defined (libtorch is needed
 by the evaluator); the `func/` library depends on `RegCNNFunc`.
@@ -127,5 +129,7 @@ hold the code, and the data locations. In short:
 | 7 | Sparsify: HDF5 of stage 6 -> the network input schema (per-event prong features and masks, event/prong sparse pixel coordinates and values, targets) | TransformerCVN training toolkit of the network author (not yet public) |
 | 8 | Training and evaluation (`train.py`, `evaluate.py`; PyTorch 2.0.1, Lightning 1.9.5) | [KaiwenYu2001/dune-nnbar-transformercvn_v2](https://github.com/KaiwenYu2001/dune-nnbar-transformercvn_v2) |
 
-The evaluation step and the trained weights will be documented here once
-they are published by the network author.
+Stages 5 to 8 are run from the `nnbar/` subdirectory of this package; see
+[`nnbar/README.md`](nnbar/README.md) for the runbook. The sparsify and
+evaluation scripts and the trained weights will be added there once they are
+published by the network author.
