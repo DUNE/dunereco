@@ -1,6 +1,6 @@
 BEGIN_PROLOG
 
-#   This file defines the configuration for the RegCNNEventDump module
+#   This file defines the configuration for the TransformerCVNMapper module
 
 standard_transformercvnmapper:
 {
