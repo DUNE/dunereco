@@ -67,7 +67,8 @@ void make_text_file_to_root_trks_shws(TString input, TString outtext, string typ
 	int f_pfVtxWire, f_pfVtxTime;
 	int f_truemode, f_trueccnc, f_truenupdg;
 
-	int f_trueleppdg, f_nshowers, f_shwflag;
+	int f_trueleppdg, f_nshowers;
+	int f_shwflag = -1;   // branched but never set: initialise so the column is deterministic
 	float f_truelepeng, f_trueleppx, f_trueleppy, f_trueleppz;
 	float f_shweng, f_shwpx, f_shwpy, f_shwpz;
 	int f_offsetU, f_offsetV, f_offsetZ;
