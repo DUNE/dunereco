@@ -9,9 +9,11 @@ the package is modelled on `RegCNN` (see PR
 [#128](https://github.com/DUNE/dunereco/pull/128)).
 
 This README describes the package structure, the art modules and their
-configuration, where the trained networks live, and how the n-nbar training
-pipeline that feeds this package is organised. Training code is **not** kept
-in dunereco; see "Training pipeline" for the repositories that hold it.
+configuration, and where the trained networks live. It also documents the
+DUNE n-nbar search, which trains and evaluates a TransformerCVN network of
+its own, entirely outside art: that workflow uses neither the mapper nor the
+evaluator of this package (see "n-nbar workflow"). Training code is **not**
+kept in dunereco.
 
 
 ## Package structure
@@ -100,14 +102,19 @@ and selected with the `Network` parameter of the evaluator.
 | Model | Path | Notes |
 |---|---|---|
 | FD HD beam, 2018 production | `FDHD/2018/dune_transformercvn_fd_hd_beam_2018prod.torchscript` | default in `TransformerCVNEvaluator.fcl` |
-| FD HD n-nbar vs atmospheric | to be added | weights and the exported TorchScript are pending from the network author |
+
+The n-nbar network is not evaluated through this module and has no
+TorchScript file here; its weights are kept with the training repository
+listed below.
 
 
-## Training pipeline (n-nbar search)
+## n-nbar workflow
 
-Training and evaluation of the network are done outside larsoft. The n-nbar
-chain is documented in
-[linyan-w/nnbar-production](https://github.com/linyan-w/nnbar-production),
+The n-nbar search trains a TransformerCVN network to separate n-nbar
+annihilation events from atmospheric-neutrino background. Everything after
+the art dump happens outside larsoft, in Python on HDF5 files; the art
+modules of this package are not part of that chain. The chain is documented
+in [linyan-w/nnbar-production](https://github.com/linyan-w/nnbar-production),
 whose README lists every stage, the repositories and feature branches that
 hold the code, and the data locations. In short:
 
@@ -119,21 +126,6 @@ hold the code, and the data locations. In short:
 | 6 | pixelmap files -> one HDF5 file (sparse `cvnmap_index`/`cvnmap_value`, prong arrays, truth, event ids) | `nnbar-production/cvn/preprocess_atmnu.py` |
 | 7 | Sparsify: HDF5 of stage 6 -> the network input schema (per-event prong features and masks, event/prong sparse pixel coordinates and values, targets) | TransformerCVN training toolkit of the network author (not yet public) |
 | 8 | Training and evaluation (`train.py`, `evaluate.py`; PyTorch 2.0.1, Lightning 1.9.5) | [KaiwenYu2001/dune-nnbar-transformercvn_v2](https://github.com/KaiwenYu2001/dune-nnbar-transformercvn_v2) |
-| 9 | Export of the trained checkpoint to TorchScript for this evaluator | to be added to the repository of stage 8 |
 
-The feature normalisation constants are stored inside the training checkpoint,
-so the exported TorchScript must wrap the trainer's `forward` (which applies
-them), not the bare network.
-
-
-## Open items before the n-nbar network can run in art
-
-* The evaluator feeds the network pixel maps only. The n-nbar network also
-  takes a feature vector per prong and event-level variables, and its prong
-  head has a different number of classes; the evaluator input construction
-  and the fixed output sizes need to be generalised.
-* The training images (stage 5, 350x350 window around the vertex) and the
-  images this mapper produces (400x280) must be made identical, including the
-  prong tagging, before a network trained on one is evaluated on the other.
-* `evaluate.py`, the n-nbar weights and the TorchScript export are pending
-  from the network author; they will be referenced here once available.
+The evaluation step and the trained weights will be documented here once
+they are published by the network author.
