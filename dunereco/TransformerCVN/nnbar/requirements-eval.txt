@@ -1,0 +1,13 @@
+# Stages 7-8 (sparsify + evaluate.py of the TransformerCVN training toolkit), CPU inference.
+# The pins are the ones the network was trained with; newer rich/transformers releases break
+# Lightning 1.9.5 / torch 2.0.1.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.0.1
+pytorch-lightning==1.9.5
+torchmetrics==0.11.4
+numpy==1.26.4
+h5py
+scikit-learn
+matplotlib
+rich==13.3.5
+transformers==4.33.3
