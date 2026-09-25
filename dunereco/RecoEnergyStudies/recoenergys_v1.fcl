@@ -1,0 +1,104 @@
+#include "services_dune.fcl"
+#include "recoenergystudies.fcl"
+#include "pandoramodules_dune.fcl"
+#include "trackshowerhits.fcl"
+#include "trackfindermodules_dune.fcl"
+#include "showerfindermodules_dune.fcl"
+#include "emshower3d.fcl"
+#include "mvamodule.fcl"
+#include "energyreco.fcl"
+#include "RegCVNMapper.fcl"
+#include "RegCVNEvaluator.fcl"
+#include "tools_dune.fcl"
+
+process_name: RecoEnergyS
+
+services:
+{
+  TFileService: { fileName: "RecoEnergyS.root" }
+        @table::dunefd_reco_services
+  MemoryTracker:     {}
+  TimeTracker:       {}
+  RandomNumberGenerator: {} #ART native random number generator
+  message:              @local::dune_message_services_prod
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+                        @table::dunefd_reco_services
+}
+
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1        # Number of events to create
+}
+
+physics:
+{
+  producers:
+  {
+    rns:                      { module_type: RandomNumberSaver }
+    mvaselectnue:     @local::dunefd_mvaselect
+    mvaselectnumu:    @local::dunefd_mvaselect
+    emshowernew:      @local::dune10kt_emshower
+    energyreconue:    @local::dunefd_nuenergyreco
+    energyreconumu:   @local::dunefd_nuenergyreco
+    energyreconuelse: @local::dunefd_nuenergyreco
+    regcvnmap:      @local::standard_regcvnmapper
+    regcvneval:     @local::standard_regcvnevaluator
+  }
+  analyzers:
+  {
+    recoEnergy:             @local::recoenergys
+  }
+# reco: [ rns, emshowernew, mvaselectnue, energyreconue ]
+ reco: [ rns, emshowernew, energyreconue, energyreconumu, 
+         energyreconuelse, regcvnmap, regcvneval]
+ myana: [ recoEnergy ]
+ trigger_paths: [reco]
+ end_paths: [ myana ]
+
+}
+outputs:
+{
+  out1:
+  {
+    module_type: RootOutput
+    fileName:    "%ifb_%tc_recoE.root"
+    dataTier:    "full-reconstructed"
+    compressionLevel: 1
+  }
+}
+
+physics.producers.regcvnmap.GlobalWireMethod: 2
+physics.producers.regcvneval.TFNetHandler.LibPath: "MRB_INSTALL"
+physics.producers.regcvneval.Target: "nuevertex"
+physics.producers.regcvneval.TFNetHandler.NInputs: 4
+physics.producers.regcvneval.TFNetHandler.TFProtoBuf: "duneRegCVNNetwork/dune_nue_vertices_20190211-114359.pb"
+#physics.producers.regcvnmap.WireLength: 100
+#physics.producers.regcvnmap.TdcWidth: 70
+#physics.producers.regcvneval.TFNetHandler.TFProtoBuf: "duneRegCVNNetwork/dune_nue_vertices_20190225-213320.pb"
+
+# old ??
+#physics.analyzers.wirecurrent.HitsModuleLabel: "gaushit"
+#physics.analyzers.recoEnergy.PFParticleModuleLabel:   "pandora"
+services.Geometry: @local::dune10kt_1x2x6_geo
+physics.producers.emshowernew.ClusterModuleLabel:    "pandora"
+physics.producers.emshowernew.HitsModuleLabel:       "linecluster"
+physics.producers.emshowernew.PFParticleModuleLabel: "pandora"
+#physics.producers.emshowernew.TrackModuleLabel:      "pandoraTrack"
+physics.producers.emshowernew.CNNEMModuleLabel:      "emtrkmichelid:emtrkmichel"
+physics.producers.emshowernew.UseCNNtoIDEMPFP:       true
+physics.producers.emshowernew.UseCNNtoIDEMHit:       false
+physics.producers.emshowernew.MinTrackLikeScore:     0.1
+
+physics.producers.mvaselectnue.MVAMethod:  "BDTG"
+physics.producers.mvaselectnue.Select:  "nue"
+physics.producers.mvaselectnue.WeightFile: "MVASelect/v2.2/TMVAClassification_BDTG.nue.weights.xml" 
+
+physics.producers.energyreconue.RecoMethod:   2
+
+physics.producers.mvaselectnumu.MVAMethod:  "BDTG"
+physics.producers.mvaselectnumu.Select:  "numu"
+physics.producers.mvaselectnumu.WeightFile: "MVASelect/v2.2/TMVAClassification_BDTG.numu.weights.xml" 
+physics.producers.energyreconumu.RecoMethod:   1
+
+physics.producers.energyreconuelse.RecoMethod:   3

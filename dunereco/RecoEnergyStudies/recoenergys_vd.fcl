@@ -1,0 +1,120 @@
+#include "services_dune.fcl"
+#include "CVNMapper.fcl"
+#include "CVNEvaluator.fcl"
+#include "recoenergystudies.fcl"
+#include "pandoramodules_dune.fcl"
+#include "trackshowerhits.fcl"
+#include "trackfindermodules_dune.fcl"
+#include "showerfindermodules_dune.fcl"
+#include "emshower3d.fcl"
+#include "mvamodule.fcl"
+#include "energyreco.fcl"
+#include "RegCNNEventDump.fcl"
+#include "RegCNNMapper.fcl"
+#include "RegCNNEvaluator.fcl"
+#include "tools_dune.fcl"
+
+process_name: RecoEnergyS
+
+services:
+{
+  TFileService: { fileName: "RecoEnergyS.root" }
+        @table::dunefdvd_reco_services
+  MemoryTracker:     {}
+  TimeTracker:       {}
+  RandomNumberGenerator: {} #ART native random number generator
+  message:              @local::dune_message_services_prod
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+                        @table::dunefd_reco_services
+}
+
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1        # Number of events to create
+}
+outputs:
+{
+  out1:
+  {
+    module_type: RootOutput
+    #fileName:    "%ifb_%tc_recoE.root"
+    fileName:    "test_recoE.root"
+    dataTier:    "full-reconstructed"
+    compressionLevel: 1
+  }
+}
+
+physics:
+{
+  producers:
+  {
+    rns:                      { module_type: RandomNumberSaver }
+    mvaselectnue:     @local::dunefd_mvaselect
+    mvaselectnumu:    @local::dunefd_mvaselect
+    emshowernew:      @local::dune10kt_emshower
+    energyreconue:    @local::dunefd_nuenergyreco_pandora_nue
+    energyreconumu:   @local::dunefd_nuenergyreco_pandora_numu
+    energyreconuelse: @local::dunefd_nuenergyreco_pandora_nc
+    cvnmap: @local::standard_cvnmapper
+    cvneval: @local::standard_cvnevaluator
+
+  }
+  analyzers:
+  {
+    recoEnergy:             @local::recoenergys
+    regcnneventdump1st:   @local::standard_regcnneventdump_fhc
+    regcnneventdump2nd:   @local::standard_regcnneventdump_fhc
+    regcnneventdump3rd:   @local::standard_regcnneventdump_fhc
+    regcnneventdump2:   @local::standard_regcnneventdump_fhc
+    regcnneventdump2b:  @local::standard_regcnneventdump_fhc
+  }
+# reco: [ rns, emshowernew, mvaselectnue, energyreconue ]
+ reco: [ rns, emshowernew, energyreconue, energyreconumu, 
+         energyreconuelse, cvnmap, cvneval
+	]
+ #map: [ cvnmap, cvneval ]
+ myana: [ recoEnergy 
+#	 , regcnneventdump1st, regcnneventdump2nd, regcnneventdump3rd
+#	 , regcnneventdump2, regcnneventdump2b
+ ]
+ stream1: [ out1 ]
+
+ trigger_paths: [reco]
+ end_paths: [ myana ]
+ #end_paths: [ stream1 ]
+ #out: [ stream1 ]
+
+}
+
+
+# old ??
+#physics.analyzers.wirecurrent.HitsModuleLabel: "gaushit"
+#physics.analyzers.recoEnergy.PFParticleModuleLabel:   "pandora"
+services.Geometry: @local::dunevd10kt_1x8x6_3view_geo
+services.DetectorPropertiesService: @local::dunefdvd_detproperties
+physics.producers.emshowernew.ClusterModuleLabel:    "pandora"
+physics.producers.emshowernew.HitsModuleLabel:       "gaushit"
+physics.producers.emshowernew.TrackModuleLabel:       "pandoraTrack"
+physics.producers.emshowernew.PFParticleModuleLabel: "pandora"
+physics.analyzers.recoEnergy.TrackModuleLabel1:      "pandoraTrack"
+physics.analyzers.recoEnergy.HitsModuleLabel:      "gaushit"
+physics.analyzers.recoEnergy.ShowerModuleLabel:      "pandoraShower"
+physics.analyzers.recoEnergy.IsVD: true
+#physics.producers.emshowernew.CNNEMModuleLabel:      "emtrkmichelid:emtrkmichel"
+physics.producers.emshowernew.UseCNNtoIDEMPFP:       true
+physics.producers.emshowernew.UseCNNtoIDEMHit:       false
+physics.producers.emshowernew.MinTrackLikeScore:     0.1
+
+physics.producers.mvaselectnue.MVAMethod:  "BDTG"
+physics.producers.mvaselectnue.Select:  "nue"
+physics.producers.mvaselectnue.WeightFile: "MVASelect/v2.2/TMVAClassification_BDTG.nue.weights.xml" 
+
+physics.producers.energyreconue.RecoMethod:   2
+
+physics.producers.mvaselectnumu.MVAMethod:  "BDTG"
+physics.producers.mvaselectnumu.Select:  "numu"
+physics.producers.mvaselectnumu.WeightFile: "MVASelect/v2.2/TMVAClassification_BDTG.numu.weights.xml" 
+physics.producers.energyreconumu.RecoMethod:   1
+
+physics.producers.energyreconuelse.RecoMethod:   3
