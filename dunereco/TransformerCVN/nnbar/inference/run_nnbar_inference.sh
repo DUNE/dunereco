@@ -12,17 +12,18 @@
 #   TYPE       image geometry of the stage-5 macro: nnbar (default) or atmnu
 #   NPAR       parallel stage-5 jobs (default 1)
 #   MODEL_TAG  sample tag stored in the h5 "model" column (atm, ha_br, ...); default none
-#   WEIGHTS    checkpoint of the trained network   [$NNBAR_CVN_TOOLKIT/nnbar_best.ckpt]
-#   OPTIONS    options file matching the checkpoint [$NNBAR_CVN_TOOLKIT/option_files/example.json]
+#   WEIGHTS    checkpoint of the trained network   [$NNBAR_CVN_WEIGHTS, fetched by setup_nnbar_cvn.sh]
+#   OPTIONS    options file matching the checkpoint [training/option_files/example.json]
 #   STOP_AFTER pixelmap | h5 | sparse : stop after that stage
 #   -P         do not apply the analysis precut in stage 7
 #
-# Stage 7 (sparsify.py, here) and stage 8 (evaluate.py of the training toolkit, cloned by
-# setup_nnbar_cvn.sh into $NNBAR_CVN_TOOLKIT) run on the CPU; stage 8 accepts -d cuda:0.
-# Requires: source setup_nnbar_cvn.sh
+# Stage 7 (../sparsify) and stage 8 (../training/evaluate.py) run on the CPU; stage 8 accepts
+# -d cuda:0. Requires: source ../setup/setup_nnbar_cvn.sh (locates the tree, sets NNBAR_CVN_DIR)
 set -uo pipefail
 _here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-MACRO="$_here/make_text_file_to_root_trks_shws.C"
+[ -f "$_here/../training/evaluate.py" ] && NNBAR_CVN_DIR="$( cd "$_here/.." && pwd )"
+[ -n "${NNBAR_CVN_DIR:-}" ] && [ -f "$NNBAR_CVN_DIR/training/evaluate.py" ] || { echo "nnbar tree not found; source setup_nnbar_cvn.sh"; exit 1; }
+MACRO="$NNBAR_CVN_DIR/pixelmap/make_text_file_to_root_trks_shws.C"
 INPUT=""; STAGE6=""; OUTDIR=""; TYPE=nnbar; NPAR=1; MODEL_TAG=""; WEIGHTS=""; OPTIONS=""; STOP=""; NOPRECUT=""; DEVICE=cpu
 usage() { sed -n '2,24p' "$0"; exit 1; }
 while getopts "i:6:o:t:j:m:w:O:s:d:Ph" opt; do
@@ -71,19 +72,19 @@ while IFS= read -r f; do [ -n "$f" ] && printf '%s\0%s\0' "$f" "$OUTDIR/pixelmap
 PMLIST="$OUTDIR/pixelmap.txt"
 find "$OUTDIR/pixelmap" -maxdepth 1 -type f -name '*.root' -size +10000c | LC_ALL=C sort > "$PMLIST"
 echo "== stage 6: $(wc -l < "$PMLIST") pixelmap file(s) -> $OUTDIR/pixelmap.h5"
-python "$_here/preprocess.py" "$H5" --filelist "$PMLIST" --no-stage ${MODEL_TAG:+--model-tag "$MODEL_TAG"} || exit 1
+python "$NNBAR_CVN_DIR/preprocess/preprocess.py" "$H5" --filelist "$PMLIST" --no-stage ${MODEL_TAG:+--model-tag "$MODEL_TAG"} || exit 1
 [ "$STOP" = h5 ] && exit 0
 fi
 
 # ---- stage 7: sparsify (network input format; applies the analysis precut) -------------------
 echo "== stage 7: $H5 -> $OUTDIR/sparse.h5"
-python "$_here/sparsify.py" "$H5" "$OUTDIR/sparse.h5" --jobs "$NPAR" $NOPRECUT || exit 1
+python "$NNBAR_CVN_DIR/sparsify/sparsify.py" "$H5" "$OUTDIR/sparse.h5" --jobs "$NPAR" $NOPRECUT || exit 1
 [ "$STOP" = sparse ] && exit 0
 
-# ---- stage 8: evaluate with the training toolkit -------------------------------------------
-TOOLKIT=${NNBAR_CVN_TOOLKIT:-}
-[ -n "$TOOLKIT" ] && [ -f "$TOOLKIT/evaluate.py" ] || { echo "stage 8: training toolkit not found (NNBAR_CVN_TOOLKIT); source setup_nnbar_cvn.sh"; exit 1; }
-WEIGHTS=${WEIGHTS:-$TOOLKIT/nnbar_best.ckpt}; OPTIONS=${OPTIONS:-$TOOLKIT/option_files/example.json}
+# ---- stage 8: evaluate with ../training/evaluate.py -------------------------------------------
+TOOLKIT="$NNBAR_CVN_DIR/training"
+WEIGHTS=${WEIGHTS:-${NNBAR_CVN_WEIGHTS:-}}; OPTIONS=${OPTIONS:-$TOOLKIT/option_files/example.json}
+[ -n "$WEIGHTS" ] || { echo "stage 8: no checkpoint (-w WEIGHTS or NNBAR_CVN_WEIGHTS from setup_nnbar_cvn.sh)"; exit 1; }
 [ -f "$WEIGHTS" ] && [ -f "$OPTIONS" ] || { echo "stage 8: weights $WEIGHTS or options $OPTIONS not found"; exit 1; }
 rm -f "$OUTDIR/predictions.h5"
 echo "== stage 8: evaluating $OUTDIR/sparse.h5 with $WEIGHTS on $DEVICE -> $OUTDIR/predictions.h5"

@@ -1,13 +1,10 @@
-# n-nbar TransformerCVN inference chain (stages 5-8): scripts only, nothing is compiled.
-# They are installed into the product's bin directory so that, after "setup dunereco",
-# run_nnbar_inference.sh and setup_nnbar_cvn.sh are on the PATH.
-install_scripts(LIST
-  run_nnbar_inference.sh
-  setup_nnbar_cvn.sh
-  preprocess.py
-  sparsify.py
-  make_text_file_to_root_trks_shws.C
-  requirements.txt
-  requirements-eval.txt
-)
-install_source()
+# n-nbar TransformerCVN: pixel maps, preprocessing, sparsify, training and inference.
+# Python and ROOT scripts only, nothing is compiled. The two entry points go into the product's
+# bin directory; the whole tree is installed with the sources, where the entry points find it
+# ($DUNERECO_DIR/source/dunereco/TransformerCVN/nnbar, see setup/setup_nnbar_cvn.sh).
+install_scripts(LIST setup/setup_nnbar_cvn.sh inference/run_nnbar_inference.sh inference/summarize_scores.py)
+install(DIRECTORY setup pixelmap preprocess sparsify training inference
+        DESTINATION source/dunereco/TransformerCVN/nnbar
+        USE_SOURCE_PERMISSIONS
+        PATTERN "__pycache__" EXCLUDE
+        PATTERN "*.ckpt" EXCLUDE)
