@@ -3,7 +3,9 @@
 The DUNE n-nbar search classifies events with a TransformerCVN trained on
 n-nbar signal against atmospheric neutrinos. This directory contains the
 complete chain from the RecoEnergyS art dump to per-event scores, plus the
-training code. Nothing here is compiled. The simulation up to the art dump
+training code, kept together as the record of the analysis. It is a standalone
+tree of python and ROOT scripts: nothing here is compiled, installed or run
+inside art, and the dunereco build does not touch it. Use it from a checkout. The simulation up to the art dump
 is documented in [linyan-w/nnbar-production](https://github.com/linyan-w/nnbar-production);
 the network code is the one of
 [KaiwenYu2001/dune-nnbar-transformercvn_v2](https://github.com/KaiwenYu2001/dune-nnbar-transformercvn_v2)
@@ -31,8 +33,7 @@ source setup/setup_nnbar_cvn.sh --no-eval  # stages 5-6 only (ROOT + h5 tools)
 source setup/setup_nnbar_cvn.sh --train    # CUDA torch 2.0.1 (cu118) for training
 ```
 
-The script finds this tree next to itself, or through `$NNBAR_CVN_DIR`, or in
-the installed sources `$DUNERECO_DIR/source/dunereco/TransformerCVN/nnbar`.
+The script finds this tree next to itself or through `$NNBAR_CVN_DIR`.
 It creates the venv `$NNBAR_CVN_VENV` (default
 `/exp/dune/app/users/$USER/nnbar-cvn-venv`, gpvm home areas are small) on
 first use, puts `training/` on `PYTHONPATH`, and fetches the checkpoint into
@@ -51,10 +52,10 @@ lar -c recoenergys.fcl -s reco2.root                 # -> <reco2>_cvnpreprocess.
 
 # 5-8. host environment (not inside a container)
 source setup/setup_nnbar_cvn.sh
-run_nnbar_inference.sh -i /path/to/cvnpreprocess/files -o /exp/dune/data/users/$USER/nnbar_eval \
+inference/run_nnbar_inference.sh -i /path/to/cvnpreprocess/files -o /exp/dune/data/users/$USER/nnbar_eval \
     -t nnbar -j 8 -m ha_br -d cuda:0
-run_nnbar_inference.sh -6 stage6.h5 -o OUT -d cuda:0   # start from an existing stage-6 file
-summarize_scores.py OUT/predictions.h5 --sparse OUT/sparse.h5 --stage6 stage6.h5 [--cut X]
+inference/run_nnbar_inference.sh -6 stage6.h5 -o OUT -d cuda:0   # start from an existing stage-6 file
+inference/summarize_scores.py OUT/predictions.h5 --sparse OUT/sparse.h5 --stage6 stage6.h5 [--cut X]
 ```
 
 `-i` accepts one file, a directory of files or a text file listing them
@@ -171,4 +172,3 @@ chain runs unchanged on data or truth-less simulation.
 * Stages 7-8 were run on the four reprocessed hA-BR detector-variation samples
   with the published checkpoint; the CUDA path and `summarize_scores.py` were
   exercised there.
-* The CMake install of this tree has not been built yet.

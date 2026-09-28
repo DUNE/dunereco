@@ -11,8 +11,8 @@
 #          from requirements.txt plus requirements-eval.txt (CPU torch; skipped with --no-eval) or,
 #          with --train, requirements-train.txt after a CUDA torch (see that file).
 # code:    the network code, train.py and evaluate.py live in ../training of this tree; it is put on
-#          PYTHONPATH. The tree is located from this script, or from $NNBAR_CVN_DIR, or from the
-#          installed sources of dunereco ($DUNERECO_DIR/source/dunereco/TransformerCVN/nnbar).
+#          PYTHONPATH. The tree is located from this script or from $NNBAR_CVN_DIR (nothing here is
+#          built or installed by dunereco; use the tree from a checkout).
 # weights: $NNBAR_CVN_WEIGHTS (default: nnbar_best.ckpt next to the venv); downloaded once from the
 #          author's repository at the pinned commit $NNBAR_CVN_WEIGHTS_COMMIT if missing.
 _here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -21,8 +21,6 @@ for _a in "$@"; do case $_a in --no-eval) _with_eval=0;; --train) _train=1;; esa
 
 if   [ -f "$_here/../training/evaluate.py" ]; then NNBAR_CVN_DIR="$( cd "$_here/.." && pwd )"
 elif [ -n "${NNBAR_CVN_DIR:-}" ] && [ -f "$NNBAR_CVN_DIR/training/evaluate.py" ]; then :
-elif [ -n "${DUNERECO_DIR:-}" ] && [ -f "$DUNERECO_DIR/source/dunereco/TransformerCVN/nnbar/training/evaluate.py" ]; then
-  NNBAR_CVN_DIR="$DUNERECO_DIR/source/dunereco/TransformerCVN/nnbar"
 else echo "ERROR: cannot locate the nnbar tree (set NNBAR_CVN_DIR)"; return 1 2>/dev/null || exit 1; fi
 export NNBAR_CVN_DIR
 
