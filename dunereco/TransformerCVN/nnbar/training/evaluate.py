@@ -98,9 +98,21 @@ def main(args=None):
         options.testing_file = args.testing_file
     if args.split == "testing" and not options.testing_file:
         raise ValueError("The testing split requires --testing-file or options.testing_file")
-    model = Network(options)
     checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
-    model.load_state_dict(checkpoint["state_dict"])
+    state = checkpoint["state_dict"]
+
+    class SizedNetwork(Network):
+        """Size the event and prong classifiers from the checkpoint, not from the labels present in
+        the input file (a background-only or signal-only file would otherwise build a smaller head)."""
+
+        def create_datasets(self):
+            training, validation, testing = super().create_datasets()
+            training.num_event_classes = state["network.event_decoder.hidden_layer.weight"].shape[0]
+            training.num_prong_classes = state["network.prong_decoder.output_layer.weight"].shape[0]
+            return training, validation, testing
+
+    model = SizedNetwork(options)
+    model.load_state_dict(state)
     dataset = model.testing_dataset if args.split == "testing" else model.validation_dataset
     loader_options = dict(model.dataloader_options)
     loader_options.update(batch_size=args.batch_size, num_workers=0, drop_last=False)

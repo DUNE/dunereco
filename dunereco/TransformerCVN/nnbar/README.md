@@ -144,11 +144,12 @@ runs on the CPU. `training/README.md` is the author's README (the
 `pip install -e` and pytest instructions there refer to files the author
 keeps local; use `setup/` instead).
 
-The class counts of the network are inferred from the labels present in the
-file given as `--training_file`, also at inference time: a file passed to
-`evaluate.py` must contain the same label range as the training file (the
-stage-7 files always do, since `mc.inter` is mapped to the four classes and
-the prong labels span all eight classes).
+During training the class counts of the network are inferred from the labels
+present in `--training_file`. `evaluate.py` here differs from the upstream
+copy in one respect: it sizes the event and prong classifiers from the
+checkpoint instead, so that a background-only or signal-only file can be
+scored (upstream would build a 3-class head for a file without n-nbar
+events and fail to load the 4-class checkpoint).
 
 ## Stage-6 HDF5 layout
 
