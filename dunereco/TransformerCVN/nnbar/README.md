@@ -18,9 +18,9 @@ the network code is the one of
 | `setup/` | -- | `setup_nnbar_cvn.sh` (ROOT, python venv, checkpoint), pinned `requirements*.txt` |
 | `pixelmap/` | 5 | `make_text_file_to_root_trks_shws.C`: RecoEnergyS tree `recoEnergy/WC` -> `pixelmap` tree, one row per pixel of the event image and of each prong image (3 planes x 350 x 350 around the Pandora vertex); drops events with fewer than 100 hits or no vertex |
 | `preprocess/` | 6 | `preprocess.py`: pixelmap files -> one HDF5 file (sparse images, prong features, truth, precut variables) |
-| `sparsify/` | 7 | `sparsify.py`: stage-6 HDF5 -> the network input format (script version of the author's `CreateFullySparseDataset.ipynb`); applies the analysis precut |
+| `sparsify/` | 7 | `sparsify.py`: stage-6 HDF5 -> the network input format (script version of the author's `CreateFullySparseDataset.ipynb`); applies the analysis precut; carries `event_id`, `file_name` and the `genie/` truth group through. `sparsify_streaming.py`: same output in blocks, for files larger than the memory |
 | `training/` | -- | the network (`transformercvn/`), `train.py`, `evaluate.py`, `option_files/example.json` (the configuration of the published checkpoint) |
-| `inference/` | 8 | `run_nnbar_inference.sh` (chains stages 5-8 or 7-8), `summarize_scores.py` |
+| `inference/` | 8 | `run_nnbar_inference.sh` (chains stages 5-8 or 7-8), `attach_truth.py` (copies `event_id` and the truth into `predictions.h5`), `summarize_scores.py` |
 
 Stage 4, the `RecoEnergyS` art analyzer that writes `*_cvnpreprocess.root`,
 is `dunereco/RecoEnergyStudies` (branch `feature/lwan_recoenergystudies`).
@@ -64,8 +64,9 @@ otherwise through the NFS mount). `-s pixelmap|h5|sparse` stops the chain
 early, `-P` skips the analysis precut in stage 7, `-d cuda:0` evaluates on a
 GPU, `-w` and `-O` override the checkpoint and its options file. Stage 5 is
 resumable: existing outputs above 10 kB are skipped. Stage 7 holds the whole
-stage-6 file in memory, like the notebook it comes from; split very large
-samples into several stage-6 files. The `-t` type must be `nnbar` for every
+stage-6 file in memory, like the notebook it comes from, unless the file is
+larger than `$NNBAR_CVN_STREAM_GB` (default 8 GB) or `-S` is given: then
+`sparsify_streaming.py` produces the identical output in blocks of events. The `-t` type must be `nnbar` for every
 sample (signal and atmospheric background).
 
 Output layout under `-o`:
@@ -76,18 +77,23 @@ pixelmap/<name>.root, <name>.log    stage 5
 pixelmap.h5                         stage 6
 sparse.h5                           stage 7  (network input; event_id and file_name carried along)
 predictions.h5                      stage 8  (event_probabilities [N,4], event_predictions, event_targets,
-                                              prong_* flattened with prong_event_index)
+                                              prong_* flattened with prong_event_index; plus event_id,
+                                              file_name, truesE, prescut, models and genie/* copied from
+                                              sparse.h5 by attach_truth.py)
 ```
 
 The event classes are, in order, other (NC and nu_tau), nu_mu CC, nu_e CC and
 n-nbar; the n-nbar score is the last column of `event_probabilities`. Rows of
-`predictions.h5` correspond one to one to the events of `sparse.h5`
-(`event_id` gives run, subrun, event). The score cut of the analysis is set
+`predictions.h5` correspond one to one to the events of `sparse.h5`, and
+`event_id` (run, subrun, event) plus the `genie/` group (GENIE record of the
+event: interaction mode, kinematics, n-nbar decay channel, final state) are
+carried along from the stage-6 file so that scores can be matched to the
+truth without the pixel maps. The score cut of the analysis is set
 from the ROC on the atmospheric sample for the checkpoint in use; it is not
 stored here.
 
-Timing on one RTX 3090 with 20 cores: stage 7 about 35 s and stage 8 about
-7 min (batch 64, 13 GB of GPU memory) per 95 000 events.
+Timing on one RTX 3090 with 20 cores: stage 7 about 30 s (12 s streaming) and
+stage 8 about 7 min (batch 64, 13 GB of GPU memory) per 95 000 events.
 
 ### Reader quirk
 
@@ -158,7 +164,10 @@ features x 20: energy, length, start x/y/z, direction x/y/z),
 `png_trueP`. Event-level: `event_id` (run, subrun, event), `input_slice`
 (reconstructed energy and vertex), `precut`, `tpc_id`, `model`, `file_name`,
 the truth `mc.inter`, `trueE`, `trueVertex`, `trueP`, `mc.genie_*`,
-`mc.prim_*`, and the standard CVN scores `cvnnue`, `cvnnumu`, ...
+`mc.prim_*`, the standard CVN scores `cvnnue`, `cvnnumu`, ..., and the group
+`genie/` with the GENIE record of the event (MCNeutrino and GTruth fields,
+`decay_channel` and `g_decay_mode` for n-nbar, the padded final-state list
+`fs_*`, `matched`); see the README of `nnbar-production`, section "cvn".
 Truth branches that are absent from the input are filled with -1, so the
 chain runs unchanged on data or truth-less simulation.
 
@@ -168,7 +177,8 @@ chain runs unchanged on data or truth-less simulation.
   and HDF5 datasets on the reference files); the run from art output through
   `run_nnbar_inference.sh` on the gpvm is still to be exercised.
 * Stage 7 is bit-identical to the author's notebook on a real stage-6 file
-  (96 848 events, all datasets compared).
+  (96 848 events, all datasets compared), and `sparsify_streaming.py` is
+  bit-identical to `sparsify.py` on the same file, truth group included.
 * Stages 7-8 were run on the four reprocessed hA-BR detector-variation samples
   with the published checkpoint; the CUDA path and `summarize_scores.py` were
   exercised there.

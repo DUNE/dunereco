@@ -16,6 +16,7 @@
 #   OPTIONS    options file matching the checkpoint [training/option_files/example.json]
 #   STOP_AFTER pixelmap | h5 | sparse : stop after that stage
 #   -P         do not apply the analysis precut in stage 7
+#   -S         stage 7 in streaming mode (automatic above NNBAR_CVN_STREAM_GB=8 GB of stage-6 file)
 #
 # Stage 7 (../sparsify) and stage 8 (../training/evaluate.py) run on the CPU; stage 8 accepts
 # -d cuda:0. Requires: source ../setup/setup_nnbar_cvn.sh (locates the tree, sets NNBAR_CVN_DIR)
@@ -24,11 +25,11 @@ _here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 [ -f "$_here/../training/evaluate.py" ] && NNBAR_CVN_DIR="$( cd "$_here/.." && pwd )"
 [ -n "${NNBAR_CVN_DIR:-}" ] && [ -f "$NNBAR_CVN_DIR/training/evaluate.py" ] || { echo "nnbar tree not found; source setup_nnbar_cvn.sh"; exit 1; }
 MACRO="$NNBAR_CVN_DIR/pixelmap/make_text_file_to_root_trks_shws.C"
-INPUT=""; STAGE6=""; OUTDIR=""; TYPE=nnbar; NPAR=1; MODEL_TAG=""; WEIGHTS=""; OPTIONS=""; STOP=""; NOPRECUT=""; DEVICE=cpu
+INPUT=""; STAGE6=""; OUTDIR=""; TYPE=nnbar; NPAR=1; MODEL_TAG=""; WEIGHTS=""; OPTIONS=""; STOP=""; NOPRECUT=""; DEVICE=cpu; STREAM=""
 usage() { sed -n '2,24p' "$0"; exit 1; }
-while getopts "i:6:o:t:j:m:w:O:s:d:Ph" opt; do
+while getopts "i:6:o:t:j:m:w:O:s:d:PSh" opt; do
   case $opt in i) INPUT=$OPTARG;; 6) STAGE6=$OPTARG;; o) OUTDIR=$OPTARG;; t) TYPE=$OPTARG;; j) NPAR=$OPTARG;; m) MODEL_TAG=$OPTARG;;
-    w) WEIGHTS=$OPTARG;; O) OPTIONS=$OPTARG;; s) STOP=$OPTARG;; d) DEVICE=$OPTARG;; P) NOPRECUT=--no-precut;; *) usage;; esac
+    w) WEIGHTS=$OPTARG;; O) OPTIONS=$OPTARG;; s) STOP=$OPTARG;; d) DEVICE=$OPTARG;; P) NOPRECUT=--no-precut;; S) STREAM=1;; *) usage;; esac
 done
 { [ -n "$INPUT" ] || [ -n "$STAGE6" ]; } && [ -n "$OUTDIR" ] || usage
 python -c "import tables, uproot" 2>/dev/null || { echo "python env missing; source setup_nnbar_cvn.sh"; exit 1; }
@@ -77,8 +78,14 @@ python "$NNBAR_CVN_DIR/preprocess/preprocess.py" "$H5" --filelist "$PMLIST" --no
 fi
 
 # ---- stage 7: sparsify (network input format; applies the analysis precut) -------------------
-echo "== stage 7: $H5 -> $OUTDIR/sparse.h5"
-python "$NNBAR_CVN_DIR/sparsify/sparsify.py" "$H5" "$OUTDIR/sparse.h5" --jobs "$NPAR" $NOPRECUT || exit 1
+H5_GB=$(( $(stat -c %s "$H5") / 1073741824 ))
+if [ -n "$STREAM" ] || [ "$H5_GB" -ge "${NNBAR_CVN_STREAM_GB:-8}" ]; then
+  echo "== stage 7 (streaming, ${H5_GB} GB): $H5 -> $OUTDIR/sparse.h5"
+  python "$NNBAR_CVN_DIR/sparsify/sparsify_streaming.py" "$H5" "$OUTDIR/sparse.h5" $NOPRECUT || exit 1
+else
+  echo "== stage 7: $H5 -> $OUTDIR/sparse.h5"
+  python "$NNBAR_CVN_DIR/sparsify/sparsify.py" "$H5" "$OUTDIR/sparse.h5" --jobs "$NPAR" $NOPRECUT || exit 1
+fi
 [ "$STOP" = sparse ] && exit 0
 
 # ---- stage 8: evaluate with ../training/evaluate.py -------------------------------------------
@@ -91,4 +98,5 @@ echo "== stage 8: evaluating $OUTDIR/sparse.h5 with $WEIGHTS on $DEVICE -> $OUTD
 PYTHONPATH="$TOOLKIT${PYTHONPATH:+:$PYTHONPATH}" python "$TOOLKIT/evaluate.py" --options "$OPTIONS" --checkpoint "$WEIGHTS" \
   --training-file "$OUTDIR/sparse.h5" --testing-file "$OUTDIR/sparse.h5" --split testing \
   --output "$OUTDIR/predictions.h5" --device "$DEVICE" || exit 1
-echo "== done: $OUTDIR/predictions.h5 (one row per real event of sparse.h5, in order; the padding event is not evaluated)"
+python "$NNBAR_CVN_DIR/inference/attach_truth.py" "$OUTDIR/sparse.h5" "$OUTDIR/predictions.h5" || exit 1
+echo "== done: $OUTDIR/predictions.h5 (one row per real event of sparse.h5, in order, with event_id and genie/ truth attached)"

@@ -15,6 +15,9 @@ Script version of CreateFullySparseDataset.ipynb
     zero entry so that images and prong features stay aligned;
   * prong labels are mc.png_label_split_photons, event labels the raw mc.inter codes
     (the dataset reader maps them to the four event classes).
+  * event_id, file_name and the per-event truth group genie/ are carried through unchanged
+    (selected with the same mask; the padding event gets -999 / empty values).
+For stage-6 files larger than the memory, use sparsify_streaming.py (same output).
 Everything is held in memory, as in the notebook: budget roughly the size of the input file.
 """
 import argparse
@@ -92,6 +95,30 @@ def compress_first_index(indices, shape):
     return np.stack([starts, ends]).T
 
 
+PASSTHROUGH_GROUPS = ("genie",)
+
+
+def load_passthrough(file, num_events):
+    """Per-event truth carried through unchanged: every dataset of the groups in PASSTHROUGH_GROUPS
+    whose first axis is the event axis (h5py Groups and datasets of other lengths are skipped)."""
+    out = {}
+    for g in PASSTHROUGH_GROUPS:
+        if g not in file or not isinstance(file[g], h5py.Group):
+            continue
+        for k, d in file[g].items():
+            if isinstance(d, h5py.Dataset) and d.ndim >= 1 and d.shape[0] == num_events:
+                out[f"{g}/{k}"] = d[:]
+    return out
+
+
+def pad_row(v):
+    """One dummy row for a carried dataset: -999 for numbers, False for booleans, empty bytes for strings."""
+    row = np.zeros((1, *v.shape[1:]), dtype=v.dtype)
+    if v.dtype.kind in "iuf":
+        row[...] = -999 if v.dtype.kind != "u" else 0
+    return row
+
+
 def coo_select(index, value, shape, keep):
     """Apply a boolean event mask to a (nnz, ndim) index array via sparse.COO."""
     coo = sparse.COO(np.ascontiguousarray(index.T), value, tuple(map(int, shape)))
@@ -122,6 +149,7 @@ def main():
     prescut = file["precut"][:] if "precut" in file else np.zeros(num_events, dtype=np.float32)
     event_id = file["event_id"][:] if "event_id" in file else None
     file_name = file["file_name"][:] if "file_name" in file else None
+    passthrough = load_passthrough(file, num_events)   # genie/* and other per-event truth, carried unchanged
 
     target = file["mc.inter"][:]
     prong_targets = file["mc.png_label_split_photons"][:]
@@ -178,6 +206,7 @@ def main():
             event_id = event_id[keep]
         if file_name is not None:
             file_name = file_name[keep]
+        passthrough = {k: v[keep] for k, v in passthrough.items()}
         cvnmap_index, cvnmap_value, cvnmap_shape = coo_select(cvnmap_index, cvnmap_value, cvnmap_shape, keep)
         png_cvnmap_index, png_cvnmap_value, png_cvnmap_shape = coo_select(png_cvnmap_index, png_cvnmap_value, png_cvnmap_shape, keep)
 
@@ -243,6 +272,7 @@ def main():
             event_id = np.concatenate([event_id, -np.ones((1, event_id.shape[1]), dtype=event_id.dtype)])
         if file_name is not None:
             file_name = np.concatenate([file_name, np.array([b"padding"], dtype=file_name.dtype)])
+        passthrough = {k: np.concatenate([v, pad_row(v)]) for k, v in passthrough.items()}
         print("appended one dummy event (event_id -1) for the reader's off-by-one", flush=True)
     with h5py.File(a.output, "w") as out:   # contiguous datasets: the reader memory-maps them
         out.create_dataset("features", data=data)
@@ -266,6 +296,8 @@ def main():
             out.create_dataset("event_id", data=event_id)
         if file_name is not None:
             out.create_dataset("file_name", data=file_name)
+        for k, v in passthrough.items():
+            out.create_dataset(k, data=v)
     print(f"wrote {a.output}: {n} events", flush=True)
     return 0 if n > 0 else 1
 
