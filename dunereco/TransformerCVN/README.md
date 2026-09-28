@@ -11,4 +11,5 @@ atmospheric/beam classifier (`art/`: mapper, evaluator and pixel-map producer;
 `nnbar/` is a separate classification with a similar backbone: the n-nbar
 search trains and evaluates its own TransformerCVN network on its own pixel
 maps, outside art. Everything for it, from the pixel-map macro to training
-and inference, lives in that directory; see `nnbar/README.md`.
+and inference, lives in that directory as a standalone tree that the build
+does not touch; see `nnbar/README.md`.
