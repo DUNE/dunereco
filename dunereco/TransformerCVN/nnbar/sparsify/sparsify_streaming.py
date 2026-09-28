@@ -24,24 +24,20 @@ from sparsify import PASSTHROUGH_GROUPS, pad_row, sparse_to_sparse  # noqa: E402
 FNAME_ITEMSIZE = 256
 
 
-def compute_event_ranges(index_dset, n_events, chunk_rows=2_000_000):
+def compute_event_ranges(index_dset, n_events, offset, chunk_rows=2_000_000):
     """(starts, ends) of each event's rows in a sparse index dataset whose column 0 is a
-    non-decreasing event number, without loading the dataset."""
+    non-decreasing event number counted from `offset`, without loading the dataset."""
     nnz = int(index_dset.shape[0])
     starts = np.zeros(n_events, dtype=np.int64)
     ends = np.zeros(n_events, dtype=np.int64)
     if nnz == 0:
         return starts, ends
-    offset = None
     current_event = None
     current_start = 0
     pos = 0
     while pos < nnz:
         take = min(chunk_rows, nnz - pos)
-        col0 = index_dset[pos:pos + take, 0].astype(np.int64, copy=False)
-        if offset is None:
-            offset = int(col0[0])
-        col0 = col0 - offset
+        col0 = index_dset[pos:pos + take, 0].astype(np.int64, copy=False) - offset
         changes = np.nonzero(np.diff(col0) != 0)[0] + 1
         bounds = np.concatenate(([0], changes, [take]))
         for s in bounds[:-1]:
@@ -147,8 +143,10 @@ def main():
 
         use_pad_mask = "input_png3d_pad_mask" in fin and any(
             np.any(fin["input_png3d_pad_mask"][i:i + 8192]) for i in range(0, n_events, 8192))
-        cvn_starts, cvn_ends = compute_event_ranges(fin["cvnmap_index"], n_events)
-        png_starts, png_ends = compute_event_ranges(fin["png_cvnmap_index"], n_events)
+        # same event origin for both indices (see sparsify.py): the first event always has event pixels
+        event_origin = int(fin["cvnmap_index"][0, 0])
+        cvn_starts, cvn_ends = compute_event_ranges(fin["cvnmap_index"], n_events, event_origin)
+        png_starts, png_ends = compute_event_ranges(fin["png_cvnmap_index"], n_events, event_origin)
         target_dtype = fin["mc.inter"].dtype
         prong_target_dtype = fin["mc.png_label_split_photons"].dtype
         mask_dtype = fin["input_png3d_pad_mask"].dtype if "input_png3d_pad_mask" in fin else np.int8

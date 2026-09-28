@@ -164,15 +164,20 @@ def main():
     if not mask.any():
         mask = prong_targets >= 0
 
-    png_cvnmap_index = file["png_cvnmap_index"][:]
-    png_cvnmap_value = file["png_cvnmap_value"][:]
-    png_cvnmap_shape = file["png_cvnmap_shape"][:]
-    png_cvnmap_index[:, 0] -= png_cvnmap_index[0][0]
-
     cvnmap_index = file["cvnmap_index"][:]
     cvnmap_value = file["cvnmap_value"][:]
     cvnmap_shape = file["cvnmap_shape"][:]
-    cvnmap_index[:, 0] -= cvnmap_index[0][0]
+    # Event numbers in both sparse indices count from the same origin. The notebook subtracted the
+    # first row of each index separately, which shifts every prong image by one event when the
+    # first event of the file has no prong (1% of atmospheric events have none); the event-image
+    # index always has the first event, so its first row defines the origin for both.
+    event_origin = int(cvnmap_index[0][0])
+    cvnmap_index[:, 0] -= event_origin
+
+    png_cvnmap_index = file["png_cvnmap_index"][:]
+    png_cvnmap_value = file["png_cvnmap_value"][:]
+    png_cvnmap_shape = file["png_cvnmap_shape"][:]
+    png_cvnmap_index[:, 0] -= event_origin
     file.close()
 
     # event images get a prong-slot column (always 0) so both maps share (event, prong, plane, y, x)
