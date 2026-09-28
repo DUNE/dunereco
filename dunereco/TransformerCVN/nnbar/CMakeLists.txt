@@ -5,6 +5,7 @@ install_scripts(LIST
   run_nnbar_inference.sh
   setup_nnbar_cvn.sh
   preprocess.py
+  sparsify.py
   make_text_file_to_root_trks_shws.C
   requirements.txt
   requirements-eval.txt

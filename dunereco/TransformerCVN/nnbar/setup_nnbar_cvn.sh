@@ -9,6 +9,9 @@
 # venv: $NNBAR_CVN_VENV, default /exp/dune/app/users/$USER/nnbar-cvn-venv when that area
 #       exists (home directories on the gpvms are small), else $HOME/nnbar-cvn-venv.
 #       Created on first use from requirements.txt and, unless --no-eval, requirements-eval.txt.
+# toolkit: the training repository (network code, evaluate.py, checkpoint) is cloned at the pinned
+#       commit $NNBAR_CVN_TOOLKIT_COMMIT into $NNBAR_CVN_TOOLKIT (default: next to the venv) and
+#       put on PYTHONPATH.
 _here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 _with_eval=1; [ "${1:-}" = "--no-eval" ] && _with_eval=0
 
@@ -33,5 +36,17 @@ if [ ! -x "$NNBAR_CVN_VENV/bin/python" ]; then
 fi
 source "$NNBAR_CVN_VENV/bin/activate"
 export NNBAR_CVN_DIR="$_here"
+
+# Network code, evaluate.py and the trained checkpoint (nnbar_best.ckpt) come from the training
+# repository, checked out once at a pinned commit next to the venv ($NNBAR_CVN_TOOLKIT).
+NNBAR_CVN_TOOLKIT_REPO=${NNBAR_CVN_TOOLKIT_REPO:-https://github.com/KaiwenYu2001/dune-nnbar-transformercvn_v2.git}
+NNBAR_CVN_TOOLKIT_COMMIT=${NNBAR_CVN_TOOLKIT_COMMIT:-deb1014}
+export NNBAR_CVN_TOOLKIT=${NNBAR_CVN_TOOLKIT:-$(dirname "$NNBAR_CVN_VENV")/nnbar-cvn-toolkit}
+if [ ! -f "$NNBAR_CVN_TOOLKIT/evaluate.py" ]; then
+  echo "cloning $NNBAR_CVN_TOOLKIT_REPO @ $NNBAR_CVN_TOOLKIT_COMMIT -> $NNBAR_CVN_TOOLKIT"
+  git clone -q "$NNBAR_CVN_TOOLKIT_REPO" "$NNBAR_CVN_TOOLKIT" && git -C "$NNBAR_CVN_TOOLKIT" checkout -q "$NNBAR_CVN_TOOLKIT_COMMIT" \
+    || echo "WARNING: toolkit clone failed; stages 7-8 will not run"
+fi
+case ":${PYTHONPATH:-}:" in *":$NNBAR_CVN_TOOLKIT:"*) ;; *) export PYTHONPATH="$NNBAR_CVN_TOOLKIT${PYTHONPATH:+:$PYTHONPATH}" ;; esac
 echo "nnbar CVN env: root $(root-config --version 2>/dev/null || echo none), python $(python --version 2>&1), venv $NNBAR_CVN_VENV"
 unset _here _with_eval

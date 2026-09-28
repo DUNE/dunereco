@@ -9,5 +9,9 @@ numpy==1.26.4
 h5py
 scikit-learn
 matplotlib
+numba
+sparse
+joblib
+tables
 rich==13.3.5
 transformers==4.33.3

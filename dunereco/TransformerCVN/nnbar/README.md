@@ -13,11 +13,11 @@ the production of the simulation up to the art dump is documented in
 | 4 | `RecoEnergyS` art analyzer (`dunereco/RecoEnergyStudies`, branch `feature/lwan_recoenergystudies`) | reco2 art file -> `*_cvnpreprocess.root` with the TTree `recoEnergy/WC` (hits, wires, prongs, truth) |
 | 5 | `make_text_file_to_root_trks_shws.C` | `recoEnergy/WC` -> `pixelmap` TTree: one row per pixel of the event image and of each prong image (3 planes x 350 x 350 window around the Pandora vertex), plus an `events` tree with the GENIE final state; applies the precuts |
 | 6 | `preprocess.py` | pixelmap files -> one HDF5 file: sparse event and prong images, per-prong reconstructed features, truth and CVN scores |
-| 7 | `sparsify.py` (TransformerCVN training toolkit, **to be added**) | stage-6 HDF5 -> the network input schema |
-| 8 | `evaluate.py` (TransformerCVN training toolkit, **to be added**) | network input + trained weights -> event and prong probabilities |
+| 7 | `sparsify.py` (script version of `CreateFullySparseDataset.ipynb` of the training toolkit) | stage-6 HDF5 -> the network input format; applies the analysis precut |
+| 8 | `evaluate.py` of the training repository, cloned by `setup_nnbar_cvn.sh` | network input + `nnbar_best.ckpt` -> event and prong probabilities (`predictions.h5`) |
 
-`run_nnbar_inference.sh` chains stages 5 to 8 and stops, with a message, at
-the first stage whose script is not present.
+`run_nnbar_inference.sh` chains stages 5 to 8. With `-6 FILE.h5` it starts from
+an existing stage-6 file (for example one of the training files).
 
 
 ## Running
@@ -34,9 +34,16 @@ run_nnbar_inference.sh -i /path/to/cvnpreprocess/files -o /exp/dune/data/users/$
 
 `-i` accepts one file, a directory of files or a text file listing them
 (`/pnfs` paths are read through xrootd when a bearer token is present,
-otherwise through the NFS mount). `-t atmnu` selects the geometry used for
-the atmospheric-neutrino background sample. `-s pixelmap|h5|sparse` stops the
-chain early. Stage 5 is resumable: existing outputs above 10 kB are skipped.
+otherwise through the NFS mount). `-s pixelmap|h5|sparse` stops the chain
+early, `-P` skips the analysis precut in stage 7, `-d cuda:0` evaluates on a
+GPU, `-w` and `-O` override the checkpoint and its options file (defaults:
+`nnbar_best.ckpt` and `option_files/example.json` of the training
+repository). Stage 5 is resumable: existing outputs above 10 kB are skipped.
+Stage 7 holds the whole stage-6 file in memory, like the notebook it comes
+from; split very large samples into several stage-6 files.
+
+The `-t` type must be `nnbar` for every sample (signal and atmospheric
+background); the macro's `atmnu` type belongs to a different study.
 
 Output layout under `-o`:
 
@@ -44,16 +51,31 @@ Output layout under `-o`:
 inputs.txt          list of stage-4 files processed
 pixelmap/<name>.root, <name>.log     stage 5
 pixelmap.h5         stage 6
-sparse.h5           stage 7
-predictions.h5      stage 8
+sparse.h5           stage 7  (network input; event_id and file_name carried along)
+predictions.h5      stage 8  (event_probabilities [N,4], event_predictions, prong_* flat with prong_event_index)
 ```
+
+The event classes are, in order, other (NC and nu_tau), nu_mu CC, nu_e CC and
+n-nbar; the n-nbar score is the last column of `event_probabilities`. Rows of
+`predictions.h5` correspond one to one to the events of `sparse.h5`
+(`event_id` gives run, subrun, event). The dataset reader of the training
+repository never reads the last event of a file (it slices with the maximum
+index exclusive); `sparsify.py` therefore appends one dummy event, which is
+the one dropped, unless `--no-pad-last` is given.
 
 The python environment lives in `$NNBAR_CVN_VENV` (default
 `/exp/dune/app/users/$USER/nnbar-cvn-venv`, since the gpvm home areas are
 small) and is created on first use from `requirements.txt` and
 `requirements-eval.txt`. The version pins in the latter are the ones the
 network was trained with; newer `rich` and `transformers` releases break
-Lightning 1.9.5 and torch 2.0.1.
+Lightning 1.9.5 and torch 2.0.1. The training repository
+(`KaiwenYu2001/dune-nnbar-transformercvn_v2`: network code, `evaluate.py`,
+`nnbar_best.ckpt`, `option_files/example.json`) is cloned once at the pinned
+commit `$NNBAR_CVN_TOOLKIT_COMMIT` into `$NNBAR_CVN_TOOLKIT` (default: next to
+the venv) and put on `PYTHONPATH`. The checkpoint is the best epoch of the
+July 13 training (epoch 31, validation n-nbar TPR 0.376 at the checkpoint
+metric's FPR); `example.json` rebuilds its architecture exactly (8 prong
+features, 4 event-level inputs, 3 planes, 4 event and 8 prong classes).
 
 
 ## Precuts
@@ -91,8 +113,10 @@ behaviour), the `model` column comes from `--model-tag` instead of the file
 name, and no atmospheric background is mixed in.
 
 
-## Trained weights
+## Validation status
 
-Weights and the matching `options.json` are not kept in git. Until they are
-placed on StashCache next to the other TransformerCVN models, pass their
-location with `-w` and `-O`.
+Stages 5 and 6 reproduce the production outputs (identical pixelmap trees and
+identical HDF5 datasets on the reference files). Stages 7 and 8 have been
+exercised end to end on synthetic stage-6 data with the real checkpoint;
+the comparison of `sparsify.py` against the notebook output on the training
+sample, and the first run on the reprocessed samples, are pending.
