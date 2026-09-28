@@ -11,9 +11,6 @@ source:
 
 services:
 {
-  #@table::dunefdvd_simulation_services
-  #@table::dunefdvd_1x8x6_3view_30deg_simulation_services
-  #@table::dunefdhd_simulation_services
   @table::dunefd_1x2x6_simulation_services
   Geometry: @local::dune10kt_1x2x6_v5_refactored_geo
   AuxDetGeometry: @local::dune10kt_1x2x6_v5_refactored_auxdet_geo
@@ -32,6 +29,3 @@ physics:
   end_paths: [ path0 ]
 }
 
-#services.Geometry.GDML: "dunevd10kt_3view_30deg_v5_refactored_1x8x6ref.gdml"
-#services.Geometry.Name: "dunevd10kt_3view_30deg_v5_refactored_1x8x6ref"
-#services.Geometry.ROOT: "dunevd10kt_3view_30deg_v5_refactored_1x8x6ref.gdml"
