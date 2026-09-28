@@ -20,7 +20,8 @@ the network code is the one of
 | `preprocess/` | 6 | `preprocess.py`: pixelmap files -> one HDF5 file (sparse images, prong features, truth, precut variables) |
 | `sparsify/` | 7 | `sparsify.py`: stage-6 HDF5 -> the network input format (script version of the author's `CreateFullySparseDataset.ipynb`); applies the analysis precut; carries `event_id`, `file_name` and the `genie/` truth group through. `sparsify_streaming.py`: same output in blocks, for files larger than the memory |
 | `training/` | -- | the network (`transformercvn/`), `train.py`, `evaluate.py`, `option_files/example.json` (the configuration of the published checkpoint) |
-| `inference/` | 8 | `run_nnbar_inference.sh` (chains stages 5-8 or 7-8), `attach_truth.py` (copies `event_id` and the truth into `predictions.h5`), `summarize_scores.py` |
+| `inference/` | 8 | `run_nnbar_inference.sh` (chains stages 5-8 or 7-8), `attach_truth.py` (copies `event_id` and the truth into `predictions.h5`), `summarize_scores.py`, `find_cut.py` (score cut at a target total background efficiency, and the signal efficiencies at it) |
+| `plots/` | -- | `make_score_table.py` + `plot_nnbar_scores.C` (ROOT): score distributions per sample, CVN efficiency per GENIE decay mode with Clopper-Pearson intervals, scores per mode, mode key |
 
 Stage 4, the `RecoEnergyS` art analyzer that writes `*_cvnpreprocess.root`,
 is `dunereco/RecoEnergyStudies` (branch `feature/lwan_recoenergystudies`).
@@ -103,6 +104,18 @@ and uses it as an exclusive slice bound. `sparsify.py` therefore appends one
 dummy event, which is the one dropped, unless `--no-pad-last` is given. The
 same happens to the training and validation ranges of a training file (one
 event lost per range, harmless).
+
+### Working point
+
+The analysis cut on the n-nbar score is set on the atmospheric background at a
+target total background efficiency, precut times CVN. `run_nnbar_inference.sh`
+does not need the whole background: any stage-6 part of it gives, with
+`find_cut.py --target 2e-4 part_predictions.h5`, the precut efficiency of that
+part, the CVN false-positive rate that the target implies, the score cut, and
+the signal efficiencies at that cut. `run_atm_part.sh`-style drivers (copy a
+part, stage 7 streaming, stage 8, attach truth, add a `part` column, delete the
+input) are machine specific and not kept here; the prediction files store
+`events_before_precut` and `events_after_precut` as attributes for `find_cut.py`.
 
 ## Precuts
 
