@@ -938,9 +938,9 @@ void sys::WireModUtility::ModifyROI(std::vector<float> & roi_data,
       roi_data[i_t] += static_cast<float>(delta);
     } else if (q_orig < 0.01) { //to prevent explosion of scaling factor
       if (verbose) std::cout << "WARNING: obtained q_orig < 0.01 ... setting scale to 1" << std::endl;
-    } else if (sigma_distance > 9.) {
+    } /*else if (sigma_distance > 9.) {
         if (verbose) std::cout << "WARNING: sigma_distance > 9 ... setting scale to 1" << std::endl;
-    } else {
+    } */else {
       scale_ratio = q_mod / q_orig;
       roi_data[i_t] = scale_ratio * roi_data[i_t];
     }

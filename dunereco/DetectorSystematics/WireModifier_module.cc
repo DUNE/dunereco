@@ -230,7 +230,9 @@ namespace wiremod
     // sub-ROI) is derived from these, replacing the SimEnergyDeposit path. The SimChannel
     // ionization gives the charge-weighted true position; the MCParticle trajectory gives
     // the local track direction used by the ThetaXW/XXW scale lookup.
-    auto const& simchVec = *evt.getValidHandle<std::vector<sim::SimChannel>>(fSimChannelLabel);
+    
+    //std::vector<sim::SimChannel> const* simchVec = nullptr;
+    //if (fUseSimChannels) auto const& simchVec = *evt.getValidHandle<std::vector<sim::SimChannel>>(fSimChannelLabel);
     auto const& mcpVec   = *evt.getValidHandle<std::vector<simb::MCParticle>>(fG4Label);
     std::map<int, const simb::MCParticle*> particleMap;
     for (auto const& p : mcpVec) particleMap[p.TrackId()] = &p;
@@ -341,7 +343,8 @@ namespace wiremod
     //wmUtil.FillROIMatchedEdepMap(edepShiftedVec, wireVec, offset_ADC);
     << "Get IDE Map";
     if (fUseSimChannels){
-    wmUtil.FillROIMatchedIDEMap(simchVec, wireVec, fDetClocksData, offset_ADC);
+      auto const& simchVec = *evt.getValidHandle<std::vector<sim::SimChannel>>(fSimChannelLabel);
+      wmUtil.FillROIMatchedIDEMap(simchVec, wireVec, fDetClocksData, offset_ADC);
     MF_LOG_VERBATIM("WireModifier")
     //  << "Got Edep Map." << '\n'
        << "Got IDE Map." << '\n'
@@ -423,7 +426,7 @@ namespace wiremod
         auto it_map = wmUtil.ROIMatchedIDEMap.find(roi_key);
         if(it_map==wmUtil.ROIMatchedIDEMap.end()){
           if (hasHit){
-            if (my_plane == 2) std::cout<<"Unmatched ROI channel: "<<wire.Channel()<<" plane: "<<my_plane<<", view: "<<wire.View()<<", ROI index: "<<i_r<<", begin tick: "<<roi_properties.begin<<", end tick: "<<roi_properties.end<<std::endl;
+            std::cout<<"Unmatched ROI channel: "<<wire.Channel()<<" plane: "<<my_plane<<", view: "<<wire.View()<<", ROI index: "<<i_r<<", begin tick: "<<roi_properties.begin<<", end tick: "<<roi_properties.end<<std::endl;
           /*for (auto const& wid : wireIDs) {
             std::cout << "WireID: Cryostat=" << wid.Cryostat
                   << " TPC=" << wid.TPC
