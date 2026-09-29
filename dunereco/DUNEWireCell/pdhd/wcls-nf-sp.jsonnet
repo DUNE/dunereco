@@ -53,13 +53,12 @@ local wcls_input = {
     data: {
       art_tag: raw_input_label,
       frame_tags: ['orig'],  // this is a WCT designator
-      tick: 512*wc.ns,
+      tick: (if (reality == 'data') then 512*wc.ns else 500*wc.ns),
       // nticks: params.daq.nticks,
     },
   }, nin=0, nout=1),
 
 };
-
 // Collect all the wc/ls output converters for use below.  Note the
 // "name" MUST match what is used in theh "outputers" parameter in the
 // FHiCL that loads this file.
@@ -123,7 +122,7 @@ local nf_maker = import 'pgrapher/experiment/pdhd/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp = sp_maker(params, tools, { sparse: sigoutform == 'sparse' });
-local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
+local sp_pipes = [sp.make_sigproc(a,l1sp_pd_mode='') for a in tools.anodes];
 
 local chsel_pipes = [
   g.pnode({

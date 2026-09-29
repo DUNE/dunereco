@@ -39,7 +39,7 @@ local wcls_input = {
       art_tag: raw_input_label,
       frame_tags: ['orig'],  // this is a WCT designator
       // nticks: params.daq.nticks,
-      tick: 512*wc.ns,
+      tick: (if (reality == 'data') then 512*wc.ns else 500*wc.ns),
     },
   }, nin=0, nout=1),
 
