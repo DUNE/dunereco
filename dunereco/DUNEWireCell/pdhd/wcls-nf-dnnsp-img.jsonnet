@@ -94,6 +94,11 @@ local wcls_output = {
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
       frame_scale: [0.001, 0.001],
+      summary_tags: ['wiener'],
+      summary_suffix: '',
+      summary_operator: { wiener: 'set' },
+      // MUST match frame_scale.
+      summary_scale: [0.001],
       // nticks: params.daq.nticks,
       chanmaskmaps: [],
       nticks: -1,
