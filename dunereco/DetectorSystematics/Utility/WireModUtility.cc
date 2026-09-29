@@ -70,8 +70,6 @@ sys::WireModUtility::ROIProperties_t sys::WireModUtility::CalcROIProperties(reco
 std::vector<std::pair<unsigned int, unsigned int>>
 sys::WireModUtility::GetTargetROIs(sim::SimEnergyDeposit const& shifted_edep, double offset)
 {
-// DUNE_MOD: This function is highly geometry-dependent.
-// // Validate PositionToTPCptr behavior with DUNE multi-TPC layouts.
   std::vector<std::pair<unsigned int, unsigned int>> target_roi_vec;
 
   geo::TPCGeo const* curTPCGeomPtr = geometry->PositionToTPCptr(shifted_edep.MidPoint());
@@ -79,8 +77,6 @@ sys::WireModUtility::GetTargetROIs(sim::SimEnergyDeposit const& shifted_edep, do
   {
     return target_roi_vec;
   }
-// DUNE_MOD: Iterate<PlaneGeo> assumes plane ordering compatible with SBN.
-// // Verify plane indexing and orientation in DUNE.
   for (auto const& plane : wireReadout->Iterate<geo::PlaneGeo>(curTPCGeomPtr->ID())) {
 
     int wireCentral = int(0.5 + plane.WireCoordinate(shifted_edep.MidPoint()));
@@ -91,8 +87,6 @@ sys::WireModUtility::GetTargetROIs(sim::SimEnergyDeposit const& shifted_edep, do
       }
 
 
-      //geo::WireID edep_wireID = plane.NearestWireID(shifted_edep.MidPoint());
-      //geo::WireID edep_wireID(plane.ID().Plane, static_cast<geo::WireID>(wireNumber));
       geo::WireID edep_wireID(plane.ID(),
                         static_cast<geo::WireID::WireID_t>(wireNumber));
       if (planeXInWindow(shifted_edep.X(), plane, *curTPCGeomPtr, offset + tickOffset))
@@ -112,13 +106,11 @@ sys::WireModUtility::GetTargetROIs(sim::SimEnergyDeposit const& shifted_edep, do
 std::vector<std::pair<unsigned int, unsigned int>>
 sys::WireModUtility::GetHitTargetROIs(recob::Hit const& hit)
 {
-  // DUNE_MOD: Verify hit timing reference frame matches wire tick convention.
   std::vector<std::pair<unsigned int, unsigned int>> target_roi_vec;
 
   int hit_wire = hit.Channel();
   int hit_tick = int(round(hit.PeakTime()));
 
-  // DUNE_MOD: readoutWindowTicks and tickOffset must match DUNE readout window.
   if (hit_tick < tickOffset || hit_tick >= readoutWindowTicks + tickOffset)
     return target_roi_vec;
 
@@ -129,21 +121,15 @@ sys::WireModUtility::GetHitTargetROIs(recob::Hit const& hit)
 //--- FillROIMatchedEdepMap ---
 void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposit> const& edepVec, std::vector<recob::Wire> const& wireVec, double offset)
 {
-  // DUNE_MOD: Assumes channel numbering consistent between geometry and wireVec.
   ROIMatchedEdepMap.clear();
-
-  
 
   std::unordered_map<unsigned int,unsigned int> wireChannelMap;
   for (size_t i_w = 0; i_w < wireVec.size(); ++i_w)
     wireChannelMap[wireVec[i_w].Channel()] = i_w;
 
   event_counter++;
-  //float xmin=1e6, xmax=-1e6, zmin=1e6, zmax=1e-6;
 
   if (SaveEdepMatchingPlots){
-    //TH2F* hMatched = new TH2F("hMatched","Matched Edeps X vs Z;X [cm];Z [cm]", 1500, -350, 350, 3000, 0, 1500);  
-    //TH2F* hUnMatched = new TH2F("hUnMatched","Non matched Edeps X vs Z;X [cm];Z [cm]", 1500, -350, 350, 3000, 0, 1500);
     
     hMatchedWD = new TH1F("hMatchedWD","Wire distance between target ROI and simulated edep; Wire distance; Counts/(# sim edep)", 21, -10, 10);
     hMatchedE = new TH1F("hMatchedE","Simulated Energy Deposits Energy; Energy [MeV]; Counts/(# sim edep)", 50, 0, 1);
@@ -178,17 +164,9 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
     hUnMatchedPDG->GetXaxis()->SetBinLabel(11, "Nuclei");
     hUnMatchedPDG->GetXaxis()->SetBinLabel(12,"Other");
 
-    /*hMatched->SetMarkerStyle(2);
-    hMatched->SetMarkerColor(kBlue);
-    hMatched->SetStats(0);*/
-    hMatchedE->SetLineColor(kBlue);
-    hMatchedE->SetStats(0);
     hMatchedPDG->SetLineColor(kBlue);
     hMatchedPDG->SetStats(0);
 
-    /*hUnMatched->SetMarkerStyle(5);
-    hUnMatched->SetMarkerColor(kRed);
-    hUnMatched->SetStats(0);*/
     hUnMatchedE->SetLineColor(kRed);
     hUnMatchedE->SetStats(0);
     hUnMatchedPDG->SetLineColor(kRed);
@@ -319,14 +297,12 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
       if (SaveEdepMatchingPlots){
         hMatchedE->Fill(edep.Energy());
         hMatchedPDG->Fill(pdg_rebin);
-        //std::cout<<"matched edep PDG: "<<pdg<<std::endl;
       }
     }
     else{
       if (SaveEdepMatchingPlots){
         hUnMatchedE->Fill(edep.Energy());
         hUnMatchedPDG->Fill(pdg_rebin);
-        //std::cout<<"unmatched edep PDG: "<<pdg<<std::endl;
       }
     }
   }
@@ -356,9 +332,6 @@ void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposi
     leg->AddEntry(hMatchedE, "Matched");
     leg->AddEntry(hUnMatchedE, "Not matched");
 
-    //hMatched->Draw("P");
-    //hUnMatched->Draw("Psame");
-    //c1->SaveAs("Edep_matching_plots.pdf(");
   
     TLatex latex;
     latex.SetNDC();                 // use normalized coordinates (0 → 1)
@@ -502,7 +475,6 @@ std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDepo
   {
     // get EDep properties
     auto edep_ptr  = edepPtrVec[i_e];
-    //const geo::TPCGeo& curTPCGeom = geometry->PositionToTPC(edep_ptr->MidPoint());
     const geo::TPCGeo* curTPCGeom = nullptr;
     try{
      curTPCGeom = &geometry->PositionToTPC(edep_ptr->MidPoint());
@@ -517,7 +489,6 @@ std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDepo
     double zeroTick = detPropData.ConvertXToTicks(0, plane0.ID());
     auto edep_tick = ticksPercm * edep_ptr->X() + (zeroTick + offset) + tickOffset;
     edep_tick = detPropData.ConvertXToTicks(edep_ptr->X(), plane0.ID()) + offset + tickOffset;
-    //geo::Point_t xyz(edep_ptr->X(), edep_ptr->Y(), edep_ptr->Z());
     auto const& xyz = edep_ptr->MidPoint();
 
     int best_wire_dist = 1e8;
@@ -638,7 +609,6 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
 
     total_energy_all += edep_ptr->E();
 
-    //const geo::TPCGeo& curTPCGeom = geometry->PositionToTPC(edep_ptr->MidPoint());
     const geo::TPCGeo* curTPCGeom = nullptr;
     try{
       curTPCGeom = &geometry->PositionToTPC(edep_ptr->MidPoint());
@@ -755,7 +725,6 @@ sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEd
   if (total_energy > 0)
     edep_col_properties.x_rms = std::sqrt(edep_col_properties.x_rms/total_energy);
 
-  //const geo::TPCGeo& tpcGeom = geometry->PositionToTPC({edep_col_properties.x, edep_col_properties.y, edep_col_properties.z});
   const geo::TPCGeo* tpcGeom = nullptr;
   try{
     tpcGeom = &geometry->PositionToTPC({edep_col_properties.x, edep_col_properties.y, edep_col_properties.z});
@@ -858,7 +827,6 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
   }
 
   if (applyTransverseDiffusionVar){
-    //std::cout<<"applying transverse diffusion rescaling"<<std::endl;
     art::ServiceHandle<sim::LArG4Parameters const> larG4Params;
     double Dnom=larG4Params->TransverseDiffusion();
     double scale_DT=Dnom/DTnew;
@@ -868,7 +836,6 @@ sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::
     double t = std::abs(x_plane - truth_coords[0]) / drift_velocity;
  
     double dT2 = truth_props.dT2;    
-    //std::cout<<"Square transverse distance: "<<dT2<<" cm^2"<<std::endl;
 
     double exponent=-dT2/(4*t)*(1/DTnew-1/Dnom)/1e3; //diffusion coefficients are in cm^2/ns but typical units cm and mus
     scale_DT *= exp(exponent);
@@ -924,15 +891,9 @@ void sys::WireModUtility::ModifyROI(std::vector<float> & roi_data,
     double delta = q_mod - q_orig;
 
     // do some sanity checks
-    /*if        (isnan(q_orig))
-    {
+    if (isnan(q_mod)) {
       if (verbose)
-        std::cout << "WARNING: obtained q_orig = NaN... setting scale to 1" << std::endl;
-      //scale_ratio = 1.0;
-    } else*/ if (isnan(q_mod)) {
-      if (verbose)
-        std::cout << "WARNING: obtained q_mod = NaN... setting scale to 0" << std::endl;
-      //scale_ratio = 0.0;
+        std::cout << "WARNING: obtained q_mod = NaN..." << std::endl;
     } else if (additiveModification) {
       //std::cout<<"using additive modification"<<std::endl;
       roi_data[i_t] += static_cast<float>(delta);
@@ -945,15 +906,6 @@ void sys::WireModUtility::ModifyROI(std::vector<float> & roi_data,
       roi_data[i_t] = scale_ratio * roi_data[i_t];
     }
 
-    /*if(isnan(scale_ratio) || isinf(scale_ratio))
-    {
-      if (verbose)
-        std::cout << "WARNING: obtained scale_ratio = " << q_mod << " / " << q_orig << " = NAN/Inf... setting to 1" << std::endl;
-      scale_ratio = 1.0;
-    }
-
-    
-    roi_data[i_t] = scale_ratio * roi_data[i_t];*/
 
     if (verbose)
       std::cout << "\t tick " << i_t << ":"

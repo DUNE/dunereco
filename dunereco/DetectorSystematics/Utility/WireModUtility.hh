@@ -55,14 +55,6 @@ namespace sys {
       TH1F *hUnMatchedClosest = nullptr;
       //removed members related to splines
 
-      //graphs could still be needed, to be tuned
-      std::vector<TGraph2D*> graph2Ds_Charge_XXZAngle;    // the graphs for the charge correction in X vs XZ angle
-      std::vector<TGraph2D*> graph2Ds_Sigma_XXZAngle;     // the graphs for the width correction in X vs XZ angle
-      std::vector<TGraph2D*> graph2Ds_Charge_XdQdX;       // the graphs for charge correction in X vs dQ/dX
-      std::vector<TGraph2D*> graph2Ds_Sigma_XdQdX;        // the graphs for width correction in X vs dQ/dX
-      std::vector<TGraph2D*> graph2Ds_Charge_XZAngledQdX; // the graphs for charge correction in XZ angle vs dQ/dX
-      std::vector<TGraph2D*> graph2Ds_Sigma_XZAngledQdX;  // the graphs for width correction in XZ angle vs dQ/dX
-
       //for debugging purposes: adding a map between the trackID and the PDG code
       std::map<int,int> trackID_to_PDG;
       unsigned int event_counter; 

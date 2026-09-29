@@ -57,8 +57,6 @@ private:
   const geo::Geometry* fGeom;
   unsigned int fTPCIndex;
   unsigned int fPlaneIndex;
-  //std::vector<unsigned int> fChsLocal;
-  //std::vector<unsigned int> fChsGlobal;
 
   std::string fSCLabel;
   std::string fWireLabel;
@@ -79,7 +77,6 @@ CheckFDHits::CheckFDHits(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
     fTPCIndex   (p.get<unsigned int> ("TPCIndex")),
     fPlaneIndex (p.get<unsigned int> ("PlaneIndex")),
-    //fChsLocal   (p.get<std::vector<unsigned int>> ("ChannelsLocal")),
     fSCLabel    (p.get<std::string>  ("SCLabel")),
     fWireLabel  (p.get<std::string>  ("WireLabel")),
     fHitLabel   (p.get<std::string>  ("HitLabel"))
@@ -113,9 +110,6 @@ void CheckFDHits::analyze(art::Event const& e)
 
   for (sim::SimChannel simCh : *simChs) {
     raw::ChannelID_t ch = simCh.Channel();
-    /*if (std::find(fChsGlobal.begin(), fChsGlobal.end(), ch) == fChsGlobal.end()) {
-      continue;
-    }*/
     if (simCh.TDCIDEMap().empty()) continue;
     std::vector<double> respVec(6000, 0.0); // Might be 4492 for VD, not sure
     for (sim::TDCIDE tickIde : simCh.TDCIDEMap()) {
@@ -131,9 +125,6 @@ void CheckFDHits::analyze(art::Event const& e)
   }
   for (recob::Wire wire : *wires) {
     raw::ChannelID_t ch = wire.Channel();
-    /*if (std::find(fChsGlobal.begin(), fChsGlobal.end(), ch) == fChsGlobal.end()) {
-      continue;
-    }*/
     bool hasSignal = false;
     for (float s : wire.Signal()) {
       if (s != 0.0f) {
@@ -158,14 +149,8 @@ void CheckFDHits::analyze(art::Event const& e)
   }
 
   std::map<unsigned int, std::vector<double>> hitResps;
-  /*for (unsigned int ch : fChsGlobal) {
-    hitResps[ch] = std::vector<double>(6000, 0.0);
-  }*/
   for (recob::Hit hit : *hits) {
     raw::ChannelID_t ch = hit.Channel();
-    /*if (std::find(fChsGlobal.begin(), fChsGlobal.end(), ch) == fChsGlobal.end()) {
-      continue;
-    }*/
     if (hitResps.find(ch) == hitResps.end()) {
       hitResps[ch] = std::vector<double>(6000,0.0);
     }
@@ -176,7 +161,6 @@ void CheckFDHits::analyze(art::Event const& e)
   for (std::pair<unsigned int, std::vector<double>> hitResp : hitResps) {
     bool isCollection = (fPlaneIndex == 2);
     fChTypes[(int)hitResp.first] = isCollection ? 1 : 0;
-    //fChTypes[(int)hitResp.first] = fGeom->SignalType(hitResp.first);
     fHits.push_back(hitResp.second);
     fHitsChs.push_back((int)hitResp.first);
   }
@@ -193,11 +177,6 @@ void CheckFDHits::beginJob()
   std::cout << "TPC " << fTPCIndex
             << " Plane " << fPlaneIndex << " ("
             << "\nChannels:\n";
-  /*for (unsigned int chLocal : fChsLocal) { 
-    unsigned int chGlobal = chLocal; //+ fGeom->FirstChannelInROP(rID);
-    fChsGlobal.push_back(chGlobal);
-    std::cout << chLocal << " -> " << chGlobal << "\n";
-  }*/
 }
 
 void CheckFDHits::endJob()
