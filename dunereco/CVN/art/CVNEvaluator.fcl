@@ -28,6 +28,43 @@ standard_tfnethandler:
   NOutputs: 7
 }
 
+standard_tritonclient:
+{
+  #serverURL:            "localhost:8001"
+  #serverURL:            "ailab01.fnal.gov:8001"
+  serverURL:             "triton.fnal.gov:443"
+  #serverURL:             "triton-cluster-svc.ml4phys.com:443"
+  verbose: false
+  ssl: true
+  sslRootCertificates: ""
+  sslPrivateKey: ""
+  sslCertificateChain: ""
+  modelName: "cvn"
+  modelVersion: ""
+  timeout: 0
+  allowedTries: 1
+  outputs: []
+}
+
+standard_tritonhandler:
+{
+  ChargeLogScale: false
+  NImageWires:    500
+  NImageTDCs:     500
+  ReverseViews:   [false,true,false]
+
+  InputNames:  [ "view0", "view1", "view2" ]
+  OutputNames: [ "output_is_antineutrino",
+                 "output_flavour",
+                 "output_interaction",
+                 "output_protons",
+                 "output_pions",
+                 "output_pizeros",
+                 "output_neutrons" ]
+
+  TritonConfig: @local::standard_tritonclient
+}
+
 standard_cvnevaluator:
 {
   module_type:        CVNEvaluator
@@ -36,7 +73,9 @@ standard_cvnevaluator:
   ResultLabel: "cvnresult"
   #CaffeNetHandler: @local::standard_caffenethandler
   TFNetHandler: @local::standard_tfnethandler
+  TritonHandler:   @local::standard_tritonhandler
   CVNType: "Tensorflow"
+  #CVNType: "Triton"
   MultiplePMs: false
 }
 
