@@ -1,5 +1,5 @@
 #include "standard_reco1_dune10kt_1x2x6.fcl"
-#include "wiremod.fcl"
+#include "dune_wiremod.fcl"
 
 # change process name, to be able to rerun it
 process_name: reco1Again
