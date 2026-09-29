@@ -43,6 +43,7 @@ execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/Supera/setup.sh dune
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Supera )
                 
 add_subdirectory(Supera)
+
 add_subdirectory(DetectorSystematics)
 # these two were not built in dunetpc at the time of the split
 # add_subdirectory(SNSlicer)
