@@ -450,13 +450,13 @@ std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDepo
   std::map<int, std::vector<const sim::SimEnergyDeposit*>> TrackIDMatchedEDepMap;
 
   // total energy of EDeps matched to the ROI (not strictly necessary, but useful for understanding/development
-  double total_energy = 0.0;
+  //double total_energy = 0.0;
   
   // loop over edeps, fill TrackIDMatchedEDepMap and calculate total energy
   for (auto const& edep_ptr : edepPtrVec)
   {
     TrackIDMatchedEDepMap[edep_ptr->TrackID()].push_back(edep_ptr);
-    total_energy += edep_ptr->E();
+    //total_energy += edep_ptr->E();
   }
 
   // calculate EDep properties by TrackID
@@ -859,7 +859,9 @@ void sys::WireModUtility::ModifyROI(std::vector<float> & roi_data,
   double q_orig = 0.0;
   double q_mod  = 0.0;
   double scale_ratio = 1.0;
-  double sigma_distance = 0.0;
+  
+  //Can be useful to prevent tail effects
+  //double sigma_distance = 0.0;
 
   // loop over the ticks
   for(size_t i_t = 0; i_t < roi_data.size(); ++i_t)
@@ -868,7 +870,7 @@ void sys::WireModUtility::ModifyROI(std::vector<float> & roi_data,
     q_orig = 0.0;
     q_mod  = 0.0;
     scale_ratio = 1.0;
-    sigma_distance = 0.0;
+    //sigma_distance = 0.0;
 
     // loop over the subs
     for (auto const& subroi_prop : subROIPropVec)
@@ -878,8 +880,8 @@ void sys::WireModUtility::ModifyROI(std::vector<float> & roi_data,
 
       q_orig += gausFunc(i_t + roi_prop.begin, subroi_prop.center,                      subroi_prop.sigma,                  subroi_prop.total_q);
       q_mod  += gausFunc(i_t + roi_prop.begin, subroi_prop.center, scale_vals.r_sigma * subroi_prop.sigma, scale_vals.r_Q * subroi_prop.total_q);
-      sigma_distance += ((i_t + roi_prop.begin - subroi_prop.center)*(i_t + roi_prop.begin - subroi_prop.center) / (subroi_prop.sigma*subroi_prop.sigma))*\
-                gausFunc(i_t + roi_prop.begin, subroi_prop.center,                      subroi_prop.sigma,                  subroi_prop.total_q); 
+      /*sigma_distance += ((i_t + roi_prop.begin - subroi_prop.center)*(i_t + roi_prop.begin - subroi_prop.center) / (subroi_prop.sigma*subroi_prop.sigma))*\
+                gausFunc(i_t + roi_prop.begin, subroi_prop.center,                      subroi_prop.sigma,                  subroi_prop.total_q);*/ 
 
 
       if (verbose)
