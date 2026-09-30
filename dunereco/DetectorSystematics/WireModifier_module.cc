@@ -53,20 +53,6 @@ namespace wiremod
       const geo::GeometryCore* fGeometry = lar::providerFrom<geo::Geometry>(); // get the geometry
       const geo::WireReadoutGeom* fWireReadout = &(art::ServiceHandle<geo::WireReadout const>()->Get());
       const detinfo::DetectorClocksData fDetClocksData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataForJob();
-      std::string fRatioFileName; // there is where we try to grab the splines/graphs (if they exist)
-      //TODO: Not using splines here
-      /*TSpline3*              fSpline_charge_Channel;
-      TSpline3*              fSpline_sigma_Channel;
-      std::vector<TSpline3*> fSpline_charge_X;
-      std::vector<TSpline3*> fSpline_sigma_X;
-      std::vector<TSpline3*> fSpline_charge_XZAngle;
-      std::vector<TSpline3*> fSpline_sigma_XZAngle;
-      std::vector<TSpline3*> fSpline_charge_YZAngle;
-      std::vector<TSpline3*> fSpline_sigma_YZAngle;
-      std::vector<TSpline3*> fSpline_charge_dEdX;
-      std::vector<TSpline3*> fSpline_sigma_dEdX;
-      std::vector<TGraph2D*> fGraph_charge_YZ; 
-      std::vector<TGraph2D*> fGraph_sigma_YZ;*/
       art::InputTag fWireLabel;     // which wires are we pulling in?
       art::InputTag fHitLabel;      // which hits are we pulling in?
       art::InputTag fEDepOrigLabel; // which are the unshifted EDeps?
@@ -124,7 +110,6 @@ namespace wiremod
 
     // try to read in the graphs/splines from a file
     //     // if that file does not exist then fake them
-    fRatioFileName = pset.get<std::string>("RatioFileName", "NOFILE");
     fApplyLowECut = pset.get<bool>("ApplyLowECut"   , false);
     fUseSimChannels = pset.get<bool>("useSimChannels"   , false);
     fApplyGainScale    = pset.get<bool>("ApplyGainScale"   , false);
