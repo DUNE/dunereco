@@ -40,8 +40,9 @@ namespace cvn
 
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());  
     fWireReadoutGeom = &art::ServiceHandle<geo::WireReadout>()->Get();
-    if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos)
+    if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos){
       _cacheIntercepts();
+    }
   }
 
   PixelMapProducer::PixelMapProducer()
@@ -99,7 +100,7 @@ namespace cvn
               wireid.Plane,wireid.TPC,tempWire,tempPlane,temptdc);
           }
           else if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos){
-            GetDUNEVertDrift3ViewGlobalWire(wireid.Wire, wireid.Plane,wireid.TPC,tempWire,tempPlane);
+            GetDUNEVertDrift3ViewGlobalWire(detProp, wireid.Wire, cluster[iHit]->PeakTime(), wireid.Plane, wireid.TPC, tempWire, tempPlane, temptdc);
           }
           // Default to 1x2x6. Should probably specifically name this function as such
           else {
@@ -223,7 +224,7 @@ namespace cvn
             GetDUNE10ktGlobalWireTDC(detProp, wireid.Wire,cluster[iHit]->PeakTime(),wireid.Plane,wireid.TPC,globalWire,globalPlane,globalTime);
           }
           else if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos){
-            GetDUNEVertDrift3ViewGlobalWire(wireid.Wire, wireid.Plane,wireid.TPC,globalWire,globalPlane);
+            GetDUNEVertDrift3ViewGlobalWire(detProp, wireid.Wire, cluster[iHit]->PeakTime(), wireid.Plane, wireid.TPC, globalWire, globalPlane, globalTime);
           }
           else {
             GetDUNEGlobalWireTDC(detProp, wireid.Wire,cluster[iHit]->PeakTime(),wireid.Plane,wireid.TPC,globalWire,globalPlane,globalTime);
@@ -524,15 +525,31 @@ namespace cvn
 
   } // function GetProtoDUNEGlobalWireTDC
   
-  void PixelMapProducer::GetDUNEVertDrift3ViewGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const
+  void PixelMapProducer::GetDUNEVertDrift3ViewGlobalWire(detinfo::DetectorPropertiesData const& detProp,
+                                                         unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const
   {
     // Preliminary function for VD Geometries
     
-    int nCRM_row = 6;
-    int nCRM_col = 6;
+    int nCRM_row = 40;
+    int nCRM_col = 8;
+    int nCRM_x = 2;
+    bool is10kt = true;
     bool is8x6 = fGeometry->DetectorName().find("8x6") != std::string::npos;
-    if(is8x6)
+    bool is6x6 = fGeometry->DetectorName().find("6x6") != std::string::npos;
+    if(is8x6){
       nCRM_col = 8;
+      nCRM_row = 6;
+      nCRM_x = 1;
+      is10kt = false;
+    }
+    if(is6x6){
+      nCRM_col = 6;
+      nCRM_row = 6;
+      nCRM_x = 1;
+      is10kt = false;
+    }
+    if(nCRM_x == 1)
+      globalTDC = localTDC;
     // spacing between y-intercepts of parallel wires in a given plane. 
     double spacing = 0.847; 
     
@@ -540,7 +557,22 @@ namespace cvn
     geo::PlaneID const planeID{0, tpc, globalPlane};
     unsigned int nWiresTPC = fWireReadoutGeom->Nwires(planeID);
     bool is3view30deg = fGeometry->DetectorName().find("30deg") != std::string::npos;
-    
+   
+    unsigned int nTPCPerVol = fGeometry->NTPC(geo::CryostatID{0}) / 2;   // 320 for 2x8x40
+    auto const& tpcgeom = fGeometry->TPC(geo::TPCID{0, tpc});
+    auto const& botActive = fGeometry->TPC(geo::TPCID{0, 0}).ActiveBoundingBox();
+    auto const& topActive = fGeometry->TPC(geo::TPCID{0, nTPCPerVol}).ActiveBoundingBox();
+
+    double driftLen = tpcgeom.DriftDistance();
+    double driftVel = detProp.DriftVelocity();
+    double gapLen = topActive.MinX() - botActive.MaxX();      // ~4 cm, the cathode
+    unsigned int drift_size = (driftLen / driftVel) * 2; // Time in ticks to cross a TPC 
+    unsigned int gap_size = (gapLen / driftVel) * 2;          // ~50 ticks
+    if(is10kt){
+      if (tpc < 320) globalTDC = localTDC;                              // anode at low x (bottom volume)
+      else           globalTDC = (2*drift_size + gap_size) - localTDC;  // anode at high x, mirrored (top volume)
+    }
+
     if(globalPlane < 2){
       
       geo::WireID wire_id = geo::WireID(planeID, localWire);

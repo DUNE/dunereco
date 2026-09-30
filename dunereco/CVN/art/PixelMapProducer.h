@@ -53,7 +53,7 @@ namespace cvn
     void GetProtoDUNEGlobalWireTDC(unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc,
                                    unsigned int& globalWire, double& globalTDC, unsigned int& globalPlane) const;
     // preliminary vert drift 3 view studies 
-    void GetDUNEVertDrift3ViewGlobalWire(unsigned int localWire, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane) const; 
+    void GetDUNEVertDrift3ViewGlobalWire(detinfo::DetectorPropertiesData const& detProp, unsigned int localWire, double localTDC, unsigned int plane, unsigned int tpc, unsigned int& globalWire, unsigned int& globalPlane, double& globalTDC) const; 
 
 
     unsigned int NWire() const {return fNWire;};
