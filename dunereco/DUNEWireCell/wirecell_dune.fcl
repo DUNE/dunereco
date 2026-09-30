@@ -483,6 +483,8 @@ wirecell_protodunevd_mc:
            DT: @local::dunefd_largeantparameters.TransverseDiffusion
            efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
            temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
+           window_duration: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
+           G4RefTime: @local::protodunevd_detectorclocks.G4RefTime
 	}
     }
 }
@@ -548,6 +550,8 @@ wirecell_protodunevd_sim_deposplat:
         DT: @local::dunefd_largeantparameters.TransverseDiffusion
         efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
         temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
+        window_duration: @local::protodunevd_services.DetectorPropertiesService.NumberTimeSamples
+        G4RefTime: @local::protodunevd_detectorclocks.G4RefTime
 	}
     }
 }
