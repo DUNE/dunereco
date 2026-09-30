@@ -12,6 +12,7 @@
 #include  <list>
 #include  <algorithm>
 #include <numeric>
+#include <limits>
 
 #include "dunereco/CVN/art/PixelMapProducer.h"
 #include "dunereco/CVN/func/AssignLabels.h"
@@ -66,12 +67,6 @@ namespace cvn
   PixelMap PixelMapProducer::CreateMap(detinfo::DetectorPropertiesData const& detProp,
                                        const std::vector<const recob::Hit* >& cluster)
   {
-    if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos){
-      fVDPlane0.clear();
-      fVDPlane1.clear();
-      _cacheIntercepts();
-    }
-    
     Boundary bound = DefineBoundary(detProp, cluster);
     return CreateMapGivenBoundary(detProp, cluster, bound);
   }
@@ -147,16 +142,56 @@ namespace cvn
   }
 
   void PixelMapProducer::_cacheIntercepts(){
-   
+
+    // rebuilt rather than appended to, so this is safe to call more than once
+    fVDPlane0.clear();
+    fVDPlane1.clear();
+
     // double spacing = 0.847;
+    int nCRM_row = 40;
+    int nCRM_col = 8;
+    int nCRM_x = 2;
+    bool is10kt = true;
+    bool is8x6 = fGeometry->DetectorName().find("8x6") != std::string::npos;
+    bool is6x6 = fGeometry->DetectorName().find("6x6") != std::string::npos;
+    if(is8x6){
+      nCRM_col = 8;
+      nCRM_row = 6;
+      nCRM_x = 1;
+      is10kt = false;
+    }
+    if(is6x6){
+      nCRM_col = 6;
+      nCRM_row = 6;
+      nCRM_x = 1;
+      is10kt = false;
+    }
+
     for(int plane = 0; plane < 2; plane++){
       
-      int nCRM_row = 6;
-      int nCRM_col = 6;
-      bool is8x6 = fGeometry->DetectorName().find("8x6") != std::string::npos;
-      if(is8x6)
-        nCRM_col = 8;
-      
+      // 2x8x40 maps intercept to global wire directly, so only the origin and step of that axis are needed
+      if(is10kt){
+        unsigned int nTPC = fGeometry->NTPC(geo::CryostatID{0});
+        unsigned int nTPCPerVol = nTPC/nCRM_x;
+
+        geo::PlaneID const refID(0, nTPCPerVol, plane);
+        double step = std::abs(_getIntercept(geo::WireID(refID, 1)) - _getIntercept(geo::WireID(refID, 0)));
+
+        double lowest = std::numeric_limits<double>::max();
+        for(unsigned int itpc = 0; itpc < nTPC; itpc++){
+          // induction views are mirrored between the two drift volumes
+          geo::PlaneID const planeID(0, itpc, itpc < nTPCPerVol ? 1 - plane : plane);
+          unsigned int nWiresTPC = fWireReadoutGeom->Nwires(planeID);
+          lowest = std::min(lowest, std::min(_getIntercept(geo::WireID(planeID, 0)),
+                                             _getIntercept(geo::WireID(planeID, nWiresTPC-1))));
+        }
+
+        if(plane == 0){ fSpacing0 = step; fIntercept0Min = lowest; }
+        else          { fSpacing1 = step; fIntercept1Min = lowest; }
+        continue;
+      }
+
+      // deal with smaller workspace geoemtries (8x6 or 6x6) : old way, kept to be consistent
       geo::WireID wstart = geo::WireID(0, 0, plane,0);
       geo::WireID wstartplus1 = geo::WireID(0, 0, plane, 1);
       double wstart_intercept = _getIntercept(wstart);
@@ -553,27 +588,36 @@ namespace cvn
     // spacing between y-intercepts of parallel wires in a given plane. 
     double spacing = 0.847; 
     
-    globalPlane = plane;
-    geo::PlaneID const planeID{0, tpc, globalPlane};
+    unsigned int nTPCPerVol = fGeometry->NTPC(geo::CryostatID{0}) / nCRM_x;
+
+    // induction views are mirrored between the two drift volumes
+    globalPlane = (is10kt && plane < 2 && tpc < nTPCPerVol) ? !plane : plane;
+    geo::PlaneID const planeID{0, tpc, plane};
     unsigned int nWiresTPC = fWireReadoutGeom->Nwires(planeID);
     bool is3view30deg = fGeometry->DetectorName().find("30deg") != std::string::npos;
-   
-    unsigned int nTPCPerVol = fGeometry->NTPC(geo::CryostatID{0}) / 2;   // 320 for 2x8x40
-    auto const& tpcgeom = fGeometry->TPC(geo::TPCID{0, tpc});
-    auto const& botActive = fGeometry->TPC(geo::TPCID{0, 0}).ActiveBoundingBox();
-    auto const& topActive = fGeometry->TPC(geo::TPCID{0, nTPCPerVol}).ActiveBoundingBox();
 
-    double driftLen = tpcgeom.DriftDistance();
-    double driftVel = detProp.DriftVelocity();
-    double gapLen = topActive.MinX() - botActive.MaxX();      // ~4 cm, the cathode
-    unsigned int drift_size = (driftLen / driftVel) * 2; // Time in ticks to cross a TPC 
-    unsigned int gap_size = (gapLen / driftVel) * 2;          // ~50 ticks
     if(is10kt){
-      if (tpc < 320) globalTDC = localTDC;                              // anode at low x (bottom volume)
-      else           globalTDC = (2*drift_size + gap_size) - localTDC;  // anode at high x, mirrored (top volume)
+      auto const& botActive = fGeometry->TPC(geo::TPCID{0, 0}).ActiveBoundingBox();
+      auto const& topActive = fGeometry->TPC(geo::TPCID{0, nTPCPerVol}).ActiveBoundingBox();
+
+      double driftLen = fGeometry->TPC(geo::TPCID{0, tpc}).DriftDistance();
+      double driftVel = detProp.DriftVelocity();
+      double gapLen = topActive.MinX() - botActive.MaxX();               // the cathode
+      unsigned int drift_size = (driftLen / driftVel) * 2;               // time in ticks to cross a TPC
+      unsigned int gap_size = (gapLen / driftVel) * 2;
+
+      // both anodes sit on the outside, so the upper volume runs backwards along the global time axis
+      if (tpc < nTPCPerVol) globalTDC = localTDC;
+      else                  globalTDC = (2*drift_size + gap_size) - localTDC;
     }
 
-    if(globalPlane < 2){
+    if(is10kt && globalPlane < 2){
+      double intercept = _getIntercept(geo::WireID(planeID, localWire));
+      globalWire = globalPlane ? std::round((intercept - fIntercept1Min)/fSpacing1)
+                               : std::round((intercept - fIntercept0Min)/fSpacing0);
+    }
+    // deal with smaller workspace geoemtries (8x6 or 6x6) : old way, kept to be consistent
+    else if(globalPlane < 2){
       
       geo::WireID wire_id = geo::WireID(planeID, localWire);
       double wire_intercept = _getIntercept(wire_id);
@@ -628,8 +672,9 @@ namespace cvn
         
       }
     }
+    // simple global Z index (collection Plane) for all geometries
     else{
-      int tpc_z = tpc/nCRM_col;
+      int tpc_z = (tpc % nTPCPerVol)/nCRM_col;
       globalWire = localWire + tpc_z*nWiresTPC;
     }
   }

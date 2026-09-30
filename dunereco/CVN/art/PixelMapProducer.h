@@ -91,6 +91,7 @@ namespace cvn
     std::vector<double> fVDPlane0;
     std::vector<double> fVDPlane1;
     double fSpacing0, fSpacing1;
+    double fIntercept0Min, fIntercept1Min;
     // std::vector<int> fPlane0GapWires;
     // std::vector<int> fPlane1GapWires;
 
