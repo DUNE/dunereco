@@ -2187,6 +2187,10 @@ protodunehd_img : {
       params : {
          charge_input_label: "wclsdatahd:gauss"
          wiener_input_label: "wclsdatahd:wiener"
+         # "bad" channel masks saved by the NF stage (wcls-nf.jsonnet nfsaver,
+         # chanmaskmaps: ['bad']).  wclsRawFrameSource does not carry masks into
+         # the SP job, so the masks come from the NF module, not the SP one.
+         bad_mask_label: "wclsdatahdfilter:badmasks"
          reality: "data"
       }
       structs: {

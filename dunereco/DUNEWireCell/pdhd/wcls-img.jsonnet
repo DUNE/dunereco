@@ -1,6 +1,11 @@
 local reality = std.extVar('reality');
 local charge_input_label = std.extVar('charge_input_label');  // "gauss", "dnnsp"
 local wiener_input_label = std.extVar('wiener_input_label');  // "wiener"
+// art label of the saved "bad" channel-mask vector<int> (wclsFrameSaver
+// chanmaskmaps: ['bad']).  In the split NF -> SP chain it is the NF module's
+// product (e.g. "wclsdatahdfilter:badmasks"), because wclsRawFrameSource does
+// not carry masks into the SP job.
+local bad_mask_label = std.extVar('bad_mask_label');
 
 local wc = import 'wirecell.jsonnet';
 local f = import "pgrapher/common/funcs.jsonnet";
@@ -33,6 +38,10 @@ local wcls_input = {
       // 8000, ...} and InSliceDeghosting's good_blob_charge_th 300 -- so
       // leaving the charge 1000x small silently deghosts every blob away.
       frame_scale: 1000.0,
+      // Restore the "bad" channel masks for CMMModifier / MaskSlices
+      // (dead-channel imaging, the ms-masked fork).
+      input_mask_tags: [bad_mask_label],
+      output_mask_tags: ['bad'],
       // nticks: params.daq.nticks,
     },
   }, nin=0, nout=1),
