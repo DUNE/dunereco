@@ -205,7 +205,7 @@ protodunehd_nf : {
       outputers: ["wclsFrameSaver:nfsaver"]
       configs: ["pgrapher/experiment/pdhd/wcls-nf.jsonnet"]
       params : {
-         raw_input_label: "tpcrawdecoder:daq" # "caldata:dataprep"
+         raw_input_label: "tpcrawdecoder:daq"
          reality: "data"
          signal_output_form: "sparse"
          use_resampler: "false"
@@ -2187,14 +2187,26 @@ protodunehd_img : {
       params : {
          charge_input_label: "wclsdatahd:gauss"
          wiener_input_label: "wclsdatahd:wiener"
+         # "bad" channel masks saved by the NF stage (wcls-nf.jsonnet nfsaver,
+         # chanmaskmaps: ['bad']).  wclsRawFrameSource does not carry masks into
+         # the SP job, so the masks come from the NF module, not the SP one.
+         bad_mask_label: "wclsdatahdfilter:badmasks"
          reality: "data"
       }
       structs: {
           Nbit: @local::Nbit_standard
-          elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database, value changed in mid-July 2024
+          elecGain:    14 #NOTE: THIS IS UNUSED IN IMAGING BUT IS NECESSARY AS A DEEPLY DEFINED EXT VAR IN params.jsonnet :sadge:
       }
    }
 }
+protodunehd_img_mc: @local::protodunehd_img
+protodunehd_img_mc.wcls_main.params.reality: "sim"
+
+protodunehd_img_nfsp_input: @local::protodunehd_img
+protodunehd_img_nfsp_input.wcls_main.params.bad_mask_label: "wclsdatahd:badmasks"
+
+protodunehd_img_nfsp_input_mc: @local::protodunehd_img_nfsp_input
+protodunehd_img_nfsp_input_mc.wcls_main.params.reality: "sim"
 
 protodunesp_img : {
    module_type : WireCellToolkit
