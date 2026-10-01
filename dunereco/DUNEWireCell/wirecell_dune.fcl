@@ -2195,7 +2195,7 @@ protodunehd_img : {
       }
       structs: {
           Nbit: @local::Nbit_standard
-          elecGain:    14 # 14 or 7.8 mV/fC, TODO need a database, value changed in mid-July 2024
+          elecGain:    14 #NOTE: THIS IS UNUSED IN IMAGING BUT IS NECESSARY AS A DEEPLY DEFINED EXT VAR IN params.jsonnet :sadge:
       }
    }
 }
