@@ -167,7 +167,16 @@ local wcls_output = {
       summary_operator: { wiener: 'set' },
       // MUST match frame_scale.
       summary_scale: [0.001],
-      chanmaskmaps: [],
+      // Save the NF "bad" channel mask.  The OmnibusNoiseFilter in each
+      // per-anode pipe builds this ChannelMaskMap, and it survives intact
+      // all the way here: OmnibusSigProc, DNNROIFinding, PlaneSelector,
+      // FrameFanout/Fanin and Retagger all forward in->masks(), and while
+      // L1SPFilterPD drops it, the l1sp_after_dnnroi final FrameMerger
+      // re-merges masks from its other port.  Writes two std::vector<int>
+      // art products, wclsdatahd:badmasks and wclsdatahd:badchannels.
+      // (The nfsaver node below also sets this, but it is never wired into
+      // the graph -- see the `local graph = ...` line near the bottom.)
+      chanmaskmaps: ['bad'],
       nticks: -1,
     },
   }, nin=1, nout=1, uses=[mega_anode]),

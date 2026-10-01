@@ -2199,6 +2199,14 @@ protodunehd_img : {
       }
    }
 }
+protodunehd_img_mc: @local::protodunehd_img
+protodunehd_img_mc.wcls_main.params.reality: "sim"
+
+protodunehd_img_nfsp_input: @local::protodunehd_img
+protodunehd_img_nfsp_input.wcls_main.params.bad_mask_label: "wclsdatahd:badmasks"
+
+protodunehd_img_nfsp_input_mc: @local::protodunehd_img_nfsp_input
+protodunehd_img_nfsp_input_mc.wcls_main.params.reality: "sim"
 
 protodunesp_img : {
    module_type : WireCellToolkit
