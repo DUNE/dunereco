@@ -48,7 +48,7 @@ local wcls_input = {
       frame_tags: ['orig'],  // this is a WCT designator
       // nticks: params.daq.nticks,
       // tick: params.daq.tick,
-      tick: 512*wc.ns, //Use 512ns here for input, we resample to 500ns later
+      tick: (if (reality == 'data') then 512*wc.ns else 500*wc.ns), //Use 512ns here for input, we resample to 500ns later
     },
   }, nin=0, nout=1),
 
