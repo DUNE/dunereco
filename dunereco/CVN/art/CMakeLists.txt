@@ -41,6 +41,7 @@ art_make(BASENAME_ONLY
   HDF5::HDF5
   MVAAlg
   Boost::filesystem
+  larrecodnn::ImagePatternAlgs_NuSonic_Triton
   MODULE_LIBRARIES 
   dunereco::CVN_func
   dunereco::CVN_tf
