@@ -13,8 +13,9 @@
 # code:    the network code, train.py and evaluate.py live in ../training of this tree; it is put on
 #          PYTHONPATH. The tree is located from this script or from $NNBAR_CVN_DIR (nothing here is
 #          built or installed by dunereco; use the tree from a checkout).
-# weights: $NNBAR_CVN_WEIGHTS (default: nnbar_best.ckpt next to the venv); downloaded once from the
-#          author's repository at the pinned commit $NNBAR_CVN_WEIGHTS_COMMIT if missing.
+# weights: $NNBAR_CVN_WEIGHTS (default: model.ckpt next to the venv); downloaded once from the
+#          author's repository at the pinned commit $NNBAR_CVN_WEIGHTS_COMMIT if missing
+#          (113ebdd = model.ckpt, training of September 2026; deb1014 = nnbar_best.ckpt, July 2026).
 _here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 _with_eval=1; _train=0
 for _a in "$@"; do case $_a in --no-eval) _with_eval=0;; --train) _train=1;; esac; done
@@ -54,10 +55,12 @@ source "$NNBAR_CVN_VENV/bin/activate"
 export NNBAR_CVN_TOOLKIT="$NNBAR_CVN_DIR/training"
 case ":${PYTHONPATH:-}:" in *":$NNBAR_CVN_TOOLKIT:"*) ;; *) export PYTHONPATH="$NNBAR_CVN_TOOLKIT${PYTHONPATH:+:$PYTHONPATH}" ;; esac
 
-# Trained checkpoint (70 MB, not kept in dunereco): best epoch of the 13 July 2026 training.
-NNBAR_CVN_WEIGHTS_COMMIT=${NNBAR_CVN_WEIGHTS_COMMIT:-deb1014}
-NNBAR_CVN_WEIGHTS_URL=${NNBAR_CVN_WEIGHTS_URL:-https://github.com/KaiwenYu2001/dune-nnbar-transformercvn_v2/raw/$NNBAR_CVN_WEIGHTS_COMMIT/nnbar_best.ckpt}
-export NNBAR_CVN_WEIGHTS=${NNBAR_CVN_WEIGHTS:-$(dirname "$NNBAR_CVN_VENV")/nnbar-cvn-weights/nnbar_best.ckpt}
+# Trained checkpoint (70 MB, not kept in dunereco): model.ckpt of the author's repository at the pinned commit
+# (113ebdd: epoch 20 of the September 2026 training, checkpoint-metric TPR 0.353).
+NNBAR_CVN_WEIGHTS_COMMIT=${NNBAR_CVN_WEIGHTS_COMMIT:-113ebdd}
+NNBAR_CVN_WEIGHTS_FILE=${NNBAR_CVN_WEIGHTS_FILE:-model.ckpt}
+NNBAR_CVN_WEIGHTS_URL=${NNBAR_CVN_WEIGHTS_URL:-https://github.com/KaiwenYu2001/dune-nnbar-transformercvn_v2/raw/$NNBAR_CVN_WEIGHTS_COMMIT/$NNBAR_CVN_WEIGHTS_FILE}
+export NNBAR_CVN_WEIGHTS=${NNBAR_CVN_WEIGHTS:-$(dirname "$NNBAR_CVN_VENV")/nnbar-cvn-weights/$NNBAR_CVN_WEIGHTS_COMMIT-$NNBAR_CVN_WEIGHTS_FILE}
 if [ ! -s "$NNBAR_CVN_WEIGHTS" ] && [ $_with_eval -eq 1 ]; then
   echo "downloading $NNBAR_CVN_WEIGHTS_URL -> $NNBAR_CVN_WEIGHTS"
   mkdir -p "$(dirname "$NNBAR_CVN_WEIGHTS")" && curl -fsSL -o "$NNBAR_CVN_WEIGHTS" "$NNBAR_CVN_WEIGHTS_URL" \
