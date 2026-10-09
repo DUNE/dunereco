@@ -39,7 +39,9 @@ It creates the venv `$NNBAR_CVN_VENV` (default
 `/exp/dune/app/users/$USER/nnbar-cvn-venv`, gpvm home areas are small) on
 first use, puts `training/` on `PYTHONPATH`, and fetches the checkpoint into
 `$NNBAR_CVN_WEIGHTS` (default next to the venv) from the author's repository
-at the pinned commit. The pins (torch 2.0.1, Lightning 1.9.5, torchmetrics
+at the pinned commit `$NNBAR_CVN_WEIGHTS_COMMIT` (default `113ebdd`, `model.ckpt`:
+epoch 20 of the September 2026 training; `deb1014` with `NNBAR_CVN_WEIGHTS_FILE=nnbar_best.ckpt`
+is the July 2026 checkpoint used for the first results). The pins (torch 2.0.1, Lightning 1.9.5, torchmetrics
 0.11.4, numpy 1.26.4, rich 13.3.5, transformers 4.33.3) are the ones the
 network was trained with; newer rich and transformers releases break
 Lightning 1.9.5 and torch 2.0.1. ROOT comes from the current environment, or
