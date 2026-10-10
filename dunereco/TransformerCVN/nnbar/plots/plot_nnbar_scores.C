@@ -37,7 +37,7 @@ void plot_nnbar_scores(double cut = 0.9668, const char* cutnote = "provisional c
     for (int i = 0; i < NV; ++i) { hv[i]->SetMaximum(ymax * 3); hv[i]->SetMinimum(1e-5); hv[i]->GetXaxis()->SetTitleSize(0.045); hv[i]->GetYaxis()->SetTitleSize(0.045); hv[i]->GetYaxis()->SetTitleOffset(1.0);
       hv[i]->Draw(i ? "HIST SAME" : "HIST"); leg.AddEntry(hv[i], Form("%s  (%.0f events)", vlabel[i].c_str(), hv[i]->GetEntries()), "l"); }
     leg.Draw(); TLine l(cut, 1e-5, cut, ymax * 3); l.SetLineStyle(2); l.SetLineColor(kGray + 2); l.Draw();
-    note.DrawLatex(0.13, 0.945, "n#bar{n} hA-BR signal, WireMod detector variations, events after precut, nnbar_best.ckpt");
+    note.DrawLatex(0.13, 0.945, "n#bar{n} hA-BR signal, WireMod detector variations, events after precut");
     note.DrawLatex(0.13, 0.655, Form("dashed line: score = %.4g, %s", cut, cutnote)); c.RedrawAxis(); c.SaveAs("plots/nnbar_scores_by_detvar.pdf"); }
 
   // ---- 2. efficiency at the cut per decay mode, per detector variation
@@ -55,7 +55,7 @@ void plot_nnbar_scores(double cut = 0.9668, const char* cutnote = "provisional c
     frame.GetXaxis()->SetLabelSize(0.027); frame.GetXaxis()->SetTitleSize(0.045); frame.GetYaxis()->SetLabelSize(0.038); frame.GetYaxis()->SetTitleSize(0.043); frame.GetYaxis()->SetTitleOffset(0.90);
     frame.Draw("AXIS"); TLegend leg(0.105, 0.765, 0.40, 0.915); leg.SetBorderSize(0); leg.SetFillStyle(0); leg.SetTextSize(0.032);
     for (auto g : gs) { g->Draw("P SAME"); leg.AddEntry(g, g->GetTitle(), "pe"); } leg.Draw();
-    note.DrawLatex(0.50, 0.925, Form("68.27%% Clopper-Pearson intervals;  %s", cutnote)); c.RedrawAxis(); c.SaveAs("plots/nnbar_cvn_efficiency_by_mode.pdf");
+    note.SetTextAlign(31); note.DrawLatex(0.95, 0.925, Form("68.27%% Clopper-Pearson intervals;  %s", cutnote)); note.SetTextAlign(11); c.RedrawAxis(); c.SaveAs("plots/nnbar_cvn_efficiency_by_mode.pdf");
     std::ofstream csv("plots/nnbar_cvn_efficiency_by_mode.csv"); csv << "detvar,decay_mode,decay_label,n_total,n_pass,efficiency\n";
     for (int i = 0; i < NV; ++i) for (int m = 1; m <= NM; ++m) csv << vname[i] << "," << m << ",\"" << mlabel[m] << "\"," << total[i][m] << "," << passed[i][m] << "," << (total[i][m] > 0 ? passed[i][m] / total[i][m] : 0) << "\n"; }
 
