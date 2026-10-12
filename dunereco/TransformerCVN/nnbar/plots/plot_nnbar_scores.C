@@ -1,5 +1,5 @@
 // n-nbar score plots for the signal detector-variation samples.
-//   root -l -b -q 'plots/plot_nnbar_scores.C(<cut>, "<note>")'   (run from the directory holding data/plots/, see make_score_table.py)
+//   root -l -b -q 'plots/plot_nnbar_scores.C(<cut>, "<note>"[, <cut2>, "<note2>"])'   (run from the directory holding data/plots/, see make_score_table.py)
 // Input: data/plots/scores.csv (detvar mode score), mode_labels.txt, detvar_labels.txt
 // Output: plots/*.pdf. Style follows forKevin/plot_nnbar_cut_efficiency.py.
 #include <fstream>
@@ -7,7 +7,8 @@
 #include <sstream>
 #include <vector>
 
-void plot_nnbar_scores(double cut = 0.9668, const char* cutnote = "provisional cut (technote value, to be updated)") {
+void plot_nnbar_scores(double cut = 0.9668, const char* cutnote = "provisional cut (technote value, to be updated)",
+                       double cut2 = -1, const char* cut2note = "") {  // cut2 > 0: second (dotted) line on the score plots
   gROOT->SetBatch(true); gStyle->SetOptStat(0); gStyle->SetEndErrorSize(4);
   gStyle->SetTitleFont(42, "XYZ"); gStyle->SetLabelFont(42, "XYZ"); gStyle->SetLegendFont(42);
   const int NV = 4; const int NM = 44;
@@ -37,8 +38,10 @@ void plot_nnbar_scores(double cut = 0.9668, const char* cutnote = "provisional c
     for (int i = 0; i < NV; ++i) { hv[i]->SetMaximum(ymax * 3); hv[i]->SetMinimum(1e-5); hv[i]->GetXaxis()->SetTitleSize(0.045); hv[i]->GetYaxis()->SetTitleSize(0.045); hv[i]->GetYaxis()->SetTitleOffset(1.0);
       hv[i]->Draw(i ? "HIST SAME" : "HIST"); leg.AddEntry(hv[i], Form("%s  (%.0f events)", vlabel[i].c_str(), hv[i]->GetEntries()), "l"); }
     leg.Draw(); TLine l(cut, 1e-5, cut, ymax * 3); l.SetLineStyle(2); l.SetLineColor(kGray + 2); l.Draw();
+    TLine l2(cut2, 1e-5, cut2, ymax * 3); l2.SetLineStyle(3); l2.SetLineColor(kGray + 2); if (cut2 > 0) l2.Draw();
     note.DrawLatex(0.13, 0.945, "n#bar{n} hA-BR signal, WireMod detector variations, events after precut");
-    note.DrawLatex(0.13, 0.655, Form("dashed line: score = %.4g, %s", cut, cutnote)); c.RedrawAxis(); c.SaveAs("plots/nnbar_scores_by_detvar.pdf"); }
+    note.DrawLatex(0.13, 0.655, Form("dashed line: score = %.4g, %s", cut, cutnote));
+    if (cut2 > 0) note.DrawLatex(0.13, 0.625, Form("dotted line: score = %.4g, %s", cut2, cut2note)); c.RedrawAxis(); c.SaveAs("plots/nnbar_scores_by_detvar.pdf"); }
 
   // ---- 2. efficiency at the cut per decay mode, per detector variation
   { double maximum = 0; std::vector<TGraphAsymmErrors*> gs;
@@ -71,7 +74,10 @@ void plot_nnbar_scores(double cut = 0.9668, const char* cutnote = "provisional c
       std::string lab = mlabel[order[j]]; auto p = lab.find("-->"); if (p != std::string::npos) lab.replace(p, 3, "#rightarrow");
       leg.AddEntry(h, Form("%d: %s  (%.0f)", order[j], lab.c_str(), mtotal[order[j]]), "l"); }
     leg.Draw(); TLine l(cut, 1e-4, cut, ymax * 3); l.SetLineStyle(2); l.SetLineColor(kGray + 2); l.Draw();
+    TLine l2(cut2, 1e-4, cut2, ymax * 3); l2.SetLineStyle(3); l2.SetLineColor(kGray + 2); if (cut2 > 0) l2.Draw();
     note.DrawLatex(0.12, 0.945, "n#bar{n} hA-BR signal, four detector variations combined, eight most populous decay modes");
+    note.DrawLatex(0.12, 0.565, Form("dashed line: score = %.4g, %s", cut, cutnote));
+    if (cut2 > 0) note.DrawLatex(0.12, 0.535, Form("dotted line: score = %.4g, %s", cut2, cut2note));
     c.RedrawAxis(); c.SaveAs("plots/nnbar_scores_by_mode.pdf"); }
 
   // ---- 4. decay-mode key
