@@ -11,7 +11,13 @@ function(params, tools) {
     local nanodes = std.length(tools.anodes),
 
 
-    local ductors = [sim.make_depotransform("ductor%d"%anode.data.ident, anode, tools.pirs[0]) for anode in tools.anodes],
+    // As in protodunevd: bottom and top drift CRMs use their own PIRs
+    // (field response x electronics response), see params.elecs.
+    local ductors = [sim.make_depotransform("ductor%d"%anode.data.ident, anode,
+                                            if params.is_top(anode.data.ident)
+                                            then tools.pirs[1] // top drift
+                                            else tools.pirs[0]) // bottom drift
+                     for anode in tools.anodes],
 
     local reframers = [
         g.pnode({
@@ -35,7 +41,7 @@ function(params, tools) {
             anode: wc.tn(anode),
             dft: wc.tn(tools.dft),
             chanstat: if std.type(csdb) == "null" then "" else wc.tn(csdb),
-            spectra_file: params.files.noise,
+            spectra_file: params.files.noises[ if params.is_top(anode.data.ident) then 1 else 0 ],
             nsamples: params.daq.nticks,
             period: params.daq.tick,
             wire_length_scale: 1.0*wc.cm, // optimization binning
@@ -58,8 +64,19 @@ function(params, tools) {
 
     local noises = [add_noise(model) for model in noise_models],
 
+    // As in protodunevd: bottom and top drift CRMs differ in ADC baselines
+    // and full scale range.
+    local digitizer(anode, name="", tag="") = g.pnode({
+        type: "Digitizer",
+        name: name,
+        data : (if params.is_top(anode.data.ident) then params.top_adc else params.adc) {
+            anode: wc.tn(anode),
+            frame_tag: tag,
+        }
+    }, nin=1, nout=1, uses=[anode]),
+
     local digitizers = [
-        sim.digitizer(anode, name="digitizer%d"%anode.data.ident, tag="orig%d"%anode.data.ident)
+        digitizer(anode, name="digitizer%d"%anode.data.ident, tag="orig%d"%anode.data.ident)
         for anode in tools.anodes],
 
     ret : {

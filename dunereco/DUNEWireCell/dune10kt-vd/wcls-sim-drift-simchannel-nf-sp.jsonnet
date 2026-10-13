@@ -9,6 +9,7 @@
 local g = import 'pgraph.jsonnet';
 local f = import 'pgrapher/common/funcs.jsonnet';
 local wc = import 'wirecell.jsonnet';
+local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
 // Note: better switch to layers
 local dnnroi = import 'pgrapher/experiment/dune-vd/dnnroi.jsonnet';
 
@@ -25,6 +26,8 @@ local fcl_params = {
     use_hydra: std.extVar('use_hydra'),
     save_rawdigits: std.extVar('save_rawdigits'),
     adc_resolution: std.extVar('adc_resolution'),
+    // Bottom drift (cold electronics) front-end gain [mV/fC]
+    elecGain: std.extVar('elecGain') * wc.mV / wc.fC,
 };
 local params_maker = import 'pgrapher/experiment/dune10kt-vd/params-10kt.jsonnet';
 local params = params_maker(fcl_params) {
@@ -35,13 +38,13 @@ local params = params_maker(fcl_params) {
     DT: std.extVar('DT') * wc.cm2 / wc.ns,
     // Electron lifetime
     lifetime: std.extVar('lifetime') * wc.us,
-    // Electron drift speed, assumes a certain applied E-field
-    drift_speed: std.extVar('driftSpeed') * wc.mm / wc.us,
+    // Electron drift speed from E-field [kV/cm] and temperature [K] as in protodunevd
+    drift_speed: util.drift_velocity(std.extVar('efield'), std.extVar('temperature')) * wc.mm / wc.us,
   },
   files: super.files {
       wires: std.extVar('files_wires'),
-      fields: [ std.extVar('files_fields'), ],
-      noise: std.extVar('files_noise'),
+      // same field response for [bottom, top] drift volumes
+      fields: [ std.extVar('files_fields'), std.extVar('files_fields'), ],
   },
 };
 
