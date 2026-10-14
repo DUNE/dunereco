@@ -1,0 +1,895 @@
+// std inlcudes
+#include <string>
+#include <vector>
+
+//ROOT includes
+#include "TF1.h"
+#include "TGraph.h"
+#include "TH1D.h"
+#include "TCanvas.h"
+#include "TH2F.h"
+#include "TStyle.h"
+#include "TLegend.h"
+#include "TLatex.h"
+
+// art includes
+#include "art/Framework/Core/EDProducer.h"
+#include "art/Framework/Core/ModuleMacros.h"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "art_root_io/TFileService.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
+
+// larsoft includes
+#include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/WireReadout.h"
+#include "larcorealg/Geometry/WireReadoutGeom.h"
+#include "larcore/CoreUtils/ServiceUtil.h" // lar::providerFrom()
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/Utilities/AssociationUtil.h"
+#include "lardataobj/RawData/RawDigit.h"
+#include "lardataobj/RecoBase/Wire.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
+#include "larevt/SpaceCharge/SpaceCharge.h"
+#include "larevt/SpaceChargeServices/SpaceChargeService.h"
+#include "lardataobj/Simulation/SimChannel.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
+
+
+#include "Utility/WireModUtility.hh"
+
+//namespace
+namespace wiremod
+{
+
+  class WireModifier : public art::EDProducer
+  {
+    public:
+      explicit WireModifier(fhicl::ParameterSet const& pset);
+      void reconfigure(fhicl::ParameterSet const& pset);
+      void produce(art::Event& evt) override;
+
+   private:
+      const geo::GeometryCore* fGeometry = lar::providerFrom<geo::Geometry>(); // get the geometry
+      const geo::WireReadoutGeom* fWireReadout = &(art::ServiceHandle<geo::WireReadout const>()->Get());
+      const detinfo::DetectorClocksData fDetClocksData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataForJob();
+      art::InputTag fWireLabel;     // which wires are we pulling in?
+      art::InputTag fHitLabel;      // which hits are we pulling in?
+      art::InputTag fEDepOrigLabel; // which are the unshifted EDeps?
+      art::InputTag fEDepShftLabel; // which are the shifted EDeps?
+      art::InputTag fSimChannelLabel;  // SimChannels for IDE-based scale truth (default "merge")
+      art::InputTag fG4Label;          // MCParticles for trajectory direction (default "largeant")
+      bool fUseSimChannels; //to use simChannels and IDEs instead of edeps
+      bool fApplyLowECut;
+      bool fApplyGainScale;
+      double fGainScale;
+      bool fApplyLifetimeVar;
+      double fLifetimeVar;
+      bool fApplyModBoxVar;
+      double fModBoxAlphaVar;
+      double fModBoxBetaVar;
+      bool fApplyLongitudinalDiffusion;
+      double fDLnew;
+      bool fApplyTransverseDiffusion;
+      double fDTnew;
+      bool fSaveChargeRatioPlots; //plot showing the ratio of ROI total charge after/before modification
+      TH2F *hRat = nullptr;
+      TGraph *grChargeRatExp = nullptr;
+      bool fSaveEdepMatchingPlots; //Plot showing the energy distirbutions and PDG code of edeps that were matched or not to an ROI
+      int fnNeighbourWires; //Number of Neighbour wires o consider for matchoing edeps to an ROI
+      int fnTickTolerance;
+      bool fAdditiveModification;
+
+       //The three following are probably not needed
+      bool fSaveHistsByChannel;     // save modified signals by channel?
+      bool fSaveHistsByWire;        // save modified signals by wire?
+      bool fIsData;                 // DEBUG: get data wires
+
+  }; // end WireModifier class
+
+  WireModifier::WireModifier(fhicl::ParameterSet const& pset) : EDProducer{pset}
+  {
+    // get the fhicl parameters
+    this->reconfigure(pset);
+  }
+
+  void WireModifier::reconfigure(fhicl::ParameterSet const& pset)
+  {
+    fWireLabel     = pset.get<art::InputTag>("WireLabel", "tpcrawdecoder:gauss");
+    fHitLabel      = pset.get<art::InputTag>("HitLabel", "gaushit");
+    fEDepOrigLabel = pset.get<art::InputTag>("EDepOrigLabel", "IonAndScint");
+    fEDepShftLabel = pset.get<art::InputTag>("EDepShftLabel", "largeant:LArG4DetectorServicevolTPCActiveInner");
+    fSimChannelLabel = pset.get<art::InputTag>("SimChannelLabel", art::InputTag("merge"));
+    fG4Label = pset.get<art::InputTag>("G4Label", art::InputTag("largeant"));
+
+
+    // what, if anything, are we putting in the histogram files
+    fSaveHistsByChannel = pset.get<bool>("SaveByChannel", false);
+    fSaveHistsByWire    = pset.get<bool>("SaveByWire"   , false);
+    fIsData             = pset.get<bool>("IsData"       , false);
+
+    // try to read in the graphs/splines from a file
+    //     // if that file does not exist then fake them
+    fApplyLowECut = pset.get<bool>("ApplyLowECut"   , false);
+    fUseSimChannels = pset.get<bool>("useSimChannels"   , false);
+    fApplyGainScale    = pset.get<bool>("ApplyGainScale"   , false);
+    if (fApplyGainScale)
+    {
+      fGainScale = pset.get<double>("ElectronicsGainScale");
+    }
+    fApplyLifetimeVar    = pset.get<bool>("ApplyLifetimeVar"   , false);
+    if (fApplyLifetimeVar)
+    {
+      fLifetimeVar = pset.get<double>("LifetimeVar");
+    }
+    fApplyModBoxVar    = pset.get<bool>("ApplyModBoxVar"   , false);
+    if (fApplyModBoxVar)
+    {
+      fModBoxAlphaVar = pset.get<double>("ModBoxAlphaVar");
+      fModBoxBetaVar = pset.get<double>("ModBoxBetaVar");
+    }
+    fApplyLongitudinalDiffusion = pset.get<bool>("ApplyLongitudinalDiffusionVar"   , false);
+    if (fApplyLongitudinalDiffusion){
+      fDLnew = pset.get<double>("DLvar");
+    }
+
+    fApplyTransverseDiffusion = pset.get<bool>("ApplyTransverseDiffusionVar"   , false);
+    if (fApplyTransverseDiffusion){
+      fDTnew = pset.get<double>("DTvar");
+    }
+
+    fSaveChargeRatioPlots = pset.get<bool>("SaveChargeRatioPlot"   , false);
+    if (!fApplyModBoxVar and !fApplyLifetimeVar) fSaveChargeRatioPlots = false; //for now only consider recombination and attenuation for charge ration plots
+    if (fSaveChargeRatioPlots){
+      const int N=200;
+      double xs[N], ys[N];
+      if (fApplyModBoxVar){ 
+        hRat = new TH2F("hRatRecomb", "Total ROI charge after/before scaling vs dE/dx; dE/dx [MeV/cm]; Charge ratio", 200, 1, 3, 200, 0.76, 0.96);
+        double beta_nom=0.212;
+        double alpha_nom=0.93;
+        double E=0.5;
+        double rho=1.39295;
+        double Bnom=beta_nom/rho/E;
+        double Bvar=fModBoxBetaVar/rho/E;
+        double xmin=1., step=2.2/N;
+        for (int i = 0; i < N; i++) {
+          xs[i] = xmin + i * step;
+          ys[i] = std::log(fModBoxAlphaVar+Bvar*xs[i])/std::log(alpha_nom+Bnom*xs[i])*beta_nom/fModBoxBetaVar;
+        }
+      }
+      else{ 
+        hRat = new TH2F("hRatRecomb", "Total ROI charge after/before scaling vs drift distance; Drift distance [cm]; Charge ratio", 37, 0, 370, 200, 0.8, 1);   
+        double factor=1./160.563*(1000./fLifetimeVar-1/10.4);
+        double xmin=0., step=370./N;
+        for (int i = 0; i < N; i++) {
+          xs[i] = xmin + i * step;
+          ys[i] = std::exp(-xs[i] * factor);
+        }   
+      }
+      grChargeRatExp = new TGraph(N, xs, ys);   
+    }
+    fSaveEdepMatchingPlots = pset.get<bool>("SaveEdepMatchingPlots"   , false);
+    fnNeighbourWires = pset.get<int>("nNeighbourWires"   , 0);
+    fnTickTolerance = pset.get<int>("nTickTolerance" , 0);
+    fAdditiveModification = pset.get<bool>("AdditiveModification"   , false);
+
+    // we make these things
+    produces<std::vector<recob::Wire      >>();
+  }
+
+ 
+
+  void WireModifier::produce(art::Event& evt)
+  {
+
+    // here's where the "magic" happens
+    art::ServiceHandle<art::TFileService> tfs;
+
+    // get a clock and det props for the event
+    const detinfo::DetectorPropertiesData detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
+
+
+    // get the things to do the things on
+    art::Handle< std::vector<recob::Wire> > wireHandle;
+    evt.getByLabel(fWireLabel, wireHandle);
+    auto const& wireVec(*wireHandle);
+
+    art::FindManyP<raw::RawDigit> digit_assn(wireHandle, evt, fWireLabel);
+
+    art::Handle< std::vector<sim::SimEnergyDeposit> > edepOrigHandle;
+    evt.getByLabel(fEDepOrigLabel, edepOrigHandle);
+    auto const& edepOrigVec(*edepOrigHandle);
+      
+    art::Handle< std::vector<sim::SimEnergyDeposit> > edepShiftedHandle;
+    evt.getByLabel(fEDepShftLabel, edepShiftedHandle);
+    auto const& edepShiftedVec(*edepShiftedHandle);
+
+
+    // SimChannel + MCParticle inputs: the scale-value truth (position/direction/dE-dQ per
+    // sub-ROI) is derived from these, replacing the SimEnergyDeposit path. The SimChannel
+    // ionization gives the charge-weighted true position; the MCParticle trajectory gives
+    // the local track direction used by the ThetaXW/XXW scale lookup.
+    
+    auto const& mcpVec   = *evt.getValidHandle<std::vector<simb::MCParticle>>(fG4Label);
+    std::map<int, const simb::MCParticle*> particleMap;
+    for (auto const& p : mcpVec) particleMap[p.TrackId()] = &p;
+
+    art::Handle< std::vector<recob::Hit> > hitHandle;
+    evt.getByLabel(fHitLabel, hitHandle);
+    auto const& hitVec(*hitHandle);
+
+
+    
+    //for debugging purposes, to know if event is CC or NC
+    auto const& mctruths = *evt.getValidHandle<std::vector<simb::MCTruth>>("generator");
+    bool isCC = false;
+    if (!mctruths.empty()) {
+      isCC = (mctruths[0].GetNeutrino().CCNC() == 0);
+    }
+    if (isCC) std::cout<<"This is a CC events"<<std::endl;
+
+    // put the new stuff somewhere
+    std::unique_ptr<std::vector<recob::Wire      >> new_wires(new std::vector<recob::Wire      >());
+
+
+    sys::WireModUtility wmUtil(fGeometry, fWireReadout, detProp); // detector geometry & properties
+    // Space-charge provider for mapping IDE (at-the-wire) positions to the true trajectory
+    // frame inside CalcPropertiesFromIDEs. Null/disabled -> identity.
+    wmUtil.fSCE = lar::providerFrom<spacecharge::SpaceChargeService>();
+
+
+    //Get the simulated particles to get the PDG ID for debugging purposes
+    if (fSaveEdepMatchingPlots){
+      art::Handle<std::vector<simb::MCParticle>> mcPartHandle;
+      evt.getByLabel("largeant", mcPartHandle);  // adjust label if needed
+      auto const& mcParticles(*mcPartHandle);
+      wmUtil.MakeTrackIDtoPDGMap(mcParticles); //map is created and will be used to get Edeps PDG plot
+    }
+
+    wmUtil.SaveEdepMatchingPlots = fSaveEdepMatchingPlots;
+    wmUtil.additiveModification = fAdditiveModification;
+    if (wmUtil.additiveModification) std::cout<<"setting additive modification"<<std::endl;
+    wmUtil.nNeighbourWires = fnNeighbourWires;    
+    wmUtil.nTickTolerance = fnTickTolerance;
+
+    wmUtil.applyGainScale    = fApplyGainScale;
+    if (wmUtil.applyGainScale)
+    {
+      std::cout<<"Will apply gain scale"<<std::endl;
+      wmUtil.gainScale = fGainScale;
+    }
+    wmUtil.applyLifetimeVar    = fApplyLifetimeVar;
+    if (wmUtil.applyLifetimeVar)
+    {
+      std::cout<<"Will apply lifetime variation scaling"<<std::endl;
+      wmUtil.lifetime_var = fLifetimeVar;
+    }
+    wmUtil.applyModBoxVar = fApplyModBoxVar;
+    if (wmUtil.applyModBoxVar)
+    {
+      std::cout<<"Will apply modified box variation scaling"<<std::endl;
+      wmUtil.ModBoxAlphaVar = fModBoxAlphaVar;
+      wmUtil.ModBoxBetaVar = fModBoxBetaVar;
+    }
+    wmUtil.applyLongitudinalDiffusionVar = fApplyLongitudinalDiffusion;
+    if (wmUtil.applyLongitudinalDiffusionVar){
+      std::cout<<"Will apply longitudinal diffusion scaling"<<std::endl;
+      wmUtil.DLnew = fDLnew;
+    }
+    wmUtil.applyTransverseDiffusionVar = fApplyTransverseDiffusion;
+    if (wmUtil.applyTransverseDiffusionVar){
+      std::cout<<"Will apply transverse diffusion scaling"<<std::endl;
+      wmUtil.DTnew = fDTnew;
+    }
+    // add some debugging here
+    MF_LOG_VERBATIM("WireModifier")
+      << "DUMP CONFIG:" << '\n'
+      << "---------------------------------------------------" << '\n'
+      << "  applyGainScale:     " << wmUtil.applyGainScale     << '\n'
+      << "  applyLifetimeVar:     " << wmUtil.applyLifetimeVar     << '\n'
+      << "  readoutWindowTicks: " << wmUtil.readoutWindowTicks << '\n'
+      << "  tickOffset:         " << wmUtil.tickOffset         << '\n'
+      << "---------------------------------------------------";
+
+    // do the things
+    double offset_ADC = 0; // don't use an offset atm
+
+    int nROIs=0;
+    int nROIs_mod=0;
+    int nROIs_lowQ_mod=0;
+    int nROIs_lowQ=0;
+    int nROIs_hit=0;
+    int nROIs_hit_mod=0;
+    int nROIs_hit_highQ=0;
+    int nROIs_hit_highQ_mod=0;    
+
+
+    //begin loop for simChannel case
+    if (fUseSimChannels){
+      auto const& simchVec = *evt.getValidHandle<std::vector<sim::SimChannel>>(fSimChannelLabel);
+      wmUtil.FillROIMatchedIDEMap(simchVec, wireVec, fDetClocksData, offset_ADC);
+    MF_LOG_VERBATIM("WireModifier")
+       << "Got IDE Map." << '\n'
+       << "Get Hit Map";
+    wmUtil.FillROIMatchedHitMap(hitVec, wireVec);
+    MF_LOG_VERBATIM("WireModifier")
+      << "Got Hit Map.";
+
+
+    // loop-de-loop
+    for(size_t i_w = 0; i_w < wireVec.size(); ++i_w)
+    {
+      MF_LOG_DEBUG("WireModifier")
+        << "Checking wire " << i_w;
+
+      auto const& wire = wireVec.at(i_w);
+
+
+      recob::Wire::RegionsOfInterest_t new_rois;
+      new_rois     .resize(wire.SignalROI().size());
+
+      unsigned int my_plane = geo::kUnknown;
+      if (wire.View() == fWireReadout->Plane(geo::PlaneID(0, 0, 0)).View())
+      {
+        MF_LOG_DEBUG("WireModifier")
+          << "Wire is on plane 0, view " << wire.View();
+        my_plane = 0;
+      } else if (wire.View() == fWireReadout->Plane(geo::PlaneID(0, 0, 1)).View()) {
+        MF_LOG_DEBUG("WireModifier")
+          << "Wire is on plane 1, view " << wire.View();
+        my_plane = 1;
+      } else if (wire.View() == fWireReadout->Plane(geo::PlaneID(0, 0, 2)).View()) {
+        MF_LOG_DEBUG("WireModifier")
+          << "Wire is on plane 2, view " << wire.View();
+        my_plane = 2;
+      }
+
+      if (my_plane == geo::kUnknown)
+      {
+        //nNoPlane++;
+        MF_LOG_DEBUG("WireModifier")
+          << "Wire is on unsupported plane. Skip.";
+      }
+
+      std::vector<geo::WireID> wireIDs = fWireReadout->ChannelToWire(wire.Channel());
+      
+      // keep track of if this wire is modified
+      bool isModified = false;
+      
+      for(size_t i_r = 0; i_r < wire.SignalROI().get_ranges().size(); ++i_r)
+      {
+        nROIs++;
+        MF_LOG_DEBUG("WireModifier")
+          << "  Checking ROI " << i_r;
+        auto const& range = wire.SignalROI().get_ranges()[i_r];
+        sys::WireModUtility::ROI_Key_t roi_key(wire.Channel(), i_r);
+
+        std::vector<float> modified_data(range.data());
+
+        //The following line can be moved back later (no need for ROI properties if it is not matched): need roi_properties of unmatched ROIs for debigging purposes
+        auto roi_properties = wmUtil.CalcROIProperties(wire, i_r);
+        bool hasHighQ = true;
+        if (roi_properties.total_q<80){ 
+          nROIs_lowQ++;
+          hasHighQ = false;
+        }
+     
+        bool hasHit = false;
+        //The following line can be moved back later: putting it here to see if the ROI has hit before checking if it has matched edep
+        auto it_hit_map = wmUtil.ROIMatchedHitMap.find(roi_key); 
+        if( it_hit_map != wmUtil.ROIMatchedHitMap.end() ){
+          nROIs_hit++;
+          if (hasHighQ) nROIs_hit_highQ++;
+          hasHit = true;
+        } 
+    
+        auto it_map = wmUtil.ROIMatchedIDEMap.find(roi_key);
+        if(it_map==wmUtil.ROIMatchedIDEMap.end()){
+          if (hasHit){
+            std::cout<<"Unmatched ROI channel: "<<wire.Channel()<<" plane: "<<my_plane<<", view: "<<wire.View()<<", ROI index: "<<i_r<<", begin tick: "<<roi_properties.begin<<", end tick: "<<roi_properties.end<<std::endl;
+          /*for (auto const& wid : wireIDs) {
+            std::cout << "WireID: Cryostat=" << wid.Cryostat
+                  << " TPC=" << wid.TPC
+                  << " Plane=" << wid.Plane
+                  << " Wire=" << wid.Wire
+                  << '\n';}*/
+          }
+          new_rois     .add_range(range.begin_index(), modified_data);
+          MF_LOG_DEBUG("WireModifier")
+            << "    Could not find matching IDE. Skip";
+          continue;
+        }
+        std::vector<size_t> matchedIDEIdxVec = it_map->second;
+        if(matchedIDEIdxVec.size() == 0)
+        {
+          new_rois     .add_range(range.begin_index(), modified_data);
+          MF_LOG_DEBUG("WireModifier")
+            << "    No indices for IDE. Skip";
+          //nNoIndex++;
+          continue;
+        }
+        
+        std::vector<const sys::WireModUtility::MatchedIDE_t*> matchedIDEPtrVec;
+        for(auto i_e : matchedIDEIdxVec)
+          matchedIDEPtrVec.push_back(&wmUtil.fIDEVec[i_e]);
+        MF_LOG_DEBUG("WireModifier")
+          << "  Found " << matchedIDEPtrVec.size() << " shifted IDEs";
+        
+        if (matchedIDEPtrVec.size()>0){
+          nROIs_mod++;
+          if (roi_properties.total_q<80) nROIs_lowQ_mod++;
+          if (hasHit){
+            nROIs_hit_mod++;
+            if (hasHighQ) nROIs_hit_highQ_mod++;
+          }
+        }
+
+        std::vector<const recob::Hit*> matchedHitPtrVec;
+        //Moving the following line before to have the hit matching also for ROIs that are not matched to an edep
+        //auto it_hit_map = wmUtil.ROIMatchedHitMap.find(roi_key);
+        if( it_hit_map != wmUtil.ROIMatchedHitMap.end() ) {
+          for( auto i_h : it_hit_map->second )
+            matchedHitPtrVec.push_back(&hitVec[i_h]);
+        }
+
+        MF_LOG_DEBUG("WireModifier")
+          << "    Found " << matchedHitPtrVec.size() << " matching hits";
+
+        //Moving the following line before to have roi_properties also for ROIs that are not matched to an edep
+        //auto roi_properties = wmUtil.CalcROIProperties(wire, i_r);
+        MF_LOG_DEBUG("WireModifier")
+          << "    ROI Properties:" << '\n'
+          << "                    key:     (" << roi_properties.key.first << ", " << roi_properties.key.second << ")" << '\n'
+          << "                    view:    " << roi_properties.view << '\n'
+          << "                    begin:   " << roi_properties.begin << '\n'
+          << "                    end:     " << roi_properties.end << '\n'
+          << "                    total_q: " << roi_properties.total_q << '\n'
+          << "                    center:  " << roi_properties.center << '\n'
+          << "                    sigma:   " << roi_properties.sigma;
+
+        auto subROIPropVec = wmUtil.CalcSubROIProperties(roi_properties, matchedHitPtrVec);
+
+        MF_LOG_DEBUG("WireModifier")
+          << "    have " << subROIPropVec.size() << " SubROT";
+
+
+        auto SubROIMatchedIDEMap =
+          wmUtil.MatchIDEsToSubROIs(subROIPropVec, matchedIDEPtrVec);
+
+        std::map<sys::WireModUtility::SubROI_Key_t, sys::WireModUtility::ScaleValues_t> SubROIMatchedScalesMap;
+        double drift_distance=0;
+        double dedx_avg=0;
+        double total_E=0;
+        for ( auto const& subroi_prop : subROIPropVec ) {
+          //nsubROIs++;
+          sys::WireModUtility::ScaleValues_t scale_vals;
+          auto key = subroi_prop.key;
+          auto key_it =  SubROIMatchedIDEMap.find(key);
+          if ( key_it != SubROIMatchedIDEMap.end() && key_it->second.size() > 0 ) {  
+            auto truth_vals = wmUtil.CalcPropertiesFromIDEs(key_it->second, particleMap);
+            total_E+=truth_vals.total_energy;
+            //drift_distance+=truth_vals.total_energy*truth_vals.x;
+            drift_distance+=truth_vals.x;
+            dedx_avg+=truth_vals.total_energy*truth_vals.dedx;
+            if ( fApplyLowECut && truth_vals.total_energy < 0.3 && subroi_prop.total_q > 80 ) {
+              scale_vals.r_Q     = 1.;
+              scale_vals.r_sigma = 1.;
+            }
+            else {
+              scale_vals = wmUtil.GetScaleValues(truth_vals, roi_properties, wireIDs);
+              mf::LogDebug("WireModifier")
+                << "Scaling! Q scale: " << scale_vals.r_Q
+                << "     sigma scale: " << scale_vals.r_sigma;
+              isModified = true;
+            }
+          }
+          else {
+            scale_vals.r_Q     = 1.;
+            scale_vals.r_sigma = 1.;
+          }
+          
+          SubROIMatchedScalesMap[key] = scale_vals;
+        }
+        //drift_distance=abs(drift_distance/total_E);
+        drift_distance=abs(drift_distance/subROIPropVec.size());
+        dedx_avg=dedx_avg/total_E;
+        wmUtil.ModifyROI(modified_data, roi_properties, subROIPropVec, SubROIMatchedScalesMap);
+        double charge = 0;
+        for (auto const& adc : modified_data)
+          charge += adc;
+        if (fSaveChargeRatioPlots){ 
+          if (fApplyLifetimeVar) hRat->Fill(drift_distance, charge/roi_properties.total_q);
+          else hRat->Fill(dedx_avg, charge/roi_properties.total_q);
+        }
+        new_rois     .add_range(roi_properties.begin, modified_data);
+      }
+
+        
+
+      new_wires->emplace_back(new_rois,      wire.Channel(), wire.View());
+
+      if (fSaveHistsByChannel && isModified)
+      {
+        readout::ROPID ropID = fWireReadout->ChannelToROP(wire.Channel());  
+        std::string titleStr =  "Cryo-"         + std::to_string(ropID.Cryostat)
+                             + "_TPCset-"       + std::to_string(ropID.TPCset)
+                             + "_ReadOutPlane-" + std::to_string(ropID.ROP)
+                             + "_Channel-"      + std::to_string(wire.Channel());
+        TH1F* oldChannelHist = new TH1F(("Old_" + titleStr).c_str(), ";Sample;Arbitrary Units", wmUtil.readoutWindowTicks, 0, wmUtil.readoutWindowTicks);
+        TH1F* newChannelHist = new TH1F(("New_" + titleStr).c_str(), ";Sample;Arbitrary Units", wmUtil.readoutWindowTicks, 0, wmUtil.readoutWindowTicks);
+        for (size_t tick = 0; tick < wmUtil.readoutWindowTicks; ++tick)
+        {
+          float oldSample = (tick <     wire         .Signal().size() ) ?     wire         .Signal().at(tick) : 0;
+          float newSample = (tick < new_wires->back().Signal().size() ) ? new_wires->back().Signal().at(tick) : 0;
+          oldChannelHist->SetBinContent(tick + 1, oldSample);
+          newChannelHist->SetBinContent(tick + 1, newSample);
+        }
+          
+        TH1F* oldChannelHist_toSave = tfs->make<TH1F>(*oldChannelHist);
+        TH1F* newChannelHist_toSave = tfs->make<TH1F>(*newChannelHist);
+        mf::LogDebug("WireModifier")
+          << "Saved histograms " << oldChannelHist_toSave->GetName() << '\n'
+          << "             and " << newChannelHist_toSave->GetName();
+      }
+
+      if (fSaveHistsByWire && isModified)
+      {
+        std::vector<geo::WireID> wireIDs = fWireReadout->ChannelToWire(wire.Channel());
+        mf::LogDebug("WireModifier")
+          << "Channel " << wire.Channel() << " has " << wireIDs.size() << " wire(s)";
+        for (auto const& wireID : wireIDs)
+        {
+          std::string titleStr =  "Cryo-"  + std::to_string(wireID.Cryostat)
+                               + "_TPC-"   + std::to_string(wireID.TPC)
+                               + "_Plane-" + std::to_string(wireID.Plane)
+                               + "_Wire-"  + std::to_string(wireID.Wire);
+          TH1F* oldWireHist = new TH1F(("Old_" + titleStr).c_str(), ";Sample;Arbitrary Units", wmUtil.readoutWindowTicks, 0, wmUtil.readoutWindowTicks);
+          TH1F* newWireHist = new TH1F(("New_" + titleStr).c_str(), ";Sample;Arbitrary Units", wmUtil.readoutWindowTicks, 0, wmUtil.readoutWindowTicks);
+          for (size_t tick = 0; tick < wmUtil.readoutWindowTicks; ++tick)
+          {
+            float oldSample = (tick <     wire         .Signal().size() ) ?     wire         .Signal().at(tick) : 0;
+            float newSample = (tick < new_wires->back().Signal().size() ) ? new_wires->back().Signal().at(tick) : 0;
+            oldWireHist->SetBinContent(tick + 1, oldSample);
+            newWireHist->SetBinContent(tick + 1, newSample);
+          }
+
+          TH1F* oldWireHist_toSave = tfs->make<TH1F>(*oldWireHist);
+          TH1F* newWireHist_toSave = tfs->make<TH1F>(*newWireHist);
+          mf::LogDebug("WireModifier")
+            << "Saved histograms " << oldWireHist_toSave->GetName() << '\n'
+            << "             and " << newWireHist_toSave->GetName();
+        }
+      }
+    } // end loop over wires
+    }// end loop for simChannels
+    
+    else { //use edeps
+    wmUtil.FillROIMatchedEdepMap(edepShiftedVec, wireVec, offset_ADC);
+    MF_LOG_VERBATIM("WireModifier")
+      << "Got Edep Map." << '\n'
+      << "Get Hit Map";
+    wmUtil.FillROIMatchedHitMap(hitVec, wireVec);
+    MF_LOG_VERBATIM("WireModifier")
+      << "Got Hit Map.";
+
+    for(size_t i_w = 0; i_w < wireVec.size(); ++i_w)
+    {
+      MF_LOG_DEBUG("WireModifier")
+        << "Checking wire " << i_w;
+
+      auto const& wire = wireVec.at(i_w);
+
+
+      recob::Wire::RegionsOfInterest_t new_rois;
+      new_rois     .resize(wire.SignalROI().size());
+
+      unsigned int my_plane = geo::kUnknown;
+      if (wire.View() == fWireReadout->Plane(geo::PlaneID(0, 0, 0)).View())
+      {
+        MF_LOG_DEBUG("WireModifier")
+          << "Wire is on plane 0, view " << wire.View();
+        my_plane = 0;
+      } else if (wire.View() == fWireReadout->Plane(geo::PlaneID(0, 0, 1)).View()) {
+        MF_LOG_DEBUG("WireModifier")
+          << "Wire is on plane 1, view " << wire.View();
+        my_plane = 1;
+      } else if (wire.View() == fWireReadout->Plane(geo::PlaneID(0, 0, 2)).View()) {
+        MF_LOG_DEBUG("WireModifier")
+          << "Wire is on plane 2, view " << wire.View();
+        my_plane = 2;
+      }
+
+      if (my_plane == geo::kUnknown)
+      {
+        MF_LOG_DEBUG("WireModifier")
+          << "Wire is on unsupported plane. Skip.";
+      }
+
+      std::vector<geo::WireID> wireIDs = fWireReadout->ChannelToWire(wire.Channel());
+      bool isModified = false;
+      
+      for(size_t i_r = 0; i_r < wire.SignalROI().get_ranges().size(); ++i_r)
+      {
+        nROIs++;
+        MF_LOG_DEBUG("WireModifier")
+          << "  Checking ROI " << i_r;
+        auto const& range = wire.SignalROI().get_ranges()[i_r];
+        sys::WireModUtility::ROI_Key_t roi_key(wire.Channel(), i_r);
+
+        std::vector<float> modified_data(range.data());
+
+                auto roi_properties = wmUtil.CalcROIProperties(wire, i_r);
+        bool hasHighQ = true;
+        if (roi_properties.total_q<80){ 
+          nROIs_lowQ++;
+          hasHighQ = false;
+        }
+     
+        bool hasHit = false;
+     
+        auto it_hit_map = wmUtil.ROIMatchedHitMap.find(roi_key); 
+        if( it_hit_map != wmUtil.ROIMatchedHitMap.end() ){
+          nROIs_hit++;
+          if (hasHighQ) nROIs_hit_highQ++;
+          hasHit = true;
+        } 
+    
+        auto it_map = wmUtil.ROIMatchedEdepMap.find(roi_key);
+        if(it_map==wmUtil.ROIMatchedEdepMap.end()){
+          new_rois     .add_range(range.begin_index(), modified_data);
+          MF_LOG_DEBUG("WireModifier")
+            << "    Could not find matching Edep. Skip";
+          continue;
+        }
+        std::vector<size_t> matchedEdepIdxVec = it_map->second;
+        if(matchedEdepIdxVec.size() == 0)
+        {
+          new_rois     .add_range(range.begin_index(), modified_data);
+          MF_LOG_DEBUG("WireModifier")
+            << "    No indices for Edep. Skip";
+          continue;
+        }
+        std::vector<const sim::SimEnergyDeposit*> matchedEdepPtrVec;
+        std::vector<const sim::SimEnergyDeposit*> matchedShiftedEdepPtrVec;
+        for(auto i_e : matchedEdepIdxVec)
+        {
+          matchedEdepPtrVec.push_back(&edepOrigVec[i_e]);
+          matchedShiftedEdepPtrVec.push_back(&edepShiftedVec[i_e]);
+        }
+        MF_LOG_DEBUG("WireModifier")
+          << "  Found " << matchedShiftedEdepPtrVec.size() << " shifted Edeps";
+        
+        if (matchedShiftedEdepPtrVec.size()>0){
+          nROIs_mod++;
+          if (roi_properties.total_q<80) nROIs_lowQ_mod++;
+          if (hasHit){
+            nROIs_hit_mod++;
+            if (hasHighQ) nROIs_hit_highQ_mod++;
+          }
+        }
+        std::vector<const recob::Hit*> matchedHitPtrVec;
+        if( it_hit_map != wmUtil.ROIMatchedHitMap.end() ) {
+          for( auto i_h : it_hit_map->second )
+            matchedHitPtrVec.push_back(&hitVec[i_h]);
+        }
+
+        MF_LOG_DEBUG("WireModifier")
+          << "    Found " << matchedHitPtrVec.size() << " matching hits";
+
+        MF_LOG_DEBUG("WireModifier")
+          << "    ROI Properties:" << '\n'
+          << "                    key:     (" << roi_properties.key.first << ", " << roi_properties.key.second << ")" << '\n'
+          << "                    view:    " << roi_properties.view << '\n'
+          << "                    begin:   " << roi_properties.begin << '\n'
+          << "                    end:     " << roi_properties.end << '\n'
+          << "                    total_q: " << roi_properties.total_q << '\n'
+          << "                    center:  " << roi_properties.center << '\n'
+          << "                    sigma:   " << roi_properties.sigma;
+
+        auto subROIPropVec = wmUtil.CalcSubROIProperties(roi_properties, matchedHitPtrVec);
+
+        MF_LOG_DEBUG("WireModifier")
+          << "    have " << subROIPropVec.size() << " SubROT";
+
+        auto SubROIMatchedShiftedEdepMap = wmUtil.MatchEdepsToSubROIs(subROIPropVec, matchedShiftedEdepPtrVec, offset_ADC, wireIDs);
+        MF_LOG_DEBUG("WireModifier")
+          << "    size of SubROIMatchedShiftedEdepMap: " << SubROIMatchedShiftedEdepMap.size();
+        std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDeposit*>> SubROIMatchedEdepMap;
+        for ( auto const& key_edepPtrVec_pair : SubROIMatchedShiftedEdepMap ) {
+          auto key = key_edepPtrVec_pair.first;
+          for ( auto const& shifted_edep_ptr : key_edepPtrVec_pair.second ) {
+            for ( unsigned int i_e=0; i_e < matchedShiftedEdepPtrVec.size(); i_e++ ) {
+              if ( shifted_edep_ptr == matchedShiftedEdepPtrVec[i_e] ) {
+                MF_LOG_DEBUG("WireModifier")
+                  << "    found matching shifted Edep!";
+                SubROIMatchedEdepMap[key].push_back(matchedEdepPtrVec[i_e]);
+                break;
+              }
+            }
+          }
+        }
+
+        MF_LOG_DEBUG("WireModifier")
+          << "    size of SubROIMatchedEdepMap: " << SubROIMatchedEdepMap.size();
+
+        std::map<sys::WireModUtility::SubROI_Key_t, sys::WireModUtility::ScaleValues_t> SubROIMatchedScalesMap;
+        double drift_distance=0;
+        double dedx_avg=0;
+        double total_E=0;
+        for ( auto const& subroi_prop : subROIPropVec ) {
+          sys::WireModUtility::ScaleValues_t scale_vals;
+          auto key = subroi_prop.key;
+          auto key_it =  SubROIMatchedEdepMap.find(key);
+
+          if ( key_it != SubROIMatchedEdepMap.end() && key_it->second.size() > 0 ) {
+            auto truth_vals = wmUtil.CalcPropertiesFromEdeps(key_it->second, offset_ADC, wireIDs);
+            total_E+=truth_vals.total_energy;
+            drift_distance+=truth_vals.x;
+            dedx_avg+=truth_vals.total_energy*truth_vals.dedx;
+            if ( fApplyLowECut && truth_vals.total_energy < 0.3 && subroi_prop.total_q > 80 ) {
+              scale_vals.r_Q     = 1.;
+              scale_vals.r_sigma = 1.;
+            }
+            else {
+              scale_vals = wmUtil.GetScaleValues(truth_vals, roi_properties, wireIDs);
+              mf::LogDebug("WireModifier")
+                << "Scaling! Q scale: " << scale_vals.r_Q
+                << "     sigma scale: " << scale_vals.r_sigma;
+              isModified = true;
+            }
+          }
+          else {
+            scale_vals.r_Q     = 1.;
+            scale_vals.r_sigma = 1.;
+          }
+          
+          SubROIMatchedScalesMap[key] = scale_vals;
+        }
+        drift_distance=abs(drift_distance/subROIPropVec.size());
+        dedx_avg=dedx_avg/total_E;
+        wmUtil.ModifyROI(modified_data, roi_properties, subROIPropVec, SubROIMatchedScalesMap);
+        double charge = 0;
+        for (auto const& adc : modified_data)
+          charge += adc;
+        if (fSaveChargeRatioPlots){ 
+          if (fApplyLifetimeVar) hRat->Fill(drift_distance, charge/roi_properties.total_q);
+          else hRat->Fill(dedx_avg, charge/roi_properties.total_q);
+        }
+        new_rois     .add_range(roi_properties.begin, modified_data);
+      }
+
+        
+
+      new_wires->emplace_back(new_rois,      wire.Channel(), wire.View());
+
+      if (fSaveHistsByChannel && isModified)
+      {
+        readout::ROPID ropID = fWireReadout->ChannelToROP(wire.Channel());  
+        std::string titleStr =  "Cryo-"         + std::to_string(ropID.Cryostat)
+                             + "_TPCset-"       + std::to_string(ropID.TPCset)
+                             + "_ReadOutPlane-" + std::to_string(ropID.ROP)
+                             + "_Channel-"      + std::to_string(wire.Channel());
+        TH1F* oldChannelHist = new TH1F(("Old_" + titleStr).c_str(), ";Sample;Arbitrary Units", wmUtil.readoutWindowTicks, 0, wmUtil.readoutWindowTicks);
+        TH1F* newChannelHist = new TH1F(("New_" + titleStr).c_str(), ";Sample;Arbitrary Units", wmUtil.readoutWindowTicks, 0, wmUtil.readoutWindowTicks);
+        for (size_t tick = 0; tick < wmUtil.readoutWindowTicks; ++tick)
+        {
+          float oldSample = (tick <     wire         .Signal().size() ) ?     wire         .Signal().at(tick) : 0;
+          float newSample = (tick < new_wires->back().Signal().size() ) ? new_wires->back().Signal().at(tick) : 0;
+          oldChannelHist->SetBinContent(tick + 1, oldSample);
+          newChannelHist->SetBinContent(tick + 1, newSample);
+        }
+          
+        TH1F* oldChannelHist_toSave = tfs->make<TH1F>(*oldChannelHist);
+        TH1F* newChannelHist_toSave = tfs->make<TH1F>(*newChannelHist);
+        mf::LogDebug("WireModifier")
+          << "Saved histograms " << oldChannelHist_toSave->GetName() << '\n'
+          << "             and " << newChannelHist_toSave->GetName();
+      }
+
+      if (fSaveHistsByWire && isModified)
+      {
+        std::vector<geo::WireID> wireIDs = fWireReadout->ChannelToWire(wire.Channel());
+        mf::LogDebug("WireModifier")
+          << "Channel " << wire.Channel() << " has " << wireIDs.size() << " wire(s)";
+        for (auto const& wireID : wireIDs)
+        {
+          std::string titleStr =  "Cryo-"  + std::to_string(wireID.Cryostat)
+                               + "_TPC-"   + std::to_string(wireID.TPC)
+                               + "_Plane-" + std::to_string(wireID.Plane)
+                               + "_Wire-"  + std::to_string(wireID.Wire);
+          TH1F* oldWireHist = new TH1F(("Old_" + titleStr).c_str(), ";Sample;Arbitrary Units", wmUtil.readoutWindowTicks, 0, wmUtil.readoutWindowTicks);
+          TH1F* newWireHist = new TH1F(("New_" + titleStr).c_str(), ";Sample;Arbitrary Units", wmUtil.readoutWindowTicks, 0, wmUtil.readoutWindowTicks);
+          for (size_t tick = 0; tick < wmUtil.readoutWindowTicks; ++tick)
+          {
+            float oldSample = (tick <     wire         .Signal().size() ) ?     wire         .Signal().at(tick) : 0;
+            float newSample = (tick < new_wires->back().Signal().size() ) ? new_wires->back().Signal().at(tick) : 0;
+            oldWireHist->SetBinContent(tick + 1, oldSample);
+            newWireHist->SetBinContent(tick + 1, newSample);
+          }
+
+          TH1F* oldWireHist_toSave = tfs->make<TH1F>(*oldWireHist);
+          TH1F* newWireHist_toSave = tfs->make<TH1F>(*newWireHist);
+          mf::LogDebug("WireModifier")
+            << "Saved histograms " << oldWireHist_toSave->GetName() << '\n'
+            << "             and " << newWireHist_toSave->GetName();
+        }
+      }
+    } // end loop over wires
+    } //endl loop for edeps
+
+    std::cout<<"--- Printing ROI-edep matching efficiencies for that event ---"<<std::endl;
+    std::cout<<"Total efficiency: "<<double(nROIs_mod)/double(nROIs)<<nROIs<<std::endl;
+    std::cout<<"Efficiency for total charge below 80: "<<double(nROIs_lowQ_mod)/double(nROIs_lowQ)<<std::endl;
+    std::cout<<"Percentage of ROIs matched to at least one hit: "<<double(nROIs_hit)/double(nROIs)<<std::endl;
+    std::cout<<"Efficiency for matched to at least one hit: "<<double(nROIs_hit_mod)/double(nROIs_hit)<<std::endl;
+    std::cout<<"nROIs matched to edep / nROIs matched to an hit: "<<double(nROIs_hit_mod)/double(nROIs_mod)<<std::endl;
+    std::cout<<"--- Finished printing efficiencies --"<<std::endl;
+ 
+    if (fSaveChargeRatioPlots){
+      TCanvas *c1 = new TCanvas("c1", "ROI properties", 800, 600);
+      c1->SetTicky();
+      c1->SetTickx();
+      gPad->SetLeftMargin(0.15);
+      gPad->SetBottomMargin(0.15);
+
+      grChargeRatExp->SetLineWidth(2);
+      grChargeRatExp->SetLineColor(kRed);
+      hRat->SetStats(0);
+      hRat->SetLineColor(kBlack);
+      grChargeRatExp->SetTitle(hRat->GetTitle());
+      grChargeRatExp->GetXaxis()->SetTitle(hRat->GetXaxis()->GetTitle());
+      grChargeRatExp->GetYaxis()->SetTitle(hRat->GetYaxis()->GetTitle());
+      grChargeRatExp->SetLineStyle(2);
+      grChargeRatExp->SetLineWidth(4);
+      //grChargeRatExp->Draw("AL");
+      hRat->GetYaxis()->CenterTitle();
+      hRat->GetXaxis()->CenterTitle();
+      hRat->GetYaxis()->SetTitleSize(0.055);
+      hRat->GetYaxis()->SetLabelSize(0.045);
+      hRat->GetYaxis()->SetTitleOffset(1.1);
+      hRat->GetXaxis()->SetTitleSize(0.055);
+      hRat->GetXaxis()->SetLabelSize(0.045);
+      hRat->GetXaxis()->SetTitleOffset(1.1);
+      hRat->SetLineColor(0);
+      hRat->SetMarkerColor(kBlack);
+      hRat->SetMarkerStyle(kPlus);
+      hRat->Draw("COLZ");
+      grChargeRatExp->Draw("Lsame");
+
+      TLegend *leg1 = new TLegend(0.15, 0.2, 0.45, 0.3);
+      TLegend *leg2 = new TLegend(0.45, 0.65, 0.9, 0.85);
+      leg1->SetTextSize(0.05);
+      leg2->SetTextSize(0.05);
+      if (fApplyModBoxVar){ 
+        leg1 = new TLegend(0.55, 0.2, 0.85, 0.3);
+        leg2 = new TLegend(0.2, 0.25, 0.95, 0.55);
+        leg2->SetHeader(Form("#splitline{Nominal Mod. Box A: %.2f, Nominal Mod. Box B: %.3f (g.kV)/(MeV.cm^{2})}{Varied Mod. Box A: %.2f, Varied Mod. Box B: %.3f (g.kV)/(MeV.cm^{2})}", 0.93, 0.212, fModBoxAlphaVar, fModBoxBetaVar), "C");
+      }
+      else leg2->SetHeader(Form("#splitline{Nominal lifetime: %.2f ms}{Varied lifetime: %.2f ms}", 10.4, fLifetimeVar/1000.), "C");
+      leg1->SetFillColor(0);   // not strictly needed if FillStyle=0
+      leg1->SetFillStyle(0);
+      leg1->SetLineColor(0);   // removes border color
+      leg1->SetBorderSize(0);
+      //leg1->AddEntry(hRat, "ROI total charge ratio");
+      leg1->AddEntry(grChargeRatExp, "Analytical ratio");
+      leg1->Draw("same");
+      leg2->SetFillColor(0);   // not strictly needed if FillStyle=0
+      leg2->SetFillStyle(0);
+      leg2->SetLineColor(0);   // removes border color
+      leg2->SetBorderSize(0);
+      leg2->Draw("same");
+      
+      TLatex latex;
+      latex.SetNDC();                 // use normalized coordinates (0 → 1)
+      latex.SetTextSize(0.04);        // adjust size
+      latex.SetTextFont(42);          // nice standard font
+      latex.DrawLatex(0.23, 0.85, "#bf{DUNE} Work in Progress");
+      
+      c1->SaveAs("ROI_charge_modification.pdf");
+      delete c1;
+    }
+    evt.put(std::move(new_wires));
+  }
+  DEFINE_ART_MODULE(WireModifier)
+} // end namespace
+

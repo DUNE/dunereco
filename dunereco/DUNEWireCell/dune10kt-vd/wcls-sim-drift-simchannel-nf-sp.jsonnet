@@ -19,16 +19,14 @@ local fcl_params = {
     G4RefTime: std.extVar('G4RefTime') * wc.us,
     response_plane: std.extVar('response_plane')*wc.cm,
     nticks: std.extVar('nticks'),
-    ncrm: std.extVar('ncrm'),
     use_dnnroi: std.extVar('use_dnnroi'),
-    process_crm: std.extVar('process_crm'),
+    process_mode: std.extVar('process_mode'),
+    process_tpc_index: std.extVar('process_tpc_index'),
     use_hydra: std.extVar('use_hydra'),
     save_rawdigits: std.extVar('save_rawdigits'),
     adc_resolution: std.extVar('adc_resolution'),
 };
-local params_maker =
-if fcl_params.ncrm == 320 then import 'pgrapher/experiment/dune10kt-vd/params-10kt.jsonnet'
-else import 'pgrapher/experiment/dune10kt-vd/params.jsonnet';
+local params_maker = import 'pgrapher/experiment/dune10kt-vd/params-10kt.jsonnet';
 local params = params_maker(fcl_params) {
   lar: super.lar {
     // Longitudinal diffusion constant
@@ -49,12 +47,10 @@ local params = params_maker(fcl_params) {
 
 local tools_all = tools_maker(params);
 local tools =
-if fcl_params.process_crm == "partial"
-then tools_all {anodes: [tools_all.anodes[n] for n in std.range(32, 79)]}
-else if fcl_params.process_crm == "test1"
-then tools_all {anodes: [tools_all.anodes[n] for n in [5]]}
-else if fcl_params.process_crm == "test2"
-then tools_all {anodes: [tools_all.anodes[n] for n in [0,1,4,5]]}
+if fcl_params.process_mode == "single-sim"
+    || fcl_params.process_mode == "single-sp"
+    || fcl_params.process_mode == "single-sim-sp"
+then tools_all {anodes: [tools_all.anodes[n] for n in [fcl_params.process_tpc_index]]}
 else tools_all;
 
 local sim_maker = import 'pgrapher/experiment/dune10kt-vd/sim.jsonnet';
@@ -117,7 +113,12 @@ local wcls_output = {
       // anode: wc.tn(tools.anode),
       anode: wc.tn(mega_anode),
       digitize: true,  // true means save as RawDigit, else recob::Wire
-      frame_tags: ['daq'],
+      frame_tags:
+      if fcl_params.process_mode == "single-sim"
+      || fcl_params.process_mode == "single-sp"
+      || fcl_params.process_mode == "single-sim-sp"
+      then ['daqtpc%d' % fcl_params.process_tpc_index]
+      else ['daq'],
       // nticks: params.daq.nticks,
       // chanmaskmaps: ['bad'],
       pedestal_mean: 'native',
@@ -136,7 +137,14 @@ local wcls_output = {
       plane_map: planemap,
       anode: wc.tn(mega_anode),
       digitize: false,  // true means save as RawDigit, else recob::Wire
-      frame_tags: ['gauss', 'wiener','dnnsp'],
+      frame_tags:
+      if fcl_params.process_mode == "single-sim"
+      || fcl_params.process_mode == "single-sp"
+      || fcl_params.process_mode == "single-sim-sp"
+      then ['gausstpc%d' % fcl_params.process_tpc_index,
+            'wienertpc%d' % fcl_params.process_tpc_index,
+            'dnnsptpc%d' % fcl_params.process_tpc_index]
+      else ['gauss', 'wiener','dnnsp'],
       frame_scale: [0.005, 0.005, 0.005],
       chanmaskmaps: [],
       nticks: params.daq.nticks,
@@ -220,13 +228,18 @@ local wcls_depoflux_writer = g.pnode({
   data: {
     anodes: [wc.tn(anode) for anode in tools.anodes],
     field_response: wc.tn(tools.field),
-    tick: 0.5 * wc.us,
-    window_start: 0.0 * wc.ms,
-    window_duration: self.tick * fcl_params.nticks,
+    tick: params.daq.tick,
+    window_start: 0,
+    window_duration: params.daq.readout_time,
     nsigma: 3.0,
-    reference_time: fcl_params.G4RefTime,
+    reference_time: fcl_params.G4RefTime, // dunefd_detectorclocks.G4RefTime (0 for FD)
     energy: 0, // energy: 0 means use the true depo energy (equivalent to SimChannelSink use_energy=true)
-    simchan_label: 'simpleSC',
+    simchan_label:
+        if fcl_params.process_mode == "single-sim"
+        || fcl_params.process_mode == "single-sp"
+        || fcl_params.process_mode == "single-sim-sp"
+        then 'simpleSCtpc%d' % fcl_params.process_tpc_index
+        else "simpleSC",
     sed_label: 'IonAndScint',
     sparse: false,
     // Smear the truth SimChannel to reco (SP) resolution so the 2D truth labels
@@ -244,12 +257,43 @@ local magoutput = 'mag.root';
 local magnify = import 'pgrapher/experiment/dune-vd/magnify-sinks.jsonnet';
 local sinks = magnify(tools, magoutput);
 
+local sim_retagger_fanins = [g.pnode({
+    type: "FrameFanin",
+    name: "sim_retagger_fanin%d" % n,
+    data: {
+        multiplicity: 1,
+        tags: ["daqtpc%d" % n],
+        tag_rules: [{
+            frame: {".*": "daqtpc%d" % [n]},
+            trace: {".*": "daqtpc%d" % [n]},
+        }]
+    },
+}, nin=1, nout=1), for n in [fcl_params.process_tpc_index]];
+local sim_retaggers = [
+    g.pnode(
+        {
+            type: 'Retagger',
+            name: 'retagger-sim-%d' % n,
+            data:
+            {
+                tag_rules:
+                [{
+                  frame: {'.*': 'daqtpc%d' % n,},
+                  merge: {'.*': 'daqtpc%d' % n,},
+                }]
+            },
+        },
+        nin=1, nout=1)
+    for n in [fcl_params.process_tpc_index]
+];
 
 local full_sim_pipes = [
   g.pipeline([
                 sn_pipes[n],
                 // sinks.orig_pipe[n],
-             ],
+             ] + if fcl_params.process_mode == "single-sim"
+                 || fcl_params.process_mode == "single-sim-sp"
+                 then [sim_retagger_fanins[n], sim_retaggers[n], wcls_output.sim_digits] else [],
              'multipass%d' % n)
   for n in anode_iota
 ];
@@ -275,23 +319,9 @@ local full_sp_pipes = [
 
 local multipass = [
   g.pipeline([
-                // wcls_simchannel_sink[n],
-                sn_pipes[n],
-                // sinks.orig_pipe[n],
-                // nf_pipes[n],
-                sp_pipes[n],
-                sinks.decon_pipe[n],
-                // sinks.debug_pipe[n], // use_roi_debug_mode=true in sp.jsonnet
-             ] + if fcl_params.use_dnnroi then [
-                 dnnroi(tools.anodes[n], ts,
-                        nticks=dnnroi_nticks,
-                        tick_per_slice=dnnroi_tick_per_slice,
-                        output_scale=dnnroi_output_scale,
-                        mask_thresh=dnnroi_mask_thresh,
-                        nchunks=dnnroi_nchunks,
-                        nchan=dnnroi_nchan),
-                //  sinks.dnnroi_pipe[n],
-             ] else [],
+                full_sim_pipes[n],
+                full_sp_pipes[n],
+             ],
              'multipass%d' % n)
   for n in anode_iota
 ];
@@ -385,8 +415,10 @@ local switch_pipes = [
 local process_pipes = if fcl_params.use_hydra then switch_pipes else multipass;
 
 local bi_manifold =
-    if fcl_params.process_crm == "test2"
-    then f.multifanpipe('DepoSetFanout', process_pipes, 'FrameFanin', [1,4], [4,1], [1,4], [4,1], 'sn_mag', outtags, tag_rules)
+    if fcl_params.process_mode == "single-sim"
+        || fcl_params.process_mode == "single-sp"
+        || fcl_params.process_mode == "single-sim-sp"
+    then f.multifanpipe('DepoSetFanout', process_pipes, 'FrameFanin', [1,1], [1,1], [1,1], [1,1], 'sn_mag', outtags, tag_rules)
     else f.multifanpipe('DepoSetFanout', process_pipes, 'FrameFanin', [1,2,8,32], [2,4,4,10], [1,2,8,32], [2,4,4,10], 'sn_mag', outtags, tag_rules);
 
 
@@ -400,7 +432,15 @@ local retagger = g.pnode({
       frame: {
         '.*': 'retagger',
       },
-      merge: {
+      merge: 
+      if fcl_params.process_mode == "single-sim"
+      || fcl_params.process_mode == "single-sp"
+      || fcl_params.process_mode == "single-sim-sp"
+        then {
+        'gauss\\d+': 'gausstpc%d' % fcl_params.process_tpc_index,
+        'wiener\\d+': 'wienertpc%d' % fcl_params.process_tpc_index,
+        'dnnsp\\d+': 'dnnsptpc%d' % fcl_params.process_tpc_index,
+      } else {
         'gauss\\d+': 'gauss',
         'wiener\\d+': 'wiener',
         'dnnsp\\d+': 'dnnsp',
@@ -413,43 +453,7 @@ local retagger = g.pnode({
 local sink = sim.frame_sink;
 
 
-// Build an incomplete subgraph ending to be spliced for saving out frames 
-// local osimfanin = g.pnode({ 
-//     type: 'FrameFanin',
-//     name:"osimfanin",
-//     data:{
-//         multiplicity: std.length(tools.anodes),
-//         tags: ['orig%d' % n for n in anode_iota],
-//     } 
-// }, nin=std.length(tools.anodes), nout=1);
-local osimfanin = 
-if fcl_params.process_crm == "test2"
-then f.multifanin('FrameFanin', [1,4], [4,1], 'osimfanin', ['orig%d' % n for n in anode_iota])
-else f.multifanin('FrameFanin', [1,2,8,32], [2,4,4,10], 'osimfanin', ['orig%d' % n for n in anode_iota]);
-local osimdump = g.pnode({ type: 'DumpFrames', name:"osimdump", data:{} }, nin=1, nout=0);
-local osimtagger = g.pnode({
-  type: 'Retagger',
-  name: 'osimtagger',
-  data: {
-    tag_rules: [{
-      frame: {'.*': 'daq',},
-      merge: {
-        'orig\\d': 'orig',
-      },
-    }],
-  },
-}, nin=1, nout=1);
-local osimsaver = g.pipeline([osimfanin, osimtagger, wcls_output.sim_digits, osimdump]);
-
-local edge_selector(e) = std.startsWith(e.tail.node, "FrameSync:frame-sync-switch-rawdigits");
-// local fanout_factory(n,e) = { type:'FrameFanout', name:"splice%d"%n };
-local fanout_factory(n,e) = { type:'FrameFanout', name:"splice%d"%n, data:{multiplicity: 2} }; // "2-wire" splice
-
-
-
-local main_graph = g.pipeline([wcls_input.deposet, setdrifter, wcls_depoflux_writer, bi_manifold, retagger, wcls_output.sp_signals, sink]);
-
-local graph = g.splice(main_graph, osimsaver, edge_selector, fanout_factory);
+local graph = g.pipeline([wcls_input.deposet, setdrifter, wcls_depoflux_writer, bi_manifold, retagger, wcls_output.sp_signals, sink]);
 
 local app = {
     type: 'TbbFlow', //Pgrapher, TbbFlow
