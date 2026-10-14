@@ -1,0 +1,25 @@
+# Reusable wclsFrameSaver / outputer lists for the dune10kt-vd WireCellToolkit
+# nfsp blocks (see wirecell_dune.fcl).
+#
+# The chosen list MUST match the jsonnet process_mode used by the block
+# (dune10kt-vd/wcls-sim-drift-simchannel-nf-sp.jsonnet):
+#   nodigits     <-> process_mode "full"          (only spsignals saved)
+#   singledigits <-> process_mode "single-sim-sp" (one merged "simdigits")
+#
+# The dune10kt-vd jsonnet only defines the single "simdigits" saver (no
+# per-CRM multidigits), so there is no multidigits list here.
+
+BEGIN_PROLOG
+
+dune10ktvd_nfsp_outputers_nodigits: [
+      "wclsDepoFluxWriter:postdrift"
+    , "wclsFrameSaver:spsignals"
+]
+
+dune10ktvd_nfsp_outputers_singledigits: [
+      "wclsDepoFluxWriter:postdrift"
+    , "wclsFrameSaver:spsignals"
+    , "wclsFrameSaver:simdigits"
+]
+
+END_PROLOG

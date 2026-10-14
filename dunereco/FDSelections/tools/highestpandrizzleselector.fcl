@@ -1,0 +1,15 @@
+#include "pandrizzle.fcl"
+
+BEGIN_PROLOG
+
+highest_pandrizzle_selector:
+{ 
+    tool_type:                      "HighestPandrizzleScoreRecoVertexShowerSelector"
+
+    PFPModuleLabel:         "pandora"
+    ShowerModuleLabel:      "pandoraShower"
+
+    PandrizzleConfig:        @local::pandrizzle
+}
+
+END_PROLOG

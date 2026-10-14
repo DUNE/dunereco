@@ -4,11 +4,24 @@ local wc = import "wirecell.jsonnet";
 
 local io = import 'pgrapher/common/fileio.jsonnet';
 local tools_maker = import 'pgrapher/common/tools.jsonnet';
-local param_maker = import 'pgrapher/experiment/dune-vd/params.jsonnet';
-local params = param_maker(10*wc.cm) {
+local params_maker = import 'pgrapher/experiment/dune-vd/params.jsonnet';
+local fcl_params = {
+    nticks: 8500,
+    response_plane: 18.92*wc.cm,
+};
+local params = params_maker(fcl_params) {
+  files: super.files {
+      wires: "dunevd10kt_3view_30deg_v3_refactored_1x8x6ref.json.bz2",
+      fields: [ "dunevd-resp-isoc3views-18d92.json.bz2", ],
+      noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2",
+  },
 };
 
-local tools = tools_maker(params);
+
+local tools_all = tools_maker(params);
+local tools = tools_all {
+  anodes: [tools_all.anodes[0]],  // only one anode plane for VD
+};
 
 local sim_maker = import 'pgrapher/experiment/dune-vd/sim.jsonnet';
 local sim = sim_maker(params, tools);
@@ -29,8 +42,8 @@ local sim = sim_maker(params, tools);
 
 // horizontal line
 local stubby = {
-  tail: wc.point(140.507, -350,   0.3, wc.cm),
-  head: wc.point(140.507,  -350,  700, wc.cm),
+  tail: wc.point(-3250, -6000,   5, wc.mm),
+  head: wc.point(3250,  -6000,  1494.2, wc.mm),
 };
 
 local tracklist = [
@@ -115,7 +128,7 @@ local parallel_pipes = [
   for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local outtags = ['orig%d' % n for n in std.range(0, std.length(tools.anodes) - 1)];
-local parallel_graph = f.multifanpipe('DepoSetFanout', parallel_pipes, 'FrameFanin', 6, 'sn_mag', outtags);
+local parallel_graph = f.multifanpipe('DepoSetFanout', parallel_pipes, 'FrameFanin', [1,1], [1,1], [1,1], [1,1], 'sn_mag', outtags);
 
 
 // Only one sink ////////////////////////////////////////////////////////////////////////////
@@ -144,3 +157,4 @@ local cmdline = {
 };
 
 [cmdline] + g.uses(graph) + [app]
+// params

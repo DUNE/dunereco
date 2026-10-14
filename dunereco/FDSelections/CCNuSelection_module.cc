@@ -18,6 +18,7 @@
 
 //STL
 #include <iostream>
+
 //ROOT
 #include "TTree.h"
 #include "TMVA/Reader.h"
@@ -30,6 +31,7 @@
 //LArSoft
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCFlux.h"
+#include "lardataobj/Simulation/SimEnergyDeposit.h"
 #include "larcore/Geometry/WireReadout.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcoreobj/SummaryData/POTSummary.h"
@@ -50,16 +52,14 @@
 //DUNE
 #include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 #include "dunereco/FDSensOpt/NeutrinoEnergyRecoAlg/NeutrinoEnergyRecoAlg.h"
-#include "dunereco/TrackPID/algorithms/CTPHelper.h"
 #include "dunereco/AnaUtils/DUNEAnaHitUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaEventUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaPFParticleUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaTrackUtils.h"
 #include "dunereco/AnaUtils/DUNEAnaShowerUtils.h"
-#include "dunereco/TrackPID/products/CTPResult.h"
-
 #include "dunereco/CVN/func/Result.h"
 #include "dunereco/AnaUtils/DUNEAnaHitUtils.h"
+#include "dunereco/FDSensOpt/FDSensOptData/AngularRecoOutput.h"
 
 //Custom
 #include "dunereco/FDSelections/pandizzle/PandizzleAlg.h"
@@ -69,12 +69,10 @@
 #include "tools/RecoShowerSelector.h"
 
 
-constexpr int kDefInt = -9999;
-constexpr int kDefDoub = (double)(kDefInt);
-
+constexpr int kDefInt = -999;
+constexpr double kDefDoub = -999.0;
 constexpr int kDefMaxNTrueVertexParticles = 150;
-constexpr int kDefMaxNRecoTracks = 50;
-constexpr int kDefMaxNRecoShowers = 50;
+constexpr int kMaxPFParticles = 100;
 
 namespace FDSelection {
   class CCNuSelection;
@@ -87,7 +85,6 @@ public:
   CCNuSelection(CCNuSelection &&) = delete;
   CCNuSelection & operator = (CCNuSelection const &) = delete;
   CCNuSelection & operator = (CCNuSelection &&) = delete;
-
   void analyze(art::Event const & e) override;
   void beginJob() override;
   void beginSubRun(art::SubRun const & sr) override;
@@ -96,27 +93,37 @@ public:
 
 private:
   void Reset();
+  void FillPandoraMaps(art::Event const& evt);
   void GetEventInfo(art::Event const & evt);
   void GetTruthInfo(art::Event const & evt);
   void FillVertexInfo(art::Event const & evt);
-  void GetRecoTrackInfo(art::Event const & evt);
-  void RunTrackSelection(art::Event const & evt);
+  void FillPFParticleInfo(art::Event const & evt);
   void FillChildPFPInformation(art::Ptr<recob::PFParticle> const pfp, art::Event const & evt, int &n_child_pfp, int &n_child_track_pfp, int &n_child_shower_pfp);
-  void GetRecoShowerInfo(art::Event const & evt);
+  void FillRecoTrackInfo(art::Event const & evt, const art::Ptr<recob::PFParticle> &pfp, const int pfpCounter);
+  void FillRecoShowerInfo(art::Event const & evt, const art::Ptr<recob::PFParticle> &pfp, const int pfpCounter);
+  void RunTrackSelection(art::Event const & evt);
+  void RunPandizzleTrackSelection();
+  void RunLongestLengthTrackSelection();
   void RunShowerSelection(art::Event const & evt);
-
+  void RunPandrizzleShowerSelection();
+  void RunHighestEnergyShowerSelection();
   TVector3 ProjectVectorOntoPlane(TVector3 vector_to_project, TVector3 plane_norm_vector);
-  double DistanceToNuVertex(art::Event const & evt, std::vector<art::Ptr<recob::Hit>> const artHitList, const TVector3 &nuVertex);
-  double YZtoU(const geo::WireID &hit_WireID, double y, double x);
-  double YZtoV(const geo::WireID &hit_WireID, double y, double x);
-  double YZtoW(const geo::WireID &hit_WireID, double y, double x);
 
+  ////////////////////////////////////////
+  // Pandora maps
+  ////////////////////////////////////////
+  lar_pandora::MCParticleMap fMCParticleMap;   // Linking TrackID -> MCParticle
+  lar_pandora::PFParticleMap fPFPMap;          // Linking Self() -> PFParticle
+  std::vector<int> fReconstructedMCParticles;  // TrackIDs of reco'd MCParticles
+  ////////////////////////////////////////
   // Trees
-  TTree *fTree; // the selection tree
-  TTree* fPOTTree;
+  ////////////////////////////////////////
+  TTree *fTree;
+  TTree *fPOTTree;
   double fPOT;
   ////////////////////////////////////////
   // Event info
+  ////////////////////////////////////////
   // Event identification
   int fRun;
   int fSubRun;
@@ -127,11 +134,13 @@ private:
   //Neutrino 
   int fNuPdg; //Interaction PDG
   int fBeamPdg; //PDG at point of creation
+  int fNuTrackID;
   int fNC;    // 1=is NC, 0=otherwise
   int fMode; // 0=QE/El, 1=RES, 2=DIS, 3=Coherent production
   int fTargetZ; //Atomic number of scattering target
   double fQ2; 
   double fENu; 
+  double fEVisNu; 
   double fW; //X-Sec params
   double fX;
   double fY;
@@ -143,29 +152,9 @@ private:
   double fNuY;
   double fNuZ;
   double fNuT;
-  //Outgoing particle count
-  int fNPiP; //Number of pi+
-  int fNPim; //Number of pi-
-  int fNPi0; //Number of pi0
-  int fNPhotons; //Number of photons
-  int fNProtons; //Number of protons
-  int fNNeutrons; //Number of neutrinos
-  int fNOther; //Number of other particles
-  int fNVertexParticles; //The total number of particles attached to the GHEP vertex
-  bool fVertexParticleIsGHEP[kDefMaxNTrueVertexParticles];
-  int fVertexParticlePDG[kDefMaxNTrueVertexParticles];
-  int fVertexParticleStatus[kDefMaxNTrueVertexParticles];
-  int fVertexParticleNChildren[kDefMaxNTrueVertexParticles];
-  double fVertexParticleMomX[kDefMaxNTrueVertexParticles];
-  double fVertexParticleMomY[kDefMaxNTrueVertexParticles];
-  double fVertexParticleMomZ[kDefMaxNTrueVertexParticles];
-  double fVertexParticleMomT[kDefMaxNTrueVertexParticles];
-  double fVertexParticleEndX[kDefMaxNTrueVertexParticles];
-  double fVertexParticleEndY[kDefMaxNTrueVertexParticles];
-  double fVertexParticleEndZ[kDefMaxNTrueVertexParticles];
-  double fVertexParticleEndT[kDefMaxNTrueVertexParticles];
   //Outgoing Lepton 
   int fLepPDG;
+  double fLepEnergy;
   double fMomLepX;
   double fMomLepY;
   double fMomLepZ;
@@ -175,6 +164,7 @@ private:
   double fLepEndZ;
   double fLepEndT;
   double fLepNuAngle;
+  int fLepHasMichelDecay;
   //Transverse Mom
   double  fNuMomTranMag;
   double  fTargNuclMomTranMag;
@@ -186,307 +176,8 @@ private:
   double  fFinalMomTranMagWithLepNoRem;
   double  fFinalMomTranMagWithLepWithRem;
   ////////////////////////////////////////
-  // Selected Track Info
-  // Truth
-  int fSelTrackTruePDG;
-  bool fSelTrackTruePrimary;
-  double fSelTrackTrueMomX;
-  double fSelTrackTrueMomY;
-  double fSelTrackTrueMomZ;
-  double fSelTrackTrueMomT;
-  double fSelTrackTrueStartX;
-  double fSelTrackTrueStartY;
-  double fSelTrackTrueStartZ;
-  double fSelTrackTrueEndX;
-  double fSelTrackTrueEndY;
-  double fSelTrackTrueEndZ;
-  // Reco
-  int fSelTrackRecoNHits;
-  double fSelTrackRecoCompleteness;
-  double fSelTrackRecoHitPurity;
-  double fSelTrackRecoStartX;
-  double fSelTrackRecoStartY;
-  double fSelTrackRecoStartZ;
-  double fSelTrackRecoEndX;
-  double fSelTrackRecoEndY;
-  double fSelTrackRecoEndZ;
-  double fSelTrackRecoUpstreamX;
-  double fSelTrackRecoUpstreamY;
-  double fSelTrackRecoUpstreamZ;
-  double fSelTrackRecoDownstreamX;
-  double fSelTrackRecoDownstreamY;
-  double fSelTrackRecoDownstreamZ;
-  double fSelTrackRecoEndClosestToVertexX;
-  double fSelTrackRecoEndClosestToVertexY;
-  double fSelTrackRecoEndClosestToVertexZ;
-  double fSelTrackRecoLength;
-  int   fSelTrackRecoContained;
-  int   fSelTrackRecoMomMethod;
-  double fSelTrackRecoCharge;
-  double fSelTrackRecoMomMCS;
-  double fSelTrackRecoMomContained;
-  double fSelTrackRecoVertexX;
-  double fSelTrackRecoVertexY;
-  double fSelTrackRecoVertexZ;
-  int fSelTrackRecoNChildPFP;
-  int fSelTrackRecoNChildTrackPFP;
-  int fSelTrackRecoNChildShowerPFP;
-  // MVA PID
-  double fSelTrackMVAElectron;
-  double fSelTrackMVAPion;
-  double fSelTrackMVAMuon;
-  double fSelTrackMVAProton;
-  double fSelTrackMVAPhoton;
-  // Pandizzle PID
-  double fSelTrackMichelNHits;
-  double fSelTrackMichelElectronMVA;
-  double fSelTrackMichelRecoEnergyPlane2;
-  double fSelTrackDeflecAngleSD;
-  double fSelTrackLength;
-  double fSelTrackEvalRatio;
-  double fSelTrackConcentration;
-  double fSelTrackCoreHaloRatio;
-  double fSelTrackConicalness;
-  double fSelTrackdEdxStart;
-  double fSelTrackdEdxEnd;
-  double fSelTrackdEdxEndRatio;
-  double fSelTrackPandizzleVar;
-  // DeepPan PID
-  double fSelTrackDeepPanMuVar;
-  double fSelTrackDeepPanPiVar;
-  double fSelTrackDeepPanProtonVar;
+  // Event-level reco
   ////////////////////////////////////////
-  // All tracks info
-  // Truth
-  int fRecoTrackTruePDG[kDefMaxNRecoTracks];
-  bool fRecoTrackTruePrimary[kDefMaxNRecoTracks];
-  double fRecoTrackTrueMomX[kDefMaxNRecoTracks];
-  double fRecoTrackTrueMomY[kDefMaxNRecoTracks];
-  double fRecoTrackTrueMomZ[kDefMaxNRecoTracks];
-  double fRecoTrackTrueMomT[kDefMaxNRecoTracks];
-  double fRecoTrackTrueStartX[kDefMaxNRecoTracks];
-  double fRecoTrackTrueStartY[kDefMaxNRecoTracks];
-  double fRecoTrackTrueStartZ[kDefMaxNRecoTracks];
-  double fRecoTrackTrueEndX[kDefMaxNRecoTracks];
-  double fRecoTrackTrueEndY[kDefMaxNRecoTracks];
-  double fRecoTrackTrueEndZ[kDefMaxNRecoTracks];
-  // Reco
-  int fNRecoTracks;
-  bool fRecoTrackIsPrimary[kDefMaxNRecoTracks];
-  int fRecoTrackRecoNHits[kDefMaxNRecoTracks];
-  double fRecoTrackRecoCompleteness[kDefMaxNRecoTracks];
-  double fRecoTrackRecoHitPurity[kDefMaxNRecoTracks];
-  double fRecoTrackRecoStartX[kDefMaxNRecoTracks];
-  double fRecoTrackRecoStartY[kDefMaxNRecoTracks];
-  double fRecoTrackRecoStartZ[kDefMaxNRecoTracks];
-  double fRecoTrackRecoEndX[kDefMaxNRecoTracks];
-  double fRecoTrackRecoEndY[kDefMaxNRecoTracks];
-  double fRecoTrackRecoEndZ[kDefMaxNRecoTracks];
-  double fRecoTrackRecoUpstreamX[kDefMaxNRecoTracks];
-  double fRecoTrackRecoUpstreamY[kDefMaxNRecoTracks];
-  double fRecoTrackRecoUpstreamZ[kDefMaxNRecoTracks];
-  double fRecoTrackRecoDownstreamX[kDefMaxNRecoTracks];
-  double fRecoTrackRecoDownstreamY[kDefMaxNRecoTracks];
-  double fRecoTrackRecoDownstreamZ[kDefMaxNRecoTracks];
-  double fRecoTrackRecoEndClosestToVertexX[kDefMaxNRecoTracks];
-  double fRecoTrackRecoEndClosestToVertexY[kDefMaxNRecoTracks];
-  double fRecoTrackRecoEndClosestToVertexZ[kDefMaxNRecoTracks];
-  double fRecoTrackRecoLength[kDefMaxNRecoTracks];
-  int   fRecoTrackRecoContained[kDefMaxNRecoTracks];
-  int   fRecoTrackRecoMomMethod[kDefMaxNRecoTracks];
-  double fRecoTrackRecoCharge[kDefMaxNRecoTracks];
-  double fRecoTrackRecoMomMCS[kDefMaxNRecoTracks];
-  double fRecoTrackRecoMomContained[kDefMaxNRecoTracks];
-  double fRecoTrackRecoVertexX[kDefMaxNRecoTracks];
-  double fRecoTrackRecoVertexY[kDefMaxNRecoTracks];
-  double fRecoTrackRecoVertexZ[kDefMaxNRecoTracks];
-  int fRecoTrackRecoNChildPFP[kDefMaxNRecoTracks];
-  int fRecoTrackRecoNChildTrackPFP[kDefMaxNRecoTracks];
-  int fRecoTrackRecoNChildShowerPFP[kDefMaxNRecoTracks];
-  // MVA PID
-  double fRecoTrackMVAElectron[kDefMaxNRecoTracks];
-  double fRecoTrackMVAPion[kDefMaxNRecoTracks];
-  double fRecoTrackMVAMuon[kDefMaxNRecoTracks];
-  double fRecoTrackMVAProton[kDefMaxNRecoTracks];
-  double fRecoTrackMVAPhoton[kDefMaxNRecoTracks];
-  // DeepPan PID
-  double fRecoTrackDeepPanMuVar[kDefMaxNRecoTracks];
-  double fRecoTrackDeepPanPiVar[kDefMaxNRecoTracks];
-  double fRecoTrackDeepPanProtonVar[kDefMaxNRecoTracks];
-  // Pandizzle PID
-  float fRecoTrackMichelNHits[kDefMaxNRecoTracks];
-  float fRecoTrackMichelElectronMVA[kDefMaxNRecoTracks];
-  float fRecoTrackMichelRecoEnergyPlane2[kDefMaxNRecoTracks];
-  float fRecoTrackDeflecAngleSD[kDefMaxNRecoTracks];
-  float fRecoTrackLength[kDefMaxNRecoTracks];
-  float fRecoTrackEvalRatio[kDefMaxNRecoTracks];
-  float fRecoTrackConcentration[kDefMaxNRecoTracks];
-  float fRecoTrackCoreHaloRatio[kDefMaxNRecoTracks];
-  float fRecoTrackConicalness[kDefMaxNRecoTracks];
-  float fRecoTrackdEdxStart[kDefMaxNRecoTracks];
-  float fRecoTrackdEdxEnd[kDefMaxNRecoTracks];
-  float fRecoTrackdEdxEndRatio[kDefMaxNRecoTracks];
-  double fRecoTrackPandizzleVar[kDefMaxNRecoTracks];
-  ////////////////////////////////////////
-  // Selected shower info
-  // Truth
-  int fSelShowerTruePDG;
-  bool fSelShowerTruePrimary;
-  double fSelShowerTrueMomX;
-  double fSelShowerTrueMomY;
-  double fSelShowerTrueMomZ;
-  double fSelShowerTrueMomT;
-  double fSelShowerTrueStartX;
-  double fSelShowerTrueStartY;
-  double fSelShowerTrueStartZ;
-  double fSelShowerTrueEndX;
-  double fSelShowerTrueEndY;
-  double fSelShowerTrueEndZ;
-  // Reco
-  int fSelShowerRecoNHits;
-  double fSelShowerRecoCompleteness;
-  double fSelShowerRecoHitPurity;
-  double fSelShowerRecoStartX;
-  double fSelShowerRecoStartY;
-  double fSelShowerRecoStartZ;
-  // trj -- comment out unused variables to make clang succeed
-  //double fSelShowerRecoEndX;
-  //double fSelShowerRecoEndY;
-  //double fSelShowerRecoEndZ;
-  double fSelShowerRecoVertexX;
-  double fSelShowerRecoVertexY;
-  double fSelShowerRecoVertexZ;
-  double fSelShowerDistanceToNuVertexU;
-  double fSelShowerDistanceToNuVertexV;
-  double fSelShowerDistanceToNuVertexW;
-  double fSelShowerRecoCharge;
-  double fSelShowerRecoMom;
-  int fSelShowerRecoNChildPFP;
-  int fSelShowerRecoNChildTrackPFP;
-  int fSelShowerRecoNChildShowerPFP;
-  double fSelShowerRecoDirX;
-  double fSelShowerRecoDirY;
-  double fSelShowerRecoDirZ;
-  double fSelShowerRecodEdx[3];
-  double fSelShowerRecoEnergy[3];
-  int fSelShowerRecoBestPlane;
-  double fSelShowerRecoLength;
-  double fSelShowerRecoOpeningAngle;
-  // MVA PID
-  double fSelShowerMVAElectron;
-  double fSelShowerMVAPion;
-  double fSelShowerMVAMuon;
-  double fSelShowerMVAProton;
-  double fSelShowerMVAPhoton;
-  // Pandrizzle PID
-  double fSelShowerPandrizzleConnectionBDTScore;
-  double fSelShowerPandrizzlePathwayLengthMin;
-  double fSelShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D;
-  double fSelShowerPandrizzleMaxNPostShowerStartHits;
-  double fSelShowerPandrizzleMaxPostShowerStartScatterAngle;
-  double fSelShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry;
-  double fSelShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry;
-  double fSelShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance;
-  double fSelShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius;
-  double fSelShowerPandrizzleMaxPostShowerStartOpeningAngle;
-  double fSelShowerPandrizzleMaxFoundHitRatio;
-  double fSelShowerPandrizzleMaxInitialGapSize;
-  double fSelShowerPandrizzleMinLargestProjectedGapSize;
-  double fSelShowerPandrizzleNViewsWithAmbiguousHits;
-  double fSelShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy;
-  double fSelShowerPandrizzleEvalRatio;
-  double fSelShowerPandrizzleConcentration;
-  double fSelShowerPandrizzleCoreHaloRatio;
-  double fSelShowerPandrizzleConicalness;
-  double fSelShowerPandrizzledEdxBestPlane;
-  double fSelShowerPandrizzleDisplacement;
-  double fSelShowerPandrizzleDCA;
-  double fSelShowerPandrizzleWideness;
-  double fSelShowerPandrizzleEnergyDensity;
-  double fSelShowerPandrizzleBDTMethod;
-  double fSelShowerEnhancedPandrizzleScore;
-  double fSelShowerBackupPandrizzleScore;
-  bool   fSelShowerPandrizzleIsFilled;
-  ////////////////////////////////////////
-  // All showers info
-  // True
-  int fNRecoShowers;
-  bool fRecoShowerTruePrimary[kDefMaxNRecoShowers];
-  double fRecoShowerTrueMomX[kDefMaxNRecoShowers];
-  double fRecoShowerTrueMomY[kDefMaxNRecoShowers];
-  double fRecoShowerTrueMomZ[kDefMaxNRecoShowers];
-  double fRecoShowerTrueMomT[kDefMaxNRecoShowers];
-  double fRecoShowerTrueStartX[kDefMaxNRecoShowers];
-  double fRecoShowerTrueStartY[kDefMaxNRecoShowers];
-  double fRecoShowerTrueStartZ[kDefMaxNRecoShowers];
-  double fRecoShowerTrueEndX[kDefMaxNRecoShowers];
-  double fRecoShowerTrueEndY[kDefMaxNRecoShowers];
-  double fRecoShowerTrueEndZ[kDefMaxNRecoShowers];
-  // Reco
-  int fRecoShowerTruePDG[kDefMaxNRecoShowers];
-  int fRecoShowerRecoNHits[kDefMaxNRecoShowers];
-  double fRecoShowerRecoCompleteness[kDefMaxNRecoShowers];
-  double fRecoShowerRecoHitPurity[kDefMaxNRecoShowers];
-  double fRecoShowerRecoStartX[kDefMaxNRecoShowers];
-  double fRecoShowerRecoStartY[kDefMaxNRecoShowers];
-  double fRecoShowerRecoStartZ[kDefMaxNRecoShowers];
-  double fRecoShowerRecoCharge[kDefMaxNRecoShowers];
-  double fRecoShowerRecoMom[kDefMaxNRecoShowers];
-  double fRecoShowerRecoVertexX[kDefMaxNRecoShowers];
-  double fRecoShowerRecoVertexY[kDefMaxNRecoShowers];
-  double fRecoShowerRecoVertexZ[kDefMaxNRecoShowers];
-  double fRecoShowerDistanceToNuVertexU[kDefMaxNRecoShowers];
-  double fRecoShowerDistanceToNuVertexV[kDefMaxNRecoShowers];
-  double fRecoShowerDistanceToNuVertexW[kDefMaxNRecoShowers];
-  int fRecoShowerRecoNChildPFP[kDefMaxNRecoShowers];
-  int fRecoShowerRecoNChildTrackPFP[kDefMaxNRecoShowers];
-  int fRecoShowerRecoNChildShowerPFP[kDefMaxNRecoShowers];
-  double fRecoShowerRecoDirX[kDefMaxNRecoShowers];
-  double fRecoShowerRecoDirY[kDefMaxNRecoShowers];
-  double fRecoShowerRecoDirZ[kDefMaxNRecoShowers];
-  double fRecoShowerRecodEdx[kDefMaxNRecoShowers][3];
-  int fRecoShowerRecoBestPlane[kDefMaxNRecoShowers];
-  double fRecoShowerRecoLength[kDefMaxNRecoShowers];
-  double fRecoShowerRecoOpeningAngle[kDefMaxNRecoShowers];
-  bool fRecoShowerRecoIsPrimaryPFPDaughter[kDefMaxNRecoShowers];
-  double fRecoShowerRecoEnergy[kDefMaxNRecoShowers][3];
-  // MVA PID
-  double fRecoShowerMVAElectron[kDefMaxNRecoShowers];
-  double fRecoShowerMVAPion[kDefMaxNRecoShowers];
-  double fRecoShowerMVAMuon[kDefMaxNRecoShowers];
-  double fRecoShowerMVAProton[kDefMaxNRecoShowers];
-  double fRecoShowerMVAPhoton[kDefMaxNRecoShowers];
-  // Pandrizzle MVA
-  double fRecoShowerPandrizzleConnectionBDTScore[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzlePathwayLengthMin[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleMaxNPostShowerStartHits[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleMaxPostShowerStartScatterAngle[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleMaxPostShowerStartOpeningAngle[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleMaxFoundHitRatio[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleMaxInitialGapSize[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleMinLargestProjectedGapSize[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleNViewsWithAmbiguousHits[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleEvalRatio[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleConcentration[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleCoreHaloRatio[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleConicalness[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzledEdxBestPlane[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleDisplacement[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleDCA[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleWideness[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleEnergyDensity[kDefMaxNRecoShowers];
-  double fRecoShowerPandrizzleBDTMethod[kDefMaxNRecoShowers];
-  double fRecoShowerEnhancedPandrizzleScore[kDefMaxNRecoShowers];
-  double fRecoShowerBackupPandrizzleScore[kDefMaxNRecoShowers];
-  bool   fRecoShowerPandrizzleIsFilled[kDefMaxNRecoShowers];
-  ////////////////////////////////////////
-  //Event-level
   double fRecoNuVtxX;
   double fRecoNuVtxY;
   double fRecoNuVtxZ;
@@ -494,1955 +185,1522 @@ private:
   int fRecoNuVtxNTracks;
   int fRecoNuVtxNChildren;
   double fRecoEventCharge;
-  double fNumuRecoMomLep;
-  double fNumuRecoEHad;
-  double fNumuRecoENu;
-  double fNueRecoMomLep;
-  double fNueRecoEHad;
-  double fNueRecoENu;
+  double fNumuRecoMomLep[kMaxPFParticles];
+  double fNumuRecoEHad[kMaxPFParticles];
+  double fNumuRecoENu[kMaxPFParticles];
+  double fNueRecoMomLep[kMaxPFParticles];
+  double fNueRecoEHad[kMaxPFParticles];
+  double fNueRecoENu[kMaxPFParticles];
+  double fRecoENuAllHits;
+  ////////////////////////////////////////
+  // PFParticle Info
+  ////////////////////////////////////////
+  // Truth
+  int fRecoPFPTruePDG[kMaxPFParticles];
+  int fRecoPFPTrueTrackID[kMaxPFParticles];
+  bool fRecoPFPTruePrimary[kMaxPFParticles];
+  double fRecoPFPTrueMomX[kMaxPFParticles];
+  double fRecoPFPTrueMomY[kMaxPFParticles];
+  double fRecoPFPTrueMomZ[kMaxPFParticles];
+  double fRecoPFPTrueMomT[kMaxPFParticles];
+  double fRecoPFPTrueStartX[kMaxPFParticles];
+  double fRecoPFPTrueStartY[kMaxPFParticles];
+  double fRecoPFPTrueStartZ[kMaxPFParticles];
+  double fRecoPFPTrueEndX[kMaxPFParticles];
+  double fRecoPFPTrueEndY[kMaxPFParticles];
+  double fRecoPFPTrueEndZ[kMaxPFParticles];
+  // Reco
+  int fNRecoPFPs;
+  int fRecoPFPSelf[kMaxPFParticles];
+  bool fRecoPFPIsPrimary[kMaxPFParticles];
+  double fRecoPFPTrackShowerScore[kMaxPFParticles];
+  int fRecoPFPTrackShowerPDG[kMaxPFParticles];
+  int fRecoPFPRecoNHits[kMaxPFParticles];
+  int fRecoPFPRecoNSpacepoints[kMaxPFParticles];
+  int fRecoPFPShowerFitSuccess[kMaxPFParticles];
+  int fRecoPFPTrackFitSuccess[kMaxPFParticles];
+  double fRecoPFPRecoCompleteness[kMaxPFParticles];
+  double fRecoPFPRecoHitPurity[kMaxPFParticles];
+  double fRecoPFPRecoCharge[kMaxPFParticles];
+  double fRecoPFPRecoVertexX[kMaxPFParticles];
+  double fRecoPFPRecoVertexY[kMaxPFParticles];
+  double fRecoPFPRecoVertexZ[kMaxPFParticles];
+  int fRecoPFPRecoNChildPFP[kMaxPFParticles];
+  int fRecoPFPRecoNChildTrackPFP[kMaxPFParticles];
+  int fRecoPFPRecoNChildShowerPFP[kMaxPFParticles];
+
+  ////////////////////////////////////////
+  // Track info
+  ////////////////////////////////////////
+  // Reco
+  double fRecoTrackRecoStartX[kMaxPFParticles];
+  double fRecoTrackRecoStartY[kMaxPFParticles];
+  double fRecoTrackRecoStartZ[kMaxPFParticles];
+  double fRecoTrackRecoEndX[kMaxPFParticles];
+  double fRecoTrackRecoEndY[kMaxPFParticles];
+  double fRecoTrackRecoEndZ[kMaxPFParticles];
+  double fRecoTrackRecoUpstreamX[kMaxPFParticles];
+  double fRecoTrackRecoUpstreamY[kMaxPFParticles];
+  double fRecoTrackRecoUpstreamZ[kMaxPFParticles];
+  double fRecoTrackRecoDownstreamX[kMaxPFParticles];
+  double fRecoTrackRecoDownstreamY[kMaxPFParticles];
+  double fRecoTrackRecoDownstreamZ[kMaxPFParticles];
+  double fRecoTrackRecoEndClosestToVertexX[kMaxPFParticles];
+  double fRecoTrackRecoEndClosestToVertexY[kMaxPFParticles];
+  double fRecoTrackRecoEndClosestToVertexZ[kMaxPFParticles];
+  double fRecoTrackRecoLength[kMaxPFParticles];
+  int   fRecoTrackRecoContained[kMaxPFParticles];
+  int   fRecoTrackRecoMomMethod[kMaxPFParticles];
+  double fRecoTrackRecoMomMCS[kMaxPFParticles];
+  double fRecoTrackRecoMomRange[kMaxPFParticles];
+  // Pandizzle PID
+  double fRecoTrackMichelNHits[kMaxPFParticles];
+  double fRecoTrackMichelElectronMVA[kMaxPFParticles];
+  double fRecoTrackMichelRecoEnergyPlane2[kMaxPFParticles];
+  double fRecoTrackDeflecAngleSD[kMaxPFParticles];
+  double fRecoTrackLength[kMaxPFParticles];
+  double fRecoTrackEvalRatio[kMaxPFParticles];
+  double fRecoTrackConcentration[kMaxPFParticles];
+  double fRecoTrackCoreHaloRatio[kMaxPFParticles];
+  double fRecoTrackConicalness[kMaxPFParticles];
+  double fRecoTrackdEdxStart[kMaxPFParticles];
+  double fRecoTrackdEdxEnd[kMaxPFParticles];
+  double fRecoTrackdEdxEndRatio[kMaxPFParticles];
+  double fRecoTrackPandizzleVar[kMaxPFParticles];
+  // Selected info
+  int fSelTrackPandizzleSelf; 
+  int fSelTrackPandizzleIndex;
+  double fSelTrackPandizzleScore;
+  int fSelPandizzleTrackContained;
+  double fSelPandizzleTrackRecoMom;
+  double fSelPandizzleTrackNumuEnu;
+  double fSelPandizzleTrackNumuEHad;
+  int fSelTrackLongestLengthSelf; 
+  int fSelTrackLongestLengthIndex;
+  double fSelTrackLongestLength;
+  int fSelLongestTrackContained;
+  double fSelLongestTrackRecoMom;
+  double fSelLongestTrackNumuEnu;
+  double fSelLongestTrackNumuEHad;
+  ////////////////////////////////////////
+  // Shower Info
+  ////////////////////////////////////////
+  double fRecoShowerRecoStartX[kMaxPFParticles];
+  double fRecoShowerRecoStartY[kMaxPFParticles];
+  double fRecoShowerRecoStartZ[kMaxPFParticles];
+  double fRecoShowerRecoDirX[kMaxPFParticles];
+  double fRecoShowerRecoDirY[kMaxPFParticles];
+  double fRecoShowerRecoDirZ[kMaxPFParticles];
+  double fRecoShowerRecoLength[kMaxPFParticles];
+  double fRecoShowerRecoOpeningAngle[kMaxPFParticles];
+  double fRecoShowerRecodEdx[kMaxPFParticles][3];
+  int fRecoShowerRecoBestPlane[kMaxPFParticles];
+  double fRecoShowerRecoMom[kMaxPFParticles];
+  double fRecoShowerRecoEnergy[kMaxPFParticles][3];
+  // Pandrizzle
+  double fRecoShowerPandrizzleConnectionBDTScore[kMaxPFParticles];
+  double fRecoShowerPandrizzlePathwayLengthMin[kMaxPFParticles];
+  double fRecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D[kMaxPFParticles];
+  double fRecoShowerPandrizzleMaxNPostShowerStartHits[kMaxPFParticles];
+  double fRecoShowerPandrizzleMaxPostShowerStartScatterAngle[kMaxPFParticles];
+  double fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry[kMaxPFParticles];
+  double fRecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry[kMaxPFParticles];
+  double fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance[kMaxPFParticles];
+  double fRecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius[kMaxPFParticles];
+  double fRecoShowerPandrizzleMaxPostShowerStartOpeningAngle[kMaxPFParticles];
+  double fRecoShowerPandrizzleMaxFoundHitRatio[kMaxPFParticles];
+  double fRecoShowerPandrizzleMaxInitialGapSize[kMaxPFParticles];
+  double fRecoShowerPandrizzleMinLargestProjectedGapSize[kMaxPFParticles];
+  double fRecoShowerPandrizzleNViewsWithAmbiguousHits[kMaxPFParticles];
+  double fRecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy[kMaxPFParticles];
+  double fRecoShowerPandrizzleEvalRatio[kMaxPFParticles];
+  double fRecoShowerPandrizzleConcentration[kMaxPFParticles];
+  double fRecoShowerPandrizzleCoreHaloRatio[kMaxPFParticles];
+  double fRecoShowerPandrizzleConicalness[kMaxPFParticles];
+  double fRecoShowerPandrizzledEdxBestPlane[kMaxPFParticles];
+  double fRecoShowerPandrizzleDisplacement[kMaxPFParticles];
+  double fRecoShowerPandrizzleDCA[kMaxPFParticles];
+  double fRecoShowerPandrizzleWideness[kMaxPFParticles];
+  double fRecoShowerPandrizzleEnergyDensity[kMaxPFParticles];
+  double fRecoShowerPandrizzleModularPathwayLength[kMaxPFParticles];
+  double fRecoShowerPandrizzleModularNuVertexChargeWeightedMeanRadialDistance[kMaxPFParticles];
+  double fRecoShowerPandrizzleModularMaxNShowerHits[kMaxPFParticles];
+  double fRecoShowerPandrizzleBDTMethod[kMaxPFParticles];
+  double fRecoShowerEnhancedPandrizzleScore[kMaxPFParticles];
+  double fRecoShowerBackupPandrizzleScore[kMaxPFParticles];
+  bool   fRecoShowerPandrizzleIsFilled[kMaxPFParticles];
+  // Selected info
+  int fSelShowerPandrizzleSelf; 
+  int fSelShowerPandrizzleIndex;
+  double fSelShowerEnhancedPandrizzleScore;
+  double fSelShowerBackupPandrizzleScore;
+  double fSelPandrizzleShowerNueEnu;
+  double fSelPandrizzleShowerNueEHad;
+  int fSelShowerHighestEnergySelf; 
+  int fSelShowerHighestEnergyIndex;
+  double fSelShowerHighestEnergy;
+  double fSelEnergyShowerNueEnu;
+  double fSelEnergyShowerNueEHad;
   ////////////////////////////////////////
   //Module labels
+  ////////////////////////////////////////
   std::string fNuGenModuleLabel;
+  std::string fEDepModuleLabel;
   std::string fLargeantModuleLabel;
   std::string fWireModuleLabel;
   std::string fTrackModuleLabel;
   std::string fShowerModuleLabel;
-  std::string fPFParticleModuleLabel;
-  std::string fVertexModuleLabel;
-  std::string fPIDModuleLabel;
-  std::string fParticleIDModuleLabel;
+  std::string fRecoModuleLabel;
   std::string fHitsModuleLabel;
   std::string fPOTModuleLabel;
   std::string fCVNModuleLabel;
-  std::string fCVNProductInstance;
-  std::string fNumuEnergyRecoModuleLabel;
-  std::string fNueEnergyRecoModuleLabel;
+  ////////////////////////////////////////
+  //Modes
+  ////////////////////////////////////////
+  bool fMakeSelectionTrainingTrees;
   ////////////////////////////////////////
   //Algs
-  bool fMakeSelectionTrainingTrees;
-  double fReducedTreeMode;
+  ////////////////////////////////////////
   PandizzleAlg fPandizzleAlg;
   PandrizzleAlg fPandrizzleAlg;
   calo::CalorimetryAlg fCalorimetryAlg;
-  ctp::CTPHelper fConvTrackPID;
   dune::NeutrinoEnergyRecoAlg fNeutrinoEnergyRecoAlg;
 
-  //Tools
-  std::unique_ptr<FDSelectionTools::RecoTrackSelector> fRecoTrackSelector;
-  std::unique_ptr<FDSelectionTools::RecoShowerSelector> fRecoShowerSelector;
-
+  ////////////////////////////////////////
   // DUNE CVN Scores
+  ////////////////////////////////////////
   double fCVNResultNue;
   double fCVNResultNumu;
   double fCVNResultNutau;
   double fCVNResultNC;
 };
 
+//////////////////////////////////////////////////////////////////////////////////
+
 FDSelection::CCNuSelection::CCNuSelection(fhicl::ParameterSet const & pset) :
   EDAnalyzer(pset),
-  fNVertexParticles(0),
-  fNRecoTracks(0),
-  fNRecoShowers(0),
-  fNuGenModuleLabel(pset.get<std::string>("ModuleLabels.NuGenModuleLabel")),
-  fLargeantModuleLabel(pset.get<std::string>("ModuleLabels.LargeantModuleLabel")),
-  fWireModuleLabel(pset.get<std::string>("ModuleLabels.WireModuleLabel")),
-  fTrackModuleLabel(pset.get<std::string>("ModuleLabels.TrackModuleLabel")),
-  fShowerModuleLabel(pset.get<std::string>("ModuleLabels.ShowerModuleLabel")),
-  fPFParticleModuleLabel(pset.get<std::string>("ModuleLabels.PFParticleModuleLabel")),
-  fVertexModuleLabel(pset.get<std::string>("ModuleLabels.VertexModuleLabel")),
-  fPIDModuleLabel(pset.get<std::string>("ModuleLabels.PIDModuleLabel")),
-  fParticleIDModuleLabel(pset.get<std::string>("ModuleLabels.ParticleIDModuleLabel")),
-  fHitsModuleLabel(pset.get<std::string>("ModuleLabels.HitsModuleLabel")),
-  fPOTModuleLabel(pset.get<std::string>("ModuleLabels.POTModuleLabel")),
-  fCVNModuleLabel(pset.get<std::string>("ModuleLabels.CVNModuleLabel")),
-  fCVNProductInstance(pset.get<std::string>("ModuleLabels.CVNProductInstance")),
-  fNumuEnergyRecoModuleLabel(pset.get<std::string>("ModuleLabels.NumuEnergyRecoModuleLabel")),
-  fNueEnergyRecoModuleLabel(pset.get<std::string>("ModuleLabels.NueEnergyRecoModuleLabel")),
+  fNuGenModuleLabel(pset.get<std::string>("NuGenModuleLabel")),
+  fEDepModuleLabel(pset.get<std::string>("EDepModuleLabel")),
+  fLargeantModuleLabel(pset.get<std::string>("LargeantModuleLabel")),
+  fWireModuleLabel(pset.get<std::string>("WireModuleLabel")),
+  fTrackModuleLabel(pset.get<std::string>("TrackModuleLabel")),
+  fShowerModuleLabel(pset.get<std::string>("ShowerModuleLabel")),
+  fRecoModuleLabel(pset.get<std::string>("RecoModuleLabel")),
+  fHitsModuleLabel(pset.get<std::string>("HitsModuleLabel")),
+  fPOTModuleLabel(pset.get<std::string>("POTModuleLabel")),
+  fCVNModuleLabel(pset.get<std::string>("CVNModuleLabel")),
   fMakeSelectionTrainingTrees(pset.get<bool>("MakeSelectionTrainingTrees")),
-  fReducedTreeMode(pset.get<bool>("ReducedTreeMode", true)),
-  fPandizzleAlg(pset),
-  fPandrizzleAlg(pset),
+  fPandizzleAlg(pset.get<fhicl::ParameterSet>("PandizzleConfig")),
+  fPandrizzleAlg(pset.get<fhicl::ParameterSet>("PandrizzleConfig")),
   fCalorimetryAlg(pset.get<fhicl::ParameterSet>("CalorimetryAlg")),
-  fConvTrackPID(pset.get<fhicl::ParameterSet>("ctpHelper")),
-  fNeutrinoEnergyRecoAlg(pset.get<fhicl::ParameterSet>("NeutrinoEnergyRecoAlg"),fTrackModuleLabel,fShowerModuleLabel,
-  fHitsModuleLabel,fWireModuleLabel,fTrackModuleLabel,fShowerModuleLabel,fPFParticleModuleLabel),
-  fRecoTrackSelector{art::make_tool<FDSelectionTools::RecoTrackSelector>(pset.get<fhicl::ParameterSet>("RecoTrackSelectorTool"))},
-  fRecoShowerSelector{art::make_tool<FDSelectionTools::RecoShowerSelector>(pset.get<fhicl::ParameterSet>("RecoShowerSelectorTool"))}
+  fNeutrinoEnergyRecoAlg(pset.get<fhicl::ParameterSet>("NeutrinoEnergyRecoAlg"), fTrackModuleLabel, fShowerModuleLabel,
+                         fHitsModuleLabel, fWireModuleLabel, fTrackModuleLabel, fShowerModuleLabel, fRecoModuleLabel)
 {
 }
+
+//////////////////////////////////////////////////////////////////////////////////
 
 void FDSelection::CCNuSelection::analyze(art::Event const & evt)
 {
-  Reset(); // reset tree variables
+    Reset();
 
-  fRun = evt.run();
-  fSubRun = evt.subRun();
-  fEvent = evt.event();
-  fIsMC = !evt.isRealData();
+    if (fMakeSelectionTrainingTrees)
+    {
+        fPandizzleAlg.Run(evt);
+        fPandrizzleAlg.Run(evt);
+    }
+    else
+    {
+        fRun = evt.run();
+        fSubRun = evt.subRun();
+        fEvent = evt.event();
+        fIsMC = !evt.isRealData();
 
-  GetEventInfo(evt);
+        FillPandoraMaps(evt);
+        GetEventInfo(evt);
 
-  if (fIsMC) 
-    GetTruthInfo(evt);
+        if (fIsMC) 
+            GetTruthInfo(evt);
 
-  FillVertexInfo(evt);
-  GetRecoTrackInfo(evt);
-  RunTrackSelection(evt);
-  GetRecoShowerInfo(evt);
-  RunShowerSelection(evt);
+        FillVertexInfo(evt);
+        FillPFParticleInfo(evt);
+        RunTrackSelection(evt);
+        RunShowerSelection(evt);
 
-  if (fMakeSelectionTrainingTrees)
-  {
-    fPandizzleAlg.Run(evt);
-    fPandrizzleAlg.Run(evt);
-  }
-
-  fTree->Fill();
+        fTree->Fill();
+    }
 }
+
+//////////////////////////////////////////////////////////////////////////////////
 
 void FDSelection::CCNuSelection::beginJob()
 {
-  // Implementation of optional member function here.
+    ///////////////////////////
+    // POT tree
+    ///////////////////////////
     art::ServiceHandle<art::TFileService> tfs;
+    fPOTTree = tfs->make<TTree>("pottree","pot tree");
+    fPOTTree->Branch("POT", &fPOT);
+    fPOTTree->Branch("Run", &fRun);
+    fPOTTree->Branch("SubRun", &fSubRun);
+
+    ///////////////////////////
+    // CCNuSelection tree
+    ///////////////////////////
     fTree = tfs->make<TTree>("ccnusel","CC nu selection");
 
+    ////////////////////////////
     // Event info
-    fTree->Branch("Run",&fRun);
-    fTree->Branch("SubRun",&fSubRun);
-    fTree->Branch("Event",&fEvent);
+    ////////////////////////////
+    fTree->Branch("Run", &fRun);
+    fTree->Branch("SubRun", &fSubRun);
+    fTree->Branch("Event", &fEvent);
 
+    ////////////////////////////
     // True info
-    fTree->Branch("NuPdg",&fNuPdg);
-    fTree->Branch("BeamPdg",&fBeamPdg);
-    fTree->Branch("NC",&fNC);
-    fTree->Branch("Mode",&fMode);
-    fTree->Branch("TargetZ",&fTargetZ);
-    fTree->Branch("Enu",&fENu);
-    fTree->Branch("NuX",&fNuX);
-    fTree->Branch("NuY",&fNuY);
-    fTree->Branch("NuZ",&fNuZ);
+    ////////////////////////////
+    fTree->Branch("NuPdg", &fNuPdg);
+    fTree->Branch("BeamPdg", &fBeamPdg);
+    fTree->Branch("NuTrackID", &fNuTrackID);
+    fTree->Branch("NC", &fNC);
+    fTree->Branch("Mode", &fMode);
+    fTree->Branch("TargetZ", &fTargetZ);
+    fTree->Branch("Enu", &fENu);
+    fTree->Branch("EVisNNu", &fEVisNu);
+    fTree->Branch("NuX", &fNuX);
+    fTree->Branch("NuY", &fNuY);
+    fTree->Branch("NuZ", &fNuZ);
+    fTree->Branch("IsMC", &fIsMC);
+    fTree->Branch("T0", &fT0);
+    fTree->Branch("Q2", &fQ2);
+    fTree->Branch("W", &fW);
+    fTree->Branch("X", &fX);
+    fTree->Branch("Y", &fY);
+    fTree->Branch("NuMomX", &fNuMomX);
+    fTree->Branch("NuMomY", &fNuMomY);
+    fTree->Branch("NuMomZ", &fNuMomZ);
+    fTree->Branch("NuMomT", &fNuMomT);
+    fTree->Branch("NuT", &fNuT);
+    fTree->Branch("LepPDG", &fLepPDG);
+    fTree->Branch("LepEnergy", &fLepEnergy);
+    fTree->Branch("MomLepX", &fMomLepX);
+    fTree->Branch("MomLepY", &fMomLepY);
+    fTree->Branch("MomLepZ", &fMomLepZ);
+    fTree->Branch("MomLepT", &fMomLepT);
+    fTree->Branch("LepEndX", &fLepEndX);
+    fTree->Branch("LepEndY", &fLepEndY);
+    fTree->Branch("LepEndZ", &fLepEndZ);
+    fTree->Branch("LepEndT", &fLepEndT);
+    fTree->Branch("LepNuAngle", &fLepNuAngle);
+    fTree->Branch("LepHasMichelDecay", &fLepHasMichelDecay);
+    fTree->Branch("NuMomTranMag", &fNuMomTranMag);
+    fTree->Branch("TargNuclMomTranMag", &fTargNuclMomTranMag);
+    fTree->Branch("InitalMomTranMag", &fInitalMomTranMag);
+    fTree->Branch("LepMomTranMag", &fLepMomTranMag);
+    fTree->Branch("NuclRemMomTranMag", &fNuclRemMomTranMag);
+    fTree->Branch("FinalMomTranMagNoLepNoRem", &fFinalMomTranMagNoLepNoRem);
+    fTree->Branch("FinalMomTranMagNoLepWithRem", &fFinalMomTranMagNoLepWithRem);
+    fTree->Branch("FinalMomTranMagWithLepNoRem", &fFinalMomTranMagWithLepNoRem);
+    fTree->Branch("FinalMomTranMagWithLepWithRem", &fFinalMomTranMagWithLepWithRem);
 
-    // Reco info 
-    fTree->Branch("RecoNuVtxX",&fRecoNuVtxX);
-    fTree->Branch("RecoNuVtxY",&fRecoNuVtxY);
-    fTree->Branch("RecoNuVtxZ",&fRecoNuVtxZ);
-    fTree->Branch("NueRecoENu",&fNueRecoENu);
-    fTree->Branch("NumuRecoENu",&fNumuRecoENu);
+    ////////////////////////////
+    // Event-level reco info 
+    ////////////////////////////
+    fTree->Branch("NRecoPFPs", &fNRecoPFPs);
+    fTree->Branch("RecoNuVtxX", &fRecoNuVtxX);
+    fTree->Branch("RecoNuVtxY", &fRecoNuVtxY);
+    fTree->Branch("RecoNuVtxZ", &fRecoNuVtxZ);
+    fTree->Branch("RecoNuVtxNShowers", &fRecoNuVtxNShowers);
+    fTree->Branch("RecoNuVtxNTracks", &fRecoNuVtxNTracks);
+    fTree->Branch("RecoNuVtxNChildren", &fRecoNuVtxNChildren);
+    fTree->Branch("RecoEventCharge", &fRecoEventCharge);
+    fTree->Branch("NumuRecoENu", fNumuRecoENu, "NumuRecoENu[NRecoPFPs]/D");
+    fTree->Branch("NumuRecoMomLep", fNumuRecoMomLep, "NumuRecoMomLep[NRecoPFPs]/D");
+    fTree->Branch("NumuRecoEHad", fNumuRecoEHad, "fNumuRecoEHad[NRecoPFPs]/D");
+    fTree->Branch("NueRecoENu", fNueRecoENu, "fNueRecoENu[NRecoPFPs]/D");
+    fTree->Branch("NueRecoMomLep", fNueRecoMomLep, "fNueRecoMomLep[NRecoPFPs]/D");
+    fTree->Branch("NueRecoEHad", fNueRecoEHad, "fNueRecoEHad[NRecoPFPs]/D");
+    fTree->Branch("RecoENuAllHits", &fRecoENuAllHits);
 
+    ////////////////////////////
     // CVN info
+    ////////////////////////////
     fTree->Branch("CVNResultNue", &fCVNResultNue);
     fTree->Branch("CVNResultNumu", &fCVNResultNumu);
     fTree->Branch("CVNResultNutau", &fCVNResultNutau);
     fTree->Branch("CVNResultNC", &fCVNResultNC);
 
-    // Selected track things...
-    fTree->Branch("SelTrackTruePDG",&fSelTrackTruePDG);
-    fTree->Branch("SelTrackRecoContained",&fSelTrackRecoContained);
-    fTree->Branch("SelTrackRecoMomMethod",&fSelTrackRecoMomMethod);
-    fTree->Branch("SelTrackPandizzleVar", &fSelTrackPandizzleVar);
+    ////////////////////////////
+    // PFParticle info
+    ////////////////////////////
+    // True
+    fTree->Branch("RecoPFPTruePDG", fRecoPFPTruePDG, "RecoPFPTruePDG[NRecoPFPs]/I");
+    fTree->Branch("RecoPFPTrueTrackID", fRecoPFPTrueTrackID, "RecoPFPTrueTrackID[NRecoPFPs]/I");
+    fTree->Branch("RecoPFPTruePrimary", fRecoPFPTruePrimary,"RecoPFPTruePrimary[NRecoPFPs]/O");
+    fTree->Branch("RecoPFPTrueMomX", fRecoPFPTrueMomX,"RecoPFPTrueMomX[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPTrueMomY", fRecoPFPTrueMomY,"RecoPFPTrueMomY[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPTrueMomZ", fRecoPFPTrueMomZ,"RecoPFPTrueMomZ[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPTrueMomT", fRecoPFPTrueMomT,"RecoPFPTrueMomT[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPTrueStartX", fRecoPFPTrueStartX,"RecoPFPTrueStartX[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPTrueStartY", fRecoPFPTrueStartY,"RecoPFPTrueStartY[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPTrueStartZ", fRecoPFPTrueStartZ,"RecoPFPTrueStartZ[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPTrueEndX", fRecoPFPTrueEndX,"RecoPFPTrueEndX[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPTrueEndY", fRecoPFPTrueEndY,"RecoPFPTrueEndY[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPTrueEndZ", fRecoPFPTrueEndZ,"RecoPFPTrueEndZ[NRecoPFPs]/D");
+    // Reco
+    fTree->Branch("RecoPFPSelf", fRecoPFPSelf, "RecoPFPSelf[NRecoPFPs]/I");
+    fTree->Branch("RecoPFPIsPrimary", fRecoPFPIsPrimary, "RecoPFPIsPrimary[NRecoPFPs]/O");
+    fTree->Branch("RecoPFPTrackShowerScore", fRecoPFPTrackShowerScore, "RecoPFPTrackShowerScore[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPTrackShowerPDG", fRecoPFPTrackShowerPDG, "RecoPFPTrackShowerPDG[NRecoPFPs]/I");
+    fTree->Branch("RecoPFPRecoNHits", fRecoPFPRecoNHits,"RecoPFPRecoNHits[NRecoPFPs]/I");
+    fTree->Branch("RecoPFPRecoNSpacepoints", fRecoPFPRecoNSpacepoints,"RecoPFPRecoNSpacepoints[NRecoPFPs]/I");
+    fTree->Branch("RecoPFPShowerFitSuccess", fRecoPFPShowerFitSuccess, "RecoPFPShowerFitSuccess[NRecoPFPs]/I");
+    fTree->Branch("RecoPFPTrackFitSuccess", fRecoPFPTrackFitSuccess, "RecoPFPTrackFitSuccess[NRecoPFPs]/I");
+    fTree->Branch("RecoPFPRecoCompleteness", fRecoPFPRecoCompleteness,"RecoPFPRecoCompleteness[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPRecoHitPurity", fRecoPFPRecoHitPurity,"RecoPFPRecoHitPurity[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPRecoCharge", fRecoPFPRecoCharge,"RecoPFPRecoCharge[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPRecoVertexX", fRecoPFPRecoVertexX,"RecoPFPRecoVertexX[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPRecoVertexY", fRecoPFPRecoVertexY,"RecoPFPRecoVertexY[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPRecoVertexZ", fRecoPFPRecoVertexZ,"RecoPFPRecoVertexZ[NRecoPFPs]/D");
+    fTree->Branch("RecoPFPRecoNChildPFP", fRecoPFPRecoNChildPFP,"RecoPFPRecoNChildPFP[NRecoPFPs]/I");
+    fTree->Branch("RecoPFPRecoNChildTrackPFP", fRecoPFPRecoNChildTrackPFP,"RecoPFPRecoNChildTrackPFP[NRecoPFPs]/I");
+    fTree->Branch("RecoPFPRecoNChildShowerPFP", fRecoPFPRecoNChildShowerPFP,"RecoPFPRecoNChildShowerPFP[NRecoPFPs]/I");
 
-    // Selected shower things
-    fTree->Branch("SelShowerTruePDG",&fSelShowerTruePDG);
-    fTree->Branch("SelShowerEnhancedPandrizzleScore",&fSelShowerEnhancedPandrizzleScore);
-    fTree->Branch("SelShowerBackupPandrizzleScore",&fSelShowerBackupPandrizzleScore);
+    ////////////////////////////
+    // Track Info
+    ////////////////////////////
+    // Reco
+    fTree->Branch("RecoTrackRecoStartX", fRecoTrackRecoStartX, "RecoTrackRecoStartX[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoStartY", fRecoTrackRecoStartY, "RecoTrackRecoStartY[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoStartZ", fRecoTrackRecoStartZ, "RecoTrackRecoStartZ[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoEndX", fRecoTrackRecoEndX, "RecoTrackRecoEndX[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoEndY", fRecoTrackRecoEndY, "RecoTrackRecoEndY[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoEndZ", fRecoTrackRecoEndZ, "RecoTrackRecoEndZ[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoUpstreamX", fRecoTrackRecoUpstreamX, "RecoTrackRecoUpstreamX[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoUpstreamY", fRecoTrackRecoUpstreamY, "RecoTrackRecoUpstreamY[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoUpstreamZ", fRecoTrackRecoUpstreamZ, "RecoTrackRecoUpstreamZ[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoDownstreamX", fRecoTrackRecoDownstreamX, "RecoTrackRecoDownstreamX[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoDownstreamY", fRecoTrackRecoDownstreamY, "RecoTrackRecoDownstreamY[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoDownstreamZ", fRecoTrackRecoDownstreamZ, "RecoTrackRecoDownstreamZ[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoEndClosestToVertexX", fRecoTrackRecoEndClosestToVertexX, "RecoTrackRecoEndClosestToVertexX[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoEndClosestToVertexY", fRecoTrackRecoEndClosestToVertexY, "RecoTrackRecoEndClosestToVertexY[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoEndClosestToVertexZ", fRecoTrackRecoEndClosestToVertexZ, "RecoTrackRecoEndClosestToVertexZ[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoLength", fRecoTrackRecoLength, "RecoTrackRecoLength[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoContained", fRecoTrackRecoContained, "RecoTrackRecoContained[NRecoPFPs]/I");
+    fTree->Branch("RecoTrackRecoMomMethod", fRecoTrackRecoMomMethod, "RecoTrackRecoMomMethod[NRecoPFPs]/I");
+    fTree->Branch("RecoTrackRecoMomMCS", fRecoTrackRecoMomMCS, "RecoTrackRecoMomMCS[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackRecoMomRange", fRecoTrackRecoMomRange, "RecoTrackRecoMomRange[NRecoPFPs]/D");
+    // Pandizzle
+    fTree->Branch("RecoTrackMichelNHits", fRecoTrackMichelNHits, "RecoTrackMichelNHits[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackMichelElectronMVA", fRecoTrackMichelElectronMVA, "RecoTrackMichelElectronMVA[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackMichelRecoEnergyPlane2", fRecoTrackMichelRecoEnergyPlane2, "RecoTrackMichelRecoEnergyPlane2[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackDeflecAngleSD", fRecoTrackDeflecAngleSD, "RecoTrackDeflecAngleSD[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackLength", fRecoTrackLength, "RecoTrackLength[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackEvalRatio", fRecoTrackEvalRatio, "RecoTrackEvalRatio[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackConcentration", fRecoTrackConcentration, "RecoTrackConcentration[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackCoreHaloRatio", fRecoTrackCoreHaloRatio, "RecoTrackCoreHaloRatio[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackConicalness", fRecoTrackConicalness, "RecoTrackConicalness[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackdEdxStart", fRecoTrackdEdxStart, "RecoTrackdEdxStart[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackdEdxEnd", fRecoTrackdEdxEnd, "RecoTrackdEdxEnd[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackdEdxEndRatio", fRecoTrackdEdxEndRatio, "RecoTrackdEdxEndRatio[NRecoPFPs]/D");
+    fTree->Branch("RecoTrackPandizzleVar", fRecoTrackPandizzleVar, "RecoTrackPandizzleVar[NRecoPFPs]/D");
+    // Selected info
+    fTree->Branch("SelTrackPandizzleSelf", &fSelTrackPandizzleSelf);
+    fTree->Branch("SelTrackPandizzleIndex", &fSelTrackPandizzleIndex);
+    fTree->Branch("SelTrackPandizzleScore", &fSelTrackPandizzleScore);
+    fTree->Branch("SelPandizzleTrackContained", &fSelPandizzleTrackContained);
+    fTree->Branch("SelPandizzleTrackRecoMom", &fSelPandizzleTrackRecoMom);
+    fTree->Branch("SelPandizzleTrackNumuEnu", &fSelPandizzleTrackNumuEnu);
+    fTree->Branch("SelPandizzleTrackNumuEHad", &fSelPandizzleTrackNumuEHad);
+    fTree->Branch("SelTrackLongestLengthSelf", &fSelTrackLongestLengthSelf);
+    fTree->Branch("SelTrackLongestLengthIndex", &fSelTrackLongestLengthIndex);
+    fTree->Branch("SelTrackLongestLength", &fSelTrackLongestLength);
+    fTree->Branch("SelLongestTrackContained", &fSelLongestTrackContained);
+    fTree->Branch("SelLongestTrackRecoMom", &fSelLongestTrackRecoMom);
+    fTree->Branch("SelLongestTrackNumuEnu", &fSelLongestTrackNumuEnu);
+    fTree->Branch("SelLongestTrackNumuEHad", &fSelLongestTrackNumuEHad);
 
-    // POT tree
-    fPOTTree = tfs->make<TTree>("pottree","pot tree");
-    fPOTTree->Branch("POT",&fPOT);
-    fPOTTree->Branch("Run",&fRun);
-    fPOTTree->Branch("SubRun",&fSubRun);
+    ///////////////////////////
+    // Shower Info
+    ///////////////////////////
+    // Reco
+    fTree->Branch("RecoShowerRecoStartX", fRecoShowerRecoStartX, "RecoShowerRecoStartX[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerRecoStartY", fRecoShowerRecoStartY, "RecoShowerRecoStartY[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerRecoStartZ", fRecoShowerRecoStartZ, "RecoShowerRecoStartZ[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerRecoDirX", fRecoShowerRecoDirX, "RecoShowerRecoDirX[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerRecoDirY", fRecoShowerRecoDirY, "RecoShowerRecoDirY[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerRecoDirZ", fRecoShowerRecoDirZ, "RecoShowerRecoDirZ[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerRecoLength", &fRecoShowerRecoLength, "RecoShowerRecoLength[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerRecoOpeningAngle", &fRecoShowerRecoOpeningAngle, "RecoShowerRecoOpeningAngle[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerRecodEdx", fRecoShowerRecodEdx, "RecoShowerRecodEdx[NRecoPFPs][3]/D");
+    fTree->Branch("RecoShowerRecoBestPlane", &fRecoShowerRecoBestPlane, "RecoShowerRecoBestPlane[NRecoPFPs]/I");
+    fTree->Branch("RecoShowerRecoMom", fRecoShowerRecoMom, "RecoShowerRecoMom[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerRecoEnergy", fRecoShowerRecoEnergy, "RecoShowerRecoEnergy[NRecoPFPs][3]/D");
+    // Pandrizzle
+    fTree->Branch("RecoShowerPandrizzleConnectionBDTScore", &fRecoShowerPandrizzleConnectionBDTScore, "RecoShowerPandrizzleConnectionBDTScore[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzlePathwayLengthMin", &fRecoShowerPandrizzlePathwayLengthMin, "RecoShowerPandrizzlePathwayLengthMin[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D", &fRecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D, 
+                  "RecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleMaxNPostShowerStartHits", &fRecoShowerPandrizzleMaxNPostShowerStartHits, "RecoShowerPandrizzleMaxNPostShowerStartHits[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartScatterAngle", &fRecoShowerPandrizzleMaxPostShowerStartScatterAngle, "RecoShowerPandrizzleMaxPostShowerStartScatterAngle[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry", &fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry, 
+                  "RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry", &fRecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry, 
+                  "RecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance", &fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance, 
+                  "RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius", &fRecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius, 
+                  "RecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartOpeningAngle", &fRecoShowerPandrizzleMaxPostShowerStartOpeningAngle, "RecoShowerPandrizzleMaxPostShowerStartOpeningAngle[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleMaxFoundHitRatio", &fRecoShowerPandrizzleMaxFoundHitRatio, "RecoShowerPandrizzleMaxFoundHitRatio[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleMaxInitialGapSize", &fRecoShowerPandrizzleMaxInitialGapSize, "RecoShowerPandrizzleMaxInitialGapSize[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleMinLargestProjectedGapSize", &fRecoShowerPandrizzleMinLargestProjectedGapSize, "RecoShowerPandrizzleMinLargestProjectedGapSize[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleNViewsWithAmbiguousHits", &fRecoShowerPandrizzleNViewsWithAmbiguousHits, "RecoShowerPandrizzleNViewsWithAmbiguousHits[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy", &fRecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy, "RecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleEvalRatio", &fRecoShowerPandrizzleEvalRatio, "RecoShowerPandrizzleEvalRatio[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleConcentration", &fRecoShowerPandrizzleConcentration, "RecoShowerPandrizzleConcentration[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleCoreHaloRatio", &fRecoShowerPandrizzleCoreHaloRatio, "RecoShowerPandrizzleCoreHaloRatio[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleConicalness", &fRecoShowerPandrizzleConicalness, "RecoShowerPandrizzleConicalness[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzledEdxBestPlane", &fRecoShowerPandrizzledEdxBestPlane, "RecoShowerPandrizzledEdxBestPlane[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleDisplacement", &fRecoShowerPandrizzleDisplacement, "RecoShowerPandrizzleDisplacement[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleDCA", &fRecoShowerPandrizzleDCA, "RecoShowerPandrizzleDCA[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleWideness", &fRecoShowerPandrizzleWideness, "RecoShowerPandrizzleWideness[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleEnergyDensity", &fRecoShowerPandrizzleEnergyDensity, "RecoShowerPandrizzleEnergyDensity[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleBDTMethod", &fRecoShowerPandrizzleBDTMethod, "RecoShowerPandrizzleBDTMethod[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerEnhancedPandrizzleScore", &fRecoShowerEnhancedPandrizzleScore, "RecoShowerEnhancedPandrizzleScore[NRecoPFPs]/D"); 
+    fTree->Branch("RecoShowerBackupPandrizzleScore", &fRecoShowerBackupPandrizzleScore, "RecoShowerBackupPandrizzleScore[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleIsFilled", &fRecoShowerPandrizzleIsFilled, "RecoShowerPandrizzleIsFilled[NRecoPFPs]/O");
+    fTree->Branch("RecoShowerPandrizzleModularPathwayLength", &fRecoShowerPandrizzleModularPathwayLength, "RecoShowerPandrizzleModularPathwayLength[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleModularNuVertexChargeWeightedMeanRadialDistance", &fRecoShowerPandrizzleModularNuVertexChargeWeightedMeanRadialDistance, "RecoShowerPandrizzleModularNuVertexChargeWeightedMeanRadialDistance[NRecoPFPs]/D");
+    fTree->Branch("RecoShowerPandrizzleModularMaxNShowerHits", &fRecoShowerPandrizzleModularMaxNShowerHits, "RecoShowerPandrizzleModularMaxNShowerHits[NRecoPFPs]/D");
 
-    if (!fReducedTreeMode)
-    {
-        fTree->Branch("IsMC",&fIsMC);
-        fTree->Branch("T0",&fT0);
-        fTree->Branch("Q2",&fQ2);
-        fTree->Branch("W",&fW);
-        fTree->Branch("X",&fX);
-        fTree->Branch("Y",&fY);
-        fTree->Branch("NuMomX",&fNuMomX);
-        fTree->Branch("NuMomY",&fNuMomY);
-        fTree->Branch("NuMomZ",&fNuMomZ);
-        fTree->Branch("NuMomT",&fNuMomT);
-        fTree->Branch("NuT",&fNuT);
-        fTree->Branch("NPiP",&fNPiP);
-        fTree->Branch("NPim",&fNPim);
-        fTree->Branch("NPi0",&fNPi0);
-        fTree->Branch("NPhotons",&fNPhotons);
-        fTree->Branch("NProton",&fNProtons);
-        fTree->Branch("NNeutrons",&fNNeutrons);
-        fTree->Branch("NOther",&fNOther);
-        fTree->Branch("NVertexParticles",&fNVertexParticles);
-        fTree->Branch("VertexParticleIsGHEP",fVertexParticleIsGHEP,"VertexParticleIsGHEP[NVertexParticles]/O");
-        fTree->Branch("VertexParticlePDG",fVertexParticlePDG,"VertexParticlePDG[NVertexParticles]/I");
-        fTree->Branch("VertexParticleStatus",fVertexParticleStatus,"VertexParticleStatus[NVertexParticles]/I");
-        fTree->Branch("VertexParticleNChildren",fVertexParticleNChildren,"VertexParticleNChildren[NVertexParticles]/I");
-        fTree->Branch("VertexParticleMomX",fVertexParticleMomX,"VertexParticleMomX[NVertexParticles]/D");
-        fTree->Branch("VertexParticleMomY",fVertexParticleMomY,"VertexParticleMomY[NVertexParticles]/D");
-        fTree->Branch("VertexParticleMomZ",fVertexParticleMomZ,"VertexParticleMomZ[NVertexParticles]/D");
-        fTree->Branch("VertexParticleMomT",fVertexParticleMomT,"VertexParticleMomT[NVertexParticles]/D");
-        fTree->Branch("VertexParticleEndX",fVertexParticleEndX,"VertexParticleEndX[NVertexParticles]/D");
-        fTree->Branch("VertexParticleEndY",fVertexParticleEndY,"VertexParticleEndY[NVertexParticles]/D");
-        fTree->Branch("VertexParticleEndZ",fVertexParticleEndZ,"VertexParticleEndZ[NVertexParticles]/D");
-        fTree->Branch("VertexParticleEndT",fVertexParticleEndT,"VertexParticleEndT[NVertexParticles]/D");
-        fTree->Branch("LepPDG",&fLepPDG);
-        fTree->Branch("MomLepX",&fMomLepX);
-        fTree->Branch("MomLepY",&fMomLepY);
-        fTree->Branch("MomLepZ",&fMomLepZ);
-        fTree->Branch("MomLepT",&fMomLepT);
-        fTree->Branch("LepEndX",&fLepEndX);
-        fTree->Branch("LepEndY",&fLepEndY);
-        fTree->Branch("LepEndZ",&fLepEndZ);
-        fTree->Branch("LepEndT",&fLepEndT);
-        fTree->Branch("LepNuAngle",&fLepNuAngle);
-        fTree->Branch("NuMomTranMag",&fNuMomTranMag);
-        fTree->Branch("TargNuclMomTranMag",&fTargNuclMomTranMag);
-        fTree->Branch("InitalMomTranMag",&fInitalMomTranMag);
-        fTree->Branch("LepMomTranMag",&fLepMomTranMag);
-        fTree->Branch("NuclRemMomTranMag",&fNuclRemMomTranMag);
-        fTree->Branch("FinalMomTranMagNoLepNoRem",&fFinalMomTranMagNoLepNoRem);
-        fTree->Branch("FinalMomTranMagNoLepWithRem",&fFinalMomTranMagNoLepWithRem);
-        fTree->Branch("FinalMomTranMagWithLepNoRem",&fFinalMomTranMagWithLepNoRem);
-        fTree->Branch("FinalMomTranMagWithLepWithRem",&fFinalMomTranMagWithLepWithRem);
-
-        fTree->Branch("SelTrackTruePrimary",&fSelTrackTruePrimary);
-        fTree->Branch("SelTrackTrueMomX",&fSelTrackTrueMomX);
-        fTree->Branch("SelTrackTrueMomY",&fSelTrackTrueMomY);
-        fTree->Branch("SelTrackTrueMomZ",&fSelTrackTrueMomZ);
-        fTree->Branch("SelTrackTrueMomT",&fSelTrackTrueMomT);
-        fTree->Branch("SelTrackTrueStartX",&fSelTrackTrueStartX);
-        fTree->Branch("SelTrackTrueStartY",&fSelTrackTrueStartY);
-        fTree->Branch("SelTrackTrueStartZ",&fSelTrackTrueStartZ);
-        fTree->Branch("SelTrackTrueEndX",&fSelTrackTrueEndX);
-        fTree->Branch("SelTrackTrueEndY",&fSelTrackTrueEndY);
-        fTree->Branch("SelTrackTrueEndZ",&fSelTrackTrueEndZ);
-        fTree->Branch("SelTrackRecoNHits",&fSelTrackRecoNHits);
-        fTree->Branch("SelTrackRecoCompleteness",&fSelTrackRecoCompleteness);
-        fTree->Branch("SelTrackRecoHitPurity",&fSelTrackRecoHitPurity);
-        fTree->Branch("SelTrackRecoStartX",&fSelTrackRecoStartX);
-        fTree->Branch("SelTrackRecoStartY",&fSelTrackRecoStartY);
-        fTree->Branch("SelTrackRecoStartZ",&fSelTrackRecoStartZ);
-        fTree->Branch("SelTrackRecoEndX",&fSelTrackRecoEndX);
-        fTree->Branch("SelTrackRecoEndY",&fSelTrackRecoEndY);
-        fTree->Branch("SelTrackRecoEndZ",&fSelTrackRecoEndZ);
-        fTree->Branch("SelTrackRecoUpstreamX",&fSelTrackRecoUpstreamX);
-        fTree->Branch("SelTrackRecoUpstreamY",&fSelTrackRecoUpstreamY);
-        fTree->Branch("SelTrackRecoUpstreamZ",&fSelTrackRecoUpstreamZ);
-        fTree->Branch("SelTrackRecoDownstreamX",&fSelTrackRecoDownstreamX);
-        fTree->Branch("SelTrackRecoDownstreamY",&fSelTrackRecoDownstreamY);
-        fTree->Branch("SelTrackRecoDownstreamZ",&fSelTrackRecoDownstreamZ);
-        fTree->Branch("SelTrackRecoEndClosestToVertexX",&fSelTrackRecoEndClosestToVertexX);
-        fTree->Branch("SelTrackRecoEndClosestToVertexY",&fSelTrackRecoEndClosestToVertexY);
-        fTree->Branch("SelTrackRecoEndClosestToVertexZ",&fSelTrackRecoEndClosestToVertexZ);
-        fTree->Branch("SelTrackRecoLength",&fSelTrackRecoLength);
-        fTree->Branch("SelTrackRecoCharge",&fSelTrackRecoCharge);
-        fTree->Branch("SelTrackRecoMomMCS",&fSelTrackRecoMomMCS);
-        fTree->Branch("SelTrackRecoMomContained",&fSelTrackRecoMomContained);
-        fTree->Branch("SelTrackRecoVertexX",&fSelTrackRecoVertexX);
-        fTree->Branch("SelTrackRecoVertexY",&fSelTrackRecoVertexY);
-        fTree->Branch("SelTrackRecoVertexZ",&fSelTrackRecoVertexZ);
-        fTree->Branch("SelTrackRecoNChildPFP",&fSelTrackRecoNChildPFP);
-        fTree->Branch("SelTrackRecoNChildTrackPFP",&fSelTrackRecoNChildTrackPFP);
-        fTree->Branch("SelTrackRecoNChildShowerPFP",&fSelTrackRecoNChildShowerPFP);
-        fTree->Branch("SelTrackMVAElectron",&fSelTrackMVAElectron);
-        fTree->Branch("SelTrackMVAPion",&fSelTrackMVAPion);
-        fTree->Branch("SelTrackMVAMuon",&fSelTrackMVAMuon);
-        fTree->Branch("SelTrackMVAProton",&fSelTrackMVAProton);
-        fTree->Branch("SelTrackMVAPhoton",&fSelTrackMVAPhoton);
-        fTree->Branch("SelTrackDeepPanMuVar",&fSelTrackDeepPanMuVar);
-        fTree->Branch("SelTrackDeepPanPiVar",&fSelTrackDeepPanPiVar);
-        fTree->Branch("SelTrackDeepPanProtonVar",&fSelTrackDeepPanProtonVar);
-        fTree->Branch("SelTrackMichelNHits", &fSelTrackMichelNHits);
-        fTree->Branch("SelTrackMichelElectronMVA", &fSelTrackMichelElectronMVA);
-        fTree->Branch("SelTrackMichelRecoEnergyPlane2", &fSelTrackMichelRecoEnergyPlane2);
-        fTree->Branch("SelTrackDeflecAngleSD", &fSelTrackDeflecAngleSD);
-        fTree->Branch("SelTrackLength", &fSelTrackLength);
-        fTree->Branch("SelTrackEvalRatio", &fSelTrackEvalRatio);
-        fTree->Branch("SelTrackConcentration", &fSelTrackConcentration);
-        fTree->Branch("SelTrackCoreHaloRatio", &fSelTrackCoreHaloRatio);
-        fTree->Branch("SelTrackConicalness", &fSelTrackConicalness);
-        fTree->Branch("SelTrackdEdxStart", &fSelTrackdEdxStart);
-        fTree->Branch("SelTrackdEdxEnd", &fSelTrackdEdxEnd);
-        fTree->Branch("SelTrackdEdxEndRatio", &fSelTrackdEdxEndRatio);
-        fTree->Branch("NRecoTracks",&fNRecoTracks);
-        fTree->Branch("RecoTrackIsPrimary",fRecoTrackIsPrimary,"RecoTrackIsPrimary[NRecoTracks]/O");
-        fTree->Branch("RecoTrackTruePDG",fRecoTrackTruePDG,"RecoTrackTruePDG[NRecoTracks]/I");
-        fTree->Branch("RecoTrackTruePrimary",fRecoTrackTruePrimary,"RecoTrackTruePrimary[NRecoTracks]/O");
-        fTree->Branch("RecoTrackTrueMomX",fRecoTrackTrueMomX,"RecoTrackTrueMomX[NRecoTracks]/D");
-        fTree->Branch("RecoTrackTrueMomY",fRecoTrackTrueMomY,"RecoTrackTrueMomY[NRecoTracks]/D");
-        fTree->Branch("RecoTrackTrueMomZ",fRecoTrackTrueMomZ,"RecoTrackTrueMomZ[NRecoTracks]/D");
-        fTree->Branch("RecoTrackTrueMomT",fRecoTrackTrueMomT,"RecoTrackTrueMomT[NRecoTracks]/D");
-        fTree->Branch("RecoTrackTrueStartX",fRecoTrackTrueStartX,"RecoTrackTrueStartX[NRecoTracks]/D");
-        fTree->Branch("RecoTrackTrueStartY",fRecoTrackTrueStartY,"RecoTrackTrueStartY[NRecoTracks]/D");
-        fTree->Branch("RecoTrackTrueStartZ",fRecoTrackTrueStartZ,"RecoTrackTrueStartZ[NRecoTracks]/D");
-        fTree->Branch("RecoTrackTrueEndX",fRecoTrackTrueEndX,"RecoTrackTrueEndX[NRecoTracks]/D");
-        fTree->Branch("RecoTrackTrueEndY",fRecoTrackTrueEndY,"RecoTrackTrueEndY[NRecoTracks]/D");
-        fTree->Branch("RecoTrackTrueEndZ",fRecoTrackTrueEndZ,"RecoTrackTrueEndZ[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoNHits",fRecoTrackRecoNHits,"RecoTrackRecoNHits[NRecoTracks]/I");
-        fTree->Branch("RecoTrackRecoCompleteness",fRecoTrackRecoCompleteness,"RecoTrackRecoCompleteness[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoHitPurity",fRecoTrackRecoHitPurity,"RecoTrackRecoHitPurity[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoStartX",fRecoTrackRecoStartX,"RecoTrackRecoStartX[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoStartY",fRecoTrackRecoStartY,"RecoTrackRecoStartY[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoStartZ",fRecoTrackRecoStartZ,"RecoTrackRecoStartZ[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoEndX",fRecoTrackRecoEndX,"RecoTrackRecoEndX[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoEndY",fRecoTrackRecoEndY,"RecoTrackRecoEndY[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoEndZ",fRecoTrackRecoEndZ,"RecoTrackRecoEndZ[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoUpstreamX",fRecoTrackRecoUpstreamX,"RecoTrackRecoUpstreamX[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoUpstreamY",fRecoTrackRecoUpstreamY,"RecoTrackRecoUpstreamY[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoUpstreamZ",fRecoTrackRecoUpstreamZ,"RecoTrackRecoUpstreamZ[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoDownstreamX",fRecoTrackRecoDownstreamX,"RecoTrackRecoDownstreamX[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoDownstreamY",fRecoTrackRecoDownstreamY,"RecoTrackRecoDownstreamY[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoDownstreamZ",fRecoTrackRecoDownstreamZ,"RecoTrackRecoDownstreamZ[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoEndClosestToVertexX",fRecoTrackRecoEndClosestToVertexX,"RecoTrackRecoEndClosestToVertexX[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoEndClosestToVertexY",fRecoTrackRecoEndClosestToVertexY,"RecoTrackRecoEndClosestToVertexY[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoEndClosestToVertexZ",fRecoTrackRecoEndClosestToVertexZ,"RecoTrackRecoEndClosestToVertexZ[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoLength",fRecoTrackRecoLength,"RecoTrackRecoLength[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoContained",fRecoTrackRecoContained,"RecoTrackRecoContained[NRecoTracks]/I");
-        fTree->Branch("RecoTrackRecoMomMethod",fRecoTrackRecoMomMethod,"RecoTrackRecoMomMethod[NRecoTracks]/I");
-        fTree->Branch("RecoTrackRecoCharge",fRecoTrackRecoCharge,"RecoTrackRecoCharge[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoMomMCS",fRecoTrackRecoMomMCS,"RecoTrackRecoMomMCS[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoMomContained",fRecoTrackRecoMomContained,"RecoTrackRecoMomContained[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoVertexX",fRecoTrackRecoVertexX,"RecoTrackRecoVertexX[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoVertexY",fRecoTrackRecoVertexY,"RecoTrackRecoVertexY[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoVertexZ",fRecoTrackRecoVertexZ,"RecoTrackRecoVertexZ[NRecoTracks]/D");
-        fTree->Branch("RecoTrackRecoNChildPFP",fRecoTrackRecoNChildPFP,"RecoTrackRecoNChildPFP[NRecoTracks]/I");
-        fTree->Branch("RecoTrackRecoNChildTrackPFP",fRecoTrackRecoNChildTrackPFP,"RecoTrackRecoNChildTrackPFP[NRecoTracks]/I");
-        fTree->Branch("RecoTrackRecoNChildShowerPFP",fRecoTrackRecoNChildShowerPFP,"RecoTrackRecoNChildShowerPFP[NRecoTracks]/I");
-        fTree->Branch("RecoTrackMVAElectron",fRecoTrackMVAElectron,"RecoTrackMVAElectron[NRecoTracks]/D");
-        fTree->Branch("RecoTrackMVAPion",fRecoTrackMVAPion,"RecoTrackMVAPion[NRecoTracks]/D");
-        fTree->Branch("RecoTrackMVAMuon",fRecoTrackMVAMuon,"RecoTrackMVAMuon[NRecoTracks]/D");
-        fTree->Branch("RecoTrackMVAProton",fRecoTrackMVAProton,"RecoTrackMVAProton[NRecoTracks]/D");
-        fTree->Branch("RecoTrackMVAPhoton",fRecoTrackMVAPhoton,"RecoTrackMVAPhoton[NRecoTracks]/D");
-        fTree->Branch("RecoTrackDeepPanMuVar",fRecoTrackDeepPanMuVar,"RecoTrackDeepPanMuVar[NRecoTracks]/D");
-        fTree->Branch("RecoTrackDeepPanPiVar",fRecoTrackDeepPanPiVar,"RecoTrackDeepPanPiVar[NRecoTracks]/D");
-        fTree->Branch("RecoTrackDeepPanProtonVar",fRecoTrackDeepPanProtonVar,"RecoTrackDeepPanProtonVar[NRecoTracks]/D");
-        fTree->Branch("RecoTrackMichelNHits", fRecoTrackMichelNHits, "RecoTrackMichelNHits/D");
-        fTree->Branch("RecoTrackMichelElectronMVA", fRecoTrackMichelElectronMVA, "RecoTrackMichelElectronMVA/D");
-        fTree->Branch("RecoTrackMichelRecoEnergyPlane2", fRecoTrackMichelRecoEnergyPlane2, "RecoTrackMichelRecoEnergyPlane2/D");
-        fTree->Branch("RecoTrackDeflecAngleSD", fRecoTrackDeflecAngleSD, "RecoTrackDeflecAngleSD/D");
-        fTree->Branch("RecoTrackLength", fRecoTrackLength, "RecoTrackLength/D");
-        fTree->Branch("RecoTrackEvalRatio", fRecoTrackEvalRatio, "RecoTrackEvalRatio/D");
-        fTree->Branch("RecoTrackConcentration", fRecoTrackConcentration, "RecoTrackConcentration/D");
-        fTree->Branch("RecoTrackCoreHaloRatio", fRecoTrackCoreHaloRatio, "RecoTrackCoreHaloRatio/D");
-        fTree->Branch("RecoTrackConicalness", fRecoTrackConicalness, "RecoTrackConicalness/D");
-        fTree->Branch("RecoTrackdEdxStart", fRecoTrackdEdxStart, "RecoTrackdEdxStart/D");
-        fTree->Branch("RecoTrackdEdxEnd", fRecoTrackdEdxEnd, "RecoTrackdEdxEnd/D");
-        fTree->Branch("RecoTrackdEdxEndRatio", fRecoTrackdEdxEndRatio, "RecoTrackdEdxEndRatio/D");
-        fTree->Branch("RecoTrackPandizzleVar",fRecoTrackPandizzleVar,"RecoTrackPandizzleVar[NRecoTracks]/D");
-        fTree->Branch("SelShowerTruePrimary",&fSelShowerTruePrimary);
-        fTree->Branch("SelShowerTrueMomX",&fSelShowerTrueMomX);
-        fTree->Branch("SelShowerTrueMomY",&fSelShowerTrueMomY);
-        fTree->Branch("SelShowerTrueMomZ",&fSelShowerTrueMomZ);
-        fTree->Branch("SelShowerTrueMomT",&fSelShowerTrueMomT);
-        fTree->Branch("SelShowerTrueStartX",&fSelShowerTrueStartX);
-        fTree->Branch("SelShowerTrueStartY",&fSelShowerTrueStartY);
-        fTree->Branch("SelShowerTrueStartZ",&fSelShowerTrueStartZ);
-        fTree->Branch("SelShowerTrueEndX",&fSelShowerTrueEndX);
-        fTree->Branch("SelShowerTrueEndY",&fSelShowerTrueEndY);
-        fTree->Branch("SelShowerTrueEndZ",&fSelShowerTrueEndZ);
-        fTree->Branch("SelShowerRecoNHits",&fSelShowerRecoNHits);
-        fTree->Branch("SelShowerRecoCompleteness",&fSelShowerRecoCompleteness);
-        fTree->Branch("SelShowerRecoHitPurity",&fSelShowerRecoHitPurity);
-        fTree->Branch("SelShowerRecoStartX",&fSelShowerRecoStartX);
-        fTree->Branch("SelShowerRecoStartY",&fSelShowerRecoStartY);
-        fTree->Branch("SelShowerRecoStartZ",&fSelShowerRecoStartZ);
-        fTree->Branch("SelShowerRecoCharge",&fSelShowerRecoCharge);
-        fTree->Branch("SelShowerRecoMom",&fSelShowerRecoMom);
-        fTree->Branch("SelShowerRecoVertexX",&fSelShowerRecoVertexX);
-        fTree->Branch("SelShowerRecoVertexY",&fSelShowerRecoVertexY);
-        fTree->Branch("SelShowerRecoVertexZ",&fSelShowerRecoVertexZ);
-        fTree->Branch("SelShowerDistanceToNuVertexU", &fSelShowerDistanceToNuVertexU);
-        fTree->Branch("SelShowerDistanceToNuVertexV", &fSelShowerDistanceToNuVertexV);
-        fTree->Branch("SelShowerDistanceToNuVertexW", &fSelShowerDistanceToNuVertexW);
-        fTree->Branch("SelShowerRecoNChildPFP",&fSelShowerRecoNChildPFP);
-        fTree->Branch("SelShowerRecoNChildTrackPFP",&fSelShowerRecoNChildTrackPFP);
-        fTree->Branch("SelShowerRecoNChildShowerPFP",&fSelShowerRecoNChildShowerPFP);
-        fTree->Branch("SelShowerRecoDirX",&fSelShowerRecoDirX);
-        fTree->Branch("SelShowerRecoDirY",&fSelShowerRecoDirY);
-        fTree->Branch("SelShowerRecoDirZ",&fSelShowerRecoDirZ);
-        fTree->Branch("SelShowerRecodEdx",&fSelShowerRecodEdx,"SelShowerRecodEdx[3]/D");
-        fTree->Branch("SelShowerRecoEnergy",&fSelShowerRecoEnergy,"SelShowerRecoEnergy[3]/D");
-        fTree->Branch("SelShowerRecoBestPlane",&fSelShowerRecoBestPlane);
-        fTree->Branch("SelShowerRecoLength",&fSelShowerRecoLength);
-        fTree->Branch("SelShowerRecoOpeningAngle",&fSelShowerRecoOpeningAngle);
-        fTree->Branch("SelShowerMVAElectron",&fSelShowerMVAElectron);
-        fTree->Branch("SelShowerMVAPion",&fSelShowerMVAPion);
-        fTree->Branch("SelShowerMVAMuon",&fSelShowerMVAMuon);
-        fTree->Branch("SelShowerMVAProton",&fSelShowerMVAProton);
-        fTree->Branch("SelShowerMVAPhoton",&fSelShowerMVAPhoton);
-        fTree->Branch("SelShowerPandrizzleConnectionBDTScore", &fSelShowerPandrizzleConnectionBDTScore);
-        fTree->Branch("SelShowerPandrizzlePathwayLengthMin", &fSelShowerPandrizzlePathwayLengthMin);
-        fTree->Branch("SelShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D", &fSelShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D);
-        fTree->Branch("SelShowerPandrizzleMaxNPostShowerStartHits", &fSelShowerPandrizzleMaxNPostShowerStartHits);
-        fTree->Branch("SelShowerPandrizzleMaxPostShowerStartScatterAngle", &fSelShowerPandrizzleMaxPostShowerStartScatterAngle);
-        fTree->Branch("SelShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry", &fSelShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry);
-        fTree->Branch("SelShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry", &fSelShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry);
-        fTree->Branch("SelShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance", &fSelShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance);
-        fTree->Branch("SelShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius", &fSelShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius);
-        fTree->Branch("SelShowerPandrizzleMaxPostShowerStartOpeningAngle", &fSelShowerPandrizzleMaxPostShowerStartOpeningAngle);
-        fTree->Branch("SelShowerPandrizzleMaxFoundHitRatio", &fSelShowerPandrizzleMaxFoundHitRatio);
-        fTree->Branch("SelShowerPandrizzleMaxInitialGapSize", &fSelShowerPandrizzleMaxInitialGapSize);
-        fTree->Branch("SelShowerPandrizzleMinLargestProjectedGapSize", &fSelShowerPandrizzleMinLargestProjectedGapSize);
-        fTree->Branch("SelShowerPandrizzleNViewsWithAmbiguousHits", &fSelShowerPandrizzleNViewsWithAmbiguousHits);
-        fTree->Branch("SelShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy", &fSelShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy);
-        fTree->Branch("SelShowerPandrizzleEvalRatio",&fSelShowerPandrizzleEvalRatio);
-        fTree->Branch("SelShowerPandrizzleConcentration",&fSelShowerPandrizzleConcentration);
-        fTree->Branch("SelShowerPandrizzleCoreHaloRatio",&fSelShowerPandrizzleCoreHaloRatio);
-        fTree->Branch("SelShowerPandrizzleConicalness",&fSelShowerPandrizzleConicalness);
-        fTree->Branch("SelShowerPandrizzledEdxBestPlane",&fSelShowerPandrizzledEdxBestPlane);
-        fTree->Branch("SelShowerPandrizzleDisplacement",&fSelShowerPandrizzleDisplacement);
-        fTree->Branch("SelShowerPandrizzleDCA",&fSelShowerPandrizzleDCA);
-        fTree->Branch("SelShowerPandrizzleWideness",&fSelShowerPandrizzleWideness);
-        fTree->Branch("SelShowerPandrizzleEnergyDensity",&fSelShowerPandrizzleEnergyDensity);
-        fTree->Branch("SelShowerPandrizzleBDTMethod", &fSelShowerPandrizzleBDTMethod);
-        fTree->Branch("SelShowerPandrizzleIsFilled",&fSelShowerPandrizzleIsFilled);
-
-        fTree->Branch("NRecoShowers",&fNRecoShowers);
-        fTree->Branch("RecoShowerTruePDG",fRecoShowerTruePDG,"RecoShowerTruePDG[NRecoShowers]/I");
-        fTree->Branch("RecoShowerTruePrimary",fRecoShowerTruePrimary,"RecoShowerTruePrimary[NRecoShowers]/O");
-        fTree->Branch("RecoShowerTrueMomX",fRecoShowerTrueMomX,"RecoShowerTrueMomX[NRecoShowers]/D");
-        fTree->Branch("RecoShowerTrueMomY",fRecoShowerTrueMomY,"RecoShowerTrueMomY[NRecoShowers]/D");
-        fTree->Branch("RecoShowerTrueMomZ",fRecoShowerTrueMomZ,"RecoShowerTrueMomZ[NRecoShowers]/D");
-        fTree->Branch("RecoShowerTrueMomT",fRecoShowerTrueMomT,"RecoShowerTrueMomT[NRecoShowers]/D");
-        fTree->Branch("RecoShowerTrueStartX",fRecoShowerTrueStartX,"RecoShowerTrueStartX[NRecoShowers]/D");
-        fTree->Branch("RecoShowerTrueStartY",fRecoShowerTrueStartY,"RecoShowerTrueStartY[NRecoShowers]/D");
-        fTree->Branch("RecoShowerTrueStartZ",fRecoShowerTrueStartZ,"RecoShowerTrueStartZ[NRecoShowers]/D");
-        fTree->Branch("RecoShowerTrueEndX",fRecoShowerTrueEndX,"RecoShowerTrueEndX[NRecoShowers]/D");
-        fTree->Branch("RecoShowerTrueEndY",fRecoShowerTrueEndY,"RecoShowerTrueEndY[NRecoShowers]/D");
-        fTree->Branch("RecoShowerTrueEndZ",fRecoShowerTrueEndZ,"RecoShowerTrueEndZ[NRecoShowers]/D");
-        fTree->Branch("RecoShowerRecoNHits",fRecoShowerRecoNHits,"RecoShowerRecoNHits[NRecoShowers]/I");
-        fTree->Branch("RecoShowerRecoCompleteness",fRecoShowerRecoCompleteness,"RecoShowerRecoCompleteness[NRecoShowers]/D");
-        fTree->Branch("RecoShowerRecoHitPurity",fRecoShowerRecoHitPurity,"RecoShowerRecoHitPurity[NRecoShowers]/D");
-        fTree->Branch("RecoShowerRecoStartX",fRecoShowerRecoStartX,"RecoShowerRecoStartX[NRecoShowers]/D");
-        fTree->Branch("RecoShowerRecoStartY",fRecoShowerRecoStartY,"RecoShowerRecoStartY[NRecoShowers]/D");
-        fTree->Branch("RecoShowerRecoStartZ",fRecoShowerRecoStartZ,"RecoShowerRecoStartZ[NRecoShowers]/D");
-        fTree->Branch("RecoShowerRecoCharge",fRecoShowerRecoCharge,"RecoShowerRecoCharge[NRecoShowers]/D");
-        fTree->Branch("RecoShowerRecoMom",fRecoShowerRecoMom,"RecoShowerRecoMom[NRecoShowers]/D");
-        fTree->Branch("RecoShowerRecoVertexX",fRecoShowerRecoVertexX,"RecoShowerRecoVertexX[NRecoShowers]/D");
-        fTree->Branch("RecoShowerRecoVertexY",fRecoShowerRecoVertexY,"RecoShowerRecoVertexY[NRecoShowers]/D");
-        fTree->Branch("RecoShowerRecoVertexZ",fRecoShowerRecoVertexZ,"RecoShowerRecoVertexZ[NRecoShowers]/D");
-        fTree->Branch("RecoShowerDistanceToNuVertexU", &fRecoShowerDistanceToNuVertexU, "RecoShowerDistanceToNuVertexU[NRecoShowers]/D");
-        fTree->Branch("RecoShowerDistanceToNuVertexV", &fRecoShowerDistanceToNuVertexV, "RecoShowerDistanceToNuVertexV[NRecoShowers]/D");
-        fTree->Branch("RecoShowerDistanceToNuVertexW", &fRecoShowerDistanceToNuVertexW, "RecoShowerDistanceToNuVertexW[NRecoShowers]/D");
-        fTree->Branch("RecoShowerRecoNChildPFP",fRecoShowerRecoNChildPFP,"RecoShowerRecoNChildPFP[NRecoShowers]/I");
-        fTree->Branch("RecoShowerRecoNChildTrackPFP",fRecoShowerRecoNChildTrackPFP,"RecoShowerRecoNChildTrackPFP[NRecoShowers]/I");
-        fTree->Branch("RecoShowerRecoNChildShowerPFP",fRecoShowerRecoNChildShowerPFP,"RecoShowerRecoNChildShowerPFP[NRecoShowers]/I");
-        fTree->Branch("RecoShowerRecoDirX",fRecoShowerRecoDirX,"RecoShowerRecoDirX[NRecoShowers]/D");
-        fTree->Branch("RecoShowerRecoDirY",fRecoShowerRecoDirY,"RecoShowerRecoDirY[NRecoShowers]/D");
-        fTree->Branch("RecoShowerRecoDirZ",fRecoShowerRecoDirZ,"RecoShowerRecoDirZ[NRecoShowers]/D");
-        fTree->Branch("RecoShowerRecodEdx",fRecoShowerRecodEdx,"RecoShowerRecodEdx[NRecoShowers][3]/D");
-        fTree->Branch("RecoShowerRecoEnergy",fRecoShowerRecoEnergy,"RecoShowerRecoEnergy[NRecoShowers][3]/D");
-        fTree->Branch("RecoShowerRecoBestPlane",&fRecoShowerRecoBestPlane,"RecoShowerRecoBestPlane[3]/I");
-        fTree->Branch("RecoShowerRecoLength",&fRecoShowerRecoLength,"RecoShowerRecoLength[3]/D");
-        fTree->Branch("RecoShowerRecoOpeningAngle",&fRecoShowerRecoOpeningAngle,"RecoShowerRecoOpeningAngle[3]/D");
-        fTree->Branch("RecoShowerRecoIsPrimaryPFPDaughter",fRecoShowerRecoIsPrimaryPFPDaughter,"RecoShowerRecoIsPrimaryPFPDaughter[NRecoShowers]/O");
-        fTree->Branch("RecoShowerMVAElectron",fRecoShowerMVAElectron,"RecoShowerMVAElectron[NRecoShowers]/D");
-        fTree->Branch("RecoShowerMVAPion",fRecoShowerMVAPion,"RecoShowerMVAPion[NRecoShowers]/D");
-        fTree->Branch("RecoShowerMVAMuon",fRecoShowerMVAMuon,"RecoShowerMVAMuon[NRecoShowers]/D");
-        fTree->Branch("RecoShowerMVAProton",fRecoShowerMVAProton,"RecoShowerMVAProton[NRecoShowers]/D");
-        fTree->Branch("RecoShowerMVAPhoton",fRecoShowerMVAPhoton,"RecoShowerMVAPhoton[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleConnectionBDTScore", &fRecoShowerPandrizzleConnectionBDTScore, "RecoShowerPandrizzleConnectionBDTScore[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzlePathwayLengthMin", &fRecoShowerPandrizzlePathwayLengthMin, "RecoShowerPandrizzlePathwayLengthMin[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D", &fRecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D, 
-                      "RecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleMaxNPostShowerStartHits", &fRecoShowerPandrizzleMaxNPostShowerStartHits, "RecoShowerPandrizzleMaxNPostShowerStartHits[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartScatterAngle", &fRecoShowerPandrizzleMaxPostShowerStartScatterAngle, "RecoShowerPandrizzleMaxPostShowerStartScatterAngle[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry", &fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry, 
-                      "RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry", &fRecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry, 
-                      "RecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance", &fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance, 
-                      "RecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius", &fRecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius, 
-                      "RecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleMaxPostShowerStartOpeningAngle", &fRecoShowerPandrizzleMaxPostShowerStartOpeningAngle, "RecoShowerPandrizzleMaxPostShowerStartOpeningAngle[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleMaxFoundHitRatio", &fRecoShowerPandrizzleMaxFoundHitRatio, "RecoShowerPandrizzleMaxFoundHitRatio[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleMaxInitialGapSize", &fRecoShowerPandrizzleMaxInitialGapSize, "RecoShowerPandrizzleMaxInitialGapSize[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleMinLargestProjectedGapSize", &fRecoShowerPandrizzleMinLargestProjectedGapSize, "RecoShowerPandrizzleMinLargestProjectedGapSize[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleNViewsWithAmbiguousHits", &fRecoShowerPandrizzleNViewsWithAmbiguousHits, "RecoShowerPandrizzleNViewsWithAmbiguousHits[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy", &fRecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy, "RecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleEvalRatio",&fRecoShowerPandrizzleEvalRatio,"RecoShowerPandrizzleEvalRatio[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleConcentration",&fRecoShowerPandrizzleConcentration,"RecoShowerPandrizzleConcentration[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleCoreHaloRatio",&fRecoShowerPandrizzleCoreHaloRatio, "RecoShowerPandrizzleCoreHaloRatio[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleConicalness",&fRecoShowerPandrizzleConicalness, "RecoShowerPandrizzleConicalness[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzledEdxBestPlane",&fRecoShowerPandrizzledEdxBestPlane, "RecoShowerPandrizzledEdxBestPlane[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleDisplacement",&fRecoShowerPandrizzleDisplacement, "RecoShowerPandrizzleDisplacement[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleDCA",&fRecoShowerPandrizzleDCA, "RecoShowerPandrizzleDCA[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleWideness",&fRecoShowerPandrizzleWideness, "RecoShowerPandrizzleWideness[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleEnergyDensity",&fRecoShowerPandrizzleEnergyDensity, "RecoShowerPandrizzleEnergyDensity[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleBDTMethod", &fRecoShowerPandrizzleBDTMethod, "RecoShowerPandrizzleBDTMethod[NRecoShowers]/D");
-        fTree->Branch("RecoShowerEnhancedPandrizzleScore",&fRecoShowerEnhancedPandrizzleScore, "RecoShowerEnhancedPandrizzleScore[NRecoShowers]/D"); 
-        fTree->Branch("RecoShowerBackupPandrizzleScore",&fRecoShowerBackupPandrizzleScore, "RecoShowerBackupPandrizzleScore[NRecoShowers]/D");
-        fTree->Branch("RecoShowerPandrizzleIsFilled",&fRecoShowerPandrizzleIsFilled, "RecoShowerPandrizzleIsFilled[NRecoShowers]/O");
-
-        fTree->Branch("RecoNuVtxNShowers",&fRecoNuVtxNShowers);
-        fTree->Branch("RecoNuVtxNTracks",&fRecoNuVtxNTracks);
-        fTree->Branch("RecoNuVtxNChildren",&fRecoNuVtxNChildren);
-
-        fTree->Branch("RecoEventCharge",&fRecoEventCharge);
-        fTree->Branch("NumuRecoMomLep",&fNumuRecoMomLep);
-        fTree->Branch("NumuRecoEHad",&fNumuRecoEHad);
-        fTree->Branch("NueRecoMomLep",&fNueRecoMomLep);
-        fTree->Branch("NueRecoEHad",&fNueRecoEHad);
-    }
-
-    Reset();  //Default value all variables now
+    // Selected info
+    fTree->Branch("SelShowerPandrizzleSelf", &fSelShowerPandrizzleSelf);
+    fTree->Branch("SelShowerPandrizzleIndex", &fSelShowerPandrizzleIndex);
+    fTree->Branch("SelShowerEnhancedPandrizzleScore", &fSelShowerEnhancedPandrizzleScore);
+    fTree->Branch("SelShowerBackupPandrizzleScore", &fSelShowerBackupPandrizzleScore);
+    fTree->Branch("SelPandrizzleShowerNueEnu", &fSelPandrizzleShowerNueEnu);
+    fTree->Branch("SelPandrizzleShowerNueEHad", &fSelPandrizzleShowerNueEHad);
+    fTree->Branch("SelShowerHighestEnergySelf", &fSelShowerHighestEnergySelf);
+    fTree->Branch("SelShowerHighestEnergyIndex", &fSelShowerHighestEnergyIndex);
+    fTree->Branch("SelShowerHighestEnergy", &fSelShowerHighestEnergy);
+    fTree->Branch("SelEnergyShowerNueEnu", &fSelEnergyShowerNueEnu);
+    fTree->Branch("SelEnergyShowerNueEHad", &fSelEnergyShowerNueEHad);
 }
+
+//////////////////////////////////////////////////////////////////////////////////
 
 void FDSelection::CCNuSelection::beginSubRun(art::SubRun const & sr)
 {
-  // Implementation of optional member function here.
 }
-void FDSelection::CCNuSelection::endSubRun(const art::SubRun& sr){
-  //Need the run and subrun
+
+//////////////////////////////////////////////////////////////////////////////////
+
+void FDSelection::CCNuSelection::endSubRun(const art::SubRun& sr)
+{
   fRun = sr.run();
   fSubRun = sr.subRun();
-  //Need the POT (obvs)
+
+  // Get POT
   art::Handle<sumdata::POTSummary> potListHandle;
 
-  if(sr.getByLabel(fPOTModuleLabel,potListHandle))
+  if (sr.getByLabel(fPOTModuleLabel, potListHandle))
+  {
     fPOT = potListHandle->totpot;
+  }
   else
+  {
     fPOT = 0.;
+  }
+
   if (fPOTTree) fPOTTree->Fill();
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+
 void FDSelection::CCNuSelection::endJob()
 {
-  // Implementation of optional member function here.
 }
+
+//////////////////////////////////////////////////////////////////////////////////
 
 void FDSelection::CCNuSelection::Reset()
 {
-  //Generic stuff
-  fRun = kDefInt;
-  fSubRun = kDefInt;
-  fEvent = kDefInt;
-  fIsMC = kDefInt;
-  //Detector stuff
-  fT0 = kDefDoub;
-  //Neutrino stuff
-  fNuPdg = kDefInt; 
-  fBeamPdg = kDefInt; 
-  fNC = kDefInt;    
-  fMode = kDefInt; 
-  fTargetZ = kDefInt;
-  fQ2 = kDefDoub; 
-  fENu = kDefDoub; 
-  fW = kDefDoub; 
-  fX = kDefDoub;
-  fY = kDefDoub;
-  fNuMomX = kDefDoub; 
-  fNuMomY = kDefDoub;
-  fNuMomZ = kDefDoub;
-  fNuMomT = kDefDoub;
-  fNuX = kDefDoub; 
-  fNuY = kDefDoub;
-  fNuZ = kDefDoub;
-  fNuT = kDefDoub;
-  fNPiP = 0;
-  fNPim = 0;
-  fNPi0 = 0;
-  fNPhotons = 0;
-  fNProtons = 0;
-  fNNeutrons = 0;
-  fNOther = 0;
-  for (int i_vertexparticle = 0; i_vertexparticle < (fNVertexParticles == 0 ? kDefMaxNTrueVertexParticles : fNVertexParticles); i_vertexparticle++){
-    fVertexParticleIsGHEP[i_vertexparticle] = 0;
-    fVertexParticlePDG[i_vertexparticle] = kDefInt;
-    fVertexParticleStatus[i_vertexparticle] = kDefInt;
-    fVertexParticleNChildren[i_vertexparticle] = kDefInt;
-    fVertexParticleMomX[i_vertexparticle] = kDefDoub;
-    fVertexParticleMomY[i_vertexparticle] = kDefDoub;
-    fVertexParticleMomZ[i_vertexparticle] = kDefDoub;
-    fVertexParticleMomT[i_vertexparticle] = kDefDoub;
-    fVertexParticleEndX[i_vertexparticle] = kDefDoub;
-    fVertexParticleEndY[i_vertexparticle] = kDefDoub;
-    fVertexParticleEndZ[i_vertexparticle] = kDefDoub;
-    fVertexParticleEndT[i_vertexparticle] = kDefDoub;
-  }
-  fNVertexParticles = 0;
-  //Outgoing lepton stuff
-  fLepPDG = kDefInt;
-  fMomLepX = kDefDoub;
-  fMomLepY = kDefDoub;
-  fMomLepZ = kDefDoub;
-  fMomLepT = kDefDoub;
-  fLepEndX = kDefDoub;
-  fLepEndY = kDefDoub;
-  fLepEndZ = kDefDoub;
-  fLepEndT = kDefDoub;
-  fLepNuAngle = kDefDoub;
-  fNuMomTranMag = kDefDoub;
-  fTargNuclMomTranMag = kDefDoub;
-  fInitalMomTranMag = kDefDoub;
-  fLepMomTranMag = kDefDoub;
-  fNuclRemMomTranMag = kDefDoub;
-  fFinalMomTranMagNoLepNoRem = kDefDoub;
-  fFinalMomTranMagNoLepWithRem = kDefDoub;
-  fFinalMomTranMagWithLepNoRem = kDefDoub;
-  fFinalMomTranMagWithLepWithRem = kDefDoub;
-  //Selection stuff
-  //Track stuff
-  //true bits
-  fSelTrackTruePDG = kDefInt;
-  fSelTrackTruePrimary = kDefInt;
-  fSelTrackTrueMomX = kDefDoub;
-  fSelTrackTrueMomY = kDefDoub;
-  fSelTrackTrueMomZ = kDefDoub;
-  fSelTrackTrueMomT = kDefDoub;
-  fSelTrackTrueStartX = kDefDoub;
-  fSelTrackTrueStartY = kDefDoub;
-  fSelTrackTrueStartZ = kDefDoub;
-  fSelTrackTrueEndX = kDefDoub;
-  fSelTrackTrueEndY = kDefDoub;
-  fSelTrackTrueEndZ = kDefDoub;
-  //reco bits
-  fSelTrackRecoNHits = kDefInt;
-  fSelTrackRecoCompleteness = kDefDoub;
-  fSelTrackRecoHitPurity = kDefDoub;
-  fSelTrackRecoStartX = kDefDoub;
-  fSelTrackRecoStartY = kDefDoub;
-  fSelTrackRecoStartZ = kDefDoub;
-  fSelTrackRecoEndX = kDefDoub;
-  fSelTrackRecoEndY = kDefDoub;
-  fSelTrackRecoEndZ = kDefDoub;
-  fSelTrackRecoUpstreamX = kDefDoub;
-  fSelTrackRecoUpstreamY = kDefDoub;
-  fSelTrackRecoUpstreamZ = kDefDoub;
-  fSelTrackRecoDownstreamX = kDefDoub;
-  fSelTrackRecoDownstreamY = kDefDoub;
-  fSelTrackRecoDownstreamZ = kDefDoub;
-  fSelTrackRecoEndClosestToVertexX = kDefDoub;
-  fSelTrackRecoEndClosestToVertexY = kDefDoub;
-  fSelTrackRecoEndClosestToVertexZ = kDefDoub;
-  fSelTrackRecoLength = kDefDoub;
-  fSelTrackRecoContained = kDefInt;
-  fSelTrackRecoMomMethod = kDefInt;
-  fSelTrackRecoCharge = kDefDoub;
-  fSelTrackRecoMomMCS = kDefDoub;
-  fSelTrackRecoMomContained = kDefDoub;
-  //fSelTrackRecoNMatchedVertices = kDefInt;
-  fSelTrackRecoVertexX = kDefDoub;
-  fSelTrackRecoVertexY = kDefDoub;
-  fSelTrackRecoVertexZ = kDefDoub;
-  fSelTrackRecoNChildPFP = kDefInt;
-  fSelTrackRecoNChildTrackPFP = kDefInt;
-  fSelTrackRecoNChildShowerPFP = kDefInt;
-  //MVA bits
-  fSelTrackMVAElectron = kDefDoub;
-  fSelTrackMVAPion = kDefDoub;
-  fSelTrackMVAMuon = kDefDoub;
-  fSelTrackMVAProton = kDefDoub;
-  fSelTrackMVAPhoton = kDefDoub;
-  //Pandizzle
-  fSelTrackMichelNHits = kDefDoub;
-  fSelTrackMichelElectronMVA = kDefDoub;
-  fSelTrackMichelRecoEnergyPlane2 = kDefDoub;
-  fSelTrackDeflecAngleSD = kDefDoub;
-  fSelTrackLength = kDefDoub;
-  fSelTrackEvalRatio = kDefDoub;
-  fSelTrackConcentration = kDefDoub;
-  fSelTrackCoreHaloRatio = kDefDoub;
-  fSelTrackConicalness = kDefDoub;
-  fSelTrackdEdxStart = kDefDoub;
-  fSelTrackdEdxEnd = kDefDoub;
-  fSelTrackdEdxEndRatio = kDefDoub;
-  fSelTrackPandizzleVar = kDefDoub;
-  //DeepPan
-  fSelTrackDeepPanMuVar = kDefDoub;
-  fSelTrackDeepPanPiVar = kDefDoub;
-  fSelTrackDeepPanProtonVar = kDefDoub;
-  //CVN
-  fCVNResultNue = kDefDoub;
-  fCVNResultNumu = kDefDoub;
-  fCVNResultNutau = kDefDoub;
-  fCVNResultNC = kDefDoub;
+    ////////////////////////////////////////
+    // Pandora maps
+    ////////////////////////////////////////
+    fMCParticleMap.clear();
+    fPFPMap.clear();
+    fReconstructedMCParticles.clear();
+    ////////////////////////////
+    // Event info
+    ////////////////////////////
+    fRun = kDefInt;
+    fSubRun = kDefInt;
+    fEvent = kDefInt;
+    ////////////////////////////
+    // True info
+    ////////////////////////////
+    fIsMC = kDefInt;
+    fT0 = kDefDoub;
+    fNuPdg = kDefInt; 
+    fBeamPdg = kDefInt; 
+    fNuTrackID = kDefInt;
+    fNC = kDefInt;    
+    fMode = kDefInt; 
+    fTargetZ = kDefInt;
+    fQ2 = kDefDoub; 
+    fENu = kDefDoub; 
+    fEVisNu = kDefDoub;
+    fW = kDefDoub; 
+    fX = kDefDoub;
+    fY = kDefDoub;
+    fNuMomX = kDefDoub; 
+    fNuMomY = kDefDoub;
+    fNuMomZ = kDefDoub;
+    fNuMomT = kDefDoub;
+    fNuX = kDefDoub; 
+    fNuY = kDefDoub;
+    fNuZ = kDefDoub;
+    fNuT = kDefDoub;
+    fLepPDG = kDefInt;
+    fLepEnergy = kDefDoub;
+    fMomLepX = kDefDoub;
+    fMomLepY = kDefDoub;
+    fMomLepZ = kDefDoub;
+    fMomLepT = kDefDoub;
+    fLepEndX = kDefDoub;
+    fLepEndY = kDefDoub;
+    fLepEndZ = kDefDoub;
+    fLepEndT = kDefDoub;
+    fLepNuAngle = kDefDoub;
+    fLepHasMichelDecay = 0;
+    fNuMomTranMag = kDefDoub;
+    fTargNuclMomTranMag = kDefDoub;
+    fInitalMomTranMag = kDefDoub;
+    fLepMomTranMag = kDefDoub;
+    fNuclRemMomTranMag = kDefDoub;
+    fFinalMomTranMagNoLepNoRem = kDefDoub;
+    fFinalMomTranMagNoLepWithRem = kDefDoub;
+    fFinalMomTranMagWithLepNoRem = kDefDoub;
+    fFinalMomTranMagWithLepWithRem = kDefDoub;
 
-  for (int i_recotrack = 0; i_recotrack < (fNRecoTracks == 0 ? kDefMaxNRecoTracks : fNRecoTracks); i_recotrack++){
-    fRecoTrackIsPrimary[i_recotrack] = false;
-    fRecoTrackTruePDG[i_recotrack] = kDefInt;
-    fRecoTrackTruePrimary[i_recotrack] = false;
-    fRecoTrackTrueMomX[i_recotrack] = kDefDoub;
-    fRecoTrackTrueMomY[i_recotrack] = kDefDoub;
-    fRecoTrackTrueMomZ[i_recotrack] = kDefDoub;
-    fRecoTrackTrueMomT[i_recotrack] = kDefDoub;
-    fRecoTrackTrueStartX[i_recotrack] = kDefDoub;
-    fRecoTrackTrueStartY[i_recotrack] = kDefDoub;
-    fRecoTrackTrueStartZ[i_recotrack] = kDefDoub;
-    fRecoTrackTrueEndX[i_recotrack] = kDefDoub;
-    fRecoTrackTrueEndY[i_recotrack] = kDefDoub;
-    fRecoTrackTrueEndZ[i_recotrack] = kDefDoub;
-    fRecoTrackRecoNHits[i_recotrack] = kDefInt;
-    fRecoTrackRecoCompleteness[i_recotrack] = kDefDoub;
-    fRecoTrackRecoHitPurity[i_recotrack] = kDefDoub;
-    fRecoTrackRecoStartX[i_recotrack] = kDefDoub;
-    fRecoTrackRecoStartY[i_recotrack] = kDefDoub;
-    fRecoTrackRecoStartZ[i_recotrack] = kDefDoub;
-    fRecoTrackRecoEndX[i_recotrack] = kDefDoub;
-    fRecoTrackRecoEndY[i_recotrack] = kDefDoub;
-    fRecoTrackRecoEndZ[i_recotrack] = kDefDoub;
-    fRecoTrackRecoUpstreamX[i_recotrack] = kDefDoub;
-    fRecoTrackRecoUpstreamY[i_recotrack] = kDefDoub;
-    fRecoTrackRecoUpstreamZ[i_recotrack] = kDefDoub;
-    fRecoTrackRecoDownstreamX[i_recotrack] = kDefDoub;
-    fRecoTrackRecoDownstreamY[i_recotrack] = kDefDoub;
-    fRecoTrackRecoDownstreamZ[i_recotrack] = kDefDoub;
-    fRecoTrackRecoEndClosestToVertexX[i_recotrack] = kDefDoub;
-    fRecoTrackRecoEndClosestToVertexY[i_recotrack] = kDefDoub;
-    fRecoTrackRecoEndClosestToVertexZ[i_recotrack] = kDefDoub;
-    fRecoTrackRecoLength[i_recotrack] = kDefDoub;
-    fRecoTrackRecoContained[i_recotrack] = kDefInt;
-    fRecoTrackRecoMomMethod[i_recotrack] = kDefInt;
-    fRecoTrackRecoCharge[i_recotrack] = kDefDoub;
-    fRecoTrackRecoMomMCS[i_recotrack] = kDefDoub;
-    fRecoTrackRecoMomContained[i_recotrack] = kDefDoub;
-    fRecoTrackRecoVertexX[i_recotrack] = kDefDoub;
-    fRecoTrackRecoVertexY[i_recotrack] = kDefDoub;
-    fRecoTrackRecoVertexZ[i_recotrack] = kDefDoub;
-    fRecoTrackRecoNChildPFP[i_recotrack] = kDefInt;
-    fRecoTrackRecoNChildTrackPFP[i_recotrack] = kDefInt;
-    fRecoTrackRecoNChildShowerPFP[i_recotrack] = kDefInt;
+    ////////////////////////////
+    // Event-level reco info 
+    ////////////////////////////
+    fRecoNuVtxX = kDefDoub;
+    fRecoNuVtxY = kDefDoub;
+    fRecoNuVtxZ = kDefDoub;
+    fRecoNuVtxNShowers = 0;
+    fRecoNuVtxNTracks = 0;
+    fRecoNuVtxNChildren = 0;
+    fRecoEventCharge = kDefDoub;
+    fRecoENuAllHits = kDefDoub;
 
-    fRecoTrackMVAElectron[i_recotrack] = kDefDoub;
-    fRecoTrackMVAPion[i_recotrack] = kDefDoub;
-    fRecoTrackMVAMuon[i_recotrack] = kDefDoub;
-    fRecoTrackMVAProton[i_recotrack] = kDefDoub;
-    fRecoTrackMVAPhoton[i_recotrack] = kDefDoub;
-    fRecoTrackPandizzleVar[i_recotrack] = kDefDoub;
-    fRecoTrackDeepPanMuVar[i_recotrack] = kDefDoub;
-    fRecoTrackDeepPanPiVar[i_recotrack] = kDefDoub;
-    fRecoTrackDeepPanProtonVar[i_recotrack] = kDefDoub;
+    ////////////////////////////
+    // CVN info
+    ////////////////////////////
+    fCVNResultNue = kDefDoub; 
+    fCVNResultNumu = kDefDoub;
+    fCVNResultNutau = kDefDoub;
+    fCVNResultNC = kDefDoub;
+    ////////////////////////////
+    // PFParticle info
+    ////////////////////////////
+    fNRecoPFPs = 0;
+    for (int i = 0; i < kMaxPFParticles; i++)
+    {
+        ////////////////////////////
+        // Event-level reco info 
+        ////////////////////////////
+        fNumuRecoENu[i] = kDefDoub;
+        fNumuRecoMomLep[i] = kDefDoub;
+        fNumuRecoEHad[i] = kDefDoub;
+        fNueRecoENu[i] = kDefDoub;
+        fNueRecoMomLep[i] = kDefDoub;
+        fNueRecoEHad[i] = kDefDoub;
 
-    fRecoTrackMichelNHits[i_recotrack] = kDefDoub;
-    fRecoTrackMichelElectronMVA[i_recotrack] = kDefDoub;
-    fRecoTrackMichelRecoEnergyPlane2[i_recotrack] = kDefDoub;
-    fRecoTrackDeflecAngleSD[i_recotrack] = kDefDoub;
-    fRecoTrackLength[i_recotrack] = kDefDoub;
-    fRecoTrackEvalRatio[i_recotrack] = kDefDoub;
-    fRecoTrackConcentration[i_recotrack] = kDefDoub;
-    fRecoTrackCoreHaloRatio[i_recotrack] = kDefDoub;
-    fRecoTrackConicalness[i_recotrack] = kDefDoub;
-    fRecoTrackdEdxStart[i_recotrack] = kDefDoub;
-    fRecoTrackdEdxEnd[i_recotrack] = kDefDoub;
-    fRecoTrackdEdxEndRatio[i_recotrack] = kDefDoub;
-  }
-  fNRecoTracks=0;
+        ////////////////////////////  
+        // PFParticle stuff
+        ////////////////////////////  
+        // Truth
+        fRecoPFPTruePDG[i] = kDefInt;
+        fRecoPFPTrueTrackID[i] = kDefInt;
+        fRecoPFPTruePrimary[i] = false;
+        fRecoPFPTrueMomX[i] = kDefDoub;
+        fRecoPFPTrueMomY[i] = kDefDoub;
+        fRecoPFPTrueMomZ[i] = kDefDoub;
+        fRecoPFPTrueMomT[i] = kDefDoub;
+        fRecoPFPTrueStartX[i] = kDefDoub;
+        fRecoPFPTrueStartY[i] = kDefDoub;
+        fRecoPFPTrueStartZ[i] = kDefDoub;
+        fRecoPFPTrueEndX[i] = kDefDoub;
+        fRecoPFPTrueEndY[i] = kDefDoub;
+        fRecoPFPTrueEndZ[i] = kDefDoub;
+        // Reco
+        fRecoPFPSelf[i] = kDefInt;
+        fRecoPFPIsPrimary[i] = false;
+        fRecoPFPTrackShowerScore[i] = kDefDoub;
+        fRecoPFPTrackShowerPDG[i] = kDefInt;
+        fRecoPFPRecoNHits[i] = kDefInt;
+        fRecoPFPRecoNSpacepoints[i] = kDefInt;
+        fRecoPFPShowerFitSuccess[i] = 0;
+        fRecoPFPTrackFitSuccess[i] = 0;
+        fRecoPFPRecoCompleteness[i] = kDefDoub;
+        fRecoPFPRecoHitPurity[i] = kDefDoub;
+        fRecoPFPRecoCharge[i] = kDefDoub;
+        fRecoPFPRecoVertexX[i] = kDefDoub;
+        fRecoPFPRecoVertexY[i] = kDefDoub;
+        fRecoPFPRecoVertexZ[i] = kDefDoub;
+        fRecoPFPRecoNChildPFP[i] = kDefInt;
+        fRecoPFPRecoNChildTrackPFP[i] = kDefInt;
+        fRecoPFPRecoNChildShowerPFP[i] = kDefInt;
 
-  //Reco energy bits
-  fNumuRecoEHad = kDefDoub;
-  fNumuRecoMomLep = kDefDoub;
-  fNumuRecoENu = kDefDoub; //Neutrino reco energy
-
-  //Shower bits
-  //true bits
-  fSelShowerTruePDG = kDefInt;
-  fSelShowerTruePrimary = false;
-  fSelShowerTrueMomX = kDefDoub;
-  fSelShowerTrueMomY = kDefDoub;
-  fSelShowerTrueMomZ = kDefDoub;
-  fSelShowerTrueMomT = kDefDoub;
-  fSelShowerTrueStartX = kDefDoub;
-  fSelShowerTrueStartY = kDefDoub;
-  fSelShowerTrueStartZ = kDefDoub;
-  fSelShowerTrueEndX = kDefDoub;
-  fSelShowerTrueEndY = kDefDoub;
-  fSelShowerTrueEndZ = kDefDoub;
-  //reco bits
-  fSelShowerRecoNHits = kDefInt;
-  fSelShowerRecoCompleteness = kDefDoub;
-  fSelShowerRecoHitPurity = kDefDoub;
-  fSelShowerRecoStartX = kDefDoub;
-  fSelShowerRecoStartY = kDefDoub;
-  fSelShowerRecoStartZ = kDefDoub;
-  fSelShowerRecoCharge = kDefDoub;
-  fSelShowerRecoMom = kDefDoub;
-  fSelShowerRecoVertexX = kDefDoub;
-  fSelShowerRecoVertexY = kDefDoub;
-  fSelShowerRecoVertexZ = kDefDoub;
-  fSelShowerDistanceToNuVertexU = kDefDoub;
-  fSelShowerDistanceToNuVertexV = kDefDoub;
-  fSelShowerDistanceToNuVertexW = kDefDoub;
-  fSelShowerRecoNChildPFP = kDefInt;
-  fSelShowerRecoNChildTrackPFP = kDefInt;
-  fSelShowerRecoNChildShowerPFP = kDefInt;
-  fSelShowerRecoDirX = kDefDoub;
-  fSelShowerRecoDirY = kDefDoub;
-  fSelShowerRecoDirZ = kDefDoub;
-  fSelShowerRecoBestPlane = kDefInt;
-  fSelShowerRecoLength = kDefDoub;
-  fSelShowerRecoOpeningAngle = kDefDoub;
-
-  //MVA bits
-  fSelShowerMVAElectron = kDefDoub;
-  fSelShowerMVAPion = kDefDoub;
-  fSelShowerMVAMuon = kDefDoub;
-  fSelShowerMVAProton = kDefDoub;
-  fSelShowerMVAPhoton = kDefDoub;
-  fSelShowerPandrizzleEvalRatio     = kDefDoub;
-  fSelShowerPandrizzleConcentration = kDefDoub;
-  fSelShowerPandrizzleCoreHaloRatio = kDefDoub;
-  fSelShowerPandrizzleConicalness   = kDefDoub;
-  fSelShowerPandrizzledEdxBestPlane = kDefDoub;
-  fSelShowerPandrizzleDisplacement  = kDefDoub;
-  fSelShowerPandrizzleDCA           = kDefDoub;
-  fSelShowerPandrizzleWideness      = kDefDoub;
-  fSelShowerPandrizzleEnergyDensity = kDefDoub;
-  fSelShowerPandrizzleBDTMethod = kDefDoub;
-  fSelShowerEnhancedPandrizzleScore = kDefDoub;
-  fSelShowerBackupPandrizzleScore      = kDefDoub;
-
-  fSelShowerPandrizzleIsFilled      = 0;
-
-  fSelShowerPandrizzleConnectionBDTScore = kDefDoub;
-  fSelShowerPandrizzlePathwayLengthMin = kDefDoub;
-  fSelShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D = kDefDoub;
-  fSelShowerPandrizzleMaxNPostShowerStartHits = kDefDoub;
-  fSelShowerPandrizzleMaxPostShowerStartScatterAngle = kDefDoub;
-  fSelShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry = kDefDoub;
-  fSelShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry = kDefDoub;
-  fSelShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance = kDefDoub;
-  fSelShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius = kDefDoub;
-  fSelShowerPandrizzleMaxPostShowerStartOpeningAngle = kDefDoub;
-  fSelShowerPandrizzleMaxFoundHitRatio = kDefDoub;
-  fSelShowerPandrizzleMaxInitialGapSize = kDefDoub;
-  fSelShowerPandrizzleMinLargestProjectedGapSize = kDefDoub;
-  fSelShowerPandrizzleNViewsWithAmbiguousHits = kDefDoub;
-  fSelShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy = kDefDoub;
-
-  for (int i_plane = 0; i_plane < 3; i_plane++) 
-  {
-      fSelShowerRecodEdx[i_plane] = kDefDoub;
-      fSelShowerRecoEnergy[i_plane] = kDefDoub;
-  }
-
-  //All shower bits
-  for (int i_shower = 0; i_shower < (fNRecoShowers == 0 ? kDefMaxNRecoShowers : fNRecoShowers); i_shower++){
-    fRecoShowerTruePDG[i_shower] = kDefInt;
-    fRecoShowerTruePrimary[i_shower] = false;
-    fRecoShowerTrueMomX[i_shower] = kDefDoub;
-    fRecoShowerTrueMomY[i_shower] = kDefDoub;
-    fRecoShowerTrueMomZ[i_shower] = kDefDoub;
-    fRecoShowerTrueMomT[i_shower] = kDefDoub;
-    fRecoShowerTrueStartX[i_shower] = kDefDoub;
-    fRecoShowerTrueStartY[i_shower] = kDefDoub;
-    fRecoShowerTrueStartZ[i_shower] = kDefDoub;
-    fRecoShowerTrueEndX[i_shower] = kDefDoub;
-    fRecoShowerTrueEndY[i_shower] = kDefDoub;
-    fRecoShowerTrueEndZ[i_shower] = kDefDoub;
-    fRecoShowerRecoNHits[i_shower] = kDefInt;
-    fRecoShowerRecoCompleteness[i_shower] = kDefDoub;
-    fRecoShowerRecoHitPurity[i_shower] = kDefDoub;
-    fRecoShowerRecoStartX[i_shower] = kDefDoub;
-    fRecoShowerRecoStartY[i_shower] = kDefDoub;
-    fRecoShowerRecoStartZ[i_shower] = kDefDoub;
-    fRecoShowerRecoCharge[i_shower] = kDefDoub;
-    fRecoShowerRecoMom[i_shower] = kDefDoub;
-    fRecoShowerRecoVertexX[i_shower] = kDefDoub;
-    fRecoShowerRecoVertexY[i_shower] = kDefDoub;
-    fRecoShowerRecoVertexZ[i_shower] = kDefDoub;
-    fRecoShowerDistanceToNuVertexU[i_shower] = kDefDoub;
-    fRecoShowerDistanceToNuVertexV[i_shower] = kDefDoub;
-    fRecoShowerDistanceToNuVertexW[i_shower] = kDefDoub;
-    fRecoShowerRecoNChildPFP[i_shower] = kDefInt;
-    fRecoShowerRecoNChildTrackPFP[i_shower] = kDefInt;
-    fRecoShowerRecoNChildShowerPFP[i_shower] = kDefInt;
-    fRecoShowerRecoDirX[i_shower] = kDefDoub;
-    fRecoShowerRecoDirY[i_shower] = kDefDoub;
-    fRecoShowerRecoDirZ[i_shower] = kDefDoub;
-    fRecoShowerRecoBestPlane[i_shower] = kDefInt;
-    fRecoShowerRecoLength[i_shower] = kDefDoub;
-    fRecoShowerRecoOpeningAngle[i_shower] = kDefDoub;
-    fRecoShowerRecoIsPrimaryPFPDaughter[i_shower] = false;
-    for (int i_plane = 0; i_plane < 3; i_plane++){
-        fRecoShowerRecodEdx[i_shower][i_plane] = kDefDoub;
-        fRecoShowerRecoEnergy[i_shower][i_plane] = kDefDoub;
+        ////////////////////////////
+        // Track stuff
+        ////////////////////////////
+        // Reco
+        fRecoTrackRecoStartX[i] = kDefDoub;
+        fRecoTrackRecoStartY[i] = kDefDoub;
+        fRecoTrackRecoStartZ[i] = kDefDoub;
+        fRecoTrackRecoEndX[i] = kDefDoub;
+        fRecoTrackRecoEndY[i] = kDefDoub;
+        fRecoTrackRecoEndZ[i] = kDefDoub;
+        fRecoTrackRecoUpstreamX[i] = kDefDoub;
+        fRecoTrackRecoUpstreamY[i] = kDefDoub;
+        fRecoTrackRecoUpstreamZ[i] = kDefDoub;
+        fRecoTrackRecoDownstreamX[i] = kDefDoub;
+        fRecoTrackRecoDownstreamY[i] = kDefDoub;
+        fRecoTrackRecoDownstreamZ[i] = kDefDoub;
+        fRecoTrackRecoEndClosestToVertexX[i] = kDefDoub;
+        fRecoTrackRecoEndClosestToVertexY[i] = kDefDoub;
+        fRecoTrackRecoEndClosestToVertexZ[i] = kDefDoub;
+        fRecoTrackRecoLength[i] = kDefDoub;
+        fRecoTrackRecoContained[i] = kDefInt;
+        fRecoTrackRecoMomMethod[i] = kDefInt;
+        fRecoTrackRecoMomMCS[i] = kDefDoub;
+        fRecoTrackRecoMomRange[i] = kDefDoub;
+        // Pandizzle
+        fRecoTrackPandizzleVar[i] = kDefDoub;
+        fRecoTrackMichelNHits[i] = kDefDoub;
+        fRecoTrackMichelElectronMVA[i] = kDefDoub;
+        fRecoTrackMichelRecoEnergyPlane2[i] = kDefDoub;
+        fRecoTrackDeflecAngleSD[i] = kDefDoub;
+        fRecoTrackLength[i] = kDefDoub;
+        fRecoTrackEvalRatio[i] = kDefDoub;
+        fRecoTrackConcentration[i] = kDefDoub;
+        fRecoTrackCoreHaloRatio[i] = kDefDoub;
+        fRecoTrackConicalness[i] = kDefDoub;
+        fRecoTrackdEdxStart[i] = kDefDoub;
+        fRecoTrackdEdxEnd[i] = kDefDoub;
+        fRecoTrackdEdxEndRatio[i] = kDefDoub;
+        ////////////////////////////
+        // Shower stuff
+        ////////////////////////////
+        // Reco
+        fRecoShowerRecoStartX[i] = kDefDoub;
+        fRecoShowerRecoStartY[i] = kDefDoub;
+        fRecoShowerRecoStartZ[i] = kDefDoub;
+        fRecoShowerRecoMom[i] = kDefDoub;
+        fRecoShowerRecoDirX[i] = kDefDoub;
+        fRecoShowerRecoDirY[i] = kDefDoub;
+        fRecoShowerRecoDirZ[i] = kDefDoub;
+        fRecoShowerRecoBestPlane[i] = kDefInt;
+        fRecoShowerRecoLength[i] = kDefDoub;
+        fRecoShowerRecoOpeningAngle[i] = kDefDoub;
+        for (int j = 0; j < 3; j++)
+        {
+            fRecoShowerRecodEdx[i][j] = kDefDoub;
+            fRecoShowerRecoEnergy[i][j] = kDefDoub;
+        }
+        // Pandrizzle
+        fRecoShowerPandrizzleConnectionBDTScore[i] = kDefDoub;
+        fRecoShowerPandrizzlePathwayLengthMin[i] = kDefDoub;
+        fRecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D[i] = kDefDoub;
+        fRecoShowerPandrizzleMaxNPostShowerStartHits[i] = kDefDoub;
+        fRecoShowerPandrizzleMaxPostShowerStartScatterAngle[i] = kDefDoub;
+        fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry[i] = kDefDoub;
+        fRecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry[i] = kDefDoub;
+        fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance[i] = kDefDoub;
+        fRecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius[i] = kDefDoub;
+        fRecoShowerPandrizzleMaxPostShowerStartOpeningAngle[i] = kDefDoub;
+        fRecoShowerPandrizzleMaxFoundHitRatio[i] = kDefDoub;
+        fRecoShowerPandrizzleMaxInitialGapSize[i] = kDefDoub;
+        fRecoShowerPandrizzleMinLargestProjectedGapSize[i] = kDefDoub;
+        fRecoShowerPandrizzleNViewsWithAmbiguousHits[i] = kDefDoub;
+        fRecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy[i] = kDefDoub;
+        fRecoShowerPandrizzleEvalRatio[i] = kDefDoub;
+        fRecoShowerPandrizzleConcentration[i] = kDefDoub;
+        fRecoShowerPandrizzleCoreHaloRatio[i] = kDefDoub;
+        fRecoShowerPandrizzleConicalness[i] = kDefDoub;
+        fRecoShowerPandrizzledEdxBestPlane[i] = kDefDoub;
+        fRecoShowerPandrizzleDisplacement[i] = kDefDoub;
+        fRecoShowerPandrizzleDCA[i] = kDefDoub;
+        fRecoShowerPandrizzleWideness[i] = kDefDoub;
+        fRecoShowerPandrizzleEnergyDensity[i] = kDefDoub;
+        fRecoShowerPandrizzleModularPathwayLength[i] = kDefDoub;
+        fRecoShowerPandrizzleModularNuVertexChargeWeightedMeanRadialDistance[i] = kDefDoub;
+        fRecoShowerPandrizzleModularMaxNShowerHits[i] = kDefDoub;
+        fRecoShowerPandrizzleBDTMethod[i] = kDefDoub;
+        fRecoShowerEnhancedPandrizzleScore[i] = kDefDoub;
+        fRecoShowerBackupPandrizzleScore[i] = kDefDoub;
+        fRecoShowerPandrizzleIsFilled[i] = 0;
     }
-    fRecoShowerMVAElectron[i_shower] = kDefDoub;
-    fRecoShowerMVAPion[i_shower] = kDefDoub;
-    fRecoShowerMVAMuon[i_shower] = kDefDoub;
-    fRecoShowerMVAProton[i_shower] = kDefDoub;
-    fRecoShowerMVAPhoton[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleConnectionBDTScore[i_shower] = kDefDoub;
-    fRecoShowerPandrizzlePathwayLengthMin[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleMaxNPostShowerStartHits[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleMaxPostShowerStartScatterAngle[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleMaxPostShowerStartOpeningAngle[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleMaxFoundHitRatio[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleMaxInitialGapSize[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleMinLargestProjectedGapSize[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleNViewsWithAmbiguousHits[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy[i_shower] = kDefDoub;
+    // Selection stuff
+    fSelTrackPandizzleSelf = -1;
+    fSelTrackPandizzleIndex = -1;
+    fSelTrackPandizzleScore = kDefDoub;
+    fSelPandizzleTrackContained = -1;
+    fSelPandizzleTrackRecoMom = kDefDoub;
+    fSelPandizzleTrackNumuEnu = kDefDoub;
+    fSelPandizzleTrackNumuEHad = kDefDoub;
+    fSelTrackLongestLengthSelf = -1;
+    fSelTrackLongestLengthIndex = -1;
+    fSelTrackLongestLength = kDefDoub;
+    fSelLongestTrackContained = -1;
+    fSelLongestTrackRecoMom = kDefDoub;
+    fSelLongestTrackNumuEnu = kDefDoub;
+    fSelLongestTrackNumuEHad = kDefDoub;
 
-    fRecoShowerPandrizzleEvalRatio[i_shower]     = kDefDoub;
-    fRecoShowerPandrizzleConcentration[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleCoreHaloRatio[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleConicalness[i_shower]   = kDefDoub;
-    fRecoShowerPandrizzledEdxBestPlane[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleDisplacement[i_shower]  = kDefDoub;
-    fRecoShowerPandrizzleDCA[i_shower]           = kDefDoub;
-    fRecoShowerPandrizzleWideness[i_shower]      = kDefDoub;
-    fRecoShowerPandrizzleEnergyDensity[i_shower] = kDefDoub;
-    fRecoShowerPandrizzleBDTMethod[i_shower]     = kDefDoub;
-    fRecoShowerEnhancedPandrizzleScore[i_shower]   = kDefDoub;
-    fRecoShowerBackupPandrizzleScore[i_shower]      = kDefDoub;
-    fRecoShowerPandrizzleIsFilled[i_shower]      = 0;
-
-  }
-  fNRecoShowers = 0;
-  //Reco nu bits
-  fRecoNuVtxX = kDefDoub;
-  fRecoNuVtxY = kDefDoub;
-  fRecoNuVtxZ = kDefDoub;
-  fRecoNuVtxNShowers = 0;
-  fRecoNuVtxNTracks = 0;
-  fRecoNuVtxNChildren = 0;
-
-
-
-  //Reco energy bits
-  fNueRecoEHad = kDefDoub;
-  fNueRecoMomLep = kDefDoub;
-  fNueRecoENu = kDefDoub; //Neutrino reco energy
-
-  //Event level stuff
-  fRecoEventCharge = kDefDoub;
-
+    fSelShowerPandrizzleSelf = -1;
+    fSelShowerPandrizzleIndex = -1;
+    fSelShowerEnhancedPandrizzleScore = kDefDoub;
+    fSelShowerBackupPandrizzleScore = kDefDoub;
+    fSelPandrizzleShowerNueEnu = kDefDoub;
+    fSelPandrizzleShowerNueEHad = kDefDoub;
+    fSelShowerHighestEnergySelf = -1;
+    fSelShowerHighestEnergyIndex = -1;
+    fSelShowerHighestEnergy = kDefDoub;
+    fSelEnergyShowerNueEnu = kDefDoub;
+    fSelEnergyShowerNueEHad = kDefDoub;
 }
 
-//////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+
+void FDSelection::CCNuSelection::FillPandoraMaps(art::Event const& evt)
+{
+    // MCParticle map
+    const std::vector<art::Ptr<simb::MCParticle>> mcParticles = dune_ana::DUNEAnaEventUtils::GetMCParticles(evt, fLargeantModuleLabel);
+    lar_pandora::LArPandoraHelper::BuildMCParticleMap(mcParticles, fMCParticleMap);
+
+    // PFParticle map
+    std::vector<art::Ptr<recob::PFParticle>> pfps = dune_ana::DUNEAnaEventUtils::GetPFParticles(evt, fRecoModuleLabel);
+    lar_pandora::LArPandoraHelper::BuildPFParticleMap(pfps, fPFPMap);
+}
+
+//////////////////////////////////////////////////////////////////////////////////
 
 void FDSelection::CCNuSelection::GetEventInfo(art::Event const & evt)
 {
-  auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
-  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataForJob(clockData);
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataForJob(clockData);
 
-  // T0
-  fT0 = trigger_offset(clockData);
+    // T0
+    fT0 = trigger_offset(clockData);
 
-  // Get total event charge
-  try
-  {
-      std::vector<art::Ptr<recob::Hit>> hitList = dune_ana::DUNEAnaEventUtils::GetHits(evt, fHitsModuleLabel);
-      fRecoEventCharge = dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, hitList);
-  }
-  catch(...)
-  {
-      return;
-  }
+    // Get total event charge
+    try
+    {
+        std::vector<art::Ptr<recob::Hit>> hitList = dune_ana::DUNEAnaEventUtils::GetHits(evt, fHitsModuleLabel);
+        fRecoEventCharge = dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, hitList);
+    }
+    catch(...)
+    {
+        return;
+    }
 
-  // Get CVN results
-  art::Handle<std::vector<cvn::Result>> cvnResult;
-  evt.getByLabel(fCVNModuleLabel, fCVNProductInstance, cvnResult);
+    // Get CVN results
+    art::Handle<std::vector<cvn::Result>> cvnResult;
+    evt.getByLabel(fCVNModuleLabel, cvnResult);
 
-  if(!cvnResult->empty()) 
-  {
-      fCVNResultNue = (*cvnResult)[0].GetNueProbability();
-      fCVNResultNumu = (*cvnResult)[0].GetNumuProbability();
-      fCVNResultNutau = (*cvnResult)[0].GetNutauProbability();
-      fCVNResultNC = (*cvnResult)[0].GetNCProbability();
-  }
+    if (!cvnResult->empty()) 
+    {
+        fCVNResultNue = (*cvnResult)[0].GetNueProbability();
+        fCVNResultNumu = (*cvnResult)[0].GetNumuProbability();
+        fCVNResultNutau = (*cvnResult)[0].GetNutauProbability();
+        fCVNResultNC = (*cvnResult)[0].GetNCProbability();
+    }
 
-  return;
+    // Get neutrino energy (from all hits)
+    std::unique_ptr<dune::EnergyRecoOutput> energyRecoHandle(std::make_unique<dune::EnergyRecoOutput>(
+        fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(evt, false)));
+    fRecoENuAllHits = energyRecoHandle->fNuLorentzVector.E();
 }
 
-//////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 
 void FDSelection::CCNuSelection::GetTruthInfo(art::Event const & evt)
 {
-  //Get the generator record
-  art::Handle<std::vector<simb::MCTruth>> mcTruthListHandle;
-  std::vector<art::Ptr<simb::MCTruth>> mcList;
-  if (evt.getByLabel(fNuGenModuleLabel, mcTruthListHandle)){
-    art::fill_ptr_vector(mcList, mcTruthListHandle);
-  }
+    const std::vector<art::Ptr<simb::MCTruth>> mcTruths = dune_ana::DUNEAnaEventUtils::GetMCTruths(evt, fNuGenModuleLabel);
 
-  if (mcList.size() == 0)
-    return;
+    if (mcTruths.empty())
+        return;
 
-  if (mcList.size() > 1)
-    mf::LogWarning("CCNuSelection") << "There are  " << mcList.size() << " MCTruth in this event.  Only taking the first one.";
+    art::Ptr<simb::MCTruth> mcTruth = mcTruths.at(0);
 
-  //Get the flux record
-  art::Handle<std::vector<simb::MCFlux>> mcFluxListHandle;
-  std::vector<art::Ptr<simb::MCFlux>> mcFlux;
-  if (evt.getByLabel(fNuGenModuleLabel, mcFluxListHandle)){
-    art::fill_ptr_vector(mcFlux, mcFluxListHandle);
-  }
+    if (mcTruth->Origin() != simb::kBeamNeutrino)
+        return;
 
-  //need the assns for later
-  art::FindManyP<simb::MCParticle> fmpt(mcTruthListHandle, evt, fLargeantModuleLabel);
+    // Get the original neutrino flavour (before osc.)
+    art::Handle<std::vector<simb::MCFlux>> mcFluxListHandle;
+    std::vector<art::Ptr<simb::MCFlux>> mcFlux;
 
-  art::Ptr<simb::MCTruth> mcTruth = mcList.at(0);
+    if (evt.getByLabel(fNuGenModuleLabel, mcFluxListHandle))
+        art::fill_ptr_vector(mcFlux, mcFluxListHandle);
 
-  if (mcTruth->Origin() != simb::kBeamNeutrino) 
-  {
-    mf::LogWarning("CCNuSelection") << "Origin for this event is " << mcTruth->Origin() << " and not simb::kBeamNeutrino (" << simb::kBeamNeutrino<<")";
-    return;
-  }
- 
-  // Neutrino
-  fNuPdg = mcTruth->GetNeutrino().Nu().PdgCode();
+    if (mcFluxListHandle.isValid()) 
+        fBeamPdg  = mcFlux[0]->fntype;
 
-  if (mcFluxListHandle.isValid()) 
-    fBeamPdg  = mcFlux[0]->fntype;
+    // Neutrino
+    const simb::MCNeutrino &mcNeutrino = mcTruth->GetNeutrino();
+    fNuTrackID = mcNeutrino.Nu().TrackId();
+    fNuPdg = mcNeutrino.Nu().PdgCode();
+    fNC = mcNeutrino.CCNC();
+    fMode = mcNeutrino.Mode(); //0=QE/El, 1=RES, 2=DIS, 3=Coherent production
+    fTargetZ = mcNeutrino.Target()%100000000/10000;
+    fENu = mcNeutrino.Nu().E();
+    fQ2 = mcNeutrino.QSqr();
+    fW = mcNeutrino.W();
+    fX = mcNeutrino.X();
+    fY = mcNeutrino.Y();
+    fNuX = mcNeutrino.Nu().Vx();
+    fNuY = mcNeutrino.Nu().Vy();
+    fNuZ = mcNeutrino.Nu().Vz();
+    fNuT = mcNeutrino.Nu().T();
+    fNuMomX = mcNeutrino.Nu().Momentum().X();
+    fNuMomY = mcNeutrino.Nu().Momentum().Y();
+    fNuMomZ = mcNeutrino.Nu().Momentum().Z();
+    fNuMomT = mcNeutrino.Nu().Momentum().T();
 
-  fNC = mcTruth->GetNeutrino().CCNC();
-  fMode = mcTruth->GetNeutrino().Mode(); //0=QE/El, 1=RES, 2=DIS, 3=Coherent production
-  fTargetZ = mcTruth->GetNeutrino().Target()%100000000/10000;
-  fENu = mcTruth->GetNeutrino().Nu().E();
-  fQ2 = mcTruth->GetNeutrino().QSqr();
-  fW = mcTruth->GetNeutrino().W();
-  fX = mcTruth->GetNeutrino().X();
-  fY = mcTruth->GetNeutrino().Y();
-  fNuX = mcTruth->GetNeutrino().Nu().Vx();
-  fNuY = mcTruth->GetNeutrino().Nu().Vy();
-  fNuZ = mcTruth->GetNeutrino().Nu().Vz();
-  fNuT = mcTruth->GetNeutrino().Nu().T();
-  fNuMomX = mcTruth->GetNeutrino().Nu().Momentum().X();
-  fNuMomY = mcTruth->GetNeutrino().Nu().Momentum().Y();
-  fNuMomZ = mcTruth->GetNeutrino().Nu().Momentum().Z();
-  fNuMomT = mcTruth->GetNeutrino().Nu().Momentum().T();
+    // Get nu visible energy
+    // Get sim edep
+    // Finally fill out MCParticle -> SimEDeps
+    art::Handle<std::vector<sim::SimEnergyDeposit>> simEDepHandle;
+    std::vector<art::Ptr<sim::SimEnergyDeposit>> simEDepVector;
+    //if (evt.getByLabel("largeant:LArG4DetectorServicevolTPCActiveInner", simEDepHandle))
+    if (evt.getByLabel(fEDepModuleLabel, simEDepHandle))
+        art::fill_ptr_vector(simEDepVector, simEDepHandle);
 
-  //Leading lepton
-  fLepPDG = mcTruth->GetNeutrino().Lepton().PdgCode();
-  fMomLepX = mcTruth->GetNeutrino().Lepton().Momentum().X();
-  fMomLepY = mcTruth->GetNeutrino().Lepton().Momentum().Y();
-  fMomLepZ = mcTruth->GetNeutrino().Lepton().Momentum().Z();
-  fMomLepT = mcTruth->GetNeutrino().Lepton().Momentum().T();
-  fLepEndX = mcTruth->GetNeutrino().Lepton().EndPosition().X();
-  fLepEndY = mcTruth->GetNeutrino().Lepton().EndPosition().Y();
-  fLepEndZ = mcTruth->GetNeutrino().Lepton().EndPosition().Z();
-  fLepEndY = mcTruth->GetNeutrino().Lepton().EndPosition().T();
-  fLepNuAngle = mcTruth->GetNeutrino().Nu().Momentum().Vect().Angle(mcTruth->GetNeutrino().Lepton().Momentum().Vect());
+    // For these events all
+    fEVisNu = 0;
+    for (const art::Ptr<sim::SimEnergyDeposit> &simEDep : simEDepVector)
+    {
+        const int trackID = abs(simEDep->TrackID());
 
-  //Vertex particles
-  const std::vector<art::Ptr<simb::MCParticle>> associated_particles = fmpt.at(mcTruth.key());
+        if (fMCParticleMap.find(trackID) != fMCParticleMap.end())
+            fEVisNu += (simEDep->Energy() * (1e-3));
+    }
 
-  fNVertexParticles = 0;
+    // Leading lepton
+    const simb::MCParticle &mcLepton = mcNeutrino.Lepton();
+    fLepPDG = mcLepton.PdgCode();
+    fLepEnergy = mcLepton.E();
+    fMomLepX = mcLepton.Momentum().X();
+    fMomLepY = mcLepton.Momentum().Y();
+    fMomLepZ = mcLepton.Momentum().Z();
+    fMomLepT = mcLepton.Momentum().T();
+    fLepEndX = mcLepton.EndPosition().X();
+    fLepEndY = mcLepton.EndPosition().Y();
+    fLepEndZ = mcLepton.EndPosition().Z();
+    fLepEndY = mcLepton.EndPosition().T();
+    fLepNuAngle = mcNeutrino.Nu().Momentum().Vect().Angle(mcLepton.Momentum().Vect());
 
-  for (unsigned int i_part = 0; i_part < associated_particles.size(); i_part++)
-  {
-    art::Ptr<simb::MCParticle> particle = associated_particles[i_part];
-    if (particle->StatusCode() != 1) continue; //count tracked particles
-    if (particle->Mother() != 0) continue; //count primary particles
-    fVertexParticleIsGHEP[fNVertexParticles] = 0;
-    fVertexParticlePDG[fNVertexParticles] = particle->PdgCode();;
-    fVertexParticleStatus[fNVertexParticles] = particle->StatusCode();
-    fVertexParticleNChildren[fNVertexParticles] = particle->NumberDaughters();
-    fVertexParticleMomX[fNVertexParticles] = particle->Momentum(0).X();
-    fVertexParticleMomY[fNVertexParticles] = particle->Momentum(0).Y();
-    fVertexParticleMomZ[fNVertexParticles] = particle->Momentum(0).Z();
-    fVertexParticleMomT[fNVertexParticles] = particle->Momentum(0).T();
-    fVertexParticleEndX[fNVertexParticles] = particle->EndPosition().X();
-    fVertexParticleEndY[fNVertexParticles] = particle->EndPosition().Y();
-    fVertexParticleEndZ[fNVertexParticles] = particle->EndPosition().Z();
-    fVertexParticleEndT[fNVertexParticles] = particle->EndPosition().T();
-    fNVertexParticles++;
-  }
+    // Does leading lepton Michel decay?
+    bool hasNumu = false, hasNue = false, hasElectron = false;
 
-  //Loop over the final state particles from the ghep vertex
-  for (int i_part = 0; i_part < mcTruth->NParticles(); i_part++)
-  {
-    const simb::MCParticle& vertex_particle = mcTruth->GetParticle(i_part);
-    int pdg = vertex_particle.PdgCode();
-    fVertexParticleIsGHEP[fNVertexParticles] = 1;
-    fVertexParticlePDG[fNVertexParticles] = pdg;
-    fVertexParticleStatus[fNVertexParticles] = vertex_particle.StatusCode();
-    fVertexParticleNChildren[fNVertexParticles] = vertex_particle.NumberDaughters();
-    fVertexParticleMomX[fNVertexParticles] = vertex_particle.Momentum(0).X();
-    fVertexParticleMomY[fNVertexParticles] = vertex_particle.Momentum(0).Y();
-    fVertexParticleMomZ[fNVertexParticles] = vertex_particle.Momentum(0).Z();
-    fVertexParticleMomT[fNVertexParticles] = vertex_particle.Momentum(0).T();
-    fVertexParticleEndX[fNVertexParticles] = vertex_particle.EndPosition().X();
-    fVertexParticleEndY[fNVertexParticles] = vertex_particle.EndPosition().Y();
-    fVertexParticleEndZ[fNVertexParticles] = vertex_particle.EndPosition().Z();
-    fVertexParticleEndT[fNVertexParticles] = vertex_particle.EndPosition().T();
-    fNVertexParticles++;
-    if (!(vertex_particle.StatusCode() == 1)) continue;
-    if (pdg >= 2000000000) continue;
-    if (std::abs(pdg) >= 11 && std::abs(pdg) <= 16) continue;
-    if (pdg==211) fNPiP++;
-    else if (pdg==-211) fNPim++;
-    else if (pdg==111) fNPi0++;
-    else if (pdg==22) fNPhotons++;
-    else if (pdg==2212) fNProtons++;
-    else if (pdg==2112) fNNeutrons++;
-    else fNOther++;
-  }
+    if (std::abs(fLepPDG) == 13)
+    {
+        for (int i = 0; i < mcLepton.NumberDaughters(); ++i)
+        {
+            const int childTrackId = mcLepton.Daughter(i);
 
-  if (fNVertexParticles > kDefMaxNTrueVertexParticles)
-  {
-    std::cout << "CCNuSelection::GetTruthInfo VERTEX ARRAY IS GOING TO BE OVERFILLED - VERY BAD" << std::endl;
-    throw;
-  }
+            if (fMCParticleMap.find(childTrackId) == fMCParticleMap.end())
+                continue;
 
-  //do some transverse momentum stuff
-  TVector3 beam_axis(0, 0, 1);
-  beam_axis.RotateX(-0.101);
-  TVector3 nu_mom_vect = mcTruth->GetNeutrino().Nu().Momentum().Vect();
-  TVector3 nu_mom_tran_vect = ProjectVectorOntoPlane(nu_mom_vect, beam_axis);
-  fNuMomTranMag = nu_mom_tran_vect.Mag(); 
+            const art::Ptr<simb::MCParticle> &childMCParticle = fMCParticleMap.at(childTrackId);
+            const int childPDG = std::abs(childMCParticle->PdgCode());
 
-  TVector3 total_initial_mom_tran_vect;
-  total_initial_mom_tran_vect += nu_mom_tran_vect;
+            if (childPDG == 11)
+                hasElectron = true;
+            else if (childPDG == 12)
+                hasNue = true;
+            else if (childPDG == 14)
+                hasNumu = true;
+        }
+    }
 
-  TVector3 total_final_mom_tran_vect_nolep_norem;
-  TVector3 total_final_mom_tran_vect_nolep_withrem;
-  TVector3 total_final_mom_tran_vect_withlep_norem;
-  TVector3 total_final_mom_tran_vect_withlep_withrem;
+    fLepHasMichelDecay = (hasNumu && hasNue && hasElectron) ? 1 : 0;
+
+    ///////////////////////////////////////////////////////////////////////////////////////////
+    // DOM - do some transverse momentum stuff
+    TVector3 beam_axis(0, 0, 1);
+    beam_axis.RotateX(-0.101);
+    TVector3 nu_mom_vect = mcNeutrino.Nu().Momentum().Vect();
+    TVector3 nu_mom_tran_vect = ProjectVectorOntoPlane(nu_mom_vect, beam_axis);
+    fNuMomTranMag = nu_mom_tran_vect.Mag(); 
+
+    TVector3 total_initial_mom_tran_vect;
+    total_initial_mom_tran_vect += nu_mom_tran_vect;
+
+    TVector3 total_final_mom_tran_vect_nolep_norem;
+    TVector3 total_final_mom_tran_vect_nolep_withrem;
+    TVector3 total_final_mom_tran_vect_withlep_norem;
+    TVector3 total_final_mom_tran_vect_withlep_withrem;
   
-  //Loop over the particles
-  for (int i_part = 0; i_part < mcTruth->NParticles(); i_part++){
-    const simb::MCParticle& particle = mcTruth->GetParticle(i_part);
-    int status = particle.StatusCode();
-    if (status == 11){ //Nucleon target
-      TVector3 target_nucleon_mom_vect = particle.Momentum(0).Vect();
-      TVector3 target_nucleon_mom_tran_vect = ProjectVectorOntoPlane(target_nucleon_mom_vect, beam_axis); 
-      total_initial_mom_tran_vect += target_nucleon_mom_tran_vect;
-      fTargNuclMomTranMag = target_nucleon_mom_tran_vect.Mag();
+    //Loop over the particles
+    for (int i_part = 0; i_part < mcTruth->NParticles(); i_part++){
+        const simb::MCParticle& particle = mcTruth->GetParticle(i_part);
+        int status = particle.StatusCode();
+        if (status == 11){ //Nucleon target
+            TVector3 target_nucleon_mom_vect = particle.Momentum(0).Vect();
+            TVector3 target_nucleon_mom_tran_vect = ProjectVectorOntoPlane(target_nucleon_mom_vect, beam_axis); 
+            total_initial_mom_tran_vect += target_nucleon_mom_tran_vect;
+            fTargNuclMomTranMag = target_nucleon_mom_tran_vect.Mag();
+        }
+        else if (status == 15){ //final nuclear remnant
+            TVector3 nuclear_rem_mom_vect = particle.Momentum(0).Vect();
+            TVector3 nuclear_rem_mom_tran_vect = ProjectVectorOntoPlane(nuclear_rem_mom_vect, beam_axis);
+            total_final_mom_tran_vect_nolep_withrem += nuclear_rem_mom_tran_vect;
+            total_final_mom_tran_vect_withlep_withrem += nuclear_rem_mom_tran_vect;
+            fNuclRemMomTranMag = nuclear_rem_mom_tran_vect.Mag();
+        }
+        else if (status == 1){ //final state particle
+            TVector3 fin_state_mom_vect = particle.Momentum(0).Vect();
+            TVector3 fin_state_mom_tran_vect = ProjectVectorOntoPlane(fin_state_mom_vect, beam_axis);
+            int pdg = particle.PdgCode();
+            if (std::abs(pdg) >= 11 && std::abs(pdg) <= 16){
+                total_final_mom_tran_vect_withlep_withrem += fin_state_mom_tran_vect;
+                total_final_mom_tran_vect_withlep_norem += fin_state_mom_tran_vect;
+                fLepMomTranMag = fin_state_mom_tran_vect.Mag();
+            }
+            else {
+                total_final_mom_tran_vect_withlep_withrem += fin_state_mom_tran_vect;
+                total_final_mom_tran_vect_withlep_norem += fin_state_mom_tran_vect;
+                total_final_mom_tran_vect_nolep_withrem += fin_state_mom_tran_vect;
+                total_final_mom_tran_vect_nolep_norem += fin_state_mom_tran_vect;
+            }
+        }
     }
-    else if (status == 15){ //final nuclear remnant
-      TVector3 nuclear_rem_mom_vect = particle.Momentum(0).Vect();
-      TVector3 nuclear_rem_mom_tran_vect = ProjectVectorOntoPlane(nuclear_rem_mom_vect, beam_axis);
-      total_final_mom_tran_vect_nolep_withrem += nuclear_rem_mom_tran_vect;
-      total_final_mom_tran_vect_withlep_withrem += nuclear_rem_mom_tran_vect;
-      fNuclRemMomTranMag = nuclear_rem_mom_tran_vect.Mag();
-    }
-    else if (status == 1){ //final state particle
-      TVector3 fin_state_mom_vect = particle.Momentum(0).Vect();
-      TVector3 fin_state_mom_tran_vect = ProjectVectorOntoPlane(fin_state_mom_vect, beam_axis);
-      int pdg = particle.PdgCode();
-      if (std::abs(pdg) >= 11 && std::abs(pdg) <= 16){
-        total_final_mom_tran_vect_withlep_withrem += fin_state_mom_tran_vect;
-        total_final_mom_tran_vect_withlep_norem += fin_state_mom_tran_vect;
-        fLepMomTranMag = fin_state_mom_tran_vect.Mag();
-      }
-      else {
-        total_final_mom_tran_vect_withlep_withrem += fin_state_mom_tran_vect;
-        total_final_mom_tran_vect_withlep_norem += fin_state_mom_tran_vect;
-        total_final_mom_tran_vect_nolep_withrem += fin_state_mom_tran_vect;
-        total_final_mom_tran_vect_nolep_norem += fin_state_mom_tran_vect;
-      }
-    }
-  }
 
-  //Get all of the mom mags now
-  fInitalMomTranMag = total_initial_mom_tran_vect.Mag();
-  fFinalMomTranMagNoLepNoRem = total_final_mom_tran_vect_nolep_norem.Mag();
-  fFinalMomTranMagNoLepWithRem = total_final_mom_tran_vect_nolep_withrem.Mag();
-  fFinalMomTranMagWithLepNoRem = total_final_mom_tran_vect_withlep_norem.Mag();
-  fFinalMomTranMagWithLepWithRem = total_final_mom_tran_vect_withlep_withrem.Mag();
+    //Get all of the mom mags now
+    fInitalMomTranMag = total_initial_mom_tran_vect.Mag();
+    fFinalMomTranMagNoLepNoRem = total_final_mom_tran_vect_nolep_norem.Mag();
+    fFinalMomTranMagNoLepWithRem = total_final_mom_tran_vect_nolep_withrem.Mag();
+    fFinalMomTranMagWithLepNoRem = total_final_mom_tran_vect_withlep_norem.Mag();
+    fFinalMomTranMagWithLepWithRem = total_final_mom_tran_vect_withlep_withrem.Mag();
 }
 
 ///////////////////////////////////////////////////////////////////////////
 
 void FDSelection::CCNuSelection::FillVertexInfo(art::Event const & evt)
 {
-  if (!dune_ana::DUNEAnaEventUtils::HasNeutrino(evt, fPFParticleModuleLabel))
-    return;
+    if (!dune_ana::DUNEAnaEventUtils::HasNeutrino(evt, fRecoModuleLabel))
+        return;
 
-  art::Ptr<recob::PFParticle> nu_pfp = dune_ana::DUNEAnaEventUtils::GetNeutrino(evt, fPFParticleModuleLabel);
-  std::vector<art::Ptr<recob::PFParticle>> nuChildren = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(nu_pfp, evt, fPFParticleModuleLabel);
+    art::Ptr<recob::PFParticle> nu_pfp = dune_ana::DUNEAnaEventUtils::GetNeutrino(evt, fRecoModuleLabel);
+    std::vector<art::Ptr<recob::PFParticle>> nuChildren = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(nu_pfp, evt, fRecoModuleLabel);
 
-  fRecoNuVtxNChildren = nuChildren.size();
-
-  for (art::Ptr<recob::PFParticle> nuChild : nuChildren)
-  {
-    int pdg = nuChild->PdgCode();
-
-    if (pdg == 11) 
-      fRecoNuVtxNShowers++;
-    else if (pdg == 13) 
-      fRecoNuVtxNTracks++;
-  }
-
-  try
-  {
-      art::Ptr<recob::Vertex> nuVertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(nu_pfp, evt, fPFParticleModuleLabel);
-
-      fRecoNuVtxX = nuVertex->position().X();
-      fRecoNuVtxY = nuVertex->position().Y();
-      fRecoNuVtxZ = nuVertex->position().Z();
-  }
-  catch(...)
-  {
-      return;
-  }
-
-  return;
-}
-
-////////////////////////////////////////////////////////////
-
-void FDSelection::CCNuSelection::GetRecoTrackInfo(art::Event const & evt)
-{
-  if(!dune_ana::DUNEAnaEventUtils::HasNeutrino(evt, fPFParticleModuleLabel))
-    return;
-
-  art::Ptr<recob::PFParticle> nuPFP = dune_ana::DUNEAnaEventUtils::GetNeutrino(evt, fPFParticleModuleLabel);
-  std::vector<art::Ptr<recob::PFParticle>> nuChildren = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(nuPFP, evt, fPFParticleModuleLabel); 
-  std::vector<art::Ptr<recob::PFParticle>> pfps = dune_ana::DUNEAnaEventUtils::GetPFParticles(evt, fPFParticleModuleLabel);
-
-  int trackCounter = 0;
-
-  for (art::Ptr<recob::PFParticle> pfp : pfps)
-  {
-    if (trackCounter == kDefMaxNRecoTracks)
-      break;
-
-    if (!dune_ana::DUNEAnaPFParticleUtils::HasTrack(pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel))
-      continue;
+    fRecoNuVtxNChildren = nuChildren.size();
 
     for (art::Ptr<recob::PFParticle> nuChild : nuChildren)
     {
-      if (nuChild->Self() == pfp->Self())
-      {
-        fRecoTrackIsPrimary[trackCounter] = true;
-        break;
-      }
+        int pdg = nuChild->PdgCode();
+
+        if (pdg == 11) 
+            fRecoNuVtxNShowers++;
+        else if (pdg == 13) 
+            fRecoNuVtxNTracks++;
     }
-
-    const std::vector<art::Ptr<recob::Hit>> current_track_hits = dune_ana::DUNEAnaPFParticleUtils::GetHits(pfp, evt, fPFParticleModuleLabel);
-    fRecoTrackRecoNHits[trackCounter] = current_track_hits.size();
-
-    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
-    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataForJob(clockData);
-    fRecoTrackRecoCharge[trackCounter]  = dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, current_track_hits); 
-
-    art::Ptr<recob::Track> current_track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(pfp, evt, fPFParticleModuleLabel, fTrackModuleLabel);
-
-    // General track variables
-    recob::Track::Point_t trackStart, trackEnd;
-    std::tie(trackStart, trackEnd) = current_track->Extent(); 
-    fRecoTrackRecoStartX[trackCounter] = trackStart.X();
-    fRecoTrackRecoStartY[trackCounter] = trackStart.Y();
-    fRecoTrackRecoStartZ[trackCounter] = trackStart.Z();
-    fRecoTrackRecoEndX[trackCounter] = trackEnd.X();
-    fRecoTrackRecoEndY[trackCounter] = trackEnd.Y();
-    fRecoTrackRecoEndZ[trackCounter] = trackEnd.Z();
-
-    if (fRecoTrackRecoEndZ[trackCounter] > fRecoTrackRecoStartZ[trackCounter])
-    {
-      fRecoTrackRecoUpstreamX[trackCounter] = fRecoTrackRecoStartX[trackCounter];
-      fRecoTrackRecoUpstreamY[trackCounter] = fRecoTrackRecoStartY[trackCounter];
-      fRecoTrackRecoUpstreamZ[trackCounter] = fRecoTrackRecoStartZ[trackCounter];
-      fRecoTrackRecoDownstreamX[trackCounter] = fRecoTrackRecoEndX[trackCounter];
-      fRecoTrackRecoDownstreamY[trackCounter] = fRecoTrackRecoEndY[trackCounter];
-      fRecoTrackRecoDownstreamZ[trackCounter] = fRecoTrackRecoEndZ[trackCounter];
-    }
-    else
-    {
-      fRecoTrackRecoDownstreamX[trackCounter] = fRecoTrackRecoStartX[trackCounter];
-      fRecoTrackRecoDownstreamY[trackCounter] = fRecoTrackRecoStartY[trackCounter];
-      fRecoTrackRecoDownstreamZ[trackCounter] = fRecoTrackRecoStartZ[trackCounter];
-      fRecoTrackRecoUpstreamX[trackCounter] = fRecoTrackRecoEndX[trackCounter];
-      fRecoTrackRecoUpstreamY[trackCounter] = fRecoTrackRecoEndY[trackCounter];
-      fRecoTrackRecoUpstreamZ[trackCounter] = fRecoTrackRecoEndZ[trackCounter];
-    }
-
-    fRecoTrackRecoLength[trackCounter] = current_track->Length();
 
     try
     {
-      art::Ptr<recob::Vertex> track_reco_vertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(pfp, evt, fPFParticleModuleLabel);
+        art::Ptr<recob::Vertex> nuVertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(nu_pfp, evt, fRecoModuleLabel);
 
-      fRecoTrackRecoVertexX[trackCounter] = track_reco_vertex->position().X();
-      fRecoTrackRecoVertexY[trackCounter] = track_reco_vertex->position().Y();
-      fRecoTrackRecoVertexZ[trackCounter] = track_reco_vertex->position().Z();
+        fRecoNuVtxX = nuVertex->position().X();
+        fRecoNuVtxY = nuVertex->position().Y();
+        fRecoNuVtxZ = nuVertex->position().Z();
     }
     catch(...)
     {
+        return;
     }
+}
 
-    TVector3 upstream_end(fRecoTrackRecoUpstreamX[trackCounter], fRecoTrackRecoUpstreamY[trackCounter], fRecoTrackRecoUpstreamZ[trackCounter]);
-    TVector3 downstream_end(fRecoTrackRecoDownstreamX[trackCounter], fRecoTrackRecoDownstreamY[trackCounter], fRecoTrackRecoDownstreamZ[trackCounter]);
-    TVector3 vertex_pos(fRecoTrackRecoVertexX[trackCounter], fRecoTrackRecoVertexY[trackCounter], fRecoTrackRecoVertexZ[trackCounter]);
+//////////////////////////////////////////////////////////////////////////////////
 
-    if ((vertex_pos - upstream_end).Mag() < (vertex_pos - downstream_end).Mag())
+void FDSelection::CCNuSelection::FillPFParticleInfo(art::Event const & evt)
+{
+    if (!dune_ana::DUNEAnaEventUtils::HasNeutrino(evt, fRecoModuleLabel))
+        return;
+
+    art::Ptr<recob::PFParticle> nuPFP = dune_ana::DUNEAnaEventUtils::GetNeutrino(evt, fRecoModuleLabel);
+    std::vector<art::Ptr<recob::PFParticle>> nuChildren = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(nuPFP, evt, fRecoModuleLabel); 
+    std::vector<art::Ptr<recob::PFParticle>> pfps = dune_ana::DUNEAnaEventUtils::GetPFParticles(evt, fRecoModuleLabel);
+    std::vector<art::Ptr<recob::Hit>> eventHitList = dune_ana::DUNEAnaEventUtils::GetHits(evt, fHitsModuleLabel);
+
+    int pfpIndex = -1;
+    fNRecoPFPs = 0;
+
+    for (art::Ptr<recob::PFParticle> pfp : pfps)
     {
-      fRecoTrackRecoEndClosestToVertexX[trackCounter] = fRecoTrackRecoUpstreamX[trackCounter];
-      fRecoTrackRecoEndClosestToVertexY[trackCounter] = fRecoTrackRecoUpstreamY[trackCounter];
-      fRecoTrackRecoEndClosestToVertexZ[trackCounter] = fRecoTrackRecoUpstreamZ[trackCounter];
+        if ((std::fabs(pfp->PdgCode()) == 12) || (std::fabs(pfp->PdgCode()) == 14) || (std::fabs(pfp->PdgCode()) == 16))
+            continue;
+
+        pfpIndex++;
+        fNRecoPFPs++;
+
+        if (pfpIndex == kMaxPFParticles)
+            break;
+
+        fRecoPFPSelf[pfpIndex] = pfp->Self();
+
+        for (art::Ptr<recob::PFParticle> nuChild : nuChildren)
+        {
+            if (nuChild->Self() == pfp->Self())
+            {
+                fRecoPFPIsPrimary[pfpIndex] = true;
+                break;
+            }
+        }
+
+        fRecoPFPTrackShowerPDG[pfpIndex] = pfp->PdgCode();
+
+        try
+        {
+            const art::Ptr<larpandoraobj::PFParticleMetadata> metadata = dune_ana::DUNEAnaPFParticleUtils::GetMetadata(pfp, evt, fRecoModuleLabel);
+
+            if (metadata->GetPropertiesMap().find("TrackScore") != metadata->GetPropertiesMap().end())
+                fRecoPFPTrackShowerScore[pfpIndex] = metadata->GetPropertiesMap().at("TrackScore");
+        }
+        catch (...) {}
+
+        const std::vector<art::Ptr<recob::Hit>> pfpHits = dune_ana::DUNEAnaPFParticleUtils::GetHits(pfp, evt, fRecoModuleLabel);
+        fRecoPFPRecoNHits[pfpIndex] = pfpHits.size();
+
+        const std::vector<art::Ptr<recob::SpacePoint>> &spacepoints = dune_ana::DUNEAnaPFParticleUtils::GetSpacePoints(pfp, evt, fRecoModuleLabel);
+        fRecoPFPRecoNSpacepoints[pfpIndex] = spacepoints.size();
+
+        auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
+        auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataForJob(clockData);
+        fRecoPFPRecoCharge[pfpIndex]  = dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, pfpHits);
+
+        try
+        {
+            art::Ptr<recob::Vertex> recoVertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(pfp, evt, fRecoModuleLabel);
+
+            fRecoPFPRecoVertexX[pfpIndex] = recoVertex->position().X();
+            fRecoPFPRecoVertexY[pfpIndex] = recoVertex->position().Y();
+            fRecoPFPRecoVertexZ[pfpIndex] = recoVertex->position().Z();
+        }
+        catch(...)
+        {
+        }
+
+        // Child particle info
+        FillChildPFPInformation(pfp, evt, fRecoPFPRecoNChildPFP[pfpIndex], fRecoPFPRecoNChildTrackPFP[pfpIndex], fRecoPFPRecoNChildShowerPFP[pfpIndex]);
+
+        int g4id = TruthMatchUtils::TrueParticleIDFromTotalRecoHits(clockData, pfpHits, 1);
+
+        if (TruthMatchUtils::Valid(g4id))
+        {
+            fRecoPFPRecoCompleteness[pfpIndex] = FDSelectionUtils::CompletenessFromTrueParticleID(clockData, pfpHits, eventHitList, g4id);
+            fRecoPFPRecoHitPurity[pfpIndex] = FDSelectionUtils::HitPurityFromTrueParticleID(clockData, pfpHits, g4id);
+
+            art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
+            const simb::MCParticle* matched_mcparticle = pi_serv->ParticleList().at(g4id);
+
+            if (matched_mcparticle)
+            {
+                fRecoPFPTruePDG[pfpIndex] = matched_mcparticle->PdgCode();
+                fRecoPFPTrueTrackID[pfpIndex] = matched_mcparticle->TrackId();
+                fReconstructedMCParticles.push_back(fRecoPFPTrueTrackID[pfpIndex]);
+
+                if (matched_mcparticle->Mother() == 0) 
+                    fRecoPFPTruePrimary[pfpIndex] = true;
+                else 
+                    fRecoPFPTruePrimary[pfpIndex] = false;
+
+                fRecoPFPTrueMomX[pfpIndex] = matched_mcparticle->Momentum().X();
+                fRecoPFPTrueMomY[pfpIndex] = matched_mcparticle->Momentum().Y();
+                fRecoPFPTrueMomZ[pfpIndex] = matched_mcparticle->Momentum().Z();
+                fRecoPFPTrueStartX[pfpIndex] = matched_mcparticle->Position(0).X();
+                fRecoPFPTrueStartY[pfpIndex] = matched_mcparticle->Position(0).Y();
+                fRecoPFPTrueStartZ[pfpIndex] = matched_mcparticle->Position(0).Z();
+                fRecoPFPTrueEndX[pfpIndex] = matched_mcparticle->EndPosition().X();
+                fRecoPFPTrueEndY[pfpIndex] = matched_mcparticle->EndPosition().Y();
+                fRecoPFPTrueEndZ[pfpIndex] = matched_mcparticle->EndPosition().Z();
+            }
+        }
+
+        // Fill the track & shower information
+        FillRecoTrackInfo(evt, pfp, pfpIndex);
+        FillRecoShowerInfo(evt, pfp, pfpIndex);
+    }
+}
+
+///////////////////////////////////////////////////////////////
+
+void FDSelection::CCNuSelection::FillChildPFPInformation(art::Ptr<recob::PFParticle> const pfp, art::Event const & evt, 
+    int &n_child_pfp, int &n_child_track_pfp, int &n_child_shower_pfp)
+{
+    n_child_pfp = 0;
+    n_child_track_pfp = 0;
+    n_child_shower_pfp = 0;
+
+    std::vector<art::Ptr<recob::PFParticle>> childPFPs = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(pfp, evt, fRecoModuleLabel);
+
+    for (art::Ptr<recob::PFParticle> childPFP : childPFPs)
+    {
+        int pdg = childPFP->PdgCode();
+
+        if (pdg == 13)
+            n_child_track_pfp++;
+        else if (pdg == 11)
+            n_child_shower_pfp++;
+        else 
+            std::cout << "FillChildPFPInformation: found a child PFP with an unexpected pdg code: " << pdg << std::endl;
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+
+void FDSelection::CCNuSelection::FillRecoTrackInfo(art::Event const & evt, const art::Ptr<recob::PFParticle> &pfp,
+    const int pfpIndex)
+{
+    if (!dune_ana::DUNEAnaPFParticleUtils::IsTrack(pfp, evt, fRecoModuleLabel, fTrackModuleLabel))
+        return;
+
+    fRecoPFPTrackFitSuccess[pfpIndex] = 1;
+
+    art::Ptr<recob::Track> track = dune_ana::DUNEAnaPFParticleUtils::GetTrack(pfp, evt, fRecoModuleLabel, fTrackModuleLabel);
+
+    // General track variables
+    recob::Track::Point_t trackStart, trackEnd;
+    std::tie(trackStart, trackEnd) = track->Extent(); 
+    fRecoTrackRecoStartX[pfpIndex] = trackStart.X();
+    fRecoTrackRecoStartY[pfpIndex] = trackStart.Y();
+    fRecoTrackRecoStartZ[pfpIndex] = trackStart.Z();
+    fRecoTrackRecoEndX[pfpIndex] = trackEnd.X();
+    fRecoTrackRecoEndY[pfpIndex] = trackEnd.Y();
+    fRecoTrackRecoEndZ[pfpIndex] = trackEnd.Z();
+
+    if (fRecoTrackRecoEndZ[pfpIndex] > fRecoTrackRecoStartZ[pfpIndex])
+    {
+        fRecoTrackRecoUpstreamX[pfpIndex] = fRecoTrackRecoStartX[pfpIndex];
+        fRecoTrackRecoUpstreamY[pfpIndex] = fRecoTrackRecoStartY[pfpIndex];
+        fRecoTrackRecoUpstreamZ[pfpIndex] = fRecoTrackRecoStartZ[pfpIndex];
+        fRecoTrackRecoDownstreamX[pfpIndex] = fRecoTrackRecoEndX[pfpIndex];
+        fRecoTrackRecoDownstreamY[pfpIndex] = fRecoTrackRecoEndY[pfpIndex];
+        fRecoTrackRecoDownstreamZ[pfpIndex] = fRecoTrackRecoEndZ[pfpIndex];
     }
     else
     {
-      fRecoTrackRecoEndClosestToVertexX[trackCounter] = fRecoTrackRecoDownstreamX[trackCounter];
-      fRecoTrackRecoEndClosestToVertexY[trackCounter] = fRecoTrackRecoDownstreamY[trackCounter];
-      fRecoTrackRecoEndClosestToVertexZ[trackCounter] = fRecoTrackRecoDownstreamZ[trackCounter];
+        fRecoTrackRecoDownstreamX[pfpIndex] = fRecoTrackRecoStartX[pfpIndex];
+        fRecoTrackRecoDownstreamY[pfpIndex] = fRecoTrackRecoStartY[pfpIndex];
+        fRecoTrackRecoDownstreamZ[pfpIndex] = fRecoTrackRecoStartZ[pfpIndex];
+        fRecoTrackRecoUpstreamX[pfpIndex] = fRecoTrackRecoEndX[pfpIndex];
+        fRecoTrackRecoUpstreamY[pfpIndex] = fRecoTrackRecoEndY[pfpIndex];
+        fRecoTrackRecoUpstreamZ[pfpIndex] = fRecoTrackRecoEndZ[pfpIndex];
     }
 
-    // Child particle info
-    FillChildPFPInformation(pfp, evt, fRecoTrackRecoNChildPFP[trackCounter], fRecoTrackRecoNChildTrackPFP[trackCounter], fRecoTrackRecoNChildShowerPFP[trackCounter]);
+    fRecoTrackRecoLength[pfpIndex] = track->Length();
 
-    // Fill momentum variables
-    std::unique_ptr<dune::EnergyRecoOutput> energyRecoHandle(std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(current_track, evt)));
-    fRecoTrackRecoContained[trackCounter] = energyRecoHandle->longestTrackContained;
-    fRecoTrackRecoMomMethod[trackCounter] = energyRecoHandle->trackMomMethod;
+    TVector3 upstream_end(fRecoTrackRecoUpstreamX[pfpIndex], fRecoTrackRecoUpstreamY[pfpIndex], fRecoTrackRecoUpstreamZ[pfpIndex]);
+    TVector3 downstream_end(fRecoTrackRecoDownstreamX[pfpIndex], fRecoTrackRecoDownstreamY[pfpIndex], fRecoTrackRecoDownstreamZ[pfpIndex]);
+    TVector3 vertex_pos(fRecoPFPRecoVertexX[pfpIndex], fRecoPFPRecoVertexY[pfpIndex], fRecoPFPRecoVertexZ[pfpIndex]);
 
-    if (energyRecoHandle->trackMomMethod == 1)
-    {   
-      // momentum by range was used to calculate ENu
-      fRecoTrackRecoMomContained[trackCounter] = sqrt(energyRecoHandle->fLepLorentzVector.Vect().Mag2());
-    }
-    else if (energyRecoHandle->trackMomMethod == 0)
+    if ((vertex_pos - upstream_end).Mag() < (vertex_pos - downstream_end).Mag())
     {
-      // momentum by MCS
-      fRecoTrackRecoMomMCS[trackCounter] = sqrt(energyRecoHandle->fLepLorentzVector.Vect().Mag2());
+        fRecoTrackRecoEndClosestToVertexX[pfpIndex] = fRecoTrackRecoUpstreamX[pfpIndex];
+        fRecoTrackRecoEndClosestToVertexY[pfpIndex] = fRecoTrackRecoUpstreamY[pfpIndex];
+        fRecoTrackRecoEndClosestToVertexZ[pfpIndex] = fRecoTrackRecoUpstreamZ[pfpIndex];
     }
-
-    std::vector<art::Ptr<recob::Hit>> eventHitList = dune_ana::DUNEAnaEventUtils::GetHits(evt, fHitsModuleLabel);
-    int g4id = TruthMatchUtils::TrueParticleIDFromTotalRecoHits(clockData, current_track_hits, 1);
-    fRecoTrackRecoCompleteness[trackCounter] = FDSelectionUtils::CompletenessFromTrueParticleID(clockData, current_track_hits, eventHitList, g4id);
-    fRecoTrackRecoHitPurity[trackCounter] = FDSelectionUtils::HitPurityFromTrueParticleID(clockData, current_track_hits, g4id);
-
-    if (TruthMatchUtils::Valid(g4id)){
-        art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
-        const simb::MCParticle* matched_mcparticle = pi_serv->ParticleList().at(g4id);
-
-        if (matched_mcparticle)
-        {
-          fRecoTrackTruePDG[trackCounter] = matched_mcparticle->PdgCode();
-
-          if (matched_mcparticle->Mother() == 0) 
-            fRecoTrackTruePrimary[trackCounter] = true;
-          else 
-            fRecoTrackTruePrimary[trackCounter] = false;
-
-          fRecoTrackTrueMomX[trackCounter] = matched_mcparticle->Momentum().X();
-          fRecoTrackTrueMomY[trackCounter] = matched_mcparticle->Momentum().Y();
-          fRecoTrackTrueMomZ[trackCounter] = matched_mcparticle->Momentum().Z();
-          fRecoTrackTrueStartX[trackCounter] = matched_mcparticle->Position(0).X();
-          fRecoTrackTrueStartY[trackCounter] = matched_mcparticle->Position(0).Y();
-          fRecoTrackTrueStartZ[trackCounter] = matched_mcparticle->Position(0).Z();
-          fRecoTrackTrueEndX[trackCounter] = matched_mcparticle->EndPosition().X();
-          fRecoTrackTrueEndY[trackCounter] = matched_mcparticle->EndPosition().Y();
-          fRecoTrackTrueEndZ[trackCounter] = matched_mcparticle->EndPosition().Z();
-        }
-    }
-
-    // MVA PID
-    art::FindOneP<anab::MVAPIDResult> findPIDResult(std::vector<art::Ptr<recob::Track>>{current_track}, evt, fPIDModuleLabel);
-    art::Ptr<anab::MVAPIDResult> pid(findPIDResult.at(0));
-
-    if (pid.isAvailable())
+    else
     {
-      std::map<std::string,double> mvaOutMap = pid->mvaOutput;
-      if (!mvaOutMap.empty())
-      {
-        fRecoTrackMVAElectron[trackCounter] = mvaOutMap["electron"];
-        fRecoTrackMVAPion[trackCounter] = mvaOutMap["pich"];
-        fRecoTrackMVAMuon[trackCounter] = mvaOutMap["muon"];
-        fRecoTrackMVAProton[trackCounter] = mvaOutMap["proton"];
-        fRecoTrackMVAPhoton[trackCounter] = mvaOutMap["photon"];
-      }
+        fRecoTrackRecoEndClosestToVertexX[pfpIndex] = fRecoTrackRecoDownstreamX[pfpIndex];
+        fRecoTrackRecoEndClosestToVertexY[pfpIndex] = fRecoTrackRecoDownstreamY[pfpIndex];
+        fRecoTrackRecoEndClosestToVertexZ[pfpIndex] = fRecoTrackRecoDownstreamZ[pfpIndex];
+    }
+
+    // Fill momentum variables & energy information (I think this is the correct implementation)
+    // 1 = range, 0 = MCS, -1 = not set
+    std::unique_ptr<dune::EnergyRecoOutput> energyRecoHandle_range(std::make_unique<dune::EnergyRecoOutput>(
+        fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(track, evt, 1, false)));
+
+    // 1 = contained, 0 = exiting, -1 = not set
+    if (energyRecoHandle_range->longestTrackContained == 1)
+    {
+        fRecoTrackRecoContained[pfpIndex] = energyRecoHandle_range->longestTrackContained;
+        fRecoTrackRecoMomMethod[pfpIndex] = energyRecoHandle_range->trackMomMethod; 
+        fRecoTrackRecoMomRange[pfpIndex] = sqrt(energyRecoHandle_range->fLepLorentzVector.Vect().Mag2());
+
+        fNumuRecoENu[pfpIndex] = energyRecoHandle_range->fNuLorentzVector.E();
+        fNumuRecoEHad[pfpIndex] = energyRecoHandle_range->fHadLorentzVector.E();
+        fNumuRecoMomLep[pfpIndex] = sqrt(energyRecoHandle_range->fLepLorentzVector.Vect().Mag2());
+    }
+    else
+    {
+        std::unique_ptr<dune::EnergyRecoOutput> energyRecoHandle_MCS(std::make_unique<dune::EnergyRecoOutput>(
+            fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(track, evt, 0, false)));
+
+        fRecoTrackRecoContained[pfpIndex] = energyRecoHandle_MCS->longestTrackContained;
+        fRecoTrackRecoMomMethod[pfpIndex] = energyRecoHandle_MCS->trackMomMethod; 
+        fRecoTrackRecoMomMCS[pfpIndex] = sqrt(energyRecoHandle_MCS->fLepLorentzVector.Vect().Mag2());
+
+        fNumuRecoENu[pfpIndex] = energyRecoHandle_MCS->fNuLorentzVector.E();
+        fNumuRecoEHad[pfpIndex] = energyRecoHandle_MCS->fHadLorentzVector.E();
+        fNumuRecoMomLep[pfpIndex] = sqrt(energyRecoHandle_MCS->fLepLorentzVector.Vect().Mag2());
     }
 
     // Pandizzle variables
-    FDSelection::PandizzleAlg::Record pandizzleRecord(fPandizzleAlg.RunPID(current_track, evt));
-    fRecoTrackMichelNHits[trackCounter] = (float)pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kMichelNHits);
-    fRecoTrackMichelElectronMVA[trackCounter] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kMichelElectronMVA);
-    fRecoTrackMichelRecoEnergyPlane2[trackCounter] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kMichelRecoEnergyPlane2);
-    fRecoTrackDeflecAngleSD[trackCounter] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kTrackDeflecAngleSD);
-    fRecoTrackLength[trackCounter] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kTrackLength);
-    fRecoTrackEvalRatio[trackCounter] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kEvalRatio);
-    fRecoTrackConcentration[trackCounter] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kConcentration);
-    fRecoTrackCoreHaloRatio[trackCounter] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kCoreHaloRatio);
-    fRecoTrackConicalness[trackCounter] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kConicalness);
-    fRecoTrackdEdxStart[trackCounter] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kdEdxStart);
-    fRecoTrackdEdxEnd[trackCounter] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kdEdxEnd);
-    fRecoTrackdEdxEndRatio[trackCounter] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kdEdxEndRatio);
-    fRecoTrackPandizzleVar[trackCounter] = pandizzleRecord.GetMVAScore();
+    FDSelection::PandizzleAlg::Record pandizzleRecord(fPandizzleAlg.RunPID(track, evt));
 
-    trackCounter++;
-  }
-
-  fNRecoTracks = trackCounter;
-
-  return;
-}
-
-///////////////////////////////////////////////////////////////
-
-void FDSelection::CCNuSelection::FillChildPFPInformation(art::Ptr<recob::PFParticle> const pfp, art::Event const & evt, int &n_child_pfp, int &n_child_track_pfp, int &n_child_shower_pfp)
-{
-  n_child_pfp = 0;
-  n_child_track_pfp = 0;
-  n_child_shower_pfp = 0;
-
-  std::vector<art::Ptr<recob::PFParticle>> childPFPs = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(pfp, evt, fPFParticleModuleLabel);
-
-  for (art::Ptr<recob::PFParticle> childPFP : childPFPs)
-  {
-    int pdg = childPFP->PdgCode();
-
-    if (pdg == 13)
-      n_child_track_pfp++;
-   else if (pdg == 11)
-      n_child_shower_pfp++;
-   else 
-      std::cout << "FillChildPFPInformation: found a child PFP with an unexpected pdg code: " << pdg << std::endl;
-  }
-
-  return;
-}
-
-///////////////////////////////////////////////////////////////
-
-void FDSelection::CCNuSelection::RunTrackSelection(art::Event const & evt)
-{
-  // Get the selected track
-  art::Ptr<recob::Track> sel_track = fRecoTrackSelector->FindSelectedTrack(evt);
-
-  if (!sel_track.isAvailable()) 
-  {
-    std::cout<<"FDSelection::CCNuSelection::RunTrackSelection - no track returned from selection" << std::endl; 
-    return;
-  }
-
-  std::vector<art::Ptr<recob::Hit>> sel_track_hits = dune_ana::DUNEAnaTrackUtils::GetHits(sel_track, evt, fTrackModuleLabel);
-  fSelTrackRecoNHits = sel_track_hits.size();
-
-  auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
-  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataForJob(clockData);
-  fSelTrackRecoCharge  = dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, sel_track_hits); 
-
-  // Get general track variables
-  recob::Track::Point_t trackStart, trackEnd;
-  std::tie(trackStart, trackEnd) = sel_track->Extent(); 
-  fSelTrackRecoStartX = trackStart.X();
-  fSelTrackRecoStartY = trackStart.Y();
-  fSelTrackRecoStartZ = trackStart.Z();
-  fSelTrackRecoEndX = trackEnd.X();
-  fSelTrackRecoEndY = trackEnd.Y();
-  fSelTrackRecoEndZ = trackEnd.Z();
-
-  if (fSelTrackRecoEndZ > fSelTrackRecoStartZ)
-  {
-    fSelTrackRecoUpstreamX = fSelTrackRecoStartX;
-    fSelTrackRecoUpstreamY = fSelTrackRecoStartY;
-    fSelTrackRecoUpstreamZ = fSelTrackRecoStartZ;
-    fSelTrackRecoDownstreamX = fSelTrackRecoEndX;
-    fSelTrackRecoDownstreamY = fSelTrackRecoEndY;
-    fSelTrackRecoDownstreamZ = fSelTrackRecoEndZ;
-  }
-  else
-  {
-    fSelTrackRecoDownstreamX = fSelTrackRecoStartX;
-    fSelTrackRecoDownstreamY = fSelTrackRecoStartY;
-    fSelTrackRecoDownstreamZ = fSelTrackRecoStartZ;
-    fSelTrackRecoUpstreamX = fSelTrackRecoEndX;
-    fSelTrackRecoUpstreamY = fSelTrackRecoEndY;
-    fSelTrackRecoUpstreamZ = fSelTrackRecoEndZ;
-  }
-
-  fSelTrackRecoLength = sel_track->Length();
-
-  art::Ptr<recob::PFParticle> sel_track_pfp = dune_ana::DUNEAnaTrackUtils::GetPFParticle(sel_track, evt, fTrackModuleLabel);
-
-  try
-  {
-      art::Ptr<recob::Vertex> track_reco_vertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(sel_track_pfp, evt, fPFParticleModuleLabel);
-
-      fSelTrackRecoVertexX = track_reco_vertex->position().X();
-      fSelTrackRecoVertexY = track_reco_vertex->position().Y();
-      fSelTrackRecoVertexZ = track_reco_vertex->position().Z();
-  }
-  catch(...)
-  {
-  }
-
-  TVector3 upstream_end(fSelTrackRecoUpstreamX, fSelTrackRecoUpstreamY, fSelTrackRecoUpstreamZ);
-  TVector3 downstream_end(fSelTrackRecoDownstreamX, fSelTrackRecoDownstreamY, fSelTrackRecoDownstreamZ);
-  TVector3 vertex_pos(fSelTrackRecoVertexX, fSelTrackRecoVertexY, fSelTrackRecoVertexZ);
-
-  if ((vertex_pos - upstream_end).Mag() < (vertex_pos - downstream_end).Mag())
-  {
-    fSelTrackRecoEndClosestToVertexX = fSelTrackRecoUpstreamX;
-    fSelTrackRecoEndClosestToVertexY = fSelTrackRecoUpstreamY;
-    fSelTrackRecoEndClosestToVertexZ = fSelTrackRecoUpstreamZ;
-  }
-  else
-  {
-    fSelTrackRecoEndClosestToVertexX = fSelTrackRecoDownstreamX;
-    fSelTrackRecoEndClosestToVertexY = fSelTrackRecoDownstreamY;
-    fSelTrackRecoEndClosestToVertexZ = fSelTrackRecoDownstreamZ;
-  }
-
-  FillChildPFPInformation(sel_track_pfp, evt, fSelTrackRecoNChildPFP, fSelTrackRecoNChildTrackPFP, fSelTrackRecoNChildShowerPFP);
-
-  // Fill neutrino energy variables
-  // Use selected track to get neutrino energy
-  std::unique_ptr<dune::EnergyRecoOutput> energyRecoHandle(std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(sel_track, evt)));
-  fNumuRecoENu = energyRecoHandle->fNuLorentzVector.E();
-  fNumuRecoEHad = energyRecoHandle->fHadLorentzVector.E();
-
-  fSelTrackRecoContained = energyRecoHandle->longestTrackContained; 
-  fSelTrackRecoMomMethod = energyRecoHandle->trackMomMethod;
-
-  if (energyRecoHandle->trackMomMethod == 1)
-  { 
-    // momentum by range was used to calculate ENu
-    fSelTrackRecoMomContained = sqrt(energyRecoHandle->fLepLorentzVector.Vect().Mag2());
-    fNumuRecoMomLep = fSelTrackRecoMomContained;
-  }
-  else if (energyRecoHandle->trackMomMethod == 0)
-  {
-    // momentum by MCS
-    fSelTrackRecoMomMCS = sqrt(energyRecoHandle->fLepLorentzVector.Vect().Mag2());
-    fNumuRecoMomLep = fSelTrackRecoMomMCS;
-  }
-
-  // Get truth information
-  int g4id = TruthMatchUtils::TrueParticleIDFromTotalRecoHits(clockData, sel_track_hits, 1);
-  std::vector<art::Ptr<recob::Hit>> eventHitList = dune_ana::DUNEAnaEventUtils::GetHits(evt, fHitsModuleLabel);
-  fSelTrackRecoCompleteness = FDSelectionUtils::CompletenessFromTrueParticleID(clockData, sel_track_hits, eventHitList, g4id);
-  fSelTrackRecoHitPurity = FDSelectionUtils::HitPurityFromTrueParticleID(clockData, sel_track_hits, g4id);
-
-  if (TruthMatchUtils::Valid(g4id))
-  {
-      art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
-      const simb::MCParticle* matched_mcparticle = pi_serv->ParticleList().at(g4id);
-      if (matched_mcparticle)
-      {
-        fSelTrackTruePDG = matched_mcparticle->PdgCode();
-
-        if (matched_mcparticle->Mother() == 0) 
-          fSelTrackTruePrimary = 1;
-        else 
-          fSelTrackTruePrimary = 0;
-
-        fSelTrackTrueMomX = matched_mcparticle->Momentum().X();
-        fSelTrackTrueMomY = matched_mcparticle->Momentum().Y();
-        fSelTrackTrueMomZ = matched_mcparticle->Momentum().Z();
-        fSelTrackTrueMomT = matched_mcparticle->Momentum().T();
-        fSelTrackTrueStartX = matched_mcparticle->Position(0).X();
-        fSelTrackTrueStartY = matched_mcparticle->Position(0).Y();
-        fSelTrackTrueStartZ = matched_mcparticle->Position(0).Z();
-        fSelTrackTrueEndX = matched_mcparticle->EndPosition().X();
-        fSelTrackTrueEndY = matched_mcparticle->EndPosition().Y();
-        fSelTrackTrueEndZ = matched_mcparticle->EndPosition().Z();
-      }
-  }
-
-  // MVA PID
-  art::FindOneP<anab::MVAPIDResult> findPIDResult(std::vector<art::Ptr<recob::Track>>{sel_track}, evt, fPIDModuleLabel);
-  art::Ptr<anab::MVAPIDResult> pid(findPIDResult.at(0));
-
-  if (pid.isAvailable())
-  {
-    std::map<std::string,double> mvaOutMap = pid->mvaOutput;
-
-    if (!mvaOutMap.empty())
-    {
-      fSelTrackMVAElectron = mvaOutMap["electron"];
-      fSelTrackMVAPion = mvaOutMap["pich"];
-      fSelTrackMVAMuon = mvaOutMap["muon"];
-      fSelTrackMVAProton = mvaOutMap["proton"];
-      fSelTrackMVAPhoton = mvaOutMap["photon"];
-    }
-  }
-
-  // Pandizzle variables
-  FDSelection::PandizzleAlg::Record pandizzleRecord(fPandizzleAlg.RunPID(sel_track, evt));
-
-  fSelTrackMichelNHits = (float)pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kMichelNHits);
-  fSelTrackMichelElectronMVA = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kMichelElectronMVA);
-  fSelTrackMichelRecoEnergyPlane2 = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kMichelRecoEnergyPlane2);
-  fSelTrackDeflecAngleSD = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kTrackDeflecAngleSD);
-  fSelTrackLength = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kTrackLength);
-  fSelTrackEvalRatio = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kEvalRatio);
-  fSelTrackConcentration = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kConcentration);
-  fSelTrackCoreHaloRatio = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kCoreHaloRatio);
-  fSelTrackConicalness = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kConicalness);
-  fSelTrackdEdxStart = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kdEdxStart);
-  fSelTrackdEdxEnd = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kdEdxEnd);
-  fSelTrackdEdxEndRatio = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kdEdxEndRatio);
-  fSelTrackPandizzleVar = pandizzleRecord.GetMVAScore();
-
-  // DeepPan variables
-  ctp::CTPResult deepPanPIDResult = fConvTrackPID.RunConvolutionalTrackPID(sel_track_pfp, evt);
-  if (deepPanPIDResult.IsValid())
-  {
-      fSelTrackDeepPanMuVar = deepPanPIDResult.GetMuonScore();
-      fSelTrackDeepPanPiVar = deepPanPIDResult.GetPionScore();
-      fSelTrackDeepPanProtonVar = deepPanPIDResult.GetProtonScore();
-  }
+    fRecoTrackMichelNHits[pfpIndex] = (double)pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kMichelNHits);
+    fRecoTrackMichelElectronMVA[pfpIndex] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kMichelElectronMVA);
+    fRecoTrackMichelRecoEnergyPlane2[pfpIndex] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kMichelRecoEnergyPlane2);
+    fRecoTrackDeflecAngleSD[pfpIndex] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kTrackDeflecAngleSD);
+    fRecoTrackLength[pfpIndex] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kTrackLength);
+    fRecoTrackEvalRatio[pfpIndex] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kEvalRatio);
+    fRecoTrackConcentration[pfpIndex] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kConcentration);
+    fRecoTrackCoreHaloRatio[pfpIndex] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kCoreHaloRatio);
+    fRecoTrackConicalness[pfpIndex] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kConicalness);
+    fRecoTrackdEdxStart[pfpIndex] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kdEdxStart);
+    fRecoTrackdEdxEnd[pfpIndex] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kdEdxEnd);
+    fRecoTrackdEdxEndRatio[pfpIndex] = pandizzleRecord.GetVar(FDSelection::PandizzleAlg::kdEdxEndRatio);
+    fRecoTrackPandizzleVar[pfpIndex] = pandizzleRecord.GetMVAScore();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-void FDSelection::CCNuSelection::GetRecoShowerInfo(art::Event const & evt)
+void FDSelection::CCNuSelection::FillRecoShowerInfo(art::Event const & evt, const art::Ptr<recob::PFParticle> &pfp,
+    const int pfpIndex)
 {
-  if(!dune_ana::DUNEAnaEventUtils::HasNeutrino(evt, fPFParticleModuleLabel))
-    return;
+    if (!dune_ana::DUNEAnaPFParticleUtils::IsShower(pfp, evt, fRecoModuleLabel, fShowerModuleLabel))
+        return;
 
-  art::Ptr<recob::PFParticle> nuPFP = dune_ana::DUNEAnaEventUtils::GetNeutrino(evt, fPFParticleModuleLabel);
-  std::vector<art::Ptr<recob::PFParticle>> nuChildren = dune_ana::DUNEAnaPFParticleUtils::GetChildParticles(nuPFP, evt, fPFParticleModuleLabel); 
-  std::vector<art::Ptr<recob::PFParticle>> pfps = dune_ana::DUNEAnaEventUtils::GetPFParticles(evt, fPFParticleModuleLabel);
+    fRecoPFPShowerFitSuccess[pfpIndex] = 1;
 
-  int showerCounter = 0;
-
-  for (art::Ptr<recob::PFParticle> pfp : pfps)
-  {
-    if (showerCounter == kDefMaxNRecoShowers)
-      break;
-
-    if (!dune_ana::DUNEAnaPFParticleUtils::HasShower(pfp, evt, fPFParticleModuleLabel, fShowerModuleLabel))
-      continue;
-
-    for (art::Ptr<recob::PFParticle> nuChild : nuChildren)
-    {
-      if (nuChild->Self() == pfp->Self())
-      {
-        fRecoShowerRecoIsPrimaryPFPDaughter[showerCounter] = true;
-        break;
-      }
-    }
-
-    const std::vector<art::Ptr<recob::Hit>> current_shower_hits = dune_ana::DUNEAnaPFParticleUtils::GetHits(pfp, evt, fPFParticleModuleLabel);
-    fRecoShowerRecoNHits[showerCounter] = current_shower_hits.size();
-
-    art::Ptr<recob::Shower> current_shower = dune_ana::DUNEAnaPFParticleUtils::GetShower(pfp, evt, fPFParticleModuleLabel, fShowerModuleLabel);
+    art::Ptr<recob::Shower> shower = dune_ana::DUNEAnaPFParticleUtils::GetShower(pfp, evt, fRecoModuleLabel, fShowerModuleLabel);
 
     // General shower variables
-    fRecoShowerRecoDirX[showerCounter] = current_shower->Direction().X();
-    fRecoShowerRecoDirY[showerCounter] = current_shower->Direction().Y();
-    fRecoShowerRecoDirZ[showerCounter] = current_shower->Direction().Z();
-    fRecoShowerRecoStartX[showerCounter] = current_shower->ShowerStart().X();
-    fRecoShowerRecoStartY[showerCounter] = current_shower->ShowerStart().Y();
-    fRecoShowerRecoStartZ[showerCounter] = current_shower->ShowerStart().Z();
-    fRecoShowerRecoBestPlane[showerCounter] = current_shower->best_plane();
-    fRecoShowerRecoLength[showerCounter] = current_shower->Length();
-    fRecoShowerRecoOpeningAngle[showerCounter] = current_shower->OpenAngle();
-
-    // Vertex info
-    try
-    {
-        art::Ptr<recob::Vertex> shower_reco_vertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(pfp, evt, fPFParticleModuleLabel);
-
-        fRecoShowerRecoVertexX[showerCounter] = shower_reco_vertex->position().X();
-        fRecoShowerRecoVertexY[showerCounter] = shower_reco_vertex->position().Y();
-        fRecoShowerRecoVertexZ[showerCounter] = shower_reco_vertex->position().Z();
-    }
-    catch(...)
-    {
-    }
-
-    try
-    {
-        std::vector<art::Ptr<recob::Hit>> hitListU = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(current_shower_hits, 0);
-        fRecoShowerDistanceToNuVertexU[showerCounter] = DistanceToNuVertex(evt, hitListU, TVector3(fNuX, fNuY, fNuZ));
-    }
-    catch(...)
-    {
-    } 
-
-    try
-    {
-        std::vector<art::Ptr<recob::Hit>> hitListV = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(current_shower_hits, 1);
-        fRecoShowerDistanceToNuVertexV[showerCounter] = DistanceToNuVertex(evt, hitListV, TVector3(fNuX, fNuY, fNuZ));
-    }
-    catch(...)
-    {
-    }
-
-    try
-    {
-        std::vector<art::Ptr<recob::Hit>> hitListW = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(current_shower_hits, 2);
-        fRecoShowerDistanceToNuVertexW[showerCounter] = DistanceToNuVertex(evt, hitListW, TVector3(fNuX, fNuY, fNuZ));
-    }
-    catch(...)
-    {
-    }
+    fRecoShowerRecoDirX[pfpIndex] = shower->Direction().X();
+    fRecoShowerRecoDirY[pfpIndex] = shower->Direction().Y();
+    fRecoShowerRecoDirZ[pfpIndex] = shower->Direction().Z();
+    fRecoShowerRecoStartX[pfpIndex] = shower->ShowerStart().X();
+    fRecoShowerRecoStartY[pfpIndex] = shower->ShowerStart().Y();
+    fRecoShowerRecoStartZ[pfpIndex] = shower->ShowerStart().Z();
+    fRecoShowerRecoBestPlane[pfpIndex] = shower->best_plane();
+    fRecoShowerRecoLength[pfpIndex] = shower->Length();
+    fRecoShowerRecoOpeningAngle[pfpIndex] = shower->OpenAngle();
 
     // Momentum and energy
     auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
     auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataForJob(clockData);
-    fRecoShowerRecoCharge[showerCounter]  = dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, current_shower_hits); 
 
-    std::unique_ptr<dune::EnergyRecoOutput> energyRecoHandle(std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(current_shower, evt)));
-    fRecoShowerRecoMom[showerCounter] = sqrt(energyRecoHandle->fLepLorentzVector.Vect().Mag2());
+    std::unique_ptr<dune::EnergyRecoOutput> energyRecoHandle(std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(shower, evt)));
+    fNueRecoENu[pfpIndex] = energyRecoHandle->fNuLorentzVector.E();
+    fNueRecoEHad[pfpIndex] = energyRecoHandle->fHadLorentzVector.E();
+    fNueRecoMomLep[pfpIndex] = sqrt(energyRecoHandle->fLepLorentzVector.Vect().Mag2());
 
-    if (current_shower->dEdx().size() > 0)
+    fRecoShowerRecoMom[pfpIndex] = sqrt(energyRecoHandle->fLepLorentzVector.Vect().Mag2());
+
+    if (shower->dEdx().size() > 0)
     {
       for (int i_plane = 0; i_plane < 3; i_plane++)
       {
-        fRecoShowerRecodEdx[showerCounter][i_plane] = current_shower->dEdx()[i_plane];
-        fRecoShowerRecoEnergy[showerCounter][i_plane] = current_shower->Energy()[i_plane];
-      }
-    }
-
-    FillChildPFPInformation(pfp, evt, fRecoShowerRecoNChildPFP[showerCounter], fRecoShowerRecoNChildTrackPFP[showerCounter], fRecoShowerRecoNChildShowerPFP[showerCounter]);
-
-    int g4id = TruthMatchUtils::TrueParticleIDFromTotalRecoHits(clockData, current_shower_hits, 1);
-    std::vector<art::Ptr<recob::Hit>> eventHitList = dune_ana::DUNEAnaEventUtils::GetHits(evt, fHitsModuleLabel);
-    fRecoShowerRecoCompleteness[showerCounter] = FDSelectionUtils::CompletenessFromTrueParticleID(clockData, current_shower_hits, eventHitList, g4id);
-    fRecoShowerRecoHitPurity[showerCounter] = FDSelectionUtils::HitPurityFromTrueParticleID(clockData, current_shower_hits, g4id);
-
-    if (TruthMatchUtils::Valid(g4id))
-    {
-        art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
-        const simb::MCParticle* matched_mcparticle = pi_serv->TrackIdToParticle_P(g4id);
-        if (matched_mcparticle)
-        {
-          fRecoShowerTruePDG[showerCounter] = matched_mcparticle->PdgCode();
-
-          if 
-            (matched_mcparticle->Mother()==0) fRecoShowerTruePrimary[showerCounter] = 1;
-          else 
-            fRecoShowerTruePrimary[showerCounter] = 0;
-
-          fRecoShowerTrueMomX[showerCounter] = matched_mcparticle->Momentum().X();
-          fRecoShowerTrueMomY[showerCounter] = matched_mcparticle->Momentum().Y();
-          fRecoShowerTrueMomZ[showerCounter] = matched_mcparticle->Momentum().Z();
-          fRecoShowerTrueMomT[showerCounter] = matched_mcparticle->Momentum().T();
-          fRecoShowerTrueStartX[showerCounter] = matched_mcparticle->Position(0).X();
-          fRecoShowerTrueStartY[showerCounter] = matched_mcparticle->Position(0).Y();
-          fRecoShowerTrueStartZ[showerCounter] = matched_mcparticle->Position(0).Z();
-          fRecoShowerTrueEndX[showerCounter] = matched_mcparticle->EndPosition().X();
-          fRecoShowerTrueEndY[showerCounter] = matched_mcparticle->EndPosition().Y();
-          fRecoShowerTrueEndZ[showerCounter] = matched_mcparticle->EndPosition().Z();
-        }
-    }
-
-    // MVA PID
-    art::FindOneP<anab::MVAPIDResult> findPIDResult(std::vector<art::Ptr<recob::Shower>>{current_shower}, evt, fPIDModuleLabel);
-    art::Ptr<anab::MVAPIDResult> pid(findPIDResult.at(0));
-
-    if (pid.isAvailable())
-    {
-      std::map<std::string,double> mvaOutMap = pid->mvaOutput;
-
-      if (!mvaOutMap.empty())
-      {
-        fRecoShowerMVAElectron[showerCounter] = mvaOutMap["electron"];
-        fRecoShowerMVAPion[showerCounter] = mvaOutMap["pich"];
-        fRecoShowerMVAMuon[showerCounter] = mvaOutMap["muon"];
-        fRecoShowerMVAProton[showerCounter] = mvaOutMap["proton"];
-        fRecoShowerMVAPhoton[showerCounter] = mvaOutMap["photon"];
+        fRecoShowerRecodEdx[pfpIndex][i_plane] = shower->dEdx()[i_plane];
+        fRecoShowerRecoEnergy[pfpIndex][i_plane] = shower->Energy()[i_plane];
       }
     }
 
     // Pandrizzle
-    FDSelection::PandrizzleAlg::Record pandrizzleRecord(fPandrizzleAlg.RunPID(current_shower, evt));
+    FDSelection::PandrizzleAlg::Record pandrizzleRecord(fPandrizzleAlg.RunPID(shower, evt));
 
-    fRecoShowerPandrizzleEvalRatio[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kEvalRatio);
-    fRecoShowerPandrizzleConcentration[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kConcentration);
-    fRecoShowerPandrizzleCoreHaloRatio[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kCoreHaloRatio);
-    fRecoShowerPandrizzleConicalness[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kConicalness);
-    fRecoShowerPandrizzledEdxBestPlane[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kdEdxBestPlane);
-    fRecoShowerPandrizzleDisplacement[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kDisplacement);
-    fRecoShowerPandrizzleDCA[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kDCA);
-    fRecoShowerPandrizzleWideness[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kWideness);
-    fRecoShowerPandrizzleEnergyDensity[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kEnergyDensity);
-    fRecoShowerPandrizzlePathwayLengthMin[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kPathwayLengthMin);
-    fRecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxShowerStartPathwayScatteringAngle2D);
-    fRecoShowerPandrizzleMaxNPostShowerStartHits[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxNPostShowerStartHits);
-    fRecoShowerPandrizzleMaxPostShowerStartScatterAngle[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxPostShowerStartScatterAngle);
-    fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxPostShowerStartNuVertexEnergyAsymmetry);
-    fRecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxPostShowerStartShowerStartEnergyAsymmetry);
-    fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance[showerCounter] = 
+    fRecoShowerPandrizzleEvalRatio[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kEvalRatio);
+    fRecoShowerPandrizzleConcentration[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kConcentration);
+    fRecoShowerPandrizzleCoreHaloRatio[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kCoreHaloRatio);
+    fRecoShowerPandrizzleConicalness[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kConicalness);
+    fRecoShowerPandrizzledEdxBestPlane[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kdEdxBestPlane);
+    fRecoShowerPandrizzleDisplacement[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kDisplacement);
+    fRecoShowerPandrizzleDCA[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kDCA);
+    fRecoShowerPandrizzleWideness[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kWideness);
+    fRecoShowerPandrizzleEnergyDensity[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kEnergyDensity);
+    fRecoShowerPandrizzlePathwayLengthMin[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kPathwayLengthMin);
+    fRecoShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxShowerStartPathwayScatteringAngle2D);
+    fRecoShowerPandrizzleMaxNPostShowerStartHits[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxNPostShowerStartHits);
+    fRecoShowerPandrizzleMaxPostShowerStartScatterAngle[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxPostShowerStartScatterAngle);
+    fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxPostShowerStartNuVertexEnergyAsymmetry);
+    fRecoShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxPostShowerStartShowerStartEnergyAsymmetry);
+    fRecoShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance[pfpIndex] = 
       pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance);
-    fRecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMinPostShowerStartShowerStartMoliereRadius);
-    fRecoShowerPandrizzleMaxPostShowerStartOpeningAngle[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxPostShowerStartOpeningAngle);
-    fRecoShowerPandrizzleMaxFoundHitRatio[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxFoundHitRatio);
-    fRecoShowerPandrizzleMaxInitialGapSize[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxInitialGapSize);
-    fRecoShowerPandrizzleMinLargestProjectedGapSize[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMinLargestProjectedGapSize);
-    fRecoShowerPandrizzleNViewsWithAmbiguousHits[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kNViewsWithAmbiguousHits);
-    fRecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kAmbiguousHitMaxUnaccountedEnergy);
+    fRecoShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMinPostShowerStartShowerStartMoliereRadius);
+    fRecoShowerPandrizzleMaxPostShowerStartOpeningAngle[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxPostShowerStartOpeningAngle);
+    fRecoShowerPandrizzleMaxFoundHitRatio[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxFoundHitRatio);
+    fRecoShowerPandrizzleMaxInitialGapSize[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxInitialGapSize);
+    fRecoShowerPandrizzleMinLargestProjectedGapSize[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMinLargestProjectedGapSize);
+    fRecoShowerPandrizzleNViewsWithAmbiguousHits[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kNViewsWithAmbiguousHits);
+    fRecoShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kAmbiguousHitMaxUnaccountedEnergy);
+    fRecoShowerPandrizzleModularPathwayLength[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kModularShowerPathwayLengthMin);
+    fRecoShowerPandrizzleModularNuVertexChargeWeightedMeanRadialDistance[pfpIndex] =
+        pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kModularShowerMaxNuVertexChargeWeightedMeanRadialDistance);
+    fRecoShowerPandrizzleModularMaxNShowerHits[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kModularShowerMaxNShowerHits);
+    fRecoShowerPandrizzleBDTMethod[pfpIndex] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kBDTMethod);
 
-    fRecoShowerPandrizzleBDTMethod[showerCounter] = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kBDTMethod);
     float pandrizzleScore(pandrizzleRecord.GetMVAScore());
-    fRecoShowerBackupPandrizzleScore[showerCounter] = (std::fabs(fRecoShowerPandrizzleBDTMethod[showerCounter] - 1.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
-    fRecoShowerEnhancedPandrizzleScore[showerCounter] = (std::fabs(fRecoShowerPandrizzleBDTMethod[showerCounter] - 2.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
-    fRecoShowerPandrizzleIsFilled[showerCounter] = pandrizzleRecord.IsFilled();
+    fRecoShowerBackupPandrizzleScore[pfpIndex] = (std::fabs(fRecoShowerPandrizzleBDTMethod[pfpIndex] - 1.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
+    fRecoShowerEnhancedPandrizzleScore[pfpIndex] = (std::fabs(fRecoShowerPandrizzleBDTMethod[pfpIndex] - 2.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
+    fRecoShowerPandrizzleIsFilled[pfpIndex] = pandrizzleRecord.IsFilled();
+}
 
-    ++showerCounter;
-  }
+//////////////////////////////////////////////////////////////////////////////////
 
-  fNRecoShowers = showerCounter;
+void FDSelection::CCNuSelection::RunTrackSelection(art::Event const & evt)
+{
+    // Pandizzle
+    RunPandizzleTrackSelection();
 
-  return;
+    // Longest Length
+    RunLongestLengthTrackSelection();
+}
+
+///////////////////////////////////////////////////////////////
+
+void FDSelection::CCNuSelection::RunPandizzleTrackSelection()
+{
+    float highestPandizzleScore = -1.1;
+
+    for (int i = 0; i < fNRecoPFPs; ++i)
+    {
+        if (!fRecoPFPIsPrimary[i])
+            continue;
+
+        if (fRecoPFPSelf[i] < 0)
+            continue;
+
+        if (fRecoTrackPandizzleVar[i] < highestPandizzleScore)
+            continue;
+
+        highestPandizzleScore = fRecoTrackPandizzleVar[i];
+        fSelTrackPandizzleSelf = fRecoPFPSelf[i];
+        fSelTrackPandizzleIndex = i;
+        fSelTrackPandizzleScore = fRecoTrackPandizzleVar[i];
+        fSelPandizzleTrackContained = fRecoTrackRecoContained[i];
+        fSelPandizzleTrackRecoMom = fNumuRecoMomLep[i];
+        fSelPandizzleTrackNumuEnu = fNumuRecoENu[i];
+        fSelPandizzleTrackNumuEHad = fNumuRecoEHad[i];
+    }
+}
+
+///////////////////////////////////////////////////////////////
+
+void FDSelection::CCNuSelection::RunLongestLengthTrackSelection()
+{
+    float longestLength = -0.1;
+
+    for (int i = 0; i < fNRecoPFPs; ++i)
+    {
+        if (!fRecoPFPIsPrimary[i])
+            continue;
+
+        if (fRecoPFPSelf[i] < 0)
+            continue;
+
+        if (fRecoTrackRecoLength[i] < longestLength)
+            continue;
+
+        longestLength = fRecoTrackRecoLength[i];
+        fSelTrackLongestLengthSelf = fRecoPFPSelf[i];
+        fSelTrackLongestLengthIndex = i;
+        fSelTrackLongestLength = fRecoTrackRecoLength[i];
+        fSelLongestTrackContained = fRecoTrackRecoContained[i];
+        fSelLongestTrackRecoMom = fNumuRecoMomLep[i];
+        fSelLongestTrackNumuEnu = fNumuRecoENu[i];
+        fSelLongestTrackNumuEHad = fNumuRecoEHad[i];
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
 
 void FDSelection::CCNuSelection::RunShowerSelection(art::Event const & evt)
 {
-  // Get the selected shower
-  art::Ptr<recob::Shower> sel_shower = fRecoShowerSelector->FindSelectedShower(evt);
+    // Pandrizzle
+    RunPandrizzleShowerSelection();
 
-  if (!sel_shower.isAvailable()) 
-  {
-    std::cout << "FDSelection::CCNuSelection::RunShowerSelection - no shower selected by tool" << std::endl;
-    return;
-  }
+    // HighestEnergy
+    RunHighestEnergyShowerSelection();
+}
 
-  art::Ptr<recob::PFParticle> sel_pfp = dune_ana::DUNEAnaShowerUtils::GetPFParticle(sel_shower, evt, fShowerModuleLabel);
+//////////////////////////////////////////////////////////////////
 
-  //Get the hits for said shower
-  const std::vector<art::Ptr<recob::Hit>> sel_shower_hits = dune_ana::DUNEAnaShowerUtils::GetHits(sel_shower, evt, fShowerModuleLabel);
-  fSelShowerRecoNHits = sel_shower_hits.size();
+void FDSelection::CCNuSelection::RunPandrizzleShowerSelection()
+{
+    bool foundEnhanced = false;
+    float highestEnhancedPandrizzleScore = -1.1;
+    float highestBackupPandrizzleScore = -1.1;
 
-  fSelShowerRecoDirX = sel_shower->Direction().X();
-  fSelShowerRecoDirY = sel_shower->Direction().Y();
-  fSelShowerRecoDirZ = sel_shower->Direction().Z();
-  fSelShowerRecoStartX = sel_shower->ShowerStart().X();
-  fSelShowerRecoStartY = sel_shower->ShowerStart().Y();
-  fSelShowerRecoStartZ = sel_shower->ShowerStart().Z();
-  fSelShowerRecoBestPlane = sel_shower->best_plane();
-  fSelShowerRecoLength = sel_shower->Length();
-  fSelShowerRecoOpeningAngle = sel_shower->OpenAngle();
-
-  // Vertex info
-  try
-  {
-    art::Ptr<recob::Vertex> shower_reco_vertex = dune_ana::DUNEAnaPFParticleUtils::GetVertex(sel_pfp, evt, fPFParticleModuleLabel);
-
-    fSelShowerRecoVertexX = shower_reco_vertex->position().X();
-    fSelShowerRecoVertexY = shower_reco_vertex->position().Y();
-    fSelShowerRecoVertexZ = shower_reco_vertex->position().Z();
-  }
-  catch(...)
-  {
-  }
-
-  try
-  {
-    std::vector<art::Ptr<recob::Hit>> hitListU = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(sel_shower_hits, 0);
-    fSelShowerDistanceToNuVertexU = DistanceToNuVertex(evt, hitListU, TVector3(fNuX, fNuY, fNuZ));
-  }
-  catch(...)
-  {
-  }
-
-  try
-  {
-    std::vector<art::Ptr<recob::Hit>> hitListV = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(sel_shower_hits, 1);
-    fSelShowerDistanceToNuVertexV = DistanceToNuVertex(evt, hitListV, TVector3(fNuX, fNuY, fNuZ));
-  }
-  catch(...)
-  {
-  }
-
-  try
-  {
-    std::vector<art::Ptr<recob::Hit>> hitListW = dune_ana::DUNEAnaHitUtils::GetHitsOnPlane(sel_shower_hits, 2);
-    fSelShowerDistanceToNuVertexW = DistanceToNuVertex(evt, hitListW, TVector3(fNuX, fNuY, fNuZ));
-  }
-  catch(...)
-  {
-  }
-
-  // Momentum and energy
-  auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataFor(evt);
-  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataForJob(clockData);
-  fSelShowerRecoCharge  = dune_ana::DUNEAnaHitUtils::LifetimeCorrectedTotalHitCharge(clockData, detProp, sel_shower_hits); 
-
-  std::unique_ptr<dune::EnergyRecoOutput> energyRecoHandle(std::make_unique<dune::EnergyRecoOutput>(fNeutrinoEnergyRecoAlg.CalculateNeutrinoEnergy(sel_shower, evt)));
-  fNueRecoENu = energyRecoHandle->fNuLorentzVector.E();
-  fNueRecoEHad = energyRecoHandle->fHadLorentzVector.E();
-  fNueRecoMomLep = sqrt(energyRecoHandle->fLepLorentzVector.Vect().Mag2());
-
-  if (sel_shower->dEdx().size() > 0)
-  {
-    for (unsigned int i_plane = 0; i_plane < 3; i_plane++)
+    for (int i = 0; i < fNRecoPFPs; ++i)
     {
-      fSelShowerRecodEdx[i_plane] = sel_shower->dEdx()[i_plane];
-      fSelShowerRecoEnergy[i_plane] = sel_shower->Energy()[i_plane];
+        if (!fRecoPFPIsPrimary[i])
+            continue;
+
+        if (fRecoPFPSelf[i] < 0)
+            continue;
+
+        if ((std::fabs(fRecoShowerPandrizzleBDTMethod[i] - 2.0) < std::numeric_limits<float>::epsilon()) && 
+            (fRecoShowerEnhancedPandrizzleScore[i] > highestEnhancedPandrizzleScore))
+        {
+            foundEnhanced = true;
+
+            highestEnhancedPandrizzleScore = fRecoShowerEnhancedPandrizzleScore[i];
+            fSelShowerPandrizzleSelf = fRecoPFPSelf[i];
+            fSelShowerPandrizzleIndex = i;
+            fSelShowerEnhancedPandrizzleScore = fRecoShowerEnhancedPandrizzleScore[i];
+            fSelShowerBackupPandrizzleScore = kDefDoub;
+            fSelPandrizzleShowerNueEnu = fNueRecoENu[i];
+            fSelPandrizzleShowerNueEHad = fNueRecoEHad[i];
+        }
+
+        if (foundEnhanced)
+            continue;
+
+        if ((std::fabs(fRecoShowerPandrizzleBDTMethod[i] - 1.0) < std::numeric_limits<float>::epsilon()) && 
+            (fRecoShowerBackupPandrizzleScore[i] > highestBackupPandrizzleScore))
+        {
+            highestBackupPandrizzleScore = fRecoShowerBackupPandrizzleScore[i];
+            fSelShowerPandrizzleSelf = fRecoPFPSelf[i];
+            fSelShowerPandrizzleIndex = i;
+            fSelShowerEnhancedPandrizzleScore = kDefDoub;
+            fSelShowerBackupPandrizzleScore = fRecoShowerBackupPandrizzleScore[i];
+            fSelPandrizzleShowerNueEnu = fNueRecoENu[i];
+            fSelPandrizzleShowerNueEHad = fNueRecoEHad[i];
+        }
     }
-  }
+}
 
-  // Child PFP info
-  FillChildPFPInformation(sel_pfp, evt, fSelShowerRecoNChildPFP, fSelShowerRecoNChildTrackPFP, fSelShowerRecoNChildShowerPFP);
+///////////////////////////////////////////////////////////////
 
-  // Truth info
-  int g4id = TruthMatchUtils::TrueParticleIDFromTotalRecoHits(clockData, sel_shower_hits, 1);
-  std::vector<art::Ptr<recob::Hit>> eventHitList = dune_ana::DUNEAnaEventUtils::GetHits(evt, fHitsModuleLabel);
-  fSelShowerRecoCompleteness = FDSelectionUtils::CompletenessFromTrueParticleID(clockData, sel_shower_hits, eventHitList, g4id);
-  fSelShowerRecoHitPurity = FDSelectionUtils::HitPurityFromTrueParticleID(clockData, sel_shower_hits, g4id);
+void FDSelection::CCNuSelection::RunHighestEnergyShowerSelection()
+{
+    float highestEnergy = -0.1;
 
-  if (TruthMatchUtils::Valid(g4id))
-  {
-      art::ServiceHandle<cheat::ParticleInventoryService> pi_serv;
-      const simb::MCParticle* matched_mcparticle = pi_serv->TrackIdToParticle_P(g4id);
-      if (matched_mcparticle)
-      {
-        fSelShowerTruePDG = matched_mcparticle->PdgCode();
-
-        if (matched_mcparticle->Mother() == 0) 
-          fSelShowerTruePrimary = 1;
-        else 
-          fSelShowerTruePrimary = 0;
-
-        fSelShowerTrueMomX = matched_mcparticle->Momentum().X();
-        fSelShowerTrueMomY = matched_mcparticle->Momentum().Y();
-        fSelShowerTrueMomZ = matched_mcparticle->Momentum().Z();
-        fSelShowerTrueMomT = matched_mcparticle->Momentum().T();
-        fSelShowerTrueStartX = matched_mcparticle->Position(0).X();
-        fSelShowerTrueStartY = matched_mcparticle->Position(0).Y();
-        fSelShowerTrueStartZ = matched_mcparticle->Position(0).Z();
-        fSelShowerTrueEndX = matched_mcparticle->EndPosition().X();
-        fSelShowerTrueEndY = matched_mcparticle->EndPosition().Y();
-        fSelShowerTrueEndZ = matched_mcparticle->EndPosition().Z();
-      }
-  }
-
-  // MVA PID
-  art::FindOneP<anab::MVAPIDResult> findPIDResult(std::vector<art::Ptr<recob::Shower>>{sel_shower}, evt, fPIDModuleLabel);
-  art::Ptr<anab::MVAPIDResult> pid(findPIDResult.at(0));
-
-  if (pid.isAvailable())
-  {
-    std::map<std::string,double> mvaOutMap = pid->mvaOutput;
-
-    if (!mvaOutMap.empty())
+    for (int i = 0; i < fNRecoPFPs; ++i)
     {
-      fSelShowerMVAElectron = mvaOutMap["electron"];
-      fSelShowerMVAPion = mvaOutMap["pich"];
-      fSelShowerMVAMuon = mvaOutMap["muon"];
-      fSelShowerMVAProton = mvaOutMap["proton"];
-      fSelShowerMVAPhoton = mvaOutMap["photon"];
-    }
-  }
+        if (!fRecoPFPIsPrimary[i])
+            continue;
 
-  //Pandrizzle
-  FDSelection::PandrizzleAlg::Record pandrizzleRecord(fPandrizzleAlg.RunPID(sel_shower, evt));
-  fSelShowerPandrizzleEvalRatio = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kEvalRatio);
-  fSelShowerPandrizzleConcentration = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kConcentration);
-  fSelShowerPandrizzleCoreHaloRatio = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kCoreHaloRatio);
-  fSelShowerPandrizzleConicalness = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kConicalness);
-  fSelShowerPandrizzledEdxBestPlane = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kdEdxBestPlane);
-  fSelShowerPandrizzleDisplacement = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kDisplacement);
-  fSelShowerPandrizzleDCA = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kDCA);
-  fSelShowerPandrizzleWideness = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kWideness);
-  fSelShowerPandrizzleEnergyDensity = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kEnergyDensity);
-  fSelShowerPandrizzlePathwayLengthMin = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kPathwayLengthMin);
-  fSelShowerPandrizzleMaxShowerStartPathwayScatteringAngle2D = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxShowerStartPathwayScatteringAngle2D);
-  fSelShowerPandrizzleMaxNPostShowerStartHits = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxNPostShowerStartHits);
-  fSelShowerPandrizzleMaxPostShowerStartScatterAngle = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxPostShowerStartScatterAngle);
-  fSelShowerPandrizzleMaxPostShowerStartNuVertexEnergyAsymmetry = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxPostShowerStartNuVertexEnergyAsymmetry);
-  fSelShowerPandrizzleMaxPostShowerStartShowerStartEnergyAsymmetry = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxPostShowerStartShowerStartEnergyAsymmetry);
-  fSelShowerPandrizzleMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance = 
-      pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxPostShowerStartNuVertexEnergyWeightedMeanRadialDistance);
-  fSelShowerPandrizzleMinPostShowerStartShowerStartMoliereRadius = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMinPostShowerStartShowerStartMoliereRadius);
-  fSelShowerPandrizzleMaxPostShowerStartOpeningAngle = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxPostShowerStartOpeningAngle);
-  fSelShowerPandrizzleMaxFoundHitRatio = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxFoundHitRatio);
-  fSelShowerPandrizzleMaxInitialGapSize = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMaxInitialGapSize);
-  fSelShowerPandrizzleMinLargestProjectedGapSize = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kMinLargestProjectedGapSize);
-  fSelShowerPandrizzleNViewsWithAmbiguousHits = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kNViewsWithAmbiguousHits);
-  fSelShowerPandrizzleAmbiguousHitMaxUnaccountedEnergy = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kAmbiguousHitMaxUnaccountedEnergy);
-  fSelShowerPandrizzleBDTMethod = pandrizzleRecord.GetVar(FDSelection::PandrizzleAlg::kBDTMethod);
-  float pandrizzleScore(pandrizzleRecord.GetMVAScore());
-  fSelShowerBackupPandrizzleScore = (std::fabs(fSelShowerPandrizzleBDTMethod - 1.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
-  fSelShowerEnhancedPandrizzleScore = (std::fabs(fSelShowerPandrizzleBDTMethod - 2.0) < std::numeric_limits<float>::epsilon()) ? pandrizzleScore : -9999.f;
-  fSelShowerPandrizzleIsFilled = pandrizzleRecord.IsFilled();
+        if (fRecoPFPSelf[i] < 0)
+            continue;
+
+        if (fRecoShowerRecoEnergy[i][2] < highestEnergy)
+            continue;
+
+        highestEnergy = fRecoShowerRecoEnergy[i][2];
+        fSelShowerHighestEnergySelf = fRecoPFPSelf[i];
+        fSelShowerHighestEnergyIndex = i;
+        fSelShowerHighestEnergy = fRecoShowerRecoEnergy[i][2];
+        fSelEnergyShowerNueEnu = fNueRecoENu[i];
+        fSelEnergyShowerNueEHad = fNueRecoEHad[i];
+    }
 }
 
 //////////////////////////////////////////////////////////////////
@@ -2453,98 +1711,5 @@ TVector3 FDSelection::CCNuSelection::ProjectVectorOntoPlane(TVector3 vector_to_p
 }
 
 //////////////////////////////////////////////////////////////////
-
-double FDSelection::CCNuSelection::DistanceToNuVertex(art::Event const & evt, std::vector<art::Ptr<recob::Hit>> const artHitList, const TVector3 &nuVertex)
-{
-  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(evt);
-  auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
-
-  double closestDistanceSquared(std::numeric_limits<double>::max());
-
-  for (art::Ptr<recob::Hit> const& hit : artHitList)
-  {
-    const geo::WireID hit_WireID(hit->WireID());
-    const double hit_Time(hit->PeakTime());
-    const geo::View_t hit_View(hit->View());
-    const geo::CryostatID cryostatID(hit_WireID.Cryostat);
-    const geo::View_t pandora_View(lar_pandora::LArPandoraGeometry::GetGlobalView(hit_WireID.Cryostat, hit_WireID.TPC, hit_View));
-
-    TVector3 vertexXYZ = nuVertex;
-    geo::Point_t hitXYZ = wireReadout.Wire(hit_WireID).GetCenter();
-    const double hitY(hitXYZ.Y());
-    const double hitZ(hitXYZ.Z());
-
-    double hitPosition[3];
-    hitPosition[0] = detProp.ConvertTicksToX(hit_Time, hit_WireID.Plane, hit_WireID.TPC, hit_WireID.Cryostat);
-    hitPosition[1] = 0.0;
-
-    double nuVertexPosition[3];
-    nuVertexPosition[0] = nuVertex[0];
-    nuVertexPosition[1] = 0.0;
-
-    if (pandora_View == geo::kW)
-    {
-      hitPosition[2] = YZtoW(hit_WireID, hitY, hitZ);
-      nuVertexPosition[2] = YZtoW(hit_WireID, vertexXYZ[1], vertexXYZ[2]);
-    }
-    else if (pandora_View == geo::kU)
-    {
-      hitPosition[2] = YZtoU(hit_WireID, hitY, hitZ);
-      nuVertexPosition[2] = YZtoU(hit_WireID, vertexXYZ[1], vertexXYZ[2]);
-    }
-    else if (pandora_View == geo::kV) 
-    {
-      hitPosition[2] = YZtoV(hit_WireID, hitY, hitZ);
-      nuVertexPosition[2] = YZtoV(hit_WireID, vertexXYZ[1], vertexXYZ[2]);
-    }
-    else 
-    {
-      throw cet::exception("LArPandora")
-        << "CreatePandoraHits2D - this wire view not recognised (View=" << hit_View << ") ";
-    }
-
-    double deltaX = hitPosition[0] - nuVertexPosition[0];
-    double deltaY = hitPosition[1] - nuVertexPosition[1];
-    double deltaZ = hitPosition[2] - nuVertexPosition[2];
-    double separationSquared = (deltaX * deltaX) + (deltaY * deltaY) + (deltaZ * deltaZ);
-
-    if (separationSquared < closestDistanceSquared)
-      closestDistanceSquared = separationSquared;
-  }
-
-  return std::sqrt(closestDistanceSquared);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-double FDSelection::CCNuSelection::YZtoU(const geo::WireID &hit_WireID, double y, double z)
-{
-    art::ServiceHandle<geo::Geometry const> theGeometry;
-    //const double wireAngleU(0.5f * M_PI - theGeometry->WireAngleToVertical(geo::kU, hit_WireID.TPC, hit_WireID.Cryostat));
-    const double wireAngleU(0.623257);
-    return (z * std::cos(wireAngleU) - y * std::sin(wireAngleU));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-double FDSelection::CCNuSelection::YZtoV(const geo::WireID &hit_WireID, double y, double z)
-{
-    art::ServiceHandle<geo::Geometry const> theGeometry;
-    //const double wireAngleV(0.5f * M_PI - theGeometry->WireAngleToVertical(geo::kV, hit_WireID.TPC, hit_WireID.Cryostat));
-    const double wireAngleV(-0.623257);
-    return (z * std::cos(wireAngleV) - y * std::sin(wireAngleV));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-double FDSelection::CCNuSelection::YZtoW(const geo::WireID &hit_WireID, double y, double z)
-{
-    art::ServiceHandle<geo::Geometry const> theGeometry;
-    //const double wireAngleW(0.5f * M_PI - theGeometry->WireAngleToVertical(geo::kW, hit_WireID.TPC, hit_WireID.Cryostat));
-    const double wireAngleW(0.0);
-    return (z * std::cos(wireAngleW) - y * std::sin(wireAngleW));
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////
 
 DEFINE_ART_MODULE(FDSelection::CCNuSelection)

@@ -116,9 +116,7 @@ class FDSelection::PandizzleAlg {
   std::string fTrackModuleLabel;
   std::string fShowerModuleLabel;
   std::string fPIDModuleLabel;
-  std::string fPFParticleModuleLabel;
-  std::string fSpacePointModuleLabel;
-  std::string fClusterModuleLabel;
+  std::string fRecoModuleLabel;
 
   //Input params
   double fIPMichelCandidateDistance;

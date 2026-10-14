@@ -1,0 +1,270 @@
+#include <vector>
+
+#include "TFile.h"
+#include "TSpline.h"
+#include "TGraph2D.h"
+#include "TNtuple.h"
+
+#include "larcorealg/Geometry/GeometryCore.h"
+#include "larcorealg/Geometry/WireReadoutGeom.h"
+#include "lardataalg/DetectorInfo/DetectorPropertiesData.h"
+#include "lardataalg/DetectorInfo/DetectorClocksData.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/TrackHitMeta.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Wire.h"
+#include "lardataobj/Simulation/SimEnergyDeposit.h"
+#include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
+#include "lardataobj/Simulation/SimChannel.h"
+#include "larevt/SpaceCharge/SpaceCharge.h"
+
+#include <limits>
+#include <memory>
+
+namespace sys {
+  class WireModUtility{
+    public:
+
+      const geo::GeometryCore* geometry;                  // save the TPC geometry
+      const geo::WireReadoutGeom* wireReadout;            // new for LarSoft v10
+      const detinfo::DetectorPropertiesData& detPropData; // save the detector property data
+      bool applyGainScale; //for electronics gain systematics
+      double gainScale;
+      bool applyLifetimeVar;
+      double lifetime_var; //new lifetime value for given variation, in microseconds
+      bool applyModBoxVar;
+      double ModBoxAlphaVar;
+      double ModBoxBetaVar;
+      double applyLongitudinalDiffusionVar;
+      double DLnew;      
+      double applyTransverseDiffusionVar;
+      double DTnew;
+      double readoutWindowTicks;                          // how many ticks are in the readout window?
+      double tickOffset;                                  // do we want an offset in the ticks?
+      int nNeighbourWires; //Number of neighbouring wires to consider for matching edeps to ROI
+      int nTickTolerance; //Tolerance for the projected tick to be associated to a signal ROI
+      bool SaveEdepMatchingPlots;
+      bool additiveModification;
+      TH1F *hMatchedE = nullptr;
+      TH1F *hUnMatchedE = nullptr;
+      TH1F *hMatchedWD = nullptr;
+      TH1F *hMatchedPDG = nullptr;
+      TH1F *hUnMatchedPDG = nullptr;
+      TH1F *hUnMatchedClosest = nullptr;
+      //removed members related to splines
+
+      //for debugging purposes: adding a map between the trackID and the PDG code
+      std::map<int,int> trackID_to_PDG;
+      unsigned int event_counter; 
+   
+    //constructor
+      WireModUtility(const geo::GeometryCore* geom, 
+                     const geo::WireReadoutGeom* wireRead,
+                     const detinfo::DetectorPropertiesData& detProp,
+                     const bool& arg_ApplyGainScale = false,
+                     const double& arg_gainScale = 1, //relative gain scale. Default is 1, no bias.
+                     const double& arg_TickOffset = 0,
+                     const int& arg_nNeighbourWires = 0,
+                     const int& arg_nTickTolerance = 0)
+      : geometry(geom),
+        wireReadout(wireRead),
+        detPropData(detProp),
+        applyGainScale(arg_ApplyGainScale),
+        gainScale(arg_gainScale),
+        readoutWindowTicks(detProp.ReadOutWindowSize()),                                               // the default A2795 (ICARUS TPC readout board) readout window is 4096 samples
+        tickOffset(arg_TickOffset),                                                                     // tick offset is for MC truth, default to zero and set only as necessary
+        nNeighbourWires(arg_nNeighbourWires),
+        nTickTolerance(arg_nTickTolerance),
+        event_counter(0)
+      {
+      }
+      
+      typedef std::pair<unsigned int,unsigned int>  ROI_Key_t;
+      typedef std::pair<ROI_Key_t, unsigned int> SubROI_Key_t;
+  
+      typedef struct ROIProperties
+      {
+        ROI_Key_t key;
+        raw::ChannelID_t channel;
+        geo::View_t view;
+        float begin;
+        float end;
+        float total_q;
+        float center;   //charge weighted center of ROI
+        float sigma;    //charge weighted RMS of ROI
+      } ROIProperties_t;
+
+      typedef struct SubROIProperties
+      {
+        SubROI_Key_t key;
+        raw::ChannelID_t channel;
+        geo::View_t view;
+        float total_q;
+        float center;
+        float sigma;
+      } SubROIProperties_t;
+
+      typedef struct ScaleValues
+      {
+        double r_Q;
+        double r_sigma;
+      } ScaleValues_t;
+
+      typedef struct TruthProperties
+      {
+        float x;
+        float x_rms;
+        float x_rms_noWeight;
+        float tick;
+        float tick_rms;
+        float tick_rms_noWeight;
+        float total_energy;
+        float x_min;
+        float x_max;
+        float tick_min;
+        float tick_max;
+        float y;
+        float z;
+        //Direction cosines
+        double dxdr;
+        double dydr;
+        double dzdr;
+        double dqdr;
+        double dedr;
+        double dedx;
+        double dT2; //square of transverse distance between matched edeps and wire
+        ScaleValues_t scales_avg[3];
+      } TruthProperties_t;
+   
+      // A single SimChannel ionization deposit (sim::IDE) tagged with its readout
+      // coordinates. This is the SimChannel analogue of a sim::SimEnergyDeposit used by
+      // the truth-matching path; unlike an edep, a sim::IDE carries only a point position
+      // (x,y,z) -- direction/step come from the matched simb::MCParticle trajectory.
+      typedef struct MatchedIDE
+      {
+        raw::ChannelID_t channel; // readout channel the charge landed on
+        geo::WireID      wire;     // wire closest to the deposit
+        double           tick;     // readout tick (TDC converted to tick)
+        const sim::IDE*  ide;      // trackID, numElectrons, energy, x, y, z
+      } MatchedIDE_t;
+
+ 
+      std::map< ROI_Key_t,std::vector<size_t> > ROIMatchedEdepMap;
+      std::map< ROI_Key_t,std::vector<size_t> > ROIMatchedHitMap;
+
+      // SimChannel/IDE truth-matching containers (parallel to the Edep versions).
+      // fIDEVec is the flat owner; ROIMatchedIDEMap stores indices into it, keyed by ROI.
+      std::vector<MatchedIDE_t>                  fIDEVec;
+      std::map< ROI_Key_t, std::vector<size_t> > ROIMatchedIDEMap;
+
+      // Space-charge provider, set by the module (lar::providerFrom<SpaceChargeService>()).
+      // Used to map IDE (at-the-wire) positions to/from the true MCParticle trajectory
+      // frame. When null or SCE disabled, the mappings are the identity.
+      const spacecharge::SpaceCharge* fSCE = nullptr;
+
+
+      //useful functions
+      //geometry functions
+      double planeXToTick(double xPos, const geo::PlaneGeo& plane, const geo::TPCGeo& tpcGeom, double offset = 0) {
+          return detPropData.ConvertXToTicks(xPos, plane.ID()) + offset;
+      }
+
+      bool planeXInWindow(double xPos, const geo::PlaneGeo& plane, const geo::TPCGeo& tpcGeom, double offset = 0)
+      {
+        double tick = planeXToTick(xPos, plane, tpcGeom, offset);
+        return (tick > 0 && tick <= detPropData.ReadOutWindowSize());
+      } 
+
+      double gausFunc(double t, double mean, double sigma, double a = 1.0)
+      {
+        return (a / (sigma * std::sqrt(2 * util::pi()))) * std::exp(-0.5 * std::pow((t - mean)/sigma, 2));
+      }
+
+      //Folds angle in [0,90deg]
+      double FoldAngle(double theta)
+      {
+        return (std::abs(theta) > 0.5 * util::pi()) ? util::pi() - std::abs(theta) : std::abs(theta);
+      }
+
+
+      //Functions to calculte fold angle related to plane. Needed if planes have a certain angle. planeAngle in degrees!
+      double ThetaXZ_PlaneRel(double dxdr, double dydr, double dzdr, double planeAngle)
+      {
+        double planeAngleRad = planeAngle * (util::pi() / 180.0);
+        double sinPlaneAngle = std::sin(planeAngleRad);
+        double cosPlaneAngle = std::cos(planeAngleRad);
+
+        double dzdrPlaneRel = dzdr * cosPlaneAngle + dydr * sinPlaneAngle;
+        
+        double theta = std::atan2(dxdr, dzdrPlaneRel);
+        return FoldAngle(theta);
+       }
+
+      double ThetaYZ_PlaneRel(double dxdr, double dydr, double dzdr, double planeAngle)
+      {
+        double planeAngleRad = planeAngle * (util::pi() / 180.0);
+        double sinPlaneAngle = std::sin(planeAngleRad);
+        double cosPlaneAngle = std::cos(planeAngleRad);
+
+        double dydrPlaneRel = dydr * cosPlaneAngle - dzdr * sinPlaneAngle;
+        double dzdrPlaneRel = dzdr * cosPlaneAngle + dydr * sinPlaneAngle;
+
+        double theta = std::atan2(dydrPlaneRel, dzdrPlaneRel);
+        return FoldAngle(theta);
+      }
+
+      //Defined in the .cc
+      void MakeTrackIDtoPDGMap(const std::vector<simb::MCParticle>& mcParticles);      
+
+      ROIProperties_t CalcROIProperties(recob::Wire const&, size_t const&);
+
+      std::vector<std::pair<unsigned int, unsigned int>> GetTargetROIs(sim::SimEnergyDeposit const&, double offset);
+      std::vector<std::pair<unsigned int, unsigned int>> GetHitTargetROIs(recob::Hit const&);
+
+      void FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposit> const&, std::vector<recob::Wire> const&, double offset);
+      void FillROIMatchedHitMap(std::vector<recob::Hit> const&, std::vector<recob::Wire> const&);
+
+      // SimChannel/IDE versions of FillROIMatchedEdepMap. The DetectorClocksData is used to
+      // convert each IDE's TDC to a readout tick (no X->tick projection / tickOffset needed,
+      // since the SimChannel already carries the readout coordinate).
+      void FillROIMatchedIDEMap(std::vector<sim::SimChannel> const& simchVec, std::vector<recob::Wire> const& wireVec, detinfo::DetectorClocksData const& clockData, double offset = 0);
+
+
+      std::vector<SubROIProperties_t> CalcSubROIProperties(ROIProperties_t const&, std::vector<const recob::Hit*> const&);
+
+      std::map<SubROI_Key_t, std::vector<const sim::SimEnergyDeposit*>> MatchEdepsToSubROIs(std::vector<SubROIProperties_t> const&, std::vector<const sim::SimEnergyDeposit*> const&, double offset, std::vector<geo::WireID> wireIDs);
+
+      // SimChannel/IDE analogue of MatchEdepsToSubROIs. Keyed on the IDE's native readout
+      // tick (no per-plane X->tick projection), otherwise the same center+/-sigma / closest
+      // sub-ROI assignment as the edep version.
+      std::map<SubROI_Key_t, std::vector<const MatchedIDE_t*>> MatchIDEsToSubROIs(std::vector<SubROIProperties_t> const&, std::vector<const MatchedIDE_t*> const&);
+
+
+      TruthProperties_t CalcPropertiesFromEdeps(std::vector<const sim::SimEnergyDeposit*> const&, double offset, std::vector<geo::WireID> wireIDs);
+
+      // SimChannel/IDE analogue of CalcPropertiesFromEdeps. Fills TruthProperties_t from the
+      // dominant track's sim::IDEs (charge-weighted position/energy) plus the matched
+      // // simb::MCParticle trajectory (direction / pitch / dedr / dqdr). particleMap maps
+      // abs(trackID) -> MCParticle so the dominant track's trajectory can be looked up.
+      TruthProperties_t CalcPropertiesFromIDEs(std::vector<const MatchedIDE_t*> const&, std::map<int, const simb::MCParticle*> const& particleMap);
+
+      // Space-charge coordinate maps (mirroring TrackCaloSkimmer). Identity if fSCE is null or SCE disabled.
+      geo::Point_t WireToTrajectoryPosition(const geo::Point_t& loc, const geo::TPCID& tpc) const;          // at-the-wire -> true trajectory frame
+      geo::Point_t TrajectoryToWirePosition(const geo::Point_t& loc, const geo::Vector_t& driftdir) const;  // true -> at-the-wire frame
+
+
+      //product of view scale and channel scale
+      ScaleValues_t GetScaleValues(TruthProperties_t const&, ROIProperties_t const&, std::vector<geo::WireID> wireIDs);
+      //scaling factors not dependent on thruth properties (e.g., electronics gain)
+      ScaleValues_t GetChannelScaleValues(TruthProperties_t const&, raw::ChannelID_t const&);
+      //scaling factors dependent on truth properties (e.g., recombination, attenuation)
+      ScaleValues_t GetViewScaleValues(TruthProperties_t const&, geo::View_t const&, std::vector<geo::WireID> wireIDs);
+
+      void ModifyROI(std::vector<float> &,
+                     ROIProperties_t const &,
+                     std::vector<SubROIProperties_t> const&,
+                     std::map<SubROI_Key_t, ScaleValues_t> const&);
+  }; // end class
+} // end namespace

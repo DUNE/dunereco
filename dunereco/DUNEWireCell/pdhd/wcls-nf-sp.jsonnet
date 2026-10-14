@@ -53,13 +53,12 @@ local wcls_input = {
     data: {
       art_tag: raw_input_label,
       frame_tags: ['orig'],  // this is a WCT designator
-      tick: 512*wc.ns,
+      tick: (if (reality == 'data') then 512*wc.ns else 500*wc.ns),
       // nticks: params.daq.nticks,
     },
   }, nin=0, nout=1),
 
 };
-
 // Collect all the wc/ls output converters for use below.  Note the
 // "name" MUST match what is used in theh "outputers" parameter in the
 // FHiCL that loads this file.
@@ -102,6 +101,11 @@ local wcls_output = {
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
       frame_scale: [0.001, 0.001],
+      summary_tags: ['wiener'],
+      summary_suffix: '',
+      summary_operator: { wiener: 'set' },
+      // MUST match frame_scale.
+      summary_scale: [0.001],
       // nticks: params.daq.nticks,
       chanmaskmaps: [],
       nticks: -1,

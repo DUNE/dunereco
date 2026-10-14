@@ -3,9 +3,9 @@
 #include "dunereco/AnaUtils/DUNEAnaPFParticleUtils.h"
 
 FDSelectionTools::HighestPandrizzleScoreRecoVertexShowerSelector::HighestPandrizzleScoreRecoVertexShowerSelector(fhicl::ParameterSet const& ps) :
-    fShowerModuleLabel(ps.get< std::string> ("ModuleLabels.ShowerModuleLabel")),
-    fPFParticleModuleLabel(ps.get< std::string> ("ModuleLabels.PFParticleModuleLabel")),
-    fPandrizzleAlg(ps)
+    fShowerModuleLabel(ps.get< std::string> ("ShowerModuleLabel")),
+    fPFParticleModuleLabel(ps.get< std::string>("PFPModuleLabel")),
+    fPandrizzleAlg(ps.get<fhicl::ParameterSet>("PandrizzleConfig"))    
 {
 }
 
@@ -28,7 +28,7 @@ art::Ptr<recob::Shower> FDSelectionTools::HighestPandrizzleScoreRecoVertexShower
 
   for (art::Ptr<recob::PFParticle> childPFP : nuChildren) 
   {
-    if (!dune_ana::DUNEAnaPFParticleUtils::HasShower(childPFP, evt, fPFParticleModuleLabel, fShowerModuleLabel))
+    if (!dune_ana::DUNEAnaPFParticleUtils::IsShower(childPFP, evt, fPFParticleModuleLabel, fShowerModuleLabel))
       continue;
 
     art::Ptr<recob::Shower> childShower = dune_ana::DUNEAnaPFParticleUtils::GetShower(childPFP, evt, fPFParticleModuleLabel, fShowerModuleLabel);

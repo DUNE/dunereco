@@ -137,11 +137,9 @@ namespace FDSelection
       void SetVar(const FDSelection::PandrizzleAlg::Vars var, const Float_t value);
       Record ReturnEmptyRecord();
 
-      std::string fPFParticleModuleLabel;
+      std::string fRecoModuleLabel;
       std::string fShowerModuleLabel;
-      std::string fClusterModuleLabel;
       std::string fPIDModuleLabel;
-      std::string fPFPMetadataLabel;
       std::string fPandrizzleWeightFileName;
       std::string fEnhancedPandrizzleWeightFileName;
 
