@@ -28,7 +28,25 @@ physics :{
             // Contract note: these exact "type:name" must be used to identify
             // the configuration data structures for these components in the Jsonnet.
 
-            inputers: ["wclsSimDepoSource:"]
+            // The graph's depo source is a wclsSimDepoSetSource (the "deposet"
+            // node), so the inputer type must match that (was previously the
+            // mismatched "wclsSimDepoSource:").
+            inputers: ["wclsSimDepoSetSource:"]
+
+            // Each art output converter (FrameSaver / SimChannelSink) must be
+            // listed here by "type:name" matching its WCT node name.
+            //
+            // For the single-* / full modes the savers are named "simdigits" and
+            // "spsignals" (below).  For process_mode "multi-sim" there is NO
+            // "simdigits"/"spsignals"; instead each TPC id <k> in
+            // structs.process_tpc_indices yields a pair named "simdigits<k>"
+            // (raw::RawDigit) and "spsignals<k>" (recob::Wire).  So for
+            // multi-sim you MUST replace the two lines below with one pair per
+            // TPC, e.g. for process_tpc_indices = [0,1,2,3]:
+            //   "wclsFrameSaver:simdigits0", "wclsFrameSaver:spsignals0",
+            //   "wclsFrameSaver:simdigits1", "wclsFrameSaver:spsignals1",
+            //   "wclsFrameSaver:simdigits2", "wclsFrameSaver:spsignals2",
+            //   "wclsFrameSaver:simdigits3", "wclsFrameSaver:spsignals3",
             outputers: [
                 "wclsSimChannelSink:postdrift",
                 "wclsFrameSaver:spsignals"
@@ -52,8 +70,28 @@ physics :{
                 # default is to assume WireCell::kU->geo::kU, kV->kV, kW->kW
                 # 3view-30deg: default, 3view: dunevd_3view
                 geo_planeid_labels: "default"
-                # single-sp, single-sim, single-sim-sp, full
+                # art InputTag of the input SimEnergyDeposit depos the WCLS source
+                # reads (full "label:instance" honored). e.g. the BlipMaker test
+                # source puts to instance "bogus" -> use "IonAndScint:bogus".
+                input_depos_tag: "IonAndScint"
+                # Processing mode.  Governs which TPCs are processed and how
+                # their output products are organized:
+                #   single-sim / single-sp / single-sim-sp
+                #       process ONE TPC (structs.process_tpc_index); outputs are
+                #       tpc-suffixed (daqtpc<i>, gausstpc<i>, ...).
+                #   full
+                #       process ALL TPCs, merged into one product per tier.
+                #   multi-sim
+                #       process the LIST of TPCs in structs.process_tpc_indices;
+                #       the depo set is fanned out and EACH TPC terminates in its
+                #       OWN FrameSaver(s) -> one RawDigit product (instance =
+                #       params.frame_tag_pattern % tpc_id) AND one recob::Wire
+                #       product (instances gauss<id>/wiener<id>[/dnnsp<id>]) PER
+                #       TPC.  (See wcls-sim-drift-simchannel-nf-sp-multi.jsonnet.)
                 process_mode: "single-sp"
+                # multi-sim only: C-style format (one %d) interpolated on the TPC
+                # id to name the per-TPC raw::RawDigit product instance.
+                frame_tag_pattern: "daq%d"
             }
             structs: {
                 # number of time samples
@@ -75,6 +113,11 @@ physics :{
                 response_plane: 18.1 # must match files_fields
                 # when process_mode is single-*, this specifies which APA to process (0-319)
                 process_tpc_index: 0
+                # when process_mode is "multi-sim", this gives the LIST of TPC
+                # ids to process, each producing its own per-TPC products.  NOTE:
+                # this is a struct (injected as Jsonnet code via std.extVar), so
+                # it is given as a quoted string holding a Jsonnet array literal.
+                process_tpc_indices: "[0, 1, 2, 3]"
                 use_hydra: true
                 save_rawdigits: false
                 # use dnn_roi or not
