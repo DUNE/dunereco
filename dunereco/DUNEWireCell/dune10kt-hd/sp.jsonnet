@@ -75,7 +75,16 @@ function(params, tools, override = {}) {
 
       // frame tags
       wiener_tag: 'wiener%d' % anode.data.ident,
+      wiener_threshold_tag: 'threshold%d' % anode.data.ident,
       gauss_tag: 'gauss%d' % anode.data.ident,
+      // Per-anode debug/DNN-ROI tags.  Without these OmnibusSigProc uses
+      // its unnumbered C++ defaults and the 6-channel DNN-ROI inputs
+      // (loose_lf%d etc, see dnnroi_pp.jsonnet) come up empty.
+      tight_lf_tag: 'tight_lf%d' % anode.data.ident,
+      loose_lf_tag: 'loose_lf%d' % anode.data.ident,
+      decon_charge_tag: 'decon_charge%d' % anode.data.ident,
+      mp2_roi_tag: 'mp2_roi%d' % anode.data.ident,
+      mp3_roi_tag: 'mp3_roi%d' % anode.data.ident,
     } + override,
   }, nin=1, nout=1, uses=[anode, tools.dft, tools.field, tools.elec_resp] + pc.uses + spfilt),
 
