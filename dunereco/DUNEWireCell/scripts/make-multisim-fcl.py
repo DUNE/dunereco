@@ -5,11 +5,12 @@ The dune10kt-vd WC/LS job
 (dune10kt-vd/wcls-sim-drift-simchannel-nf-sp.jsonnet) supports a
 process_mode="multi-sim" in which the input depos are fanned out to one finger
 per TPC id in structs.process_tpc_indices, and EACH TPC terminates in its own
-pair of wclsFrameSaver nodes named "simdigits<id>" (raw::RawDigit) and
-"spsignals<id>" (recob::Wire).  For art to actually write those products, the
-WireCellToolkit module's `outputers` list MUST name every one of those nodes --
-exactly the set implied by process_tpc_indices.  Keeping those two lists in sync
-by hand is tedious and error-prone.
+trio of art-output nodes: a wclsDepoFluxWriter named "postdrift<id>"
+(sim::SimChannel) and two wclsFrameSaver nodes named "simdigits<id>"
+(raw::RawDigit) and "spsignals<id>" (recob::Wire).  For art to actually write
+those products, the WireCellToolkit module's `outputers` list MUST name every
+one of those nodes -- exactly the set implied by process_tpc_indices.  Keeping
+those lists in sync by hand is tedious and error-prone.
 
 This script derives BOTH lists from a single user-supplied set of TPC ids and
 emits a small overlay FHiCL that #includes the original single-sim FHiCL and
@@ -163,12 +164,18 @@ def main(argv=None):
         lines.append(f'{base_key}.params.input_depos_tag: "{args.input_depos_tag}"')
     lines.append(f'{base_key}.structs.process_tpc_indices: "{indices}"')
     lines.append("")
-    lines.append("# outputers: one SimChannel writer + a RawDigit and a recob::Wire")
-    lines.append("# saver per TPC -- kept consistent with process_tpc_indices above.")
+    lines.append("# outputers: per TPC, a SimChannel writer + a RawDigit saver +")
+    lines.append("# a recob::Wire saver -- kept consistent with process_tpc_indices")
+    lines.append("# above.  In multi-sim each TPC terminates in its own trio named")
+    lines.append("# postdrift<id> (sim::SimChannel), simdigits<id> (raw::RawDigit)")
+    lines.append("# and spsignals<id> (recob::Wire).")
     lines.append(f"{base_key}.outputers: [")
-    lines.append('      "wclsDepoFluxWriter:postdrift"')
+    first = True
     for i in ids:
-        lines.append(f'    , "wclsFrameSaver:simdigits{i}", "wclsFrameSaver:spsignals{i}"')
+        lead = "      " if first else "    , "
+        first = False
+        lines.append(f'{lead}"wclsDepoFluxWriter:postdrift{i}"'
+                     f', "wclsFrameSaver:simdigits{i}", "wclsFrameSaver:spsignals{i}"')
     lines.append("]")
     lines.append("")
     text = "\n".join(lines)

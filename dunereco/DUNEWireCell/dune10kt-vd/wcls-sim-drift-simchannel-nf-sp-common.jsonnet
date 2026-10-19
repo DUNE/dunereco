@@ -115,13 +115,23 @@ local planemap_ = {
   dnnroi_node(n):: dnnroi(tools.anodes[n], self.ts, output_scale=1.2),
 
   // The wcls depo-flux writer (writes SimChannels to the art::Event and passes
-  // the depo set through).  simchan_label is the art product instance name and
-  // is mode-dependent, so it is a parameter here.
-  depoflux_writer(simchan_label):: g.pnode({
+  // the depo set through).  Three parameters are mode-dependent:
+  //   simchan_label : the art product INSTANCE name of the std::vector<SimChannel>
+  //   name          : the WCT node name == the art-output-converter name that
+  //                   must appear in the module's `outputers` as
+  //                   "wclsDepoFluxWriter:<name>"
+  //   anodes        : the anode OBJECTS whose channels this writer tabulates.
+  //                   The writer initializes one (dense) SimChannel per channel
+  //                   of these anodes and projects only the depos flowing into
+  //                   this node that fall inside their sensitive volumes.  Pass a
+  //                   single-anode list to partition SimChannels per TPC (one
+  //                   product per TPC); pass all processed anodes for one merged
+  //                   product.  [default: all processed anodes, node "postdrift"]
+  depoflux_writer(simchan_label, name='postdrift', anodes=tools.anodes):: g.pnode({
     type: 'wclsDepoFluxWriter',
-    name: 'postdrift',
+    name: name,
     data: {
-      anodes: [wc.tn(anode) for anode in tools.anodes],
+      anodes: [wc.tn(anode) for anode in anodes],
       field_response: wc.tn(tools.field),
       tick: params.daq.tick,
       window_start: 0,
@@ -132,7 +142,7 @@ local planemap_ = {
       sed_label: fcl_params.input_depos_tag,
       sparse: false,
     },
-  }, nin=1, nout=1, uses=tools.anodes + [tools.field]),
+  }, nin=1, nout=1, uses=anodes + [tools.field]),
 
   // ---- FrameSaver factories (the art output converters) -------------------
   // Each frame_tag in `tags` becomes an art product *instance* name; the art
