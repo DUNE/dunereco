@@ -92,6 +92,9 @@ physics :{
                 # multi-sim only: C-style format (one %d) interpolated on the TPC
                 # id to name the per-TPC raw::RawDigit product instance.
                 frame_tag_pattern: "daq%d"
+                # graph-execution engine: "TbbFlow" (multi-threaded) or
+                # "Pgrapher" (single-threaded serial).  Must match wcls_main.apps.
+                engine: "TbbFlow"
             }
             structs: {
                 # number of time samples
@@ -123,6 +126,9 @@ physics :{
                 # use dnn_roi or not
                 use_dnnroi: false
                 adc_resolution: 14
+                # TbbFlow max thread count (tbb::global_control); 0 = all cores.
+                # Ignored by the Pgrapher engine.
+                max_threads: 0
             }
 
          }

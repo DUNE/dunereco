@@ -114,6 +114,12 @@ def main(argv=None):
                          "omit to leave the base FHiCL's value")
     ap.add_argument("--process-name", default=None,
                     help="override process_name")
+    ap.add_argument("--no-rawdigits", dest="save_rawdigits", action="store_false",
+                    default=True,
+                    help="do NOT save the per-TPC raw::RawDigit (ADC) products: "
+                         "sim feeds sigproc inside the WCT graph so the dense ADC "
+                         "waveform never reaches the art::Event (big memory win "
+                         "for many-TPC jobs).  Omits the simdigits<id> outputers.")
     ap.add_argument("--max-tpc", type=int, default=320,
                     help="warn if any id is >= this (FD-VD has 320 CRMs) "
                          "[default: %(default)s]; 0 disables the check")
@@ -163,19 +169,30 @@ def main(argv=None):
     if args.input_depos_tag is not None:
         lines.append(f'{base_key}.params.input_depos_tag: "{args.input_depos_tag}"')
     lines.append(f'{base_key}.structs.process_tpc_indices: "{indices}"')
+    lines.append(f'{base_key}.structs.save_rawdigits: '
+                 f'{"true" if args.save_rawdigits else "false"}')
     lines.append("")
-    lines.append("# outputers: per TPC, a SimChannel writer + a RawDigit saver +")
-    lines.append("# a recob::Wire saver -- kept consistent with process_tpc_indices")
-    lines.append("# above.  In multi-sim each TPC terminates in its own trio named")
-    lines.append("# postdrift<id> (sim::SimChannel), simdigits<id> (raw::RawDigit)")
-    lines.append("# and spsignals<id> (recob::Wire).")
+    if args.save_rawdigits:
+        lines.append("# outputers: per TPC, a SimChannel writer + a RawDigit saver +")
+        lines.append("# a recob::Wire saver -- kept consistent with")
+        lines.append("# process_tpc_indices above.  In multi-sim each TPC terminates")
+        lines.append("# in its own trio named postdrift<id> (sim::SimChannel),")
+        lines.append("# simdigits<id> (raw::RawDigit) and spsignals<id> (recob::Wire).")
+    else:
+        lines.append("# outputers: per TPC, a SimChannel writer + a recob::Wire")
+        lines.append("# saver (NO RawDigit -- save_rawdigits=false keeps ADC inside")
+        lines.append("# the WCT graph): postdrift<id> (sim::SimChannel) and")
+        lines.append("# spsignals<id> (recob::Wire).")
     lines.append(f"{base_key}.outputers: [")
     first = True
     for i in ids:
         lead = "      " if first else "    , "
         first = False
-        lines.append(f'{lead}"wclsDepoFluxWriter:postdrift{i}"'
-                     f', "wclsFrameSaver:simdigits{i}", "wclsFrameSaver:spsignals{i}"')
+        trio = '"wclsDepoFluxWriter:postdrift%d"' % i
+        if args.save_rawdigits:
+            trio += ', "wclsFrameSaver:simdigits%d"' % i
+        trio += ', "wclsFrameSaver:spsignals%d"' % i
+        lines.append(lead + trio)
     lines.append("]")
     lines.append("")
     text = "\n".join(lines)

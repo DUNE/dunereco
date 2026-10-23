@@ -127,7 +127,13 @@ local planemap_ = {
   //                   single-anode list to partition SimChannels per TPC (one
   //                   product per TPC); pass all processed anodes for one merged
   //                   product.  [default: all processed anodes, node "postdrift"]
-  depoflux_writer(simchan_label, name='postdrift', anodes=tools.anodes):: g.pnode({
+  // `sparse`: false (default) pre-initializes one dense SimChannel per channel of
+  // `anodes` EVERY event (visit() does this regardless of whether the node ran),
+  // so the product is always nchan-sized -- even for a TPC the hydra busted.  Set
+  // sparse=true to emit SimChannels ONLY for channels that actually received
+  // charge (LArSoft-conventional); then a busted (no-depo) TPC yields a 0-size
+  // product, matching the RawDigit/recob::Wire sparseness.
+  depoflux_writer(simchan_label, name='postdrift', anodes=tools.anodes, sparse=false):: g.pnode({
     type: 'wclsDepoFluxWriter',
     name: name,
     data: {
@@ -140,7 +146,7 @@ local planemap_ = {
       reference_time: 0,
       simchan_label: simchan_label,
       sed_label: fcl_params.input_depos_tag,
-      sparse: false,
+      sparse: sparse,
     },
   }, nin=1, nout=1, uses=anodes + [tools.field]),
 
@@ -163,7 +169,10 @@ local planemap_ = {
     },
   }, nin=1, nout=1, uses=[anode]),
 
-  // recob::Wire saver (post-SP signals).
+  // recob::Wire saver (post-SP signals).  sparse=true (trick 2) writes the
+  // zero-suppressed sigproc ROIs as sparse recob::Wire, so the product holds
+  // only the non-zero regions instead of a dense all-ticks waveform -- far less
+  // memory for the art::Event fan-in.
   sig_saver(name, anode, tags):: g.pnode({
     type: 'wclsFrameSaver',
     name: name,
@@ -171,6 +180,7 @@ local planemap_ = {
       plane_map: planemap_,
       anode: wc.tn(anode),
       digitize: false,  // recob::Wire
+      sparse: true,     // zero-suppressed ROIs, not dense waveforms
       frame_tags: tags,
       frame_scale: [0.005 for t in tags],
       chanmaskmaps: [],

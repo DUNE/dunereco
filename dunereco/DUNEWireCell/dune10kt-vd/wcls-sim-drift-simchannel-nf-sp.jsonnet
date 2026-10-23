@@ -28,7 +28,15 @@ local single_maker = import 'pgrapher/experiment/dune10kt-vd/wcls-sim-drift-simc
 local multi_maker = import 'pgrapher/experiment/dune10kt-vd/wcls-sim-drift-simchannel-nf-sp-multi.jsonnet';
 
 // ---- 1. resolve the fcl knobs -------------------------------------------
-local fcl_params = {
+// IMPORTANT: the extVar-derived knobs are forced to concrete literals ONCE, via
+// std.parseJson(std.manifestJson(...)).  Without this, go-jsonnet does NOT
+// memoize the extVar-valued numeric params (nticks, elecGain, response_plane,
+// ...) as they thread through params_maker into the per-anode response / sim /
+// sigproc construction: it REBUILDS the (nticks-sized) response arrays once per
+// processed TPC.  For the multi-sim fan that is ~GBs of config-compile memory
+// PER CRU (the dominant per-CRU job-memory cost); forcing the values concrete
+// restores normal sharing (measured: ~10 GB -> ~0.13 GB for 4 CRUs).
+local fcl_params = std.parseJson(std.manifestJson({
   G4RefTime: std.extVar('G4RefTime') * wc.us,
   response_plane: std.extVar('response_plane') * wc.cm,
   nticks: std.extVar('nticks'),
@@ -48,21 +56,24 @@ local fcl_params = {
   // multi-*  : list of TPC ids, and the per-TPC RawDigit tag/instance pattern
   process_tpc_indices: std.extVar('process_tpc_indices'),
   frame_tag_pattern: std.extVar('frame_tag_pattern'),
-};
+}));
 
 // ---- 2. params + tools ---------------------------------------------------
+// The lar/files extVar overrides are forced concrete for the same reason.
+local lar_over = std.parseJson(std.manifestJson({
+  DL: std.extVar('DL') * wc.cm2 / wc.ns,
+  DT: std.extVar('DT') * wc.cm2 / wc.ns,
+  lifetime: std.extVar('lifetime') * wc.us,
+  drift_speed: util.drift_velocity(std.extVar('efield'), std.extVar('temperature')) * wc.mm / wc.us,
+}));
+local files_over = std.parseJson(std.manifestJson({
+  wires: std.extVar('files_wires'),
+  // same field response for [bottom, top] drift volumes
+  fields: [std.extVar('files_fields'), std.extVar('files_fields')],
+}));
 local params = params_maker(fcl_params) {
-  lar: super.lar {
-    DL: std.extVar('DL') * wc.cm2 / wc.ns,
-    DT: std.extVar('DT') * wc.cm2 / wc.ns,
-    lifetime: std.extVar('lifetime') * wc.us,
-    drift_speed: util.drift_velocity(std.extVar('efield'), std.extVar('temperature')) * wc.mm / wc.us,
-  },
-  files: super.files {
-    wires: std.extVar('files_wires'),
-    // same field response for [bottom, top] drift volumes
-    fields: [std.extVar('files_fields'), std.extVar('files_fields')],
-  },
+  lar: super.lar + lar_over,
+  files: super.files + files_over,
 };
 
 local tools_all = tools_maker(params);
@@ -90,9 +101,19 @@ local built =
 local graph = built.graph;
 
 // ---- 4. emit -------------------------------------------------------------
+// The graph-execution engine is fcl-selectable: 'TbbFlow' (multi-threaded TBB
+// flow graph) or 'Pgrapher' (single-threaded serial executor).  Both consume
+// the same edge list.
+local engine = std.extVar('engine');
 local app = {
-  type: 'TbbFlow',  // Pgrapher, TbbFlow
+  type: engine,
   data: { edges: g.edges(graph) },
 };
+// For TbbFlow only, a TbbDataFlowGraph carries the thread limit: max_threads
+// feeds tbb::global_control(max_allowed_parallelism); 0 leaves TBB free to use
+// all cores (the historical default).  Pgrapher ignores it (always serial).
+local dfg = if engine == 'TbbFlow'
+  then [{ type: 'TbbDataFlowGraph', data: { max_threads: std.extVar('max_threads') } }]
+  else [];
 
-g.uses(graph) + [app]
+g.uses(graph) + dfg + [app]

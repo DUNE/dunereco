@@ -30,10 +30,19 @@
 
 local g = import 'pgraph.jsonnet';
 local wc = import 'wirecell.jsonnet';
+local mf = import 'multifan.jsonnet';
 
 function(params, tools, fcl_params, com) {
 
   local ftp = fcl_params.frame_tag_pattern,
+  // Trick 1: when false, the per-TPC RawDigit (ADC) saver is omitted so the
+  //   dense ADC waveform is never put to the art::Event -- sim feeds sigproc
+  //   entirely inside the WCT graph.  Only SimChannel + recob::Wire are output.
+  local save_raw = fcl_params.save_rawdigits,
+  // Trick 3: hydra "DeposOrBust" short-circuit (TbbFlow only -- the FrameSync
+  //   merge is async).  Fingers whose filtered depo set is empty skip the whole
+  //   sim+sigproc pipeline and emit an EmptyFrame instead.
+  local use_hydra = fcl_params.use_hydra,
 
   // Build one finger for the n-th processed anode (TPC ident = k).
   local finger(n) =
@@ -51,10 +60,12 @@ function(params, tools, fcl_params, com) {
     // Per-TPC SimChannel writer: a depo-flux writer over THIS TPC's one anode,
     // fed the already-filtered depo set, so it emits one std::vector<SimChannel>
     // holding only this TPC's channels.  It passes the depo set through to sim.
-    local scwriter = com.depoflux_writer('simpleSC%d' % k, 'postdrift%d' % k, [anode]);
+    // It lives at the HEAD of `work` (behind DeposOrBust) so a BUSTED TPC skips
+    // it too -> a 0-size SimChannel product, matching the RawDigit/recob::Wire.
+    local scwriter = com.depoflux_writer('simpleSC%d' % k, 'postdrift%d' % k, [anode], sparse=true);
 
-    // Retag the post-sim ADC frame's traces to the per-TPC RawDigit tag so the
-    // RawDigit saver (frame_tags=[ftp % k]) picks them up.
+    // Optional (trick 1) RawDigit saver chain: retag the post-sim ADC frame's
+    // traces to the per-TPC RawDigit tag, then save raw::RawDigit.
     local raw_fanin = g.pnode({
       type: 'FrameFanin',
       name: 'multi-raw-fanin-%d' % k,
@@ -69,10 +80,10 @@ function(params, tools, fcl_params, com) {
       name: 'multi-raw-retag-%d' % k,
       data: { tag_rules: [{ frame: { '.*': ftp % k }, merge: { '.*': ftp % k } }] },
     }, nin=1, nout=1);
-
     local raw_saver = com.raw_saver('simdigits%d' % k, manode, [ftp % k]);
+    local raw_chain = if save_raw then [raw_fanin, raw_retag, raw_saver] else [];
 
-    // Per-TPC signal processing and its recob::Wire saver.
+    // Per-TPC signal processing and its recob::Wire saver (sparse ROIs, trick 2).
     local sig_tags = ['gauss%d' % k, 'wiener%d' % k]
                      + (if fcl_params.use_dnnroi then ['dnnsp%d' % k] else []);
     local sp_branch = [com.sp_pipes[n]]
@@ -81,18 +92,50 @@ function(params, tools, fcl_params, com) {
 
     local dump = com.dumpframes('multi-dump-%d' % k);
 
-    g.pipeline(
-      [ds_filter, scwriter, com.sn_pipes[n], raw_fanin, raw_retag, raw_saver]
-      + sp_branch
-      + [sig_saver, dump],
-      'multifinger%d' % k),
+    // The "work": SimChannel save -> sim (+ optional RawDigit save) -> sigproc ->
+    // recob::Wire save.  ALL THREE art writers (SimChannel, RawDigit, recob::Wire)
+    // live INSIDE this hydra-protected subgraph so a BUSTED (empty) TPC skips them
+    // entirely and writes ZERO-size products.  (A saver placed AFTER the FrameSync
+    // merge would run on the busted EmptyFrame too, and wclsFrameSaver always emits
+    // one recob::Wire per channel -> a full nchan vector of empty ROIs instead of a
+    // 0-size vector, making the hydra skip invisible in the output.)  The scwriter
+    // takes the depo set in and passes it through, so it leads the pipe; depos in
+    // -> frame out.
+    local work = g.pipeline([scwriter, com.sn_pipes[n]] + raw_chain + sp_branch + [sig_saver],
+                            'multiwork%d' % k);
+
+    // Hydra switch: DeposOrBust routes a non-empty depo set to `work` (port 0)
+    // or, when empty, emits an EmptyFrame (port 1); FrameSync merges the two.
+    local dorb = g.pnode({ type: 'DeposOrBust', name: 'dorb-multi-%d' % k },
+                         nin=1, nout=2);
+    local frame_sync = g.pnode({ type: 'FrameSync', name: 'frame-sync-multi-%d' % k },
+                               nin=2, nout=1);
+    local switch = g.intern(
+      innodes=[dorb], outnodes=[frame_sync], centernodes=[work],
+      edges=[
+        g.edge(dorb, work, 0, 0),
+        g.edge(work, frame_sync, 0, 0),
+        g.edge(dorb, frame_sync, 1, 1),
+      ], name='multiswitch%d' % k);
+
+    local body = if use_hydra
+                 then [ds_filter, switch]
+                 else [ds_filter, work];
+
+    g.pipeline(body + [dump], 'multifinger%d' % k),
 
   local fingers = [finger(n) for n in com.anode_iota],
 
   // DepoSetFanout -> per-TPC self-terminating fingers.  Each finger writes its
   // own SimChannel / RawDigit / recob::Wire products (see finger() above), so
-  // nothing is written before the fan-out.
-  local fanout = g.fan.sink('DepoSetFanout', fingers, 'multi_sim_fanout'),
+  // nothing is written before the fan-out.  The fan is built via multifan so a
+  // whole-detector (>10 TPC) job factors into a TREE of <=10-way DepoSetFanouts
+  // -- a flat fanout would trip the TbbFlow FanoutWrapper nout<=10 assertion.
+  // Only the total TPC count drives the factoring (no per-layer knobs in FCL).
+  local fo = mf.fanout('multi_sim_fanout', 'DepoSetFanout', std.length(fingers), max=10),
+  local fanout = g.intern(
+    innodes=[fo], outnodes=fingers,
+    edges=[g.edge(fo, fingers[n], n, 0) for n in com.anode_iota]),
 
   graph: g.pipeline([
     com.wcls_input.deposet,

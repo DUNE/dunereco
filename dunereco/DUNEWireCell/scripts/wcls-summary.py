@@ -55,6 +55,7 @@ import bz2
 import collections
 import copy
 import datetime
+import glob
 import gzip
 import json
 import math
@@ -2562,6 +2563,13 @@ def parse_args(argv):
                    help='directory tree searched recursively for WCT data files by base name (repeatable)')
     p.add_argument('--map', action='append', default=[],
                    help='make a Jsonnet import prefix point to a directory, eg pgrapher/experiment=/src/DUNEWireCell')
+    p.add_argument('--auto', dest='auto', action='store_true', default=True,
+                   help='auto-locate FHiCL/Jsonnet/data search paths relative '
+                        'to this script + WIRECELL_PATH so the in-tree '
+                        'dune10kt-vd example runs without a full DUNE '
+                        'environment (default: on)')
+    p.add_argument('--no-auto', dest='auto', action='store_false',
+                   help='disable --auto path discovery')
     p.add_argument('--dunewirecell', default=None,
                    help='a dunereco DUNEWireCell source directory: maps pgrapher/{experiment,common,dune,ui}, '
                    'searches it for data files and FHiCL includes')
@@ -2576,6 +2584,139 @@ def parse_args(argv):
     return p.parse_args(argv)
 
 
+# ----------------------------------------------------------------------
+# Auto-location of search paths
+# ----------------------------------------------------------------------
+
+def _ancestors(start, levels):
+    '''`start` and up to `levels` parent directories, nearest first.'''
+    d = os.path.abspath(start)
+    out = [d]
+    for _ in range(levels):
+        nd = os.path.dirname(d)
+        if nd == d:
+            break
+        d = nd
+        out.append(d)
+    return out
+
+
+def _first_glob(ancestors, patterns):
+    '''First existing path matching any <ancestor>/<pattern> (bounded globs,
+    no recursive **), scanning ancestors nearest-first.'''
+    for anc in ancestors:
+        for pat in patterns:
+            hits = sorted(glob.glob(os.path.join(anc, pat)))
+            if hits:
+                return hits[0]
+    return None
+
+
+def _wcpath_entries(args_paths):
+    '''Explicit paths plus WIRECELL_PATH entries.'''
+    return [p for p in (list(args_paths) +
+                        os.environ.get('WIRECELL_PATH', '').split(':')) if p]
+
+
+def autolocate(args):
+    '''Best-effort discovery of the Jsonnet / FHiCL / data search paths needed
+    to summarize the in-tree dune10kt-vd example WITHOUT a full DUNE shell
+    environment.
+
+    Everything discovered here is APPENDED to whatever the user passed
+    explicitly (-I/--fcl-tree/-J/-P/--dunewirecell), so explicit flags always
+    keep priority and nothing is overridden.  Discovery is relative to this
+    script's location (a dunereco checkout) plus WIRECELL_PATH, so it works
+    from a bare dunereco + wire-cell-toolkit checkout.  Disable with --no-auto.
+
+    What it tries to find, and why each is needed:
+      * --dunewirecell : the DUNEWireCell dir holding this script -- it carries
+          dune10kt-vd/, common/, dune/ ... i.e. the pgrapher/experiment tree the
+          config Jsonnet imports.
+      * --fcl-tree <dunereco> : so the WC FHiCL (#include "wirecell_dune.fcl",
+          the per-detector fcls) resolve by basename.
+      * -J <wire-cell-toolkit/cfg> : wirecell.jsonnet / pgraph.jsonnet /
+          pgrapher/common, imported by the config Jsonnet (unless already on
+          WIRECELL_PATH).
+      * -P <wire-cell-data> : field-response / wire-geometry .json.bz2 data
+          (unless already on WIRECELL_PATH).
+      * --fcl-tree <DUNE fcl install> : the dunecore detector-service fcls
+          (detectorproperties_dune.fcl, detectorclocks_dune.fcl, ...) that the
+          base fcl's structs reference via @local::.  These are NOT in dunereco;
+          if a light install tree is nearby we index it so most @local:: resolve.
+          A few numbers that live only in the heavy larsoft sim-service chain
+          (e.g. dunefd_largeantparameters' DL/DT) cannot be found this way --
+          supply them with --ext-code if they end up unresolved.
+    '''
+    if not args.auto:
+        return
+    here = os.path.dirname(os.path.abspath(__file__))
+    dwc = os.path.dirname(here)                 # scripts/ -> DUNEWireCell/
+    ancestors = _ancestors(here, 8)
+    found = []
+
+    # 1. --dunewirecell (the DUNEWireCell dir with dune10kt-vd/ etc.)
+    if not args.dunewirecell and os.path.isdir(os.path.join(dwc, 'dune10kt-vd')):
+        args.dunewirecell = dwc
+        found.append('--dunewirecell %s' % dwc)
+
+    # 2. --fcl-tree for the dunereco checkout (WC fcls, resolved by basename).
+    reco = next((a for a in ancestors
+                 if os.path.basename(a) == 'dunereco'
+                 and os.path.isdir(os.path.join(a, 'dunereco'))), None)
+    if reco is None:
+        reco = os.path.dirname(os.path.dirname(dwc))  # .../DUNEWireCell -> repo
+    if reco and os.path.isdir(reco) and reco not in args.fcl_tree:
+        args.fcl_tree.append(reco)
+        found.append('--fcl-tree %s' % reco)
+
+    # 3. -J for the wire-cell-toolkit cfg library (if not already available).
+    have_wct = any(os.path.exists(os.path.join(p, 'wirecell.jsonnet'))
+                   for p in _wcpath_entries(args.jpath))
+    if not have_wct:
+        cfg = _first_glob(ancestors, [
+            'wire-cell-toolkit/cfg/wirecell.jsonnet',
+            '*/wire-cell-toolkit/cfg/wirecell.jsonnet',
+            '*/*/wire-cell-toolkit/cfg/wirecell.jsonnet',
+            '*/cfg/wirecell.jsonnet',
+        ])
+        if cfg:
+            d = os.path.dirname(cfg)
+            args.jpath.append(d)
+            found.append('-J %s' % d)
+
+    # 4. -P for wire-cell-data (if no response data already available).
+    have_data = any(glob.glob(os.path.join(p, '*.json.bz2'))
+                    for p in _wcpath_entries(args.data_path))
+    if not have_data:
+        wcd = _first_glob(ancestors, [
+            'wire-cell-data', '*/wire-cell-data', '*/*/wire-cell-data',
+        ])
+        if wcd and os.path.isdir(wcd):
+            args.data_path.append(wcd)
+            found.append('-P %s' % wcd)
+
+    # 5. --fcl-tree for a nearby DUNE fcl install (dunecore service fcls).
+    dp = _first_glob(ancestors, [
+        'fcl/detectorproperties_dune.fcl',
+        '*/fcl/detectorproperties_dune.fcl',
+        '*/*/fcl/detectorproperties_dune.fcl',
+        '*/*/*/fcl/detectorproperties_dune.fcl',
+        '*/*/*/*/fcl/detectorproperties_dune.fcl',
+    ])
+    if dp:
+        d = os.path.dirname(dp)
+        if d not in args.fcl_tree:
+            args.fcl_tree.append(d)
+            found.append('--fcl-tree %s' % d)
+
+    if found:
+        info('auto-located (use --no-auto to disable):\n    ' +
+             '\n    '.join(found))
+    else:
+        info('auto-location found nothing to add (use --no-auto to disable)')
+
+
 def main(argv=None):
     args = parse_args(argv if argv is not None else sys.argv[1:])
     tmpdir = tempfile.mkdtemp(prefix='wcls-summary-')
@@ -2587,6 +2728,7 @@ def main(argv=None):
 
 
 def run(args, tmpdir):
+    autolocate(args)
     paths = Paths(args, tmpdir)
     incdirs = list(args.fcl_path)
     if args.dunewirecell:
@@ -2624,9 +2766,16 @@ def run(args, tmpdir):
     extvars, unresolved = make_extvars(wm, args.ext_str, args.ext_code)
     if unresolved:
         msg = '\n'.join('  %s = %s (at %s)' % (k, u.ref, u.src) for k, u in unresolved)
-        raise SystemExit('unresolved FHiCL values for external variables:\n%s\n'
-                         'add FHiCL include paths (-I, --fcl-tree) or give --ext-str/--ext-code key=value'
-                         % msg)
+        hint = ('  --ext-code %s=<value>' % k for k, _ in unresolved)
+        raise SystemExit(
+            'unresolved FHiCL values for external variables:\n%s\n'
+            'These @local:: references resolve only against FHiCL that could not\n'
+            'be loaded here.  Values from detectorproperties/detectorclocks live\n'
+            'in a DUNE fcl install (auto-located if one is near this checkout);\n'
+            'a few (e.g. dunefd_largeantparameters DL/DT) live only in the heavy\n'
+            'larsoft sim-service chain, which is NOT in dunereco.  Either add the\n'
+            'right FHiCL path (-I, --fcl-tree) or supply the values directly, e.g.\n%s'
+            % (msg, '\n'.join(hint)))
     fpaths = [os.path.abspath(p) for p in fhicl_strings(wm.get('paths'))]
     configs = fhicl_strings(wm.get('configs'))
     if args.jsonnet:
