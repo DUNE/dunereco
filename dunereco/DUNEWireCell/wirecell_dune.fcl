@@ -2338,8 +2338,8 @@ dune10kt_vertdrift_sim_nfsp : {
             G4RefTime: @local::dunefd_detectorclocks.G4RefTime
             # response plane [cm]
             response_plane: 18.1 # must match files_fields
-            # when process_mode is single-*, this specifies which APA to process (0-319)
-            process_tpc_index: 0
+            # when process_mode is single-*, this specifies which anode to process (0-319)
+            process_anode_index: 0
             use_hydra: true
             save_rawdigits: false
             # use dnn_roi or not
@@ -2350,7 +2350,7 @@ dune10kt_vertdrift_sim_nfsp : {
 }
 
 # Variation of the dune10kt-vd block that ALSO saves raw digits.
-# single-sim-sp: process one APA (process_tpc_index) and save one merged
+# single-sim-sp: process one anode (process_anode_index) and save one merged
 # "simdigits" RawDigit collection (plus spsignals).
 dune10kt_vertdrift_sim_nfsp_singledigits : {
     @table::dune10kt_vertdrift_sim_nfsp

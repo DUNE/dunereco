@@ -5,16 +5,16 @@
 //   1. resolve all std.extVar() fcl knobs into one `fcl_params` object,
 //   2. build `params` (params-10kt) and `tools` (narrowed to the anodes to run),
 //   3. dispatch on process_mode to a modal layer that builds the graph:
-//        - "multi-sim"            -> -multi.jsonnet  (per-TPC fan-out, per-TPC
-//                                     FrameSavers; process_tpc_indices list)
+//        - "multi-sim"            -> -multi.jsonnet  (per-anode fan-out, per-anode
+//                                     FrameSavers; process_anode_indices list)
 //        - "single-sim/-sp/-sim-sp" and the "full" fallback -> -single.jsonnet
 //   4. wrap the graph in the flow-engine app and emit.
 //
 // Shared detector glue lives in -common.jsonnet; the modal graph assembly lives
 // in -single.jsonnet / -multi.jsonnet.  See those files for details.
 //
-// NOTE on extVar laziness: per-mode knobs (process_tpc_index vs
-// process_tpc_indices / frame_tag_pattern) are referenced only on the code path
+// NOTE on extVar laziness: per-mode knobs (process_anode_index vs
+// process_anode_indices / frame_tag_pattern) are referenced only on the code path
 // that needs them, so a FHiCL need only supply the knobs for its chosen mode.
 
 local g = import 'pgraph.jsonnet';
@@ -33,7 +33,7 @@ local multi_maker = import 'pgrapher/experiment/dune10kt-vd/wcls-sim-drift-simch
 // memoize the extVar-valued numeric params (nticks, elecGain, response_plane,
 // ...) as they thread through params_maker into the per-anode response / sim /
 // sigproc construction: it REBUILDS the (nticks-sized) response arrays once per
-// processed TPC.  For the multi-sim fan that is ~GBs of config-compile memory
+// processed anode.  For the multi-sim fan that is ~GBs of config-compile memory
 // PER CRU (the dominant per-CRU job-memory cost); forcing the values concrete
 // restores normal sharing (measured: ~10 GB -> ~0.13 GB for 4 CRUs).
 local fcl_params = std.parseJson(std.manifestJson({
@@ -51,10 +51,10 @@ local fcl_params = std.parseJson(std.manifestJson({
   adc_resolution: std.extVar('adc_resolution'),
   // Bottom drift (cold electronics) front-end gain [mV/fC]
   elecGain: std.extVar('elecGain') * wc.mV / wc.fC,
-  // single-* : which one TPC to process
-  process_tpc_index: std.extVar('process_tpc_index'),
-  // multi-*  : list of TPC ids, and the per-TPC RawDigit tag/instance pattern
-  process_tpc_indices: std.extVar('process_tpc_indices'),
+  // single-* : which one anode to process
+  process_anode_index: std.extVar('process_anode_index'),
+  // multi-*  : list of anode indices, and the per-anode RawDigit tag/instance pattern
+  process_anode_indices: std.extVar('process_anode_indices'),
   frame_tag_pattern: std.extVar('frame_tag_pattern'),
 }));
 
@@ -86,8 +86,8 @@ local is_multi = fcl_params.process_mode == 'multi-sim';
 
 // The anodes this job will process, as positions into tools_all.anodes.
 local anode_indices =
-  if is_multi then fcl_params.process_tpc_indices
-  else if is_single then [fcl_params.process_tpc_index]
+  if is_multi then fcl_params.process_anode_indices
+  else if is_single then [fcl_params.process_anode_index]
   else std.range(0, std.length(tools_all.anodes) - 1);  // "full"
 
 local tools = tools_all { anodes: [tools_all.anodes[i] for i in anode_indices] };
@@ -101,13 +101,36 @@ local built =
 local graph = built.graph;
 
 // ---- 4. emit -------------------------------------------------------------
+// Order-preserving O(N log N) dedup.  pgraph's g.uses()/g.edges() dedup via
+// wc.unique_list() which is O(N^2) DEEP-object comparison -- fine for ProtoDUNE
+// but impractical for a full FD-VD single graph (~5800 nodes, all uniquely
+// named, so ~17M deep compares finding ZERO dups -> ~20 min just to compile).
+// Nodes are uniquely identified by "type:name" (the WCT NamedFactory identity)
+// and edges by their serialized form, so we dedup by a cheap string key while
+// keeping the FIRST occurrence -- order matters: WCT configures components in
+// array order and resolve_uses() already emits dependencies before dependents
+// (e.g. AnodePlane before OmnibusSigProc).  [The proper fix belongs in pgraph's
+// g.uses/g.edges upstream.]
+local unique_by(lst, keyf) =
+  local n = std.length(lst);
+  if n <= 1 then lst
+  else
+    local pairs = std.makeArray(n, function(i) { k: keyf(lst[i]), i: i });
+    local sorted = std.sort(pairs, function(p) [p.k, p.i]);
+    local keep = [ sorted[j].i for j in std.range(0, n - 1)
+                   if j == 0 || sorted[j].k != sorted[j - 1].k ];
+    [ lst[i] for i in std.sort(keep) ];
+local uses = unique_by(g.resolve_uses(graph.uses),
+                       function(n) std.get(n, 'type', '') + ':' + std.get(n, 'name', ''));
+local edges = unique_by(graph.edges, function(e) std.manifestJson(e));
+
 // The graph-execution engine is fcl-selectable: 'TbbFlow' (multi-threaded TBB
 // flow graph) or 'Pgrapher' (single-threaded serial executor).  Both consume
 // the same edge list.
 local engine = std.extVar('engine');
 local app = {
   type: engine,
-  data: { edges: g.edges(graph) },
+  data: { edges: edges },
 };
 // For TbbFlow only, a TbbDataFlowGraph carries the thread limit: max_threads
 // feeds tbb::global_control(max_allowed_parallelism); 0 leaves TBB free to use
@@ -116,4 +139,4 @@ local dfg = if engine == 'TbbFlow'
   then [{ type: 'TbbDataFlowGraph', data: { max_threads: std.extVar('max_threads') } }]
   else [];
 
-g.uses(graph) + dfg + [app]
+uses + dfg + [app]

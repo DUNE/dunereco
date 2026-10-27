@@ -560,6 +560,32 @@ class ExtVar:
         return a.src + via
 
 
+def _jsonnet_number(text):
+    '''Normalize a FHiCL numeric literal to a form valid in Jsonnet.
+
+    FHiCL (like C/C++) accepts trailing-dot ("0.", "250.") and leading-dot
+    (".5") floats, but Jsonnet's number grammar requires a digit on both
+    sides of the decimal point, so "0." baked into an --ext-code value makes
+    go-jsonnet report "junk after decimal point" (the junk is its own
+    end-of-input rune, U+FFFD).  The real WCLS art tool side-steps this
+    because fhicl's get<std::string>() returns a canonicalized number; here
+    we normalize the source token directly, preserving its digits.
+    Non-numeric text (eg "infinity") passes through unchanged.'''
+    t = text.strip().lstrip('+')
+    sign = ''
+    if t[:1] == '-':
+        sign, t = '-', t[1:]
+    exp = ''
+    cands = [j for j in (t.find('e'), t.find('E')) if j >= 0]
+    if cands:
+        i = min(cands)
+        t, exp = t[:i], t[i:]
+    if '.' in t:
+        intp, _, frac = t.partition('.')
+        t = (intp or '0') + '.' + (frac or '0')
+    return sign + t + exp
+
+
 def make_extvars(wcls_main, overrides_str, overrides_code):
     '''Turn wcls_main params/structs into ext vars like WCLS_tool does.'''
     evs = collections.OrderedDict()
@@ -572,7 +598,12 @@ def make_extvars(wcls_main, overrides_str, overrides_code):
                 evs[k] = ExtVar(k, 'str', None, a)
                 continue
             if isinstance(a, Atom):
-                val = a.text if a.kind in ('num', 'bool') else ('' if a.value is None else str(a.value))
+                if a.kind == 'num':
+                    val = _jsonnet_number(a.text)
+                elif a.kind == 'bool':
+                    val = a.text
+                else:
+                    val = '' if a.value is None else str(a.value)
                 evs[k] = ExtVar(k, 'str', val, a)
             else:
                 warn('wcls_main.params.%s is not an atom, passing as JSON' % k)
@@ -590,9 +621,11 @@ def make_extvars(wcls_main, overrides_str, overrides_code):
                 elif a.kind == 'nil':
                     code = 'null'
                 elif a.kind == 'num':
-                    code = a.text.lstrip('+')
-                    if code.lower().endswith('infinity'):
+                    if a.text.lower().endswith('infinity'):
                         warn('struct %s is infinite, not representable in Jsonnet' % k)
+                        code = a.text.lstrip('+')
+                    else:
+                        code = _jsonnet_number(a.text)
                 else:
                     code = str(a.value)  # WCLS passes the string content as code
                 evs[k] = ExtVar(k, 'code', code, a)
@@ -2578,6 +2611,10 @@ def parse_args(argv):
     p.add_argument('--jsonnet-exe', default=os.environ.get('JSONNET', 'jsonnet'), help='jsonnet program')
     p.add_argument('--save-json', default=None, help='also save the compiled WCT configuration to this file')
     p.add_argument('--keep', default=None, help='keep the LaTeX source and figures in this directory')
+    p.add_argument('--outdir', default=None,
+                   help='use this directory as the working area for all intermediate '
+                        'files (created if absent) and do not remove it on exit; the '
+                        'final PDF location is still governed by -o/--output')
     p.add_argument('--max-anode-rows', type=int, default=400, help='maximum rows in the per-face table')
     p.add_argument('--no-appendix', dest='appendix', action='store_false',
                    help='do not include the appendix listing all components')
@@ -2719,6 +2756,10 @@ def autolocate(args):
 
 def main(argv=None):
     args = parse_args(argv if argv is not None else sys.argv[1:])
+    if args.outdir:
+        tmpdir = os.path.abspath(args.outdir)
+        os.makedirs(tmpdir, exist_ok=True)
+        return run(args, tmpdir)
     tmpdir = tempfile.mkdtemp(prefix='wcls-summary-')
     try:
         return run(args, tmpdir)

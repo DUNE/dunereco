@@ -38,11 +38,11 @@ physics :{
             //
             // For the single-* / full modes the savers are named "simdigits" and
             // "spsignals" (below).  For process_mode "multi-sim" there is NO
-            // "simdigits"/"spsignals"; instead each TPC id <k> in
-            // structs.process_tpc_indices yields a pair named "simdigits<k>"
+            // "simdigits"/"spsignals"; instead each anode ident <k> in
+            // structs.process_anode_indices yields a pair named "simdigits<k>"
             // (raw::RawDigit) and "spsignals<k>" (recob::Wire).  So for
             // multi-sim you MUST replace the two lines below with one pair per
-            // TPC, e.g. for process_tpc_indices = [0,1,2,3]:
+            // anode, e.g. for process_anode_indices = [0,1,2,3]:
             //   "wclsFrameSaver:simdigits0", "wclsFrameSaver:spsignals0",
             //   "wclsFrameSaver:simdigits1", "wclsFrameSaver:spsignals1",
             //   "wclsFrameSaver:simdigits2", "wclsFrameSaver:spsignals2",
@@ -74,23 +74,23 @@ physics :{
                 # reads (full "label:instance" honored). e.g. the BlipMaker test
                 # source puts to instance "bogus" -> use "IonAndScint:bogus".
                 input_depos_tag: "IonAndScint"
-                # Processing mode.  Governs which TPCs are processed and how
+                # Processing mode.  Governs which anodes are processed and how
                 # their output products are organized:
                 #   single-sim / single-sp / single-sim-sp
-                #       process ONE TPC (structs.process_tpc_index); outputs are
-                #       tpc-suffixed (daqtpc<i>, gausstpc<i>, ...).
+                #       process ONE anode (structs.process_anode_index); outputs are
+                #       index-suffixed (daq<i>, gauss<i>, ...).
                 #   full
-                #       process ALL TPCs, merged into one product per tier.
+                #       process ALL anodes, merged into one product per tier.
                 #   multi-sim
-                #       process the LIST of TPCs in structs.process_tpc_indices;
-                #       the depo set is fanned out and EACH TPC terminates in its
+                #       process the LIST of anodes in structs.process_anode_indices;
+                #       the depo set is fanned out and EACH anode terminates in its
                 #       OWN FrameSaver(s) -> one RawDigit product (instance =
-                #       params.frame_tag_pattern % tpc_id) AND one recob::Wire
+                #       params.frame_tag_pattern % anode ident) AND one recob::Wire
                 #       product (instances gauss<id>/wiener<id>[/dnnsp<id>]) PER
-                #       TPC.  (See wcls-sim-drift-simchannel-nf-sp-multi.jsonnet.)
+                #       anode.  (See wcls-sim-drift-simchannel-nf-sp-multi.jsonnet.)
                 process_mode: "single-sp"
-                # multi-sim only: C-style format (one %d) interpolated on the TPC
-                # id to name the per-TPC raw::RawDigit product instance.
+                # multi-sim only: C-style format (one %d) interpolated on the anode
+                # ident to name the per-anode raw::RawDigit product instance.
                 frame_tag_pattern: "daq%d"
                 # graph-execution engine: "TbbFlow" (multi-threaded) or
                 # "Pgrapher" (single-threaded serial).  Must match wcls_main.apps.
@@ -114,13 +114,13 @@ physics :{
                 G4RefTime: @local::dunefd_detectorclocks.G4RefTime
                 # response plane [cm]
                 response_plane: 18.1 # must match files_fields
-                # when process_mode is single-*, this specifies which APA to process (0-319)
-                process_tpc_index: 0
-                # when process_mode is "multi-sim", this gives the LIST of TPC
-                # ids to process, each producing its own per-TPC products.  NOTE:
+                # when process_mode is single-*, this specifies which anode to process (0-319)
+                process_anode_index: 0
+                # when process_mode is "multi-sim", this gives the LIST of anode
+                # idents to process, each producing its own per-anode products.  NOTE:
                 # this is a struct (injected as Jsonnet code via std.extVar), so
                 # it is given as a quoted string holding a Jsonnet array literal.
-                process_tpc_indices: "[0, 1, 2, 3]"
+                process_anode_indices: "[0, 1, 2, 3]"
                 use_hydra: true
                 save_rawdigits: false
                 # use dnn_roi or not

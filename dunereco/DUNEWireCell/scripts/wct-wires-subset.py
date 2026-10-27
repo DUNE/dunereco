@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Subset a Wire-Cell Toolkit "wires" file to a chosen set of TPCs (anodes).
+"""Subset a Wire-Cell Toolkit "wires" file to a chosen set of anodes.
 
 A WCT wires file (JSON, optionally bz2/gz) holds a single whole-detector
 geometry under a top-level "Store":
@@ -20,21 +20,21 @@ faces/planes/wires/points compactly while remapping every positional reference.
 That yields a valid, internally-consistent store a fraction of the size.
 
 Why bother: WCT's WireSchemaFile loads and parses the ENTIRE wires file at job
-start regardless of how many TPCs a job processes.  For FD-VD the whole-detector
+start regardless of how many anodes a job processes.  For FD-VD the whole-detector
 file is ~244 MB of JSON (552,960 wires) and its jsoncpp DOM peaks at ~2.8 GB --
-the dominant term in the per-job memory floor.  A per-TPC (or per-group) subset
-file shrinks that cost roughly in proportion to the TPCs kept.
+the dominant term in the per-job memory floor.  A per-anode (or per-group) subset
+file shrinks that cost roughly in proportion to the anodes kept.
 
-The TPC ids selected are matched against anode `ident`s (for the dune10kt-vd
-files these equal the process_tpc_indices used by the WCLS config).
+The anode idents selected here are matched against each anode's `ident` (for the
+dune10kt-vd files these equal the process_anode_indices used by the WCLS config).
 
 Examples
 --------
-  # keep TPCs 0 and 1
-  wct-wires-subset.py -t 0,1 full.json.bz2 sub-0_1.json.bz2
+  # keep anodes 0 and 1
+  wct-wires-subset.py -a 0,1 full.json.bz2 sub-0_1.json.bz2
 
   # keep a mixed spec, read plain json, write bz2 (by extension)
-  wct-wires-subset.py -t 0-3,10,20-22 full.json out.json.bz2
+  wct-wires-subset.py -a 0-3,10,20-22 full.json out.json.bz2
 """
 
 import argparse
@@ -46,7 +46,7 @@ import re
 import sys
 
 
-def parse_tpc_spec(spec):
+def parse_anode_spec(spec):
     """Parse 'N', 'A-B', comma/space separated into a sorted set of ints."""
     ids = set()
     for item in spec.replace(",", " ").split():
@@ -59,9 +59,9 @@ def parse_tpc_spec(spec):
         elif re.fullmatch(r"\d+", item):
             ids.add(int(item))
         else:
-            raise ValueError(f"bad TPC-id item '{item}' (want N or A-B)")
+            raise ValueError(f"bad anode item '{item}' (want N or A-B)")
     if not ids:
-        raise ValueError("no TPC ids given")
+        raise ValueError("no anodes given")
     return ids
 
 
@@ -172,17 +172,17 @@ def subset_store(store, keep_idents):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        description="Subset a WCT wires file to a set of TPCs (anodes).",
+        description="Subset a WCT wires file to a set of anodes.",
         formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
     ap.add_argument("input", help="input WCT wires file (.json/.json.bz2/.gz)")
     ap.add_argument("output", help="output wires file (compression by extension)")
-    ap.add_argument("-t", "--tpcs", required=True, metavar="TPCSPEC",
-                    help="TPC/anode idents to keep: N and/or A-B, comma/space "
+    ap.add_argument("-a", "--anodes", required=True, metavar="ANODESPEC",
+                    help="anode idents to keep: N and/or A-B, comma/space "
                          "separated (e.g. '0-3,10,20-22')")
     args = ap.parse_args(argv)
 
     try:
-        keep = parse_tpc_spec(args.tpcs)
+        keep = parse_anode_spec(args.anodes)
     except ValueError as e:
         ap.error(str(e))
 
@@ -198,7 +198,7 @@ def main(argv=None):
         json.dump({"Store": new_store}, fp)
 
     sz = os.path.getsize(args.output)
-    print("wrote %s  (TPCs %s: %d/%d anodes, %d/%d wires, %d points, %.1f MB)"
+    print("wrote %s  (anodes %s: %d/%d anodes, %d/%d wires, %d points, %.1f MB)"
           % (args.output, ",".join(str(i) for i in sorted(keep)),
              len(new_store["anodes"]), len(store["anodes"]),
              nw1, nw0, len(new_store["points"]), sz / 1e6),

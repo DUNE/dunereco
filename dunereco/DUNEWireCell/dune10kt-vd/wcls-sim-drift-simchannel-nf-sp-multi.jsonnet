@@ -1,18 +1,18 @@
 // Modal layer: "multi-sim".  The input depo set is fanned out (DepoSetFanout)
-// to one finger per TPC listed in process_tpc_indices.  Each finger processes
-// exactly one TPC and TERMINATES IN ITS OWN FrameSaver(s), so each TPC yields
+// to one finger per anode listed in process_anode_indices.  Each finger processes
+// exactly one anode and TERMINATES IN ITS OWN FrameSaver(s), so each anode yields
 // SEPARATE art::Event products rather than one merged product (cf. the ICARUS
 // wcls-multitpc-*-refactored pattern).
 //
-// Per the design agreed with the user ("both per TPC"): each finger emits
+// Per the design agreed with the user ("both per anode"): each finger emits
 //   * a sim::SimChannel product (the drifted depo flux), AND
 //   * a raw::RawDigit product (post-sim ADC), and
 //   * a recob::Wire product (post-SP signals).
 //
-// The SimChannel writer sits at the HEAD of the finger (right after the per-TPC
-// DepoSetFilter) so it tabulates only that TPC's depos over that TPC's one anode
-// -> one std::vector<sim::SimChannel> product PER TPC (instance "simpleSC<id>",
-// converter name "postdrift<id>") rather than one merged product for all TPCs.
+// The SimChannel writer sits at the HEAD of the finger (right after the per-anode
+// DepoSetFilter) so it tabulates only that anode's depos over that one anode
+// -> one std::vector<sim::SimChannel> product PER anode (instance "simpleSC<id>",
+// converter name "postdrift<id>") rather than one merged product for all anodes.
 //
 // Because a wclsFrameSaver is nin=1/nout=1 (it saves a copy and passes the
 // frame through), a finger is a simple linear pipe:
@@ -20,11 +20,11 @@
 //   DepoSetFilter(anode) -> sim -> retag -> RawDigit-saver -> sp -> Wire-saver -> dump
 //
 // Product instance names (= WCT frame tags = art product "label"/instance):
-//   * SimChannel : "simpleSC%d" % tpc_id (writer/converter name "postdrift%d")
-//   * RawDigit : frame_tag_pattern % tpc_id   (e.g. "daq%d" -> "daq7")
-//   * recob::Wire : "gauss%d"/"wiener%d"(/"dnnsp%d") % tpc_id -- these are the
+//   * SimChannel : "simpleSC%d" % k (writer/converter name "postdrift%d")
+//   * RawDigit : frame_tag_pattern % k   (e.g. "daq%d" -> "daq7")
+//   * recob::Wire : "gauss%d"/"wiener%d"(/"dnnsp%d") % k -- these are the
 //                   per-anode trace tags OmnibusSigProc already emits, so each
-//                   TPC's signals are already uniquely named.
+//                   anode's signals are already uniquely named.
 //
 // Signature: function(params, tools, fcl_params, com) -> { graph: <pnode> }
 
@@ -35,7 +35,7 @@ local mf = import 'multifan.jsonnet';
 function(params, tools, fcl_params, com) {
 
   local ftp = fcl_params.frame_tag_pattern,
-  // Trick 1: when false, the per-TPC RawDigit (ADC) saver is omitted so the
+  // Trick 1: when false, the per-anode RawDigit (ADC) saver is omitted so the
   //   dense ADC waveform is never put to the art::Event -- sim feeds sigproc
   //   entirely inside the WCT graph.  Only SimChannel + recob::Wire are output.
   local save_raw = fcl_params.save_rawdigits,
@@ -44,28 +44,28 @@ function(params, tools, fcl_params, com) {
   //   sim+sigproc pipeline and emit an EmptyFrame instead.
   local use_hydra = fcl_params.use_hydra,
 
-  // Build one finger for the n-th processed anode (TPC ident = k).
+  // Build one finger for the n-th processed anode (anode ident = k).
   local finger(n) =
     local anode = tools.anodes[n];
     local k = anode.data.ident;
     local manode = com.mega_anode_for([anode]);
 
-    // Select only this TPC's depos out of the fanned-out set.
+    // Select only this anode's depos out of the fanned-out set.
     local ds_filter = g.pnode({
       type: 'DepoSetFilter',
       name: 'ds-filter-multi-%d' % k,
       data: { anode: wc.tn(anode) },
     }, nin=1, nout=1, uses=[anode]);
 
-    // Per-TPC SimChannel writer: a depo-flux writer over THIS TPC's one anode,
+    // Per-anode SimChannel writer: a depo-flux writer over THIS one anode,
     // fed the already-filtered depo set, so it emits one std::vector<SimChannel>
-    // holding only this TPC's channels.  It passes the depo set through to sim.
-    // It lives at the HEAD of `work` (behind DeposOrBust) so a BUSTED TPC skips
+    // holding only this anode's channels.  It passes the depo set through to sim.
+    // It lives at the HEAD of `work` (behind DeposOrBust) so a BUSTED anode skips
     // it too -> a 0-size SimChannel product, matching the RawDigit/recob::Wire.
     local scwriter = com.depoflux_writer('simpleSC%d' % k, 'postdrift%d' % k, [anode], sparse=true);
 
     // Optional (trick 1) RawDigit saver chain: retag the post-sim ADC frame's
-    // traces to the per-TPC RawDigit tag, then save raw::RawDigit.
+    // traces to the per-anode RawDigit tag, then save raw::RawDigit.
     local raw_fanin = g.pnode({
       type: 'FrameFanin',
       name: 'multi-raw-fanin-%d' % k,
@@ -83,7 +83,7 @@ function(params, tools, fcl_params, com) {
     local raw_saver = com.raw_saver('simdigits%d' % k, manode, [ftp % k]);
     local raw_chain = if save_raw then [raw_fanin, raw_retag, raw_saver] else [];
 
-    // Per-TPC signal processing and its recob::Wire saver (sparse ROIs, trick 2).
+    // Per-anode signal processing and its recob::Wire saver (sparse ROIs, trick 2).
     local sig_tags = ['gauss%d' % k, 'wiener%d' % k]
                      + (if fcl_params.use_dnnroi then ['dnnsp%d' % k] else []);
     local sp_branch = [com.sp_pipes[n]]
@@ -94,7 +94,7 @@ function(params, tools, fcl_params, com) {
 
     // The "work": SimChannel save -> sim (+ optional RawDigit save) -> sigproc ->
     // recob::Wire save.  ALL THREE art writers (SimChannel, RawDigit, recob::Wire)
-    // live INSIDE this hydra-protected subgraph so a BUSTED (empty) TPC skips them
+    // live INSIDE this hydra-protected subgraph so a BUSTED (empty) anode skips them
     // entirely and writes ZERO-size products.  (A saver placed AFTER the FrameSync
     // merge would run on the busted EmptyFrame too, and wclsFrameSaver always emits
     // one recob::Wire per channel -> a full nchan vector of empty ROIs instead of a
@@ -126,12 +126,12 @@ function(params, tools, fcl_params, com) {
 
   local fingers = [finger(n) for n in com.anode_iota],
 
-  // DepoSetFanout -> per-TPC self-terminating fingers.  Each finger writes its
+  // DepoSetFanout -> per-anode self-terminating fingers.  Each finger writes its
   // own SimChannel / RawDigit / recob::Wire products (see finger() above), so
   // nothing is written before the fan-out.  The fan is built via multifan so a
-  // whole-detector (>10 TPC) job factors into a TREE of <=10-way DepoSetFanouts
+  // whole-detector (>10 anode) job factors into a TREE of <=10-way DepoSetFanouts
   // -- a flat fanout would trip the TbbFlow FanoutWrapper nout<=10 assertion.
-  // Only the total TPC count drives the factoring (no per-layer knobs in FCL).
+  // Only the total anode count drives the factoring (no per-layer knobs in FCL).
   local fo = mf.fanout('multi_sim_fanout', 'DepoSetFanout', std.length(fingers), max=10),
   local fanout = g.intern(
     innodes=[fo], outnodes=fingers,

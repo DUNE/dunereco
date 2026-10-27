@@ -4,9 +4,9 @@
 // fanned back in and merged (Retagger) into one product.  This is the historical
 // behavior of wcls-sim-drift-simchannel-nf-sp.jsonnet, preserved verbatim here.
 //
-//   single-sim      : process one TPC (process_tpc_index); save RawDigit (daqtpc<i>)
-//   single-sp       : process one TPC; save recob::Wire (gauss/wiener/dnnsp tpc<i>)
-//   single-sim-sp   : process one TPC; save both
+//   single-sim      : process one anode (process_anode_index); save RawDigit (daq<i>)
+//   single-sp       : process one anode; save recob::Wire (gauss<i>/wiener<i>/dnnsp<i>)
+//   single-sim-sp   : process one anode; save both
 //   (anything else) : "full" -- process all anodes, merge into one product
 //
 // Signature: function(params, tools, fcl_params, com) -> { graph: <pnode> }
@@ -18,7 +18,7 @@ local f = import 'pgrapher/common/funcs.jsonnet';
 
 function(params, tools, fcl_params, com) {
 
-  local idx = fcl_params.process_tpc_index,
+  local idx = fcl_params.process_anode_index,
   local is_single =
     fcl_params.process_mode == 'single-sim'
     || fcl_params.process_mode == 'single-sp'
@@ -33,24 +33,24 @@ function(params, tools, fcl_params, com) {
   // Combined output savers (one shared mega-anode).
   local sim_digits = com.raw_saver(
     'simdigits', mega_anode,
-    if is_single then ['daqtpc%d' % idx] else ['daq']),
+    if is_single then ['daq%d' % idx] else ['daq']),
 
   local sp_signals = com.sig_saver(
     'spsignals', mega_anode,
     if is_single
-    then ['gausstpc%d' % idx, 'wienertpc%d' % idx, 'dnnsptpc%d' % idx]
+    then ['gauss%d' % idx, 'wiener%d' % idx, 'dnnsp%d' % idx]
     else ['gauss', 'wiener', 'dnnsp']),
 
   // The sim (RawDigit) sub-pipe retags its single anode's traces to the
-  // per-TPC "daqtpc<i>" name before the shared simdigits saver.
+  // per-anode "daq<i>" name before the shared simdigits saver.
   local sim_retagger_fanins = [
     g.pnode({
       type: 'FrameFanin',
       name: 'sim_retagger_fanin%d' % n,
       data: {
         multiplicity: 1,
-        tags: ['daqtpc%d' % n],
-        tag_rules: [{ frame: { '.*': 'daqtpc%d' % n }, trace: { '.*': 'daqtpc%d' % n } }],
+        tags: ['daq%d' % n],
+        tag_rules: [{ frame: { '.*': 'daq%d' % n }, trace: { '.*': 'daq%d' % n } }],
       },
     }, nin=1, nout=1)
     for n in [idx]
@@ -59,7 +59,7 @@ function(params, tools, fcl_params, com) {
     g.pnode({
       type: 'Retagger',
       name: 'retagger-sim-%d' % n,
-      data: { tag_rules: [{ frame: { '.*': 'daqtpc%d' % n }, merge: { '.*': 'daqtpc%d' % n } }] },
+      data: { tag_rules: [{ frame: { '.*': 'daq%d' % n }, merge: { '.*': 'daq%d' % n } }] },
     }, nin=1, nout=1)
     for n in [idx]
   ],
@@ -177,9 +177,9 @@ function(params, tools, fcl_params, com) {
         frame: { '.*': 'retagger' },
         merge:
           if is_single then {
-            'gauss\\d+': 'gausstpc%d' % idx,
-            'wiener\\d+': 'wienertpc%d' % idx,
-            'dnnsp\\d+': 'dnnsptpc%d' % idx,
+            'gauss\\d+': 'gauss%d' % idx,
+            'wiener\\d+': 'wiener%d' % idx,
+            'dnnsp\\d+': 'dnnsp%d' % idx,
           } else {
             'gauss\\d+': 'gauss',
             'wiener\\d+': 'wiener',
@@ -190,7 +190,7 @@ function(params, tools, fcl_params, com) {
   }, nin=1, nout=1),
 
   local depoflux = com.depoflux_writer(
-    if is_single then 'simpleSCtpc%d' % idx else 'simpleSC'),
+    if is_single then 'simpleSC%d' % idx else 'simpleSC'),
 
   local sink = g.pnode({ type: 'DumpFrames', name: 'single-frame-sink', data: {} }, nin=1, nout=0),
 

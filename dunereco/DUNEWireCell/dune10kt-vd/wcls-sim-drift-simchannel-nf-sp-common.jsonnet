@@ -60,7 +60,7 @@ local planemap_ = {
 
   // A MegaAnodePlane spanning an arbitrary set of anodes.  The "single"/"full"
   // modes use one over all processed anodes; the "multi" mode builds one per
-  // TPC so each per-TPC FrameSaver maps only its own channels.
+  // anode so each per-anode FrameSaver maps only its own channels.
   mega_anode_for(anodes):: {
     type: 'MegaAnodePlane',
     name: 'meganodes_' + std.join('_', [std.toString(a.data.ident) for a in anodes]),
@@ -124,14 +124,14 @@ local planemap_ = {
   //                   The writer initializes one (dense) SimChannel per channel
   //                   of these anodes and projects only the depos flowing into
   //                   this node that fall inside their sensitive volumes.  Pass a
-  //                   single-anode list to partition SimChannels per TPC (one
-  //                   product per TPC); pass all processed anodes for one merged
+  //                   single-anode list to partition SimChannels per anode (one
+  //                   product per anode); pass all processed anodes for one merged
   //                   product.  [default: all processed anodes, node "postdrift"]
   // `sparse`: false (default) pre-initializes one dense SimChannel per channel of
   // `anodes` EVERY event (visit() does this regardless of whether the node ran),
-  // so the product is always nchan-sized -- even for a TPC the hydra busted.  Set
+  // so the product is always nchan-sized -- even for an anode the hydra busted.  Set
   // sparse=true to emit SimChannels ONLY for channels that actually received
-  // charge (LArSoft-conventional); then a busted (no-depo) TPC yields a 0-size
+  // charge (LArSoft-conventional); then a busted (no-depo) anode yields a 0-size
   // product, matching the RawDigit/recob::Wire sparseness.
   depoflux_writer(simchan_label, name='postdrift', anodes=tools.anodes, sparse=false):: g.pnode({
     type: 'wclsDepoFluxWriter',
