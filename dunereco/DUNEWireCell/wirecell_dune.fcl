@@ -2082,6 +2082,9 @@ protodunevd_nfsp_dnnroi : {
 }
 protodunevd_nfsp_dnnroi_mc: @local::protodunevd_nfsp_dnnroi
 protodunevd_nfsp_dnnroi_mc.wcls_main.params.reality: "sim"
+# MC is simulated at 500 ns on all anodes; the 512->500 ns Resampler is for
+# BDE data only (on for MC it stretches BDE drift times by 2.4%).
+protodunevd_nfsp_dnnroi_mc.wcls_main.params.use_resampler: "false"
 
 protodunevd_nf : {
    module_type : WireCellToolkit

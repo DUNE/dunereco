@@ -13,6 +13,16 @@ base {
       drift_speed: 1.473 * wc.mm/wc.us,
   },
 
+  // MC: SP time offset = origin/v_sim - origin/v_FR, which cancels the
+  // mismatch between the field-response speed (FR file: origin 181 mm,
+  // speed 1.53 mm/us) and the simulated drift speed.  Data keeps its
+  // measured value (params.jsonnet sp.ctoffset).
+  sp: super.sp {
+      local fr_origin = 181.0*wc.mm,
+      local fr_speed = 1.53*wc.mm/wc.us,
+      ctoffset: fr_origin/$.lar.drift_speed - fr_origin/fr_speed,
+  },
+
   daq: super.daq {
 
     // Number of readout ticks.  See also sim.response.nticks.
