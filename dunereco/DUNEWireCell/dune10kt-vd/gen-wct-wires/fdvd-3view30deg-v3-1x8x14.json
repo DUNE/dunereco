@@ -1,0 +1,11 @@
+{
+  "era": "fd",
+  "technology": "vd",
+  "variant": "3view30deg-v3-1x8x14",
+  "gdml": "dunevd10kt_3view_30deg_v3_refactored_1x8x14ref.gdml",
+  "detector_name": "dunevd10kt_3view_30deg_v3_refactored_1x8x14ref",
+  "channel_map": "WireReadoutCRUGeom",
+  "sorter": "GeoObjectSorterCRU",
+  "grouping": "tpcset",
+  "correction": 4
+}

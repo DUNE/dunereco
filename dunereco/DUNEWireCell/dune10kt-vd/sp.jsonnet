@@ -12,12 +12,16 @@ function(params, tools, override = {}) {
 
   local pc = tools.perchanresp_nameuses,
 
-  local resolution = params.adc.resolution,
-  local fullscale = params.adc.fullscale[1] - params.adc.fullscale[0],
-  local ADC_mV_ratio = ((1 << resolution) - 1 ) / fullscale,
-
   // pDSP needs a per-anode sigproc
-  make_sigproc(anode, name=null):: g.pnode({
+  make_sigproc(anode, name=null)::
+    // As in protodunevd: bottom and top drift CRMs differ in ADC and
+    // electronics response.
+    local is_top = params.is_top(anode.data.ident);
+    local adc = if is_top then params.top_adc else params.adc;
+    local resolution = adc.resolution;
+    local fullscale = adc.fullscale[1] - adc.fullscale[0];
+    local ADC_mV_ratio = ((1 << resolution) - 1 ) / fullscale;
+    g.pnode({
     type: 'OmnibusSigProc',
     name:
       if std.type(name) == 'null'
@@ -49,9 +53,16 @@ function(params, tools, override = {}) {
       anode: wc.tn(anode),
       dft: wc.tn(tools.dft),
       field_response: wc.tn(tools.field),
-      elecresponse: wc.tn(tools.elec_resp),
+      elecresponse: if is_top
+                    then wc.tn(tools.elec_resps[1])
+                    else wc.tn(tools.elec_resps[0]),
       ftoffset: 0.0, // default 0.0
-      ctoffset: 1.0*wc.microsecond, // default -8.0
+      // The field response (protodunevd_FR_imbalance3p_260501.json.bz2)
+      // starts at response_plane = 181 mm from the collection strips and
+      // assumes 1.53 mm/us.  Correct for the simulated drift speed (the
+      // 4 us PD-VD value is tuned to its data, ~1.473 mm/us).
+      ctoffset: params.det.response_plane / params.lar.drift_speed
+                - params.det.response_plane / (1.53*wc.mm/wc.us),
       per_chan_resp: pc.name,
       fft_flag: 0,  // 1 is faster but higher memory, 0 is slightly slower but lower memory
       postgain: 1.0, // params.elec.postgain,  // default 1.2
@@ -91,6 +102,6 @@ function(params, tools, override = {}) {
       mp3_roi_tag: 'mp3_roi%d' % anode.data.ident,
       mp2_roi_tag: 'mp2_roi%d' % anode.data.ident,
     } + override,
-  }, nin=1, nout=1, uses=[anode, tools.dft, tools.field, tools.elec_resp] + pc.uses + spfilt),
+  }, nin=1, nout=1, uses=[anode, tools.dft, tools.field, tools.elec_resps[0], tools.elec_resps[1]] + pc.uses + spfilt),
 
 }
