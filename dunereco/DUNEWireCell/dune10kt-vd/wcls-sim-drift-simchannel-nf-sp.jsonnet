@@ -27,6 +27,24 @@ local common_maker = import 'pgrapher/experiment/dune10kt-vd/wcls-sim-drift-simc
 local single_maker = import 'pgrapher/experiment/dune10kt-vd/wcls-sim-drift-simchannel-nf-sp-single.jsonnet';
 local multi_maker = import 'pgrapher/experiment/dune10kt-vd/wcls-sim-drift-simchannel-nf-sp-multi.jsonnet';
 
+// Expand an anode index list.  Each element is a number or a string of
+// comma-separated parts, each part an index "N" or an inclusive range "A-B",
+// e.g. [0, 1, "10-20", "30-32,40"].  A bare A-B is Jsonnet subtraction, so
+// ranges must be strings.
+local expand_indices(lst) =
+  local one(part) =
+    local ab = [std.stripChars(x, ' ') for x in std.split(part, '-')];
+    if std.length(ab) == 1 then [std.parseInt(ab[0])]
+    else if std.length(ab) == 2 && std.parseInt(ab[0]) <= std.parseInt(ab[1])
+    then std.range(std.parseInt(ab[0]), std.parseInt(ab[1]))
+    else error 'bad anode index range "%s"' % part;
+  std.flattenArrays([
+    if std.isNumber(x) then [x]
+    else if std.isString(x) then std.flattenArrays([one(p) for p in std.split(x, ',')])
+    else error 'anode index must be a number or a range string, got %s' % std.manifestJson(x)
+    for x in lst
+  ]);
+
 // ---- 1. resolve the fcl knobs -------------------------------------------
 // IMPORTANT: the extVar-derived knobs are forced to concrete literals ONCE, via
 // std.parseJson(std.manifestJson(...)).  Without this, go-jsonnet does NOT
@@ -53,8 +71,9 @@ local fcl_params = std.parseJson(std.manifestJson({
   elecGain: std.extVar('elecGain') * wc.mV / wc.fC,
   // single-* : which one anode to process
   process_anode_index: std.extVar('process_anode_index'),
-  // multi-*  : list of anode indices, and the per-anode RawDigit tag/instance pattern
-  process_anode_indices: std.extVar('process_anode_indices'),
+  // multi-*  : list of anode indices (ranges expanded, see expand_indices),
+  // and the per-anode RawDigit tag/instance pattern
+  process_anode_indices: expand_indices(std.extVar('process_anode_indices')),
   frame_tag_pattern: std.extVar('frame_tag_pattern'),
 }));
 

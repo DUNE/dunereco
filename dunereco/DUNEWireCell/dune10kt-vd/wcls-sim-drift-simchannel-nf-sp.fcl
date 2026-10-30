@@ -147,6 +147,8 @@ physics :{
                 # when process_mode is "multi-sim", this gives the LIST of anode
                 # idents to process, each producing its own per-anode products.
                 # It is a struct: WCLS converts the FHiCL sequence to Jsonnet code.
+                # Elements are indices or range strings, e.g. [0, 1, "10-20"];
+                # the outputers below must still list every expanded anode.
                 process_anode_indices: [0, 1, 2, 3]
                 use_hydra: true
                 save_rawdigits: false
