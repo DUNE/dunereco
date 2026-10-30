@@ -168,7 +168,7 @@ def main(argv=None):
     lines.append(f'{base_key}.params.frame_tag_pattern: "{args.frame_tag_pattern}"')
     if args.input_depos_tag is not None:
         lines.append(f'{base_key}.params.input_depos_tag: "{args.input_depos_tag}"')
-    lines.append(f'{base_key}.structs.process_anode_indices: "{indices}"')
+    lines.append(f'{base_key}.structs.process_anode_indices: {indices}')
     lines.append(f'{base_key}.structs.save_rawdigits: '
                  f'{"true" if args.save_rawdigits else "false"}')
     lines.append("")

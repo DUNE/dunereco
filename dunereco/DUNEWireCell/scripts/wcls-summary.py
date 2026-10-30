@@ -630,7 +630,7 @@ def make_extvars(wcls_main, overrides_str, overrides_code):
                     code = str(a.value)  # WCLS passes the string content as code
                 evs[k] = ExtVar(k, 'code', code, a)
             else:
-                warn('wcls_main.structs.%s is not an atom, passing as JSON code' % k)
+                # WCLS converts a sequence or table struct to JSON code.
                 evs[k] = ExtVar(k, 'code', json.dumps(fhicl_to_python(a)), None)
     for kind, ovs in (('str', overrides_str), ('code', overrides_code)):
         for ov in ovs:

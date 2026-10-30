@@ -145,10 +145,9 @@ physics :{
                 # when process_mode is single-*, this specifies which anode to process (0-319)
                 process_anode_index: 0
                 # when process_mode is "multi-sim", this gives the LIST of anode
-                # idents to process, each producing its own per-anode products.  NOTE:
-                # this is a struct (injected as Jsonnet code via std.extVar), so
-                # it is given as a quoted string holding a Jsonnet array literal.
-                process_anode_indices: "[0, 1, 2, 3]"
+                # idents to process, each producing its own per-anode products.
+                # It is a struct: WCLS converts the FHiCL sequence to Jsonnet code.
+                process_anode_indices: [0, 1, 2, 3]
                 use_hydra: true
                 save_rawdigits: false
                 # use dnn_roi or not
