@@ -57,7 +57,12 @@ function(params, tools, override = {}) {
                     then wc.tn(tools.elec_resps[1])
                     else wc.tn(tools.elec_resps[0]),
       ftoffset: 0.0, // default 0.0
-      ctoffset: 4*wc.microsecond, //consistent with FR: protodunevd_FR_imbalance3p_260501.json.bz2
+      // The field response (protodunevd_FR_imbalance3p_260501.json.bz2)
+      // starts at response_plane = 181 mm from the collection strips and
+      // assumes 1.53 mm/us.  Correct for the simulated drift speed (the
+      // 4 us PD-VD value is tuned to its data, ~1.473 mm/us).
+      ctoffset: params.det.response_plane / params.lar.drift_speed
+                - params.det.response_plane / (1.53*wc.mm/wc.us),
       per_chan_resp: pc.name,
       fft_flag: 0,  // 1 is faster but higher memory, 0 is slightly slower but lower memory
       postgain: 1.0, // params.elec.postgain,  // default 1.2
