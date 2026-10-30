@@ -1,6 +1,18 @@
 #include "services_dune.fcl"
 
 process_name: wclssim
+
+# Builds the WCT wire schema from the LArSoft geometry and channel map for
+# params.wire_schema "service", and the drift planes for params.drift_planes
+# "service".  "pair-tpc" groups the two jumpered CRMs of a
+# CRU into one two-face WCT anode with ident TPC/2 (as the v6 wires file).  A
+# job that redefines its whole services table must carry this entry along.
+services.WireSchemaService: {
+   grouping: "pair-tpc"
+   correction: 4      # 1=load 2=order 3=direction 4=pitch
+   validate: true
+   anode_offset: 0.0  # cm from the collection plane, positive into the drift volume
+}
 physics :{
    producers: {
       plopper : {
@@ -55,7 +67,23 @@ physics :{
 
             // Make available parameters via Jsonnet's std.extVar()
             params: {
-                # file: wires
+                # Wire geometry source for the WCT anodes:
+                #   "service" -- larwirecell's WireSchemaService builds it from
+                #                this job's LArSoft geometry + channel map, so WCT
+                #                and LArSoft wires/channels agree by construction
+                #                (needs services.WireSchemaService, see below).
+                #   "file"    -- the WCT wires file named by files_wires.
+                wire_schema: "service"
+                # Drift-axis "anode", "response" and "cathode" planes of the
+                # AnodePlanes and the Drifter:
+                #   "service" -- from the LArSoft geometry via WireSchemaService
+                #                (anode at the collection plane plus its
+                #                anode_offset, response at response_plane from
+                #                the collection plane, cathode at the TPC active
+                #                volume face).
+                #   "params"  -- the fixed values in params-10kt.jsonnet.
+                drift_planes: "service"
+                # file: wires (used only when wire_schema is "file")
                 # dunevd10kt_3view_30deg_v6_refactored.json.bz2
                 # files_wires: "dunevd10kt_3view_30deg_v5_refactored_1x8x6ref.json.bz2"
                 files_wires: "dunevd10kt_3view_30deg_v6_refactored.json.bz2"

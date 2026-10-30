@@ -2302,6 +2302,14 @@ dune10kt_vertdrift_sim_nfsp : {
 
         // Make available parameters via Jsonnet's std.extVar()
         params: {
+            # "service": WCT wires from larwirecell WireSchemaService (the job
+            # must have services.WireSchemaService: @local::dune10ktvd_wire_schema_service);
+            # "file": the WCT wires file files_wires.
+            wire_schema: "service"
+            # "service": drift-axis anode/response/cathode planes from the
+            # LArSoft geometry via the same WireSchemaService; "params": the
+            # fixed values in params-10kt.jsonnet.
+            drift_planes: "service"
             # file: wires
             # dunevd10kt_3view_30deg_v6_refactored.json.bz2
             # files_wires: "dunevd10kt_3view_30deg_v5_refactored_1x8x6ref.json.bz2"
@@ -2363,4 +2371,15 @@ dune10kt_vertdrift_sim_nfsp_singledigits : {
         }
     }
 }
+
+# larwirecell WireSchemaService config for dune10kt_vertdrift_sim_nfsp with
+# wire_schema "service": the two jumpered CRMs of a CRU form one two-face WCT
+# anode with ident TPC/2, matching dunevd10kt_3view_30deg_v6_refactored.
+dune10ktvd_wire_schema_service: {
+    grouping: "pair-tpc"
+    correction: 4
+    validate: true
+    anode_offset: 0.0   # cm from the collection plane, positive into the drift volume
+}
+
 END_PROLOG

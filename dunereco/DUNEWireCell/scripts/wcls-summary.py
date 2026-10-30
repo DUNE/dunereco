@@ -1479,6 +1479,7 @@ class Summary:
     # -- sections
 
     def run(self, jobinfo):
+        self.jobinfo = jobinfo
         sections = [
             ('Job', self.sec_job, jobinfo),
             ('Detector', self.sec_detector, None),
@@ -1606,6 +1607,43 @@ class Summary:
 
     # Detector --------------------------------------------------------
 
+    def drift_planes(self, comp):
+        '''Return the IDriftPlanes component named by comp's drift_planes, or None.'''
+        dp = comp['data'].get('drift_planes')
+        return self.cfg.get(dp) if dp else None
+
+    def anode_faces(self, a):
+        '''Return an AnodePlane's faces: inline, or from a configured DriftPlanes.
+        Planes from larwirecell's wclsDriftPlanesSource are only known at run
+        time, so give no faces for them.'''
+        dp = self.drift_planes(a)
+        if dp is None:
+            return a['data'].get('faces', [])
+        if dp.get('type') == 'DriftPlanes':
+            for vol in dp['data'].get('volumes', []):
+                if vol.get('wires') == a['data'].get('ident'):
+                    return vol.get('faces', [])
+        return []
+
+    def para_live_drift_planes(self, comps, what):
+        '''Describe wclsDriftPlanesSource providers of the given components.'''
+        dps = collections.OrderedDict()
+        for c in comps:
+            dp = self.drift_planes(c)
+            if dp and dp.get('type') == 'wclsDriftPlanesSource':
+                dps[tn(dp)] = dp
+        for dp in dps.values():
+            rd = dp['data'].get('response_distance', 10 * U.cm)
+            self.doc.para(r'\textbf{Drift planes from LArSoft:} %s take the \texttt{anode}, '
+                          r'\texttt{response} and \texttt{cathode} planes from %s, which builds '
+                          r'them at run time from the LArSoft geometry through larwirecell\textquotesingle s '
+                          r'\texttt{WireSchemaService}: anode at the collection plane (displaced by the '
+                          r'service\textquotesingle s \texttt{anode\_offset}), response %s cm from the '
+                          r'collection plane against the drift, cathode at the face of the TPC active '
+                          r'volume opposite the wires.  Their values are not part of the configuration '
+                          r'and are not shown here; the job log lists the drift regions.'
+                          % (what, ttex(tn(dp)), num(rd / U.cm, 4)))
+
     def sec_detector(self):
         d = self.doc
         anodes = self.cfg.of_type('AnodePlane')
@@ -1624,19 +1662,44 @@ class Summary:
                r'in $y$--$z$ planes.  In the DUNE/LArSoft convention $y$ is vertical (up) '
                r'and $z$ is along the beam.  Electrons drift from the cathode toward the anode.')
 
+        # larwirecell's wclsWireSchemaSource has no file: the art
+        # WireSchemaService builds the wires from the job's LArSoft geometry and
+        # channel map at run time.  For the drawings use the files_wires
+        # parameter, if the job names one, as a stand-in.
+        standin = None
+        ev = self.jobinfo.get('extvars', {}).get('files_wires') if hasattr(self, 'jobinfo') else None
+        if ev is not None and ev.value:
+            standin = ev.value
         schemas = collections.OrderedDict()
+        service = False
         for a in anodes:
             ws = self.cfg.get(a['data'].get('wire_schema'))
-            fn = ws['data'].get('filename') if ws else None
+            if ws and ws.get('type') == 'wclsWireSchemaSource':
+                service = True
+                fn = standin
+            else:
+                fn = ws['data'].get('filename') if ws else None
             schemas.setdefault(fn, []).append(a)
+        if service:
+            d.para(r'\textbf{Wire geometry from LArSoft:} the anodes use '
+                   r'\texttt{wclsWireSchemaSource}, which takes the wire schema that '
+                   r'larwirecell\textquotesingle s \texttt{WireSchemaService} builds at run '
+                   r'time from the job\textquotesingle s LArSoft geometry and channel map, so '
+                   r'WCT and LArSoft wires and channels agree by construction.  '
+                   + (r'The drawings and tables below use the \texttt{files\_wires} file '
+                      r'%s as a stand-in.' % ttex(standin) if standin else
+                      r'No stand-in wires file is named (\texttt{files\_wires}), so no '
+                      r'per-anode geometry is shown.'))
+        self.para_live_drift_planes(anodes, 'the anodes')
         rows = []
         for fn, ans in schemas.items():
             ws = self.cfg.get(ans[0]['data'].get('wire_schema'))
-            rows.append((ttex('filename'), ttex(fn), ttex(tn(ws)) if ws else '?'))
+            label = 'filename' if not service else 'stand-in filename'
+            rows.append((ttex(label), ttex(fn), ttex(tn(ws)) if ws else '?'))
             p = self.paths.find_data(fn)
             rows.append((ttex('(found at)'), ttex(p or 'NOT FOUND'), ''))
         rows += [(ttex(k), fmt_value(k, v, 'AnodePlane'), ttex('AnodePlane') + ' (%s)' % src)
-                 for k, vals in group_params(anodes, skip=(r'^faces', r'^ident$', r'^wire_schema$'))
+                 for k, vals in group_params(anodes, skip=(r'^faces', r'^ident$', r'^wire_schema$', r'^drift_planes$'))
                  for v, names in vals for src in [('all' if len(names) == len(anodes) else names_tex(names))]]
         d.kv_table(rows, 'Wire schema and common anode parameters.')
 
@@ -1646,7 +1709,7 @@ class Summary:
             wg = self.wires(fn) if fn else None
             for a in ans:
                 ident = a['data'].get('ident')
-                faces = a['data'].get('faces', [])
+                faces = self.anode_faces(a)
                 fgeo = wg.anodes.get(ident) if wg else None
                 for fi, fc in enumerate(faces):
                     if fc is None:
@@ -1997,8 +2060,13 @@ class Summary:
             d.table(['Field response', 'Drift speed in FR calculation', 'File'], rows,
                     ['0.3\\linewidth', '0.25\\linewidth', '0.39\\linewidth'],
                     'Drift speed assumed by field response calculations (for comparison).')
+        self.para_live_drift_planes(drifters, 'the drifters')
         for c in drifters:
             xr = c['data'].get('xregions', [])
+            dp = self.drift_planes(c)
+            if dp is not None and dp.get('type') == 'DriftPlanes':
+                xr = [f for vol in dp['data'].get('volumes', []) for f in vol.get('faces', []) if f]
+                xr = [f for i, f in enumerate(xr) if f not in xr[:i]]
             if xr:
                 rows = [(str(i), '%.2f' % (r.get('anode', float('nan')) / U.cm),
                          '%.2f' % (r.get('response', float('nan')) / U.cm),

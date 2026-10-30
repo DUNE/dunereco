@@ -76,7 +76,40 @@ local params = params_maker(fcl_params) {
   files: super.files + files_over,
 };
 
-local tools_all = tools_maker(params);
+// Where the anodes get their wire geometry (params.wire_schema):
+//   "service" -- larwirecell's art WireSchemaService, built from the job's own
+//                LArSoft geometry + channel map, so WCT and LArSoft wires and
+//                channels agree by construction.  Needs a WireSchemaService in
+//                the FHiCL services (grouping "pair-tpc" for this detector).
+//   "file"    -- the WCT wires file named by params.files_wires.
+local wire_schema = std.extVar('wire_schema');
+local tools_base = tools_maker(params);
+local tools_wires =
+  if wire_schema == 'service'
+  then tools_base { wires: { type: 'wclsWireSchemaSource', name: '', data: {} } }
+  else if wire_schema == 'file'
+  then tools_base
+  else error 'wire_schema must be "service" or "file", got "%s"' % wire_schema;
+
+// Where the anodes and the drifter get their "anode", "response" and "cathode"
+// drift-axis planes:
+//   "service" -- larwirecell's WireSchemaService, from the LArSoft geometry.
+//                The response plane is params.det.response_plane from the
+//                collection plane, which must match the field response.
+//   "params"  -- the fixed per-volume faces of params.det.volumes.
+local drift_planes = std.extVar('drift_planes');
+local tools_all =
+  if drift_planes == 'service'
+  then tools_wires {
+    drift_planes:: {
+      type: 'wclsDriftPlanesSource',
+      name: '',
+      data: { response_distance: params.det.response_plane },
+    },
+  }
+  else if drift_planes == 'params'
+  then tools_wires
+  else error 'drift_planes must be "service" or "params", got "%s"' % drift_planes;
 
 local is_single =
   fcl_params.process_mode == 'single-sim'
