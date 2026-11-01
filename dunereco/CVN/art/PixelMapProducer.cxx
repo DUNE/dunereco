@@ -12,8 +12,8 @@
 #include  <list>
 #include  <algorithm>
 #include <numeric>
+#include <algorithm>
 #include <limits>
-#include <map>
 
 #include "dunereco/CVN/art/PixelMapProducer.h"
 #include "dunereco/CVN/func/AssignLabels.h"
@@ -43,11 +43,6 @@ namespace cvn
     fGeometry = &*(art::ServiceHandle<geo::Geometry>());  
     fWireReadoutGeom = &art::ServiceHandle<geo::WireReadout>()->Get();
     if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos){
-      for (unsigned t = 0; t < 640; ++t) {
-        auto c = fGeometry->TPC(geo::TPCID{0, t}).GetCenter();
-        std::cout << t << "  iz_assumed " << (t % 320)/8 << "  iy_assumed " << (t % 8)
-          << "  x " << c.X() << "  y " << c.Y() << "  z " << c.Z() << std::endl;
-      }
       _cacheIntercepts();
     }
   }
@@ -184,16 +179,19 @@ namespace cvn
         double step = std::abs(_getIntercept(geo::WireID(refID, 1)) - _getIntercept(geo::WireID(refID, 0)));
 
         double lowest = std::numeric_limits<double>::max();
+        double highest = std::numeric_limits<double>::lowest();
         for(unsigned int itpc = 0; itpc < nTPC; itpc++){
           // induction views are mirrored between the two drift volumes
           geo::PlaneID const planeID(0, itpc, itpc < nTPCPerVol ? 1 - plane : plane);
           unsigned int nWiresTPC = fWireReadoutGeom->Nwires(planeID);
-          lowest = std::min(lowest, std::min(_getIntercept(geo::WireID(planeID, 0)),
-                                             _getIntercept(geo::WireID(planeID, nWiresTPC-1))));
+          double first = _getIntercept(geo::WireID(planeID, 0));
+          double last = _getIntercept(geo::WireID(planeID, nWiresTPC-1));
+          lowest = std::min({lowest, first, last});
+          highest = std::max({highest, first, last});
         }
 
         if(plane == 0){ fSpacing0 = step; fIntercept0Min = lowest; }
-        else          { fSpacing1 = step; fIntercept1Min = lowest; }
+        else          { fSpacing1 = step; fIntercept1Max = highest; }
         continue;
       }
 
@@ -249,32 +247,11 @@ namespace cvn
     std::vector<int> wire_0;
     std::vector<int> wire_1;
     std::vector<int> wire_2;
-    std::vector<unsigned int> tpc_2;    // VDDIAG
-    std::vector<double> peak_2;         // VDDIAG
-    int wireIdCheck[2][3][2] = {};      // VDDIAG: [volume][plane][stored WireID matches geometry]
-    int nMismatchShown = 0;             // VDDIAG
-    static int vddiagCall = 0;          // VDDIAG: position dump for the 5th event only (one DefineBoundary call per event)
-    bool dumpPositions = (++vddiagCall == 5);
-    if (dumpPositions)
-      std::cout << "VDDIAG POS view tpc plane wire channel y z peakTime globalTime globalWire" << std::endl;
+    
 
     for(size_t iHit = 0; iHit < cluster.size(); ++iHit)
     {
       geo::WireID wireid = cluster[iHit]->WireID();
-
-      {   // VDDIAG: hit's stored WireID vs the current geometry's wires for the hit's channel
-        auto ids = fWireReadoutGeom->ChannelToWire(cluster[iHit]->Channel());
-        bool match = std::find(ids.begin(), ids.end(), wireid) != ids.end();
-        unsigned int vol = wireid.TPC < fGeometry->NTPC(geo::CryostatID{0})/2 ? 0 : 1;
-        if (wireid.Plane < 3) wireIdCheck[vol][wireid.Plane][match]++;
-        if (!match && nMismatchShown < 10) {
-          ++nMismatchShown;
-          std::cout << "VDDIAG WIREID_EXAMPLE channel " << cluster[iHit]->Channel()
-                    << " stored T" << wireid.TPC << " P" << wireid.Plane << " W" << wireid.Wire << "  geometry:";
-          for (auto const& id : ids) std::cout << " T" << id.TPC << " P" << id.Plane << " W" << id.Wire;
-          std::cout << std::endl;
-        }
-      }
       
       unsigned int globalWire = wireid.Wire;
       unsigned int globalPlane = wireid.Plane;
@@ -311,14 +288,6 @@ namespace cvn
       if(globalPlane==2){
         time_2.push_back(globalTime);
         wire_2.push_back(globalWire);
-        tpc_2.push_back(wireid.TPC);                     // VDDIAG
-        peak_2.push_back(cluster[iHit]->PeakTime());     // VDDIAG
-      }
-      if (dumpPositions && globalPlane < 2) {            // VDDIAG: stored wire label -> position in this job's geometry
-        auto pos = fWireReadoutGeom->WirePtr(wireid)->GetCenter();
-        std::cout << "VDDIAG POS " << globalPlane << " " << wireid.TPC << " " << wireid.Plane << " " << wireid.Wire
-                  << " " << cluster[iHit]->Channel() << " " << pos.Y() << " " << pos.Z()
-                  << " " << cluster[iHit]->PeakTime() << " " << globalTime << " " << globalWire << std::endl;
       }
     }
 
@@ -340,12 +309,12 @@ namespace cvn
     auto minwireelement_2= std::min_element(wire_2.begin(), wire_2.end());
     if(wire_2.size() > 0) std::cout<<"minwire 2: "<<*minwireelement_2<<std::endl;
 
-    auto maxwireelement_0= std::max_element(wire_0.begin(), wire_0.end());
-    std::cout<<"maxwire 0: "<<*maxwireelement_0<<std::endl;
-    auto maxwireelement_1= std::max_element(wire_1.begin(), wire_1.end());
-    std::cout<<"maxwire 1: "<<*maxwireelement_1<<std::endl;
-    auto maxwireelement_2= std::max_element(wire_2.begin(), wire_2.end());
-    std::cout<<"maxwire 2: "<<*maxwireelement_2<<std::endl;
+    //auto maxwireelement_0= std::max_element(wire_0.begin(), wire_0.end());
+    //std::cout<<"maxwire 0: "<<*maxwireelement_0<<std::endl;
+    //auto maxwireelement_1= std::max_element(wire_1.begin(), wire_1.end());
+    //std::cout<<"maxwire 1: "<<*maxwireelement_1<<std::endl;
+    //auto maxwireelement_2= std::max_element(wire_2.begin(), wire_2.end());
+    //std::cout<<"maxwire 2: "<<*maxwireelement_2<<std::endl;
 
 
     int minwire_0 = 0;
@@ -355,96 +324,7 @@ namespace cvn
     if(wire_1.size() > 0) minwire_1 = *minwireelement_1-1;
     if(wire_2.size() > 0) minwire_2 = *minwireelement_2-1;
 
-    std::vector<int> w = wire_2;
-    std::sort(w.begin(), w.end());
-    w.erase(std::unique(w.begin(), w.end()), w.end());
-    for(size_t i = 1; i < w.size(); ++i){
-      if(w[i] - w[i-1] > 20)
-        std::cout << "view 2 RAW gap: " << w[i-1] << " -> " << w[i]
-                  << "  (" << w[i] - w[i-1] << " wires)" << std::endl;
-    }
-
     Boundary bound(fNWire,fTRes,minwire_0,minwire_1,minwire_2,tmean_0,tmean_1,tmean_2);
-
-    // ===== BEGIN VDDIAG: diagnostics for the VD 2x8x40 global coordinates, delete when resolved =====
-    if (fGeometry->DetectorName().find("dunevd10kt_3view") != std::string::npos) {
-      unsigned int nTPC = fGeometry->NTPC(geo::CryostatID{0});
-      unsigned int nTPCPerVol = nTPC/2;
-
-      static bool geometryDumped = false;
-      if (!geometryDumped) {
-        geometryDumped = true;
-        std::cout << "VDDIAG TPC tpc iz iy x z XTicksOffset_p0 XTicksOffset_p1 XTicksOffset_p2 x_at_tick0_p2" << std::endl;
-        for (unsigned int t = 0; t < nTPC; ++t) {
-          auto c = fGeometry->TPC(geo::TPCID{0, t}).GetCenter();
-          std::cout << "VDDIAG TPC " << t << " " << (t % nTPCPerVol)/8 << " " << t % 8
-                    << " " << c.X() << " " << c.Z()
-                    << " " << detProp.GetXTicksOffset(0, t, 0)
-                    << " " << detProp.GetXTicksOffset(1, t, 0)
-                    << " " << detProp.GetXTicksOffset(2, t, 0)
-                    << " " << detProp.ConvertTicksToX(0., 2, t, 0) << std::endl;
-        }
-
-        std::cout << "VDDIAG ORIENT tpc plane wire y z tanThetaZ intercept globalWire globalPlane" << std::endl;
-        for (unsigned int t : {0u, nTPCPerVol}) {
-          for (unsigned int p = 0; p < 2; ++p) {
-            geo::PlaneID const pid(0, t, p);
-            unsigned int nw = fWireReadoutGeom->Nwires(pid);
-            for (unsigned int w : {0u, nw/2, nw - 1}) {
-              const geo::WireGeo* wg = fWireReadoutGeom->WirePtr(geo::WireID(pid, w));
-              auto wc = wg->GetCenter();
-              unsigned int gw = 0, gp = 0; double gt = 0.;
-              GetDUNEVertDrift3ViewGlobalWire(detProp, w, 0., p, t, gw, gp, gt);
-              std::cout << "VDDIAG ORIENT " << t << " " << p << " " << w << " " << wc.Y() << " " << wc.Z()
-                        << " " << wg->TanThetaZ() << " " << _getIntercept(geo::WireID(pid, w))
-                        << " " << gw << " " << gp << std::endl;
-            }
-          }
-        }
-      }
-
-      const std::vector<int>* wires[3] = {&wire_0, &wire_1, &wire_2};
-      const std::vector<double>* times[3] = {&time_0, &time_1, &time_2};
-      for (unsigned int v = 0; v < 3; ++v) {
-        if (wires[v]->empty()) continue;
-        size_t wireFail = 0, timeFail = 0;
-        for (size_t i = 0; i < wires[v]->size(); ++i) {
-          int w = (*wires[v])[i]; double t = (*times[v])[i];
-          if (w < bound.FirstWire(v) || w > bound.LastWire(v)) ++wireFail;
-          if (t < bound.FirstTDC(v) || t > bound.LastTDC(v)) ++timeFail;
-        }
-        std::cout << "VDDIAG VIEW " << v
-                  << " wires " << *std::min_element(wires[v]->begin(), wires[v]->end())
-                  << ".." << *std::max_element(wires[v]->begin(), wires[v]->end())
-                  << " window_wires " << bound.FirstWire(v) << ".." << bound.LastWire(v)
-                  << " times " << *std::min_element(times[v]->begin(), times[v]->end())
-                  << ".." << *std::max_element(times[v]->begin(), times[v]->end())
-                  << " window_time " << bound.FirstTDC(v) << ".." << bound.LastTDC(v)
-                  << " hits " << wires[v]->size() << " wireFail " << wireFail << " timeFail " << timeFail << std::endl;
-      }
-
-      struct Tally { int n = 0, inTime = 0; double peak = 0., global = 0.;
-                     int wmin = std::numeric_limits<int>::max(), wmax = std::numeric_limits<int>::min(); };
-      std::map<unsigned int, Tally> perTPC;
-      for (size_t i = 0; i < wire_2.size(); ++i) {
-        Tally& a = perTPC[tpc_2[i]];
-        a.n++; a.peak += peak_2[i]; a.global += time_2[i];
-        a.wmin = std::min(a.wmin, wire_2[i]); a.wmax = std::max(a.wmax, wire_2[i]);
-        if (time_2[i] >= bound.FirstTDC(2) && time_2[i] <= bound.LastTDC(2)) a.inTime++;
-      }
-      std::cout << "VDDIAG WIREID volume plane nMatch nMismatch  (volume 0 = TPC < " << nTPCPerVol << ")" << std::endl;
-      for (int vol = 0; vol < 2; ++vol)
-        for (int p = 0; p < 3; ++p)
-          std::cout << "VDDIAG WIREID " << vol << " " << p << " " << wireIdCheck[vol][p][1]
-                    << " " << wireIdCheck[vol][p][0] << std::endl;
-
-      std::cout << "VDDIAG ZTPC tpc iz iy nhits meanPeakTime meanGlobalTime wmin wmax nInTimeWindow" << std::endl;
-      for (auto const& [t, a] : perTPC)
-        std::cout << "VDDIAG ZTPC " << t << " " << (t % nTPCPerVol)/8 << " " << t % 8 << " " << a.n
-                  << " " << a.peak/a.n << " " << a.global/a.n << " " << a.wmin << " " << a.wmax
-                  << " " << a.inTime << std::endl;
-    }
-    // ===== END VDDIAG =====
 
     return bound;
   }
@@ -737,7 +617,8 @@ namespace cvn
 
     if(is10kt && globalPlane < 2){
       double intercept = _getIntercept(geo::WireID(planeID, localWire));
-      globalWire = globalPlane ? std::round((intercept - fIntercept1Min)/fSpacing1)
+      // view 1 counts down in intercept to match the 1x8x6 convention the network was trained on
+      globalWire = globalPlane ? std::round((fIntercept1Max - intercept)/fSpacing1)
                                : std::round((intercept - fIntercept0Min)/fSpacing0);
     }
     // deal with smaller workspace geoemtries (8x6 or 6x6) : old way, kept to be consistent
