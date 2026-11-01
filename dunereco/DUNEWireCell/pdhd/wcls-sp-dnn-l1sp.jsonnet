@@ -114,10 +114,9 @@ local sp_override = { sparse: sigoutform == 'sparse' }
 // The input here is the NF-stage RawDigit (saved by wcls-nf.jsonnet's
 // nfsaver as the "raw" art instance).  On data, the NF stage runs the
 // 512->500 ns Resampler, so its RawDigit is at 500 ns; read it at that
-// period with NO Resampler downstream.  (params.daq.tick is still 512 ns,
-// the pre-resample DAQ period, so it must NOT be used here.)  On sim there
-// is no resampler, so the input stays at the native 512 ns DAQ tick.
-local input_tick = if reality == 'data' then 500 * wc.ns else 512 * wc.ns;
+// period with NO Resampler downstream.  Sim is generated at the native
+// 500 ns.
+local input_tick = 500 * wc.ns;
 local wcls_input = {
   adc_digits: g.pnode({
     type: 'wclsRawFrameSource',
@@ -154,6 +153,12 @@ local wcls_output = {
       digitize: false,  // true means save as RawDigit, else recob::Wire
       frame_tags: ['gauss', 'wiener'],
       frame_scale: [0.001, 0.001],
+      summary_tags: ['wiener'],
+      summary_suffix: '',
+      summary_operator: { wiener: 'set' },
+      // MUST match frame_scale.
+      summary_scale: [0.001],
+
       chanmaskmaps: [],
       nticks: -1,
     },

@@ -76,8 +76,8 @@ namespace solar {
   void LowECluster::initialize(
     const std::vector<float>& position,
     int   id,
-    int   tpc,
     int   nhits,
+    int   tpc,
     int   channel,
     float charge,
     float time,

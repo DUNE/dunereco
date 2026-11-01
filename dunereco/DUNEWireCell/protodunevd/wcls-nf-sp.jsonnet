@@ -175,7 +175,10 @@ local nf_maker = import 'pgrapher/experiment/protodunevd/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], tools.anodes[n].data.ident, name='nf%d' % tools.anodes[n].data.ident) for n in std.range(0, std.length(tools.anodes) - 1)];
 
 local sp = sp_maker(params, tools, sp_override);
-local sp_pipes = [sp.make_sigproc(a) for a in tools.anodes];
+// L1SP OFF by default in the plain NF+SP chain (l1sp_pd_mode='' skips
+// building L1SPFilterPD entirely).  L1SP runs in the DNN chain
+// (wcls-nf-sp-dnnroi.jsonnet), wired after DNN-ROI.
+local sp_pipes = [sp.make_sigproc(a, l1sp_pd_mode='') for a in tools.anodes];
 
 local dnnroi = import 'pgrapher/experiment/dune-vd/dnnroi.jsonnet';
 local ts =

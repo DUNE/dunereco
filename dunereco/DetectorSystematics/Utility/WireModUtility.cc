@@ -1,0 +1,1203 @@
+#include "WireModUtility.hh"
+#include "lardataalg/DetectorInfo/DetectorPropertiesData.h"
+#include "larsim/Simulation/LArG4Parameters.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "TCanvas.h"
+#include "TH2F.h"
+#include "TH1F.h"
+#include "TStyle.h"
+#include "TLegend.h"
+#include "TLatex.h"
+
+//For debugging purposes
+//--- MakeTrackIDtoPDGMap ---
+void sys::WireModUtility::MakeTrackIDtoPDGMap(
+        const std::vector<simb::MCParticle>& mcParticles)
+{
+    trackID_to_PDG.clear();
+    for (const auto& p : mcParticles) {
+        trackID_to_PDG[p.TrackId()] = p.PdgCode();
+    }
+}
+
+//--- CalcROIProperties ---
+sys::WireModUtility::ROIProperties_t sys::WireModUtility::CalcROIProperties(recob::Wire const& wire, size_t const& roi_idx)
+{
+  // get the ROI. Need to verify ROI tick conventions and signal calibration units.
+  recob::Wire::RegionsOfInterest_t::datarange_t const& roi = wire.SignalROI().get_ranges()[roi_idx];
+
+  // initialize the return value
+  ROIProperties_t roi_vals;
+  roi_vals.channel = wire.Channel(); // DUNE_MOD: confirm channel mapping consistency
+  roi_vals.view    = wire.View(); // DUNE_MOD: DUNE may have different plane/view conventions
+  roi_vals.begin   = roi.begin_index();
+  roi_vals.end     = roi.end_index();
+  roi_vals.center  = 0;
+  roi_vals.total_q = 0;
+  roi_vals.sigma   = 0;
+
+  // loop over the roi and find the charge-weighted center and total charge
+  auto const& roi_data = roi.data();
+  for (size_t i_t = 0; i_t < roi_data.size(); ++i_t)
+  {
+    roi_vals.center += roi_data[i_t]*(i_t+roi_vals.begin);
+    roi_vals.total_q += roi_data[i_t];
+  }
+
+  //Do we need to protect against division by 0?
+  roi_vals.center = roi_vals.center/roi_vals.total_q;
+
+  // get the width (again charge-weighted)
+  //   // if the ROI is only one tick set the cent to the middle of the tick and width to 0.5
+  for (size_t i_t = 0; i_t<roi_data.size(); ++i_t)
+  {
+    roi_vals.sigma += roi_data[i_t]*(i_t+roi_vals.begin-roi_vals.center)*(i_t+roi_vals.begin-roi_vals.center);
+  }
+  //Do we need to protect against division by 0?
+  roi_vals.sigma = std::sqrt(roi_vals.sigma/roi_vals.total_q);
+  if (roi_vals.end-roi_vals.begin == 1)
+  {
+    roi_vals.center += 0.5;
+    roi_vals.sigma   = 0.5;
+  }
+  
+  // return the calc'd properies
+  return roi_vals;
+}
+
+
+//--- GetTargetROIs ---
+std::vector<std::pair<unsigned int, unsigned int>>
+sys::WireModUtility::GetTargetROIs(sim::SimEnergyDeposit const& shifted_edep, double offset)
+{
+  std::vector<std::pair<unsigned int, unsigned int>> target_roi_vec;
+
+  geo::TPCGeo const* curTPCGeomPtr = geometry->PositionToTPCptr(shifted_edep.MidPoint());
+  if (curTPCGeomPtr == nullptr)
+  {
+    return target_roi_vec;
+  }
+  for (auto const& plane : wireReadout->Iterate<geo::PlaneGeo>(curTPCGeomPtr->ID())) {
+
+    int wireCentral = int(0.5 + plane.WireCoordinate(shifted_edep.MidPoint()));
+    for (int wireNumber = wireCentral-nNeighbourWires; wireNumber < wireCentral+nNeighbourWires+1; wireNumber++){
+      if ((wireNumber < 0) || (wireNumber >= (int)plane.Nwires()))
+      {
+        continue;
+      }
+
+
+      geo::WireID edep_wireID(plane.ID(),
+                        static_cast<geo::WireID::WireID_t>(wireNumber));
+      if (planeXInWindow(shifted_edep.X(), plane, *curTPCGeomPtr, offset + tickOffset))
+      {
+        target_roi_vec.emplace_back(
+          wireReadout->PlaneWireToChannel(edep_wireID),
+          std::round(planeXToTick(shifted_edep.X(), plane, *curTPCGeomPtr, offset + tickOffset))
+        );
+      }
+    }
+  }
+
+  return target_roi_vec;
+}
+
+//--- GetHitTargetROIs ---
+std::vector<std::pair<unsigned int, unsigned int>>
+sys::WireModUtility::GetHitTargetROIs(recob::Hit const& hit)
+{
+  std::vector<std::pair<unsigned int, unsigned int>> target_roi_vec;
+
+  int hit_wire = hit.Channel();
+  int hit_tick = int(round(hit.PeakTime()));
+
+  if (hit_tick < tickOffset || hit_tick >= readoutWindowTicks + tickOffset)
+    return target_roi_vec;
+
+  target_roi_vec.emplace_back((unsigned int) hit_wire, (unsigned int) hit_tick);
+  return target_roi_vec;
+}
+
+//--- FillROIMatchedEdepMap ---
+void sys::WireModUtility::FillROIMatchedEdepMap(std::vector<sim::SimEnergyDeposit> const& edepVec, std::vector<recob::Wire> const& wireVec, double offset)
+{
+  ROIMatchedEdepMap.clear();
+
+  std::unordered_map<unsigned int,unsigned int> wireChannelMap;
+  for (size_t i_w = 0; i_w < wireVec.size(); ++i_w)
+    wireChannelMap[wireVec[i_w].Channel()] = i_w;
+
+  event_counter++;
+
+  if (SaveEdepMatchingPlots){
+    
+    hMatchedWD = new TH1F("hMatchedWD","Wire distance between target ROI and simulated edep; Wire distance; Counts/(# sim edep)", 21, -10, 10);
+    hMatchedE = new TH1F("hMatchedE","Simulated Energy Deposits Energy; Energy [MeV]; Counts/(# sim edep)", 50, 0, 1);
+    hUnMatchedE = new TH1F("hUnMatchedE","Simulated Energy Deposits Energy; Energy [MeV]; Counts/(# sim edep)", 50, 0, 1);
+    hMatchedPDG = new TH1F("hMatchedPDG", "Simulated Energy Deposits PDG code; PDG code; Counts/(# sim edep)",12, -0.5, 11.5);
+    hUnMatchedPDG = new TH1F("hUnMatchedPDG", "Simulated Energy Deposits PDG code; PDG code/(# sim edep); Counts",12, -0.5, 11.5);
+    hUnMatchedClosest = new TH1F("hUnMatchedClosest", "Tick distance to closest signal ROI on target wire; Tick distance; Counts/(# sim edep)", 100, 0, 100);
+
+    hMatchedPDG->GetXaxis()->SetBinLabel(1, "PDG=0");
+    hMatchedPDG->GetXaxis()->SetBinLabel(2, "e^{#pm}");
+    hMatchedPDG->GetXaxis()->SetBinLabel(3, "#mu^{#pm}");
+    hMatchedPDG->GetXaxis()->SetBinLabel(10, "#gamma");
+    hMatchedPDG->GetXaxis()->SetBinLabel(4, "p");
+    hMatchedPDG->GetXaxis()->SetBinLabel(5, "n");
+    hMatchedPDG->GetXaxis()->SetBinLabel(6, "#pi^{#pm}");
+    hMatchedPDG->GetXaxis()->SetBinLabel(7, "#pi^{0}");
+    hMatchedPDG->GetXaxis()->SetBinLabel(8, "K^{#pm}");
+    hMatchedPDG->GetXaxis()->SetBinLabel(9, "K^{0}");
+    hMatchedPDG->GetXaxis()->SetBinLabel(11, "Nuclei");
+    hMatchedPDG->GetXaxis()->SetBinLabel(12,"Other");
+
+    hUnMatchedPDG->GetXaxis()->SetBinLabel(1, "PDG=0");
+    hUnMatchedPDG->GetXaxis()->SetBinLabel(2, "e^{#pm}");
+    hUnMatchedPDG->GetXaxis()->SetBinLabel(3, "#mu^{#pm}");
+    hUnMatchedPDG->GetXaxis()->SetBinLabel(10, "#gamma");
+    hUnMatchedPDG->GetXaxis()->SetBinLabel(4, "p");
+    hUnMatchedPDG->GetXaxis()->SetBinLabel(5, "n");
+    hUnMatchedPDG->GetXaxis()->SetBinLabel(6, "#pi^{#pm}");
+    hUnMatchedPDG->GetXaxis()->SetBinLabel(7, "#pi^{0}");
+    hUnMatchedPDG->GetXaxis()->SetBinLabel(8, "K^{#pm}");
+    hUnMatchedPDG->GetXaxis()->SetBinLabel(9, "K^{0}");
+    hUnMatchedPDG->GetXaxis()->SetBinLabel(11, "Nuclei");
+    hUnMatchedPDG->GetXaxis()->SetBinLabel(12,"Other");
+
+    hMatchedPDG->SetLineColor(kBlue);
+    hMatchedPDG->SetStats(0);
+
+    hUnMatchedE->SetLineColor(kRed);
+    hUnMatchedE->SetStats(0);
+    hUnMatchedPDG->SetLineColor(kRed);
+    hUnMatchedPDG->SetStats(0);
+  }  
+ 
+  int nNoTargetROI=0;
+  int nSignalROIInvalid=0;
+  int nSignalROIEmpty=0;
+  int nSignalROIRange0=0;
+  int nSignalROISize=0;
+  int nSignalROINoSecond=0; 
+  int nCloseROI=0;
+  int nMissingWire=0;
+  for (size_t i_e = 0; i_e < edepVec.size(); ++i_e)
+  {
+    bool isMatched=false;
+    auto const& edep = edepVec[i_e];
+    geo::Point_t xyz = edep.MidPoint();
+
+    int trackID=std::abs(edep.TrackID());
+    int pdg=0, pdg_rebin=11;
+    auto it = trackID_to_PDG.find(trackID);
+        if (it != trackID_to_PDG.end()) pdg = it->second; 
+    if (pdg==-11 || pdg==11) pdg_rebin=1; //electron, positron
+    if (pdg==-13 || pdg==13) pdg_rebin=2; //muons
+    if (pdg==-2212 || pdg==2212) pdg_rebin=3; //protons
+    if (pdg==-2112 || pdg==2112) pdg_rebin=4; //neutrons
+    if (pdg==-211 || pdg==211) pdg_rebin=5; //charged pions
+    if (pdg==-111 || pdg==111) pdg_rebin=6; //neutral pions
+    if (pdg==-321 || pdg==321) pdg_rebin=7; //charged kaons
+    if (pdg==310 || pdg==130) pdg_rebin=8; //neutral kaons
+    if (pdg==22) pdg_rebin=9; //gamma
+    if (pdg>1e9) pdg_rebin=10; //nuclei
+    if (pdg==0) pdg_rebin=0;
+
+    auto target_rois = GetTargetROIs(edepVec[i_e], offset);
+    bool hasTargetROIs=false;
+    for (auto const& target_roi : target_rois)
+    {
+      hasTargetROIs=true; 
+      if (wireChannelMap.find(target_roi.first) == wireChannelMap.end())
+      { 
+        nMissingWire++; 
+        continue;
+      }
+      auto const& target_wire = wireVec.at(wireChannelMap[target_roi.first]);
+     
+      int best_delta_wire = 11;
+     
+      auto wireIDs = wireReadout->ChannelToWire(target_wire.Channel());
+      for (auto const& wireID : wireIDs){
+        int wire_index = wireID.Wire;
+        auto const& plane = wireReadout->Plane(wireID);
+        int wireProj = int(0.5+wireReadout->Plane(plane.ID()).WireCoordinate(xyz));
+        int delta = wireProj - wire_index;
+        //std::cout<<"Tentative distance between target roi and edep: "<<delta<<std::endl;
+        if (std::abs(delta)<std::abs(best_delta_wire)) best_delta_wire = delta;
+      }
+      //std::cout<<"Best distance between target roi and edep: "<<best_delta_wire<<std::endl;
+      if (not target_wire.SignalROI().is_valid())
+      {
+        nSignalROIInvalid++;
+        //std::cout<<"invalid Signal ROI for this wire"<<std::endl;
+        continue;
+      }
+      if (target_wire.SignalROI().empty())
+      {
+        nSignalROIEmpty++;
+        //std::cout<<"empty signal ROI for this wire"<<std::endl;
+        continue;
+      }
+      if (target_wire.SignalROI().n_ranges() == 0)
+      {
+        nSignalROIRange0++;
+        /*std::cout<<"0 ranges for this wire's signal ROI"<<std::endl;
+        for (int delta = -2; delta <= 2; ++delta) {
+          int neigh_channel = target_roi.first + delta;
+          auto const& neigh_wire = wireVec.at(wireChannelMap[neigh_channel]);  // however you access wires
+          if (neigh_wire.SignalROI().n_ranges() >0)
+          {
+            std::cout<<"Neighbour channel at "<<delta<<" has signal ROIs"<<std::endl;
+          }
+        }*/
+       
+        continue;
+      }
+
+
+      if (target_wire.SignalROI().size() <= target_roi.second)
+      {
+        nSignalROISize++;
+        //std::cout<<"signa ROI size smaller than target_roi tick"<<std::endl;
+        continue;
+      }
+      
+      int min_distance = std::numeric_limits<int>::max();
+      for (size_t r = 0; r < target_wire.SignalROI().n_ranges(); ++r){
+        auto const& range = target_wire.SignalROI().range(r);
+
+        int start = range.begin_index();
+        int end   = range.end_index();
+
+        int distance;
+
+        if (static_cast<int>(target_roi.second) < start) distance = start - static_cast<int>(target_roi.second);
+
+        else if (static_cast<int>(target_roi.second) > end) distance = static_cast<int>(target_roi.second) - end;
+
+        else distance = 0;  // inside ROI
+        if (SaveEdepMatchingPlots) hUnMatchedClosest->Fill(distance);
+        if (distance < nTickTolerance+1){
+          ROIMatchedEdepMap[std::make_pair(target_wire.Channel(),r)].push_back(i_e);
+          isMatched=true;
+        }
+        if (distance < min_distance)
+        {
+          min_distance = distance;
+        }
+        
+      }
+      if (min_distance<5) nCloseROI++;
+      if (!isMatched) nSignalROINoSecond++;
+      if (SaveEdepMatchingPlots) hMatchedWD->Fill(best_delta_wire);
+    }
+    if (!hasTargetROIs) nNoTargetROI++;
+    if (isMatched){
+      if (SaveEdepMatchingPlots){
+        hMatchedE->Fill(edep.Energy());
+        hMatchedPDG->Fill(pdg_rebin);
+      }
+    }
+    else{
+      if (SaveEdepMatchingPlots){
+        hUnMatchedE->Fill(edep.Energy());
+        hUnMatchedPDG->Fill(pdg_rebin);
+      }
+    }
+  }
+  /*std::cout<<"no corresponding wire: "<<nMissingWire<<std::endl;
+  //std::cout<<"no target ROI: "<<nNoTargetROI<<std::endl;
+  //std::cout<<"invalid signal ROI: "<<nSignalROIInvalid<<std::endl;
+  //std::cout<<"empty signal ROI: "<<nSignalROIEmpty<<std::endl;
+  std::cout<<"signal ROI range=0: "<<nSignalROIRange0<<std::endl;
+  //std::cout<<"invalid signal ROI size: "<<nSignalROISize<<std::endl;
+  std::cout<<"tick outside an ROI: "<<nSignalROINoSecond<<std::endl;
+  std::cout<<"tick close to an ROI (distance inferior to 5): "<<nCloseROI<<std::endl;*/
+  
+
+  if (SaveEdepMatchingPlots){
+    TCanvas* c1 = new TCanvas("c1","Edep XZ Display",800,600);
+
+    c1->SetGridy();
+
+    hMatchedE->Scale(1./edepVec.size());
+    hUnMatchedE->Scale(1./edepVec.size());
+    hMatchedPDG->Scale(1./edepVec.size());
+    hUnMatchedPDG->Scale(1./edepVec.size());
+    hMatchedWD->Scale(1./edepVec.size());
+    hUnMatchedClosest->Scale(1./edepVec.size());   
+
+    TLegend *leg = new TLegend(0.6, 0.7, 0.85, 0.85);
+    leg->AddEntry(hMatchedE, "Matched");
+    leg->AddEntry(hUnMatchedE, "Not matched");
+
+  
+    TLatex latex;
+    latex.SetNDC();                 // use normalized coordinates (0 → 1)
+    latex.SetTextSize(0.04);        // adjust size
+    latex.SetTextFont(42);          // nice standard font
+
+    hMatchedE->Draw("HIST");
+    hUnMatchedE->Draw("HISTsame");
+    leg->Draw("same");
+    latex.DrawLatex(0.2, 0.85, "DUNE Work in Progress");
+    c1->SaveAs("Edep_matching_plots.pdf(");
+
+    hMatchedWD->Draw("HIST");
+    c1->SaveAs("Edep_matching_plots.pdf");
+    
+    //hUnMatchedClosest->SetLineColor(kRed);
+    hUnMatchedClosest->Draw("HIST");
+    c1->SaveAs("Edep_matching_plots.pdf");
+
+    c1->SetLogy();
+    hMatchedPDG->Draw("HIST");
+    hUnMatchedPDG->Draw("HISTsame");
+    leg->Draw("same");
+    latex.DrawLatex(0.2, 0.85, "DUNE Work in Progress");
+    c1->SaveAs("Edep_matching_plots.pdf)");
+    delete c1;
+  }
+}
+
+
+//--- FillROIMatchedHitMap ---
+void sys::WireModUtility::FillROIMatchedHitMap(std::vector<recob::Hit> const& hitVec, std::vector<recob::Wire> const& wireVec)
+{
+  // clear the map in case it was already set
+  ROIMatchedHitMap.clear();
+
+  // get the channel from each wire and set up a map between them
+  std::unordered_map<unsigned int,unsigned int> wireChannelMap;
+  for (size_t i_w = 0; i_w < wireVec.size(); ++i_w)
+    wireChannelMap[wireVec[i_w].Channel()] = i_w;
+
+  double nHitsMatched = 0;
+  // loop over hits
+  for (size_t i_h = 0; i_h < hitVec.size(); ++i_h)
+  {
+    // get the ROIs
+    //     // <channel number, tick time>
+    std::vector<std::pair<unsigned int, unsigned int>> target_rois = GetHitTargetROIs(hitVec[i_h]);
+
+    // loop over ROI and match the energy deposits with wires
+    for (auto const& target_roi : target_rois)
+    {
+      // if we can't find the wire, skip it
+      if (wireChannelMap.find(target_roi.first) == wireChannelMap.end())
+        continue;
+
+      auto const& target_wire = wireVec.at(wireChannelMap[target_roi.first]);
+
+      // if there are no ticks in in the wire skip it
+      //       // likewise if there's nothing in the region of interst
+      if (not target_wire.SignalROI().is_valid()              ||
+          target_wire.SignalROI().empty()                     ||
+          target_wire.SignalROI().n_ranges() == 0             ||
+          target_wire.SignalROI().size() <= target_roi.second ||
+          target_wire.SignalROI().is_void(target_roi.second)   )
+        continue;
+
+      // which range is it?
+      auto range_number = target_wire.SignalROI().find_range_iterator(target_roi.second) - target_wire.SignalROI().begin_range();
+      nHitsMatched++;
+      // pupluate the map
+      ROIMatchedHitMap[std::make_pair(target_wire.Channel(),range_number)].push_back(i_h);
+    }
+  }
+  std::cout<<"Efficiency of matching hits to an ROI: "<<nHitsMatched/double(hitVec.size())<<std::endl;
+}
+
+//--- CalcSubROIProperties ---
+std::vector<sys::WireModUtility::SubROIProperties_t> sys::WireModUtility::CalcSubROIProperties(sys::WireModUtility::ROIProperties_t const& roi_properties, std::vector<const recob::Hit*> const& hitPtrVec)
+{
+  std::vector<sys::WireModUtility::SubROIProperties_t> subroi_properties_vec;
+  sys::WireModUtility::SubROIProperties_t subroi_properties;
+  subroi_properties.channel = roi_properties.channel;
+  subroi_properties.view    = roi_properties.view;
+
+  // if this ROI doesn't contain any hits, define subROI based on ROI properities
+  //   // otherwise, define subROIs based on hits
+  if (hitPtrVec.size() == 0)
+  {
+    subroi_properties.key     = std::make_pair(roi_properties.key, 0);
+    subroi_properties.total_q = roi_properties.total_q;
+    subroi_properties.center  = roi_properties.center;
+    subroi_properties.sigma   = roi_properties.sigma;
+    subroi_properties_vec.push_back(subroi_properties);
+  } else
+  {
+    for (unsigned int i_h=0; i_h < hitPtrVec.size(); ++i_h)
+    {
+      auto hit_ptr = hitPtrVec[i_h];
+      subroi_properties.key     = std::make_pair(roi_properties.key, i_h);
+      subroi_properties.total_q = hit_ptr->Integral();
+      subroi_properties.center  = hit_ptr->PeakTime();
+      subroi_properties.sigma   = hit_ptr->RMS();
+      subroi_properties_vec.push_back(subroi_properties);
+    }
+  }
+
+  return subroi_properties_vec;
+}
+
+//--- MatchEdepsToSubROIs ---
+std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sim::SimEnergyDeposit*>> sys::WireModUtility::MatchEdepsToSubROIs(std::vector<sys::WireModUtility::SubROIProperties_t> const& subROIPropVec, 
+                                                                                                                  std::vector<const sim::SimEnergyDeposit*> const& edepPtrVec, double offset, std::vector<geo::WireID> wireIDs)
+{
+  // for each TrackID, which EDeps are associated with it? keys are TrackIDs
+  std::map<int, std::vector<const sim::SimEnergyDeposit*>> TrackIDMatchedEDepMap;
+
+  // total energy of EDeps matched to the ROI (not strictly necessary, but useful for understanding/development
+  //double total_energy = 0.0;
+  
+  // loop over edeps, fill TrackIDMatchedEDepMap and calculate total energy
+  for (auto const& edep_ptr : edepPtrVec)
+  {
+    TrackIDMatchedEDepMap[edep_ptr->TrackID()].push_back(edep_ptr);
+    //total_energy += edep_ptr->E();
+  }
+
+  // calculate EDep properties by TrackID
+  std::map<int, sys::WireModUtility::TruthProperties_t> TrackIDMatchedPropertyMap;
+  for (auto const& track_edeps : TrackIDMatchedEDepMap)
+    TrackIDMatchedPropertyMap[track_edeps.first] = CalcPropertiesFromEdeps(track_edeps.second, offset, wireIDs);
+
+  // map it all out
+  std::map<unsigned int, std::vector<unsigned int>> EDepMatchedSubROIMap;        // keys are indexes of edepPtrVec, values are vectors of indexes of subROIPropVec
+  std::map<int, std::unordered_set<unsigned int>>   TrackIDMatchedSubROIMap;     // keys are TrackIDs, values are sets of indexes of subROIPropVec
+  std::map<unsigned int, std::vector<unsigned int>> SubROIMatchedEDepMap;        // keys are indexes of subROIPropVec, values are vectors of indexes of edepPtrVec
+  std::map<unsigned int, std::map<int, double>>     SubROIMatchedTrackEnergyMap; // keys are indexes of subROIPropVec, values are maps of TrackIDs to matched energy (in MeV)
+
+  // loop over EDeps
+  for (unsigned int i_e = 0; i_e < edepPtrVec.size(); ++i_e)
+  {
+    // get EDep properties
+    auto edep_ptr  = edepPtrVec[i_e];
+    const geo::TPCGeo* curTPCGeom = nullptr;
+    try{
+     curTPCGeom = &geometry->PositionToTPC(edep_ptr->MidPoint());
+    }
+    catch(cet::exception const& e) {
+      //std::cout<<"No TPC at this position"<<std::endl;
+      continue;
+    } 
+
+    const auto plane0 = wireReadout->FirstPlane(curTPCGeom->ID());
+    double ticksPercm = detPropData.GetXTicksCoefficient(); // this should be by TPCID, but isn't building right now
+    double zeroTick = detPropData.ConvertXToTicks(0, plane0.ID());
+    auto edep_tick = ticksPercm * edep_ptr->X() + (zeroTick + offset) + tickOffset;
+    edep_tick = detPropData.ConvertXToTicks(edep_ptr->X(), plane0.ID()) + offset + tickOffset;
+    auto const& xyz = edep_ptr->MidPoint();
+
+    int best_wire_dist = 1e8;
+    for (auto const& wireID : wireIDs){
+      int wire_index = wireID.Wire;
+      auto const& plane = wireReadout->Plane(wireID);
+      int wireProj = int(0.5+wireReadout->Plane(plane.ID()).WireCoordinate(xyz));
+      int wire_dist = std::abs(wire_index - wireProj);
+    
+      if (wire_dist < best_wire_dist) best_wire_dist = wire_dist;
+    }
+    //std::cout<<"Wire distance :"<<best_wire_dist<<std::endl;
+    if (best_wire_dist > nNeighbourWires){
+      std::cout<<"Distance larger than maximum allowed, this should not happen: "<<best_wire_dist<<std::endl;
+      continue;
+    }
+
+    // loop over subROIs
+    unsigned int closest_hit = std::numeric_limits<unsigned int>::max();
+    float min_dist = std::numeric_limits<float>::max();
+    for (unsigned int i_h = 0; i_h < subROIPropVec.size(); ++i_h)
+    {
+      auto subroi_prop = subROIPropVec[i_h];
+
+      /*if (subroi_prop.total_q < 5 && best_wire_dist>2){
+        //std::cout<<"Rejected because of too high distance for low charge"<<std::endl;
+        continue;
+      }*/
+
+      if (edep_tick > subroi_prop.center-subroi_prop.sigma && edep_tick < subroi_prop.center+subroi_prop.sigma)
+      {
+        EDepMatchedSubROIMap[i_e].push_back(i_h);
+        TrackIDMatchedSubROIMap[edep_ptr->TrackID()].emplace(i_h);
+      }
+      float hit_dist = std::abs(edep_tick - subroi_prop.center) / subroi_prop.sigma;
+      if (hit_dist < min_dist)
+      {
+        closest_hit = i_h;
+        min_dist = hit_dist;
+      }
+    }
+
+    // if EDep is less than 2.5 units away from closest subROI, assign it to that subROI
+    if (min_dist < 5) // try 5 for testing purposes
+    {
+      auto i_h = closest_hit;
+      SubROIMatchedEDepMap[i_h].push_back(i_e);
+      SubROIMatchedTrackEnergyMap[i_h][edep_ptr->TrackID()] += edep_ptr->E();
+    }
+  }
+
+  // convert to desired format (possibly a better way to do this...?)
+  std::map<SubROI_Key_t, std::vector<const sim::SimEnergyDeposit*>> ReturnMap;
+  for (auto it_h = SubROIMatchedEDepMap.begin(); it_h != SubROIMatchedEDepMap.end(); ++it_h)
+  {
+    auto key = subROIPropVec[it_h->first].key;
+    for (auto const& i_e : it_h->second)
+    {
+      ReturnMap[key].push_back(edepPtrVec[i_e]);
+    }
+  }
+
+  return ReturnMap;
+}
+
+
+//--- CalcPropertiesFromEdeps ---
+sys::WireModUtility::TruthProperties_t sys::WireModUtility::CalcPropertiesFromEdeps(std::vector<const sim::SimEnergyDeposit*> const& edepPtrVec, double offset, std::vector<geo::WireID> wireIDs)
+{
+  //split the edeps by TrackID
+  std::map< int, std::vector<const sim::SimEnergyDeposit*> > edepptrs_by_trkid;
+  std::map< int, double > energy_per_trkid;
+  for(auto const& edep_ptr : edepPtrVec)
+  {
+    edepptrs_by_trkid[edep_ptr->TrackID()].push_back(edep_ptr);
+    energy_per_trkid[edep_ptr->TrackID()]+=edep_ptr->E();
+  }
+
+  int trkid_max     = std::numeric_limits<int>::min();
+  double energy_max = std::numeric_limits<double>::min();
+  for(auto const& e_p_id : energy_per_trkid)
+  {
+    if(e_p_id.second > energy_max)
+    {
+      trkid_max = e_p_id.first;
+      energy_max = e_p_id.second;
+    }
+  }
+
+  auto edepPtrVecMaxE = edepptrs_by_trkid[trkid_max];
+  
+  //first, let's loop over all edeps and get an average weight scale...
+  sys::WireModUtility::TruthProperties_t edep_props;
+  double total_energy_all = 0.0;
+  
+  sys::WireModUtility::ScaleValues_t scales_e_weighted[3];
+  for(size_t i_p = 0; i_p < 3; ++i_p)
+  {
+    scales_e_weighted[i_p].r_Q     = 0.0;
+    scales_e_weighted[i_p].r_sigma = 0.0;
+  }
+
+  for(auto const edep_ptr : edepPtrVec)
+  {
+    if (edep_ptr->StepLength() == 0)
+      continue;
+
+    edep_props.x = edep_ptr->X();
+    edep_props.y = edep_ptr->Y();
+    edep_props.z = edep_ptr->Z();
+
+    edep_props.dxdr = (edep_ptr->EndX() - edep_ptr->StartX()) / edep_ptr->StepLength();
+    edep_props.dydr = (edep_ptr->EndY() - edep_ptr->StartY()) / edep_ptr->StepLength();
+    edep_props.dzdr = (edep_ptr->EndZ() - edep_ptr->StartZ()) / edep_ptr->StepLength();
+
+    edep_props.dedr = edep_ptr->E() / edep_ptr->StepLength();
+    edep_props.dedx = edep_ptr->E() / edep_ptr->StepLength();
+
+    total_energy_all += edep_ptr->E();
+
+    const geo::TPCGeo* curTPCGeom = nullptr;
+    try{
+      curTPCGeom = &geometry->PositionToTPC(edep_ptr->MidPoint());
+    }
+    catch(cet::exception const& e) {
+      //std::cout<<"No TPC at this position"<<std::endl;
+      continue;
+    }    
+
+    for (auto const& plane : wireReadout->Iterate<geo::PlaneGeo>(curTPCGeom->ID())) {
+      int i_p = plane.ID().Plane;
+      auto scales = GetViewScaleValues(edep_props, plane.View(), wireIDs);
+      scales_e_weighted[i_p].r_Q     += edep_ptr->E()*scales.r_Q;
+      scales_e_weighted[i_p].r_sigma += edep_ptr->E()*scales.r_sigma; 
+    }
+  }
+
+  for(size_t i_p = 0; i_p < 3; ++i_p)
+  {
+    if (total_energy_all > 0)
+    {
+      scales_e_weighted[i_p].r_Q     = scales_e_weighted[i_p].r_Q / total_energy_all;
+      scales_e_weighted[i_p].r_sigma = scales_e_weighted[i_p].r_sigma / total_energy_all;
+    }
+    if (scales_e_weighted[i_p].r_Q == 0)
+      scales_e_weighted[i_p].r_Q = 1;
+    if (scales_e_weighted[i_p].r_sigma == 0)
+      scales_e_weighted[i_p].r_sigma = 1;
+  }
+
+  TruthProperties_t edep_col_properties;
+
+  //copy in the scales that were calculated before
+  for(size_t i_p = 0; i_p < 3; ++i_p)
+  {
+    edep_col_properties.scales_avg[i_p].r_Q = scales_e_weighted[i_p].r_Q;
+    edep_col_properties.scales_avg[i_p].r_sigma = scales_e_weighted[i_p].r_sigma;
+  }
+
+  // calculations happen here
+  edep_col_properties.x              = 0.;
+  edep_col_properties.x_rms          = 0.;
+  edep_col_properties.x_rms_noWeight = 0.;
+  edep_col_properties.x_min          = std::numeric_limits<float>::max();
+  edep_col_properties.x_max          = std::numeric_limits<float>::min();
+
+  edep_col_properties.y    = 0.;
+  edep_col_properties.z    = 0.;
+  edep_col_properties.dxdr = 0.;
+  edep_col_properties.dydr = 0.;
+  edep_col_properties.dzdr = 0.;
+
+  edep_col_properties.dedr = 0.;
+  edep_col_properties.dedx = 0.;
+  edep_col_properties.dT2 = 0.;
+
+  double total_energy = 0.0;
+  double total_length = 0.0;
+  for (auto const& edep_ptr : edepPtrVecMaxE)
+  {
+    edep_col_properties.x += edep_ptr->X()*edep_ptr->E();
+    edep_col_properties.x_min = (edep_ptr->X() < edep_col_properties.x_min) ? edep_ptr->X() : edep_col_properties.x_min;
+    edep_col_properties.x_max = (edep_ptr->X() > edep_col_properties.x_max) ? edep_ptr->X() : edep_col_properties.x_max;
+    total_energy += edep_ptr->E();
+    edep_col_properties.y += edep_ptr->Y()*edep_ptr->E();
+    edep_col_properties.z += edep_ptr->Z()*edep_ptr->E();
+
+    if (edep_ptr->StepLength() == 0)
+      continue;
+
+    total_length += edep_ptr->StepLength();
+    edep_col_properties.dxdr += edep_ptr->E()*(edep_ptr->EndX() - edep_ptr->StartX()) / edep_ptr->StepLength();
+    edep_col_properties.dydr += edep_ptr->E()*(edep_ptr->EndY() - edep_ptr->StartY()) / edep_ptr->StepLength();
+    edep_col_properties.dzdr += edep_ptr->E()*(edep_ptr->EndZ() - edep_ptr->StartZ()) / edep_ptr->StepLength();
+
+    edep_col_properties.dedr += edep_ptr->E()*edep_ptr->E() / edep_ptr->StepLength();
+  
+    auto const& xyz = edep_ptr->MidPoint();
+    double best_dT=1e8;
+    for (auto const& wireID : wireIDs){
+      int wire_index = wireID.Wire;
+      auto const& plane = wireReadout->Plane(wireID);
+      int wireProj = int(0.5+wireReadout->Plane(plane.ID()).WireCoordinate(xyz));
+      int wire_dist = std::abs(wire_index - wireProj);
+      double wire_pitch = plane.WirePitch();
+      double dT=wire_dist*wire_pitch;
+  
+      if (dT < best_dT){ 
+        best_dT = dT;
+      }
+    }
+    edep_col_properties.dT2=best_dT*best_dT*edep_ptr->E();
+  }
+  if (total_energy > 0)
+  {
+    edep_col_properties.x    = edep_col_properties.x / total_energy;
+    edep_col_properties.y    = edep_col_properties.y / total_energy;
+    edep_col_properties.z    = edep_col_properties.z / total_energy;
+    edep_col_properties.dxdr = edep_col_properties.dxdr / total_energy;
+    edep_col_properties.dydr = edep_col_properties.dydr / total_energy;
+    edep_col_properties.dzdr = edep_col_properties.dzdr / total_energy;
+
+    edep_col_properties.dedr = edep_col_properties.dedr / total_energy;
+    edep_col_properties.dT2 = edep_col_properties.dT2 / total_energy;
+  }
+  if (total_length > 0) edep_col_properties.dedx = total_energy / total_length;
+  for (auto const& edep_ptr : edepPtrVecMaxE)
+  {
+    edep_col_properties.x_rms          += (edep_ptr->X()-edep_col_properties.x)*(edep_ptr->X()-edep_col_properties.x)*edep_ptr->E();
+    edep_col_properties.x_rms_noWeight += (edep_ptr->X()-edep_col_properties.x)*(edep_ptr->X()-edep_col_properties.x);
+  }
+  edep_col_properties.x_rms_noWeight = std::sqrt(edep_col_properties.x_rms_noWeight);
+
+  if (total_energy > 0)
+    edep_col_properties.x_rms = std::sqrt(edep_col_properties.x_rms/total_energy);
+
+  const geo::TPCGeo* tpcGeom = nullptr;
+  try{
+    tpcGeom = &geometry->PositionToTPC({edep_col_properties.x, edep_col_properties.y, edep_col_properties.z});
+  }
+  catch(cet::exception const& e) {
+    //std::cout<<"No TPC at this position"<<std::endl;
+    return edep_col_properties;
+  }
+
+  const auto plane0 = wireReadout->FirstPlane(tpcGeom->ID());
+  double ticksPercm = detPropData.GetXTicksCoefficient(); // this should be by TPCID, but isn't building right now
+  edep_col_properties.tick              = detPropData.ConvertXToTicks(edep_col_properties.x    , plane0.ID()) + offset + tickOffset;
+  edep_col_properties.tick_rms          = ticksPercm*edep_col_properties.x_rms;
+  edep_col_properties.tick_rms_noWeight = ticksPercm*edep_col_properties.x_rms_noWeight;
+  edep_col_properties.tick_min          = detPropData.ConvertXToTicks(edep_col_properties.x_min, plane0.ID()) + offset + tickOffset;
+  edep_col_properties.tick_max          = detPropData.ConvertXToTicks(edep_col_properties.x_max, plane0.ID()) + offset + tickOffset;
+  edep_col_properties.total_energy      = total_energy;
+  
+  return edep_col_properties; 
+}
+
+//--- GetScaleValues ---
+sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetScaleValues(sys::WireModUtility::TruthProperties_t const& truth_props, sys::WireModUtility::ROIProperties_t const& roi_vals, std::vector<geo::WireID> wireIDs)
+{
+  sys::WireModUtility::ScaleValues_t scales;
+  sys::WireModUtility::ScaleValues_t channelScales = GetChannelScaleValues(truth_props, roi_vals.channel);
+  sys::WireModUtility::ScaleValues_t viewScales    = GetViewScaleValues(truth_props, roi_vals.view, wireIDs);
+  scales.r_Q     = channelScales.r_Q     * viewScales.r_Q;
+  scales.r_sigma = channelScales.r_sigma * viewScales.r_sigma;
+  return scales;
+}
+
+//--- GetChannelScaleValues ---
+// Rescaling depending only on the channel (noise, gain systematics etc.) To modify for DUNE
+sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetChannelScaleValues(sys::WireModUtility::TruthProperties_t const& truth_props, raw::ChannelID_t const& channel)
+{
+  // initialize return
+  sys::WireModUtility::ScaleValues_t scales;
+  scales.r_Q     = 1.0;
+  scales.r_sigma = 1.0;
+  
+  // try to get geo
+  //   // if not in a TPC return default values
+  double const truth_coords[3] = {truth_props.x, truth_props.y, truth_props.z};
+  geo::TPCGeo const* curTPCGeomPtr = geometry->PositionToTPCptr(geo::vect::makePointFromCoords(truth_coords));
+  if (curTPCGeomPtr == nullptr)
+    return scales;
+
+  if (applyGainScale)
+  {
+    scales.r_Q *= gainScale; //changing only amplitude for electronics gain. Should I also change sigma?
+  }
+  return scales;
+}
+
+//--- GetViewScaleValues ---
+// Rescaling depending on truth info of the event (recombination, attenuation etc.). To modify for DUNE using analytical formula
+sys::WireModUtility::ScaleValues_t sys::WireModUtility::GetViewScaleValues(sys::WireModUtility::TruthProperties_t const& truth_props, geo::View_t const& view, std::vector<geo::WireID> wireIDs)
+{
+  // initialize return
+  sys::WireModUtility::ScaleValues_t scales;
+  scales.r_Q     = 1.0;
+  scales.r_sigma = 1.0;
+  
+  // try to get geo
+  //   // if not in a TPC return default values
+  double const truth_coords[3] = {truth_props.x, truth_props.y, truth_props.z};
+  geo::TPCGeo const* curTPCGeomPtr = geometry->PositionToTPCptr(geo::vect::makePointFromCoords(truth_coords));
+  if (curTPCGeomPtr == nullptr)
+    return scales;
+
+  const auto plane0 = wireReadout->FirstPlane(curTPCGeomPtr->ID());
+  if (applyLifetimeVar)
+  {
+    double drift_velocity = detPropData.DriftVelocity();
+    double x_plane = plane0.GetCenter().X();
+    double t = std::abs(x_plane - truth_coords[0]) / drift_velocity;
+    double lifetime_nom = detPropData.ElectronLifetime();
+    double scale_lifetime = exp(-t*(1./lifetime_var-1./lifetime_nom));
+    scales.r_Q *= scale_lifetime;
+  }
+
+  if (applyModBoxVar)
+  {
+    art::ServiceHandle<sim::LArG4Parameters const> larG4Params;    
+    double alpha_nom=larG4Params->ModBoxA();
+    double beta_nom=larG4Params->ModBoxB();
+    double E=detPropData.Efield();
+    double rho=detPropData.Density();
+    //double scale_recomb=beta_nom/ModBoxBetaVar*log(ModBoxAlphaVar+ModBoxBetaVar/E/rho*truth_props.dedr)/log(alpha_nom+beta_nom/E/rho*truth_props.dedr);
+    double scale_recomb=beta_nom/ModBoxBetaVar*log(ModBoxAlphaVar+ModBoxBetaVar/E/rho*truth_props.dedx)/log(alpha_nom+beta_nom/E/rho*truth_props.dedx);
+    scales.r_Q *= scale_recomb;
+  }
+
+  if (applyLongitudinalDiffusionVar){
+    art::ServiceHandle<sim::LArG4Parameters const> larG4Params;
+    double Dnom=larG4Params->LongitudinalDiffusion();
+    double scale_DL=sqrt(Dnom/DLnew);
+    scales.r_sigma *= scale_DL; 
+  }
+
+  if (applyTransverseDiffusionVar){
+    art::ServiceHandle<sim::LArG4Parameters const> larG4Params;
+    double Dnom=larG4Params->TransverseDiffusion();
+    double scale_DT=Dnom/DTnew;
+
+    double drift_velocity = detPropData.DriftVelocity();
+    double x_plane = plane0.GetCenter().X();
+    double t = std::abs(x_plane - truth_coords[0]) / drift_velocity;
+ 
+    double dT2 = truth_props.dT2;    
+
+    double exponent=-dT2/(4*t)*(1/DTnew-1/Dnom)/1e3; //diffusion coefficients are in cm^2/ns but typical units cm and mus
+    scale_DT *= exp(exponent);
+    scales.r_Q *= scale_DT;
+  }
+  //std::cout<<"scaling factor: "<<scales.r_Q<<std::endl;
+  return scales;
+}
+
+//--- ModifyROI ---
+void sys::WireModUtility::ModifyROI(std::vector<float> & roi_data,
+                                    sys::WireModUtility::ROIProperties_t const& roi_prop,
+                                    std::vector<sys::WireModUtility::SubROIProperties_t> const& subROIPropVec,
+                                    std::map<sys::WireModUtility::SubROI_Key_t, sys::WireModUtility::ScaleValues_t> const& subROIScaleMap)
+{
+
+  // do you want a bunch of messages?
+  bool verbose = false;
+  
+  // initialize some values
+  double q_orig = 0.0;
+  double q_mod  = 0.0;
+  double scale_ratio = 1.0;
+  
+  //Can be useful to prevent tail effects
+  //double sigma_distance = 0.0;
+
+  // loop over the ticks
+  for(size_t i_t = 0; i_t < roi_data.size(); ++i_t)
+  {
+    // reset your values
+    q_orig = 0.0;
+    q_mod  = 0.0;
+    scale_ratio = 1.0;
+    //sigma_distance = 0.0;
+
+    // loop over the subs
+    for (auto const& subroi_prop : subROIPropVec)
+    {
+      // get your scale vals
+      auto scale_vals = subROIScaleMap.find(subroi_prop.key)->second;
+
+      q_orig += gausFunc(i_t + roi_prop.begin, subroi_prop.center,                      subroi_prop.sigma,                  subroi_prop.total_q);
+      q_mod  += gausFunc(i_t + roi_prop.begin, subroi_prop.center, scale_vals.r_sigma * subroi_prop.sigma, scale_vals.r_Q * subroi_prop.total_q);
+      /*sigma_distance += ((i_t + roi_prop.begin - subroi_prop.center)*(i_t + roi_prop.begin - subroi_prop.center) / (subroi_prop.sigma*subroi_prop.sigma))*\
+                gausFunc(i_t + roi_prop.begin, subroi_prop.center,                      subroi_prop.sigma,                  subroi_prop.total_q);*/ 
+
+
+      if (verbose)
+        std::cout << "    Incrementing q_orig by gausFunc(" << i_t + roi_prop.begin << ", " << subroi_prop.center << ", " <<                      subroi_prop.sigma << ", " <<                  subroi_prop.total_q << ")" << '\n'
+                  << "    Incrementing q_mod  by gausFunc(" << i_t + roi_prop.begin << ", " << subroi_prop.center << ", " << scale_vals.r_sigma * subroi_prop.sigma << ", " << scale_vals.r_Q * subroi_prop.total_q << ")" << std::endl;
+    }
+
+    //for the additive modification
+    double delta = q_mod - q_orig;
+
+    // do some sanity checks
+    if (isnan(q_mod)) {
+      if (verbose)
+        std::cout << "WARNING: obtained q_mod = NaN..." << std::endl;
+    } else if (additiveModification) {
+      //std::cout<<"using additive modification"<<std::endl;
+      roi_data[i_t] += static_cast<float>(delta);
+    } else if (q_orig < 0.01) { //to prevent explosion of scaling factor
+      if (verbose) std::cout << "WARNING: obtained q_orig < 0.01 ... setting scale to 1" << std::endl;
+    } /*else if (sigma_distance > 9.) {
+        if (verbose) std::cout << "WARNING: sigma_distance > 9 ... setting scale to 1" << std::endl;
+    } */else {
+      scale_ratio = q_mod / q_orig;
+      roi_data[i_t] = scale_ratio * roi_data[i_t];
+    }
+
+
+    if (verbose)
+      std::cout << "\t tick " << i_t << ":"
+                <<  " data="   << roi_data[i_t]
+                << ", q_orig=" << q_orig
+                << ", q_mod="  << q_mod
+                << ", ratio="  << scale_ratio << std::endl;
+  }
+
+  // we're done now
+  return;
+}
+
+
+// NEW FUNCTIONS FOR USING IDES INSTEAD OF EDEPS
+
+
+//FillROIMatchedIDEMap
+void sys::WireModUtility::FillROIMatchedIDEMap(std::vector<sim::SimChannel> const& simchVec, std::vector<recob::Wire> const& wireVec, detinfo::DetectorClocksData const& clockData, double offset)
+{
+
+  ROIMatchedIDEMap.clear();
+  fIDEVec.clear();
+  std::unordered_map<unsigned int, unsigned int> wireChannelMap;
+  for (size_t i_w = 0; i_w < wireVec.size(); ++i_w)
+    wireChannelMap[wireVec[i_w].Channel()] = i_w;
+ 
+  if (SaveEdepMatchingPlots){
+    hMatchedE = new TH1F("hMatchedE","Simulated Energy Deposits Energy; Energy [MeV]; Counts/(# sim edep)", 50, 0, 1);
+    hUnMatchedE = new TH1F("hUnMatchedE","Simulated Energy Deposits Energy; Energy [MeV]; Counts/(# sim edep)", 50, 0, 1);
+  }
+ 
+  int nSimCH_matched = 0;
+  bool isCHmatched = false;
+  for (auto const& simch : simchVec)
+  {
+    raw::ChannelID_t channel = simch.Channel();
+    auto wcIt = wireChannelMap.find(channel);
+    if (wcIt == wireChannelMap.end())
+      continue;
+    auto const& target_wire = wireVec.at(wcIt->second);
+
+    // wire closest to the charge (used later for the SCE-undo)
+    geo::WireID wireID;
+    auto const wires = wireReadout->ChannelToWire(channel);
+    if (!wires.empty()) wireID = wires[0];
+
+    for (auto const& tdcide : simch.TDCIDEMap())
+    {
+      // convert the SimChannel TDC to a readout tick (same frame as the ROI samples)
+      double tick = clockData.TPCTDC2Tick(tdcide.first) + offset + tickOffset;
+      if (tick < 0) continue;
+      unsigned int sample = (unsigned int) std::round(tick);
+
+      if (not target_wire.SignalROI().is_valid()  ||
+          target_wire.SignalROI().empty()         ||
+          target_wire.SignalROI().n_ranges() == 0 )
+        continue;
+      
+      bool isMatched = false;
+      size_t range_number = 0;
+      for (int dt = 0; dt<nTickTolerance+1; dt++){
+        int t = static_cast<int>(sample)-dt;
+        if (t>=0){
+          if (target_wire.SignalROI().size() > static_cast<size_t>(t) && !target_wire.SignalROI().is_void(t)) isMatched = true;
+        }
+        if (isMatched){
+          range_number = target_wire.SignalROI().find_range_iterator(t) - target_wire.SignalROI().begin_range();
+          break;
+        }
+        else{
+          t = static_cast<int>(sample)+dt;
+          if (target_wire.SignalROI().size() > static_cast<size_t>(t) && !target_wire.SignalROI().is_void(t)){
+            range_number = target_wire.SignalROI().find_range_iterator(t) - target_wire.SignalROI().begin_range();
+            isMatched = true;
+            break;
+          }
+        }
+      }
+      if (isMatched){
+        ROI_Key_t roi_key = std::make_pair(target_wire.Channel(), range_number);
+        isCHmatched=true;
+        for (sim::IDE const& ide : tdcide.second)
+        {
+          fIDEVec.push_back( MatchedIDE_t{channel, wireID, tick, &ide} );
+          ROIMatchedIDEMap[roi_key].push_back(fIDEVec.size() - 1);
+          if (SaveEdepMatchingPlots) hMatchedE->Fill(ide.energy);
+        }
+      }
+      else if (SaveEdepMatchingPlots){
+        for (sim::IDE const& ide : tdcide.second)
+        {
+          hUnMatchedE->Fill(ide.energy);
+        }  
+      }
+    }
+    if (isCHmatched) nSimCH_matched++;
+  }
+  std::cout<<nSimCH_matched<<" matched simulated channels out of "<<simchVec.size()<<", efficiency: "<<nSimCH_matched/(simchVec.size()*1.0)<<std::endl;
+  if (SaveEdepMatchingPlots){
+    TCanvas* c1 = new TCanvas("c1","Edep XZ Display",800,600);
+
+    c1->SetGridy();
+    TLegend *leg = new TLegend(0.6, 0.7, 0.85, 0.85);
+    leg->AddEntry(hMatchedE, "Matched");
+    leg->AddEntry(hUnMatchedE, "Not matched");
+
+    hMatchedE->SetLineColor(kBlue);
+    hMatchedE->SetLineWidth(3);
+    hUnMatchedE->SetLineColor(kRed);
+    hUnMatchedE->SetLineWidth(3);
+
+    hMatchedE->Draw("HIST");
+    hUnMatchedE->Draw("HISTsame");
+    leg->Draw("same");
+
+    c1->SaveAs("Edep_matching_plots.pdf");
+    delete c1;
+  }
+}
+
+//--- MatchIDEsToSubROIs ---
+std::map<sys::WireModUtility::SubROI_Key_t, std::vector<const sys::WireModUtility::MatchedIDE_t*>>
+sys::WireModUtility::MatchIDEsToSubROIs(std::vector<sys::WireModUtility::SubROIProperties_t> const& subROIPropVec,
+                                        std::vector<const sys::WireModUtility::MatchedIDE_t*> const& idePtrVec)
+{
+  std::map<unsigned int, std::vector<unsigned int>> SubROIMatchedIDEMap; // subROI idx -> ide idxs
+
+  for (unsigned int i_e = 0; i_e < idePtrVec.size(); ++i_e)
+  {
+    double ide_tick = idePtrVec[i_e]->tick;
+    unsigned int closest = std::numeric_limits<unsigned int>::max();
+    float min_dist = std::numeric_limits<float>::max();
+    for (unsigned int i_h = 0; i_h < subROIPropVec.size(); ++i_h)
+    {
+      auto const& s = subROIPropVec[i_h];
+      if (s.sigma <= 0) continue;
+      float dist = std::abs((float)(ide_tick - s.center)) / s.sigma;
+      if (dist < min_dist) { min_dist = dist; closest = i_h; }
+    }
+    if (closest != std::numeric_limits<unsigned int>::max() && min_dist < 5)
+      SubROIMatchedIDEMap[closest].push_back(i_e);
+  }
+
+  std::map<SubROI_Key_t, std::vector<const MatchedIDE_t*>> ReturnMap;
+  for (auto const& kv : SubROIMatchedIDEMap)
+  {
+    auto key = subROIPropVec[kv.first].key;
+    for (auto const& i_e : kv.second)
+      ReturnMap[key].push_back(idePtrVec[i_e]);
+  }
+  return ReturnMap;
+}
+
+//--- CalcPropertiesFromIDEs ---
+sys::WireModUtility::TruthProperties_t
+sys::WireModUtility::CalcPropertiesFromIDEs(std::vector<const sys::WireModUtility::MatchedIDE_t*> const& idePtrVec,
+                                            std::map<int, const simb::MCParticle*> const& particleMap)
+{
+  TruthProperties_t props;
+  props.x = props.y = props.z = 0.f;
+  props.x_rms = props.x_rms_noWeight = 0.f;
+  props.x_min = std::numeric_limits<float>::max();
+  props.x_max = std::numeric_limits<float>::lowest();
+  props.tick = props.tick_rms = props.tick_rms_noWeight = 0.f;
+  props.tick_min = std::numeric_limits<float>::max();
+  props.tick_max = std::numeric_limits<float>::lowest();
+  props.dxdr = props.dydr = props.dzdr = 0.;
+  props.dedx = props.dedr = props.dqdr = 0.;
+  props.dT2 = 0;
+  props.total_energy = 0.f;
+  for (size_t i_p = 0; i_p < 3; ++i_p) { props.scales_avg[i_p].r_Q = 1.; props.scales_avg[i_p].r_sigma = 1.; }
+  if (idePtrVec.empty()) return props;
+
+  // dominant track = max summed energy (abs(trackID), matching TrackCaloSkimmer)
+  std::map<int, double> energy_per_trkid;
+  for (auto const& m : idePtrVec)
+    energy_per_trkid[std::abs(m->ide->trackID)] += m->ide->energy;
+  int trkid_max = 0; double energy_max = -1.;
+  for (auto const& e : energy_per_trkid)
+    if (e.second > energy_max) { energy_max = e.second; trkid_max = e.first; }
+
+  // numElectrons-weighted centroid in the SCE-undone frame + energy/electron/tick sums
+  struct Acc { double xtraj, tick, ne; };
+  std::vector<Acc> accs;
+  double sumNe = 0., sumE = 0., cx = 0., cy = 0., cz = 0., tsum = 0.;
+  geo::WireID domWire;
+  for (auto const& m : idePtrVec)
+  {
+    if (std::abs(m->ide->trackID) != trkid_max) continue;
+    double ne = m->ide->numElectrons;
+    double e  = m->ide->energy;
+    geo::Point_t p_raw(m->ide->x, m->ide->y, m->ide->z);
+    geo::Point_t p_traj = WireToTrajectoryPosition(p_raw, m->wire);
+    cx += ne * p_traj.X(); cy += ne * p_traj.Y(); cz += ne * p_traj.Z();
+    tsum += ne * m->tick;
+    sumNe += ne; sumE += e;
+    accs.push_back({p_traj.X(), m->tick, ne});
+    if (p_traj.X() < props.x_min)   props.x_min   = p_traj.X();
+    if (p_traj.X() > props.x_max)   props.x_max   = p_traj.X();
+    if (m->tick    < props.tick_min) props.tick_min = m->tick;
+    if (m->tick    > props.tick_max) props.tick_max = m->tick;
+    domWire = m->wire;
+  }
+  if (sumNe <= 0) return props;
+  cx /= sumNe; cy /= sumNe; cz /= sumNe;
+  props.x = cx; props.y = cy; props.z = cz;
+  props.total_energy = sumE;
+  props.tick = tsum / sumNe;
+  double xr = 0., xrnw = 0., tr = 0.;
+  for (auto const& a : accs)
+  {
+    xr   += a.ne * (a.xtraj - cx) * (a.xtraj - cx);
+    xrnw +=        (a.xtraj - cx) * (a.xtraj - cx);
+    tr   += a.ne * (a.tick - props.tick) * (a.tick - props.tick);
+  }
+  props.x_rms             = std::sqrt(xr / sumNe);
+  props.x_rms_noWeight    = std::sqrt(xrnw);
+  props.tick_rms          = std::sqrt(tr / sumNe);
+  props.tick_rms_noWeight = props.x_rms_noWeight;
+
+  // direction / pitch from the matched MCParticle trajectory (nearest point to centroid)
+  auto pit = particleMap.find(trkid_max);
+  if (pit != particleMap.end() && pit->second != nullptr)
+  {
+    const simb::MCParticle* part = pit->second;
+    TVector3 hp(cx, cy, cz);
+    double closest = -1.; TVector3 dir;
+    for (unsigned int i = 0; i < part->NumberTrajectoryPoints(); ++i)
+    {
+      double d = (part->Position(i).Vect() - hp).Mag();
+      if (closest < 0. || d < closest)
+      {
+        closest = d;
+        dir = part->Momentum(i).Vect().Unit();
+      }
+    }
+    if (closest >= 0. && dir.Mag() > 1e-4)
+    {
+      props.dxdr = dir.X();
+      props.dydr = dir.Y();
+      props.dzdr = dir.Z();
+
+      if (domWire.isValid)
+      {
+        geo::PlaneID plane(domWire.Cryostat, domWire.TPC, domWire.Plane);
+        geo::PlaneGeo const& pg = wireReadout->Plane(plane);
+        double angletovert = wireReadout->WireAngleToVertical(pg.View(), plane) - 0.5 * ::util::pi<>();
+        double cosgamma = std::abs(std::cos(angletovert) * dir.Z() + std::sin(angletovert) * dir.Y());
+        double pitch = (cosgamma > 1e-6) ? pg.WirePitch() / cosgamma : pg.WirePitch();
+        if (pitch > 0)
+        {
+          props.dedr = sumE  / pitch; // dE/dx [MeV/cm]
+          props.dedx = sumE  / pitch; // dE/dx [MeV/cm]
+          props.dqdr = sumNe / pitch; // dQ/dx [electrons/cm]
+        }
+      }
+    }
+  }
+
+  return props;
+}
+
+//--- WireToTrajectoryPosition (SCE: at-the-wire -> true trajectory frame) ---
+geo::Point_t sys::WireModUtility::WireToTrajectoryPosition(const geo::Point_t& loc, const geo::TPCID& tpc) const
+{
+  geo::Point_t ret = loc;
+  if (fSCE && fSCE->EnableSimSpatialSCE())
+  {
+    geo::Vector_t offset = fSCE->GetCalPosOffsets(ret, tpc.TPC);
+    ret.SetX(ret.X() + offset.X());
+    ret.SetY(ret.Y() + offset.Y());
+    ret.SetZ(ret.Z() + offset.Z());
+  }
+  return ret;
+}
+
+//--- TrajectoryToWirePosition (SCE: true -> at-the-wire frame) ---
+geo::Point_t sys::WireModUtility::TrajectoryToWirePosition(const geo::Point_t& loc, const geo::Vector_t& driftdir) const
+{
+  geo::Point_t ret = loc;
+  int corr = driftdir.X(); // returned X offset is the drift; sign it by the drift direction
+  if (fSCE && fSCE->EnableSimSpatialSCE())
+  {
+    geo::Vector_t offset = fSCE->GetPosOffsets(ret);
+    ret.SetX(ret.X() + corr * offset.X());
+    ret.SetY(ret.Y() + offset.Y());
+    ret.SetZ(ret.Z() + offset.Z());
+  }
+  return ret;
+}
+
+

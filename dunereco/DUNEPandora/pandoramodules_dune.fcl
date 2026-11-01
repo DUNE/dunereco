@@ -95,7 +95,7 @@ dunefdhd_pandoraTrackCreation.UseAllParticles:                      true
 
 dunefdvd_pandoraTrackCreation: @local::dunefdhd_pandoraTrackCreation 
 
-dune_pandoraModularShowerCreation:                                         @local::standard_pandoraModularShowerCreation
+dune_pandoraModularShowerCreation:                                  @local::standard_pandoraModularShowerCreation
 dune_pandoraModularShowerCreation.PFParticleLabel:                  "pandora"
 dune_pandoraModularShowerCreation.ShowerFinderTools: [
   @local::dune_showerpfpvertexstartposition,
@@ -113,7 +113,8 @@ dunefdhd_pandoraModularShowerCreation: @local::dune_pandoraModularShowerCreation
 dunefdhd_pandoraModularShowerCreation.UseAllParticles:                      true
 dunefdhd_pandoraModularShowerCreation.ShowerFinderTools: [
   @local::dune_showerpfpvertexstartposition,
-  @local::dune_showerpcadirection,
+  @local::dunefdhd_showerpcadirection,
+  @local::dunefdhd_showerrefinedpcadirection,
   @local::dune_showerlengthpercentile,
   @local::dunefdhd_showernumelectronsenergy,
   @local::dune_3dcylindertrackhitfinder,
@@ -126,7 +127,8 @@ dunefdhd_pandoraModularShowerCreation.ShowerFinderTools: [
 dunefdvd_pandoraModularShowerCreation: @local::dunefdhd_pandoraModularShowerCreation
 dunefdvd_pandoraModularShowerCreation.ShowerFinderTools: [
   @local::dune_showerpfpvertexstartposition,
-  @local::dune_showerpcadirection,
+  @local::dunefdvd_showerpcadirection,
+  @local::dunefdvd_showerrefinedpcadirection,
   @local::dune_showerlengthpercentile,
   @local::dunefdvd_showernumelectronsenergy,
   @local::dune_3dcylindertrackhitfinder,
