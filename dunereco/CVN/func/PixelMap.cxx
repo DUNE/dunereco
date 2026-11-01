@@ -175,9 +175,12 @@ namespace cvn
       for(unsigned int iTdc = 0; iTdc < fNTdc; ++iTdc)
       {
         // Add 1 to in each bin to skip underflow
-        hist->SetBinContent(iWire+1, iTdc + fNTdc*(iWire%3) + 1,
-                            fPE[LocalToIndex(iWire, iTdc)]);
-
+        // hist->SetBinContent(iWire+1, iTdc + fNTdc*(iWire%3) + 1,
+        //                     fPE[LocalToIndex(iWire, iTdc)]);
+        const unsigned int i = LocalToIndex(iWire, iTdc);
+        hist->SetBinContent(iWire+1, iTdc + 1,             fPEX[i]);
+        hist->SetBinContent(iWire+1, iTdc + fNTdc + 1,     fPEY[i]);
+        hist->SetBinContent(iWire+1, iTdc + 2*fNTdc + 1,   fPEZ[i]);
       }
     }
     return hist;
@@ -195,8 +198,12 @@ namespace cvn
       for(unsigned int iTdc = 0; iTdc < fNTdc; ++iTdc)
       {
         // Add 1 to in each bin to skip underflow
-        hist->SetBinContent(iWire+1, iTdc + fNTdc*(iWire%3) + 1,
-                            (double)fLab[LocalToIndex(iWire, iTdc)]);
+        // hist->SetBinContent(iWire+1, iTdc + fNTdc*(iWire%3) + 1,
+        //                     (double)fLab[LocalToIndex(iWire, iTdc)]);
+        const unsigned int i = LocalToIndex(iWire, iTdc);
+        hist->SetBinContent(iWire+1, iTdc + 1,             fLabX[i]);
+        hist->SetBinContent(iWire+1, iTdc + fNTdc + 1,     fLabY[i]);
+        hist->SetBinContent(iWire+1, iTdc + 2*fNTdc + 1,   fLabZ[i]);
 
       }
     }
