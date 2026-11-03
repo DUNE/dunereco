@@ -33,36 +33,50 @@ function(params, tools) {
             },
         }, nin=1, nout=1) for anode in tools.anodes],
 
+    // One noise model per drift volume ([bottom, top]), shared by all of that
+    // volume's anodes, so its spectra file is loaded once.  The model looks
+    // up a channel's plane and wires through its anode, here a MegaAnodePlane
+    // over the volume's anodes of this job.
     // fixme: see https://github.com/WireCell/wire-cell-gen/issues/29
-    local make_noise_model = function(anode, csdb=null) {
-        type: "EmpiricalNoiseModel",
-        name: "empericalnoise%s"% anode.name,
-        data: {
-            anode: wc.tn(anode),
-            dft: wc.tn(tools.dft),
-            chanstat: if std.type(csdb) == "null" then "" else wc.tn(csdb),
-            spectra_file: params.files.noises[ if params.is_top(anode.data.ident) then 1 else 0 ],
-            nsamples: params.daq.nticks,
-            period: params.daq.tick,
-            wire_length_scale: 1.0*wc.cm, // optimization binning
+    local make_noise_model = function(top, csdb=null)
+        local volume = if top then "top" else "bottom";
+        local anodes = [a for a in tools.anodes if params.is_top(a.data.ident) == top];
+        local manode = {
+            type: "MegaAnodePlane",
+            name: "meganodes_" + volume,
+            data: { anodes_tn: [wc.tn(a) for a in anodes] },
+            uses: anodes,
+        };
+        {
+            type: "EmpiricalNoiseModel",
+            name: "empericalnoise" + volume,
+            data: {
+                anode: wc.tn(manode),
+                dft: wc.tn(tools.dft),
+                chanstat: if std.type(csdb) == "null" then "" else wc.tn(csdb),
+                spectra_file: params.files.noises[ if top then 1 else 0 ],
+                nsamples: params.daq.nticks,
+                period: params.daq.tick,
+                wire_length_scale: 1.0*wc.cm, // optimization binning
+            },
+            uses: [manode, tools.dft] + if std.type(csdb) == "null" then [] else [csdb],
         },
-        uses: [anode, tools.dft] + if std.type(csdb) == "null" then [] else [csdb],
-    },
-    local noise_models = [make_noise_model(anode) for anode in tools.anodes],
+    local noise_models = [make_noise_model(false), make_noise_model(true)],
 
 
-    local add_noise = function(model) g.pnode({
+    local add_noise = function(anode) g.pnode({
         type: "AddNoise",
-        name: "addnoise%s"%[model.name],
+        name: "addnoiseempericalnoise%s" % anode.name,
         data: {
             rng: wc.tn(tools.random),
             dft: wc.tn(tools.dft),
-            model: wc.tn(model),
+            model: wc.tn(noise_models[if params.is_top(anode.data.ident) then 1 else 0]),
 	    nsamples: params.daq.nticks,
             replacement_percentage: 0.02, // random optimization
-        }}, nin=1, nout=1, uses=[tools.random, tools.dft, model]),
+        }}, nin=1, nout=1,
+        uses=[tools.random, tools.dft, noise_models[if params.is_top(anode.data.ident) then 1 else 0]]),
 
-    local noises = [add_noise(model) for model in noise_models],
+    local noises = [add_noise(anode) for anode in tools.anodes],
 
     // As in protodunevd: bottom and top drift CRMs differ in ADC baselines
     // and full scale range.
