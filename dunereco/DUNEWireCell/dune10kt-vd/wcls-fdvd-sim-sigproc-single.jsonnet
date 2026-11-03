@@ -2,7 +2,8 @@
 // detector-wide "full" fallback.  One combined FrameSaver per output tier is
 // produced: all processed anodes are fanned out, their signal-processing frames
 // fanned back in and merged (Retagger) into one product.  This is the historical
-// behavior of wcls-sim-drift-simchannel-nf-sp.jsonnet, preserved verbatim here.
+// behavior of the original wcls-sim-drift-simchannel-nf-sp.jsonnet, preserved
+// verbatim here.
 //
 //   single-sim      : process one anode (process_anode_index); save RawDigit (daq<i>)
 //   single-sp       : process one anode; save recob::Wire (gauss<i>/wiener<i>/dnnsp<i>)
@@ -10,7 +11,7 @@
 //   (anything else) : "full" -- process all anodes, merge into one product
 //
 // Signature: function(params, tools, fcl_params, com) -> { graph: <pnode> }
-// where `com` is wcls-sim-drift-simchannel-nf-sp-common.jsonnet applied.
+// where `com` is wcls-fdvd-sim-sigproc-common.jsonnet applied.
 
 local g = import 'pgraph.jsonnet';
 local wc = import 'wirecell.jsonnet';

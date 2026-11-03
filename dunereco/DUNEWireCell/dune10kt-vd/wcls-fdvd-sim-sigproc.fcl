@@ -24,7 +24,7 @@ physics :{
             tool_type: WCLS
             apps: ["TbbFlow"] # Pgrapher, TbbFlow
 
-            # logsinks: ["stdout:info", "wcls-sim-drift-simchannel-nf-sp.log:debug"]
+            # logsinks: ["stdout:info", "wcls-fdvd-sim-sigproc.log:debug"]
             logsinks: ["stdout:debug"]
             loglevels: ["debug"]
 
@@ -34,7 +34,7 @@ physics :{
             ]
 
             // needs to be found via your WIRECELL_PATH
-            configs: ["pgrapher/experiment/dune10kt-vd/wcls-sim-drift-simchannel-nf-sp.jsonnet"]
+            configs: ["pgrapher/experiment/dune10kt-vd/wcls-fdvd-sim-sigproc.jsonnet"]
 
 
             // Contract note: these exact "type:name" must be used to identify
@@ -115,7 +115,7 @@ physics :{
                 #       OWN FrameSaver(s) -> one RawDigit product (instance =
                 #       params.frame_tag_pattern % anode ident) AND one recob::Wire
                 #       product (instances gauss<id>/wiener<id>[/dnnsp<id>]) PER
-                #       anode.  (See wcls-sim-drift-simchannel-nf-sp-multi.jsonnet.)
+                #       anode.  (See wcls-fdvd-sim-sigproc-multi.jsonnet.)
                 process_mode: "single-sp"
                 # multi-sim only: C-style format (one %d) interpolated on the anode
                 # ident to name the per-anode raw::RawDigit product instance.

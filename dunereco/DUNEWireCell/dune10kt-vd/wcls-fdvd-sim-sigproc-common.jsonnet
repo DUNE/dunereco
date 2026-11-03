@@ -1,11 +1,11 @@
-// Shared building blocks for the dune10kt-vd WC/LS
-// sim-drift-simchannel-nf-sp job.  This "common" layer is detector-level glue:
+// Shared building blocks for the dune10kt-vd WC/LS sim + sigproc job
+// (wcls-fdvd-sim-sigproc).  This "common" layer is detector-level glue:
 // given the already-built `params`, `tools` and a resolved `fcl_params` object,
 // it returns the reusable pnodes and node factories that BOTH the "single" and
 // "multi" modal layers assemble into a graph.
 //
 // It does NOT resolve std.extVar() (that is the high-layer's job, see
-// wcls-sim-drift-simchannel-nf-sp.jsonnet) and it does NOT build the final
+// wcls-fdvd-sim-sigproc.jsonnet) and it does NOT build the final
 // graph (that is the modal layers' job, see the -single / -multi files).
 //
 // Contract: the caller passes
