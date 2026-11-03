@@ -4,7 +4,29 @@
 local wc = import "wirecell.jsonnet";
 local base = import "pgrapher/common/params.jsonnet";
 
+// Bottom-drift electronics-noise file, selected by the front-end gain.  Same
+// as protodunevd/params.jsonnet: the CRP strip layout is the same in PD-VD
+// and in the FD-VD so the PD-VD data-driven spectra are used.  The cold
+// electronics has four gain settings -- 4.7 / 7.8 / 14 / 25 mV/fC -- and
+// noise-spectra files currently exist only for 7.8 and 14.  Any other gain
+// aborts the configuration rather than silently using a wrong-gain spectrum.
+local pdvd_bottom_noise(gain) =
+    local g = gain / (wc.mV / wc.fC);
+    if std.abs(g - 7.8) < 0.05 then "pdvd-bottom-noise-spectra-7d8mVfC-v1.json.bz2"
+    else if std.abs(g - 14.0) < 0.05 then "pdvd-bottom-noise-spectra-14mVfC-v1.json.bz2"
+    else error ("FD-VD bottom noise: no spectra file for elec.gain = " + g
+                + " mV/fC.  Valid cold-electronics gain settings are"
+                + " 4.7/7.8/14/25 mV/fC; spectra files exist only for 7.8 and 14.");
+
 function(params) base {
+
+    local ncrm = if std.objectHas(params, 'ncrm') then params.ncrm else 320,
+
+    // CRMs [0, ncrm/2) are in the bottom drift volume and are read out by
+    // the cold electronics (BDE).  CRMs [ncrm/2, ncrm) are in the top drift
+    // volume and are read out by the top drift electronics (TDE).
+    is_top(ident):: ident >= ncrm/2,
+
     // This section will be overwritten in simparams.jsonnet
     det : {
 
@@ -14,8 +36,6 @@ function(params) base {
         // Only one CRP is defined in this geometry 
         // CRMs are oneside anodes     
         
-        local ncrm = if std.objectHas(params, 'ncrm') then params.ncrm else 320,
-
         response_plane: params.response_plane,
 
         local bot_crp_x = -651.90*wc.cm,
@@ -55,29 +75,43 @@ function(params) base {
         //first_frame_number: 0,
     },
 
+    // ADC as in protodunevd.  These are the bottom drift values.  The top
+    // drift values are applied per-CRM in the digitizer (sim.jsonnet) and
+    // in sigproc (sp.jsonnet) via top_adc below.
     adc: super.adc {
-        
-        // Set 0 for now
-        //baselines: [0*wc.millivolt, 0*wc.millivolt, 0*wc.millivolt],
-        resolution: if std.objectHas(params, 'adc_resolution') then params.adc_resolution else 12,
-        //fullscale: [0.2*wc.volt, 1.6*wc.volt],
-
-        // Copied from pdsp. induction plane: 2350 ADC, collection plane: 900 ADC
-        // baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
-        // fullscale: [0.2*wc.volt, 1.6*wc.volt],
-
+        resolution: if std.objectHas(params, 'adc_resolution') then params.adc_resolution else 14,
+        baselines: [1003.4*wc.millivolt,1003.4*wc.millivolt,507.7*wc.millivolt],
+        fullscale: [0.2*wc.volt, 1.6*wc.volt],
+    },
+    // top drift: ~1 volt baselines, 0-2volt full scale
+    top_adc: self.adc {
+        baselines: [1.0*wc.volt, 1.0*wc.volt, 1.0*wc.volt],
+        fullscale: [0.0*wc.volt, 2.0*wc.volt],
     },
 
-    // Take BNL cold electronics on ProtoDUNE as reference here
-    elec: super.elec {
-
+    // Electronics response as in protodunevd.  One per field response, in
+    // the same order as files.fields: [bottom, top].
+    local elec_gain = if std.objectHas(params, 'elecGain') then params.elecGain else 7.8*wc.mV/wc.fC,
+    elecs: [
+      super.elec { // bottom drift, cold electronics (BDE)
         type: "ColdElecResponse",
-
-        // copied from pdsp
-        gain: 14*wc.mV/wc.fC,
+        gain: elec_gain,
         shaping: 2.2 * wc.us,
-        postgain: 1.1365,
-        start: 0,
+        postgain: 1.0,
+      },
+      super.elec { // top drift electronics (TDE)
+        type: "JsonElecResponse",
+        filename: "dunevd-coldbox-elecresp-top-psnorm_400.json.bz2",
+        gain: elec_gain, // not used by JsonElecResponse
+        postgain: 1.36, // 11mV/fC, 1.94 -> 14mV/fC
+      },
+    ],
+    elec: $.elecs[0], // nominal
+
+    // As in protodunevd: no RC response in the simulation.
+    rc_resp: {
+        width: 1.1*wc.ms,
+        rc_layers: 0,
     },
 
     sim: super.sim {
@@ -122,15 +156,20 @@ function(params) base {
         // Standard wire geometry with 2 wire planes and third dummy induction
         wires: "dunevd10kt-1x6x6-3view30deg-wires-v1.json.bz2",
 
-        // Based on the simulations made for the 50L prototype 
+        // Same CRP strip geometry as PD-VD so use its field response, one
+        // per drift volume: [bottom, top].  The response_plane parameter
+        // (18.1 cm) MUST match this file.
         fields: [
-            "dunevd-resp-isoc3views-18d92.json.bz2",
+            "protodunevd_FR_imbalance3p_260501.json.bz2",
+            "protodunevd_FR_imbalance3p_260501.json.bz2",
         ],
 
-        // fixme: this is for microboone and probably bogus for
-        // protodune because (at least) the span of MB wire lengths do
-        // not cover pdsp's.
-        noise: "dunevd10kt-1x6x6-3view30deg-noise-spectra-v1.json.bz2",
+        // Electronics-noise spectra as in protodunevd: [bottom, top].
+        // Bottom is selected by the front-end gain.
+        noises: [
+            pdvd_bottom_noise($.elecs[0].gain),
+            "pdvd-top-noise-spectra-v3.json.bz2",
+        ],
 
         chresp: null,
 
