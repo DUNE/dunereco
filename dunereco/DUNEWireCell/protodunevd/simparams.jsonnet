@@ -17,10 +17,13 @@ base {
   // mismatch between the field-response speed (FR file: origin 181 mm,
   // speed 1.53 mm/us) and the simulated drift speed.  Data keeps its
   // measured value (params.jsonnet sp.ctoffset).
+  // The extra half tick: the sim reframer drops roundToInt(response/tick)
+  // ticks while OmnibusSigProc truncates (ctoffset + origin/speed)/period,
+  // so +0.5 tick makes SP round too and both shift by the same tick count.
   sp: super.sp {
       local fr_origin = 181.0*wc.mm,
       local fr_speed = 1.53*wc.mm/wc.us,
-      ctoffset: fr_origin/$.lar.drift_speed - fr_origin/fr_speed,
+      ctoffset: fr_origin/$.lar.drift_speed - fr_origin/fr_speed + 0.5*$.daq.tick,
   },
 
   daq: super.daq {
