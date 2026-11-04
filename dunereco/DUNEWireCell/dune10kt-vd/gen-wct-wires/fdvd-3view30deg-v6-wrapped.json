@@ -1,0 +1,15 @@
+{
+  "era": "fd",
+  "technology": "vd",
+  "variant": "3view30deg-v6-wrapped",
+  "comment": "Genuine full FDVD.  With current dunecore, the detector Name 'dunevd10kt_3view_30deg_v6_refactored' (contains 'dunevd10kt', NOT '1x8x'/'1x6x') makes DUNEWireReadout select CRPWireReadoutGeom -> bridged/wrapped induction.  2 CRM = 1 CRU = one 2-face WCT anode (pair-tpc).  Reproduces dune10kt-vd/dunevd10kt_3view_30deg_v6_refactored.json.bz2 (491520 channels).  CRPWireReadoutGeom also requires a PDMapTool (irrelevant to wires).",
+  "gdml": "dunevd10kt_3view_30deg_v6_refactored.gdml",
+  "gdml_sha1sum": "8edf6b4efeaf8cabcb75e61954e34a4f7f5eea2d",
+  "detector_name": "dunevd10kt_3view_30deg_v6_refactored",
+  "channel_map": "CRPWireReadoutGeom",
+  "sorter": "GeoObjectSorterCRU60D",
+  "pdmap_tool": "PDVDPDMapAlg",
+  "pdmap_file": "PDVD_PDS_Mapping_v09162025.json",
+  "grouping": "pair-tpc",
+  "correction": 4
+}
