@@ -1,0 +1,31 @@
+# flashmatch_bdt.fcl
+#
+# Configurations for FlashMatchBDT module in dunereco.
+#
+# Author: Pierre Granger (pierre.granger@cern.ch)
+# Date: 2026
+
+BEGIN_PROLOG
+
+standard_flashmatchbdtalg:
+{
+    WeightFile:        "FlashMatch/bdt_augmented.bin"
+    PEThreshold:       100.0   # Minimum flash PE for candidate selection
+    SpatialSigma:      62.64   # Spatial resolution scale sigma [cm]
+    MinBDTScore:       0.30    # Minimum BDT probability to accept match
+    FallbackToCharge:  true    # Fallback to SpacePoint centroid if vertex missing
+}
+
+standard_flashmatchbdt:
+{
+    module_type:            "FlashMatchBDT"
+    FlashModuleLabel:       "opflash"
+    PFParticleModuleLabel:  "pandora"
+    SpacePointModuleLabel:  "pandora"
+    SelectPrimaryOnly:      true
+    BDTAlg:                 @local::standard_flashmatchbdtalg
+}
+
+dune10kt_flashmatchbdt: @local::standard_flashmatchbdt
+
+END_PROLOG
