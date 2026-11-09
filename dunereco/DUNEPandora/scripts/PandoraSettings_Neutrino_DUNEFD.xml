@@ -13,6 +13,7 @@
         <CurrentCaloHitListReplacement>CaloHitList2D</CurrentCaloHitListReplacement>
     </algorithm>
 
+    <!-- DL Vertexing -->       
     <algorithm type = "LArDLVertexing">
         <TrainingMode>false</TrainingMode>
         <OutputVertexListName>NeutrinoVertices3D_Pass1</OutputVertexListName>
@@ -176,16 +177,16 @@
         <PathLengthRatioCut>1.012</PathLengthRatioCut>
         <ShowerWidthRatioCut>0.2</ShowerWidthRatioCut>
     </algorithm>
-    <algorithm type = "LArThreeDShowers">
-        <InputClusterListNameU>ClustersU</InputClusterListNameU>
-        <InputClusterListNameV>ClustersV</InputClusterListNameV>
-        <InputClusterListNameW>ClustersW</InputClusterListNameW>
-        <OutputPfoListName>ShowerParticles3D</OutputPfoListName>
-        <ShowerTools>
-            <tool type = "LArClearShowers"/>
-            <tool type = "LArSplitShowers"/>
-            <tool type = "LArSimpleShowers"/>
-        </ShowerTools>
+    <algorithm type = "LArDLMultiViewMatching">
+        <ModelEncoderFileName>PandoraNetworkData/PandoraNet_ShowerMatching_DUNEFD_HD_Encoder_v05_09_00.pt</ModelEncoderFileName>
+        <ModelAttnFileName>PandoraNetworkData/PandoraNet_ShowerMatching_DUNEFD_HD_Attn_v05_09_00.pt</ModelAttnFileName>
+        <ModelSimFileName>PandoraNetworkData/PandoraNet_ShowerMatching_DUNEFD_HD_Sim_v05_09_00.pt</ModelSimFileName>
+        <MatchingTools>
+          <tool type = "LArDLThreeViewClearShowers"/>
+          <tool type = "LArDLThreeViewMergeAndCreateShowers"/>
+          <tool type = "LArDLTwoViewClearShowers"/>
+          <tool type = "LArDLTwoViewMergeAndCreateShowers"/>
+        </MatchingTools>
     </algorithm>
 
     <!-- TwoViewTrackAlgorithms out-of-the-box for showers - U and V -->
