@@ -77,6 +77,9 @@ function(params, tools, override = {}) {
       wiener_tag: 'wiener%d' % anode.data.ident,
       wiener_threshold_tag: 'threshold%d' % anode.data.ident,
       gauss_tag: 'gauss%d' % anode.data.ident,
+      // tight_lf%d is one of the 6-channel DNN-ROI inputs; without this
+      // OmnibusSigProc uses its unnumbered C++ default and the DNN gets zeros.
+      tight_lf_tag: 'tight_lf%d' % anode.data.ident,
       loose_lf_tag: 'loose_lf%d' % anode.data.ident,
       mp2_roi_tag: 'mp2_roi%d' % anode.data.ident,
       mp3_roi_tag: 'mp3_roi%d' % anode.data.ident,

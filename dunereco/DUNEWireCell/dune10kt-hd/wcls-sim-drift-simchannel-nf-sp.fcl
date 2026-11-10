@@ -24,9 +24,9 @@ physics :{
             // Contract note: these exact "type:name" must be used to identify
             // the configuration data structures for these components in the Jsonnet.
 
-            inputers: ["wclsSimDepoSource:"]
+            inputers: ["wclsSimDepoSetSource:"]
             outputers: [
-                "wclsSimChannelSink:postdrift",
+                "wclsDepoFluxWriter:postdrift",
                 "wclsFrameSaver:spsignals"
             ]
 
@@ -46,6 +46,8 @@ physics :{
               G4RefTime: @local::dunefd_detectorclocks.G4RefTime
               # use_hydra / skip processing
               use_hydra: true
+              # use dnn_roi or not
+              use_dnnroi: false
             }
 
          }
