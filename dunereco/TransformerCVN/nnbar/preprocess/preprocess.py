@@ -280,6 +280,8 @@ def main(fout_path, fins, model=-1, shuffle=False, stage=True):
         import random
         random.shuffle(fins)
     fout = tb.open_file(fout_path, mode='w')
+    # make the file self-describing: the integer 'model' column is an index into this list
+    fout.root._v_attrs.model_names = np.array(MODEL_TAGS, dtype='S16')
     out = Output(fout)
     total_events, nfiles, missing = 0, 0, set()
     try:
