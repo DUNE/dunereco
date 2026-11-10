@@ -8,6 +8,36 @@ import torch
 
 from transformercvn.options import Options
 
+# Sample tags of the integer ``model`` column written by the nnbar preprocessing
+# (nnbar-production cvn/preprocess_atmnu.py): the column is an index into this list.
+DEFAULT_MODEL_NAMES = ["atm", "ha_lfg", "hn_lfg", "ha_esf", "hn_esf", "ha_br", "hn_br"]
+
+
+def export_model_column(output_file, input_file, split, options):
+    """Copy the per-event ``model`` code of the exported rows and its name list into the predictions file.
+
+    The exported rows follow the input file order: the whole file for the testing split, the validation
+    range ``[dataset_limit * train_validation_split, dataset_limit)`` of the training file otherwise.
+    """
+    with h5py.File(input_file, "r") as source:
+        if "model" not in source:
+            return None
+        num_events = len(source["model"])
+        if split == "testing":
+            lower, upper = 0, num_events
+        else:
+            lower = int(round(options.dataset_limit * options.train_validation_split * num_events))
+            upper = int(round(options.dataset_limit * num_events))
+        model = source["model"][lower:upper]
+        names = source.attrs.get("model_names", None)
+    names = [n.decode() if isinstance(n, bytes) else str(n) for n in names] if names is not None else DEFAULT_MODEL_NAMES
+    with h5py.File(output_file, "a") as output:
+        if output.attrs["num_events"] != len(model):
+            raise ValueError(f"model column has {len(model)} rows, predictions have {output.attrs['num_events']}")
+        output.create_dataset("event_model", data=model)
+        output.attrs["model_names"] = names
+    return model, names
+
 
 def export_predictions(model, dataloader, output_file, device="cpu"):
     """Stream predictions to HDF5, flattening valid prongs to support variable batches.
@@ -119,6 +149,13 @@ def main(args=None):
     dataloader = model.dataloader(dataset, **loader_options)
     path = export_predictions(model, dataloader, args.output, args.device)
     print(f"Saved predictions to {path}")
+    input_file = options.testing_file if args.split == "testing" else options.training_file
+    exported = export_model_column(path, input_file, args.split, options)
+    if exported is not None:
+        model_column, names = exported
+        counts = {names[code] if 0 <= code < len(names) else str(code): int((model_column == code).sum())
+                  for code in sorted(set(model_column.tolist()))}
+        print("Exported event_model (index into model_names):", counts)
 
 
 if __name__ == "__main__":
