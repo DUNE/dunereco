@@ -12,6 +12,8 @@ are gathered in the new event order and their compressed indices rebuilt; shape 
 first input and must agree. A per-event `sample` dataset (int8, the position of the input on the command line)
 and the attribute `samples` (the LABELs) record where each event comes from.
 --limit N keeps only the first N events of each input (for tests).
+Memory: the pixel lists of every input are held once (no concatenated copy); the output is written in blocks
+of --block-events events, so the peak is about the total pixel size of the inputs plus one block.
 """
 import argparse
 
@@ -32,14 +34,46 @@ def per_event_names(f, n):
     return names
 
 
-def gather_pixels(coords, values, cidx, order):
-    """Pixel rows of the events in `order`, and the compressed index of the result."""
-    lo, hi = cidx[order, 0], cidx[order, 1]
+def rows_of(lo, hi):
+    """Row numbers of the pixel ranges [lo, hi) in order."""
     lengths = hi - lo
-    starts = np.repeat(lo - np.concatenate(([0], np.cumsum(lengths)[:-1])), lengths)
-    rows = starts + np.arange(lengths.sum())
+    return np.repeat(lo - np.concatenate(([0], np.cumsum(lengths)[:-1])), lengths) + np.arange(lengths.sum())
+
+
+def write_pixels(out, names, parts, order, src, block):
+    """Write the pixel lists of the events in `order` (global event numbers) in blocks; `parts` holds per input
+    (coords, values, cidx relative to that input's arrays); `src` maps global event -> (input, local event)."""
+    c, v, ci = names
+    first_c, first_v, first_ci = parts[0]
+    lens_all = [p[2][:, 1] - p[2][:, 0] for p in parts]
+    sidx, eidx = src[order, 0], src[order, 1]
+    lengths = np.empty(len(order), dtype=np.int64)
+    for s in range(len(parts)):
+        m = sidx == s
+        lengths[m] = lens_all[s][eidx[m]]
     ends = np.cumsum(lengths)
-    return coords[rows], values[rows], np.stack((ends - lengths, ends), axis=1).astype(cidx.dtype)
+    total = int(ends[-1]) if len(ends) else 0
+    dc = out.create_dataset(c, shape=(total,) + first_c.shape[1:], dtype=first_c.dtype)
+    dv = out.create_dataset(v, shape=(total,) + first_v.shape[1:], dtype=first_v.dtype)
+    out.create_dataset(ci, data=np.stack((ends - lengths, ends), axis=1).astype(first_ci.dtype))
+    for b0 in range(0, len(order), block):
+        b1 = min(b0 + block, len(order))
+        r0 = int(ends[b0 - 1]) if b0 else 0
+        r1 = int(ends[b1 - 1])
+        bc = np.empty((r1 - r0,) + first_c.shape[1:], dtype=first_c.dtype)
+        bv = np.empty((r1 - r0,) + first_v.shape[1:], dtype=first_v.dtype)
+        pos = (ends[b0:b1] - lengths[b0:b1]) - r0
+        for s, (pc, pv, pci) in enumerate(parts):
+            m = sidx[b0:b1] == s
+            if not m.any():
+                continue
+            ev = eidx[b0:b1][m]
+            src_rows = rows_of(pci[ev, 0], pci[ev, 1])
+            dst_rows = rows_of(pos[m], pos[m] + lengths[b0:b1][m])
+            bc[dst_rows] = pc[src_rows]
+            bv[dst_rows] = pv[src_rows]
+        dc[r0:r1] = bc
+        dv[r0:r1] = bv
 
 
 def main():
@@ -48,6 +82,7 @@ def main():
     ap.add_argument("inputs", nargs="+", help="FILE:LABEL")
     ap.add_argument("--seed", type=int, default=2026)
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--block-events", type=int, default=20000)
     a = ap.parse_args()
     files = [s.rsplit(":", 1) if ":" in s else (s, s) for s in a.inputs]
 
@@ -74,9 +109,8 @@ def main():
             for kind, (c, v, ci) in PIXEL_SETS.items():
                 cidx = f[ci][:m]
                 lo, hi = int(cidx[0, 0]), int(cidx[-1, 1])
-                off = sum(len(x) for x in pixels[kind][0])
                 pixels[kind][0].append(f[c][lo:hi]); pixels[kind][1].append(f[v][lo:hi])
-                pixels[kind][2].append(cidx - lo + off)
+                pixels[kind][2].append(cidx - lo)
             counts.append(m)
             print(f"{label}: {m} events from {path}", flush=True)
 
@@ -86,12 +120,13 @@ def main():
         for k, parts in per_event.items():
             out.create_dataset(k, data=np.concatenate(parts)[order])
             parts.clear()
-        for kind, (c, v, ci) in PIXEL_SETS.items():
-            coords, values, cidx = (np.concatenate(x) for x in pixels[kind])
+        src = np.concatenate([np.stack((np.full(m, si), np.arange(m)), axis=1) for si, m in enumerate(counts)])
+        for kind, names in PIXEL_SETS.items():
+            parts = list(zip(*pixels[kind]))
             pixels[kind] = None
-            coords, values, cidx = gather_pixels(coords, values, cidx, order)
-            out.create_dataset(c, data=coords); out.create_dataset(v, data=values); out.create_dataset(ci, data=cidx)
-            del coords, values, cidx
+            write_pixels(out, names, parts, order, src, a.block_events)
+            del parts
+            print(f"{kind} pixels written", flush=True)
         for k, x in shapes.items():
             out.create_dataset(k, data=x)
         out.attrs["samples"] = np.array([lab for _, lab in files], dtype="S")
