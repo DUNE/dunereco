@@ -11,7 +11,8 @@ file_name and the genie/* passthrough group) are permuted; the pixel lists (even
 are gathered in the new event order and their compressed indices rebuilt; shape datasets are copied from the
 first input and must agree. A per-event `sample` dataset (int8, the position of the input on the command line)
 and the attribute `samples` (the LABELs) record where each event comes from.
---limit N keeps only the first N events of each input (for tests).
+--limit N keeps only the first N events of each input (for tests). --drop-group genie leaves the truth group out
+(needed when mixing inputs with and without it; the training does not read it).
 Memory: the pixel lists of every input are held once (no concatenated copy); the output is written in blocks
 of --block-events events, so the peak is about the total pixel size of the inputs plus one block.
 """
@@ -25,11 +26,12 @@ PIXEL_SETS = {"event": ("event_pixels_coordinates", "event_pixels_values", "even
 SHAPE_SETS = ("event_pixels_shape", "prong_pixels_shape", "full_pixels_shape")
 
 
-def per_event_names(f, n):
-    """Datasets (also inside groups) whose first dimension is the number of events."""
+def per_event_names(f, n, drop=()):
+    """Datasets (also inside groups) whose first dimension is the number of events, except groups in `drop`."""
     skip = {x for v in PIXEL_SETS.values() for x in v} | set(SHAPE_SETS)
     names = []
     f.visititems(lambda k, o: names.append(k) if isinstance(o, h5py.Dataset) and k not in skip
+                 and not any(k.startswith(g.rstrip("/") + "/") for g in drop)
                  and o.ndim > 0 and o.shape[0] == n else None)
     return names
 
@@ -83,6 +85,8 @@ def main():
     ap.add_argument("--seed", type=int, default=2026)
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--block-events", type=int, default=20000)
+    ap.add_argument("--drop-group", action="append", default=[],
+                    help="leave out this group (e.g. genie, when only some inputs carry the truth); repeatable")
     a = ap.parse_args()
     files = [s.rsplit(":", 1) if ":" in s else (s, s) for s in a.inputs]
 
@@ -93,7 +97,7 @@ def main():
             if f["event_id"][-1][0] == -1 if "event_id" in f else False:
                 raise SystemExit(f"{path}: ends with a padding event; write the inputs with --no-pad-last")
             m = min(n, a.limit) if a.limit else n
-            names = per_event_names(f, n)
+            names = per_event_names(f, n, a.drop_group)
             if si == 0:
                 keys = set(names)
                 shapes = {k: f[k][:] for k in SHAPE_SETS}
