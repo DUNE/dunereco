@@ -2044,6 +2044,16 @@ protodunevd_nfsp : {
    }
 }
 
+# MC variant of protodunevd_nfsp: simparams (MC SP ctoffset computed from the
+# sim drift speed), no Resampler (MC is simulated at 500 ns on all anodes).
+protodunevd_nfsp_mc: @local::protodunevd_nfsp
+protodunevd_nfsp_mc.wcls_main.params.reality: "sim"
+protodunevd_nfsp_mc.wcls_main.params.use_resampler: "false"
+# Same E-field/temperature as the sim blocks: SP derives the drift speed (and
+# so the MC ctoffset) from them, matching the sim drift speed.
+protodunevd_nfsp_mc.wcls_main.structs.efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
+protodunevd_nfsp_mc.wcls_main.structs.temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
+
 # NF + SP + DNN-ROI + L1SP-after-DNN (hybrid) for ProtoDUNE-VD.
 # DNN-ROI runs on CPU; L1SP-after-DNN runs in 'hybrid' mode by default
 # (both wired in pgrapher/experiment/protodunevd/wcls-nf-sp-dnnroi.jsonnet).
@@ -2085,6 +2095,10 @@ protodunevd_nfsp_dnnroi_mc.wcls_main.params.reality: "sim"
 # MC is simulated at 500 ns on all anodes; the 512->500 ns Resampler is for
 # BDE data only (on for MC it stretches BDE drift times by 2.4%).
 protodunevd_nfsp_dnnroi_mc.wcls_main.params.use_resampler: "false"
+# Same E-field/temperature as the sim blocks: SP derives the drift speed (and
+# so the MC ctoffset) from them, matching the sim drift speed.
+protodunevd_nfsp_dnnroi_mc.wcls_main.structs.efield: @local::protodunevd_services.DetectorPropertiesService.Efield[0] # kV/cm
+protodunevd_nfsp_dnnroi_mc.wcls_main.structs.temperature: @local::protodunevd_services.DetectorPropertiesService.Temperature # K
 
 protodunevd_nf : {
    module_type : WireCellToolkit
