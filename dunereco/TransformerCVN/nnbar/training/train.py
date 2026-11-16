@@ -108,6 +108,7 @@ def main(
 
     # Create the initial model on the CPU
     # ---------------------------------------------------------------------------------------------
+    options.accumulate_grad_batches = 8  # used by the Trainer and by the LR schedule (steps per epoch)
     model = Network(options)
 
     # Create Loggers and Checkpoint systems
@@ -123,7 +124,7 @@ def main(
 
         checkpoint_callback = ModelCheckpoint(
             verbose=options.verbose_output,
-            every_n_train_steps=eval,
+            every_n_epochs=1,  # was every_n_train_steps=eval: counts optimizer steps (x8 accumulation), i.e. top-k only every 8 epochs
             monitor="val_epoch_nnbar_ovr_tpr",
             mode="max",
             save_top_k=5,
@@ -154,7 +155,7 @@ def main(
         gradient_clip_val=options.gradient_clip,
         precision=16 if fp16 else 32,
         val_check_interval=eval,
-        accumulate_grad_batches=8,
+        accumulate_grad_batches=options.accumulate_grad_batches,
         sync_batchnorm=options.num_gpu > 1,
         enable_checkpointing=not debug,
     )

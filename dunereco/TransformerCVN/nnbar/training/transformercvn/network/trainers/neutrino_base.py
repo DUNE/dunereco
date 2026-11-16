@@ -50,8 +50,11 @@ class NeutrinoBase(pl.LightningModule):
                 self.pixel_mean = torch.nn.Parameter(self.pixel_mean, requires_grad=False)
                 self.pixel_std = torch.nn.Parameter(self.pixel_std, requires_grad=False)
 
+        # The scheduler steps once per optimizer step, i.e. once every accumulate_grad_batches batches.
         self.steps_per_epoch = len(self.training_dataset) // (
-            self.options.batch_size * max(1, self.options.num_gpu)
+            self.options.batch_size
+            * max(1, self.options.num_gpu)
+            * max(1, getattr(self.options, "accumulate_grad_batches", 1))
         )
         self.total_steps = self.steps_per_epoch * self.options.epochs
         self.warmup_steps = int(
