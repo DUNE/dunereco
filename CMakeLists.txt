@@ -25,6 +25,8 @@ cet_set_compiler_flags(DIAGS CAUTIOUS
   EXTRA_FLAGS -pedantic -Wno-unused-local-typedefs
               -Wno-deprecated-declarations
               $<$<CXX_COMPILER_ID:GNU>:-Wno-maybe-uninitialized> -Wno-error=array-bounds
+  $<$<COMPILE_LANGUAGE:CXX>:-Wno-deprecated-enum-float-conversion>
+  $<$<COMPILE_LANGUAGE:CXX>:-Wno-deprecated-enum-enum-conversion>
 )
 
 find_package( Boost REQUIRED COMPONENTS system )
