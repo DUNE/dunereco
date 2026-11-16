@@ -87,7 +87,7 @@
 #>  define_pythonpath
 ####################################
 parent		dunereco
-defaultqual	e26
+defaultqual	e28
 ####################################
 
 ####################################
@@ -238,10 +238,8 @@ end_product_list
 #
 ####################################
 qualifier   dunecore    duneprototypes   larcv2           notes
-c14:debug   c14:debug   c14:debug        c14:debug:p3915
-c14:prof    c14:prof    c14:prof         c14:prof:p3915
-e26:debug   e26:debug   e26:debug        e26:debug:p3915
-e26:prof    e26:prof    e26:prof         e26:prof:p3915
+e28:debug   e28:debug   e28:debug        e28:debug:p3915
+e28:prof    e28:prof    e28:prof         e28:prof:p3915
 end_qualifier_list
 ####################################
 
