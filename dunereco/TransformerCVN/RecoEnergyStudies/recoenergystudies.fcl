@@ -1,0 +1,29 @@
+#include "calorimetry_dune10kt.fcl"
+BEGIN_PROLOG
+
+recoenergys:
+{
+   module_type:             "RecoEnergyS"
+   CalorimetryAlg:          @local::dune10kt_calorimetryalgmc
+   HitsModuleLabel:         "hitfd" #"linecluster"
+   ClusterModuleLabel:      "hitfd" #"linecluster"
+   ShowerModuleLabel:       "pandoraShower" #"emshower"
+   TrackModuleLabel1:       "pmtrack"
+   TrackModuleLabel2:       "pandoraTrack"
+   ClusterModuleLabel:      "linecluster"
+   RawDigitModuleLabel:     "daq"
+   WireModuleLabel:         "caldata"
+   GeantModuleLabel:        "largeant"
+   #VertexModuleLabel:       "pmtrack"
+   VertexModuleLabel:       "pandora"
+   PFParticleModuleLabel:   "pandora"
+   PandoraNuVertexModuleLabel: "pandora"
+   MCGenModuleLabel:        "generator"
+   GlobalWireMethod:        2
+   EnergyRecoNueLabel:      "energyrecnue" #"energyreconue"
+   EnergyRecoNumuLabel:     "energyrecnumu" #"energyreconumu"
+   EnergyRecoNuelseLabel:   "energyrecnc" #energyreconuelse"
+   RegCNNModuleLabel:       "regcnneval"
+   RegCNNResultLabel:       "regcnnresult"
+}
+END_PROLOG
