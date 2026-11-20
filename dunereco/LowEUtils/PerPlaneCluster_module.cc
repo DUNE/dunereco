@@ -11,6 +11,9 @@
 #define PerPlaneCluster_H 1
 
 #include "dunereco/LowEUtils/LowEUtils.h"
+// move Geometry here to avoid problem with range when building root dictionary
+#include "larcore/Geometry/Geometry.h"
+#include "larcorealg/Geometry/GeometryCore.h"
 
 using namespace lowe;
 using namespace producer;
