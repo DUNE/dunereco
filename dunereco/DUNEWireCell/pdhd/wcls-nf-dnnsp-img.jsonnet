@@ -119,15 +119,26 @@ local wcls_output = {
   }, nin=1, nout=1, uses=[mega_anode]),
 };
 
+//This will be used below to override rms cuts in MC which are idealized
+local rms_overrides(n) = if (reality=='sim') then [{
+      channels: std.range(n * 2560, (n + 1) * 2560 - 1),
+      min_rms_cut: 1.0,
+      max_rms_cut: 30.0,  
+}] else [];
+
 // local perfect = import 'chndb-perfect.jsonnet';
 local base = import 'chndb-base.jsonnet';
 local chndb = [{
   type: 'OmniChannelNoiseDB',
   name: 'ocndbperfect%d' % n,
   // data: perfect(params, tools.anodes[n], tools.field, n) { dft:wc.tn(tools.dft) },
-  data: base(params, tools.anodes[n], tools.field, n) { dft:wc.tn(tools.dft) },
+  data: base(
+    params, tools.anodes[n], tools.field, n,
+    rms_overrides(n), //Overriding as I say above
+  ) { dft:wc.tn(tools.dft) },
   uses: [tools.anodes[n], tools.field, tools.dft],
 } for n in std.range(0, std.length(tools.anodes) - 1)];
+
 
 local nf_maker = import 'pgrapher/experiment/pdhd/nf.jsonnet';
 local nf_pipes = [nf_maker(params, tools.anodes[n], chndb[n], n, name='nf%d' % n) for n in std.range(0, std.length(tools.anodes) - 1)];
