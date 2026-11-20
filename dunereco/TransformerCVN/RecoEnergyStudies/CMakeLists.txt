@@ -1,4 +1,5 @@
-
+# dunereco::CVN_art (PixelMapProducer, used only for the vertical-drift global wire mapping) is built only with
+# TensorFlow and Triton (dunereco/CVN/CMakeLists.txt). Without them the module is built for horizontal drift only.
 simple_plugin(RecoEnergyS "module"
     lardataobj::RawData
     lardataobj::RecoBase
@@ -31,8 +32,11 @@ simple_plugin(RecoEnergyS "module"
     ${ROOT_BASIC_LIB_LIST}
     BASENAME_ONLY
     dunereco::CVN_func
-    dunereco::CVN_art
     )
+if (( DEFINED ENV{TENSORFLOW_DIR} ) AND ( DEFINED ENV{TRITON_DIR} ))
+  target_link_libraries(RecoEnergyS_module PRIVATE dunereco::CVN_art)
+  target_compile_definitions(RecoEnergyS_module PRIVATE RECOENERGYS_WITH_CVN_ART)
+endif()
 install_headers()
 install_fhicl()
 install_source()
