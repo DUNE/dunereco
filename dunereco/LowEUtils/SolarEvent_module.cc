@@ -14,6 +14,7 @@
 #define SolarEvent_H 1
 
 #include "dunereco/LowEUtils/LowEEvent.h"
+#include "dunereco/LowEUtils/LowEUtils.h"
 
 using namespace solar;
 using namespace producer;
