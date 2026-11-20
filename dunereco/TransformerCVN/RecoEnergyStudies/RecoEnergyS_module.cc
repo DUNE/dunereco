@@ -596,7 +596,6 @@ private:
   art::ServiceHandle<geo::Geometry> geom;
   geo::Geometry* m_geom = &*geom;
   geo::WireReadoutGeom const* wireReadout = &art::ServiceHandle<geo::WireReadout>()->Get();
-  detinfo::DetectorProperties const* detprop = nullptr;
 
   double fCVNResultIsAntineutrino;
   double fCVNResultNue, fCVNResultNumu, fCVNResultNutau, fCVNResultNC; // flavour
@@ -1812,7 +1811,6 @@ std::cout<<"fGlobalWireMethod = "<<fGlobalWireMethod<<std::endl;
   // loop over for reconstructed shower
   std::map<int, double> trkide;
   float showerCharge = 0;
-  int icount_shower = 0;
   hit_shw_count = 0;
   shw_correctedChargeU = 0;
   shw_correctedChargeV = 0;
@@ -2076,7 +2074,6 @@ std::cout<<"fGlobalWireMethod = "<<fGlobalWireMethod<<std::endl;
 	   } // collect leading emshower
 
          } // end of fmsh
-	 if (showerCharge>0) icount_shower += 1;
          shw_tot_chg = showerCharge;
      } // end of loop for ishower
   } // end of if showerHandle
