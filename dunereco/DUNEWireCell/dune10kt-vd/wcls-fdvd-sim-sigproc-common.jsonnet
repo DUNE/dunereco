@@ -143,7 +143,18 @@ local planemap_ = {
       window_start: 0,
       window_duration: params.daq.readout_time,
       nsigma: 3.0,
-      reference_time: 0,
+      // The writer times charge at the collection plane as depo time at the
+      // response plane + FR origin / FR speed (181 mm / 1.53 mm/us), while SP
+      // (sp.jsonnet ctoffset) uses the simulated drift speed.  Shift the
+      // SimChannel TDCs by the same amount so they line up with the SP
+      // signal: R/1.53 - R/v_drift = +5.57 us (11.1 ticks) for R = 18.1 cm,
+      // v_drift = 1.6056 mm/us (0.5 kV/cm, 87 K).  Without it the TDCs are
+      // 11.6 ticks late (measured, WCT 0.38.1).
+      // v8 GGD geometry: +5.57 us.  v6 geometry: also +5.57 us -- the shift
+      // depends only on the response plane, the FR and the drift speed, not
+      // on the wire positions (measured -11.6 ticks with v6 wires as well).
+      reference_time: params.det.response_plane / (1.53*wc.mm/wc.us)
+                      - params.det.response_plane / params.lar.drift_speed,
       simchan_label: simchan_label,
       sed_label: fcl_params.input_depos_tag,
       sparse: sparse,
