@@ -62,7 +62,12 @@
 #include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 #include "dunereco/CVN/func/InteractionType.h"
 #include "dunereco/CVN/func/Result.h"
+// CVN_art (and with it the vertical-drift global wire mapping) is built only with TensorFlow and Triton;
+// without it the module is built for horizontal drift only (CMakeLists.txt sets RECOENERGYS_WITH_CVN_ART).
+#ifdef RECOENERGYS_WITH_CVN_ART
 #include "dunereco/CVN/art/PixelMapProducer.h"
+#endif
+#include "cetlib_except/exception.h"
 //#include "dune/RegCNN/func/RegCNNResult.h"
 
 // ROOT & C++ includes
@@ -591,7 +596,6 @@ private:
   art::ServiceHandle<geo::Geometry> geom;
   geo::Geometry* m_geom = &*geom;
   geo::WireReadoutGeom const* wireReadout = &art::ServiceHandle<geo::WireReadout>()->Get();
-  detinfo::DetectorProperties const* detprop = nullptr;
 
   double fCVNResultIsAntineutrino;
   double fCVNResultNue, fCVNResultNumu, fCVNResultNutau, fCVNResultNC; // flavour
@@ -1085,6 +1089,11 @@ void recoestudy::RecoEnergyS::reconfigure(fhicl::ParameterSet const& pset) {
   fRegCNNModule2Label = pset.get<std::string>("RegCNNModule2Label");
   fRegCNNResult2Label = pset.get<std::string>("RegCNNResult2Label");*/
   fIsVD = pset.get<bool>("IsVD");
+#ifndef RECOENERGYS_WITH_CVN_ART
+  if (fIsVD)
+    throw cet::exception("RecoEnergyS") << "IsVD: true needs dunereco::CVN_art (PixelMapProducer), which is built only "
+                                        << "with TensorFlow and Triton; this build supports horizontal drift only.\n";
+#endif
 
   ievt = -999;
   subrun = -999;
@@ -1802,7 +1811,6 @@ std::cout<<"fGlobalWireMethod = "<<fGlobalWireMethod<<std::endl;
   // loop over for reconstructed shower
   std::map<int, double> trkide;
   float showerCharge = 0;
-  int icount_shower = 0;
   hit_shw_count = 0;
   shw_correctedChargeU = 0;
   shw_correctedChargeV = 0;
@@ -2066,7 +2074,6 @@ std::cout<<"fGlobalWireMethod = "<<fGlobalWireMethod<<std::endl;
 	   } // collect leading emshower
 
          } // end of fmsh
-	 if (showerCharge>0) icount_shower += 1;
          shw_tot_chg = showerCharge;
      } // end of loop for ishower
   } // end of if showerHandle
@@ -2753,8 +2760,10 @@ void recoestudy::RecoEnergyS::GetDUNEGlobalWireTDC(const geo::WireID& wireID, do
       globalWire = 0;
       globalPlane = 0;
       globalTDC = localTDC;
+#ifdef RECOENERGYS_WITH_CVN_ART
       cvn::PixelMapProducer producer;
       producer.GetDUNEVertDrift3ViewGlobalWire(wireID.Wire, wireID.Plane,wireID.TPC,globalWire,globalPlane);
+#endif
   }
   else {
       unsigned int localWire = wireID.Wire;
