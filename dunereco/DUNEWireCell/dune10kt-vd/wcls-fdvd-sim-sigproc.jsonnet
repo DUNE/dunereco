@@ -1,0 +1,233 @@
+// High layer / entry point for the dune10kt-vd WC/LS sim + sigproc job.  It is
+// named to match the hosting FHiCL (wcls-fdvd-sim-sigproc.fcl).
+//
+// The file evaluates to a function of one object, `cfg`, holding the FHiCL
+// knobs in FHiCL units, one field per WCLS params/structs entry.  Jsonnet calls
+// a top-level function with its default arguments, so when WCLS loads this file
+// directly cfg comes from std.extVar() (see `extvars` below).  Another Jsonnet
+// may instead import this file and call it with its own cfg, as the legacy
+// wcls-sim-drift-simchannel-nf-sp.jsonnet does.
+//
+// Responsibilities of THIS layer only:
+//   1. resolve the cfg knobs into one `fcl_params` object,
+//   2. build `params` (params-10kt) and `tools` (narrowed to the anodes to run),
+//   3. dispatch on process_mode to a modal layer that builds the graph:
+//        - "multi-sim"            -> -multi.jsonnet  (per-anode fan-out, per-anode
+//                                     FrameSavers; process_anode_indices list)
+//        - "single-sim/-sp/-sim-sp" and the "full" fallback -> -single.jsonnet
+//   4. wrap the graph in the flow-engine app and emit.
+//
+// Shared detector glue lives in -common.jsonnet; the modal graph assembly lives
+// in -single.jsonnet / -multi.jsonnet.  See those files for details.
+//
+// NOTE: every cfg field is required, in every process_mode: fcl_params below is
+// forced with std.manifestJson(), which evaluates all of its fields.
+
+local g = import 'pgraph.jsonnet';
+local wc = import 'wirecell.jsonnet';
+local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
+local params_maker = import 'pgrapher/experiment/dune10kt-vd/params-10kt.jsonnet';
+local tools_maker = import 'pgrapher/common/tools.jsonnet';
+
+local common_maker = import 'pgrapher/experiment/dune10kt-vd/wcls-fdvd-sim-sigproc-common.jsonnet';
+local single_maker = import 'pgrapher/experiment/dune10kt-vd/wcls-fdvd-sim-sigproc-single.jsonnet';
+local multi_maker = import 'pgrapher/experiment/dune10kt-vd/wcls-fdvd-sim-sigproc-multi.jsonnet';
+
+// Expand an anode index list.  Each element is a number or a string of
+// comma-separated parts, each part an index "N" or an inclusive range "A-B",
+// e.g. [0, 1, "10-20", "30-32,40"].  A bare A-B is Jsonnet subtraction, so
+// ranges must be strings.
+local expand_indices(lst) =
+  local one(part) =
+    local ab = [std.stripChars(x, ' ') for x in std.split(part, '-')];
+    if std.length(ab) == 1 then [std.parseInt(ab[0])]
+    else if std.length(ab) == 2 && std.parseInt(ab[0]) <= std.parseInt(ab[1])
+    then std.range(std.parseInt(ab[0]), std.parseInt(ab[1]))
+    else error 'bad anode index range "%s"' % part;
+  std.flattenArrays([
+    if std.isNumber(x) then [x]
+    else if std.isString(x) then std.flattenArrays([one(p) for p in std.split(x, ',')])
+    else error 'anode index must be a number or a range string, got %s' % std.manifestJson(x)
+    for x in lst
+  ]);
+
+// ---- 0. the FHiCL knobs ------------------------------------------------
+// As WCLS supplies them: params as ext-str, structs as ext-code.  Fields are
+// lazy, so a caller-supplied cfg never evaluates these.
+local extvars = {
+  G4RefTime: std.extVar('G4RefTime'),
+  response_plane: std.extVar('response_plane'),
+  nticks: std.extVar('nticks'),
+  use_dnnroi: std.extVar('use_dnnroi'),
+  process_mode: std.extVar('process_mode'),
+  geo_planeid_labels: std.extVar('geo_planeid_labels'),
+  input_depos_tag: std.extVar('input_depos_tag'),
+  use_hydra: std.extVar('use_hydra'),
+  save_rawdigits: std.extVar('save_rawdigits'),
+  adc_resolution: std.extVar('adc_resolution'),
+  elecGain: std.extVar('elecGain'),
+  process_anode_index: std.extVar('process_anode_index'),
+  process_anode_indices: std.extVar('process_anode_indices'),
+  frame_tag_pattern: std.extVar('frame_tag_pattern'),
+  DL: std.extVar('DL'),
+  DT: std.extVar('DT'),
+  lifetime: std.extVar('lifetime'),
+  efield: std.extVar('efield'),
+  temperature: std.extVar('temperature'),
+  files_wires: std.extVar('files_wires'),
+  files_fields: std.extVar('files_fields'),
+  wire_schema: std.extVar('wire_schema'),
+  drift_planes: std.extVar('drift_planes'),
+  engine: std.extVar('engine'),
+  max_threads: std.extVar('max_threads'),
+};
+
+function(cfg=extvars)
+
+// ---- 1. resolve the fcl knobs -------------------------------------------
+// IMPORTANT: the cfg-derived knobs are forced to concrete literals ONCE, via
+// std.parseJson(std.manifestJson(...)).  Without this, go-jsonnet does NOT
+// memoize the cfg-valued numeric params (nticks, elecGain, response_plane,
+// ...) as they thread through params_maker into the per-anode response / sim /
+// sigproc construction: it REBUILDS the (nticks-sized) response arrays once per
+// processed anode.  For the multi-sim fan that is ~GBs of config-compile memory
+// PER CRU (the dominant per-CRU job-memory cost); forcing the values concrete
+// restores normal sharing (measured: ~10 GB -> ~0.13 GB for 4 CRUs).
+local fcl_params = std.parseJson(std.manifestJson({
+  G4RefTime: cfg.G4RefTime * wc.us,
+  response_plane: cfg.response_plane * wc.cm,
+  nticks: cfg.nticks,
+  use_dnnroi: cfg.use_dnnroi,
+  process_mode: cfg.process_mode,
+  geo_planeid_labels: cfg.geo_planeid_labels,
+  // art InputTag ("label[:instance[:process]]") of the input SimEnergyDeposit
+  // collection the WCLS depo source reads (and the DepoFluxWriter's sed_label).
+  input_depos_tag: cfg.input_depos_tag,
+  use_hydra: cfg.use_hydra,
+  save_rawdigits: cfg.save_rawdigits,
+  adc_resolution: cfg.adc_resolution,
+  // Bottom drift (cold electronics) front-end gain [mV/fC]
+  elecGain: cfg.elecGain * wc.mV / wc.fC,
+  // single-* : which one anode to process
+  process_anode_index: cfg.process_anode_index,
+  // multi-*  : list of anode indices (ranges expanded, see expand_indices),
+  // and the per-anode RawDigit tag/instance pattern
+  process_anode_indices: expand_indices(cfg.process_anode_indices),
+  frame_tag_pattern: cfg.frame_tag_pattern,
+}));
+
+// ---- 2. params + tools ---------------------------------------------------
+// The lar/files overrides are forced concrete for the same reason.
+local lar_over = std.parseJson(std.manifestJson({
+  DL: cfg.DL * wc.cm2 / wc.ns,
+  DT: cfg.DT * wc.cm2 / wc.ns,
+  lifetime: cfg.lifetime * wc.us,
+  drift_speed: util.drift_velocity(cfg.efield, cfg.temperature) * wc.mm / wc.us,
+}));
+local files_over = std.parseJson(std.manifestJson({
+  wires: cfg.files_wires,
+  // same field response for [bottom, top] drift volumes
+  fields: [cfg.files_fields, cfg.files_fields],
+}));
+local params = params_maker(fcl_params) {
+  lar: super.lar + lar_over,
+  files: super.files + files_over,
+};
+
+// Where the anodes get their wire geometry (params.wire_schema):
+//   "service" -- larwirecell's art WireSchemaService, built from the job's own
+//                LArSoft geometry + channel map, so WCT and LArSoft wires and
+//                channels agree by construction.  Needs a WireSchemaService in
+//                the FHiCL services (grouping "pair-tpc" for this detector).
+//   "file"    -- the WCT wires file named by params.files_wires.
+local wire_schema = cfg.wire_schema;
+local tools_base = tools_maker(params);
+local tools_wires =
+  if wire_schema == 'service'
+  then tools_base { wires: { type: 'wclsWireSchemaSource', name: '', data: {} } }
+  else if wire_schema == 'file'
+  then tools_base
+  else error 'wire_schema must be "service" or "file", got "%s"' % wire_schema;
+
+// Where the anodes and the drifter get their "anode", "response" and "cathode"
+// drift-axis planes:
+//   "service" -- larwirecell's WireSchemaService, from the LArSoft geometry.
+//                The response plane is params.det.response_plane from the
+//                collection plane, which must match the field response.
+//   "params"  -- the fixed per-volume faces of params.det.volumes.
+local drift_planes = cfg.drift_planes;
+local tools_all =
+  if drift_planes == 'service'
+  then tools_wires {
+    drift_planes:: {
+      type: 'wclsDriftPlanesSource',
+      name: '',
+      data: { response_distance: params.det.response_plane },
+    },
+  }
+  else if drift_planes == 'params'
+  then tools_wires
+  else error 'drift_planes must be "service" or "params", got "%s"' % drift_planes;
+
+local is_single =
+  fcl_params.process_mode == 'single-sim'
+  || fcl_params.process_mode == 'single-sp'
+  || fcl_params.process_mode == 'single-sim-sp';
+local is_multi = fcl_params.process_mode == 'multi-sim';
+
+// The anodes this job will process, as positions into tools_all.anodes.
+local anode_indices =
+  if is_multi then fcl_params.process_anode_indices
+  else if is_single then [fcl_params.process_anode_index]
+  else std.range(0, std.length(tools_all.anodes) - 1);  // "full"
+
+local tools = tools_all { anodes: [tools_all.anodes[i] for i in anode_indices] };
+
+// ---- 3. dispatch to the modal layer -------------------------------------
+local com = common_maker(params, tools, fcl_params);
+local built =
+  if is_multi
+  then multi_maker(params, tools, fcl_params, com)
+  else single_maker(params, tools, fcl_params, com);
+local graph = built.graph;
+
+// ---- 4. emit -------------------------------------------------------------
+// Order-preserving O(N log N) dedup.  pgraph's g.uses()/g.edges() dedup via
+// wc.unique_list() which is O(N^2) DEEP-object comparison -- fine for ProtoDUNE
+// but impractical for a full FD-VD single graph (~5800 nodes, all uniquely
+// named, so ~17M deep compares finding ZERO dups -> ~20 min just to compile).
+// Nodes are uniquely identified by "type:name" (the WCT NamedFactory identity)
+// and edges by their serialized form, so we dedup by a cheap string key while
+// keeping the FIRST occurrence -- order matters: WCT configures components in
+// array order and resolve_uses() already emits dependencies before dependents
+// (e.g. AnodePlane before OmnibusSigProc).  [The proper fix belongs in pgraph's
+// g.uses/g.edges upstream.]
+local unique_by(lst, keyf) =
+  local n = std.length(lst);
+  if n <= 1 then lst
+  else
+    local pairs = std.makeArray(n, function(i) { k: keyf(lst[i]), i: i });
+    local sorted = std.sort(pairs, function(p) [p.k, p.i]);
+    local keep = [ sorted[j].i for j in std.range(0, n - 1)
+                   if j == 0 || sorted[j].k != sorted[j - 1].k ];
+    [ lst[i] for i in std.sort(keep) ];
+local uses = unique_by(g.resolve_uses(graph.uses),
+                       function(n) std.get(n, 'type', '') + ':' + std.get(n, 'name', ''));
+local edges = unique_by(graph.edges, function(e) std.manifestJson(e));
+
+// The graph-execution engine is fcl-selectable: 'TbbFlow' (multi-threaded TBB
+// flow graph) or 'Pgrapher' (single-threaded serial executor).  Both consume
+// the same edge list.
+local engine = cfg.engine;
+local app = {
+  type: engine,
+  data: { edges: edges },
+};
+// For TbbFlow only, a TbbDataFlowGraph carries the thread limit: max_threads
+// feeds tbb::global_control(max_allowed_parallelism); 0 leaves TBB free to use
+// all cores (the historical default).  Pgrapher ignores it (always serial).
+local dfg = if engine == 'TbbFlow'
+  then [{ type: 'TbbDataFlowGraph', data: { max_threads: cfg.max_threads } }]
+  else [];
+
+uses + dfg + [app]
