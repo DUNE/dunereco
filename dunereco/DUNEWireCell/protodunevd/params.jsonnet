@@ -25,14 +25,15 @@ base {
         // See:  wirecell-util wire-volumes protodune-wires-larsoft-v3.json.bz2
         // to help with defining these parameters.
 
-        // between center lines
+        // |x| of the collection (W) strips; cathode center is at x=0.
+        // A CRP is single-sided, so unlike an APA there is no frame
+        // center between two W planes: centerline IS the W strip plane.
         local apa_cpa = 341.55*wc.cm,
-        local cpa_thick = 50.8*wc.mm,
-        local apa_w2w = 85.725*wc.mm,
-        local plane_gap = 4.76*wc.mm,
-        local apa_g2g = 114.3*wc.mm, 
+        local cpa_thick = 60.0*wc.mm, // GDML CathodeBlock (protodunevd_v4_refactored.gdml)
 
-        local apa_plane = 0.5*apa_g2g, // pick it to be at the grid wires
+        // Anode cut-off at the CRP shield plane, the drift-facing edge of
+        // the active LAr.  CRP stack: W -3.2mm-> V -10mm-> U -3.2mm-> shield.
+        local apa_plane = 16.4*wc.mm,
 
         // The "response" plane is where the field response functions
         // start.  Garfield calcualtions start somewhere relative to
@@ -40,7 +41,9 @@ base {
         // match what field response functions also used.
         response_plane: 18.1*wc.cm, // relative to collection wires
                                     // synced to params.files.fields
-        local res_plane = 0.5*apa_w2w + self.response_plane,
+        // No 0.5*apa_w2w term (that is the APA half-width, 4.29 cm, which
+        // made the drifter skip 4.29 cm of drift -> hits ~27 us early).
+        local res_plane = self.response_plane,
 
         // The cathode plane is like the anode cut off plane.  Any
         // depo not between the two is dropped prior to drifting.
@@ -114,6 +117,13 @@ base {
     // default and to pre-size freqbinner() calls in chndb-base.jsonnet.
     nf: super.nf {
         nsamples: 8000,
+    },
+
+    // Signal-processing collection-plane time offset (OmnibusSigProc
+    // ctoffset).  4 us is tuned to real data; for MC simparams.jsonnet
+    // computes it from the simulated drift speed.
+    sp: {
+        ctoffset: 4*wc.microsecond, // consistent with FR: protodunevd_FR_imbalance3p_260501.json.bz2
     },
 
     adc: super.adc {

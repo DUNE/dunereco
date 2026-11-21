@@ -33,7 +33,15 @@ local raw_input_label = std.extVar('raw_input_label');  // eg "daq"
 
 
 local data_params = import 'params.jsonnet';
-local simu_params = import 'simparams.jsonnet';
+// MC: use the drift speed the sim drifted at (wcls-sim-drift-depoflux.jsonnet,
+// from the fcl E-field/temperature structs), so simparams' MC sp.ctoffset is
+// computed for it.
+local util = import 'pgrapher/experiment/protodunevd/funcs.jsonnet';
+local simu_params = (import 'simparams.jsonnet') {
+  lar+: {
+    drift_speed: util.drift_velocity(std.extVar('efield'), std.extVar('temperature')) * wc.mm / wc.us,
+  },
+};
 local params = if reality == 'data' then data_params else simu_params;
 
 
