@@ -17,6 +17,7 @@ add_subdirectory(TransformerCVN)
 add_subdirectory(VLNets)
 add_subdirectory(PointResTree)
 add_subdirectory(WireFilter)
+add_subdirectory(FlashMatch)
 
 # Supera
 #
