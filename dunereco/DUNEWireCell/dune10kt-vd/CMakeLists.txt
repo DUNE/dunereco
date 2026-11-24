@@ -9,3 +9,6 @@ install_wp(LIST ${jsonnet_file} SUBDIRNAME pgrapher/experiment/dune10kt-vd)
 
 file(GLOB jsonbz2_file *.json.bz2)
 install_wp(LIST ${jsonbz2_file})
+
+# The standalone WC/LS job of this directory.
+install_fhicl()
