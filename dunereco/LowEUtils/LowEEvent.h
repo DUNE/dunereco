@@ -10,8 +10,7 @@
 #ifndef LOWEEVENT_H
 #define LOWEEVENT_H
 
-// DUNE includes -- LowEUtils makes problems for the dictionary generator
-//#include "dunereco/LowEUtils/LowEUtils.h"
+// DUNE includes
 #include "dunereco/LowEUtils/LowECluster.h"
 
 // LArSoft includes
@@ -26,7 +25,6 @@
 #include <vector>
 
 using namespace solar;
-//using namespace producer;
 
 namespace lowe {
     /**
