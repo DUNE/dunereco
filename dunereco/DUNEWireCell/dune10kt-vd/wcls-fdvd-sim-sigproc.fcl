@@ -127,7 +127,7 @@ physics :{
             structs: {
                 # number of time samples
                 # bottom drift (cold electronics) front-end gain [mV/fC]
-                elecGain: 14
+                elecGain: 7.8
                 nticks: @local::dunefdvd_detproperties.NumberTimeSamples
                 # Longitudinal diffusion constant [cm2/ns] 4.0e-9
                 DL: @local::dunefd_largeantparameters.LongitudinalDiffusion
