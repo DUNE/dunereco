@@ -14,9 +14,6 @@
 // LArSoft includes
 #include "dunecore/ProducerUtils/ProducerUtils.h"
 #include "dunereco/LowEUtils/LowECluster.h"
-#include "larcore/Geometry/Geometry.h"
-#include "larcore/Geometry/WireReadout.h"
-#include "larcorealg/Geometry/GeometryCore.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"

@@ -9,7 +9,7 @@ cmake_minimum_required (VERSION 3.20 FATAL_ERROR)
 
 find_package(cetmodules 3.12.00 REQUIRED)
 project(dunereco LANGUAGES CXX)
-set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 10.32.00d01)
+set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING 11.00.00d00)
 
 # cetbuildtools contains our cmake modules
 
@@ -25,6 +25,8 @@ cet_set_compiler_flags(DIAGS CAUTIOUS
   EXTRA_FLAGS -pedantic -Wno-unused-local-typedefs
               -Wno-deprecated-declarations
               $<$<CXX_COMPILER_ID:GNU>:-Wno-maybe-uninitialized> -Wno-error=array-bounds
+  $<$<COMPILE_LANGUAGE:CXX>:-Wno-deprecated-enum-float-conversion>
+  $<$<COMPILE_LANGUAGE:CXX>:-Wno-deprecated-enum-enum-conversion>
 )
 
 find_package( Boost REQUIRED COMPONENTS system )

@@ -11,13 +11,20 @@
 #define LOWEEVENT_H
 
 // DUNE includes
-#include "dunereco/LowEUtils/LowEUtils.h"
+#include "dunereco/LowEUtils/LowECluster.h"
+
+// LArSoft includes
+#include "lardataobj/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/OpFlash.h"
+
+// Art includes
+#include "canvas/Persistency/Common/Ptr.h"
+#include "canvas/Persistency/Common/PtrVector.h"
 
 // std includes
 #include <vector>
 
 using namespace solar;
-using namespace producer;
 
 namespace lowe {
     /**
