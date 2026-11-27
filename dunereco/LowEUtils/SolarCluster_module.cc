@@ -12,6 +12,10 @@
 #define SolarCluster_H 1
 
 #include "dunereco/LowEUtils/LowEUtils.h"
+// move WireReadout.h here to avoid problem with range when building root dictionary
+#include "larcore/Geometry/Geometry.h"
+#include "larcorealg/Geometry/GeometryCore.h"
+#include "larcore/Geometry/WireReadout.h"
 
 using namespace lowe;
 using namespace producer;
