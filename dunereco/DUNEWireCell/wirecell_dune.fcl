@@ -339,7 +339,7 @@ wirecell_protodunespmc:
         params: {
         }
         structs: {
-            Nbit: @local::Nbit_standard 
+            Nbit: @local::Nbit_legacy 
             elecGain:    14 
             // Longitudinal diffusion constant [cm2/s]
             DL: 4.0

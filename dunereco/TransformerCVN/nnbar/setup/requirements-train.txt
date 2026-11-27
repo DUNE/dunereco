@@ -1,0 +1,14 @@
+# Working environment on the local RTX 3090 box (Python 3.9, verified 2026-09-25 with a GPU smoke test).
+# Install:  python3.9 -m venv .venv && source .venv/bin/activate
+#           pip install torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cu118
+#           pip install -r requirements-local.txt
+# Run with the repo on the path (no pyproject.toml in this copy):  PYTHONPATH=$PWD python train.py ...
+pytorch-lightning==1.9.5
+torchmetrics==0.11.4
+numpy==1.26.4
+h5py
+scikit-learn
+matplotlib
+tensorboard
+rich==13.3.5          # newer rich breaks Lightning 1.9.5 RichProgressBar ("pop from empty list")
+transformers==4.33.3  # newer transformers refuse torch 2.0.1

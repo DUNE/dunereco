@@ -1,0 +1,6 @@
+# Stage 6 (preprocess.py): pixelmap ROOT files -> HDF5
+numpy==1.26.4
+uproot
+awkward
+h5py
+tables
